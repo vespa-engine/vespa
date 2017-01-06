@@ -2,17 +2,17 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.session.LocalSession;
 
 import java.util.concurrent.Executor;
 
@@ -38,27 +38,34 @@ public class SessionContentHandler extends SessionHandler {
 
     @Override
     public HttpResponse handleGET(HttpRequest request) {
-        LocalSession session = validateRequestAndGetSession(request);
-        return contentHandler.get(SessionContentRequestV2.create(request, session));
+        return contentHandler.get(getContentRequest(request));
     }
 
     @Override
     public HttpResponse handlePUT(HttpRequest request) {
-        LocalSession session = validateRequestAndGetSession(request);
-        return contentHandler.put(SessionContentRequestV2.create(request, session));
+        return contentHandler.put(getContentRequest(request));
     }
 
     @Override
     public HttpResponse handleDELETE(HttpRequest request) {
-        LocalSession session = validateRequestAndGetSession(request);
-        return contentHandler.delete(SessionContentRequestV2.create(request, session));
+        return contentHandler.delete(getContentRequest(request));
     }
 
-    private LocalSession validateRequestAndGetSession(HttpRequest request) {
-        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+    private void validateRequest(TenantName tenantName) {
         Utils.checkThatTenantExists(tenants, tenantName);
-        Tenant tenant = tenants.getTenant(tenantName);
-        return applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+    }
+
+    private SessionContentRequestV2 getContentRequest(HttpRequest request) {
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        validateRequest(tenantName);
+        long sessionId = getSessionIdV2(request);
+        String contentPath = SessionContentRequestV2.getContentPath(request);
+        ApplicationFile applicationFile =
+                applicationRepository.getApplicationFileFromSession(tenantName,
+                                                                    sessionId,
+                                                                    contentPath,
+                                                                    ContentRequest.getApplicationFileMode(request.getMethod()));
+        return new SessionContentRequestV2(request, sessionId, tenantName, contentPath, applicationFile);
     }
 
 }

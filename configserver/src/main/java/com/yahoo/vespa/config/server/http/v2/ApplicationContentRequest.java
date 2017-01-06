@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.session.LocalSession;
 
 /**
  * Represents a content request for an application.
@@ -21,18 +21,18 @@ public class ApplicationContentRequest extends ContentRequest {
     private final ApplicationId applicationId;
     private final Zone zone;
 
-    private ApplicationContentRequest(HttpRequest request, LocalSession session, ApplicationId applicationId, Zone zone) {
-        super(request, session);
+    ApplicationContentRequest(HttpRequest request,
+                              long sessionId,
+                              ApplicationId applicationId,
+                              Zone zone,
+                              String contentPath,
+                              ApplicationFile applicationFile) {
+        super(request, sessionId, contentPath, applicationFile);
         this.applicationId = applicationId;
         this.zone = zone;
     }
 
-    public static ContentRequest create(HttpRequest request, LocalSession session, ApplicationId applicationId, Zone zone) {
-        return new ApplicationContentRequest(request, session, applicationId, zone);
-    }
-
-    @Override
-    protected String getContentPath(HttpRequest request) {
+    static String getContentPath(HttpRequest request) {
         BindingMatch<?> bm = Utils.getBindingMatch(request, uriPattern);
         return bm.group(7);
     }
