@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerTestUtils;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -47,7 +45,6 @@ public class RunVespaLocal {
             .parentHostHostname(HostName.getLocalhost())
             .inetAddressResolver(new InetAddressResolver());
 
-    private NodeAdminStateUpdater nodeAdminStateUpdater = null;
     private final Docker docker;
     private final Logger logger = Logger.getLogger("RunVespaLocal");
 
@@ -82,7 +79,7 @@ public class RunVespaLocal {
         assertTrue("Could not start config server", LocalZoneUtils.isReachableURL(configServerUrl, Duration.ofSeconds(120)));
 
         logger.info("Provisioning nodes");
-        Set<String> hostnames = LocalZoneUtils.provisionNodes(HostName.getLocalhost(), numNodesToProvision);
+        Set<String> hostnames = LocalZoneUtils.provisionNodes(LocalZoneUtils.NODE_ADMIN_HOSTNAME, numNodesToProvision);
         hostnames.forEach(hostname -> LocalZoneUtils.setState(Node.State.ready, hostname));
     }
 
@@ -95,7 +92,7 @@ public class RunVespaLocal {
     void startNodeAdminInIDE(PathResolver pathResolver) {
         logger.info("Starting node-admin");
         environmentBuilder.pathResolver(pathResolver);
-        nodeAdminStateUpdater = new ComponentsProviderImpl(
+        new ComponentsProviderImpl(
                 docker,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation),
                 environmentBuilder.build(),
@@ -104,21 +101,26 @@ public class RunVespaLocal {
 
     /**
      * Starts node-admin inside a container
+     * @param pathToNodeAdminApp Path to node-admin application.zip
      * @param pathToContainerStorage Path to where the container data will be stored, the path must exist and must
      *                               be writeable by user, normally /home/docker/container-storage
      */
-    void startNodeAdminAsContainer(Path pathToContainerStorage) throws UnknownHostException {
-        String hostname = InetAddress.getByName("172.18.0.1").getHostName();
-        logger.info("Provisioning host at " + hostname);
-        LocalZoneUtils.provisionHost(hostname);
-        LocalZoneUtils.setState(Node.State.ready, hostname);
-
+    void startNodeAdminAsContainer(Path pathToNodeAdminApp, Path pathToContainerStorage) throws UnknownHostException {
         logger.info("Starting node-admin");
+        String parentHostHostname = LocalZoneUtils.NODE_ADMIN_HOSTNAME;
         LocalZoneUtils.startNodeAdminIfNeeded(docker, environmentBuilder.build(), pathToContainerStorage);
+
+        logger.info("Provisioning host at " + parentHostHostname);
+        LocalZoneUtils.provisionHost(parentHostHostname);
+        LocalZoneUtils.setState(Node.State.ready, parentHostHostname);
+
+        logger.info("Deploying node-admin app");
+        LocalZoneUtils.deployApp(docker, pathToNodeAdminApp, "vespa", "node-admin");
+
+        logger.info("Waiting for node-admin to serve");
         try {
             URL nodeUrl = new URL("http://localhost:" + System.getenv("VESPA_WEB_SERVICE_PORT") + "/");
             assertTrue(LocalZoneUtils.isReachableURL(nodeUrl, Duration.ofSeconds(120)));
-            logger.info("Ready");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
