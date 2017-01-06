@@ -139,7 +139,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
     private Message updateTiming(Message msg) {
         msg.setTimeReceivedNow();
         if (msg.getTimeRemaining() <= 0) {
-            msg.setTimeRemaining((long) (timeout * 1000));
+            msg.setTimeRemaining((long)(timeout) * 1000l);
         }
         return msg;
     }
