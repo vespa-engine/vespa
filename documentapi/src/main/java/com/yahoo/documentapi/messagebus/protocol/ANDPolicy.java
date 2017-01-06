@@ -57,10 +57,10 @@ public class ANDPolicy implements DocumentProtocolRoutingPolicy {
     public void merge(RoutingContext context) {
         DocumentProtocol.merge(context);
     }
-        
+
     public void destroy() {
     }
-    
+
     public MetricSet getMetrics() {
         return null;
     }

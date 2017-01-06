@@ -65,7 +65,7 @@ class RoutingPolicyRepository {
         if (ret.getMetrics() != null) {
             metrics.routingPolicyMetrics.addMetric(ret.getMetrics());
         }
-        
+
         if (ret == null) {
             log.log(LogLevel.ERROR, "Routing policy factory " + factory.getClass().getName() + " failed to create a " +
                                     "routing policy for parameter '" + name + "'.");

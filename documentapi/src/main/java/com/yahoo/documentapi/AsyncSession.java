@@ -10,7 +10,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
  * <p>A session for asynchronous access to a document repository.
  * This class provides document repository writes and random access with high
  * throughput.</p>
- * 
+ *
  * <p>All operations which are <i>accepted</i> by an async session will cause one or more
  * {@link Response responses} to be returned within the timeout limit. When an operation fails,
  * the response will contain the argument which was submitted to the operation.</p>

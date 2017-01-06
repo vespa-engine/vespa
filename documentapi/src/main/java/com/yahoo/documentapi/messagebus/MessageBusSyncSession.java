@@ -214,7 +214,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
             notify();
         }
     }
-    
+
     private void syncSendPutDocumentMessage(PutDocumentMessage putDocumentMessage) {
         Reply reply = syncSend(putDocumentMessage);
         if (reply.hasErrors()) {

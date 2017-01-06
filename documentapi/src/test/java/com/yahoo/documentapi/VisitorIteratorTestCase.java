@@ -509,7 +509,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(token.getFinishedBucketCount(), 1L << 17);
         assertEquals(token.getBucketCursor(), 1L << 17);
         assertTrue(token.isFinished());
-        
+
         ProgressToken token2 = new ProgressToken(token.serialize());
         assertEquals(17, token2.getDistributionBitCount());
         assertEquals(1L << 17, token2.getTotalBucketCount());
@@ -814,7 +814,7 @@ public class VisitorIteratorTestCase extends TestCase {
         iter.update(bpp[1].getSuperbucket(), new BucketId());
 
         iter.setDistributionBitCount(20);
-        // ProgressToken doesn't change yet, since it had active buckets 
+        // ProgressToken doesn't change yet, since it had active buckets
         assertEquals(p.getDistributionBitCount(), 16);
         assertEquals(iter.getDistributionBitCount(), 20);
         assertEquals(iter.getBucketSource().getDistributionBitCount(), 20);
@@ -1256,7 +1256,7 @@ public class VisitorIteratorTestCase extends TestCase {
         assertEquals(p.getActiveBucketCount(), 0);
         assertEquals(p.getBucketCursor(), 503 << 2);
         assertTrue(iter.hasNext());
-        
+
         ProgressToken p2 = new ProgressToken(p.serialize());
         assertEquals(p2.getDistributionBitCount(), 12);
         assertEquals(p2.getTotalBucketCount(), 1 << 12);
