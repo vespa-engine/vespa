@@ -19,7 +19,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class DeleteOldAppDataTest {
     @Rule
@@ -121,9 +121,9 @@ public class DeleteOldAppDataTest {
         assertThat(folder.getRoot().listFiles().length, is(8)); // 5 abc files + 1 week_old_file + 2 directories
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testDeleteWithInvalidBasePath() throws IOException {
-        DeleteOldAppData.deleteFiles("/some/made/up/dir/", 0, null, false);
+    @Test
+    public void testGetContentsOfNonExistingDirectory() throws IOException {
+        assertArrayEquals(new File[0], DeleteOldAppData.getContentsOfDirectory("/some/made/up/dir/"));
     }
 
     @Test(expected=IllegalArgumentException.class)
