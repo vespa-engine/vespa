@@ -75,11 +75,11 @@ VESPA_DLL_EXPORT int local_pthread_create (pthread_t *thread,
                           void * (*start_routine) (void *),
                           void * arg)
 {
-    size_t numThreads;
-    for (numThreads = _G_threadCount
-        ;(numThreads < vespamalloc::_G_myMemP->getMaxNumThreads()) && ! _G_threadCount.compare_exchange_strong(numThreads, numThreads+1)
-        ; numThreads = _G_threadCount) {
-    }
+    size_t numThreads = _G_threadCount;
+    while ((numThreads < vespamalloc::_G_myMemP->getMaxNumThreads())
+           && ! _G_threadCount.compare_exchange_strong(numThreads, numThreads+1))
+    { }
+
     if (numThreads >= vespamalloc::_G_myMemP->getMaxNumThreads()) {
         return EAGAIN;
     }
