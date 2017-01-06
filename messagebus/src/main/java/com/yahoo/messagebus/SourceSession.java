@@ -201,7 +201,7 @@ public final class SourceSession implements ReplyHandler {
             if (msg.isExpired()) {
                 Error error = new Error(ErrorCode.TIMEOUT, "Timed out in sendQ");
                 notifyComplete(new Result(error));
-                replyHandler.handleReply(new SendTimeoutReply(msg, error));
+                replyHandler.handleReply(createSendTimedoutReply(msg, error));
                 return true;
             }
             return false;
@@ -229,22 +229,12 @@ public final class SourceSession implements ReplyHandler {
         }
     }
 
-    static class SendTimeoutReply extends Reply {
-
-        SendTimeoutReply(Message msg, Error error) {
-            setMessage(msg);
-            addError(error);
-        }
-
-        @Override
-        public Utf8String getProtocol() {
-            return null;
-        }
-
-        @Override
-        public int getType() {
-            return 0;
-        }
+    Reply createSendTimedoutReply(Message msg, Error error) {
+        Reply reply = new EmptyReply();
+        reply.setMessage(msg);
+        reply.addError(error);
+        msg.swapState(reply);
+        return reply;
     }
 
     static private boolean isSendQFull(Result res) {
