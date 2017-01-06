@@ -145,31 +145,30 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
 struct MyDiskMemUsageNotifier : public IDiskMemUsageNotifier
 {
     DiskMemUsageState _state;
-    std::vector<IDiskMemUsageListener *> _listeners;
+    IDiskMemUsageListener *_listener;
     MyDiskMemUsageNotifier()
         : _state(),
-          _listeners()
+          _listener(nullptr)
     {
+    }
+    ~MyDiskMemUsageNotifier()
+    {
+        assert(_listener == nullptr);
     }
     virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override
     {
-        _listeners.push_back(listener);
+        assert(_listener == nullptr);
+        _listener = listener;
         listener->notifyDiskMemUsage(_state);
     }
     virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override
     {
-        for (auto it = _listeners.begin(); it != _listeners.end(); ++it) {
-            if (*it == listener) {
-                _listeners.erase(it);
-                break;
-            }
-        }
+        assert(listener == _listener);
+        _listener = nullptr;
     }
     void update(DiskMemUsageState state) {
         _state = state;
-        for (auto &listener : _listeners) {
-            listener->notifyDiskMemUsage(_state);
-        }
+        _listener->notifyDiskMemUsage(_state);
     }
 };
 
