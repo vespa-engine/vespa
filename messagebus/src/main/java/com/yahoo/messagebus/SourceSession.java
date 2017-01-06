@@ -4,7 +4,9 @@ package com.yahoo.messagebus;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingTable;
+import com.yahoo.text.Utf8String;
 
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -26,8 +28,9 @@ public final class SourceSession implements ReplyHandler {
     private final ThrottlePolicy throttlePolicy;
     private volatile double timeout;
     private volatile int pendingCount = 0;
-    private int blockedCount = 0;
-    private boolean closed = false;
+    private volatile boolean closed = false;
+    private final Queue<BlockedMessage> blockedQ = new LinkedList<>();
+    private final Thread blockedMessageSender;
 
     /**
      * <p>The default constructor requires values for all final member variables
@@ -48,6 +51,9 @@ public final class SourceSession implements ReplyHandler {
         replyHandler = params.getReplyHandler();
         throttlePolicy = params.getThrottlePolicy();
         timeout = params.getTimeout();
+        blockedMessageSender = new Thread(this::blockedSendLoop);
+        blockedMessageSender.setDaemon(true);
+        blockedMessageSender.start();
     }
 
     @Override
@@ -126,10 +132,16 @@ public final class SourceSession implements ReplyHandler {
      * @return The result of <i>initiating</i> sending of this message.
      */
     public Result send(Message msg) {
+        return sendInternal(updateTiming(msg));
+    }
+    private Message updateTiming(Message msg) {
         msg.setTimeReceivedNow();
         if (msg.getTimeRemaining() <= 0) {
-            msg.setTimeRemaining((long)(timeout * 1000));
+            msg.setTimeRemaining((long)(timeout) * 1000L);
         }
+        return msg;
+    }
+    private Result sendInternal(Message msg) {
         synchronized (lock) {
             if (closed) {
                 return new Result(ErrorCode.SEND_QUEUE_CLOSED,
@@ -155,6 +167,80 @@ public final class SourceSession implements ReplyHandler {
         return Result.ACCEPTED;
     }
 
+    public void blockedSendLoop()  {
+        while (!closed) {
+            sendBlockedMessages();
+            expireStalledBlockedMessages();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+        sendBlockedMessages();
+        expireStalledBlockedMessages();
+    }
+
+    private class BlockedMessage {
+        private final Message msg;
+        private Result result = null;
+        BlockedMessage(Message msg) {
+            this.msg = msg;
+        }
+
+        private void notifyComplete(Result result) {
+            synchronized (this) {
+                this.result = result;
+                notify();
+            }
+        }
+
+        Message getMessage() { return msg; }
+
+        boolean notifyIfExpired() {
+            if (msg.isExpired()) {
+                Error error = new Error(ErrorCode.TIMEOUT, "Timed out in sendQ");
+                notifyComplete(new Result(error));
+                replyHandler.handleReply(createSendTimedoutReply(msg, error));
+                return true;
+            }
+            return false;
+        }
+
+        boolean sendOrExpire() {
+            if ( ! notifyIfExpired() ) {
+                Result res = sendInternal(msg);
+                if ( ! isSendQFull(res) ) {
+                    notifyComplete(res);
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Result waitComplete() throws InterruptedException {
+            synchronized (this) {
+                while (result == null) {
+                    this.wait();
+                }
+            }
+            return result;
+        }
+    }
+
+    Reply createSendTimedoutReply(Message msg, Error error) {
+        Reply reply = new EmptyReply();
+        reply.setMessage(msg);
+        reply.addError(error);
+        msg.swapState(reply);
+        return reply;
+    }
+
+    static private boolean isSendQFull(Result res) {
+        return !res.isAccepted() && (res.getError().getCode() == ErrorCode.SEND_QUEUE_FULL);
+    }
+
     /**
      * <p>This is a blocking proxy to the {@link #send(Message)} method. This
      * method blocks until the message is accepted by the send queue. Note that
@@ -167,19 +253,34 @@ public final class SourceSession implements ReplyHandler {
      * @throws InterruptedException Thrown if the calling thread is interrupted.
      */
     public Result sendBlocking(Message msg) throws InterruptedException {
-        while (true) {
-            Result res = send(msg);
-            if (res.isAccepted() || res.getError().getCode() != ErrorCode.SEND_QUEUE_FULL) {
-                return res;
-            }
+        Result res = send(msg);
+        if (isSendQFull(res)) {
+            BlockedMessage blockedMessage = new BlockedMessage(msg);
             synchronized (lock) {
-                try {
-                    blockedCount++;
-                    while (!closed && !throttlePolicy.canSend(msg, pendingCount)) {
-                        lock.wait(10);
-                    }
-                } finally {
-                    blockedCount--;
+                blockedQ.add(blockedMessage);
+            }
+            res = blockedMessage.waitComplete();
+        }
+        return res;
+    }
+
+    private void expireStalledBlockedMessages() {
+        synchronized (lock) {
+            final Iterator<BlockedMessage> each = blockedQ.iterator();
+            while (each.hasNext()) {
+                if (each.next().notifyIfExpired()) {
+                    each.remove();
+                }
+            }
+        }
+    }
+
+    private void sendBlockedMessages() {
+        synchronized (lock) {
+            for (boolean success = true; success && !blockedQ.isEmpty(); ) {
+                success = blockedQ.element().sendOrExpire();
+                if (success) {
+                    blockedQ.remove();
                 }
             }
         }
@@ -198,11 +299,7 @@ public final class SourceSession implements ReplyHandler {
                 throttlePolicy.processReply(reply);
             }
             done = (closed && pendingCount == 0);
-            if (blockedCount < 10) {
-                lock.notifyAll();
-            } else {
-                lock.notify();
-            }
+            sendBlockedMessages();
         }
         if (reply.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
             reply.getTrace().trace(TraceLevel.COMPONENT,
