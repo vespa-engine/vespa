@@ -86,8 +86,8 @@ public:
     ~Mutex()           { quit(); }
     void lock();
     void unlock();
-    static void addThread()      { _threadCount++; }
-    static void subThread()      { _threadCount--; }
+    static void addThread()      { _threadCount.fetch_add(1); }
+    static void subThread()      { _threadCount.fetch_sub(1); }
     static void stopRecursion()  { _stopRecursion = true; }
     static void allowRecursion() { _stopRecursion = false; }
     void init();
