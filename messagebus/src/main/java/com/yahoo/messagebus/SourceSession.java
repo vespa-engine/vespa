@@ -9,6 +9,7 @@ import com.yahoo.text.Utf8String;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -263,7 +264,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
         Result res = send(msg);
         if (isSendQFull(res)) {
             BlockedMessage blockedMessage = new BlockedMessage(msg);
-            synchronized (lock) {
+            synchronized (blockedQ) {
                 blockedQ.add(blockedMessage);
             }
             res = blockedMessage.waitComplete();
@@ -271,14 +272,24 @@ public final class SourceSession implements ReplyHandler, Runnable {
         return res;
     }
 
+    private void expireStalledBlockedMessages() {
+        blockedQ.removeIf(new Predicate<BlockedMessage>() {
+            @Override
+            public boolean test(BlockedMessage blockedMessage) {
+                return blockedMessage.getMessage().isExpired();
+            }
+        });
+    }
+
     private void sendBlockedMessages() {
-        synchronized (lock) {
+        synchronized (blockedQ) {
             for (boolean success = true; success && !blockedQ.isEmpty(); ) {
                 success = blockedQ.element().sendOrExpire();
                 if (success) {
                     blockedQ.remove();
                 }
             }
+            expireStalledBlockedMessages();
         }
     }
 
@@ -295,8 +306,8 @@ public final class SourceSession implements ReplyHandler, Runnable {
                 throttlePolicy.processReply(reply);
             }
             done = (closed && pendingCount == 0);
-            sendBlockedMessages();
         }
+        sendBlockedMessages();
         if (reply.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
             reply.getTrace().trace(TraceLevel.COMPONENT,
                                    "Source session received reply. " + pendingCount + " message(s) now pending.");
