@@ -228,7 +228,9 @@ public final class SourceSession implements ReplyHandler, Runnable {
 
         Result waitComplete() throws InterruptedException {
             synchronized (this) {
-                this.wait();
+                while (result == null) {
+                    this.wait();
+                }
             }
             return result;
         }
