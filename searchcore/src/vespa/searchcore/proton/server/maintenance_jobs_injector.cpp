@@ -37,12 +37,14 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              const ILidSpaceCompactionHandler::Vector &lscHandlers,
                              IOperationStorer &opStorer,
                              IFrozenBucketHandler &fbHandler,
-                             const IJobTracker::SP &tracker)
+                             const IJobTracker::SP &tracker,
+                             IDiskMemUsageNotifier &diskMemUsageNotifier)
 {
     for (auto &lidHandler : lscHandlers) {
         IMaintenanceJob::UP job = IMaintenanceJob::UP
                 (new LidSpaceCompactionJob(config.getLidSpaceCompactionConfig(),
-                        *lidHandler, opStorer, fbHandler));
+                                           *lidHandler, opStorer, fbHandler,
+                                           diskMemUsageNotifier));
         controller.registerJob(std::move(trackJob(tracker,
                 std::move(job))));
     }
@@ -117,7 +119,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                                 mRemSubDB._subDbId, docTypeName, prdHandler, fbHandler));
     controller.registerJob(std::move(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob))));
     injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer,
-                                 fbHandler, jobTrackers.getLidSpaceCompact());
+                                 fbHandler, jobTrackers.getLidSpaceCompact(),
+                                 diskMemUsageNotifier);
     injectBucketMoveJob(controller, fbHandler, docTypeName, moveHandler, bucketModifiedHandler,
                         clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers, diskMemUsageNotifier);
     controller.registerJob(std::make_unique<SampleAttributeUsageJob>

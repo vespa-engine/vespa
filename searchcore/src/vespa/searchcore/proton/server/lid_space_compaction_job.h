@@ -5,10 +5,12 @@
 #include "i_lid_space_compaction_handler.h"
 #include "i_maintenance_job.h"
 #include "i_operation_storer.h"
+#include "i_disk_mem_usage_listener.h"
 
 namespace proton {
 
 class IFrozenBucketHandler;
+class IDiskMemUsageNotifier;
 
 /**
  * Job that regularly checks whether lid space compaction should be performed
@@ -17,7 +19,8 @@ class IFrozenBucketHandler;
  * Compaction is handled by moving documents from high lids to low free lids.
  * A handler is typically working over a single document sub db.
  */
-class LidSpaceCompactionJob : public IMaintenanceJob
+class LidSpaceCompactionJob : public IMaintenanceJob,
+                              public IDiskMemUsageListener
 {
 private:
     const DocumentDBLidSpaceCompactionConfig _cfg;
@@ -27,21 +30,32 @@ private:
     IDocumentScanIterator::UP   _scanItr;
     bool                        _retryFrozenDocument;
     bool                        _shouldCompactLidSpace;
+    bool                        _resourcesOK;
+    bool                        _runnable;  // can try to perform work
+    IMaintenanceJobRunner      *_runner;
+    IDiskMemUsageNotifier      &_diskMemUsageNotifier;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
     bool shouldRestartScanDocuments(const search::LidUsageStats &stats) const;
     search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats);
     bool scanDocuments(const search::LidUsageStats &stats);
     void compactLidSpace(const search::LidUsageStats &stats);
+    void refreshRunnable();
 
 public:
     LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                           ILidSpaceCompactionHandler &handler,
                           IOperationStorer &opStorer,
-                          IFrozenBucketHandler &frozenHandler);
+                          IFrozenBucketHandler &frozenHandler,
+                          IDiskMemUsageNotifier &diskMemUsageNotifier);
+    ~LidSpaceCompactionJob();
+
+    // Implements IDiskMemUsageListener
+    virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
 
     // Implements IMaintenanceJob
     virtual bool run();
+    virtual void registerRunner(IMaintenanceJobRunner *runner) override;
 };
 
 } // namespace proton

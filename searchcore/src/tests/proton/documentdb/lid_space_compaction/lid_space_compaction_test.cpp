@@ -10,6 +10,8 @@ LOG_SETUP("lid_space_compaction_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
+#include <vespa/searchcore/proton/server/i_disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 
 using namespace document;
 using namespace proton;
@@ -140,6 +142,37 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
     virtual void removeListener(IBucketFreezeListener *) override { }
 };
 
+struct MyDiskMemUsageNotifier : public IDiskMemUsageNotifier
+{
+    DiskMemUsageState _state;
+    std::vector<IDiskMemUsageListener *> _listeners;
+    MyDiskMemUsageNotifier()
+        : _state(),
+          _listeners()
+    {
+    }
+    virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override
+    {
+        _listeners.push_back(listener);
+        listener->notifyDiskMemUsage(_state);
+    }
+    virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override
+    {
+        for (auto it = _listeners.begin(); it != _listeners.end(); ++it) {
+            if (*it == listener) {
+                _listeners.erase(it);
+                break;
+            }
+        }
+    }
+    void update(DiskMemUsageState state) {
+        _state = state;
+        for (auto &listener : _listeners) {
+            listener->notifyDiskMemUsage(_state);
+        }
+    }
+};
+
 struct MyFeedView : public test::DummyFeedView
 {
     MyFeedView(const DocumentTypeRepo::SP &repo)
@@ -182,19 +215,33 @@ struct MySubDb : public test::DummyDocumentSubDb
     }
 };
 
+struct MyJobRunner : public IMaintenanceJobRunner
+{
+    IMaintenanceJob &_job;
+    MyJobRunner(IMaintenanceJob &job)
+        : _job(job)
+    {
+        _job.registerRunner(this);
+    }
+    virtual void run() override { _job.run(); }
+};
+
 struct JobFixture
 {
     MyHandler _handler;
     MyStorer _storer;
     MyFrozenBucketHandler _frozenHandler;
+    MyDiskMemUsageNotifier _diskMemUsageNotifier;
     LidSpaceCompactionJob _job;
+    MyJobRunner           _jobRunner;
     JobFixture(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
                double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
                uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN)
         : _handler(),
           _job(DocumentDBLidSpaceCompactionConfig(JOB_DELAY,
                   allowedLidBloat, allowedLidBloatFactor, maxDocsToScan),
-                  _handler, _storer, _frozenHandler)
+               _handler, _storer, _frozenHandler, _diskMemUsageNotifier),
+          _jobRunner(_job)
     {
     }
     JobFixture &addStats(uint32_t docIdLimit,
@@ -442,6 +489,30 @@ TEST_F("require that held lids are not considered free, one move", JobFixture)
     EXPECT_TRUE(assertJobContext(4, 5, 1, 0, 0, f));
     f.endScan().compact();
     EXPECT_TRUE(assertJobContext(4, 5, 1, 5, 1, f));
+}
+
+TEST_F("require that resource starvation blocks lid space compaction", JobFixture)
+{
+    f.addStats(10, {1,3,4,5,6,9},
+            {{9,2},   // 30% bloat: move 9 -> 2
+             {6,7}}); // no documents to move
+    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    EXPECT_TRUE(f.run()); // scan
+    TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
+}
+
+TEST_F("require that ending resource starvation resumes lid space compaction", JobFixture)
+{
+    f.addStats(10, {1,3,4,5,6,9},
+            {{9,2},   // 30% bloat: move 9 -> 2
+             {6,7}}); // no documents to move
+    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    EXPECT_TRUE(f.run()); // scan
+    TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 0}}));
+    TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
+    TEST_DO(f.endScan().compact());
+    TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));
 }
 
 TEST_MAIN()

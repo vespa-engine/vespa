@@ -7,6 +7,8 @@ LOG_SETUP(".proton.server.lid_space_compaction_job");
 #include "lid_space_compaction_job.h"
 #include "ifrozenbuckethandler.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include "imaintenancejobrunner.h"
+#include "i_disk_mem_usage_notifier.h"
 
 using search::DocumentMetaData;
 using search::LidUsageStats;
@@ -84,7 +86,8 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
 LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                                              ILidSpaceCompactionHandler &handler,
                                              IOperationStorer &opStorer,
-                                             IFrozenBucketHandler &frozenHandler)
+                                             IFrozenBucketHandler &frozenHandler,
+                                             IDiskMemUsageNotifier &diskMemUsageNotifier)
     : IMaintenanceJob("lid_space_compaction." + handler.getName(),
             config.getInterval(), config.getInterval()),
       _cfg(config),
@@ -93,13 +96,26 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _frozenHandler(frozenHandler),
       _scanItr(),
       _retryFrozenDocument(false),
-      _shouldCompactLidSpace(false)
+      _shouldCompactLidSpace(false),
+      _resourcesOK(true),
+      _runnable(true),
+      _runner(nullptr),
+      _diskMemUsageNotifier(diskMemUsageNotifier)
 {
+    _diskMemUsageNotifier.addDiskMemUsageListener(this);
+}
+
+LidSpaceCompactionJob::~LidSpaceCompactionJob()
+{
+    _diskMemUsageNotifier.removeDiskMemUsageListener(this);
 }
 
 bool
 LidSpaceCompactionJob::run()
 {
+    if (!_runnable) {
+        return true; // indicate work is done since no work can be done
+    }
     LidUsageStats stats = _handler.getLidStatus();
     if (_scanItr) {
         return scanDocuments(stats);
@@ -111,6 +127,31 @@ LidSpaceCompactionJob::run()
         return scanDocuments(stats);
     }
     return true;
+}
+
+void
+LidSpaceCompactionJob::refreshRunnable()
+{
+    _runnable = _resourcesOK;
+}
+
+void
+LidSpaceCompactionJob::notifyDiskMemUsage(DiskMemUsageState state)
+{
+    // Called by master write thread
+    bool resourcesOK = !state.aboveDiskLimit() && !state.aboveMemoryLimit();
+    _resourcesOK = resourcesOK;
+    bool oldRunnable = _runnable;
+    refreshRunnable();
+    if (_runner && _runnable && !oldRunnable) {
+        _runner->run();
+    }
+}
+
+void
+LidSpaceCompactionJob::registerRunner(IMaintenanceJobRunner *runner)
+{
+    _runner = runner;
 }
 
 } // namespace proton
