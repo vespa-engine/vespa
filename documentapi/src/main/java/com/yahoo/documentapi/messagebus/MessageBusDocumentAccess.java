@@ -26,11 +26,11 @@ import java.util.concurrent.ScheduledExecutorService;
 public class MessageBusDocumentAccess extends DocumentAccess {
 
     private final NetworkMessageBus bus;
-    
+
     private final MessageBusParams params;
     // TODO: make pool size configurable? ScheduledExecutorService is not dynamic
-    private final ScheduledExecutorService scheduledExecutorService = 
-            Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), 
+    private final ScheduledExecutorService scheduledExecutorService =
+            Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(),
                                              ThreadFactoryFactory.getDaemonThreadFactory("mbus.access.scheduler"));
 
     /**
@@ -63,7 +63,7 @@ public class MessageBusDocumentAccess extends DocumentAccess {
             throw new DocumentAccessException(e);
         }
     }
-    
+
     private MessageBus messageBus() {
         return bus.getMessageBus();
     }

@@ -127,7 +127,7 @@ public class PolicyTestFrame extends junit.framework.Assert {
         } else {
             List<RoutingNode> selected = select(expected.size());
             for (RoutingNode node : selected) {
-                assertTrue("Route '" + node.getRoute() + "' not selected.", 
+                assertTrue("Route '" + node.getRoute() + "' not selected.",
                            expected.contains(node.getRoute().toString()));
                 node.handleReply(new EmptyReply());
             }

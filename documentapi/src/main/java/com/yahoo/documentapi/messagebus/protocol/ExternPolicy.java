@@ -140,7 +140,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
 
     public void destroy() {
     }
-    
+
     public MetricSet getMetrics() {
         return null;
     }

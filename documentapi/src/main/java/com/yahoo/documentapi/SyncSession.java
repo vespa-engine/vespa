@@ -12,7 +12,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 /**
  * <p>A session for synchronous access to a document repository. This class
- * provides simple document access where throughput is not a concern.</p> 
+ * provides simple document access where throughput is not a concern.</p>
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */

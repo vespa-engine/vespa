@@ -15,7 +15,7 @@ public abstract class RoutingPolicyFactories {
         public void destroy() {
         }
     }
-    
+
     static class StoragePolicyFactory implements RoutingPolicyFactory {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new StoragePolicy(param);

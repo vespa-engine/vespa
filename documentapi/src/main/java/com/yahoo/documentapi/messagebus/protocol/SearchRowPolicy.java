@@ -68,7 +68,7 @@ public class SearchRowPolicy implements DocumentProtocolRoutingPolicy {
             if (context.getNumChildren() - oosReplies.size() >= minOk) {
                 DocumentProtocol.merge(context, oosReplies);
                 return;
-            } 
+            }
         }
         DocumentProtocol.merge(context);
     }

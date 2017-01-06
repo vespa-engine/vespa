@@ -141,7 +141,7 @@ public class PolicyTestCase {
         }
         frame.destroy();
     }
-    
+
     @Test
     public void requireThatExternPolicyMergesOneReplyAsProtocol() throws Exception {
         PolicyTestFrame frame = newPutDocumentFrame("doc:scheme:");
@@ -414,9 +414,9 @@ public class PolicyTestCase {
         tryWasFound(frame, 3, 0x7, true);
         frame.destroy();
     }
-    
-    private void tryWasFound(PolicyTestFrame frame, int expectedRecipients, 
-                             int foundMask, boolean expectedFound) 
+
+    private void tryWasFound(PolicyTestFrame frame, int expectedRecipients,
+                             int foundMask, boolean expectedFound)
     {
         {
             frame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:69")));
@@ -848,8 +848,8 @@ public class PolicyTestCase {
         throw new TimeoutException();
     }
 
-    private static void assertMirrorContains(IMirror slobrok, String pattern, int numEntries) 
-            throws InterruptedException, TimeoutException 
+    private static void assertMirrorContains(IMirror slobrok, String pattern, int numEntries)
+            throws InterruptedException, TimeoutException
     {
         for (int i = 0; i < TIMEOUT_MILLIS / 10; ++i) {
             if (slobrok.lookup(pattern).length == numEntries) {

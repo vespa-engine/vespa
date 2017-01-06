@@ -17,10 +17,10 @@ public class DocumentAccessParams {
 
     /** The document manager config, or empty if not provided (in which case a subscription must be created) */
     private Optional<DocumentmanagerConfig> documentmanagerConfig = Optional.empty();
-    
+
     /** Returns the config id that the document manager should subscribe to. */
     public String getDocumentManagerConfigId() { return documentManagerConfigId; }
-    
+
     /** Returns the document manager config to use, or empty if it it necessary to subscribe to get it */
     public Optional<DocumentmanagerConfig> documentmanagerConfig() { return documentmanagerConfig; }
 

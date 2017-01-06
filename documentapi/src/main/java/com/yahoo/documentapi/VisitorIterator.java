@@ -165,7 +165,7 @@ public class VisitorIterator {
                     return false;
                 }
             }
-            return true; 
+            return true;
         }
 
         /**
@@ -327,7 +327,7 @@ public class VisitorIterator {
                                             ProgressToken progress)
         {
             this.distributionBitCount = distributionBitCount;
-            
+
             // There might be a case where we're waiting for active buckets
             // already when a new distribution bit change comes in. If so,
             // don't do anything at all yet with the set of pending
@@ -712,7 +712,7 @@ public class VisitorIterator {
      * <p><em>Note:</em> when decreasing the number of distribution bits,
      * there is a chance of losing superbucket progress in a bucket that
      * is merged with another bucket, leading to potential duplicate
-     * results.</p> 
+     * results.</p>
      *
      * @param distBits New system state distribution bit count
      */
