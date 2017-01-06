@@ -76,7 +76,7 @@ private:
     AllocFree                   _scList[NUM_SIZE_CLASSES];
     DataSegment<MemBlockPtrT> & _dataSegment;
     std::atomic<size_t>         _getChunks;
-    size_t                      _getChunksSum;
+    std::atomic<size_t>         _getChunksSum;
     std::atomic<size_t>         _allocChunkList;
     Stat                        _stat[NUM_SIZE_CLASSES];
     static size_t               _threadCacheLimit __attribute__((visibility("hidden")));

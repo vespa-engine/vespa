@@ -72,7 +72,7 @@ AllocPoolT<MemBlockPtrT>::getAlloc(SizeClassT sc)
                 return NULL;
             }
         }
-        USE_STAT2(_stat[sc]._getAlloc++);
+        USE_STAT2(_stat[sc]._getAlloc.fetch_add(1, std::memory_order_relaxed));
     }
     PARANOID_CHECK1( if (csl->empty() || (csl->count() > ChunkSList::NumBlocks)) { *(int*)0 = 0; } );
     return csl;
@@ -83,7 +83,7 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *
 AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc, size_t UNUSED(minBlocks))
 {
     ChunkSList * csl = getFree(sc);
-    USE_STAT2(_stat[sc]._getFree.fetch_add(1));
+    USE_STAT2(_stat[sc]._getFree.fetch_add(1, std::memory_order_relaxed));
     return csl;
 }
 
@@ -95,7 +95,7 @@ AllocPoolT<MemBlockPtrT>::exchangeFree(SizeClassT sc, typename AllocPoolT<MemBlo
     AllocFree & af = _scList[sc];
     ChunkSList::linkIn(af._full, csl, csl);
     ChunkSList *ncsl = getFree(sc);
-    USE_STAT2(_stat[sc]._exchangeFree.fetch_add(1));
+    USE_STAT2(_stat[sc]._exchangeFree.fetch_add(1, std::memory_order_relaxed));
     return ncsl;
 }
 
@@ -107,7 +107,7 @@ AllocPoolT<MemBlockPtrT>::exchangeAlloc(SizeClassT sc, typename AllocPoolT<MemBl
     AllocFree & af = _scList[sc];
     ChunkSList::linkIn(af._empty, csl, csl);
     ChunkSList * ncsl = getAlloc(sc);
-    USE_STAT2(_stat[sc]._exchangeAlloc.fetch_add(1));
+    USE_STAT2(_stat[sc]._exchangeAlloc.fetch_add(1, std::memory_order_relaxed));
     PARANOID_CHECK1( if (ncsl->empty() || (ncsl->count() > ChunkSList::NumBlocks)) { *(int*)0 = 0; } );
     return ncsl;
 }
@@ -122,7 +122,7 @@ AllocPoolT<MemBlockPtrT>::exactAlloc(size_t exactSize, SizeClassT sc,
     MemBlockPtrT mem(exactBlock, MemBlockPtrT::unAdjustSize(adjustedSize));
     csl->add(mem);
     ChunkSList * ncsl = csl;
-    USE_STAT2(_stat[sc]._exactAlloc.fetch_add(1));
+    USE_STAT2(_stat[sc]._exactAlloc.fetch_add(1, std::memory_order_relaxed));
     mem.logBigBlock(exactSize, mem.adjustSize(exactSize), MemBlockPtrT::classSize(sc));
     PARANOID_CHECK1( if (ncsl->empty() || (ncsl->count() > ChunkSList::NumBlocks)) { *(int*)0 = 0; } );
     return ncsl;
@@ -145,7 +145,7 @@ AllocPoolT<MemBlockPtrT>::returnMemory(SizeClassT sc,
     }
     completelyEmpty = csl;
 #endif
-    USE_STAT2(_stat[sc]._return.fetch_add(1));
+    USE_STAT2(_stat[sc]._return.fetch_add(1, std::memory_order_relaxed));
     return completelyEmpty;
 }
 
@@ -189,7 +189,7 @@ AllocPoolT<MemBlockPtrT>::malloc(const Guard & guard, SizeClassT sc)
         }
     }
     PARANOID_CHECK1( for (ChunkSList * c(csl); c; c = c->getNext()) { if (c->empty()) { *(int*)1 = 1; } } );
-    USE_STAT2(_stat[sc]._malloc.fetch_add(1));
+    USE_STAT2(_stat[sc]._malloc.fetch_add(1, std::memory_order_relaxed));
     return csl;
 }
 
@@ -219,8 +219,8 @@ AllocPoolT<MemBlockPtrT>::getChunks(const Guard & guard, size_t numChunks)
     } else {
         csl = NULL;
     }
-    USE_STAT2(_getChunks.fetch_add(1));
-    USE_STAT2(_getChunksSum+=numChunks);
+    USE_STAT2(_getChunks.fetch_add(1, std::memory_order_relaxed));
+    USE_STAT2(_getChunksSum.fetch_add(numChunks, std::memory_order_relaxed));
     PARANOID_CHECK1( for (ChunkSList * c(csl); c; c = c->getNext()) { if ( ! c->empty()) { *(int*)1 = 1; } } );
     return csl;
 }
@@ -241,7 +241,7 @@ AllocPoolT<MemBlockPtrT>::allocChunkList(const Guard & guard)
         }
         newList[chunksInBlock-1].setNext(NULL);
     }
-    USE_STAT2(_allocChunkList.fetch_add(1));
+    USE_STAT2(_allocChunkList.fetch_add(1, std::memory_order_relaxed));
     return newList;
 }
 
@@ -250,7 +250,7 @@ void AllocPoolT<MemBlockPtrT>::info(FILE * os, size_t level)
 {
     if (level > 0) {
         fprintf(os, "GlobalPool getChunks(%ld, %ld) allocChunksList(%ld):\n",
-                _getChunks.load(), _getChunksSum, _allocChunkList.load());
+                _getChunks.load(), _getChunksSum.load(), _allocChunkList.load());
         for (size_t i = 0; i < NELEMS(_stat); i++) {
             const Stat & s = _stat[i];
             if (s.isUsed()) {
