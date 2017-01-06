@@ -32,11 +32,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
@@ -242,6 +245,51 @@ public class ApacheGatewayConnectionTest {
 
         apacheGatewayConnection.writeOperations(documents);
         assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void dynamic_headers_are_added_to_the_response() throws IOException, ServerResponseException, InterruptedException {
+        ConnectionParams.HeaderProvider headerProvider = mock(ConnectionParams.HeaderProvider.class);
+        when(headerProvider.getHeaderValue())
+                .thenReturn("v1")
+                .thenReturn("v2")
+                .thenReturn("v3");
+
+        ConnectionParams connectionParams = new ConnectionParams.Builder()
+                .addDynamicHeader("foo", headerProvider)
+                .build();
+
+        CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
+
+        AtomicInteger counter = new AtomicInteger(1);
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post  -> {
+            Header[] fooHeader = post.getHeaders("foo");
+            assertEquals(1, fooHeader.length);
+            assertEquals("foo", fooHeader[0].getName());
+            assertEquals("v" + counter.getAndIncrement(), fooHeader[0].getValue());
+            verifyContentSentLatch.countDown();
+            return httpResponse("clientId", "3");
+
+        });
+
+        ApacheGatewayConnection apacheGatewayConnection =
+            new ApacheGatewayConnection(
+                    Endpoint.create("hostname", 666, false),
+                    new FeedParams.Builder().build(),
+                    "",
+                    connectionParams,
+                    mockFactory,
+                    "clientId");
+        apacheGatewayConnection.connect();
+        apacheGatewayConnection.handshake();
+
+        List<Document> documents = new ArrayList<>();
+        documents.add(createDoc("42", "content", true));
+        apacheGatewayConnection.writeOperations(documents);
+        apacheGatewayConnection.writeOperations(documents);
+        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
+
+        verify(headerProvider, times(3)).getHeaderValue(); // 1x connect(), 2x writeOperations()
     }
 
     private static ApacheGatewayConnection.HttpClientFactory mockHttpClientFactory(HttpExecuteMock httpExecuteMock) throws IOException {

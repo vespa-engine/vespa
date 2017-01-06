@@ -7,12 +7,11 @@ import javax.net.ssl.SSLContext;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -55,6 +54,20 @@ public class ConnectionParamsTest {
         Map.Entry<String, String> header3 = headers.next();
         assertThat(header3.getKey(), equalTo("Banana"));
         assertThat(header3.getValue(), equalTo("Apple"));
+    }
+
+    @Test
+    public void header_providers_are_registered() {
+        ConnectionParams.HeaderProvider dummyProvider1 = () -> "fooValue";
+        ConnectionParams.HeaderProvider dummyProvider2 = () -> "barValue";
+        ConnectionParams params = new ConnectionParams.Builder()
+                .addDynamicHeader("foo", dummyProvider1)
+                .addDynamicHeader("bar", dummyProvider2)
+                .build();
+        Map<String, ConnectionParams.HeaderProvider> headerProviders = params.getDynamicHeaders();
+        assertEquals(2, headerProviders.size());
+        assertEquals(dummyProvider1, headerProviders.get("foo"));
+        assertEquals(dummyProvider2, headerProviders.get("bar"));
     }
 
 }
