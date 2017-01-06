@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
-public final class SourceSession implements ReplyHandler, Runnable {
+public final class SourceSession implements ReplyHandler {
 
     private static Logger log = Logger.getLogger(SourceSession.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
@@ -51,7 +51,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
         replyHandler = params.getReplyHandler();
         throttlePolicy = params.getThrottlePolicy();
         timeout = params.getTimeout();
-        blockedMessageSender = new Thread(this);
+        blockedMessageSender = new Thread(this::blockedSendLoop);
         blockedMessageSender.setDaemon(true);
         blockedMessageSender.start();
     }
@@ -137,7 +137,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
     private Message updateTiming(Message msg) {
         msg.setTimeReceivedNow();
         if (msg.getTimeRemaining() <= 0) {
-            msg.setTimeRemaining((long)(timeout) * 1000l);
+            msg.setTimeRemaining((long)(timeout) * 1000L);
         }
         return msg;
     }
@@ -167,8 +167,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
         return Result.ACCEPTED;
     }
 
-    @Override
-    public void run()  {
+    public void blockedSendLoop()  {
         while (!closed) {
             sendBlockedMessages();
             expireStalledBlockedMessages();
