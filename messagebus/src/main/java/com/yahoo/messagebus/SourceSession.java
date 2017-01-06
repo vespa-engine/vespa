@@ -189,13 +189,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
             this.msg = msg;
         }
 
-        private void notifyFailure(Result result) {
-            synchronized (this) {
-                this.result = result;
-                notify();
-            }
-        }
-        private void notifySuccess(Result result) {
+        private void notifyComplete(Result result) {
             synchronized (this) {
                 this.result = result;
                 notify();
@@ -207,7 +201,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
         boolean notifyIfExpired() {
             if (msg.isExpired()) {
                 Error error = new Error(ErrorCode.TIMEOUT, "Timed out in sendQ");
-                notifyFailure(new Result(error));
+                notifyComplete(new Result(error));
                 replyHandler.handleReply(new SendTimeoutReply(msg, error));
                 return true;
             }
@@ -218,7 +212,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
             if ( ! notifyIfExpired() ) {
                 Result res = sendInternal(msg);
                 if ( ! isSendQFull(res) ) {
-                    notifySuccess(res);
+                    notifyComplete(res);
                 } else {
                     return false;
                 }
