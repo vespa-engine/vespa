@@ -119,7 +119,7 @@ public class GetSearcher extends Searcher {
                 }
             }
 
-            return (numPending > 0);
+            return numPending > 0;
         }
 
         private void addDocumentHit(Reply reply) {
