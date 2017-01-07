@@ -97,7 +97,8 @@ public class SharedSender implements ReplyHandler {
     }
 
     public int getPendingCount(ResultCallback owner) {
-        return getNonNullState(owner).getNumPending();
+        OwnerState state = activeOwners.get(owner);
+        return (state != null) ? state.getNumPending() : 0;
     }
 
     /**
