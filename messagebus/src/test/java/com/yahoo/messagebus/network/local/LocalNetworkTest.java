@@ -109,7 +109,7 @@ public class LocalNetworkTest {
         assertEquals(ErrorCode.TIMEOUT, res.getError().getCode());
         assertTrue(res.getError().getMessage().endsWith("Timed out in sendQ"));
         long end = System.currentTimeMillis();
-        assertTrue(end - start >= (TIMEOUT*0.98)); // Different clocks are used....
+        assertTrue(end - start >= TIMEOUT);
         assertTrue(end - start < 2*TIMEOUT);
 
         msg = serverB.messages.poll(60, TimeUnit.SECONDS);

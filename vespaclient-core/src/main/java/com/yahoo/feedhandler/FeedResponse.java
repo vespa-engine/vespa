@@ -101,7 +101,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         return "";
     }
 
-    public boolean handleReply(Reply reply) {
+    public boolean handleReply(Reply reply, int numPending) {
         metrics.addReply(reply);
         if (reply.getTrace().getLevel() > 0) {
             String str = reply.getTrace().toString();
@@ -126,7 +126,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
             isAborted = abortOnError;
             return !abortOnError;
         }
-        return true;
+        return numPending > 0;
     }
 
     public void done() {
