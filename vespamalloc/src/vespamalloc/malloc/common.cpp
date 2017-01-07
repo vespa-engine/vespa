@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "common.h"
+#include <vespamalloc/malloc/common.h>
 #include <pthread.h>
 
 namespace vespamalloc {
 
-std::atomic<uint32_t> Mutex::_threadCount(0);
+uint32_t Mutex::_threadCount = 0;
 bool     Mutex::_stopRecursion = true;
 
 void Mutex::lock()

@@ -1,8 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/thread.h>
+#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/atomic.h>
-#include <vespamalloc/malloc/allocchunk.h>
+#include <vector>
+
+using vespalib::Atomic;
 
 class Test : public vespalib::TestApp
 {
@@ -37,10 +39,10 @@ void Test::testSwap(T initial)
 {
     T value(initial);
 
-    ASSERT_TRUE(vespalib::Atomic::cmpSwap(&value, initial+1, initial));
+    ASSERT_TRUE(Atomic::cmpSwap(&value, initial+1, initial));
     ASSERT_TRUE(value == initial+1);
 
-    ASSERT_TRUE(!vespalib::Atomic::cmpSwap(&value, initial+2, initial));
+    ASSERT_TRUE(!Atomic::cmpSwap(&value, initial+2, initial));
     ASSERT_TRUE(value == initial+1);
 }
 
@@ -89,7 +91,7 @@ template <typename T>
 void Stress<T>::stressSwap(T & value)
 {
     for (T old = value; old > 0; old = value) {
-        if (vespalib::Atomic::cmpSwap(&value, old-1, old)) {
+        if (Atomic::cmpSwap(&value, old-1, old)) {
             _successCount++;
         } else {
             _failedCount++;
@@ -100,20 +102,6 @@ void Stress<T>::stressSwap(T & value)
 int Test::Main()
 {
     TEST_INIT("atomic");
-
-    {
-        std::atomic<uint32_t> uint32V;
-        ASSERT_TRUE(uint32V.is_lock_free());
-    }
-    {
-        std::atomic<uint64_t> uint64V;
-        ASSERT_TRUE(uint64V.is_lock_free());
-    }
-    {
-        std::atomic<vespamalloc::TaggedPtr> taggedPtr;
-        ASSERT_EQUAL(16, sizeof(vespamalloc::TaggedPtr));
-        ASSERT_TRUE(taggedPtr.is_lock_free());
-    }
 
     testSwap<uint32_t>(6);
     testSwap<uint32_t>(7);
