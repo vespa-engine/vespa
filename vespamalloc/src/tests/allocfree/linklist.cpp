@@ -1,14 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "producerconsumer.h"
+#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include "producerconsumer.h"
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/util/callstack.h>
 #include <vespa/log/log.h>
-LOG_SETUP("linklist_test");
 
 using vespalib::Consumer;
 using vespalib::Producer;
 using vespalib::ProducerConsumer;
+
+LOG_SETUP("linklist_test");
 
 TEST_SETUP(Test);
 
@@ -58,9 +60,9 @@ List globalList[NumBlocks];
 
 class LinkIn : public Consumer {
 public:
-    LinkIn(List::AtomicHeadPtr & list, uint32_t maxQueue, bool inverse);
+    LinkIn(List::HeadPtr & list, uint32_t maxQueue, bool inverse);
 private:
-    List::AtomicHeadPtr & _head;
+    List::HeadPtr & _head;
     virtual void consume(void * p) {
         List * l((List *) p);
         if ( ! ((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) { abort(); }
@@ -68,7 +70,7 @@ private:
     }
 };
 
-LinkIn::LinkIn(List::AtomicHeadPtr & list, uint32_t maxQueue, bool inverse) :
+LinkIn::LinkIn(List::HeadPtr & list, uint32_t maxQueue, bool inverse) :
     Consumer (maxQueue, inverse),
     _head(list)
 {
@@ -78,10 +80,10 @@ LinkIn::LinkIn(List::AtomicHeadPtr & list, uint32_t maxQueue, bool inverse) :
 
 class LinkOut : public Producer {
 public:
-    LinkOut(List::AtomicHeadPtr & list, uint32_t cnt, LinkIn &target)
+    LinkOut(List::HeadPtr & list, uint32_t cnt, LinkIn &target)
         : Producer(cnt, target), _head(list) {}
 private:
-    List::AtomicHeadPtr & _head;
+    List::HeadPtr & _head;
     virtual void * produce()       {
         void *p = List::linkOut(_head);
         List *l((List *)p);
@@ -94,10 +96,10 @@ private:
 
 class LinkInOutAndIn : public ProducerConsumer {
 public:
-    LinkInOutAndIn(List::AtomicHeadPtr & list, uint32_t cnt, bool inverse)
+    LinkInOutAndIn(List::HeadPtr & list, uint32_t cnt, bool inverse)
         : ProducerConsumer(cnt, inverse), _head(list) { }
 private:
-    List::AtomicHeadPtr & _head;
+    List::HeadPtr & _head;
     virtual void * produce()       {
         void *p = List::linkOut(_head);
         List *l((List *)p);
@@ -123,7 +125,10 @@ int Test::Main() {
     ASSERT_EQUAL(1024ul, sizeof(List));
 
     FastOS_ThreadPool      pool(128000);
-    List::AtomicHeadPtr    sharedList(List::HeadPtr(nullptr, 1));
+    List::HeadPtr    sharedList;
+    sharedList._tag = 1;
+    List::init();
+    List::enableThreadSupport();
     fprintf(stderr, "Start populating list\n");
     for (size_t i=0; i < NumBlocks; i++) {
         List * l(&globalList[i]);
@@ -138,9 +143,7 @@ int Test::Main() {
     List *n =  List::linkOut(sharedList);
     ASSERT_TRUE(n == NULL);
 
-    List::HeadPtr tmp(sharedList.load());
-    tmp._tag = 1;
-    sharedList.store(tmp);
+    sharedList._tag = 1;
     fprintf(stderr, "Start populating list\n");
     for (size_t i=0; i < NumBlocks; i++) {
         List * l(&globalList[i]);

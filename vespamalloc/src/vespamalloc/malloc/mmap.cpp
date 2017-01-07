@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <vespa/vespalib/util/backtrace.h>
 
 extern "C" {
 
@@ -56,7 +57,7 @@ void * local_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t 
         }
     }
     if ((length >= getLogLimit()) && !isFromVespaMalloc(addr)) {
-        fprintf (stderr, "mmap requesting block of size %ld from %s\n", length, "no backtrace");
+        fprintf (stderr, "mmap requesting block of size %ld from %s\n", length, vespalib::getStackTrace(0).c_str());
     }
     return (*real_func)(addr, length, prot, flags, fd, offset);
 }
@@ -72,7 +73,7 @@ void * local_mmap64(void *addr, size_t length, int prot, int flags, int fd, off6
         }
     }
     if (length >= getLogLimit() && !isFromVespaMalloc(addr)) {
-        fprintf (stderr, "mmap requesting block of size %ld from %s\n", length, "no backtrace");
+        fprintf (stderr, "mmap requesting block of size %ld from %s\n", length, vespalib::getStackTrace(0).c_str());
     }
     return (*real_func)(addr, length, prot, flags, fd, offset);
 }
@@ -88,7 +89,7 @@ int local_munmap(void *addr, size_t length)
         }
     }
     if ((length >= getLogLimit()) && !isFromVespaMalloc(addr)) {
-        fprintf (stderr, "munmap releasing block of size %ld from %s\n", length, "no backtrace");
+        fprintf (stderr, "munmap releasing block of size %ld from %s\n", length, vespalib::getStackTrace(0).c_str());
     }
     return (*real_func)(addr, length);
 }
