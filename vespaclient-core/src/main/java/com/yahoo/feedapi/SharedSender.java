@@ -76,12 +76,16 @@ public class SharedSender implements ReplyHandler {
      * @return true if there were no more pending, or false if the timeout expired.
      */
     public boolean waitForPending(ResultCallback owner, long timeoutMs) {
-        try {
-            return getNonNullState(owner).waitPending(timeoutMs);
-        } catch (InterruptedException e) {
+        OwnerState state = activeOwners.get(owner);
+        if (state != null) {
+            try {
+                return state.waitPending(timeoutMs);
+            } catch (InterruptedException e) {
+                return false;
+            }
         }
 
-        return false;
+        return true;
     }
 
     private OwnerState getNonNullState(ResultCallback owner) {
@@ -113,9 +117,12 @@ public class SharedSender implements ReplyHandler {
      * @param owner the file to check for pending documents
      */
     public void waitForPending(ResultCallback owner) {
-        try {
-            getNonNullState(owner).waitPending();
-        } catch (InterruptedException e) { }
+        OwnerState state = activeOwners.get(owner);
+        if (state != null) {
+            try {
+                state.waitPending();
+            } catch (InterruptedException e) { }
+        }
     }
 
     /**
@@ -143,7 +150,7 @@ public class SharedSender implements ReplyHandler {
             return;
         }
 
-        OwnerState state = getNonNullState(owner);
+        OwnerState state = activeOwners.get(owner);
         if (state == null) {
             state = new OwnerState();
             activeOwners.put(owner, state);
