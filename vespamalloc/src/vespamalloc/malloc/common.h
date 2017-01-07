@@ -57,7 +57,9 @@ typedef int SizeClassT;
 
    
 inline int msbIdx(uint64_t v) {
-    return v ? 63 - __builtin_clzl(v) : 0;
+    int64_t result;
+    __asm __volatile("bsrq %0,%0" : "=r" (result) : "0" (v));
+    return result;
 }    
 
 template <size_t MinClassSizeC>
