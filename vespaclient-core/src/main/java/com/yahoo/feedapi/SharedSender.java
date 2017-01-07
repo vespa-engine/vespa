@@ -182,8 +182,8 @@ public class SharedSender implements ReplyHandler {
 
         if (owner != null) {
             metrics.addReply(r);
-            boolean active = owner.handleReply(r);
             OwnerState state = activeOwners.get(owner);
+            boolean active = owner.handleReply(r, state.getNumPending() - 1);
 
             if (state != null) {
                 if (log.isLoggable(LogLevel.SPAM)) {
@@ -192,8 +192,8 @@ public class SharedSender implements ReplyHandler {
                 if (!active) {
                     state.clearPending();
                     activeOwners.remove(owner);
-                } else if ((state.decPending(1) <= 0)) {
-                    activeOwners.remove(owner);
+                } else {
+                    state.decPending(1);
                 }
             } else {
                 // TODO: should be debug level if at all.
@@ -269,7 +269,7 @@ public class SharedSender implements ReplyHandler {
     public interface ResultCallback {
 
         /** Return true if we should continue waiting for replies for this sender. */
-        boolean handleReply(Reply r);
+        boolean handleReply(Reply r, int numPending);
 
         /**
          * Returns true if feeding has been aborted. No more feeding is allowed with this
