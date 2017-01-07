@@ -97,7 +97,7 @@ public class GetSearcher extends Searcher {
             return sw.toString();
         }
 
-        public boolean handleReply(Reply reply, int numPending) {
+        public boolean handleReply(Reply reply) {
             if ((reply.getTrace().getLevel() > 0) && log.isLoggable(LogLevel.DEBUG)) {
                 String str = reply.getTrace().toString();
                 log.log(LogLevel.DEBUG, str);
@@ -119,7 +119,7 @@ public class GetSearcher extends Searcher {
                 }
             }
 
-            return (numPending > 0);
+            return true;
         }
 
         private void addDocumentHit(Reply reply) {
