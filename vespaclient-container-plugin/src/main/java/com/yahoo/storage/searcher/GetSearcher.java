@@ -63,6 +63,14 @@ public class GetSearcher extends Searcher {
 
     private static final Logger log = Logger.getLogger(GetSearcher.class.getName());
 
+    private static final CompoundName ID = new CompoundName("id");
+    private static final CompoundName HEADERS_ONLY = new CompoundName("headersonly");
+    private static final CompoundName POPULATE_HIT_FIELDS = new CompoundName("populatehitfields");
+    private static final CompoundName FIELDSET = new CompoundName("fieldset");
+    private static final CompoundName FIELD = new CompoundName("field");
+    private static final CompoundName CONTENT_TYPE = new CompoundName("contenttype");
+    private static final CompoundName TIEMOUT = new CompoundName("timeout");
+
     FeedContext context;
 
     private final long defaultTimeoutMillis;
@@ -195,7 +203,7 @@ public class GetSearcher extends Searcher {
         this.defaultTimeoutMillis = defaultTimeoutMillis;
     }
 
-    private void postValidateDocumentIdParameters(Properties properties, int arrayIdsFound) throws Exception {
+    private static void postValidateDocumentIdParameters(Properties properties, int arrayIdsFound) throws Exception {
         for (Map.Entry<String, Object> kv : properties.listProperties().entrySet()) {
             if (!kv.getKey().startsWith("id[")) {
                 continue;
@@ -218,7 +226,7 @@ public class GetSearcher extends Searcher {
 
         // First check for regular "id=XX" syntax. If found, return vector with that
         // document id only
-        String singleId = properties.getString("id");
+        String singleId = properties.getString(ID);
 
         int index = 0;
         if (singleId != null) {
@@ -234,8 +242,8 @@ public class GetSearcher extends Searcher {
                 docIds.add(docId);
                 ++index;
             }
+            postValidateDocumentIdParameters(properties, index);
         }
-        postValidateDocumentIdParameters(properties, index);
 
         handleData(query.getHttpRequest(), docIds);
         return docIds;
@@ -350,12 +358,12 @@ public class GetSearcher extends Searcher {
         GetResponse response = new GetResponse(documentIds);
         Properties properties = query.properties();
 
-        boolean headersOnly = properties.getBoolean("headersonly", false);
-        boolean populateHitFields = properties.getBoolean("populatehitfields", false);
-        String fieldSet     = properties.getString("fieldset");
-        String fieldName    = properties.getString("field");
-        String contentType  = properties.getString("contenttype");
-        long timeoutMillis = properties.getString("timeout") != null ? query.getTimeout() : defaultTimeoutMillis;
+        boolean headersOnly = properties.getBoolean(HEADERS_ONLY, false);
+        boolean populateHitFields = properties.getBoolean(POPULATE_HIT_FIELDS, false);
+        String fieldSet     = properties.getString(FIELDSET);
+        String fieldName    = properties.getString(FIELD);
+        String contentType  = properties.getString(CONTENT_TYPE);
+        long timeoutMillis = properties.getString(TIEMOUT) != null ? query.getTimeout() : defaultTimeoutMillis;
 
         if (fieldSet == null) {
             fieldSet = headersOnly ? "[header]" : "[all]";

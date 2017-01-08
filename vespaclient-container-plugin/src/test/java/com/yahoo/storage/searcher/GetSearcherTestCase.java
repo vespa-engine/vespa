@@ -477,7 +477,7 @@ public class GetSearcherTestCase {
 
         {
             Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
-                    newQuery("?id=userdoc:kittens:1:2&id[1]=userdoc:kittens:2:3"));
+                    newQuery("?id[1]=userdoc:kittens:2:3"));
 
             assertNotNull(result.hits().getErrorHit());
 
