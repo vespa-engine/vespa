@@ -24,6 +24,7 @@ public class SharedSender implements ReplyHandler {
     private SendSession sender;
     private RouteMetricSet metrics;
     private static final int REACT_LATENCY_ON_RACE = 5;
+    private static final int REACT_LATENCY_ON_WATERMARK = 5;
 
     private ConcurrentHashMap<ResultCallback, OwnerState> activeOwners = new ConcurrentHashMap<>();
 
@@ -230,7 +231,7 @@ public class SharedSender implements ReplyHandler {
             try {
                 synchronized (numPending) {
                     while (numPending.get() > limit) {
-                        numPending.wait(5);
+                        numPending.wait(REACT_LATENCY_ON_WATERMARK);
                     }
                 }
             } catch (InterruptedException e) {
