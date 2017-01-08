@@ -22,8 +22,8 @@ public class SharedSender implements ReplyHandler {
     public static final Logger log = Logger.getLogger(SharedSender.class.getName());
 
     private SendSession sender;
-    private final Object monitor = new Object();
     private RouteMetricSet metrics;
+    private static final int REACT_LATENCY_ON_RACE = 5;
 
     private ConcurrentHashMap<ResultCallback, OwnerState> activeOwners = new ConcurrentHashMap<>();
 
@@ -253,7 +253,7 @@ public class SharedSender implements ReplyHandler {
             long timeLeft = timeoutMS;
             synchronized (numPending) {
                 while ((numPending.get() > 0) && (timeLeft > 0)) {
-                    numPending.wait(timeLeft);
+                    numPending.wait(REACT_LATENCY_ON_RACE);
                     timeLeft = timeoutMS - (SystemTimer.INSTANCE.milliTime() - timeStart);
                 }
             }
@@ -263,7 +263,7 @@ public class SharedSender implements ReplyHandler {
         void waitPending() throws InterruptedException {
             synchronized (numPending) {
                 while (numPending.get() > 0) {
-                    numPending.wait();
+                    numPending.wait(REACT_LATENCY_ON_RACE);
                 }
             }
         }
