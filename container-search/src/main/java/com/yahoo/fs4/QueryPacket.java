@@ -105,7 +105,8 @@ public class QueryPacket extends Packet {
         int startOfFieldToSave;
 
         boolean sendSessionKey = query.getGroupingSessionCache() || query.getRanking().getQueryCache();
-        buffer.putInt(getFeatureInt(sendSessionKey));
+        int featureFlag = getFeatureInt(sendSessionKey);
+        buffer.putInt(featureFlag);
 
         IntegerCompressor.putCompressedPositiveNumber(getOffset(), buffer);
         IntegerCompressor.putCompressedPositiveNumber(getHits(), buffer);
@@ -117,7 +118,7 @@ public class QueryPacket extends Packet {
         Item.putString(query.getRanking().getProfile(), buffer);
         queryPacketData.setRankProfile(buffer, startOfFieldToSave);
 
-        if ( query.hasEncodableProperties()) {
+        if ( (featureFlag & QF_PROPERTIES) != 0) {
             startOfFieldToSave = buffer.position();
             query.encodeAsProperties(buffer, true);
             queryPacketData.setPropertyMaps(buffer, startOfFieldToSave);
@@ -125,17 +126,18 @@ public class QueryPacket extends Packet {
 
         // Language not needed when sending query stacks
 
-        if (query.getRanking().getSorting() != null) {
+        if ((featureFlag & QF_SORTSPEC) != 0) {
             int sortSpecLengthPosition=buffer.position();
             buffer.putInt(0);
             int sortSpecLength = query.getRanking().getSorting().encode(buffer);
             buffer.putInt(sortSpecLengthPosition, sortSpecLength);
         }
 
-        if (getGroupingList(query).size() > 0) {
+        if ( (featureFlag & QF_GROUPSPEC) != 0) {
+            List<Grouping> groupingList = GroupingExecutor.getGroupingList(query);
             BufferSerializer gbuf = new BufferSerializer(new GrowableByteBuffer());
-            gbuf.putInt(null, getGroupingList(query).size());
-            for (Grouping g: getGroupingList(query)){
+            gbuf.putInt(null, groupingList.size());
+            for (Grouping g: groupingList){
                 g.serialize(gbuf);
             }
             gbuf.getBuf().flip();
@@ -150,7 +152,7 @@ public class QueryPacket extends Packet {
             buffer.put(query.getSessionId(true).asUtf8String().getBytes());
         }
 
-        if (query.getRanking().getLocation() != null) {
+        if ((featureFlag & QF_LOCATION) != 0) {
             startOfFieldToSave = buffer.position();
             int locationLengthPosition=buffer.position();
             buffer.putInt(0);
@@ -184,16 +186,14 @@ public class QueryPacket extends Packet {
     static final int QF_SESSIONID       = 0x00800000;
 
     private int getFeatureInt(boolean sendSessionId) {
-        int features = QF_PARSEDQUERY; // this bitmask means "parsed query" in query packet.
-                                       // we always use a parsed query here
+        int features = QF_PARSEDQUERY | QF_RANKP; // this bitmask means "parsed query" in query packet.
+                                                  // And rank properties. Both are always present
 
-        features |= QF_RANKP; // hasRankProfile
-
-        features |= (query.getRanking().getSorting() != null)               ? QF_SORTSPEC : 0;
-        features |= (query.getRanking().getLocation() != null)              ? QF_LOCATION : 0;
-        features |= (query.hasEncodableProperties())                      ? QF_PROPERTIES : 0;
-        features |= (getGroupingList(query).size() > 0)                     ? QF_GROUPSPEC : 0;
-        features |= (sendSessionId)  ? QF_SESSIONID : 0;
+        features |= (query.getRanking().getSorting() != null)   ? QF_SORTSPEC   : 0;
+        features |= (query.getRanking().getLocation() != null)  ? QF_LOCATION   : 0;
+        features |= (query.hasEncodableProperties())            ? QF_PROPERTIES : 0;
+        features |= GroupingExecutor.hasGroupingList(query)     ? QF_GROUPSPEC  : 0;
+        features |= (sendSessionId)                             ? QF_SESSIONID  : 0;
 
         return features;
     }
@@ -231,10 +231,6 @@ public class QueryPacket extends Packet {
 
     public String toString() {
         return "Query x packet [query: " + query + "]";
-    }
-
-    private static List<Grouping> getGroupingList(Query query) {
-        return Collections.unmodifiableList(GroupingExecutor.getGroupingList(query));
     }
 
     static int getQueryFlags(Query query) {
