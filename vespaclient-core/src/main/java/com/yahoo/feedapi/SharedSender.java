@@ -48,7 +48,10 @@ public class SharedSender implements ReplyHandler {
     }
 
     public void remove(ResultCallback owner) {
-        activeOwners.remove(owner);
+        OwnerState state = activeOwners.remove(owner);
+        if (state != null) {
+            state.clearPending();
+        }
     }
 
     public void shutdown() {
