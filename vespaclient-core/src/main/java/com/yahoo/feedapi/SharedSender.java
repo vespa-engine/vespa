@@ -187,9 +187,9 @@ public class SharedSender implements ReplyHandler {
         if (owner != null) {
             metrics.addReply(r);
             OwnerState state = activeOwners.get(owner);
-            boolean active = owner.handleReply(r, state.getNumPending() - 1);
 
             if (state != null) {
+                boolean active = owner.handleReply(r, state.getNumPending() - 1);
                 if (log.isLoggable(LogLevel.SPAM)) {
                     log.log(LogLevel.SPAM, "Received reply for file " + owner.toString() + ", count was " + state.getNumPending());
                 }
@@ -207,7 +207,6 @@ public class SharedSender implements ReplyHandler {
             log.log(LogLevel.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
         }
     }
-
 
     public static class OwnerState {
 
