@@ -203,8 +203,8 @@ public class SharedSender implements ReplyHandler {
     }
 
     private static final class Sync extends AbstractQueuedSynchronizer {
-        Sync(int count) {
-            setState(1);
+        Sync(int initialCount) {
+            setState(initialCount);
         }
 
         int getCount() {
