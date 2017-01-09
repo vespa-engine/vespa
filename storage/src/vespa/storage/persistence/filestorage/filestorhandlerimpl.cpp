@@ -604,7 +604,6 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
             }
 
             api::StorageMessage & m(*iter->_command);
-            mbus::Trace& trace(m.getTrace());
 
             if (!operationHasHighEnoughPriorityToBeRun(m, maxPriority)
                 || operationBlockedByHigherPriorityThread(m, t)
@@ -613,38 +612,43 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
                 break;
             }
 
-            const uint64_t waitTime(
-                    const_cast<metrics::MetricTimer&>(iter->_timer).stop(
-                        t.metrics->averageQueueWaitingTime[
-                        m.getLoadType()]));
-
-            MBUS_TRACE(trace, 9, "FileStorHandler: Message identified by disk thread.");
-            LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue, timeout %d",
-                m.toString().c_str(), waitTime, static_cast<api::StorageCommand&>(m).getTimeout());
-
-            std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
-            idx.erase(iter); // iter not used after this point.
-
-            if (!messageTimedOutInQueue(*msg, waitTime)) {
-                std::unique_ptr<FileStorHandler::BucketLockInterface> locker(
-                        takeDiskBucketLockOwnership(lockGuard, t, id, *msg));
-                lockGuard.unlock();
-                MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
-                return std::move(FileStorHandler::LockedMessage(std::move(locker), std::move(msg)));
-            } else {
-                std::shared_ptr<api::StorageReply> msgReply(
-                        makeQueueTimeoutReply(*msg));
-                lockGuard.broadcast(); // XXX: needed here?
-                lockGuard.unlock();
-                _messageSender.sendReply(msgReply);
-                return {};
-            }
+            return getMessage(lockGuard, t, idx, iter);
         }
         if (attempt == 0) {
             lockGuard.wait(_getNextMessageTimeout);
         }
     }
     return {}; // No message fetched.
+}
+
+FileStorHandler::LockedMessage
+FileStorHandlerImpl::getMessage(vespalib::MonitorGuard & guard, Disk & t, PriorityIdx & idx, PriorityIdx::iterator iter) {
+
+    api::StorageMessage & m(*iter->_command);
+    const uint64_t waitTime(
+            const_cast<metrics::MetricTimer &>(iter->_timer).stop(
+                    t.metrics->averageQueueWaitingTime[m.getLoadType()]));
+
+    mbus::Trace &trace(m.getTrace());
+    MBUS_TRACE(trace, 9, "FileStorHandler: Message identified by disk thread.");
+    LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue, timeout %d",
+        m.toString().c_str(), waitTime, static_cast<api::StorageCommand &>(m).getTimeout());
+
+    std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
+    idx.erase(iter); // iter not used after this point.
+
+    if (!messageTimedOutInQueue(*msg, waitTime)) {
+        auto locker = takeDiskBucketLockOwnership(guard, t, iter->_bucketId, *msg);
+        guard.unlock();
+        MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
+        return std::move(FileStorHandler::LockedMessage(std::move(locker), std::move(msg)));
+    } else {
+        std::shared_ptr<api::StorageReply> msgReply(makeQueueTimeoutReply(*msg));
+        guard.broadcast(); // XXX: needed here?
+        guard.unlock();
+        _messageSender.sendReply(msgReply);
+        return {};
+    }
 }
 
 std::shared_ptr<FileStorHandler::BucketLockInterface>

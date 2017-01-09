@@ -160,6 +160,7 @@ public:
 
     void pause(uint16_t disk, uint8_t priority) const;
     FileStorHandler::LockedMessage getNextMessage(uint16_t disk, uint8_t lowestPriority);
+    FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, Disk & t, PriorityIdx & idx, PriorityIdx::iterator iter);
 
     FileStorHandler::LockedMessage & getNextMessage(uint16_t disk, FileStorHandler::LockedMessage& lock,
                                                     uint8_t lowestPriority);
