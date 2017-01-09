@@ -15,11 +15,11 @@
 
 #pragma once
 
+#include "filestorhandler.h"
+#include "mergestatus.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storage/persistence/filestorage/filestorhandler.h>
-#include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/storageframework/storageframework.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
@@ -51,6 +51,7 @@ public:
         uint8_t _priority;
 
         MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::BucketId& bId);
+        MessageEntry(MessageEntry &&);
         MessageEntry(const MessageEntry &);
         MessageEntry & operator = (const MessageEntry &) = delete;
         ~MessageEntry();

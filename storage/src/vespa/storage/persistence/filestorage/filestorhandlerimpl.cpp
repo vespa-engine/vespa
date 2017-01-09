@@ -255,8 +255,7 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg,
                 "FileStorHandler: Operation added to disk %d's queue with "
                 "priority %u", disk, msg->getPriority()));
 
-        t.queue.push_back(MessageEntry(msg,
-                                       getStorageMessageBucketId(*msg)));
+        t.queue.emplace_back(msg, getStorageMessageBucketId(*msg));
 
         LOG(spam, "Queued operation %s with priority %u.",
             msg->getType().toString().c_str(),
@@ -1053,7 +1052,7 @@ FileStorHandlerImpl::remapQueueNoLock(
     for (BucketIdx::iterator i = range.first; i != range.second; ++i) {
         assert(i->_bucketId == source.bid);
 
-        entriesFound.push_back(*i);
+        entriesFound.push_back(std::move(*i));
     }
 
     // Remove them
@@ -1094,7 +1093,7 @@ FileStorHandlerImpl::remapQueueNoLock(
         } else {
             entry._bucketId = bid;
             // Move to correct disk queue if needed
-            _diskInfo[targetDisk].queue.push_back(entry);
+            _diskInfo[targetDisk].queue.emplace_back(std::move(entry));
         }
     }
 
@@ -1209,11 +1208,20 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::Stora
       _priority(cmd->getPriority())
 { }
 
+
 FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry)
     : _command(entry._command),
       _timer(entry._timer),
       _bucketId(entry._bucketId),
       _priority(entry._priority)
+{ }
+
+
+FileStorHandlerImpl::MessageEntry::MessageEntry(MessageEntry && entry)
+        : _command(std::move(entry._command)),
+          _timer(entry._timer),
+          _bucketId(entry._bucketId),
+          _priority(entry._priority)
 { }
 
 FileStorHandlerImpl::MessageEntry::~MessageEntry() { }
