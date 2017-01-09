@@ -207,6 +207,7 @@ public class SharedSender implements ReplyHandler {
     }
 
     private static final class Sync extends AbstractQueuedSynchronizer {
+        private static final long serialVersionUID = 0x66b0c5f99ba513aeL;
         Sync(int initialCount) {
             setState(initialCount);
         }
