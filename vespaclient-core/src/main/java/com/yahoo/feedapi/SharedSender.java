@@ -86,14 +86,6 @@ public class SharedSender implements ReplyHandler {
         return true;
     }
 
-    private OwnerState getNonNullState(ResultCallback owner) {
-        OwnerState state = activeOwners.get(owner);
-        if (state == null) {
-            throw new IllegalStateException("No active callback : " + owner.toString());
-        }
-        return state;
-    }
-
     public int getPendingCount(ResultCallback owner) {
         OwnerState state = activeOwners.get(owner);
         return (state != null) ? state.getNumPending() : 0;
