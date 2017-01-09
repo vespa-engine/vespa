@@ -628,9 +628,8 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
             if (!messageTimedOutInQueue(*msg, waitTime)) {
                 std::unique_ptr<FileStorHandler::BucketLockInterface> locker(
                         takeDiskBucketLockOwnership(lockGuard, t, id, *msg));
-                MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
-                lockGuard.broadcast(); // XXX: needed here?
                 lockGuard.unlock();
+                MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
                 return std::move(FileStorHandler::LockedMessage(std::move(locker), std::move(msg)));
             } else {
                 std::shared_ptr<api::StorageReply> msgReply(
