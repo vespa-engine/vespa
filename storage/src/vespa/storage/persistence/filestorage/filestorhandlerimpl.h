@@ -130,7 +130,7 @@ public:
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
-        BucketLock(Disk& disk, const document::BucketId& id, uint8_t priority,
+        BucketLock(const vespalib::MonitorGuard & guard, Disk& disk, const document::BucketId& id, uint8_t priority,
                    const vespalib::stringref & statusString);
         ~BucketLock();
 
@@ -260,7 +260,8 @@ private:
      * Disk lock MUST have been taken prior to calling this function.
      */
     std::unique_ptr<FileStorHandler::BucketLockInterface>
-    takeDiskBucketLockOwnership(Disk& disk, const document::BucketId& id, const api::StorageMessage& msg);
+    takeDiskBucketLockOwnership(const vespalib::MonitorGuard & guard,
+                                Disk& disk, const document::BucketId& id, const api::StorageMessage& msg);
 
     /**
      * Creates and returns a reply with api::TIMEOUT return code for msg.

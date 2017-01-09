@@ -547,12 +547,13 @@ FileStorHandlerImpl::messageTimedOutInQueue(const api::StorageMessage& msg,
 
 std::unique_ptr<FileStorHandler::BucketLockInterface>
 FileStorHandlerImpl::takeDiskBucketLockOwnership(
+        const vespalib::MonitorGuard & guard,
         Disk& disk,
         const document::BucketId& id,
         const api::StorageMessage& msg)
 {
     return std::unique_ptr<FileStorHandler::BucketLockInterface>(
-            new BucketLock(disk, id, msg.getPriority(), msg.getSummary()));
+            new BucketLock(guard, disk, id, msg.getPriority(), msg.getSummary()));
 }
 
 std::unique_ptr<api::StorageReply>
@@ -627,7 +628,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
 
             if (!messageTimedOutInQueue(*msg, waitTime)) {
                 std::unique_ptr<FileStorHandler::BucketLockInterface> locker(
-                        takeDiskBucketLockOwnership(t, id, *msg));
+                        takeDiskBucketLockOwnership(lockGuard, t, id, *msg));
                 MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
                 lockGuard.broadcast(); // XXX: needed here?
                 lockGuard.unlock();
@@ -669,7 +670,7 @@ FileStorHandlerImpl::lock(const document::BucketId& bucket, uint16_t disk)
     }
 
     std::shared_ptr<FileStorHandler::BucketLockInterface> locker(
-            new BucketLock(t, bucket, 255, "External lock"));
+            new BucketLock(lockGuard, t, bucket, 255, "External lock"));
 
     lockGuard.broadcast();
     return locker;
@@ -1248,6 +1249,7 @@ FileStorHandlerImpl::getQueueSize(uint16_t disk) const
 }
 
 FileStorHandlerImpl::BucketLock::BucketLock(
+        const vespalib::MonitorGuard & guard,
         Disk& disk,
         const document::BucketId& id,
         uint8_t priority,
@@ -1255,6 +1257,7 @@ FileStorHandlerImpl::BucketLock::BucketLock(
     : _disk(disk),
       _id(id)
 {
+    (void) guard;
     if (_id.getRawId() != 0) {
         // Lock the bucket and wait until it is not the current operation for
         // the disk itself.
