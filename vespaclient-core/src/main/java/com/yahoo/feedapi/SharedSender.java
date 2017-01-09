@@ -223,10 +223,11 @@ public class SharedSender implements ReplyHandler {
         @Override
         protected boolean tryReleaseShared(int releases) {
             // Increment/Decrement count; signal when transition downwards to zero.
+            // releases == 0 means unblock all
             while ( true ) {
                 int c = getState();
                 if ((c == 0) && (releases >= 0)) { return false; }
-                int nextc = (c > releases) ? c - releases : 0;
+                int nextc = (c > releases) ? ((releases != 0) ? c - releases : 0) : 0;
                 if (compareAndSetState(c, nextc)) {
                     return nextc == 0;
                 }
