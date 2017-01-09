@@ -1,5 +1,7 @@
 package com.yahoo.tensor;
 
+import com.google.common.annotations.Beta;
+
 import java.util.Arrays;
 
 /**
@@ -7,6 +9,7 @@ import java.util.Arrays;
  * 
  * @author bratseth
  */
+@Beta
 public final class DimensionSizes {
 
     private final int[] sizes;
