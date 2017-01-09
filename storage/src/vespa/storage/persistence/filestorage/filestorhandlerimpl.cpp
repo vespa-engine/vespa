@@ -622,7 +622,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
             LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue, timeout %d",
                 m.toString().c_str(), waitTime, static_cast<api::StorageCommand&>(m).getTimeout());
 
-            std::shared_ptr<api::StorageMessage> msg(iter->_command);
+            std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
             idx.erase(iter); // iter not used after this point.
 
             if (!messageTimedOutInQueue(*msg, waitTime)) {
@@ -630,7 +630,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
                         takeDiskBucketLockOwnership(t, id, *msg));
                 MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
                 lockGuard.broadcast(); // XXX: needed here?
-                return {std::move(locker), msg};
+                return {std::move(locker), std::move(msg)};
             } else {
                 std::shared_ptr<api::StorageReply> msgReply(
                         makeQueueTimeoutReply(*msg));
