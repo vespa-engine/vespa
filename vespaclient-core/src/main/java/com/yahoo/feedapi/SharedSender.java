@@ -191,15 +191,18 @@ public class SharedSender implements ReplyHandler {
             return;
         }
 
-        boolean active = owner.handleReply(r, state.getNumPending() - 1);
+        int numPending = state.getNumPending() - 1;
+        boolean noMorePending = state.decPending(1);
+        if (noMorePending) {
+            numPending = 0;
+        }
+        boolean active = owner.handleReply(r, numPending);
         if (log.isLoggable(LogLevel.SPAM)) {
             log.log(LogLevel.SPAM, "Received reply for file " + owner.toString() + ", count was " + state.getNumPending());
         }
         if (!active) {
             state.clearPending();
             activeOwners.remove(owner);
-        } else {
-            state.decPending(1);
         }
     }
 
@@ -241,8 +244,8 @@ public class SharedSender implements ReplyHandler {
             sync.releaseShared(-count);
         }
 
-        void decPending(int count) {
-            sync.releaseShared(count);
+        boolean decPending(int count) {
+            return sync.releaseShared(count);
         }
 
         void waitMaxPendingBelow(int limit) {
