@@ -20,7 +20,6 @@ class TypedBinaryFormat
     static constexpr uint32_t DENSE_BINARY_FORMAT_TYPE = 2u;
 public:
     static void serialize(nbostream &stream, const Tensor &tensor);
-    static void deserialize(nbostream &stream, TensorBuilder &builder);
     static std::unique_ptr<Tensor> deserialize(nbostream &stream);
 };
 
