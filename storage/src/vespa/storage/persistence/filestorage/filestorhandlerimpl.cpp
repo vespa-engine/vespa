@@ -8,13 +8,10 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/common/messagesender.h>
-#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/messagebucketid.h>
 #include <vespa/storage/persistence/messages.h>
-#include <vespa/vespalib/util/random.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -606,11 +603,11 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
                 continue;
             }
 
-            std::shared_ptr<api::StorageMessage> msg(iter->_command);
-            mbus::Trace& trace(msg->getTrace());
+            api::StorageMessage & m(*iter->_command);
+            mbus::Trace& trace(m.getTrace());
 
-            if (!operationHasHighEnoughPriorityToBeRun(*msg, maxPriority)
-                || operationBlockedByHigherPriorityThread(*msg, t)
+            if (!operationHasHighEnoughPriorityToBeRun(m, maxPriority)
+                || operationBlockedByHigherPriorityThread(m, t)
                 || isPaused())
             {
                 break;
@@ -619,15 +616,13 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
             const uint64_t waitTime(
                     const_cast<metrics::MetricTimer&>(iter->_timer).stop(
                         t.metrics->averageQueueWaitingTime[
-                        msg->getLoadType()]));
+                        m.getLoadType()]));
 
-            MBUS_TRACE(trace, 9, "FileStorHandler: Message identified by "
-                                 "disk thread.");
-            LOG(debug,
-                "Message %s waited %" PRIu64 " ms in storage queue, timeout %d",
-                msg->toString().c_str(), waitTime,
-                static_cast<api::StorageCommand&>(*msg).getTimeout());
+            MBUS_TRACE(trace, 9, "FileStorHandler: Message identified by disk thread.");
+            LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue, timeout %d",
+                m.toString().c_str(), waitTime, static_cast<api::StorageCommand&>(m).getTimeout());
 
+            std::shared_ptr<api::StorageMessage> msg(iter->_command);
             idx.erase(iter); // iter not used after this point.
 
             if (!messageTimedOutInQueue(*msg, waitTime)) {
