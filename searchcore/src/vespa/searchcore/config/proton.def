@@ -398,3 +398,6 @@ hwinfo.disk.samplewritesize long default = 1073741824
 ## Minimun write speed needed to avoid disk being considered slow.
 ## Unit is MiB/s, default is 100.0 MiB/s.
 hwinfo.disk.slowwritespeedlimit double default = 100.0
+
+## Adjustment to resource limit when determining if maintenance jobs can run.
+maintenancejobs.resourcelimitfactor double default = 1.05

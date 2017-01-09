@@ -145,6 +145,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
               IClusterStateChangedNotifier &clusterStateChangedNotifier,
               IBucketStateChangedNotifier &bucketStateChangedNotifier,
               IDiskMemUsageNotifier &diskMemUsageNotifier,
+              double resourceLimitFactor,
               const vespalib::string &docTypeName)
     : IMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0),
       IClusterStateChangedHandler(),
@@ -171,7 +172,8 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _runnable(false),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
-      _diskMemUsageNotifier(diskMemUsageNotifier)
+      _diskMemUsageNotifier(diskMemUsageNotifier),
+      _resourceLimitFactor(resourceLimitFactor)
 {
     refreshDerivedClusterState();
     
@@ -373,7 +375,7 @@ BucketMoveJob::notifyBucketStateChanged(const BucketId &bucketId,
 void BucketMoveJob::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
-    bool resourcesOK = !state.aboveDiskLimit() && !state.aboveMemoryLimit();
+    bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
     _resourcesOK = resourcesOK;
     refreshRunnable();
     if (_runner && _runnable) {

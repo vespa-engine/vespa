@@ -78,7 +78,8 @@ DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig(void)
       _visibilityDelay(0),
       _lidSpaceCompaction(),
       _attributeUsageFilterConfig(),
-      _attributeUsageSampleInterval(60.0)
+      _attributeUsageSampleInterval(60.0),
+      _resourceLimitFactor(1.0)
 {
 }
 
@@ -92,7 +93,8 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
                             fastos::TimeStamp visibilityDelay,
                             const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                             const AttributeUsageFilterConfig &attributeUsageFilterConfig,
-                            double attributeUsageSampleInterval)
+                            double attributeUsageSampleInterval,
+                            double resourceLimitFactor)
     : _pruneRemovedDocuments(pruneRemovedDocuments),
       _heartBeat(heartBeat),
       _wipeOldRemovedFields(wipeOldRemovedFields),
@@ -100,7 +102,8 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
       _visibilityDelay(visibilityDelay),
       _lidSpaceCompaction(lidSpaceCompaction),
       _attributeUsageFilterConfig(attributeUsageFilterConfig),
-      _attributeUsageSampleInterval(attributeUsageSampleInterval)
+      _attributeUsageSampleInterval(attributeUsageSampleInterval),
+      _resourceLimitFactor(resourceLimitFactor)
 {
 }
 
@@ -115,7 +118,8 @@ operator==(const DocumentDBMaintenanceConfig &rhs) const
         _visibilityDelay == rhs._visibilityDelay &&
         _lidSpaceCompaction == rhs._lidSpaceCompaction &&
         _attributeUsageFilterConfig == rhs._attributeUsageFilterConfig &&
-        _attributeUsageSampleInterval == rhs._attributeUsageSampleInterval;
+        _attributeUsageSampleInterval == rhs._attributeUsageSampleInterval &&
+        _resourceLimitFactor == rhs._resourceLimitFactor;
 }
 
 } // namespace proton

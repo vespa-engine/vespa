@@ -25,6 +25,7 @@ const double JOB_DELAY = 1.0;
 const uint32_t ALLOWED_LID_BLOAT = 1;
 const double ALLOWED_LID_BLOAT_FACTOR = 0.3;
 const uint32_t MAX_DOCS_TO_SCAN = 100;
+constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 const vespalib::string DOC_ID = "id:test:searchdocument::0";
 const BucketId BUCKET_ID_1(1);
 const BucketId BUCKET_ID_2(2);
@@ -235,11 +236,12 @@ struct JobFixture
     MyJobRunner           _jobRunner;
     JobFixture(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
                double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
-               uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN)
+               uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
+               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR)
         : _handler(),
           _job(DocumentDBLidSpaceCompactionConfig(JOB_DELAY,
                   allowedLidBloat, allowedLidBloatFactor, maxDocsToScan),
-               _handler, _storer, _frozenHandler, _diskMemUsageNotifier),
+               _handler, _storer, _frozenHandler, _diskMemUsageNotifier, resourceLimitFactor),
           _jobRunner(_job)
     {
     }
@@ -509,6 +511,18 @@ TEST_F("require that ending resource starvation resumes lid space compaction", J
     EXPECT_TRUE(f.run()); // scan
     TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
     TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 0}}));
+    TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
+    TEST_DO(f.endScan().compact());
+    TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));
+}
+
+TEST_F("require that resource limit factor adjusts limit", JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, 1.05))
+{
+    f.addStats(10, {1,3,4,5,6,9},
+            {{9,2},   // 30% bloat: move 9 -> 2
+             {6,7}}); // no documents to move
+    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    EXPECT_FALSE(f.run()); // scan
     TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
     TEST_DO(f.endScan().compact());
     TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));

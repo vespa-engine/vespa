@@ -37,6 +37,8 @@ public:
     const ResourceUsageState &memoryState() const { return _memoryState; }
     bool aboveDiskLimit() const { return diskState().aboveLimit(); }
     bool aboveMemoryLimit() const { return memoryState().aboveLimit(); }
+    bool aboveDiskLimit(double resourceLimitFactor) const { return diskState().aboveLimit(resourceLimitFactor); }
+    bool aboveMemoryLimit(double resourceLimitFactor) const { return memoryState().aboveLimit(resourceLimitFactor); }
 };
 
 } // namespace proton
