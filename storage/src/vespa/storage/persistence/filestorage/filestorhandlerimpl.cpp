@@ -447,11 +447,11 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk,
         return lck;
     }
 
-    std::shared_ptr<api::StorageMessage> msg(range.first->_command);
-    mbus::Trace& trace = msg->getTrace();
+    api::StorageMessage & m(*range.first->_command);
+    mbus::Trace& trace = m.getTrace();
 
     // Priority is too low, not buffering any more.
-    if (msg->getPriority() > maxPriority || msg->getPriority() >= _maxPriorityToBlock) {
+    if (m.getPriority() > maxPriority || m.getPriority() >= _maxPriorityToBlock) {
         lck.second.reset();
         return lck;
     }
@@ -462,16 +462,17 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk,
 
     uint64_t waitTime(
             const_cast<metrics::MetricTimer&>(range.first->_timer).stop(
-                    t.metrics->averageQueueWaitingTime[msg->getLoadType()]));
+                    t.metrics->averageQueueWaitingTime[m.getLoadType()]));
 
     LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue (bucket %s), "
                "timeout %d",
-        msg->toString().c_str(), waitTime, id.toString().c_str(),
-        static_cast<api::StorageCommand&>(*msg).getTimeout());
+        m.toString().c_str(), waitTime, id.toString().c_str(),
+        static_cast<api::StorageCommand&>(m).getTimeout());
 
-    if (msg->getType().isReply() ||
-        waitTime < static_cast<api::StorageCommand&>(*msg).getTimeout())
+    if (m.getType().isReply() ||
+        waitTime < static_cast<api::StorageCommand&>(m).getTimeout())
     {
+        std::shared_ptr<api::StorageMessage> msg = std::move(range.first->_command);
         idx.erase(range.first);
         lck.second.swap(msg);
         lockGuard.broadcast();
@@ -479,15 +480,14 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk,
         return lck;
     } else {
         std::shared_ptr<api::StorageReply> msgReply(
-                static_cast<api::StorageCommand&>(*msg)
+                static_cast<api::StorageCommand&>(m)
                 .makeReply().release());
-        msgReply->setResult(api::ReturnCode(
-                api::ReturnCode::TIMEOUT,
-                "Message waited too long in storage queue"));
-
         idx.erase(range.first);
         lockGuard.broadcast();
         lockGuard.unlock();
+        msgReply->setResult(api::ReturnCode(
+                api::ReturnCode::TIMEOUT,
+                "Message waited too long in storage queue"));
         _messageSender.sendReply(msgReply);
 
         lck.second.reset();
