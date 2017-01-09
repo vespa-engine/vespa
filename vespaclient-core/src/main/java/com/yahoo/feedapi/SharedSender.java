@@ -143,8 +143,11 @@ public class SharedSender implements ReplyHandler {
 
         OwnerState state = activeOwners.get(owner);
         if (state == null) {
-            state = new OwnerState();
-            activeOwners.put(owner, state);
+            OwnerState newState = new OwnerState();
+            state = activeOwners.putIfAbsent(owner, newState);
+            if (state == null) {
+                state = newState;
+            }
         }
         if (maxPendingPerOwner != -1 && blockingQueue) {
             state.waitMaxPendingbelow(maxPendingPerOwner);
