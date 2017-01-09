@@ -83,7 +83,7 @@ public class Concat extends PrimitiveTensorFunction {
             for (Iterator<IndexedTensor.SubspaceIterator> ib = b.subspaceIterator(otherADimensions); ib.hasNext();) {
                 IndexedTensor.SubspaceIterator ibSubspace = ib.next();
                 while (ibSubspace.hasNext()) {
-                    java.util.Map.Entry<TensorAddress, Double> bCell = ibSubspace.next(); // TODO: Create Cell convenience subclass for Map.Entry
+                    Tensor.Cell bCell = ibSubspace.next();
                     TensorAddress combinedAddress = combineAddresses(aAddress, aToIndexes, bCell.getKey(), bToIndexes,
                                                                      concatType, offset, dimension);
                     if (combinedAddress == null) continue; // incompatible
@@ -125,21 +125,21 @@ public class Concat extends PrimitiveTensorFunction {
 
     /** Returns the  concrete (not type) dimension sizes resulting from combining a and b */
     private DimensionSizes concatSize(TensorType concatType, IndexedTensor a, IndexedTensor b, String concatDimension) {
-        DimensionSizes.Builder joinedSizes = new DimensionSizes.Builder(concatType.dimensions().size());
-        for (int i = 0; i < joinedSizes.dimensions(); i++) {
+        DimensionSizes.Builder concatSizes = new DimensionSizes.Builder(concatType.dimensions().size());
+        for (int i = 0; i < concatSizes.dimensions(); i++) {
             String currentDimension = concatType.dimensions().get(i).name();
             int aSize = a.type().indexOfDimension(currentDimension).map(d -> a.dimensionSizes().size(d)).orElse(0);
             int bSize = b.type().indexOfDimension(currentDimension).map(d -> b.dimensionSizes().size(d)).orElse(0);
             if (currentDimension.equals(concatDimension))
-                joinedSizes.set(i, aSize + bSize);
+                concatSizes.set(i, aSize + bSize);
             else if (aSize != 0 && bSize != 0 && aSize!=bSize )
                 throw new IllegalArgumentException("Dimension " + currentDimension + " must be of the same size when " +
                                                    "concatenating " + a.type() + " and " + b.type() + " along dimension " + 
                                                    concatDimension + ", but was " + aSize + " and " + bSize);
             else
-                joinedSizes.set(i, Math.max(aSize, bSize));
+                concatSizes.set(i, Math.max(aSize, bSize));
         }
-        return joinedSizes.build();
+        return concatSizes.build();
     }
 
     /**
@@ -150,13 +150,13 @@ public class Concat extends PrimitiveTensorFunction {
      */
     private TensorAddress combineAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                            TensorType concatType, int concatOffset, String concatDimension) {
-        int[] joinedLabels = new int[concatType.dimensions().size()];
-        Arrays.fill(joinedLabels, -1);
+        int[] combinedLabels = new int[concatType.dimensions().size()];
+        Arrays.fill(combinedLabels, -1);
         int concatDimensionIndex = concatType.indexOfDimension(concatDimension).get();
-        mapContent(a, joinedLabels, aToIndexes, concatDimensionIndex, concatOffset); // note: This sets a nonsensical value in the concat dimension
-        boolean compatible = mapContent(b, joinedLabels, bToIndexes, concatDimensionIndex, concatOffset); // ... which is overwritten by the right value here
+        mapContent(a, combinedLabels, aToIndexes, concatDimensionIndex, concatOffset); // note: This sets a nonsensical value in the concat dimension
+        boolean compatible = mapContent(b, combinedLabels, bToIndexes, concatDimensionIndex, concatOffset); // ... which is overwritten by the right value here
         if ( ! compatible) return null;
-        return TensorAddress.of(joinedLabels);
+        return TensorAddress.of(combinedLabels);
     }
 
     /**
@@ -166,7 +166,7 @@ public class Concat extends PrimitiveTensorFunction {
      * fromType.dimensions().get(i).name.equals(toType.dimensions().get(n).name())
      * If some dimension in fromType is not present in toType, the corresponding index will be -1
      */
-    // TODO: Stolen from join - put on TensorType?
+    // TODO: Stolen from join
     private int[] mapIndexes(TensorType fromType, TensorType toType) {
         int[] toIndexes = new int[fromType.dimensions().size()];
         for (int i = 0; i < fromType.dimensions().size(); i++)

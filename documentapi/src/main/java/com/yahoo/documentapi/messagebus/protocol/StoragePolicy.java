@@ -326,9 +326,13 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
                 }
             }
             if (context.usedState != null && newState.getVersion() <= context.usedState.getVersion()) {
-                reply.setRetryDelay(-1);
+                if (reply.getRetryDelay() <= 0.0) {
+                    reply.setRetryDelay(-1);
+                }
             } else {
-                reply.setRetryDelay(0);
+                if (reply.getRetryDelay() <= 0.0) {
+                    reply.setRetryDelay(0);
+                }
             }
             if (context.calculatedDistributor == null) {
                 if (cachedClusterState == null) {

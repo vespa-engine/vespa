@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.number.OrderingComparison.lessThan;
+import static org.hamcrest.number.OrderingComparison.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -109,8 +111,8 @@ public class LocalNetworkTest {
         assertEquals(ErrorCode.TIMEOUT, res.getError().getCode());
         assertTrue(res.getError().getMessage().endsWith("Timed out in sendQ"));
         long end = System.currentTimeMillis();
-        assertTrue(end - start >= (TIMEOUT*0.98)); // Different clocks are used....
-        assertTrue(end - start < 2*TIMEOUT);
+        assertThat(end, greaterThanOrEqualTo(start+TIMEOUT));
+        assertThat(end, lessThan(start+2*TIMEOUT));
 
         msg = serverB.messages.poll(60, TimeUnit.SECONDS);
         assertThat(msg, instanceOf(SimpleMessage.class));

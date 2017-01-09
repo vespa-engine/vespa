@@ -4,15 +4,14 @@ package com.yahoo.vespa.http.client.config;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.yahoo.vespa.http.client.Session;
-
 import net.jcip.annotations.Immutable;
 
 import javax.net.ssl.SSLContext;
-
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,6 +35,7 @@ public final class ConnectionParams {
         private SSLContext sslContext = null;
         private long connectionTimeout = TimeUnit.SECONDS.toMillis(60);
         private final Multimap<String, String> headers = ArrayListMultimap.create();
+        private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
         private int numPersistentConnectionsPerEndpoint = 8;
         private String proxyHost = null;
         private int proxyPort = 8080;
@@ -69,6 +69,24 @@ public final class ConnectionParams {
          */
         public Builder addHeader(String key, String value) {
             headers.put(key, value);
+            return this;
+        }
+
+        /**
+         * Adds a header provider for dynamic headers; headers where the value may change during a feeding session
+         * (e.g. security tokens with limited life time). Only one {@link HeaderProvider} is allowed for a given header name.
+         *
+         * @param provider A provider for a dynamic header
+         * @return pointer to builder.
+         * @throws IllegalArgumentException if a provider is already registered for the given header name
+         */
+        public Builder addDynamicHeader(String headerName, HeaderProvider provider) {
+            Objects.requireNonNull(headerName, "Header name cannot be null");
+            Objects.requireNonNull(provider, "Header provider cannot be null");
+            if (headerProviders.containsKey(headerName)) {
+                throw new IllegalArgumentException("Provider already registered for name '" + headerName + "'");
+            }
+            headerProviders.put(headerName, provider);
             return this;
         }
 
@@ -203,6 +221,7 @@ public final class ConnectionParams {
                     sslContext,
                     connectionTimeout,
                     headers,
+                    headerProviders,
                     numPersistentConnectionsPerEndpoint,
                     proxyHost,
                     proxyPort,
@@ -254,6 +273,7 @@ public final class ConnectionParams {
     private final SSLContext sslContext;
     private final long connectionTimeout;
     private final Multimap<String, String> headers = ArrayListMultimap.create();
+    private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
     private final int numPersistentConnectionsPerEndpoint;
     private final String proxyHost;
     private final int proxyPort;
@@ -270,6 +290,7 @@ public final class ConnectionParams {
             SSLContext sslContext,
             long connectionTimeout,
             Multimap<String, String> headers,
+            Map<String, HeaderProvider> headerProviders,
             int numPersistentConnectionsPerEndpoint,
             String proxyHost,
             int proxyPort,
@@ -284,6 +305,7 @@ public final class ConnectionParams {
         this.sslContext = sslContext;
         this.connectionTimeout = connectionTimeout;
         this.headers.putAll(headers);
+        this.headerProviders.putAll(headerProviders);
         this.numPersistentConnectionsPerEndpoint = numPersistentConnectionsPerEndpoint;
         this.proxyHost = proxyHost;
         this.proxyPort = proxyPort;
@@ -303,6 +325,10 @@ public final class ConnectionParams {
 
     public Collection<Map.Entry<String, String>> getHeaders() {
         return Collections.unmodifiableCollection(headers.entries());
+    }
+
+    public Map<String, HeaderProvider> getDynamicHeaders() {
+        return Collections.unmodifiableMap(headerProviders);
     }
 
     public int getNumPersistentConnectionsPerEndpoint() {
@@ -345,6 +371,16 @@ public final class ConnectionParams {
 
     public boolean getPrintTraceToStdErr() {
         return printTraceToStdErr;
+    }
+
+    /**
+     * A header provider that provides a header value. {@link #getHeaderValue()} is called each time a new HTTP request
+     * is constructed by {@link com.yahoo.vespa.http.client.FeedClient}.
+     *
+     * Important: The implementation of {@link #getHeaderValue()} must be thread-safe!
+     */
+    public interface HeaderProvider {
+        String getHeaderValue();
     }
 
 }

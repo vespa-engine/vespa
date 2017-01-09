@@ -52,6 +52,21 @@ public class IndexedTensor implements Tensor {
         return new CellIterator();
     }
 
+    /** Returns an iterator over all the cells in this tensor which matches the given partial address */
+    // TODO: Move up to Tensor and create a mixed tensor which can implement it (and subspace iterators) efficiently
+    public SubspaceIterator cellIterator(PartialAddress partialAddress, DimensionSizes iterationSizes) {
+        int[] startAddress = new int[type().dimensions().size()];
+        List<Integer> iterateDimensions = new ArrayList<>();
+        for (int i = 0; i < type().dimensions().size(); i++) {
+            int partialAddressLabel = partialAddress.intLabel(type.dimensions().get(i).name());
+            if (partialAddressLabel >= 0) // iterate at this label
+                startAddress[i] = partialAddressLabel;
+            else // iterate over this dimension
+                iterateDimensions.add(i);
+        }
+        return new SubspaceIterator(iterateDimensions, startAddress, iterationSizes);
+    }
+
     /**
      * Returns an iterator over the values of this.
      * Values are returned in order of increasing indexes in each dimension, increasing 
