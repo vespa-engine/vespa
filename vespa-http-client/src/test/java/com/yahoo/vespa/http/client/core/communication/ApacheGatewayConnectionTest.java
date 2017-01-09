@@ -1,19 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.TestUtils;
+import com.yahoo.vespa.http.client.config.ConnectionParams;
+import com.yahoo.vespa.http.client.config.Endpoint;
+import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.core.Document;
+import com.yahoo.vespa.http.client.core.Headers;
+import com.yahoo.vespa.http.client.core.ServerResponseException;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
@@ -24,16 +18,29 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
 import org.junit.Test;
-import com.yahoo.vespa.http.client.config.ConnectionParams;
-import com.yahoo.vespa.http.client.config.Endpoint;
-import com.yahoo.vespa.http.client.config.FeedParams;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 
 public class ApacheGatewayConnectionTest {
@@ -47,23 +54,14 @@ public class ApacheGatewayConnectionTest {
                 .setEnableV3Protocol(true)
                 .build();
         final List<Document> documents = new ArrayList<>();
-
-        final ApacheGatewayConnection.HttpClientFactory mockFactory =
-                mock(ApacheGatewayConnection.HttpClientFactory.class);
-        final HttpClient httpClientMock = mock(HttpClient.class);
-        when(mockFactory.createClient()).thenReturn(httpClientMock);
-
         final CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
 
         final String vespaDocContent ="Hello, I a JSON doc.";
         final String docId = "42";
 
         final AtomicInteger requestsReceived = new AtomicInteger(0);
-
         // This is the fake server, takes header client ID and uses this as session Id.
-        stub(httpClientMock.execute(any())).toAnswer((Answer) invocation -> {
-            final Object[] args = invocation.getArguments();
-            final HttpPost post = (HttpPost) args[0];
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> {
             final Header clientIdHeader = post.getFirstHeader(Headers.CLIENT_ID);
             verifyContentSentLatch.countDown();
             return httpResponse(clientIdHeader.getValue(), "3");
@@ -94,15 +92,8 @@ public class ApacheGatewayConnectionTest {
                 .setEnableV3Protocol(true)
                 .build();
 
-        final ApacheGatewayConnection.HttpClientFactory mockFactory =
-                mock(ApacheGatewayConnection.HttpClientFactory.class);
-        final HttpClient httpClientMock = mock(HttpClient.class);
-        when(mockFactory.createClient()).thenReturn(httpClientMock);
-
         // This is the fake server, returns wrong session Id.
-        stub(httpClientMock.execute(any())).toAnswer(invocation -> {
-            return httpResponse("Wrong Id from server", "3");
-        });
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> httpResponse("Wrong Id from server", "3"));
 
         ApacheGatewayConnection apacheGatewayConnection =
                 new ApacheGatewayConnection(
@@ -148,11 +139,6 @@ public class ApacheGatewayConnectionTest {
                 .build();
         final List<Document> documents = new ArrayList<>();
 
-        final ApacheGatewayConnection.HttpClientFactory mockFactory =
-                mock(ApacheGatewayConnection.HttpClientFactory.class);
-        final HttpClient httpClientMock = mock(HttpClient.class);
-        when(mockFactory.createClient()).thenReturn(httpClientMock);
-
         final CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
 
         final String vespaDocContent ="Hello, I a JSON doc.";
@@ -161,13 +147,11 @@ public class ApacheGatewayConnectionTest {
         final AtomicInteger requestsReceived = new AtomicInteger(0);
 
         // This is the fake server, checks that DATA_FORMAT header is set properly.
-        stub(httpClientMock.execute(any())).toAnswer((Answer) invocation -> {
-            final Object[] args = invocation.getArguments();
-            final HttpPost post = (HttpPost) args[0];
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> {
             final Header header = post.getFirstHeader(Headers.DATA_FORMAT);
             if (requestsReceived.incrementAndGet() == 1) {
                 // This is handshake, it is not json.
-                assert(header == null);
+                assert (header == null);
                 return httpResponse("clientId", "3");
             }
             assertNotNull(header);
@@ -218,11 +202,6 @@ public class ApacheGatewayConnectionTest {
                 .build();
         final List<Document> documents = new ArrayList<>();
 
-        final ApacheGatewayConnection.HttpClientFactory mockFactory =
-                mock(ApacheGatewayConnection.HttpClientFactory.class);
-        final HttpClient httpClientMock = mock(HttpClient.class);
-        when(mockFactory.createClient()).thenReturn(httpClientMock);
-
         final CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
 
         final String vespaDocContent ="Hello, I am the document data.";
@@ -232,9 +211,7 @@ public class ApacheGatewayConnectionTest {
 
         // When sending data on http client, check if it is compressed. If compressed, unzip, check result,
         // and count down latch.
-        stub(httpClientMock.execute(any())).toAnswer((Answer) invocation -> {
-            final Object[] args = invocation.getArguments();
-            final HttpPost post = (HttpPost) args[0];
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post -> {
             final Header header = post.getFirstHeader("Content-Encoding");
             if (header != null && header.getValue().equals("gzip")) {
                 final String rawContent = TestUtils.zipStreamToString(post.getEntity().getContent());
@@ -249,6 +226,7 @@ public class ApacheGatewayConnectionTest {
             }
             return httpResponse("clientId", "3");
         });
+
         StatusLine statusLineMock = mock(StatusLine.class);
         when(statusLineMock.getStatusCode()).thenReturn(200);
 
@@ -267,6 +245,68 @@ public class ApacheGatewayConnectionTest {
 
         apacheGatewayConnection.writeOperations(documents);
         assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void dynamic_headers_are_added_to_the_response() throws IOException, ServerResponseException, InterruptedException {
+        ConnectionParams.HeaderProvider headerProvider = mock(ConnectionParams.HeaderProvider.class);
+        when(headerProvider.getHeaderValue())
+                .thenReturn("v1")
+                .thenReturn("v2")
+                .thenReturn("v3");
+
+        ConnectionParams connectionParams = new ConnectionParams.Builder()
+                .addDynamicHeader("foo", headerProvider)
+                .build();
+
+        CountDownLatch verifyContentSentLatch = new CountDownLatch(1);
+
+        AtomicInteger counter = new AtomicInteger(1);
+        ApacheGatewayConnection.HttpClientFactory mockFactory = mockHttpClientFactory(post  -> {
+            Header[] fooHeader = post.getHeaders("foo");
+            assertEquals(1, fooHeader.length);
+            assertEquals("foo", fooHeader[0].getName());
+            assertEquals("v" + counter.getAndIncrement(), fooHeader[0].getValue());
+            verifyContentSentLatch.countDown();
+            return httpResponse("clientId", "3");
+
+        });
+
+        ApacheGatewayConnection apacheGatewayConnection =
+            new ApacheGatewayConnection(
+                    Endpoint.create("hostname", 666, false),
+                    new FeedParams.Builder().build(),
+                    "",
+                    connectionParams,
+                    mockFactory,
+                    "clientId");
+        apacheGatewayConnection.connect();
+        apacheGatewayConnection.handshake();
+
+        List<Document> documents = new ArrayList<>();
+        documents.add(createDoc("42", "content", true));
+        apacheGatewayConnection.writeOperations(documents);
+        apacheGatewayConnection.writeOperations(documents);
+        assertTrue(verifyContentSentLatch.await(10, TimeUnit.SECONDS));
+
+        verify(headerProvider, times(3)).getHeaderValue(); // 1x connect(), 2x writeOperations()
+    }
+
+    private static ApacheGatewayConnection.HttpClientFactory mockHttpClientFactory(HttpExecuteMock httpExecuteMock) throws IOException {
+        ApacheGatewayConnection.HttpClientFactory mockFactory =
+                mock(ApacheGatewayConnection.HttpClientFactory.class);
+        HttpClient httpClientMock = mock(HttpClient.class);
+        when(mockFactory.createClient()).thenReturn(httpClientMock);
+        stub(httpClientMock.execute(any())).toAnswer((Answer) invocation -> {
+            Object[] args = invocation.getArguments();
+            HttpPost post = (HttpPost) args[0];
+            return httpExecuteMock.execute(post);
+        });
+        return mockFactory;
+    }
+
+    @FunctionalInterface private interface HttpExecuteMock {
+        HttpResponse execute(HttpPost httpPost) throws IOException;
     }
 
     private Document createDoc(final String docId, final String content, boolean useJson) throws IOException {

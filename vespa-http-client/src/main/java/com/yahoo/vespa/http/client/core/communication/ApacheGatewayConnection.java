@@ -16,15 +16,14 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,12 +35,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
-
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -228,6 +227,13 @@ class ApacheGatewayConnection implements GatewayConnection {
         for (Map.Entry<String, String> extraHeader : connectionParams.getHeaders()) {
             httpPost.addHeader(extraHeader.getKey(), extraHeader.getValue());
         }
+        connectionParams.getDynamicHeaders().forEach((headerName, provider) -> {
+            String headerValue = Objects.requireNonNull(
+                    provider.getHeaderValue(),
+                    provider.getClass().getName() + ".getHeader() returned null as header value!");
+            httpPost.addHeader(headerName, headerValue);
+        });
+
         if (useCompression) {
             httpPost.setHeader("Content-Encoding", "gzip");
         }
