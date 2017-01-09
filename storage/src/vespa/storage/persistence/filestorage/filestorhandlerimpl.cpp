@@ -261,7 +261,7 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg,
             msg->getType().toString().c_str(),
             msg->getPriority());
 
-        lockGuard.signal();
+        lockGuard.broadcast();
     } else {
         return false;
     }
