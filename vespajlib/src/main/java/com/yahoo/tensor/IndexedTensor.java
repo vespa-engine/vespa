@@ -217,13 +217,6 @@ public class IndexedTensor implements Tensor {
 
         public abstract Builder cell(double value, int ... indexes);
 
-        protected double[] arrayFor(DimensionSizes sizes) {
-            int productSize = 1;
-            for (int i = 0; i < sizes.dimensions(); i++ )
-                productSize *= sizes.size(i);
-            return new double[productSize];
-        }
-
         @Override
         public TensorType type() { return type; }
 
@@ -233,7 +226,7 @@ public class IndexedTensor implements Tensor {
     }
     
     /** A bound builder can create the double array directly */
-    private static class BoundBuilder extends Builder {
+    public static class BoundBuilder extends Builder {
 
         private DimensionSizes sizes;
         private double[] values;
@@ -242,7 +235,7 @@ public class IndexedTensor implements Tensor {
             this(type, dimensionSizesOf(type));
         }
 
-        public static DimensionSizes dimensionSizesOf(TensorType type) {
+        static DimensionSizes dimensionSizesOf(TensorType type) {
             DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size());
             for (int i = 0; i < type.dimensions().size(); i++)
                 b.set(i, type.dimensions().get(i).size().get());
@@ -254,7 +247,7 @@ public class IndexedTensor implements Tensor {
             if ( sizes.dimensions() != type.dimensions().size())
                 throw new IllegalArgumentException("Must have a dimension size entry for each dimension in " + type);
             this.sizes = sizes;
-            values = arrayFor(sizes);
+            values = new double[sizes.totalSize()];
             Arrays.fill(values, Double.NaN);
         }
         
@@ -290,15 +283,21 @@ public class IndexedTensor implements Tensor {
 
         @Override
         public Builder cell(Cell cell, double value) {
-            // TODO: Use internal index if applicable
-            // values[internalIndex] = value;
-            // return this;
             int directIndex = cell.getDirectIndex();
             if (directIndex >= 0) // optimization
                 values[directIndex] = value;
             else
                 super.cell(cell, value);
             return this;
+        }
+
+        /** 
+         * Set a cell value by the index in the internal layout of this cell. 
+         * This requires knowledge of the internal layout of cells in this implementation, and should therefore
+         * probably not be used (but when it can be used it is fast).
+         */
+        public void cellByDirectIndex(int index, double value) {
+            values[index] = value;
         }
 
     }
@@ -324,7 +323,7 @@ public class IndexedTensor implements Tensor {
                 return new IndexedTensor(type, new DimensionSizes.Builder(type.dimensions().size()).build(), new double[] {(Double) firstDimension.get(0) });
 
             DimensionSizes dimensionSizes = findDimensionSizes(firstDimension);
-            double[] values = arrayFor(dimensionSizes);
+            double[] values = new double[dimensionSizes.totalSize()];
             fillValues(0, 0, firstDimension, dimensionSizes, values);
             return new IndexedTensor(type, dimensionSizes, values);
         }
