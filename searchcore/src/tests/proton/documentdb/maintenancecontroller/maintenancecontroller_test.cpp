@@ -544,7 +544,8 @@ public:
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval()));
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getResourceLimitFactor()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -561,7 +562,8 @@ public:
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval()));
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getResourceLimitFactor()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -578,7 +580,8 @@ public:
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval()));
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getResourceLimitFactor()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -596,7 +599,8 @@ public:
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval()));
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getResourceLimitFactor()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }

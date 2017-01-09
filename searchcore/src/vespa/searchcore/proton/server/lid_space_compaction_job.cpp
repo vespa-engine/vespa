@@ -87,7 +87,8 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
                                              ILidSpaceCompactionHandler &handler,
                                              IOperationStorer &opStorer,
                                              IFrozenBucketHandler &frozenHandler,
-                                             IDiskMemUsageNotifier &diskMemUsageNotifier)
+                                             IDiskMemUsageNotifier &diskMemUsageNotifier,
+                                             double resourceLimitFactor)
     : IMaintenanceJob("lid_space_compaction." + handler.getName(),
             config.getInterval(), config.getInterval()),
       _cfg(config),
@@ -100,7 +101,8 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _resourcesOK(true),
       _runnable(true),
       _runner(nullptr),
-      _diskMemUsageNotifier(diskMemUsageNotifier)
+      _diskMemUsageNotifier(diskMemUsageNotifier),
+      _resourceLimitFactor(resourceLimitFactor)
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
 }
@@ -139,7 +141,7 @@ void
 LidSpaceCompactionJob::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
-    bool resourcesOK = !state.aboveDiskLimit() && !state.aboveMemoryLimit();
+    bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
     _resourcesOK = resourcesOK;
     bool oldRunnable = _runnable;
     refreshRunnable();

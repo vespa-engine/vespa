@@ -539,7 +539,7 @@ struct ControllerFixtureBase
     MyFrozenBucketHandler       _fbh;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
     BucketMoveJob               _bmj;
-    ControllerFixtureBase()
+    ControllerFixtureBase(double resourceLimitFactor)
         : _builder(),
           _calc(new test::BucketStateCalculator),
           _bucketHandler(),
@@ -552,7 +552,7 @@ struct ControllerFixtureBase
           _diskMemUsageNotifier(),
           _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
                _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
-               _diskMemUsageNotifier,
+               _diskMemUsageNotifier, resourceLimitFactor,
                "test")
     {
     }
@@ -606,9 +606,12 @@ struct ControllerFixtureBase
 };
 
 
+constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
+
 struct ControllerFixture : public ControllerFixtureBase
 {
-    ControllerFixture() : ControllerFixtureBase()
+    ControllerFixture(double resourceLimitFactor = RESOURCE_LIMIT_FACTOR)
+        : ControllerFixtureBase(resourceLimitFactor)
     {
         _builder.createDocs(1, 1, 4); // 3 docs
         _builder.createDocs(2, 4, 6); // 2 docs
@@ -623,7 +626,7 @@ struct ControllerFixture : public ControllerFixtureBase
 
 struct OnlyReadyControllerFixture : public ControllerFixtureBase
 {
-    OnlyReadyControllerFixture() : ControllerFixtureBase()
+    OnlyReadyControllerFixture() : ControllerFixtureBase(RESOURCE_LIMIT_FACTOR)
     {
         _builder.createDocs(1, 1, 2); // 1 docs
         _builder.createDocs(2, 2, 4); // 2 docs
@@ -1180,6 +1183,7 @@ TEST_F("require that thawed bucket is not moved if active as well", ControllerFi
 
 struct ResourceLimitControllerFixture : public ControllerFixture
 {
+    using ControllerFixture::ControllerFixture;
     void testJobStopping(DiskMemUsageState blockingUsageState) {
         // Bucket 1 shold be moved
         addReady(_ready.bucket(2));
@@ -1198,6 +1202,20 @@ struct ResourceLimitControllerFixture : public ControllerFixture
         EXPECT_EQUAL(2u, docsMoved().size());
         EXPECT_EQUAL(0u, bucketsModified().size());
     }
+
+    void testJobNotStopping(DiskMemUsageState blockingUsageState) {
+        // Bucket 1 shold be moved
+        addReady(_ready.bucket(2));
+        // Note: This depends on f._bmj.run() moving max 1 documents
+        EXPECT_TRUE(!_bmj.run());
+        EXPECT_EQUAL(1u, docsMoved().size());
+        EXPECT_EQUAL(0u, bucketsModified().size());
+        // Notify that we've over limit, but not over adjusted limit
+        _diskMemUsageNotifier.notify(blockingUsageState);
+        EXPECT_TRUE(!_bmj.run());
+        EXPECT_EQUAL(2u, docsMoved().size());
+        EXPECT_EQUAL(0u, bucketsModified().size());
+    }
 };
 
 
@@ -1210,6 +1228,18 @@ TEST_F("require that bucket move stops when disk limit is reached", ResourceLimi
 TEST_F("require that bucket move stops when memory limit is reached", ResourceLimitControllerFixture)
 {
     f.testJobStopping(DiskMemUsageState(ResourceUsageState(), ResourceUsageState(0.7, 0.8)));
+}
+
+
+TEST_F("require that bucket move uses resource limit factor for disk resource limit", ResourceLimitControllerFixture(1.2))
+{
+    f.testJobNotStopping(DiskMemUsageState(ResourceUsageState(0.7, 0.8), ResourceUsageState()));
+}
+
+
+TEST_F("require that bucket move uses resource limit factor for memory resource limit", ResourceLimitControllerFixture(1.2))
+{
+    f.testJobNotStopping(DiskMemUsageState(ResourceUsageState(), ResourceUsageState(0.7, 0.8)));
 }
 
 

@@ -74,6 +74,7 @@ private:
     DocumentDBLidSpaceCompactionConfig    _lidSpaceCompaction;
     AttributeUsageFilterConfig            _attributeUsageFilterConfig;
     double                                _attributeUsageSampleInterval;
+    double                                _resourceLimitFactor;
 
 public:
     DocumentDBMaintenanceConfig(void);
@@ -85,7 +86,8 @@ public:
                                 fastos::TimeStamp visibilityDelay,
                                 const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                                 const AttributeUsageFilterConfig &attributeUsageFilterConfig,
-                                double attributeUsageSampleInterval);
+                                double attributeUsageSampleInterval,
+                                double resourceLimitFactor);
 
     bool
     operator==(const DocumentDBMaintenanceConfig &rhs) const;
@@ -127,6 +129,7 @@ public:
     double getAttributeUsageSampleInterval() const {
         return _attributeUsageSampleInterval;
     }
+    double getResourceLimitFactor() const { return _resourceLimitFactor; }
 };
 
 } // namespace proton

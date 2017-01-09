@@ -34,6 +34,7 @@ private:
     bool                        _runnable;  // can try to perform work
     IMaintenanceJobRunner      *_runner;
     IDiskMemUsageNotifier      &_diskMemUsageNotifier;
+    double                      _resourceLimitFactor;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
     bool shouldRestartScanDocuments(const search::LidUsageStats &stats) const;
@@ -47,7 +48,8 @@ public:
                           ILidSpaceCompactionHandler &handler,
                           IOperationStorer &opStorer,
                           IFrozenBucketHandler &frozenHandler,
-                          IDiskMemUsageNotifier &diskMemUsageNotifier);
+                          IDiskMemUsageNotifier &diskMemUsageNotifier,
+                          double resourceLimitFactor);
     ~LidSpaceCompactionJob();
 
     // Implements IDiskMemUsageListener

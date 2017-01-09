@@ -123,7 +123,8 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     AttributeUsageFilterConfig(
                             proton.writefilter.attribute.enumstorelimit,
                             proton.writefilter.attribute.multivaluelimit),
-                    proton.writefilter.sampleinterval));
+                    proton.writefilter.sampleinterval,
+                    proton.maintenancejobs.resourcelimitfactor));
 }
 
 

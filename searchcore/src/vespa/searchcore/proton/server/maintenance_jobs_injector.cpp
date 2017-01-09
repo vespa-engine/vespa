@@ -44,7 +44,8 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
         IMaintenanceJob::UP job = IMaintenanceJob::UP
                 (new LidSpaceCompactionJob(config.getLidSpaceCompactionConfig(),
                                            *lidHandler, opStorer, fbHandler,
-                                           diskMemUsageNotifier));
+                                           diskMemUsageNotifier,
+                                           config.getResourceLimitFactor()));
         controller.registerJob(std::move(trackJob(tracker,
                 std::move(job))));
     }
@@ -61,7 +62,8 @@ injectBucketMoveJob(MaintenanceController &controller,
                     IBucketStateChangedNotifier &bucketStateChangedNotifier,
                     const std::shared_ptr<IBucketStateCalculator> &calc,
                     DocumentDBJobTrackers &jobTrackers,
-                    IDiskMemUsageNotifier &diskMemUsageNotifier)
+                    IDiskMemUsageNotifier &diskMemUsageNotifier,
+                    double resourceLimitFactor)
 {
     IMaintenanceJob::UP bmj;
     bmj.reset(new BucketMoveJob(calc,
@@ -73,6 +75,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                                 clusterStateChangedNotifier,
                                 bucketStateChangedNotifier,
                                 diskMemUsageNotifier,
+                                resourceLimitFactor,
                                 docTypeName));
     controller.registerJob(std::move(trackJob(jobTrackers.getBucketMove(),
                                               std::move(bmj))));
@@ -122,7 +125,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                  fbHandler, jobTrackers.getLidSpaceCompact(),
                                  diskMemUsageNotifier);
     injectBucketMoveJob(controller, fbHandler, docTypeName, moveHandler, bucketModifiedHandler,
-                        clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers, diskMemUsageNotifier);
+                        clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers, diskMemUsageNotifier, config.getResourceLimitFactor());
     controller.registerJob(std::make_unique<SampleAttributeUsageJob>
                            (readyAttributeManager,
                             notReadyAttributeManager,
