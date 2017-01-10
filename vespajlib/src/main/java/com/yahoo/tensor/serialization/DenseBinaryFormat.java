@@ -41,13 +41,8 @@ public class DenseBinaryFormat implements BinaryFormat {
 
     private void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
         Iterator<Double> i = tensor.valueIterator();
-        if ( ! i.hasNext()) { // no values: Encode as NaN, as 0 dimensions may also mean 1 value
-            buffer.putDouble(Double.NaN);
-        }
-        else {
-            while (i.hasNext())
-                buffer.putDouble(i.next());
-        }
+        while (i.hasNext())
+            buffer.putDouble(i.next());
     }
 
     @Override

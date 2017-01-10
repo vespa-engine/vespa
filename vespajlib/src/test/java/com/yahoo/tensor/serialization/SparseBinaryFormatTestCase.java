@@ -19,6 +19,7 @@ public class SparseBinaryFormatTestCase {
 
     @Test
     public void testSerialization() {
+        assertSerialization("tensor(x{}):{}");
         assertSerialization("tensor(x{}):{{x:0}:2.0}");
         assertSerialization("tensor(dimX{},dimY{}):{{dimX:labelA,dimY:labelB}:2.0,{dimY:labelC,dimX:labelD}:3.0}");
         assertSerialization("tensor(x{},y{}):{{x:0,y:1}:2.0}");

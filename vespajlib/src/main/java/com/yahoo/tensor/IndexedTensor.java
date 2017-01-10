@@ -103,7 +103,6 @@ public class IndexedTensor implements Tensor {
      * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
      */
     public double get(int ... indexes) {
-        if (values.length == 0) return Double.NaN;
         return values[toValueIndex(indexes, dimensionSizes)];
     }
 
@@ -157,7 +156,7 @@ public class IndexedTensor implements Tensor {
     @Override
     public Map<TensorAddress, Double> cells() {
         if (dimensionSizes.dimensions() == 0)
-            return values.length == 0 ? Collections.emptyMap() : Collections.singletonMap(TensorAddress.empty, values[0]);
+            return Collections.singletonMap(TensorAddress.empty, values[0]);
         
         ImmutableMap.Builder<TensorAddress, Double> builder = new ImmutableMap.Builder<>();
         Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, values.length);
@@ -221,7 +220,7 @@ public class IndexedTensor implements Tensor {
         public TensorType type() { return type; }
 
         @Override
-        public abstract IndexedTensor build();
+        public abstract Tensor build();
 
     }
     
@@ -269,11 +268,14 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public IndexedTensor build() {
+        public Tensor build() {
             // Note that we do not check for no NaN's here for performance reasons. 
             // NaN's don't get lost so leaving them in place should be quite benign 
-            if (values.length == 1 && Double.isNaN(values[0]))
-                values = new double[0];
+
+            // An empty tensor with no dimensions is mapped
+            if (values.length == 1 && Double.isNaN(values[0]) && type.dimensions().isEmpty())
+                return MappedTensor.Builder.of(type).build();
+
             IndexedTensor tensor = new IndexedTensor(type, sizes, values);
             // prevent further modification
             sizes = null;
@@ -316,24 +318,28 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public IndexedTensor build() {
-            if (firstDimension == null) // empty
-                return new IndexedTensor(type, new DimensionSizes.Builder(type.dimensions().size()).build(), new double[] {});
+        public Tensor build() {
+            if (firstDimension == null && type.dimensions().isEmpty()) // empty
+                return MappedTensor.Builder.of(type).build();
             if (type.dimensions().isEmpty()) // single number
                 return new IndexedTensor(type, new DimensionSizes.Builder(type.dimensions().size()).build(), new double[] {(Double) firstDimension.get(0) });
 
             DimensionSizes dimensionSizes = findDimensionSizes(firstDimension);
             double[] values = new double[dimensionSizes.totalSize()];
-            fillValues(0, 0, firstDimension, dimensionSizes, values);
+            if (firstDimension != null)
+                fillValues(0, 0, firstDimension, dimensionSizes, values);
             return new IndexedTensor(type, dimensionSizes, values);
         }
         
         private DimensionSizes findDimensionSizes(List<Object> firstDimension) {
             List<Integer> dimensionSizeList = new ArrayList<>(type.dimensions().size());
-            findDimensionSizes(0, dimensionSizeList, firstDimension);
+            if (firstDimension != null)
+                findDimensionSizes(0, dimensionSizeList, firstDimension);
             DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size()); // may be longer than the list but that's correct
-            for (int i = 0; i < b.dimensions(); i++)
-                b.set(i, dimensionSizeList.get(i));
+            for (int i = 0; i < b.dimensions(); i++) {
+                if (i < dimensionSizeList.size())
+                    b.set(i, dimensionSizeList.get(i));
+            }
             return b.build();
         }
 

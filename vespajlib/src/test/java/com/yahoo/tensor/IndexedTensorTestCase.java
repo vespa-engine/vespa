@@ -21,19 +21,6 @@ public class IndexedTensorTestCase {
     private final int zSize = 5;
 
     @Test
-    public void testEmpty() {
-        Tensor empty = Tensor.Builder.of(TensorType.empty).build();
-        assertTrue(empty instanceof IndexedTensor);
-        assertTrue(empty.isEmpty());
-        assertEquals("{}", empty.toString());
-        Tensor emptyFromString = Tensor.from(TensorType.empty, "{}");
-        assertEquals("{}", Tensor.from(TensorType.empty, "{}").toString());
-        assertTrue(emptyFromString.isEmpty());
-        assertTrue(emptyFromString instanceof IndexedTensor);
-        assertEquals(empty, emptyFromString);
-    }
-    
-    @Test
     public void testSingleValue() {
         Tensor singleValue = Tensor.Builder.of(TensorType.empty).cell(TensorAddress.empty, 3.5).build();
         assertTrue(singleValue instanceof IndexedTensor);
@@ -91,7 +78,7 @@ public class IndexedTensorTestCase {
                         for (int z = 0; z < zSize; z++)
                             builder.cell(value(v, w, x, y, z), v, w, x, y, z);
 
-        IndexedTensor tensor = builder.build();
+        IndexedTensor tensor = (IndexedTensor)builder.build();
 
         // Lookup by index arguments
         for (int v = 0; v < vSize; v++)

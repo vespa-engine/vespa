@@ -53,9 +53,6 @@ public class TensorType {
         return TensorTypeParser.fromSpec(specString);
     }
 
-    /** Returns true if all dimensions of this are indexed */
-    public boolean isIndexed() { return dimensions().stream().allMatch(d -> d.isIndexed()); }
-    
     /** Returns an immutable list of the dimensions of this */
     public List<Dimension> dimensions() { return dimensions; }
     

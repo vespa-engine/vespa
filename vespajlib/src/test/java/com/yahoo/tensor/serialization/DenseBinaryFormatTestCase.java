@@ -20,7 +20,6 @@ public class DenseBinaryFormatTestCase {
 
     @Test
     public void testSerialization() {
-        assertSerialization("{}");
         assertSerialization("{-5.37}");
         assertSerialization("tensor(x[]):{{x:0}:2.0}");
         assertSerialization("tensor(x[],y[]):{{x:0,y:0}:2.0}");
