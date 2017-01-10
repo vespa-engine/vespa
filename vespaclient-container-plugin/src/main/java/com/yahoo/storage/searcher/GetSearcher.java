@@ -85,6 +85,7 @@ public class GetSearcher extends Searcher {
         private Map<String, Integer> ordering;
         private List<DocumentHit> documentHits = new ArrayList<>();
         private List<DefaultErrorHit> errorHits = new ArrayList<>();
+        private List<Reply> replies = new ArrayList<>();
 
         public GetResponse(List<String> documentIds) {
             ordering = new HashMap<>(documentIds.size());
@@ -110,6 +111,15 @@ public class GetSearcher extends Searcher {
                 String str = reply.getTrace().toString();
                 log.log(LogLevel.DEBUG, str);
             }
+            replies.add(reply);
+            return numPending > 0;
+        }
+        private void processReplies() {
+            for (Reply reply : replies) {
+                processReply(reply);
+            }
+        }
+        private void processReply(Reply reply) {
             if (!reply.hasErrors()) {
                 try {
                     addDocumentHit(reply);
@@ -126,8 +136,6 @@ public class GetSearcher extends Searcher {
                     log.log(LogLevel.DEBUG, "Received error reply with message " + reply.getError(0).getMessage());
                 }
             }
-
-            return (numPending > 0);
         }
 
         private void addDocumentHit(Reply reply) {
@@ -385,6 +393,7 @@ public class GetSearcher extends Searcher {
             result.hits().addError(ErrorMessage.createTimeout(
                     "Timed out after waiting "+timeoutMillis+" ms for responses"));
         }
+        response.processReplies();
         if (fieldName != null) {
             handleFieldFiltering(response, result, fieldName, contentType, headersOnly);
         } else {
