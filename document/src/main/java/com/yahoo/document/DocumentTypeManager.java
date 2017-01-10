@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * datatypes, for instance displaying the data type in human-readable form
  * or as XML.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class DocumentTypeManager {
 
