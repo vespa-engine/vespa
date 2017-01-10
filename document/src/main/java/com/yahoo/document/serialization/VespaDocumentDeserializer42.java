@@ -278,7 +278,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
         int encodedTensorLength = buf.getInt1_4Bytes();
         if (encodedTensorLength > 0) {
             byte[] encodedTensor = getBytes(null, encodedTensorLength);
-            value.assign(TypedBinaryFormat.decode(null, encodedTensor)); // TODO: Pass type
+            value.assign(TypedBinaryFormat.decode(encodedTensor));
         } else {
             value.clear();
         }

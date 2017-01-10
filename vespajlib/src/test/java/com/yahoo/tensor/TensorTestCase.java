@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests tensor functionality
+ * Tests Tensor functionality
  * 
  * @author bratseth
  */
@@ -29,8 +29,7 @@ public class TensorTestCase {
 
     @Test
     public void testStringForm() {
-        assertEquals("{5.7}", Tensor.from("{5.7}").toString());
-        assertTrue(Tensor.from("{5.7}") instanceof IndexedTensor);
+        assertEquals("{}", Tensor.from("{}").toString());
         assertEquals("{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
         assertEquals("{{d1:l1,d2:l1}:-5.3,{d1:l1,d2:l2}:0.0}", Tensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
     }

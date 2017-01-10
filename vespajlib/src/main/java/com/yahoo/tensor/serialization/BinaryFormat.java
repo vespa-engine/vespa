@@ -4,7 +4,6 @@ package com.yahoo.tensor.serialization;
 import com.google.common.annotations.Beta;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 
 /**
  * Representation of a specific binary format with functions for serializing a Tensor object into
@@ -22,10 +21,7 @@ interface BinaryFormat {
 
     /**
      * Deserialize the given binary data into a Tensor object.
-     * 
-     * @param type the expected abstract type of the tensor to serialize
-     * @param buffer the buffer containing the tensor binary data
      */
-    Tensor decode(TensorType type, GrowableByteBuffer buffer);
+    Tensor decode(GrowableByteBuffer buffer);
 
 }
