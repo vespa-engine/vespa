@@ -177,7 +177,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0,y:0}:15, {x:1,y:0}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         // -- join composites
         tester.assertEvaluates("{ }", "tensor0 * tensor0", "{}");
-        tester.assertEvaluates("{{x:0,y:0,z:0}:0.0}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
+        tester.assertEvaluates("tensor(x{},y{},z{}):{}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
                                "{{x:0}:1}", "{}", "{{y:0,z:0}:1}");
         tester.assertEvaluates("tensor(x{}):{}",
                                "tensor0 * tensor1", "{ {x:0}:3 }", "tensor(x{}):{ {x:1}:5 }");
@@ -262,8 +262,7 @@ public class EvaluationTestCase {
                                "{ {x:0}:1, {x:1}:2 }", "{ {y:0}:3, {y:1}:4 }", "{ {z:0}:5 }",
                                "{ {x:0,y:0,z:0}:0.5, {x:1,y:0,z:0}:1.5, {x:0,y:0,z:1}:4.5, {x:0,y:1,z:0}:0, {x:1,y:0,z:1}:0, {x:0,y:1,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:0 }");
         tester.assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{ {x:0}:0, {x:1}:0 }", "{ {x:0}:1, {x:1}:1 }");
-        tester.assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                  "{ {x:0}:1, {x:1}:1 }");
-        tester.assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "tensor(x{}):{}",                  "{ {x:0}:1, {x:1}:1 }");
+        tester.assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                   "{ {x:0}:1, {x:1}:1 }");
 
         // tensor result dimensions are given from argument dimensions, not the resulting values
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");

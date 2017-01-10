@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
 
-import com.yahoo.text.Utf8;
-
 import java.nio.*;
 
 /**
@@ -22,22 +20,21 @@ import java.nio.*;
  * No methods except getByteBuffer() expose the encapsulated
  * ByteBuffer, which is intentional.
  *
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
-
     public static final int DEFAULT_BASE_SIZE = 64*1024;
     public static final float DEFAULT_GROW_FACTOR = 2.0f;
     private ByteBuffer buffer;
     private float growFactor;
     private int mark = -1;
 
-    // NOTE: It might have been better to subclass HeapByteBuffer,
-    // but that class is package-private. Subclassing ByteBuffer would involve
-    // implementing a lot of abstract methods, which would mean reinventing
-    // some (too many) wheels.
+    //NOTE: It might have been better to subclass HeapByteBuffer,
+    //but that class is package-private. Subclassing ByteBuffer would involve
+    //implementing a lot of abstract methods, which would mean reinventing
+    //some (too many) wheels.
 
-    // CONSTRUCTORS:
+    //CONSTRUCTORS:
 
     public GrowableByteBuffer() {
         this(DEFAULT_BASE_SIZE, DEFAULT_GROW_FACTOR);
@@ -64,7 +61,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     }
 
 
-    // ACCESSORS:
+    //ACCESSORS:
 
     public float getGrowFactor() {
         return growFactor;
@@ -365,21 +362,6 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
             //length 1 byte
             return get();
         }
-    }
-
-    /** Writes this string to the buffer as a 1_4 encoded length in bytes followed by the utf8 bytes */
-    public void putUtf8String(String value) {
-        byte[] stringBytes = Utf8.toBytes(value);
-        putInt1_4Bytes(stringBytes.length);
-        put(stringBytes);
-    }
-
-    /** Reads a string from the buffer as a 1_4 encoded length in bytes followed by the utf8 bytes */
-    public String getUtf8String() {
-        int stringLength = getInt1_4Bytes();
-        byte[] stringBytes = new byte[stringLength];
-        get(stringBytes);
-        return Utf8.toString(stringBytes);
     }
 
     /**

@@ -29,14 +29,6 @@ public final class DimensionSizes {
     /** Returns the number of dimensions this provides the size of */
     public int dimensions() { return sizes.length; }
 
-    /** Returns the product of the sizes of this */
-    public int totalSize() {
-        int productSize = 1;
-        for (int dimensionSize : sizes )
-            productSize *= dimensionSize;
-        return productSize;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;

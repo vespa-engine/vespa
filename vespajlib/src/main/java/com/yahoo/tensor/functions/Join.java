@@ -113,7 +113,7 @@ public class Join extends PrimitiveTensorFunction {
     
     /** Join a tensor into a superspace */
     private Tensor subspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
-        if (subspace instanceof IndexedTensor && superspace instanceof IndexedTensor)
+        if (subspace.type().isIndexed() && superspace.type().isIndexed())
             return indexedSubspaceJoin((IndexedTensor) subspace, (IndexedTensor) superspace, joinedType, reversedArgumentOrder);
         else
             return generalSubspaceJoin(subspace, superspace, joinedType, reversedArgumentOrder);
