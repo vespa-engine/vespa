@@ -189,7 +189,7 @@ if [ "$VESPA_USE_VESPAMALLOC_DST" = "all" ]; then
     suf=vespa/malloc/libvespamallocdst16.so
 fi
 
-if [[ ($no_valgrind || $use_callgrind) && -z $VESPA_RUN_STANDALONE ]]; then
+if $no_valgrind || $use_callgrind; then
     for tryfile in $p64/$suf $p32/$suf $pre/$suf ; do
         if [ -f $tryfile ]; then
                 LD_PRELOAD=$tryfile
@@ -207,9 +207,7 @@ fi
 
 if $no_valgrind || ! which valgrind >/dev/null ; then
     # log_debug_message $0-bin $@
-    if [ -z $VESPA_RUN_STANDALONE ]; then
-        ulimit -c unlimited
-    fi
+    ulimit -c unlimited
     if numactl --interleave all true &> /dev/null; then
         # We are allowed to use numactl
         if [ "$VESPA_AFFINITY_CPU_SOCKET" ]; then
