@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component;
 
+import com.yahoo.collections.MethodCache;
+
 import java.lang.reflect.Method;
 
 /**
@@ -10,6 +12,8 @@ import java.lang.reflect.Method;
  * @author bratseth
  */
 public class AbstractComponent implements Component {
+
+    static final MethodCache deconstructMethods = new MethodCache("deconstruct");
 
     // All accesses to id MUST go through getId.
     private ComponentId id;
@@ -129,16 +133,12 @@ public class AbstractComponent implements Component {
     }
 
     protected boolean setIsDeconstructable() {
-        try {
-            Method deconstruct = getClass().getMethod("deconstruct");
-            @SuppressWarnings("rawtypes")
-            Class declaringClass = deconstruct.getDeclaringClass();
-            if (declaringClass != AbstractComponent.class) {
-                return true;
-            }
-        } catch (NoSuchMethodException e) {
+        Method deconstruct = deconstructMethods.get(this);
+        if (deconstruct == null) {
             com.yahoo.protect.Process.logAndDie("Component " + this + " does not have method deconstruct() - impossible!");
         }
-        return false;
+        @SuppressWarnings("rawtypes")
+        Class declaringClass = deconstruct.getDeclaringClass();
+        return (declaringClass != AbstractComponent.class);
     }
 }
