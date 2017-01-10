@@ -13,7 +13,7 @@ import java.lang.reflect.Method;
  */
 public class AbstractComponent implements Component {
 
-    static final MethodCache deconstructMethods = new MethodCache("deconstruct");
+    private static final MethodCache deconstructMethods = new MethodCache("deconstruct");
 
     // All accesses to id MUST go through getId.
     private ComponentId id;
