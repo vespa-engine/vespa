@@ -2,6 +2,7 @@
 package com.yahoo.tensor;
 
 import com.google.common.collect.Sets;
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.Set;
@@ -16,6 +17,20 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class MappedTensorTestCase {
+
+    @Test
+    public void testEmpty() {
+        TensorType type = new TensorType.Builder().mapped("x").build();
+        Tensor empty = Tensor.Builder.of(type).build();
+        TestCase.assertTrue(empty instanceof MappedTensor);
+        TestCase.assertTrue(empty.isEmpty());
+        assertEquals("tensor(x{}):{}", empty.toString());
+        Tensor emptyFromString = Tensor.from(type, "{}");
+        assertEquals("tensor(x{}):{}", Tensor.from("tensor(x{}):{}").toString());
+        TestCase.assertTrue(emptyFromString.isEmpty());
+        TestCase.assertTrue(emptyFromString instanceof MappedTensor);
+        assertEquals(empty, emptyFromString);
+    }
 
     @Test
     public void testOneDimensionalBuilding() {
