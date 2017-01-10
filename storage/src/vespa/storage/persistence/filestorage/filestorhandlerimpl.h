@@ -238,14 +238,6 @@ private:
     bool diskIsClosed(uint16_t disk) const;
 
     /**
-     * Return whether msg has sufficiently high priority that a thread with
-     * a configured priority threshold of maxPriority can even run in.
-     * Often, operations such as streaming searches will have dedicated threads
-     * that refuse lower priority operations such as Puts etc.
-     */
-    bool operationHasHighEnoughPriorityToBeRun(const api::StorageMessage& msg, uint8_t maxPriority) const;
-
-    /**
      * Return whether an already running high priority operation pre-empts
      * (blocks) the operation in msg from even starting in the current thread.
      */
@@ -270,7 +262,6 @@ private:
      * Swaps (invalidates) context from msg into reply.
      */
     std::unique_ptr<api::StorageReply> makeQueueTimeoutReply(api::StorageMessage& msg) const;
-    bool bucketIsLockedOnDisk(const document::BucketId&, const Disk&) const;
     bool messageMayBeAborted(const api::StorageMessage& msg) const;
     bool hasBlockingOperations(const Disk& t) const;
     void abortQueuedCommandsForBuckets(Disk& disk, const AbortBucketOperationsCommand& cmd);

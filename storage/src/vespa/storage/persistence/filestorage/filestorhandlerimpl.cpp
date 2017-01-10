@@ -516,15 +516,6 @@ FileStorHandlerImpl::diskIsClosed(uint16_t disk) const
 }
 
 bool
-FileStorHandlerImpl::operationHasHighEnoughPriorityToBeRun(
-        const api::StorageMessage& msg,
-        uint8_t maxPriority) const
-{
-    // NOTE: priority integral value 0 is considered highest pri.
-    return (msg.getPriority() <= maxPriority);
-}
-
-bool
 FileStorHandlerImpl::operationBlockedByHigherPriorityThread(
         const api::StorageMessage& msg,
         const Disk& disk) const
@@ -567,21 +558,34 @@ FileStorHandlerImpl::makeQueueTimeoutReply(api::StorageMessage& msg) const
     return msgReply;
 }
 
-bool
-FileStorHandlerImpl::bucketIsLockedOnDisk(const document::BucketId& id,
-                                          const Disk& t) const
-{
-    return (id.getRawId() != 0 && t.isLocked(id));
+namespace {
+    bool
+    bucketIsLockedOnDisk(const document::BucketId &id, const FileStorHandlerImpl::Disk &t) {
+        return (id.getRawId() != 0 && t.isLocked(id));
+    }
+
+    /**
+     * Return whether msg has sufficiently high priority that a thread with
+     * a configured priority threshold of maxPriority can even run in.
+     * Often, operations such as streaming searches will have dedicated threads
+     * that refuse lower priority operations such as Puts etc.
+     */
+    bool
+    operationHasHighEnoughPriorityToBeRun(const api::StorageMessage& msg, uint8_t maxPriority)
+    {
+        // NOTE: priority integral value 0 is considered highest pri.
+        return (msg.getPriority() <= maxPriority);
+    }
 }
 
 FileStorHandler::LockedMessage
 FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
 {
+    assert(disk < _diskInfo.size());
     if (!tryHandlePause(disk)) {
         return {}; // Still paused, return to allow tick.
     }
 
-    assert(disk < _diskInfo.size());
     Disk& t(_diskInfo[disk]);
 
     vespalib::MonitorGuard lockGuard(t.lock);
@@ -589,30 +593,22 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
     // if none can be found and then exiting if the same is the case on the
     // second attempt. This is key to allowing the run loop to register
     // ticks at regular intervals while not busy-waiting.
-    for (int attempt = 0; attempt < 2; ++attempt) {
+    for (int attempt = 0; (attempt < 2) && ! diskIsClosed(disk); ++attempt) {
         PriorityIdx& idx(boost::multi_index::get<1>(t.queue));
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
-        
-        if (diskIsClosed(disk)) {
-            return {};
+
+        while (iter != end && bucketIsLockedOnDisk(iter->_bucketId, t)) {
+            iter++;
         }
-        while (iter != end) {
-            document::BucketId id(iter->_bucketId);
-            if (bucketIsLockedOnDisk(id, t)) {
-                ++iter; // Try next in queue, if any.
-                continue;
-            }
+        if (iter != end) {
+            api::StorageMessage &m(*iter->_command);
 
-            api::StorageMessage & m(*iter->_command);
-
-            if (!operationHasHighEnoughPriorityToBeRun(m, maxPriority)
-                || operationBlockedByHigherPriorityThread(m, t)
-                || isPaused())
+            if (operationHasHighEnoughPriorityToBeRun(m, maxPriority)
+                && ! operationBlockedByHigherPriorityThread(m, t)
+                && ! isPaused())
             {
-                break;
+                return getMessage(lockGuard, t, idx, iter);
             }
-
-            return getMessage(lockGuard, t, idx, iter);
         }
         if (attempt == 0) {
             lockGuard.wait(_getNextMessageTimeout);
