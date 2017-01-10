@@ -63,8 +63,8 @@ public class RankFeaturesTestCase {
         assertEquals(entries.size() * 2, properties.asMap().size()); // tensor type info has been added
         assertEquals(entries.size() * 2, decodedProperties.size());
         for (Entry entry : entries) {
-            assertEquals(entry.tensor, (Tensor) decodedProperties.get(entry.normalizedKey));
-            assertEquals("tensor", (String) decodedProperties.get(entry.normalizedKey + ".type"));
+            assertEquals(entry.tensor, decodedProperties.get(entry.normalizedKey));
+            assertEquals("tensor", decodedProperties.get(entry.normalizedKey + ".type"));
         }
     }
 
@@ -106,7 +106,7 @@ public class RankFeaturesTestCase {
             if (key.contains(".type")) {
                 result.put(key, Utf8.toString(value));
             } else {
-                result.put(key, TypedBinaryFormat.decode(value));
+                result.put(key, TypedBinaryFormat.decode(null, value)); // TODO: Pass type
             }
         }
         return result;
