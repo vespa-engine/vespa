@@ -19,6 +19,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
@@ -38,6 +39,7 @@ import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
@@ -66,11 +68,12 @@ import static org.junit.Assert.*;
 /**
  * Basic test of JSON streams to Vespa document instances.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JsonReaderTestCase {
-    DocumentTypeManager types;
-    JsonFactory parserFactory;
+
+    private DocumentTypeManager types;
+    private JsonFactory parserFactory;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -133,7 +136,8 @@ public class JsonReaderTestCase {
         }
         {
             DocumentType x = new DocumentType("testtensor");
-            x.addField(new Field("tensorfield", DataType.TENSOR));
+            TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
+            x.addField(new Field("tensorfield", new TensorDataType(tensorType)));
             types.registerDocumentType(x);
         }
         {
@@ -1077,16 +1081,6 @@ public class JsonReaderTestCase {
                 createPutWithTensor("{ "
                         + "  \"cells\": [ "
                         + "    { \"value\": 2.0 } "
-                        + "  ]"
-                        + "}"));
-    }
-
-    @Test
-    public void testParsingOfTensorWithSingleCellWithoutValue() {
-        assertTensorField("{{x:a}:0.0}",
-                createPutWithTensor("{ "
-                        + "  \"cells\": [ "
-                        + "    { \"address\": { \"x\": \"a\" } } "
                         + "  ]"
                         + "}"));
     }

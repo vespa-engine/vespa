@@ -23,13 +23,11 @@ public class TensorFieldProcessor extends Processor {
     @Override
     public void process() {
         for (SDField field : search.allFieldsList()) {
-            if (field.getDataType() == DataType.TENSOR) {
-                warnUseOfTensorFieldAsAttribute(field);
-                validateIndexingScripsForTensorField(field);
-                validateAttributeSettingForTensorField(field);
-            } else {
-                validateDataTypeForField(field);
-            }
+            if ( ! (field.getDataType() instanceof TensorDataType)) continue;
+
+            warnUseOfTensorFieldAsAttribute(field);
+            validateIndexingScripsForTensorField(field);
+            validateAttributeSettingForTensorField(field);
         }
     }
 
@@ -55,9 +53,4 @@ public class TensorFieldProcessor extends Processor {
         }
     }
 
-    private void validateDataTypeForField(SDField field) {
-        if (field.getDataType().getPrimitiveType() == DataType.TENSOR) {
-            fail(search, field, "A field with collection type of tensor is not supported. Use simple type 'tensor' instead.");
-        }
-    }
 }

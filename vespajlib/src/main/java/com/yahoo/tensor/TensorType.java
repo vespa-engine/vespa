@@ -77,6 +77,25 @@ public class TensorType {
         return Optional.empty();
     }
 
+    /** 
+     * Returns whether a tensor of the given type can be assigned to this type,
+     * i.e of this type is a generalization of the given type.
+     */
+    public boolean isAssignableTo(TensorType other) {
+        if (other.dimensions().size() != this.dimensions().size()) return false;
+        for (int i = 0; i < other.dimensions().size(); i++) {
+            Dimension thisDimension = this.dimensions().get(i);
+            Dimension otherDimension = other.dimensions().get(i);
+            if (thisDimension.isIndexed() != other.isIndexed()) return false;
+            if ( ! thisDimension.name().equals(otherDimension.name())) return false;
+            if (thisDimension.size().isPresent()) {
+                if ( ! otherDimension.size().isPresent()) return false;
+                if (otherDimension.size().get() > thisDimension.size().get() ) return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public String toString() {
         return "tensor(" + dimensions.stream().map(Dimension::toString).collect(Collectors.joining(",")) + ")";

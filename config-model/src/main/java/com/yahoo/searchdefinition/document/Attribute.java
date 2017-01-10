@@ -25,10 +25,6 @@ public final class Attribute implements Cloneable, Serializable {
     private Type type;
     private CollectionType collectionType;
 
-    /** True if only the enum information should be read from this attribute
-     *  (i.e. the actual values are not relevant, only which documents have the
-     *   same values) Used for collapsing and unique.
-     */
     private boolean removeIfZero = false;
     private boolean createIfNonExistent = false;
     private boolean enableBitVectors = false;
@@ -224,31 +220,22 @@ public final class Attribute implements Cloneable, Serializable {
     }
 
     /** Converts to the right field type from an attribute type */
-    public static DataType convertAttrType(Type attrType) {
-        if (attrType== Type.STRING) {
-            return DataType.STRING;
-        } else if (attrType== Type.INTEGER) {
-            return DataType.INT;
-        } else if (attrType== Type.LONG) {
-            return DataType.LONG;
-        } else if (attrType== Type.FLOAT) {
-            return DataType.FLOAT;
-        } else if (attrType== Type.DOUBLE) {
-            return DataType.DOUBLE;
-        } else if (attrType == Type.BYTE) {
-            return DataType.BYTE;
-        } else if (attrType == Type.PREDICATE) {
-            return DataType.PREDICATE;
-        } else if (attrType == Type.TENSOR) {
-            return DataType.TENSOR;
-        } else {
-            throw new IllegalArgumentException("Don't know which attribute type to " +
-                    "convert " + attrType + " to");
+    private DataType toDataType(Type attributeType) {
+        switch (attributeType) {
+            case STRING : return DataType.STRING;
+            case INTEGER: return DataType.INT;
+            case LONG: return DataType.LONG;
+            case FLOAT: return DataType.FLOAT;
+            case DOUBLE: return DataType.DOUBLE;
+            case BYTE: return DataType.BYTE;
+            case PREDICATE: return DataType.PREDICATE;
+            case TENSOR: DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
+            default: throw new IllegalArgumentException("Unknown attribute type " + attributeType);
         }
     }
 
     public DataType getDataType() {
-        DataType dataType = Attribute.convertAttrType(type);
+        DataType dataType = toDataType(type);
         if (collectionType.equals(Attribute.CollectionType.ARRAY)) {
             return DataType.getArray(dataType);
         } else if (collectionType.equals(Attribute.CollectionType.WEIGHTEDSET)) {

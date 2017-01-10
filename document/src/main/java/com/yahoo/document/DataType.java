@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.UriFieldValue;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.ObjectVisitor;
@@ -50,14 +51,13 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     public final static PrimitiveDataType URI = new PrimitiveDataType("uri", 10, UriFieldValue.class, new UriFieldValue.Factory());
     public final static NumericDataType BYTE = new NumericDataType("byte", 16, ByteFieldValue.class, ByteFieldValue.getFactory());
     public final static PrimitiveDataType PREDICATE = new PrimitiveDataType("predicate", 20, PredicateFieldValue.class, PredicateFieldValue.getFactory());
-    public final static PrimitiveDataType TENSOR = new PrimitiveDataType("tensor", 21, TensorFieldValue.class, TensorFieldValue.getFactory());
-    // ADDITIONAL parametrized types added at runtime: map, struct, array, weighted set, annotation reference
+    // ADDITIONAL parametrized types added at runtime: map, struct, array, weighted set, annotation reference, tensor
 
     // Tags are converted to weightedset<string> when reading the search definition TODO: Remove it
     public final static WeightedSetDataType TAG = new WeightedSetDataType(DataType.STRING, true, true);
 
     public static int lastPredefinedDataTypeId() {
-        return 21;
+        return 20;
     }
 
     /** Set to true when this type is registered in a type manager. From that time we should refuse changes. */
@@ -196,6 +196,11 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         return new WeightedSetDataType(type, createIfNonExistent, removeIfZero);
     }
 
+    /** Returns the given tensor type as a DataType */
+    public static TensorDataType getTensor(TensorType type) {
+        return new TensorDataType(type);
+    }
+    
     public String getName() {
         return name;
     }

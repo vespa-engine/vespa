@@ -4,6 +4,7 @@ package com.yahoo.tensor.serialization;
 import com.google.common.annotations.Beta;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 /**
  * Class used by clients for serializing a Tensor object into binary format or
