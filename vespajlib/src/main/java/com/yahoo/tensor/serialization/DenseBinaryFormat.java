@@ -34,7 +34,7 @@ public class DenseBinaryFormat implements BinaryFormat {
     private void encodeDimensions(GrowableByteBuffer buffer, IndexedTensor tensor) {
         buffer.putInt1_4Bytes(tensor.type().dimensions().size());
         for (int i = 0; i < tensor.type().dimensions().size(); i++) {
-            encodeString(buffer, tensor.type().dimensions().get(i).name());
+            buffer.putUtf8String(tensor.type().dimensions().get(i).name());
             buffer.putInt1_4Bytes(tensor.dimensionSizes().size(i));
         }
     }
@@ -48,12 +48,6 @@ public class DenseBinaryFormat implements BinaryFormat {
             while (i.hasNext())
                 buffer.putDouble(i.next());
         }
-    }
-
-    private void encodeString(GrowableByteBuffer buffer, String value) {
-        byte[] stringBytes = Utf8.toBytes(value);
-        buffer.putInt1_4Bytes(stringBytes.length);
-        buffer.put(stringBytes);
     }
 
     @Override
@@ -74,7 +68,7 @@ public class DenseBinaryFormat implements BinaryFormat {
         for (int i = 0; i < dimensionCount; i++) {
             TensorType.Dimension expectedDimension = type.dimensions().get(i);
 
-            String encodedName = decodeString(buffer);
+            String encodedName = buffer.getUtf8String();
             int encodedSize = buffer.getInt1_4Bytes();
 
             if ( ! expectedDimension.name().equals(encodedName))
@@ -93,13 +87,6 @@ public class DenseBinaryFormat implements BinaryFormat {
     private void decodeCells(DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
         for (int i = 0; i < sizes.totalSize(); i++)
             builder.cellByDirectIndex(i, buffer.getDouble());
-    }
-
-    private String decodeString(GrowableByteBuffer buffer) {
-        int stringLength = buffer.getInt1_4Bytes();
-        byte[] stringBytes = new byte[stringLength];
-        buffer.get(stringBytes);
-        return Utf8.toString(stringBytes);
     }
 
 }

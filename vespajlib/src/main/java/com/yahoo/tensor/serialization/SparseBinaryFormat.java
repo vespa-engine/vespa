@@ -34,7 +34,7 @@ class SparseBinaryFormat implements BinaryFormat {
     private void encodeDimensions(GrowableByteBuffer buffer, List<TensorType.Dimension> sortedDimensions) {
         buffer.putInt1_4Bytes(sortedDimensions.size());
         for (TensorType.Dimension dimension : sortedDimensions) {
-            encodeString(buffer, dimension.name());
+            buffer.putUtf8String(dimension.name());
         }
     }
 
@@ -49,13 +49,7 @@ class SparseBinaryFormat implements BinaryFormat {
 
     private void encodeAddress(GrowableByteBuffer buffer, TensorAddress address) {
         for (int i = 0; i < address.size(); i++)
-            encodeString(buffer, address.label(i));
-    }
-
-    private void encodeString(GrowableByteBuffer buffer, String value) {
-        byte[] stringBytes = Utf8.toBytes(value);
-        buffer.putInt1_4Bytes(stringBytes.length);
-        buffer.put(stringBytes);
+            buffer.putUtf8String(address.label(i));
     }
 
     @Override
@@ -73,7 +67,7 @@ class SparseBinaryFormat implements BinaryFormat {
         TensorType.Builder builder = new TensorType.Builder();
         int numDimensions = buffer.getInt1_4Bytes();
         for (int i = 0; i < numDimensions; ++i) {
-            builder.mapped(decodeString(buffer));
+            builder.mapped(buffer.getUtf8String());
         }
         return builder.build();
     }
@@ -86,7 +80,7 @@ class SparseBinaryFormat implements BinaryFormat {
 
         for (int i = 0; i < dimensionCount; ++i) {
             TensorType.Dimension expectedDimension = type.dimensions().get(i);
-            String encodedName = decodeString(buffer);
+            String encodedName = buffer.getUtf8String();
             if ( ! expectedDimension.name().equals(encodedName))
                 throw new IllegalArgumentException("Type/instance mismatch: Instance has '" + encodedName +
                                                    "' as dimension " + i + " but type is " + type);
@@ -104,18 +98,11 @@ class SparseBinaryFormat implements BinaryFormat {
 
     private void decodeAddress(GrowableByteBuffer buffer, Tensor.Builder.CellBuilder builder, TensorType type) {
         for (TensorType.Dimension dimension : type.dimensions()) {
-            String label = decodeString(buffer);
+            String label = buffer.getUtf8String();
             if ( ! label.isEmpty()) {
                 builder.label(dimension.name(), label);
             }
         }
-    }
-
-    private String decodeString(GrowableByteBuffer buffer) {
-        int stringLength = buffer.getInt1_4Bytes();
-        byte[] stringBytes = new byte[stringLength];
-        buffer.get(stringBytes);
-        return Utf8.toString(stringBytes);
     }
 
 }
