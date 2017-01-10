@@ -83,7 +83,7 @@ public class DenseBinaryFormat implements BinaryFormat {
 
             if (expectedDimension.size().isPresent() && expectedDimension.size().get() < encodedSize)
                 throw new IllegalArgumentException("Type/instance mismatch: Instance has size " + encodedSize + 
-                                                   " in " + expectedDimension);
+                                                   " in " + expectedDimension  + " in type " + type);
 
             builder.set(i, encodedSize);
         }
