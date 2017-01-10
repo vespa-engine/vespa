@@ -7,6 +7,7 @@
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/vespalib/tensor/serialization/sparse_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <ostream>
@@ -80,7 +81,9 @@ struct Fixture
     Tensor::UP deserialize(nbostream &stream) {
         BuilderType builder;
         nbostream wrapStream(stream.peek(), stream.size());
-        TypedBinaryFormat::deserialize(wrapStream, builder);
+        auto formatId = wrapStream.getInt1_4Bytes();
+        ASSERT_EQUAL(formatId, 1); // sparse format
+        SparseBinaryFormat::deserialize(wrapStream, builder);
         EXPECT_TRUE(wrapStream.size() == 0);
         auto ret = builder.build();
         checkDeserialize<BuilderType>(stream, *ret);

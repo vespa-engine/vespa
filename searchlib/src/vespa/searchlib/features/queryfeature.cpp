@@ -118,11 +118,9 @@ createTensorExecutor(const search::fef::IQueryEnvironment &env,
 {
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
-        DefaultTensor::builder tensorBuilder;
         const vespalib::string &value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
-        vespalib::tensor::TypedBinaryFormat::deserialize(stream, tensorBuilder);
-        vespalib::tensor::Tensor::UP tensor = tensorBuilder.build();
+        vespalib::tensor::Tensor::UP tensor = vespalib::tensor::TypedBinaryFormat::deserialize(stream);
         if (tensor->getType() != valueType) {
             vespalib::tensor::TensorMapper mapper(valueType);
             vespalib::tensor::Tensor::UP mappedTensor = mapper.map(*tensor);

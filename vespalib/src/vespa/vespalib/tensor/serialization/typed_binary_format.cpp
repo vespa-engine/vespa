@@ -29,16 +29,6 @@ TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 }
 
 
-void
-TypedBinaryFormat::deserialize(nbostream &stream, TensorBuilder &builder)
-{
-    auto formatId = stream.getInt1_4Bytes();
-    (void) formatId;
-    assert(formatId == SPARSE_BINARY_FORMAT_TYPE);
-    SparseBinaryFormat::deserialize(stream, builder);
-}
-
-
 std::unique_ptr<Tensor>
 TypedBinaryFormat::deserialize(nbostream &stream)
 {
