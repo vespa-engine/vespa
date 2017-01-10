@@ -112,7 +112,7 @@ public class MapEncoder {
     public static int encodeObjectMultiMap(String mapName, Map<String,List<Object>> map, ByteBuffer buffer) {
         if (map.isEmpty()) return 0;
 
-        byte [] utf8 = Utf8.toBytes(mapName);
+        byte[] utf8 = Utf8.toBytes(mapName);
         buffer.putInt(utf8.length);
         buffer.put(utf8);
         addTensorTypeInfo(map);
