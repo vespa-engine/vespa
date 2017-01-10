@@ -1,5 +1,6 @@
 package com.yahoo.tensor;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -7,6 +8,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -21,6 +23,15 @@ public class IndexedTensorTestCase {
     private final int zSize = 5;
 
     @Test
+    public void testEmpty() {
+        Tensor empty = Tensor.Builder.of(TensorType.empty).build();
+        assertEquals(1, empty.size());
+        assertEquals((double)0.0, (double)empty.valueIterator().next(), 0.00000001);
+        Tensor emptyFromString = Tensor.from(TensorType.empty, "{}");
+        assertEquals(empty, emptyFromString);
+    }
+
+    @Test
     public void testSingleValue() {
         Tensor singleValue = Tensor.Builder.of(TensorType.empty).cell(TensorAddress.empty, 3.5).build();
         assertTrue(singleValue instanceof IndexedTensor);
@@ -29,22 +40,6 @@ public class IndexedTensorTestCase {
         assertEquals("{3.5}", singleValueFromString.toString());
         assertTrue(singleValueFromString instanceof IndexedTensor);
         assertEquals(singleValue, singleValueFromString);
-    }
-    
-    @Test
-    public void testSingleValueWithDimensions() {
-        TensorType type = new TensorType.Builder().indexed("x").indexed("y").build();
-        Tensor emptyWithDimensions = Tensor.Builder.of(type).build();
-        assertTrue(emptyWithDimensions instanceof IndexedTensor);
-        assertEquals("tensor(x[],y[]):{}", emptyWithDimensions.toString());
-        Tensor emptyWithDimensionsFromString = Tensor.from("tensor(x[],y[]):{}");
-        assertEquals("tensor(x[],y[]):{}", emptyWithDimensionsFromString.toString());
-        assertTrue(emptyWithDimensionsFromString instanceof IndexedTensor);
-        assertEquals(emptyWithDimensions, emptyWithDimensionsFromString);
-
-        IndexedTensor emptyWithDimensionsIndexed = (IndexedTensor)emptyWithDimensions;
-        assertEquals(0, emptyWithDimensionsIndexed.dimensionSizes().size(0));
-        assertEquals(0, emptyWithDimensionsIndexed.dimensionSizes().size(1));
     }
     
     @Test

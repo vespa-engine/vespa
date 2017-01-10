@@ -29,8 +29,6 @@ public class TensorTestCase {
 
     @Test
     public void testStringForm() {
-        assertEquals("{}", Tensor.from("{}").toString());
-        assertTrue(Tensor.from("{}") instanceof MappedTensor);
         assertEquals("{5.7}", Tensor.from("{5.7}").toString());
         assertTrue(Tensor.from("{5.7}") instanceof IndexedTensor);
         assertEquals("{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());

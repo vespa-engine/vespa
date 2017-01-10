@@ -20,12 +20,13 @@ public class MappedTensorTestCase {
 
     @Test
     public void testEmpty() {
-        Tensor empty = Tensor.Builder.of(TensorType.empty).build();
+        TensorType type = new TensorType.Builder().mapped("x").build();
+        Tensor empty = Tensor.Builder.of(type).build();
         TestCase.assertTrue(empty instanceof MappedTensor);
         TestCase.assertTrue(empty.isEmpty());
-        assertEquals("{}", empty.toString());
-        Tensor emptyFromString = Tensor.from(TensorType.empty, "{}");
-        assertEquals("{}", Tensor.from(TensorType.empty, "{}").toString());
+        assertEquals("tensor(x{}):{}", empty.toString());
+        Tensor emptyFromString = Tensor.from(type, "{}");
+        assertEquals("tensor(x{}):{}", Tensor.from("tensor(x{}):{}").toString());
         TestCase.assertTrue(emptyFromString.isEmpty());
         TestCase.assertTrue(emptyFromString instanceof MappedTensor);
         assertEquals(empty, emptyFromString);

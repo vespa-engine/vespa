@@ -220,7 +220,7 @@ public class IndexedTensor implements Tensor {
         public TensorType type() { return type; }
 
         @Override
-        public abstract Tensor build();
+        public abstract IndexedTensor build();
 
     }
     
@@ -247,7 +247,6 @@ public class IndexedTensor implements Tensor {
                 throw new IllegalArgumentException("Must have a dimension size entry for each dimension in " + type);
             this.sizes = sizes;
             values = new double[sizes.totalSize()];
-            Arrays.fill(values, Double.NaN);
         }
         
         @Override
@@ -268,14 +267,7 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public Tensor build() {
-            // Note that we do not check for no NaN's here for performance reasons. 
-            // NaN's don't get lost so leaving them in place should be quite benign 
-
-            // An empty tensor with no dimensions is mapped
-            if (values.length == 1 && Double.isNaN(values[0]) && type.dimensions().isEmpty())
-                return MappedTensor.Builder.of(type).build();
-
+        public IndexedTensor build() {
             IndexedTensor tensor = new IndexedTensor(type, sizes, values);
             // prevent further modification
             sizes = null;
@@ -318,23 +310,21 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public Tensor build() {
-            if (firstDimension == null && type.dimensions().isEmpty()) // empty
-                return MappedTensor.Builder.of(type).build();
+        public IndexedTensor build() {
+            if (firstDimension == null) throw new IllegalArgumentException("Tensor of type " + type() + " has no values");
+
             if (type.dimensions().isEmpty()) // single number
                 return new IndexedTensor(type, new DimensionSizes.Builder(type.dimensions().size()).build(), new double[] {(Double) firstDimension.get(0) });
 
             DimensionSizes dimensionSizes = findDimensionSizes(firstDimension);
             double[] values = new double[dimensionSizes.totalSize()];
-            if (firstDimension != null)
-                fillValues(0, 0, firstDimension, dimensionSizes, values);
+            fillValues(0, 0, firstDimension, dimensionSizes, values);
             return new IndexedTensor(type, dimensionSizes, values);
         }
         
         private DimensionSizes findDimensionSizes(List<Object> firstDimension) {
             List<Integer> dimensionSizeList = new ArrayList<>(type.dimensions().size());
-            if (firstDimension != null)
-                findDimensionSizes(0, dimensionSizeList, firstDimension);
+            findDimensionSizes(0, dimensionSizeList, firstDimension);
             DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size()); // may be longer than the list but that's correct
             for (int i = 0; i < b.dimensions(); i++) {
                 if (i < dimensionSizeList.size())
