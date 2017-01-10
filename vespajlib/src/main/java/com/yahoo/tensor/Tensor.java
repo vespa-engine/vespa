@@ -213,10 +213,9 @@ public interface Tensor {
 
     static String contentToString(Tensor tensor) {
         List<java.util.Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
-        if (tensor.type().dimensions().isEmpty()) { // TODO: Decide on one way to represent degeneration to number
+        if (tensor.type().dimensions().isEmpty()) {
             if (cellEntries.isEmpty()) return "{}";
-            double value = cellEntries.get(0).getValue();
-            return value == 0.0 ? "{}" : "{" + value +"}";
+            return "{" + cellEntries.get(0).getValue() +"}";
         }
         
         Collections.sort(cellEntries, java.util.Map.Entry.<TensorAddress, Double>comparingByKey());
