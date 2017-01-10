@@ -88,6 +88,17 @@ public class OperationHandlerImpl implements OperationHandler {
                     restUri));
         }
         try {
+            return doVisit(visitorControlHandler, localDataVisitorHandler, restUri);
+        } finally {
+            visitorSession.destroy();
+        }
+    }
+
+    private VisitResult doVisit(
+            VisitorControlHandler visitorControlHandler,
+            LocalDataVisitorHandler localDataVisitorHandler,
+            RestUri restUri) throws RestApiException {
+        try {
             if (! visitorControlHandler.waitUntilDone(VISIT_TIMEOUT_MS)) {
                 throw new RestApiException(Response.createErrorResponse(500, "Timed out", restUri));
             }
@@ -112,8 +123,9 @@ public class OperationHandlerImpl implements OperationHandler {
 
     @Override
     public void put(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException {
+        SyncSession syncSession = null;
         try {
-            SyncSession syncSession = documentAccess.createSyncSession(new SyncParameters());
+            syncSession = documentAccess.createSyncSession(new SyncParameters());
             DocumentPut put = new DocumentPut(data.getDocument());
             put.setCondition(data.getCondition());
             syncSession.put(put);
@@ -121,26 +133,32 @@ public class OperationHandlerImpl implements OperationHandler {
             throw new RestApiException(createErrorResponse(documentException, restUri));
         } catch (Exception e) {
             throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+        } finally {
+            if (syncSession != null) { syncSession.destroy(); }
         }
     }
 
     @Override
     public void update(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException {
+        SyncSession syncSession = null;
         try {
-            SyncSession syncSession = documentAccess.createSyncSession(new SyncParameters());
+            syncSession = documentAccess.createSyncSession(new SyncParameters());
             syncSession.update(data.getDocumentUpdate());
         } catch (DocumentAccessException documentException) {
             throw new RestApiException(createErrorResponse(documentException, restUri));
         } catch (Exception e) {
             throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+        } finally {
+            if (syncSession != null) { syncSession.destroy(); }
         }
     }
 
     @Override
     public void delete(RestUri restUri, String condition) throws RestApiException {
+        SyncSession syncSession = null;
         try {
             DocumentId id = new DocumentId(restUri.generateFullId());
-            SyncSession syncSession = documentAccess.createSyncSession(new SyncParameters());
+            syncSession = documentAccess.createSyncSession(new SyncParameters());
             DocumentRemove documentRemove = new DocumentRemove(id);
             if (condition != null && ! condition.isEmpty()) {
                 documentRemove.setCondition(new TestAndSetCondition(condition));
@@ -150,14 +168,17 @@ public class OperationHandlerImpl implements OperationHandler {
             throw new RestApiException(Response.createErrorResponse(400, documentException.getMessage(), restUri));
         } catch (Exception e) {
             throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+        } finally {
+            if (syncSession != null) { syncSession.destroy(); }
         }
     }
 
     @Override
     public Optional<String> get(RestUri restUri) throws RestApiException {
+        SyncSession syncSession = null;
         try {
             DocumentId id = new DocumentId(restUri.generateFullId());
-            SyncSession syncSession = documentAccess.createSyncSession(new SyncParameters());
+            syncSession = documentAccess.createSyncSession(new SyncParameters());
             final Document document = syncSession.get(id);
             if (document == null) {
                 return Optional.empty();
@@ -169,6 +190,8 @@ public class OperationHandlerImpl implements OperationHandler {
 
         } catch (Exception e) {
             throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+        } finally {
+            if (syncSession != null) { syncSession.destroy(); }
         }
     }
 
