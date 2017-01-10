@@ -3,7 +3,9 @@ package com.yahoo.tensor.serialization;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 /**
  * Class used by clients for serializing a Tensor object into binary format or
@@ -18,25 +20,31 @@ import com.yahoo.tensor.Tensor;
 public class TypedBinaryFormat {
 
     private static final int SPARSE_BINARY_FORMAT_TYPE = 1;
+    private static final int DENSE_BINARY_FORMAT_TYPE = 2;
 
     public static byte[] encode(Tensor tensor) {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        buffer.putInt1_4Bytes(SPARSE_BINARY_FORMAT_TYPE);
-        new SparseBinaryFormat().encode(buffer, tensor);
+        if (tensor instanceof IndexedTensor && 1==2) { // TODO: Activate when we have type information everywhere
+            buffer.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
+            new DenseBinaryFormat().encode(buffer, tensor);
+        }
+        else {
+            buffer.putInt1_4Bytes(SPARSE_BINARY_FORMAT_TYPE);
+            new SparseBinaryFormat().encode(buffer, tensor);
+        }
         buffer.flip();
         byte[] result = new byte[buffer.remaining()];
         buffer.get(result);
         return result;
     }
 
-    public static Tensor decode(byte[] data) {
+    public static Tensor decode(TensorType type, byte[] data) {
         GrowableByteBuffer buffer = GrowableByteBuffer.wrap(data);
         int formatType = buffer.getInt1_4Bytes();
         switch (formatType) {
-            case SPARSE_BINARY_FORMAT_TYPE:
-                return new SparseBinaryFormat().decode(buffer);
-            default:
-                throw new IllegalArgumentException("Binary format type " + formatType + " is not a known format");
+            case SPARSE_BINARY_FORMAT_TYPE: return new SparseBinaryFormat().decode(type, buffer);
+            case DENSE_BINARY_FORMAT_TYPE: return new DenseBinaryFormat().decode(type, buffer);
+            default: throw new IllegalArgumentException("Binary format type " + formatType + " is unknown");
         }
     }
 
