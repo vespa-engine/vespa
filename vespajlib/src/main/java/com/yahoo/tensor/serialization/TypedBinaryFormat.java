@@ -24,7 +24,7 @@ public class TypedBinaryFormat {
 
     public static byte[] encode(Tensor tensor) {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        if (tensor instanceof IndexedTensor && 1==2) { // TODO: Activate when we have type information everywhere
+        if (tensor instanceof IndexedTensor) {
             buffer.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
             new DenseBinaryFormat().encode(buffer, tensor);
         }

@@ -83,7 +83,7 @@ public class TensorType {
         for (int i = 0; i < other.dimensions().size(); i++) {
             Dimension thisDimension = this.dimensions().get(i);
             Dimension otherDimension = other.dimensions().get(i);
-            if (thisDimension.isIndexed() != other.isIndexed()) return false;
+            if (thisDimension.isIndexed() != otherDimension.isIndexed()) return false;
             if ( ! thisDimension.name().equals(otherDimension.name())) return false;
             if (thisDimension.size().isPresent()) {
                 if ( ! otherDimension.size().isPresent()) return false;
