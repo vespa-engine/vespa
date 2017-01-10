@@ -26,7 +26,7 @@ public class IndexedTensorTestCase {
     public void testEmpty() {
         Tensor empty = Tensor.Builder.of(TensorType.empty).build();
         assertEquals(1, empty.size());
-        assertEquals(0.0, empty.valueIterator().next(), 0.00000001);
+        assertEquals((double)0.0, (double)empty.valueIterator().next(), 0.00000001);
         Tensor emptyFromString = Tensor.from(TensorType.empty, "{}");
         assertEquals(empty, emptyFromString);
     }
@@ -73,7 +73,7 @@ public class IndexedTensorTestCase {
                         for (int z = 0; z < zSize; z++)
                             builder.cell(value(v, w, x, y, z), v, w, x, y, z);
 
-        IndexedTensor tensor = builder.build();
+        IndexedTensor tensor = (IndexedTensor)builder.build();
 
         // Lookup by index arguments
         for (int v = 0; v < vSize; v++)
