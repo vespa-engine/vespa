@@ -15,11 +15,11 @@
 
 #pragma once
 
+#include "filestorhandler.h"
+#include "mergestatus.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storage/persistence/filestorage/filestorhandler.h>
-#include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/storageframework/storageframework.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
@@ -51,6 +51,7 @@ public:
         uint8_t _priority;
 
         MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::BucketId& bId);
+        MessageEntry(MessageEntry &&);
         MessageEntry(const MessageEntry &);
         MessageEntry & operator = (const MessageEntry &) = delete;
         ~MessageEntry();
@@ -130,7 +131,7 @@ public:
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
-        BucketLock(Disk& disk, const document::BucketId& id, uint8_t priority,
+        BucketLock(const vespalib::MonitorGuard & guard, Disk& disk, const document::BucketId& id, uint8_t priority,
                    const vespalib::stringref & statusString);
         ~BucketLock();
 
@@ -159,6 +160,7 @@ public:
 
     void pause(uint16_t disk, uint8_t priority) const;
     FileStorHandler::LockedMessage getNextMessage(uint16_t disk, uint8_t lowestPriority);
+    FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, Disk & t, PriorityIdx & idx, PriorityIdx::iterator iter);
 
     FileStorHandler::LockedMessage & getNextMessage(uint16_t disk, FileStorHandler::LockedMessage& lock,
                                                     uint8_t lowestPriority);
@@ -236,14 +238,6 @@ private:
     bool diskIsClosed(uint16_t disk) const;
 
     /**
-     * Return whether msg has sufficiently high priority that a thread with
-     * a configured priority threshold of maxPriority can even run in.
-     * Often, operations such as streaming searches will have dedicated threads
-     * that refuse lower priority operations such as Puts etc.
-     */
-    bool operationHasHighEnoughPriorityToBeRun(const api::StorageMessage& msg, uint8_t maxPriority) const;
-
-    /**
      * Return whether an already running high priority operation pre-empts
      * (blocks) the operation in msg from even starting in the current thread.
      */
@@ -260,14 +254,14 @@ private:
      * Disk lock MUST have been taken prior to calling this function.
      */
     std::unique_ptr<FileStorHandler::BucketLockInterface>
-    takeDiskBucketLockOwnership(Disk& disk, const document::BucketId& id, const api::StorageMessage& msg);
+    takeDiskBucketLockOwnership(const vespalib::MonitorGuard & guard,
+                                Disk& disk, const document::BucketId& id, const api::StorageMessage& msg);
 
     /**
      * Creates and returns a reply with api::TIMEOUT return code for msg.
      * Swaps (invalidates) context from msg into reply.
      */
     std::unique_ptr<api::StorageReply> makeQueueTimeoutReply(api::StorageMessage& msg) const;
-    bool bucketIsLockedOnDisk(const document::BucketId&, const Disk&) const;
     bool messageMayBeAborted(const api::StorageMessage& msg) const;
     bool hasBlockingOperations(const Disk& t) const;
     void abortQueuedCommandsForBuckets(Disk& disk, const AbortBucketOperationsCommand& cmd);

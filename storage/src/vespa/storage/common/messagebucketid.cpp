@@ -3,7 +3,6 @@
 #include "messagebucketid.h"
 #include "statusmessages.h"
 #include "bucketmessages.h"
-#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/multioperation.h>
