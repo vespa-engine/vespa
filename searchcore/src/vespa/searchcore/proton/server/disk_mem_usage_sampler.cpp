@@ -4,6 +4,7 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/timer.h>
 #include <vespa/searchlib/common/lambdatask.h>
+#include <cstdlib>
 
 using search::makeLambdaTask;
 
@@ -11,15 +12,22 @@ namespace proton {
 
 namespace {
 
-uint64_t getPhysicalMemory() {
-    return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+uint64_t getPhysicalMemoryBytes()
+{
+    // TODO: Temporal workaround for Docker nodes. Remove when this is part of proton.cfg instead.
+    if (const char *memoryEnv = std::getenv("VESPA_TOTAL_MEMORY_MB")) {
+        uint64_t physicalMemoryMB = atoll(memoryEnv);
+        return physicalMemoryMB * 1024u * 1024u;
+    } else {
+        return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+    }
 }
 
 } // namespace proton:<anonymous>
 
 DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in,
                                          const Config &config)
-    : _filter(getPhysicalMemory()),
+    : _filter(getPhysicalMemoryBytes()),
       _path(path_in),
       _sampleInterval(60.0),
       _periodicTimer()
