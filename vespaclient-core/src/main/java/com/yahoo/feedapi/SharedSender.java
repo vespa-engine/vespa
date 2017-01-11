@@ -94,6 +94,7 @@ public class SharedSender implements ReplyHandler {
                 return;
             }
             synchronized(p) {
+                // yes this should be an "if":
                 if (p.value > threshold) {
                     p.wait(millis);
                 }
@@ -146,6 +147,8 @@ public class SharedSender implements ReplyHandler {
         return metrics;
     }
 
+    /// not used
+    @Deprecated
     public void remove(ResultCallback owner) {
         while (pendingMap.getValue(owner) > 0) {
             pendingMap.decrement(owner);
@@ -203,9 +206,11 @@ public class SharedSender implements ReplyHandler {
 
     /**
      * Waits until the given file has no pending documents.
+     * NOTE: Not used anywhere, deprecated.
      *
      * @param owner the file to check for pending documents
      */
+    @Deprecated
     public void waitForPending(ResultCallback owner) {
         try {
             pendingMap.waitForPending(owner, 0);
@@ -241,8 +246,8 @@ public class SharedSender implements ReplyHandler {
             int count = pendingMap.postIncrement(owner);
             if (maxPendingPerOwner != -1 && blockingQueue) {
                 while (count > maxPendingPerOwner) {
+                    pendingMap.decrement(owner); // could not send now, back off our try
                     log.log(LogLevel.INFO, "Owner " + owner + " already has " + count + " pending. Waiting for replies");
-                    pendingMap.decrement(owner);
                     pendingMap.waitForPending(owner, maxPendingPerOwner);
                     count = pendingMap.postIncrement(owner);
                 }
