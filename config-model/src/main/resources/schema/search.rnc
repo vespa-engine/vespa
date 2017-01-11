@@ -7,7 +7,6 @@ include "container.rnc"
 Search = element search {
    attribute version { "2.0" } &
    GenericConfig* &
-   (QrserversWithClusters | QRServers)? &
    SearchDefinitions? &
    SCluster*
 }
@@ -42,57 +41,6 @@ TopLevelDispatchers = element topleveldispatchers {
    }+ &
    GenericConfig*
 }
-
-QRServers = element qrservers {
-   GenericConfig* &
-   Container &
-   element qrserveroptions {
-      QRServerOptionsElems
-   }? &
-   attribute jvmargs { text }? &
-   attribute preload { text }? &
-   element qrserver {
-      service.attlist &
-      GenericConfig*
-   }+ &
-   element cache {
-      attribute size { xsd:string {   pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }
-   }?
-}
-
-QrserversWithClusters = element qrservers {
-   GenericConfig* &
-   OuterSearchChains? &
-   element cluster {
-     attribute name { xsd:NCName } &
-     GenericConfig* &
-     Container &
-     element qrserveroptions {
-        QRServerOptionsElems
-     }? &
-     element nodes {
-       attribute jvmargs { text }? &
-       attribute preload { text }? &
-       element node {
-         service.attlist &
-         GenericConfig*
-       }+
-     }+ &
-     element cache {
-        attribute size { xsd:string {   pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }
-     }?
-   }+
-}
-
-Container =
-   Handler* &
-   Client* &
-   Server* &
-   Component* &
-   HttpFilter? &
-   Renderer* &
-   SearchChains? &
-   Processing?
 
 ModeRealTime = attribute indexingmode { string "realtime" | string "REALTIME" }
 
