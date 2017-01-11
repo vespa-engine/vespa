@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network.local;
 
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.messagebus.*;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
@@ -100,19 +101,19 @@ public class LocalNetworkTest {
         msg.setRoute(new Route().addHop(Hop.parse(intermediate.getConnectionSpec()))
                 .addHop(Hop.parse(destination.getConnectionSpec())));
         assertThat(source.sendBlocking(msg).isAccepted(), is(true));
+        long start = SystemTimer.INSTANCE.milliTime();
         Message msg2 = new SimpleMessage("foo2");
         msg2.setRoute(new Route().addHop(Hop.parse(intermediate.getConnectionSpec()))
                 .addHop(Hop.parse(destination.getConnectionSpec())));
         long TIMEOUT = 1000;
         msg2.setTimeRemaining(TIMEOUT);
-        long start = System.currentTimeMillis();
         Result res = source.sendBlocking(msg2);
         assertThat(res.isAccepted(), is(false));
         assertEquals(ErrorCode.TIMEOUT, res.getError().getCode());
         assertTrue(res.getError().getMessage().endsWith("Timed out in sendQ"));
-        long end = System.currentTimeMillis();
+        long end = SystemTimer.INSTANCE.milliTime();
         assertThat(end, greaterThanOrEqualTo(start+TIMEOUT));
-        assertThat(end, lessThan(start+2*TIMEOUT));
+        assertThat(end, lessThan(start+5*TIMEOUT));
 
         msg = serverB.messages.poll(60, TimeUnit.SECONDS);
         assertThat(msg, instanceOf(SimpleMessage.class));
