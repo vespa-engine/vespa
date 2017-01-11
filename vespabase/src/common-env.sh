@@ -142,9 +142,6 @@ consider_fallback VESPA_USE_NO_VESPAMALLOC  $(get_var "no_vespamalloc_list")
 #     export VESPA_USE_HUGEPAGES="yes"
 # fi
 
-if [ -z "$YINST_RUNNING" ]; then
-    export VESPA_RUN_STANDALONE=true
-fi
 
 fixlimits () {
     # number of open files:

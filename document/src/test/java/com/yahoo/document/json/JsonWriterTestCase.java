@@ -129,20 +129,18 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public final void smokeTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public void smokeTest() throws IOException {
         roundTripEquality("id:unittest:smoke::whee", "{"
                 + " \"something\": \"smoketest\"," + " \"nalle\": \"bamse\""
                 + "}");
     }
 
     @Test
-    public final void hideEmptyStringsTest() throws JsonParseException,
-            JsonMappingException, IOException {
-        final String fields = "{"
+    public void hideEmptyStringsTest() throws IOException {
+        String fields = "{"
                         + " \"something\": \"\"," + " \"nalle\": \"bamse\""
                         + "}";
-        final String filteredFields = "{"
+        String filteredFields = "{"
                 + " \"nalle\": \"bamse\""
                 + "}";
 
@@ -150,53 +148,46 @@ public class JsonWriterTestCase {
         assertEqualJson(asDocument("id:unittest:smoke::whee", filteredFields), JsonWriter.toByteArray(doc));
     }
 
-    private void roundTripEquality(final String docId, final String fields)
-            throws JsonParseException, JsonMappingException, IOException {
+    private void roundTripEquality(final String docId, final String fields) throws IOException {
         Document doc = readDocumentFromJson(docId, fields);
         assertEqualJson(asDocument(docId, fields), JsonWriter.toByteArray(doc));
     }
 
     @Test
-    public final void structTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public void structTest() throws IOException {
         roundTripEquality("id:unittest:mirrors::whee", "{ "
                 + "\"skuggsjaa\": {" + "\"sandra\": \"person\","
                 + " \"cloud\": \"another person\"}}");
     }
 
     @Test
-    public final void singlePosTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public void singlePosTest() throws IOException {
         roundTripEquality("id:unittest:testsinglepos::bamf", "{ \"singlepos\": \"N60.222333;E10.12\" }");
     }
 
     @Test
-    public final void multiPosTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public void multiPosTest() throws IOException {
         roundTripEquality("id:unittest:testmultipos::bamf", "{ \"multipos\": [ \"N0.0;E0.0\", \"S1.1;W1.1\", \"N10.2;W122.2\" ] }");
     }
 
     @Test
-    public final void arrayTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public void arrayTest() throws IOException {
         roundTripEquality("id:unittest:testarray::whee", "{ \"actualarray\": ["
                 + " \"nalle\"," + " \"tralle\"]}");
     }
 
     @Test
-    public final void weightedSetTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public void weightedSetTest() throws IOException {
         roundTripEquality("id:unittest:testset::whee", "{ \"actualset\": {"
                 + " \"nalle\": 2," + " \"tralle\": 7 }}");
     }
 
     @Test
-    public final void mapTest() throws JsonParseException,
-            JsonMappingException, IOException {
-        final String fields = "{ \"actualmap\": ["
+    public void mapTest() throws IOException {
+        String fields = "{ \"actualmap\": ["
                         + " { \"key\": \"nalle\", \"value\": \"kalle\"},"
                         + " { \"key\": \"tralle\", \"value\": \"skalle\"} ]}";
-        final String docId = "id:unittest:testmap::whee";
+        String docId = "id:unittest:testmap::whee";
         Document doc = readDocumentFromJson(docId, fields);
         // we have to do everything by hand to check, as maps are unordered, but
         // are serialized as an ordered structure
@@ -225,7 +216,7 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public final void rawTest() throws JsonParseException, JsonMappingException, IOException {
+    public final void rawTest() throws IOException {
         String payload = new String(
                 new JsonStringEncoder().quoteAsString(new Base64()
                         .encodeToString(Utf8.toBytes("smoketest"))));
@@ -236,15 +227,13 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public final void predicateTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public final void predicateTest() throws IOException {
         roundTripEquality("id:unittest:testpredicate::whee", "{ "
                 + "\"actualpredicate\": \"foo in [bar]\" }");
     }
 
     @Test
-    public final void stringToArrayOfIntMapTest() throws JsonParseException,
-            JsonMappingException, IOException {
+    public final void stringToArrayOfIntMapTest() throws IOException {
         String docId = "id:unittest:testMapStringToArrayOfInt::whee";
         String fields = "{ \"actualMapStringToArrayOfInt\": ["
                 + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }" + "]}";
@@ -273,8 +262,7 @@ public class JsonWriterTestCase {
         return put.getDocument();
     }
 
-    private void assertEqualJson(byte[] expected, byte[] generated)
-            throws JsonParseException, JsonMappingException, IOException {
+    private void assertEqualJson(byte[] expected, byte[] generated) throws IOException {
         ObjectMapper m = new ObjectMapper();
         Map<?, ?> exp = m.readValue(expected, Map.class);
         Map<?, ?> gen = m.readValue(generated, Map.class);
@@ -313,7 +301,7 @@ public class JsonWriterTestCase {
 
     @Test
     public void testWritingOfEmptyTensor() throws IOException {
-        assertTensorRoundTripEquality("{}", "{ \"cells\": [] }");
+        assertTensorRoundTripEquality("{}","{ \"cells\": [{\"address\": {}, \"value\": 0.0}] }");
     }
 
     @Test

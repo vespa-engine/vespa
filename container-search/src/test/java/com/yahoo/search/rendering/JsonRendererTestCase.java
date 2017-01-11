@@ -23,7 +23,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -132,10 +131,7 @@ public class JsonRendererTestCase {
     }
 
     private Result newEmptyResult(String[] args) {
-        String query = "/?" + String.join("&", args);
-        Query q = new Query(query);
-        Result r = new Result(q);
-        return r;
+        return new Result(new Query("/?" + String.join("&", args)));
     }
 
     private Result newEmptyResult() {
@@ -188,7 +184,7 @@ public class JsonRendererTestCase {
 
 
     @Test
-    public final void testTracing() throws JsonGenerationException, IOException, InterruptedException, ExecutionException {
+    public final void testTracing() throws IOException, InterruptedException, ExecutionException {
         // which clearly shows a trace child is created once too often...
         String expected = "{\n"
                 + "    \"root\": {\n"
@@ -244,7 +240,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testEmptyTracing() throws JsonGenerationException, IOException, InterruptedException, ExecutionException {
+    public final void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -329,7 +325,7 @@ public class JsonRendererTestCase {
 
 
     @Test
-    public final void testHalfEmptyTracing() throws JsonGenerationException, IOException, InterruptedException, ExecutionException {
+    public final void testHalfEmptyTracing() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -355,8 +351,7 @@ public class JsonRendererTestCase {
                 + "    }\n"
                 + "}\n";
         Query q = new Query("/?query=a&tracelevel=0");
-        Execution execution = new Execution(
-                Execution.Context.createContextStub());
+        Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
 
         execution.search(q);
@@ -379,7 +374,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testTracingOfNodesWithBothChildrenAndData() throws JsonGenerationException, IOException, InterruptedException, ExecutionException {
+    public final void testTracingOfNodesWithBothChildrenAndData() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -412,8 +407,7 @@ public class JsonRendererTestCase {
                 + "    }\n"
                 + "}\n";
         Query q = new Query("/?query=a&tracelevel=1");
-        Execution execution = new Execution(
-                Execution.Context.createContextStub());
+        Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
         execution.search(q);
         final TraceNode child = new TraceNode("string payload", 0L);
@@ -426,7 +420,7 @@ public class JsonRendererTestCase {
 
 
     @Test
-    public final void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws JsonGenerationException, IOException, InterruptedException, ExecutionException {
+    public final void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -467,7 +461,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testTracingOfNestedNodesWithDataAndSubnodes() throws JsonGenerationException, IOException, InterruptedException, ExecutionException {
+    public final void testTracingOfNestedNodesWithDataAndSubnodes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"fields\": {\n"
@@ -607,7 +601,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testMoreTypes() throws InterruptedException, ExecutionException, JsonParseException, JsonMappingException, IOException {
+    public void testMoreTypes() throws InterruptedException, ExecutionException, IOException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -645,7 +639,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testNullField() throws InterruptedException, ExecutionException, JsonParseException, JsonMappingException, IOException {
+    public void testNullField() throws InterruptedException, ExecutionException, IOException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -694,7 +688,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testHitWithSource() throws JsonParseException, JsonMappingException, IOException, InterruptedException, ExecutionException {
+    public void testHitWithSource() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -721,8 +715,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testErrorWithStackTrace() throws InterruptedException,
-            ExecutionException, JsonParseException, JsonMappingException, IOException {
+    public void testErrorWithStackTrace() throws InterruptedException, ExecutionException, IOException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"errors\": [\n"
@@ -761,7 +754,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testGrouping() throws InterruptedException, ExecutionException, JsonParseException, JsonMappingException, IOException {
+    public void testGrouping() throws InterruptedException, ExecutionException, IOException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -832,7 +825,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testGroupingWithBucket() throws InterruptedException, ExecutionException, JsonParseException, JsonMappingException, IOException {
+    public void testGroupingWithBucket() throws InterruptedException, ExecutionException, IOException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -890,7 +883,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testJsonObjects() throws JsonParseException, JsonMappingException, InterruptedException, ExecutionException, IOException, JSONException {
+    public void testJsonObjects() throws InterruptedException, ExecutionException, IOException, JSONException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -1126,15 +1119,12 @@ public class JsonRendererTestCase {
         assertEquals(");", jsonCallbackEnd);
     }
 
-    private String render(Result r) throws InterruptedException,
-            ExecutionException {
-        Execution execution = new Execution(
-                Execution.Context.createContextStub());
+    private String render(Result r) throws InterruptedException, ExecutionException {
+        Execution execution = new Execution(Execution.Context.createContextStub());
         return render(execution, r);
     }
 
-    private String render(Execution execution, Result r)
-            throws InterruptedException, ExecutionException {
+    private String render(Execution execution, Result r) throws InterruptedException, ExecutionException {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
         assertTrue(f.get());
@@ -1143,7 +1133,7 @@ public class JsonRendererTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    private void assertEqualJson(String expected, String generated) throws JsonParseException, JsonMappingException, IOException {
+    private void assertEqualJson(String expected, String generated) throws IOException {
         ObjectMapper m = new ObjectMapper();
         Map<String, Object> exp = m.readValue(expected, Map.class);
         Map<String, Object> gen = m.readValue(generated, Map.class);
