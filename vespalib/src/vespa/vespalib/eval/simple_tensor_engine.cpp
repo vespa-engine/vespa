@@ -102,7 +102,7 @@ SimpleTensorEngine::map(const UnaryOperation &op, const eval::Tensor &a, Stash &
 {
     assert(&a.engine() == this);
     const SimpleTensor &simple_a = static_cast<const SimpleTensor&>(a);    
-    auto result = SimpleTensor::perform(op, simple_a);
+    auto result = SimpleTensor::map(op, simple_a);
     return stash.create<TensorValue>(std::move(result));
 }
 
@@ -113,7 +113,7 @@ SimpleTensorEngine::apply(const BinaryOperation &op, const eval::Tensor &a, cons
     assert(&b.engine() == this);
     const SimpleTensor &simple_a = static_cast<const SimpleTensor&>(a);
     const SimpleTensor &simple_b = static_cast<const SimpleTensor&>(b);
-    auto result = SimpleTensor::perform(op, simple_a, simple_b);
+    auto result = SimpleTensor::join(op, simple_a, simple_b);
     return stash.create<TensorValue>(std::move(result));
 }
 

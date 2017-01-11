@@ -439,7 +439,7 @@ SimpleTensor::equal(const SimpleTensor &a, const SimpleTensor &b)
 }
 
 std::unique_ptr<SimpleTensor>
-SimpleTensor::perform(const UnaryOperation &op, const SimpleTensor &a)
+SimpleTensor::map(const UnaryOperation &op, const SimpleTensor &a)
 {
     Cells cells(a.cells());
     for (auto &cell: cells) {
@@ -449,7 +449,7 @@ SimpleTensor::perform(const UnaryOperation &op, const SimpleTensor &a)
 }
 
 std::unique_ptr<SimpleTensor>
-SimpleTensor::perform(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b)
+SimpleTensor::join(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b)
 {
     TypeAnalyzer type_info(a.type(), b.type());
     Builder builder(type_info.result_type);

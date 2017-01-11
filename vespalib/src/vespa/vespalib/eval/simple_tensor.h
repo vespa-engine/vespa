@@ -76,8 +76,8 @@ public:
     std::unique_ptr<SimpleTensor> reduce(const BinaryOperation &op, const std::vector<vespalib::string> &dimensions) const;
     static std::unique_ptr<SimpleTensor> create(const TensorSpec &spec);
     static bool equal(const SimpleTensor &a, const SimpleTensor &b);
-    static std::unique_ptr<SimpleTensor> perform(const UnaryOperation &op, const SimpleTensor &a);
-    static std::unique_ptr<SimpleTensor> perform(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b);
+    static std::unique_ptr<SimpleTensor> map(const UnaryOperation &op, const SimpleTensor &a);
+    static std::unique_ptr<SimpleTensor> join(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b);
 };
 
 } // namespace vespalib::eval

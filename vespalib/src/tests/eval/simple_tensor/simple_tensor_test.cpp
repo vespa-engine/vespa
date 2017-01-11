@@ -91,7 +91,7 @@ TEST("require that simple tensors can have their values negated") {
             .add({{"x","1"},{"y","1"}}, -1)
             .add({{"x","2"},{"y","1"}}, 3)
             .add({{"x","1"},{"y","2"}}, -5));
-    auto result = SimpleTensor::perform(operation::Neg(), *tensor);
+    auto result = SimpleTensor::map(operation::Neg(), *tensor);
     EXPECT_EQUAL(*expect, *result);
     Stash stash;
     const Value &result2 = SimpleTensorEngine::ref().map(operation::Neg(), *tensor, stash);
@@ -116,7 +116,7 @@ TEST("require that simple tensors can be multiplied with each other") {
             .add({{"x","2"},{"y","1"},{"z","1"}}, 21)
             .add({{"x","2"},{"y","1"},{"z","2"}}, 39)
             .add({{"x","1"},{"y","2"},{"z","1"}}, 55));
-    auto result = SimpleTensor::perform(operation::Mul(), *lhs, *rhs);
+    auto result = SimpleTensor::join(operation::Mul(), *lhs, *rhs);
     EXPECT_EQUAL(*expect, *result);
     Stash stash;
     const Value &result2 = SimpleTensorEngine::ref().apply(operation::Mul(), *lhs, *rhs, stash);
