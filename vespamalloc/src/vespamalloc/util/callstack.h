@@ -75,6 +75,9 @@ size_t StackEntry<StackRep>::fillStack(StackEntry<StackRep> *stack, size_t nelem
     } else {
         sz = 0;
     }
+    if (sz < nelems) {
+        stack[sz] = StackEntry<StackRep>();
+    }
     return sz;
 }
 
