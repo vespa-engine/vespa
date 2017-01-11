@@ -25,7 +25,6 @@ public class FilterChainsBuilder extends DomChainsBuilder<Filter, Chain<Filter>,
     private static final Map<String, Class<? extends DomChainBuilderBase<? extends Filter, ? extends Chain<Filter>>>> chainType2BuilderClass =
             Collections.unmodifiableMap(
                     new LinkedHashMap<String, Class<? extends DomChainBuilderBase<? extends Filter, ? extends Chain<Filter>>>>() {{
-                        put("chain", FilterChainBuilder.class);  // TODO: remove when 'chain' under 'http' is removed from xml schema
                         put("request-chain", FilterChainBuilder.class);
                         put("response-chain", FilterChainBuilder.class);
                     }});
