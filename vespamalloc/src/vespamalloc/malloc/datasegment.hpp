@@ -169,6 +169,8 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, S
     size_t checkedCount(0);
     size_t allocatedCount(0);
     size_t notAccounted(0);
+    size_t invalidCallStacks(0);
+    size_t emptyCallStacks(0);
     std::unique_ptr<CallGraphLT> callGraph(new CallGraphLT);
     for(size_t i=0; i <  NELEMS(_blockList); ) {
         const BlockT & b = _blockList[i];
@@ -196,6 +198,12 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, S
                             if ( ! callGraph->addStack(mem.callStack(), csl)) {
                                 notAccounted++;
                             }
+                        } else {
+                            if (mem.callStackLen() == 0) {
+                                emptyCallStacks++;
+                            } else {
+                                invalidCallStacks++;
+                            }
                         }
                     }
                 }
@@ -205,9 +213,9 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, S
             i++;
         }
     }
-    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "ByMeAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld:\n",
+    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "ByMeAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld EmptyCallStacks=%ld InvalidCallStacks=%ld:\n",
             checkedCount, allocatedCount, checkedCount ? allocatedCount*100/checkedCount : 0,
-            usedCount, checkedCount ? static_cast<double>(usedCount*100)/checkedCount : 0.0, notAccounted);
+            usedCount, checkedCount ? static_cast<double>(usedCount*100)/checkedCount : 0.0, notAccounted, emptyCallStacks, invalidCallStacks);
     if ( ! callGraph->empty()) {
         Aggregator agg;
         DumpGraph<typename CallGraphLT::Node> dump(&agg, "{ ", " }");
