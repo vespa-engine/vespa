@@ -4,8 +4,9 @@ FROM centos:7
 RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo && \
     yum -y install epel-release && \
     yum -y install centos-release-scl && \
-    yum -y install devtoolset-4-gcc-c++ \
-                   devtoolset-4-libatomic-devel \
+    yum -y install devtoolset-6-gcc-c++ \
+                   devtoolset-6-libatomic-devel \
+                   devtoolset-6-binutils \
                    make \
                    cmake3 \
                    ccache \
@@ -28,6 +29,6 @@ RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vesp
                    vespa-libtorrent-devel \
                    vespa-zookeeper-c-client-devel \
                    vespa-cppunit-devel && \
-    echo "source /opt/rh/devtoolset-4/enable" > /etc/profile.d/devtoolset-4.sh && \
+    echo "source /opt/rh/devtoolset-6/enable" > /etc/profile.d/devtoolset-6.sh && \
     echo "*          soft    nproc     32768" > /etc/security/limits.d/90-nproc.conf 
 

@@ -16,8 +16,9 @@ Source0:        vespa-%{version}.tar.gz
 
 BuildRequires: epel-release 
 BuildRequires: centos-release-scl
-BuildRequires: devtoolset-4-gcc-c++
-BuildRequires: devtoolset-4-libatomic-devel
+BuildRequires: devtoolset-6-gcc-c++
+BuildRequires: devtoolset-6-libatomic-devel
+BuildRequires: devtoolset-6-binutils
 BuildRequires: Judy-devel
 BuildRequires: cmake3
 BuildRequires: lz4-devel
@@ -60,7 +61,7 @@ Vespa - The open big data serving engine
 %setup -q
 
 %build
-source /opt/rh/devtoolset-4/enable || true
+source /opt/rh/devtoolset-6/enable || true
 sh bootstrap.sh
 mvn install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
