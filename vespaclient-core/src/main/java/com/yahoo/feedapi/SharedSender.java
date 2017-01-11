@@ -23,7 +23,104 @@ public class SharedSender implements ReplyHandler {
     public static final Logger log = Logger.getLogger(SharedSender.class.getName());
 
     private SendSession sender;
-    private final Object monitor = new Object();
+
+    public static class PendingMap {
+        private static class Pending {
+            public int value = 1;
+        }
+
+        private Map<ResultCallback, Pending> map = new HashMap<>();
+
+        public int postIncrement(ResultCallback owner) {
+            synchronized(map) {
+                Pending p = map.get(owner);
+                if (p != null) {
+                    synchronized(p) {
+                        return p.value++;
+                    }
+                } else {
+                    map.put(owner, new Pending());
+                    return 0;
+                }
+            }
+        }
+
+        public void decrement(ResultCallback owner) {
+            synchronized(map) {
+                Pending p = map.get(owner);
+                if (p == null) {
+                    // IllegalArgumentException e = new IllegalArgumentException("owner "+owner+" not in map");
+                    // e.fillInStackTrace();
+                    // e.printStackTrace();
+                    return;
+                }
+                synchronized(p) {
+                    if (--p.value == 0) {
+                        map.remove(owner);
+                        map.notify();
+                    }
+                    p.notifyAll();
+                }
+            }
+        }
+
+        public void waitForPending(ResultCallback owner, int threshold)
+            throws InterruptedException
+        {
+            assert threshold >= 0;
+            Pending p;
+            synchronized(map) {
+                p = map.get(owner);
+            }
+            if (p == null) {
+                return;
+            }
+            synchronized(p) {
+                while (p.value > threshold) {
+                    p.wait();
+                }
+            }
+        }
+
+        public void waitForPending(ResultCallback owner, int threshold, long millis)
+            throws InterruptedException
+        {
+            assert threshold >= 0;
+            Pending p;
+            synchronized(map) {
+                p = map.get(owner);
+            }
+            if (p == null) {
+                return;
+            }
+            synchronized(p) {
+                if (p.value > threshold) {
+                    p.wait(millis);
+                }
+            }
+        }
+
+        public void drain() throws InterruptedException {
+            synchronized(map) {
+                while (! map.isEmpty()) {
+                    map.wait(100);
+                }
+            }
+        }
+
+        public int getValue(ResultCallback owner) {
+            synchronized(map) {
+                Pending p = map.get(owner);
+                if (p == null) {
+                    return 0;
+                } else {
+                    return p.value;
+                }
+            }
+        }
+    }
+
+    private final PendingMap pendingMap = new PendingMap();
     private RouteMetricSet metrics;
 
     // Maps from filename to number of pending requests
@@ -50,18 +147,14 @@ public class SharedSender implements ReplyHandler {
     }
 
     public void remove(ResultCallback owner) {
-        synchronized (monitor) {
-            activeOwners.remove(owner);
+        while (pendingMap.getValue(owner) > 0) {
+            pendingMap.decrement(owner);
         }
     }
 
     public void shutdown() {
         try {
-            synchronized (monitor) {
-                while ( ! activeOwners.isEmpty()) {
-                    monitor.wait(180 * 1000);
-                }
-            }
+            pendingMap.drain();
         } catch (InterruptedException e) {
         }
         sender.close();
@@ -76,36 +169,25 @@ public class SharedSender implements ReplyHandler {
      * @return true if there were no more pending, or false if the timeout expired.
      */
     public boolean waitForPending(ResultCallback owner, long timeoutMs) {
-        long timeStart = SystemTimer.INSTANCE.milliTime();
-        long timeLeft = timeoutMs;
-
         try {
-            while (timeoutMs == -1 || timeLeft > 0) {
-                synchronized (monitor) {
-                    Integer count = activeOwners.get(owner);
-                    if (count == null || count == 0) {
-                        return true;
-                    } else if (timeLeft > 0) {
-                        monitor.wait(timeLeft);
-                    } else {
-                        monitor.wait();
-                    }
-                }
-
-                timeLeft = timeoutMs - (SystemTimer.INSTANCE.milliTime() - timeStart);
+            if (timeoutMs == -1 ) {
+                pendingMap.waitForPending(owner, 0);
+                return true;
+            }
+            long timeStart = SystemTimer.INSTANCE.milliTime();
+            long timeLeft = timeoutMs;
+            while (timeLeft > 0 && pendingMap.getValue(owner) > 0) {
+                pendingMap.waitForPending(owner, 0, timeLeft);
+                long elapsed = SystemTimer.INSTANCE.milliTime() - timeStart;
+                timeLeft = timeoutMs - elapsed;
             }
         } catch (InterruptedException e) {
         }
-
-        return false;
+        return pendingMap.getValue(owner) == 0;
     }
 
     public int getPendingCount(ResultCallback owner) {
-        Integer count = activeOwners.get(owner);
-        if (count == null) {
-            return 0;
-        }
-        return count;
+        return pendingMap.getValue(owner);
     }
 
     /**
@@ -125,7 +207,10 @@ public class SharedSender implements ReplyHandler {
      * @param owner the file to check for pending documents
      */
     public void waitForPending(ResultCallback owner) {
-        waitForPending(owner, -1);
+        try {
+            pendingMap.waitForPending(owner, 0);
+        } catch (InterruptedException e) {
+        }
     }
 
     /**
@@ -152,37 +237,17 @@ public class SharedSender implements ReplyHandler {
         if (owner.isAborted()) {
             return;
         }
-
         try {
-            synchronized (monitor) {
-                if (maxPendingPerOwner != -1 && blockingQueue) {
-                    while (true) {
-                        Integer count = activeOwners.get(owner);
-
-                        if (count != null && count >= maxPendingPerOwner) {
-                            log.log(LogLevel.INFO, "Owner " + owner + " already has " + count + " pending. Waiting for replies");
-                            monitor.wait(10000);
-                        } else {
-                            break;
-                        }
-                    }
-                }
-
-                Integer count = activeOwners.get(owner);
-
-                if (count == null) {
-                    activeOwners.put(owner, 1);
-                } else {
-                    activeOwners.put(owner, count + 1);
+            int count = pendingMap.postIncrement(owner);
+            if (maxPendingPerOwner != -1 && blockingQueue) {
+                while (count > maxPendingPerOwner) {
+                    log.log(LogLevel.INFO, "Owner " + owner + " already has " + count + " pending. Waiting for replies");
+                    pendingMap.decrement(owner);
+                    pendingMap.waitForPending(owner, maxPendingPerOwner);
+                    count = pendingMap.postIncrement(owner);
                 }
             }
-        } catch (InterruptedException e) {
-            return;
-        }
-
-        msg.setContext(owner);
-
-        try {
+            msg.setContext(owner);
             com.yahoo.messagebus.Result r = sender.send(msg, blockingQueue);
             if (!r.isAccepted()) {
                 EmptyReply reply = new EmptyReply();
@@ -203,30 +268,15 @@ public class SharedSender implements ReplyHandler {
      */
     @Override
     public void handleReply(Reply r) {
-        synchronized (monitor) {
-            ResultCallback owner = (ResultCallback) r.getContext();
+        ResultCallback owner = (ResultCallback) r.getContext();
 
-            if (owner != null) {
-                metrics.addReply(r);
-
-                Integer count = activeOwners.get(owner);
-
-                if (count != null) {
-                    if (log.isLoggable(LogLevel.SPAM)) {
-                        log.log(LogLevel.SPAM, "Received reply for file " + owner.toString() + " count was " + count);
-                    }
-
-                    if ( ! owner.handleReply(r, count - 1)) {
-                        activeOwners.remove(owner);
-                    } else {
-                        activeOwners.put(owner, count - 1);
-                    }
-                }
-            } else {
-                log.log(LogLevel.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
-            }
-
-            monitor.notifyAll();
+        if (owner != null) {
+            metrics.addReply(r);
+            int count = pendingMap.getValue(owner);
+            owner.handleReply(r, count - 1);
+            pendingMap.decrement(owner);
+        } else {
+            log.log(LogLevel.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
         }
     }
 
