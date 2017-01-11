@@ -59,20 +59,4 @@ asciistream & operator << (asciistream & os, const StackReturnEntry & v)
     return os << t;
 }
 
-void StackFrameReturnEntry::info(FILE * os) const
-{
-    static char tmp[0x400];
-    verifyAndCopy(_return, tmp, sizeof(tmp));
-    fprintf(os, "%s(%p, %p)", tmp, _return, _stack);
-}
-
-asciistream & operator << (asciistream & os, const StackFrameReturnEntry & v)
-{
-    static char tmp[0x100];
-    static char t[0x200];
-    verifyAndCopy(v._return, tmp, sizeof(tmp));
-    snprintf(t, sizeof(t), "%s(%p, %p)", tmp, v._return, v._stack);
-    return os << t;
-}
-
 }
