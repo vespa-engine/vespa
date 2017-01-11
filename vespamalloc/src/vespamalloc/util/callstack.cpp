@@ -16,22 +16,6 @@ const char * dlAddr(const void * func) {
     return funcName;
 }
 
-const void * dlNextSym(const void * func)
-{
-    const char * f = static_cast<const char *>(func);
-    size_t i(0);
-    bool done(false);
-    for( i = 0; !done; i++) {
-        Dl_info info;
-        int ret = dladdr(f+i, &info);
-        if (ret == 0) {
-            fprintf(stderr, "dladdr failed for %p\n", f+i);
-        }
-        done = (f != info.dli_saddr);
-    }
-    return f+i;
-}
-
 static void verifyAndCopy(const void * addr, char *v, size_t sz)
 {
     size_t pos(0);
