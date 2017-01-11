@@ -631,10 +631,11 @@ FileStorHandlerImpl::getMessage(vespalib::MonitorGuard & guard, Disk & t, Priori
         m.toString().c_str(), waitTime, static_cast<api::StorageCommand &>(m).getTimeout());
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
+    document::BucketId bucketId(iter->_bucketId);
     idx.erase(iter); // iter not used after this point.
 
     if (!messageTimedOutInQueue(*msg, waitTime)) {
-        auto locker = takeDiskBucketLockOwnership(guard, t, iter->_bucketId, *msg);
+        auto locker = takeDiskBucketLockOwnership(guard, t, bucketId, *msg);
         guard.unlock();
         MBUS_TRACE(trace, 9, "FileStorHandler: Got lock on bucket");
         return std::move(FileStorHandler::LockedMessage(std::move(locker), std::move(msg)));
