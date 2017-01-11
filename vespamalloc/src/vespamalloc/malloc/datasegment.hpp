@@ -210,9 +210,9 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, S
             i++;
         }
     }
-    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "ByMeAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld EmptyCallStacks=%ld InvalidCallStacks=%ld:\n",
+    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "ByMeAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld InvalidCallStacks=%ld:\n",
             checkedCount, allocatedCount, checkedCount ? allocatedCount*100/checkedCount : 0,
-            usedCount, checkedCount ? static_cast<double>(usedCount*100)/checkedCount : 0.0, notAccounted, emptyCallStacks, invalidCallStacks);
+            usedCount, checkedCount ? static_cast<double>(usedCount*100)/checkedCount : 0.0, notAccounted, invalidCallStacks);
     if ( ! callGraph->empty()) {
         Aggregator agg;
         DumpGraph<typename CallGraphLT::Node> dump(&agg, "{ ", " }");
