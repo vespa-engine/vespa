@@ -122,16 +122,21 @@ public class SharedSender implements ReplyHandler {
         owner.getPending().inc();
         globalPending.inc();
 
+        com.yahoo.messagebus.Result r;
         try {
-            com.yahoo.messagebus.Result r = sender.send(msg, blockingQueue);
-            if (!r.isAccepted()) {
-                EmptyReply reply = new EmptyReply();
-                msg.swapState(reply);
-                reply.setMessage(msg);
-                reply.addError(r.getError());
-                handleReply(reply);
-            }
+            r = sender.send(msg, blockingQueue);
         } catch (InterruptedException e) {
+            r = null;
+        }
+        if (r == null || !r.isAccepted()) {
+            // pretend we sent OK but got this error reply:
+            EmptyReply reply = new EmptyReply();
+            msg.swapState(reply);
+            reply.setMessage(msg);
+            if (r != null) {
+                reply.addError(r.getError());
+            }
+            handleReply(reply);
         }
     }
 
