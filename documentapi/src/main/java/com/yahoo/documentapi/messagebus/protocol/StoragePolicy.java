@@ -330,7 +330,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
             resetCachedStateIfClusterStateVersionLikelyRolledBack(newState);
             markReplyAsImmediateRetryIfNewStateObserved(reply, context, newState);
 
-            if ((context.calculatedDistributor == null)) {
+            if (context.calculatedDistributor == null) {
                 traceReplyFromRandomDistributor(reply, newState);
             } else {
                 traceReplyFromSpecificDistributor(reply, context, newState);
