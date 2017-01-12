@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * @author valerijf
+ * @author freva
  */
 
 public class DeleteOldAppData {
@@ -127,15 +127,11 @@ public class DeleteOldAppData {
         Files.deleteIfExists(file.toPath());
     }
 
-    private static File[] getContentsOfDirectory(String directoryPath) {
+    static File[] getContentsOfDirectory(String directoryPath) {
         File directory = new File(directoryPath);
         File[] directoryContents = directory.listFiles();
 
-        if (directoryContents == null) {
-            throw new IllegalArgumentException("The specified path is not a directory");
-        }
-
-        return directoryContents;
+        return directoryContents == null ? new File[0] : directoryContents;
     }
 
     private static File getMostRecentlyModifiedFileIn(File baseFile) {

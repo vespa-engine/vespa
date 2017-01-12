@@ -94,7 +94,8 @@ function InternalMain {
           cloudconfig_server.default_flavor=docker \
           cloudconfig_server.environment="$HOSTED_VESPA_ENVIRONMENT" \
           cloudconfig_server.hosted_vespa=true \
-          services.addr_configserver="$CONFIG_SERVER_HOSTNAME"
+          services.addr_configserver="$CONFIG_SERVER_HOSTNAME" \
+          vespa_zkfacade.restrict=""
 
     # Can also set jvmargs if necessary:
     # set cloudconfig_server.jvmargs=-Dvespa.freezedetector.disable=true -XX:NewRatio=1 -verbose:gc -XX:+PrintGCDateStamps -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Xms6g -Xmx6g

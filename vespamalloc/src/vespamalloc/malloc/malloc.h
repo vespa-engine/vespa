@@ -159,7 +159,7 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::malloc(size_t sz)
     }
     PARANOID_CHECK2(if (!mem.validFree() && mem.ptr()) { crash(); } );
     mem.setExact(sz);
-    mem.alloc(_prAllocLimit<=sz);
+    mem.alloc(_prAllocLimit<=mem.adjustSize(sz));
     return mem.ptr();
 }
 

@@ -23,7 +23,6 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -43,7 +42,7 @@ public class LocalZoneUtils {
     public static final int CONFIG_SERVER_WEB_SERVICE_PORT = 4080;
     public static final String CONFIG_SERVER_HOSTNAME = "config-server";
     public static final ContainerName CONFIG_SERVER_CONTAINER_NAME = new ContainerName(CONFIG_SERVER_HOSTNAME);
-    public static final String NODE_ADMIN_HOSTNAME = HostName.getLocalhost();
+    public static final String NODE_ADMIN_HOSTNAME = getParentHostHostname();
     public static final ContainerName NODE_ADMIN_CONTAINER_NAME = new ContainerName("node-admin");
     public static final DockerImage VESPA_LOCAL_IMAGE = new DockerImage("vespa-local:latest");
 
@@ -91,11 +90,7 @@ public class LocalZoneUtils {
                 .withVolume(pathToContainerStorage.toString(), "/host" + pathToContainerStorage.toString())
                 .withEnvironment("ENVIRONMENT", environment.getEnvironment())
                 .withEnvironment("REGION", environment.getRegion())
-                .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME)
-                .withEnvironment("JPDA_PORT", "localhost:5555")
-                .withEnvironment("JPDA_SUSPEND", "n")
-                .withEnvironment("YJAVA_OPTS", "-Dvespa.freezedetector.disable=true")
-                .withEntrypoint("/usr/local/bin/start-node-admin.sh");
+                .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME);
 
         Arrays.asList(
                     "/home/y/logs",
@@ -123,18 +118,6 @@ public class LocalZoneUtils {
     }
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        /*
-         * Because the daemon could be running on a remote machine, docker build command will upload the entire
-         * build path to daemon and then execute the Dockerfile. This means that:
-         * 1. We cant use relative paths in Dockerfile
-         * 2. We should avoid using a large directory as build root
-         *
-         * Therefore, copy docker-api jar to node-admin/target and use node-admin as build root instead of vespa/
-          */
-        Files.copy(PROJECT_ROOT.resolve("docker-api/target/docker-api-jar-with-dependencies.jar"),
-                PROJECT_ROOT.resolve("node-admin/target/docker-api-jar-with-dependencies.jar"),
-                StandardCopyOption.REPLACE_EXISTING);
-
         Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/Dockerfile");
 
         Path dockerfileTemplatePath = Paths.get("node-admin/Dockerfile.template");
@@ -142,10 +125,6 @@ public class LocalZoneUtils {
                 .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
                 .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());
         Files.write(dockerfilePath, dockerfileTemplate.getBytes());
-
-        String servicesXml = new String(Files.readAllBytes(PROJECT_ROOT.resolve("node-admin/src/main/application/services.xml")))
-                .replaceAll("(<isRunningLocally>).*(<\\/isRunningLocally>)", "$1true$2");
-        Files.write(PROJECT_ROOT.resolve("node-admin/include/services.xml"), servicesXml.getBytes());
 
         docker.buildImage(dockerfilePath.getParent().toFile(), VESPA_LOCAL_IMAGE);
     }
@@ -280,6 +259,10 @@ public class LocalZoneUtils {
         }
 
         return false;
+    }
+
+    private static String getParentHostHostname() {
+        return HostName.getLocalhost();
     }
 }
 
