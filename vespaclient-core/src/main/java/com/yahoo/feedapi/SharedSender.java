@@ -135,7 +135,7 @@ public class SharedSender implements ReplyHandler {
      * @param owner A callback to send replies to when received from messagebus
      */
     public void send(Message msg, ResultCallback owner) {
-        send(msg, owner, -1, true);
+        send(msg, owner, true);
     }
 
     /**
@@ -144,40 +144,22 @@ public class SharedSender implements ReplyHandler {
      *
      * @param msg                The message to send
      * @param owner              The callback to send replies to when received from messagebus
-     * @param maxPendingPerOwner The maximum number of pending messages the callback
      * @param blockingQueue      If true, block until the message bus queue is available.
      */
-    public void send(Message msg, ResultCallback owner, int maxPendingPerOwner, boolean blockingQueue) {
+    public void send(Message msg, ResultCallback owner, boolean blockingQueue) {
         // Silently fail messages that are attempted sent after the callback aborted.
         if (owner.isAborted()) {
             return;
         }
 
-        try {
-            synchronized (monitor) {
-                if (maxPendingPerOwner != -1 && blockingQueue) {
-                    while (true) {
-                        Integer count = activeOwners.get(owner);
+        synchronized (monitor) {
+            Integer count = activeOwners.get(owner);
 
-                        if (count != null && count >= maxPendingPerOwner) {
-                            log.log(LogLevel.INFO, "Owner " + owner + " already has " + count + " pending. Waiting for replies");
-                            monitor.wait(10000);
-                        } else {
-                            break;
-                        }
-                    }
-                }
-
-                Integer count = activeOwners.get(owner);
-
-                if (count == null) {
-                    activeOwners.put(owner, 1);
-                } else {
-                    activeOwners.put(owner, count + 1);
-                }
+            if (count == null) {
+                activeOwners.put(owner, 1);
+            } else {
+                activeOwners.put(owner, count + 1);
             }
-        } catch (InterruptedException e) {
-            return;
         }
 
         msg.setContext(owner);
