@@ -78,6 +78,7 @@ public:
     static bool equal(const SimpleTensor &a, const SimpleTensor &b);
     static std::unique_ptr<SimpleTensor> map(const UnaryOperation &op, const SimpleTensor &a);
     static std::unique_ptr<SimpleTensor> join(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b);
+    static std::unique_ptr<SimpleTensor> concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension);
 };
 
 } // namespace vespalib::eval

@@ -12,22 +12,23 @@ namespace {
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
 
-const Dimension *find_dimension(const std::vector<Dimension> &list, const vespalib::string &name) {
-    for (const auto &item: list) {
-        if (item.name == name) {
-            return &item;
+size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::string &name) {
+    for (size_t idx = 0; idx < list.size(); ++idx) {
+        if (list[idx].name == name) {
+            return idx;
         }
     }
-    return nullptr;
+    return ValueType::Dimension::npos;
 }
 
 Dimension *find_dimension(std::vector<Dimension> &list, const vespalib::string &name) {
-    for (auto &item: list) {
-        if (item.name == name) {
-            return &item;
-        }
-    }
-    return nullptr;    
+    size_t idx = my_dimension_index(list, name);
+    return (idx != ValueType::Dimension::npos) ? &list[idx] : nullptr;
+}
+
+const Dimension *find_dimension(const std::vector<Dimension> &list, const vespalib::string &name) {
+    size_t idx = my_dimension_index(list, name);
+    return (idx != ValueType::Dimension::npos) ? &list[idx] : nullptr;
 }
 
 void sort_dimensions(DimensionList &dimensions) {
@@ -130,6 +131,11 @@ ValueType::is_dense() const
         }
     }
     return true;
+}
+
+size_t
+ValueType::dimension_index(const vespalib::string &name) const {
+    return my_dimension_index(_dimensions, name);
 }
 
 std::vector<vespalib::string>
