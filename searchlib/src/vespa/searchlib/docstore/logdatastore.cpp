@@ -875,6 +875,8 @@ LogDataStore::setLid(const LockGuard & guard, uint32_t lid, const LidInfo & meta
         }
         _lidInfo.setGeneration(_genHandler.getNextGeneration());
         _genHandler.incGeneration();
+        _genHandler.updateFirstUsedGeneration();
+        _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
         setNextId(_lidInfo.size());
     }
     _lidInfo[lid] = meta;
