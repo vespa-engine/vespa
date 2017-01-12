@@ -3,6 +3,9 @@
 #pragma once
 
 #include <vespa/fastos/time.h>
+#include <vespa/fastos/cond.h>
+
+class FNET_Task;
 
 /**
  * An object of this class handles scheduling of @ref FNET_Task
@@ -24,7 +27,7 @@ public:
     };
 
 private:
-    FNET_Cond    _cond;
+    FastOS_Cond    _cond;
     FNET_Task   *_slots[NUM_SLOTS + 1];
     FastOS_Time  _next;
     FastOS_Time  _now;
@@ -44,129 +47,20 @@ private:
     void Wait()      { _cond.Wait();      }
     void Broadcast() { _cond.Broadcast(); }
 
+    FNET_Task *GetTask() { return _currPt; }
 
-    FNET_Task *GetTask()
-    {
-        return _currPt;
-    }
-
-
-    void FirstTask(uint32_t slot)
-    {
-        _currPt = _slots[slot];
-        _tailPt = (_currPt != NULL) ?
-                  _currPt->_task_prev : NULL;
-    }
-
-
-    void NextTask()
-    {
-        _currPt = (_currPt != _tailPt) ?
-                  _currPt->_task_next : NULL;
-    }
-
-
-    void AdjustCurrPt()
-    {
-        _currPt = (_currPt != _tailPt) ?
-                  _currPt->_task_next : NULL;
-    }
-
-
-    void AdjustTailPt()
-    {
-        _tailPt = _tailPt->_task_prev;
-    }
-
-
-    void LinkIn(FNET_Task *task)
-    {
-        FNET_Task **head = &(_slots[task->_task_slot]);
-
-        if ((*head) == NULL) {
-            (*head) = task;
-            task->_task_next = task;
-            task->_task_prev = task;
-        } else {
-            task->_task_next = (*head);
-            task->_task_prev = (*head)->_task_prev;
-            (*head)->_task_prev->_task_next = task;
-            (*head)->_task_prev = task;
-        }
-    }
-
-
-    void LinkOut(FNET_Task *task)
-    {
-        FNET_Task **head = &(_slots[task->_task_slot]);
-
-        if (task == _currPt)
-            AdjustCurrPt();
-        else if (task == _tailPt)
-            AdjustTailPt();
-
-        if (task->_task_next == task) {
-            (*head) = NULL;
-        } else {
-            task->_task_prev->_task_next = task->_task_next;
-            task->_task_next->_task_prev = task->_task_prev;
-            if ((*head) == task)
-                (*head) = task->_task_next;
-        }
-        task->_task_next = NULL;
-        task->_task_prev = NULL;
-    }
-
-
-    static bool IsActive(FNET_Task *task)
-    { return task->_task_next != NULL; }
-
-
-    bool IsPerforming(FNET_Task *task)
-    { return task == _performing; }
-
-
-    void BeforeTask(FNET_Task *task)
-    {
-        _performing = task;
-        Unlock();
-    }
-
-
-    void AfterTask()
-    {
-        Lock();
-        _performing = NULL;
-        if (_waitTask) {
-            _waitTask = false;
-            Broadcast();
-        }
-    }
-
-
-    void WaitTask(FNET_Task *task)
-    {
-        while (IsPerforming(task)) {
-            _waitTask = true;
-            Wait();
-        }
-    }
-
-
-    void PerformTasks(uint32_t slot, uint32_t iter)
-    {
-        FirstTask(slot);
-        for (FNET_Task *task; (task = GetTask()) != NULL; ) {
-            NextTask();
-
-            if (task->_task_iter == iter) {
-                LinkOut(task);
-                BeforeTask(task);
-                task->PerformTask(); // PERFORM TASK
-                AfterTask();
-            }
-        }
-    }
+    void FirstTask(uint32_t slot);
+    void NextTask();
+    void AdjustCurrPt();
+    void AdjustTailPt();
+    void LinkIn(FNET_Task *task);
+    void LinkOut(FNET_Task *task);
+    bool IsPerforming(FNET_Task *task) { return task == _performing; }
+    void BeforeTask(FNET_Task *task);
+    void AfterTask();
+    void WaitTask(FNET_Task *task);
+    void PerformTasks(uint32_t slot, uint32_t iter);
+    bool IsActive(FNET_Task *task);
 
 public:
 

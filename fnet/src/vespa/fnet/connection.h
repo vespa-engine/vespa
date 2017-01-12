@@ -3,6 +3,17 @@
 #pragma once
 
 #include "ext_connectable.h"
+#include "iocomponent.h"
+#include "databuffer.h"
+#include "context.h"
+#include "channellookup.h"
+#include "packetqueue.h"
+
+class FNET_IPacketStreamer;
+class FNET_IServerAdapter;
+class FastOS_SocketInterface;
+class FNET_IPacketHandler;
+
 /**
  * Interface implemented by objects that want to perform connection
  * cleanup. Use the SetCleanupHandler method to register with a
@@ -53,35 +64,6 @@ public:
         FNET_WRITE_REDO = 10
     };
 
-#ifndef IAM_DOXYGEN
-    class SyncPacket : public FNET_DummyPacket
-    {
-    private:
-        FNET_Cond       _cond;
-        bool            _done;
-        bool            _waiting;
-
-    public:
-        SyncPacket()
-            : _cond(),
-              _done(false),
-              _waiting(false) {}
-        virtual ~SyncPacket() {}
-
-        void WaitFree()
-        {
-            _cond.Lock();
-            _waiting = true;
-            while(!_done)
-                _cond.Wait();
-            _waiting = false;
-            _cond.Unlock();
-        }
-
-        virtual void Free();
-    };
-#endif // DOXYGEN
-
 private:
     struct Flags {
         Flags() :
@@ -100,7 +82,7 @@ private:
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
     FNET_Channel            *_adminChannel;    // only on client side
-    FastOS_Socket           *_socket;          // socket for this conn
+    FastOS_SocketInterface  *_socket;          // socket for this conn
     FNET_Context             _context;         // connection context
     State                    _state;           // connection state
     Flags                    _flags;           // Packed flags.
@@ -239,7 +221,7 @@ public:
     FNET_Connection(FNET_TransportThread *owner,
                     FNET_IPacketStreamer *streamer,
                     FNET_IServerAdapter *serverAdapter,
-                    FastOS_Socket *mySocket,
+                    FastOS_SocketInterface *mySocket,
                     const char *spec);
 
     /**
@@ -260,7 +242,7 @@ public:
                     FNET_IPacketHandler *adminHandler,
                     FNET_Context adminContext,
                     FNET_Context context,
-                    FastOS_Socket *mySocket,
+                    FastOS_SocketInterface *mySocket,
                     const char *spec);
 
     /**

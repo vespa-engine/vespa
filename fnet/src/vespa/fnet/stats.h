@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 /**
  * This class is used internally by @ref FNET_Transport objects to
  * aggregate FNET statistics. The actual statistics are located in the

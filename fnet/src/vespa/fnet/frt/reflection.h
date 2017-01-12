@@ -2,6 +2,12 @@
 
 #pragma once
 
+#include "invokable.h"
+#include <cstdint>
+
+class FRT_Values;
+class FRT_Supervisor;
+class FRT_StringValue;
 
 class FRT_Method
 {
@@ -28,30 +34,9 @@ public:
                const char    *returnSpec,
                bool           instant,
                FRT_METHOD_PT  method,
-               FRT_Invokable *handler)
-        : _hashNext(NULL),
-          _listNext(NULL),
-          _name(strdup(name)),
-          _paramSpec(strdup(paramSpec)),
-          _returnSpec(strdup(returnSpec)),
-          _instant(instant),
-          _method(method),
-          _handler(handler),
-          _docLen(0),
-          _doc(NULL)
-    {
-        assert(_name != NULL);
-        assert(_paramSpec != NULL);
-        assert(_returnSpec != NULL);
-    }
+               FRT_Invokable *handler);
 
-    ~FRT_Method()
-    {
-        free(_name);
-        free(_paramSpec);
-        free(_returnSpec);
-        free(_doc);
-    }
+    ~FRT_Method();
 
     FRT_Method *GetNext() { return _listNext; }
     const char *GetName() { return _name; }
@@ -60,22 +45,8 @@ public:
     bool IsInstant() { return _instant; }
     FRT_METHOD_PT GetMethod() { return _method; }
     FRT_Invokable *GetHandler() { return _handler; }
-    void SetDocumentation(FRT_Values *values)
-    {
-        free(_doc);
-        _docLen = values->GetLength();
-        _doc = (char *) malloc(_docLen);
-        assert(_doc != NULL);
-
-        FNET_DataBuffer buf(_doc, _docLen);
-        values->EncodeCopy(&buf);
-    }
-    void GetDocumentation(FRT_Values *values)
-    {
-        FNET_DataBuffer buf(_doc, _docLen);
-        buf.FreeToData(_docLen);
-        values->DecodeCopy(&buf, _docLen);
-    }
+    void SetDocumentation(FRT_Values *values);
+    void GetDocumentation(FRT_Values *values);
 };
 
 //------------------------------------------------------------------------

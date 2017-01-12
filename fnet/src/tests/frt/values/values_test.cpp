@@ -1,6 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/values.h>
+#include <vespa/fnet/databuffer.h>
+#include <vespa/fnet/info.h>
+
+using vespalib::Stash;
 
 uint8_t   int8_arr[3] = {    1,    2,    3 };
 uint16_t int16_arr[3] = {    2,    4,    6 };
@@ -159,12 +163,12 @@ void checkValues(FRT_Values &v1, FRT_Values &v2) {
     EXPECT_TRUE(v2.Equals(&v1));
 }
 
-TEST_FF("set and get", FRT_MemoryTub(), FRT_Values(&f1)) {
+TEST_FF("set and get", Stash(), FRT_Values(&f1)) {
     fillValues(f2);
     checkValues(f2);
 }
 
-TEST_FFFF("encode/decode big endian", FRT_MemoryTub(), FRT_Values(&f1),
+TEST_FFFF("encode/decode big endian", Stash(), FRT_Values(&f1),
          FNET_DataBuffer(), FRT_Values(&f1))
 {
     fillValues(f2);
@@ -174,7 +178,7 @@ TEST_FFFF("encode/decode big endian", FRT_MemoryTub(), FRT_Values(&f1),
     checkValues(f2, f4);
 }
 
-TEST_FFFF("encode/decode host endian", FRT_MemoryTub(), FRT_Values(&f1),
+TEST_FFFF("encode/decode host endian", Stash(), FRT_Values(&f1),
           FNET_DataBuffer(), FRT_Values(&f1))
 {
     fillValues(f2);
@@ -184,7 +188,7 @@ TEST_FFFF("encode/decode host endian", FRT_MemoryTub(), FRT_Values(&f1),
     checkValues(f2, f4);
 }
 
-TEST_FFFF("decode little if host is little", FRT_MemoryTub(), FRT_Values(&f1),
+TEST_FFFF("decode little if host is little", Stash(), FRT_Values(&f1),
           FNET_DataBuffer(), FRT_Values(&f1))
 {
     if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
@@ -199,7 +203,7 @@ TEST_FFFF("decode little if host is little", FRT_MemoryTub(), FRT_Values(&f1),
     }
 }
 
-TEST_FF("print values", FRT_MemoryTub(), FRT_Values(&f1)) {
+TEST_FF("print values", Stash(), FRT_Values(&f1)) {
     fillValues(f2);
     f2.Print();
 }

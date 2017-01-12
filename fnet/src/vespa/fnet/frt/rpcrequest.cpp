@@ -21,9 +21,7 @@ FRT_RPCRequest::FRT_RPCRequest()
       _abortHandler(NULL),
       _returnHandler(NULL),
       _cleanupHandler(NULL)
-{
-}
-
+{ }
 
 FRT_RPCRequest::~FRT_RPCRequest()
 {
@@ -35,8 +33,7 @@ FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage, uint32_t 
 {
     _errorCode = errorCode;
     _errorMessageLen = errorMessageLen;
-    _errorMessage = _tub.CopyString(errorMessage,
-                                    errorMessageLen);
+    _errorMessage = fnet::copyString(_tub.alloc(errorMessageLen + 1), errorMessage, errorMessageLen);
 }
 void
 FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage) {
@@ -44,20 +41,68 @@ FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage) {
 }
 
 void
-FRT_RPCRequest::SetError(uint32_t errorCode)
-{
+FRT_RPCRequest::SetError(uint32_t errorCode) {
     SetError(errorCode, FRT_GetDefaultErrorMessage(errorCode));
 }
 
+bool
+FRT_RPCRequest::CheckReturnTypes(const char *types) {
+    if (IsError()) {
+        return false;
+    }
+    if (strcmp(types, GetReturnSpec()) != 0) {
+        SetError(FRTE_RPC_WRONG_RETURN);
+        return false;
+    }
+    return true;
+}
+
 void
-FRT_RPCRequest::Reset()
-{
+FRT_RPCRequest::SetMethodName(const char *methodName, uint32_t len) {
+    _methodNameLen = len;
+    _methodName = fnet::copyString(_tub.alloc(len + 1), methodName, len);
+}
+void
+FRT_RPCRequest::SetMethodName(const char *methodName) {
+    SetMethodName(methodName, strlen(methodName));
+}
+
+bool
+FRT_RPCRequest::Abort() {
+    if (_abortHandler == NULL) {
+        return false;
+    }
+    return _abortHandler->HandleAbort();
+}
+
+void
+FRT_RPCRequest::Return() {
+    _returnHandler->HandleReturn();
+}
+
+FNET_Connection *
+FRT_RPCRequest::GetConnection() {
+    if (_returnHandler == NULL)
+        return NULL;
+    return _returnHandler->GetConnection();
+}
+
+void
+FRT_RPCRequest::Cleanup() {
+    if (_cleanupHandler != NULL) {
+        _cleanupHandler->HandleCleanup();
+        _cleanupHandler = NULL;
+    }
+}
+
+void
+FRT_RPCRequest::Reset() {
     assert(_refcnt <= 1);
     Cleanup();
     _context = FNET_Context();
     _params.Reset();
     _return.Reset();
-    _tub.Reset();
+    _tub.clear();
     _errorCode = FRTE_NO_ERROR;
     _errorMessageLen = 0;
     _errorMessage = NULL;

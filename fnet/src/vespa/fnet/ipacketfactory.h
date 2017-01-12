@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "context.h"
+
 /**
  * Interface describing objects that are able to create packets. An
  * object implementing this interface is needed in order to use the
@@ -28,7 +30,6 @@ public:
      *        for the channel that will receive the packet after it is
      *        created and un-streamed.
      **/
-    virtual FNET_Packet *CreatePacket(uint32_t pcode,
-                                      FNET_Context context) = 0;
+    virtual FNET_Packet *CreatePacket(uint32_t pcode, FNET_Context context) = 0;
 };
 

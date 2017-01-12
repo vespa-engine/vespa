@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "ipacketstreamer.h"
+
 /**
  * This is a convenience class. Large applications may want to
  * implement the functionality offered by this class themselves to

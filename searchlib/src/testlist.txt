@@ -90,7 +90,6 @@ tests/memoryindex/documentinverter
 tests/memoryindex/fieldinverter
 tests/memoryindex/memoryindex
 tests/memoryindex/urlfieldinverter
-tests/memorytub
 tests/nativerank
 tests/nearsearch
 tests/postinglistbm

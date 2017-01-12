@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "ipackethandler.h"
+#include <vespa/fastos/cond.h>
+
 /**
  * This class implements a queue of packets. Being in a queue does not
  * affect the packet's internal data. This is the superclass of the
@@ -172,7 +175,7 @@ private:
 
 
 protected:
-    FNET_Cond    _cond;
+    FastOS_Cond  _cond;
     uint32_t     _waitCnt;
 
 
@@ -185,8 +188,7 @@ public:
      * @param hpRetCode the value that should be returned when used
      *                  as a packet handler. Default is FNET_KEEP_CHANNEL.
      **/
-    FNET_PacketQueue(uint32_t len = 64,
-                     HP_RetCode hpRetCode = FNET_KEEP_CHANNEL);
+    FNET_PacketQueue(uint32_t len = 64, HP_RetCode hpRetCode = FNET_KEEP_CHANNEL);
     virtual ~FNET_PacketQueue();
 
 

@@ -253,7 +253,7 @@ FRT_PacketFactory::CreatePacket(uint32_t pcode, FNET_Context context)
     if (req == NULL || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0)
         return NULL;
 
-    FRT_MemoryTub *tub = req->GetMemoryTub();
+    vespalib::Stash *tub = req->getStash();
     pcode &= 0xffff; // remove flags
 
     switch(pcode) {

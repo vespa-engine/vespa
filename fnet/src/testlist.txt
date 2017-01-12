@@ -3,7 +3,6 @@ tests/connection_spread
 tests/databuffer
 tests/examples
 tests/fdselector
-tests/frt/memorytub
 tests/frt/method_pt
 tests/frt/parallel_rpc
 tests/frt/rpc

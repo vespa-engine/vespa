@@ -1,18 +1,56 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "connection.h"
+#include "dummypacket.h"
+#include "channel.h"
+#include "controlpacket.h"
+#include "ipacketstreamer.h"
+#include "iserveradapter.h"
+#include "config.h"
+#include "transport_thread.h"
+#include <vespa/fastos/socket.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
-#include <vespa/fnet/fnet.h>
+
+namespace {
+class SyncPacket : public FNET_DummyPacket {
+private:
+    FastOS_Cond _cond;
+    bool _done;
+    bool _waiting;
+
+public:
+    SyncPacket()
+            : _cond(),
+              _done(false),
+              _waiting(false) {}
+
+    virtual ~SyncPacket() {}
+
+    void WaitFree() {
+        _cond.Lock();
+        _waiting = true;
+        while (!_done)
+            _cond.Wait();
+        _waiting = false;
+        _cond.Unlock();
+    }
+
+    virtual void Free();
+};
+
 
 void
-FNET_Connection::SyncPacket::Free()
+SyncPacket::Free()
 {
     _cond.Lock();
     _done = true;
     if (_waiting)
         _cond.Signal();
     _cond.Unlock();
+}
+
 }
 
 ///////////////////////
@@ -35,7 +73,6 @@ FNET_Connection::GetStateString(State state)
         return "ILLEGAL";
     }
 }
-
 
 void
 FNET_Connection::SetState(State state)
@@ -360,7 +397,7 @@ FNET_Connection::Write(bool direct)
 FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketStreamer *streamer,
                                  FNET_IServerAdapter *serverAdapter,
-                                 FastOS_Socket *mySocket,
+                                 FastOS_SocketInterface *mySocket,
                                  const char *spec)
     : FNET_IOComponent(owner, mySocket, spec, /* time-out = */ true),
       _streamer(streamer),
@@ -395,7 +432,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketHandler *adminHandler,
                                  FNET_Context adminContext,
                                  FNET_Context context,
-                                 FastOS_Socket *mySocket,
+                                 FastOS_SocketInterface *mySocket,
                                  const char *spec)
     : FNET_IOComponent(owner, mySocket, spec, /* time-out = */ true),
       _streamer(streamer),

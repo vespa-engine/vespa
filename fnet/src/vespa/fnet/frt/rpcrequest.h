@@ -54,7 +54,8 @@ public:
 class FRT_RPCRequest
 {
 private:
-    FRT_MemoryTub _tub;
+    using Stash = vespalib::Stash;
+    Stash         _tub;
     FNET_Context  _context;
     FRT_Values    _params;
     FRT_Values    _return;
@@ -94,7 +95,7 @@ public:
     void SetContext(FNET_Context context) { _context = context; }
     FNET_Context GetContext() { return _context; }
 
-    FRT_MemoryTub *GetMemoryTub() { return &_tub; }
+    Stash * getStash() { return &_tub; }
 
     FRT_Values *GetParams() { return &_params; }
     FRT_Values *GetReturn() { return &_return; }
@@ -121,24 +122,10 @@ public:
     uint32_t GetErrorMessageLen() { return _errorMessageLen; }
     const char *GetErrorMessage() { return _errorMessage; }
 
-    bool CheckReturnTypes(const char *types) {
-        if (IsError()) {
-            return false;
-        }
-        if (strcmp(types, GetReturnSpec()) != 0) {
-            SetError(FRTE_RPC_WRONG_RETURN);
-            return false;
-        }
-        return true;
-    }
+    bool CheckReturnTypes(const char *types);
 
-    void SetMethodName(const char *methodName, uint32_t len)
-    {
-        _methodNameLen = len;
-        _methodName = _tub.CopyString(methodName, len);
-    }
-    void SetMethodName(const char *methodName)
-    { SetMethodName(methodName, strlen(methodName)); }
+    void SetMethodName(const char *methodName, uint32_t len);
+    void SetMethodName(const char *methodName);
 
     uint32_t GetMethodNameLen() { return _methodNameLen; }
     const char *GetMethodName() { return _methodName; }
@@ -151,38 +138,12 @@ public:
     void SetDetachedPT(bool *detachedPT) { _detachedPT = detachedPT; }
     void Detach() { *_detachedPT = true; }
 
-    void SetAbortHandler(FRT_IAbortHandler *handler)
-    { _abortHandler = handler; }
-    void SetReturnHandler(FRT_IReturnHandler *handler)
-    { _returnHandler = handler; }
-    void SetCleanupHandler(FRT_ICleanupHandler *handler)
-    { _cleanupHandler = handler; }
+    void SetAbortHandler(FRT_IAbortHandler *handler) { _abortHandler = handler; }
+    void SetReturnHandler(FRT_IReturnHandler *handler) { _returnHandler = handler; }
+    void SetCleanupHandler(FRT_ICleanupHandler *handler) { _cleanupHandler = handler; }
 
-    bool Abort()
-    {
-        if (_abortHandler == NULL) {
-            return false;
-        }
-        return _abortHandler->HandleAbort();
-    }
-
-    void Return() {
-        _returnHandler->HandleReturn();
-    }
-
-    FNET_Connection *GetConnection()
-    {
-        if (_returnHandler == NULL)
-            return NULL;
-        return _returnHandler->GetConnection();
-    }
-
-    void Cleanup()
-    {
-        if (_cleanupHandler != NULL) {
-            _cleanupHandler->HandleCleanup();
-            _cleanupHandler = NULL;
-        }
-    }
+    bool Abort();
+    void Return();
+    FNET_Connection *GetConnection();
+    void Cleanup();
 };
-

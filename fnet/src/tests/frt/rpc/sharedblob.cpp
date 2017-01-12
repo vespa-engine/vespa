@@ -1,7 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vector>
+
+constexpr size_t ALLOC_LIMIT=1024;
 
 struct MyBlob : FRT_ISharedBlob
 {
@@ -16,8 +19,8 @@ struct MyBlob : FRT_ISharedBlob
 struct Data
 {
     enum {
-        SMALL = (FRT_MemoryTub::ALLOC_LIMIT / 2),
-        LARGE = (FRT_MemoryTub::ALLOC_LIMIT * 2)
+        SMALL = (ALLOC_LIMIT / 2),
+        LARGE = (ALLOC_LIMIT * 2)
     };
 
     char    *buf;

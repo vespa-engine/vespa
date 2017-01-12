@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
+#include "iocomponent.h"
+#include "transport_thread.h"
+#include <vespa/fastos/socket.h>
 
 
 FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
-                                   FastOS_Socket *mysocket,
+                                   FastOS_SocketInterface *mysocket,
                                    const char *spec,
                                    bool shouldTimeOut)
     : _ioc_next(NULL),
@@ -31,6 +32,15 @@ FNET_IOComponent::~FNET_IOComponent()
     free(_ioc_spec);
 }
 
+FNET_Config *
+FNET_IOComponent::GetConfig() {
+    return _ioc_owner->GetConfig();
+}
+
+void
+FNET_IOComponent::UpdateTimeOut() {
+    _ioc_owner->UpdateTimeOut(this);
+}
 
 void
 FNET_IOComponent::AddRef()

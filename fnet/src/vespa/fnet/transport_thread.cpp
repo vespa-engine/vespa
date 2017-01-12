@@ -1,9 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "transport_thread.h"
+#include "iexecutable.h"
+#include "iocomponent.h"
+#include "controlpacket.h"
+#include "connector.h"
+#include "connection.h"
+#include "transport.h"
+#include <vespa/vespalib/util/sync.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
-#include <vespa/fnet/fnet.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace {
 

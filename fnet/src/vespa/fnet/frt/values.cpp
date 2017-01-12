@@ -9,7 +9,24 @@ static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte.");
 static_assert(sizeof(float)   == sizeof(uint32_t), "float must be same size as uint32_t");
 static_assert(sizeof(double)  == sizeof(uint64_t), "double must be same size as uint64_t");
 
-FRT_Values::FRT_Values(FRT_MemoryTub *tub)
+constexpr size_t SHARED_LIMIT = 1024;
+
+namespace fnet {
+
+char * copyString(char *dst, const char *src, size_t len) {
+    memcpy(dst, src, len);
+    dst[len] = '\0';
+    return dst;
+}
+
+char * copyData(char *dst, const void *src, size_t len) {
+    memcpy(dst, src, len);
+    return dst;
+}
+
+}
+
+FRT_Values::FRT_Values(Stash *tub)
     : _maxValues(0),
       _numValues(0),
       _typeString(NULL),
@@ -19,6 +36,15 @@ FRT_Values::FRT_Values(FRT_MemoryTub *tub)
 { }
 
 FRT_Values::~FRT_Values() { }
+
+FRT_Values::LocalBlob::LocalBlob(const char *data, uint32_t len) :
+        _data(Alloc::alloc(len)),
+        _len(len)
+{
+    if (data != NULL) {
+        memcpy(_data.get(), data, len);
+    }
+}
 
 void
 FRT_Values::DiscardBlobs()
@@ -54,10 +80,10 @@ FRT_Values::EnsureFree(uint32_t need)
     if (cnt < 16)
         cnt = 16;
 
-    char *types = (char *) _tub->Alloc(cnt + 1);
+    char *types = (char *) _tub->alloc(cnt + 1);
     memcpy(types, _typeString, _numValues);
     memset(types + _numValues, FRT_VALUE_NONE, cnt + 1 - _numValues);
-    FRT_Value *values = (FRT_Value *) _tub->Alloc(cnt * sizeof(FRT_Value));
+    FRT_Value *values = (FRT_Value *) _tub->alloc(cnt * sizeof(FRT_Value));
     memcpy(values, _values, _numValues * sizeof(FRT_Value));
     _maxValues  = cnt;
     _typeString = types;
@@ -67,7 +93,7 @@ FRT_Values::EnsureFree(uint32_t need)
 uint8_t *
 FRT_Values::AddInt8Array(uint32_t len) {
     EnsureFree();
-    uint8_t *ret = (uint8_t *) _tub->Alloc(len * sizeof(uint8_t));
+    uint8_t *ret = (uint8_t *) _tub->alloc(len * sizeof(uint8_t));
     _values[_numValues]._int8_array._pt = ret;
     _values[_numValues]._int8_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT8_ARRAY;
@@ -77,7 +103,7 @@ FRT_Values::AddInt8Array(uint32_t len) {
 void
 FRT_Values::AddInt8Array(const uint8_t *array, uint32_t len) {
     EnsureFree();
-    uint8_t *pt = (uint8_t *) _tub->Alloc(len * sizeof(uint8_t));
+    uint8_t *pt = (uint8_t *) _tub->alloc(len * sizeof(uint8_t));
     _values[_numValues]._int8_array._pt = pt;
     _values[_numValues]._int8_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT8_ARRAY;
@@ -87,7 +113,7 @@ FRT_Values::AddInt8Array(const uint8_t *array, uint32_t len) {
 uint16_t *
 FRT_Values::AddInt16Array(uint32_t len) {
     EnsureFree();
-    uint16_t *ret = (uint16_t *) _tub->Alloc(len * sizeof(uint16_t));
+    uint16_t *ret = (uint16_t *) _tub->alloc(len * sizeof(uint16_t));
     _values[_numValues]._int16_array._pt = ret;
     _values[_numValues]._int16_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT16_ARRAY;
@@ -97,7 +123,7 @@ FRT_Values::AddInt16Array(uint32_t len) {
 void
 FRT_Values::AddInt16Array(const uint16_t *array, uint32_t len) {
     EnsureFree();
-    uint16_t *pt = (uint16_t *) _tub->Alloc(len * sizeof(uint16_t));
+    uint16_t *pt = (uint16_t *) _tub->alloc(len * sizeof(uint16_t));
     _values[_numValues]._int16_array._pt = pt;
     _values[_numValues]._int16_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT16_ARRAY;
@@ -107,7 +133,7 @@ FRT_Values::AddInt16Array(const uint16_t *array, uint32_t len) {
 uint32_t *
 FRT_Values::AddInt32Array(uint32_t len) {
     EnsureFree();
-    uint32_t *ret = (uint32_t *) _tub->Alloc(len * sizeof(uint32_t));
+    uint32_t *ret = (uint32_t *) _tub->alloc(len * sizeof(uint32_t));
     _values[_numValues]._int32_array._pt = ret;
     _values[_numValues]._int32_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT32_ARRAY;
@@ -117,7 +143,7 @@ FRT_Values::AddInt32Array(uint32_t len) {
 void
 FRT_Values::AddInt32Array(const uint32_t *array, uint32_t len) {
     EnsureFree();
-    uint32_t *pt = (uint32_t *) _tub->Alloc(len * sizeof(uint32_t));
+    uint32_t *pt = (uint32_t *) _tub->alloc(len * sizeof(uint32_t));
     _values[_numValues]._int32_array._pt = pt;
     _values[_numValues]._int32_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT32_ARRAY;
@@ -127,7 +153,7 @@ FRT_Values::AddInt32Array(const uint32_t *array, uint32_t len) {
 uint64_t *
 FRT_Values::AddInt64Array(uint32_t len) {
     EnsureFree();
-    uint64_t *ret = (uint64_t *) _tub->Alloc(len * sizeof(uint64_t));
+    uint64_t *ret = (uint64_t *) _tub->alloc(len * sizeof(uint64_t));
     _values[_numValues]._int64_array._pt = ret;
     _values[_numValues]._int64_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT64_ARRAY;
@@ -137,7 +163,7 @@ FRT_Values::AddInt64Array(uint32_t len) {
 void
 FRT_Values::AddInt64Array(const uint64_t *array, uint32_t len) {
     EnsureFree();
-    uint64_t *pt = (uint64_t *) _tub->Alloc(len * sizeof(uint64_t));
+    uint64_t *pt = (uint64_t *) _tub->alloc(len * sizeof(uint64_t));
     _values[_numValues]._int64_array._pt = pt;
     _values[_numValues]._int64_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT64_ARRAY;
@@ -147,7 +173,7 @@ FRT_Values::AddInt64Array(const uint64_t *array, uint32_t len) {
 float *
 FRT_Values::AddFloatArray(uint32_t len) {
     EnsureFree();
-    float *ret = (float *) _tub->Alloc(len * sizeof(float));
+    float *ret = (float *) _tub->alloc(len * sizeof(float));
     _values[_numValues]._float_array._pt = ret;
     _values[_numValues]._float_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_FLOAT_ARRAY;
@@ -157,7 +183,7 @@ FRT_Values::AddFloatArray(uint32_t len) {
 void
 FRT_Values::AddFloatArray(const float *array, uint32_t len) {
     EnsureFree();
-    float *pt = (float *) _tub->Alloc(len * sizeof(float));
+    float *pt = (float *) _tub->alloc(len * sizeof(float));
     _values[_numValues]._float_array._pt = pt;
     _values[_numValues]._float_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_FLOAT_ARRAY;
@@ -167,7 +193,7 @@ FRT_Values::AddFloatArray(const float *array, uint32_t len) {
 double *
 FRT_Values::AddDoubleArray(uint32_t len) {
     EnsureFree();
-    double *ret = (double *) _tub->Alloc(len * sizeof(double));
+    double *ret = (double *) _tub->alloc(len * sizeof(double));
     _values[_numValues]._double_array._pt = ret;
     _values[_numValues]._double_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_DOUBLE_ARRAY;
@@ -177,7 +203,7 @@ FRT_Values::AddDoubleArray(uint32_t len) {
 void
 FRT_Values::AddDoubleArray(const double *array, uint32_t len) {
     EnsureFree();
-    double *pt = (double *) _tub->Alloc(len * sizeof(double));
+    double *pt = (double *) _tub->alloc(len * sizeof(double));
     _values[_numValues]._double_array._pt = pt;
     _values[_numValues]._double_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_DOUBLE_ARRAY;
@@ -187,7 +213,7 @@ FRT_Values::AddDoubleArray(const double *array, uint32_t len) {
 void
 FRT_Values::AddString(const char *str, uint32_t len) {
     EnsureFree();
-    _values[_numValues]._string._str = _tub->CopyString(str, len);
+    _values[_numValues]._string._str = fnet::copyString(_tub->alloc(len+1), str, len);
     _values[_numValues]._string._len = len;
     _typeString[_numValues++] = FRT_VALUE_STRING;
 }
@@ -195,7 +221,7 @@ FRT_Values::AddString(const char *str, uint32_t len) {
 char *
 FRT_Values::AddString(uint32_t len) {
     EnsureFree();
-    char *ret = (char *) _tub->Alloc(len + 1);
+    char *ret = (char *) _tub->alloc(len + 1);
     _values[_numValues]._string._str = ret;
     _values[_numValues]._string._len = len;
     _typeString[_numValues++] = FRT_VALUE_STRING;
@@ -205,7 +231,7 @@ FRT_Values::AddString(uint32_t len) {
 FRT_StringValue *
 FRT_Values::AddStringArray(uint32_t len) {
     EnsureFree();
-    FRT_StringValue *ret = (FRT_StringValue *) _tub->Alloc(len * sizeof(FRT_StringValue));
+    FRT_StringValue *ret = (FRT_StringValue *) _tub->alloc(len * sizeof(FRT_StringValue));
     _values[_numValues]._string_array._pt = ret;
     _values[_numValues]._string_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_STRING_ARRAY;
@@ -228,24 +254,24 @@ FRT_Values::AddData(vespalib::alloc::Alloc buf, uint32_t len) {
 
 void
 FRT_Values::AddData(const char *buf, uint32_t len) {
-    if (len > FRT_MemoryTub::ALLOC_LIMIT) {
+    if (len > SHARED_LIMIT) {
         return AddSharedData(new (_tub) LocalBlob(buf, len));
     }
     EnsureFree();
-    _values[_numValues]._data._buf = _tub->CopyData(buf, len);
+    _values[_numValues]._data._buf = fnet::copyData(_tub->alloc(len), buf, len);
     _values[_numValues]._data._len = len;
     _typeString[_numValues++] = FRT_VALUE_DATA;
 }
 
 char *
 FRT_Values::AddData(uint32_t len) {
-    if (len > FRT_MemoryTub::ALLOC_LIMIT) {
+    if (len > SHARED_LIMIT) {
         LocalBlob *blob = new (_tub) LocalBlob(NULL, len);
         AddSharedData(blob);
         return blob->getInternalData();
     }
     EnsureFree();
-    char *ret = (char *) _tub->Alloc(len);
+    char *ret = (char *) _tub->alloc(len);
     _values[_numValues]._data._buf = ret;
     _values[_numValues]._data._len = len;
     _typeString[_numValues++] = FRT_VALUE_DATA;
@@ -255,7 +281,7 @@ FRT_Values::AddData(uint32_t len) {
 FRT_DataValue *
 FRT_Values::AddDataArray(uint32_t len) {
     EnsureFree();
-    FRT_DataValue *ret = (FRT_DataValue *) _tub->Alloc(len * sizeof(FRT_DataValue));
+    FRT_DataValue *ret = (FRT_DataValue *) _tub->alloc(len * sizeof(FRT_DataValue));
     _values[_numValues]._data_array._pt = ret;
     _values[_numValues]._data_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_DATA_ARRAY;
@@ -264,26 +290,24 @@ FRT_Values::AddDataArray(uint32_t len) {
 
 void
 FRT_Values::SetString(FRT_StringValue *value, const char *str, uint32_t len) {
-    value->_str = _tub->CopyString(str, len);
+    value->_str = fnet::copyString(_tub->alloc(len+1), str, len);
     value->_len = len;
 }
 
 void
 FRT_Values::SetString(FRT_StringValue *value, const char *str) {
-    uint32_t len = strlen(str);
-    value->_str = _tub->CopyString(str, len);
-    value->_len = len;
+    SetString(value, str, strlen(str));
 }
 
 void
 FRT_Values::SetData(FRT_DataValue *value, const char *buf, uint32_t len) {
     char *mybuf = NULL;
-    if (len > FRT_MemoryTub::ALLOC_LIMIT) {
+    if (len > SHARED_LIMIT) {
         LocalBlob *blob = new (_tub) LocalBlob(buf, len);
         _blobs = new (_tub) BlobRef(value, 0, blob, _blobs);
         mybuf = blob->getInternalData();
     } else {
-        mybuf = _tub->CopyData(buf, len);
+        mybuf = fnet::copyData(_tub->alloc(len), buf, len);
     }
     value->_buf = mybuf;
     value->_len = len;

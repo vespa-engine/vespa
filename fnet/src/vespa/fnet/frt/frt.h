@@ -8,7 +8,6 @@ class FRT_IReturnHandler;
 class FRT_ICleanupHandler;
 class FRT_ISharedBlob;
 
-class FRT_MemoryTub;
 class FRT_Method;
 class FRT_PacketFactory;
 class FRT_ReflectionBuilder;
@@ -26,7 +25,6 @@ class FRT_Values;
 #include "error.h"
 #include "isharedblob.h"
 #include "invokable.h"
-#include "memorytub.h"
 #include "values.h"
 #include "reflection.h"
 #include "rpcrequest.h"

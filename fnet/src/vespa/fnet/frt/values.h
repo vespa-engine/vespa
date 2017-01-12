@@ -2,9 +2,14 @@
 
 #pragma once
 
-#include "memorytub.h"
 #include "isharedblob.h"
+#include <vespa/vespalib/util/stash.h>
+#include <cstring>
 
+namespace fnet {
+    char * copyString(char *dst, const char *src, size_t len);
+    char * copyData(char *dst, const void *src, size_t len);
+}
 class FNET_DataBuffer;
 
 template <typename T>
@@ -74,22 +79,16 @@ union FRT_Value
 class FRT_Values
 {
 public:
+    using Stash = vespalib::Stash;
+    using Alloc = vespalib::alloc::Alloc;
     class LocalBlob : public FRT_ISharedBlob
     {
-        using Alloc = vespalib::alloc::Alloc;
     public:
         LocalBlob(Alloc data, uint32_t len) :
             _data(std::move(data)),
             _len(len)
         { }
-        LocalBlob(const char *data, uint32_t len) :
-            _data(Alloc::alloc(len)),
-            _len(len)
-        {
-            if (data != NULL) {
-                memcpy(_data.get(), data, len);
-            }
-        }
+        LocalBlob(const char *data, uint32_t len);
         void addRef() override {}
         void subRef() override { Alloc().swap(_data); }
         uint32_t getLen() override { return _len; }
@@ -124,12 +123,12 @@ private:
     char          *_typeString;
     FRT_Value     *_values;
     BlobRef       *_blobs;
-    FRT_MemoryTub *_tub;
+    Stash         *_tub;
 
 public:
     FRT_Values(const FRT_Values &) = delete;
     FRT_Values &operator=(const FRT_Values &) = delete;
-    FRT_Values(FRT_MemoryTub *tub);
+    FRT_Values(Stash *tub);
     ~FRT_Values();
 
     void DiscardBlobs();
@@ -251,7 +250,7 @@ public:
     char *AddString(uint32_t len);
     FRT_StringValue *AddStringArray(uint32_t len);
     void AddSharedData(FRT_ISharedBlob *blob);
-    void AddData(vespalib::alloc::Alloc buf, uint32_t len);
+    void AddData(Alloc buf, uint32_t len);
     void AddData(const char *buf, uint32_t len);
     char *AddData(uint32_t len);
     FRT_DataValue *AddDataArray(uint32_t len);

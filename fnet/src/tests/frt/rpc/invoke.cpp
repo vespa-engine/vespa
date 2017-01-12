@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/fnet.h>
 
 //-------------------------------------------------------------
 
@@ -104,8 +105,8 @@ public:
 class EchoTest : public FRT_Invokable
 {
 private:
-    FRT_MemoryTub *_echo_tub;
-    FRT_Values    *_echo_args;
+    vespalib::Stash *_echo_tub;
+    FRT_Values      *_echo_args;
 
     EchoTest(const EchoTest &);
     EchoTest &operator=(const EchoTest &);
@@ -120,7 +121,7 @@ public:
 
     void Init(FRT_Supervisor *supervisor)
     {
-        _echo_tub = new FRT_MemoryTub();
+        _echo_tub = new vespalib::Stash();
         _echo_args = new FRT_Values(_echo_tub);
         assert(_echo_tub != NULL && _echo_args != NULL);
 
@@ -261,7 +262,7 @@ public:
             if (delay == 0) {
                 req->Return();
             } else {
-                new (req->GetMemoryTub()) DelayedReturn(_scheduler,
+                new (req->getStash()) DelayedReturn(_scheduler,
                         req,
                         ((double)delay) / 1000.0);
             }
@@ -281,7 +282,7 @@ public:
                     // block, but don't cripple server scheduler...
                     // (NB: in 'real life', instant methods should never block)
 
-                    FastOS_Time *now = _supervisor->GetTransport()->GetTimeSampler();
+                    FastOS_TimeInterface *now = _supervisor->GetTransport()->GetTimeSampler();
                     FNET_Scheduler *scheduler = _supervisor->GetScheduler();
                     assert(scheduler->GetTimeSampler() == now);
 
