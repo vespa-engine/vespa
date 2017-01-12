@@ -86,6 +86,7 @@ public class GetSearcher extends Searcher {
         private List<DocumentHit> documentHits = new ArrayList<>();
         private List<DefaultErrorHit> errorHits = new ArrayList<>();
         private List<Reply> replies = new ArrayList<>();
+        private final SharedSender.Pending pendingNumber = new SharedSender.Pending();
 
         public GetResponse(List<String> documentIds) {
             ordering = new HashMap<>(documentIds.size());
@@ -106,14 +107,16 @@ public class GetSearcher extends Searcher {
             return sw.toString();
         }
 
-        public boolean handleReply(Reply reply, int numPending) {
+        public boolean handleReply(Reply reply) {
             if ((reply.getTrace().getLevel() > 0) && log.isLoggable(LogLevel.DEBUG)) {
                 String str = reply.getTrace().toString();
                 log.log(LogLevel.DEBUG, str);
             }
             replies.add(reply);
-            return numPending > 0;
+            return true;
         }
+        public SharedSender.Pending getPending() { return pendingNumber; }
+
         private void processReplies() {
             for (Reply reply : replies) {
                 processReply(reply);

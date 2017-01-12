@@ -84,19 +84,13 @@ public class SingleSender implements SimpleFeedAccess {
         return m;
     }
 
-    public void send(Message m) {
-        send(m, -1);
-    }
-
     /**
-     * Sends the given message, allowing a maximum of maxPending messages to be
-     * sent for this sender.
+     * Sends the given message.
      *
      * @param m          The message to send
-     * @param maxPending The number of pending messages to block on for this sender.
      */
-    public void send(Message m, int maxPending) {
-        sender.send(processMessage(m), owner, maxPending, blockingQueue);
+    public void send(Message m) {
+        sender.send(processMessage(m), owner, blockingQueue);
     }
 
     public void done() {

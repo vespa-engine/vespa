@@ -35,6 +35,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
     private final RouteMetricSet metrics;
     private boolean abortOnError = false;
     private boolean isAborted = false;
+    private final SharedSender.Pending pendingNumber = new SharedSender.Pending();
 
     public FeedResponse(RouteMetricSet metrics) {
         super(com.yahoo.jdisc.http.HttpResponse.Status.OK);
@@ -101,7 +102,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         return "";
     }
 
-    public boolean handleReply(Reply reply, int numPending) {
+    public boolean handleReply(Reply reply) {
         metrics.addReply(reply);
         if (reply.getTrace().getLevel() > 0) {
             String str = reply.getTrace().toString();
@@ -123,11 +124,15 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
                 log.finest(str);
                 addError(str);
             }
-            isAborted = abortOnError;
-            return !abortOnError;
+            if (abortOnError) {
+                isAborted = true;
+                return false;
+            }
         }
-        return numPending > 0;
+        return true;
     }
+
+    public SharedSender.Pending getPending() { return pendingNumber; }
 
     public void done() {
         metrics.done();
