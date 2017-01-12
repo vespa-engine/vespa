@@ -54,21 +54,9 @@ class SparseBinaryFormat implements BinaryFormat {
 
     @Override
     public Tensor decode(TensorType type, GrowableByteBuffer buffer) {
-        if (type == null) // TODO (January 2017): Remove this when types are available
-            type = decodeDimensionsToType(buffer);
-        else
-            consumeAndValidateDimensions(type, buffer);
+        consumeAndValidateDimensions(type, buffer);
         Tensor.Builder builder = Tensor.Builder.of(type);
         decodeCells(buffer, builder, type);
-        return builder.build();
-    }
-
-    private TensorType decodeDimensionsToType(GrowableByteBuffer buffer) {
-        TensorType.Builder builder = new TensorType.Builder();
-        int numDimensions = buffer.getInt1_4Bytes();
-        for (int i = 0; i < numDimensions; ++i) {
-            builder.mapped(buffer.getUtf8String());
-        }
         return builder.build();
     }
 

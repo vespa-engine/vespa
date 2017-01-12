@@ -15,7 +15,7 @@ public class ThisExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext ctx) {
+    protected void doVerify(VerificationContext context) {
         // empty
     }
 

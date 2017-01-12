@@ -19,8 +19,10 @@ import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
@@ -115,7 +117,8 @@ public class JsonWriterTestCase {
         }
         {
             DocumentType x = new DocumentType("testtensor");
-            x.addField(new Field("tensorfield", DataType.TENSOR));
+            TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
+            x.addField(new Field("tensorfield", new TensorDataType(tensorType)));
             types.registerDocumentType(x);
         }
     }
@@ -298,7 +301,7 @@ public class JsonWriterTestCase {
 
     @Test
     public void testWritingOfEmptyTensor() throws IOException {
-        assertTensorRoundTripEquality("{}","{ \"cells\": [{\"address\": {}, \"value\": 0.0}] }");
+        assertTensorRoundTripEquality("{}","{ \"cells\": [] }");
     }
 
     @Test
@@ -321,20 +324,12 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public void testWritingOfTensorWithSingleCellWithEmptyAddress() throws IOException {
-        assertTensorRoundTripEquality("{ "
-                + "  \"cells\": [ "
-                + "    { \"address\": {}, \"value\": 2.0 } "
-                + "  ]"
-                + "}");
-    }
-
-    @Test
     public void testWritingOfTensorFieldValueWithoutTensor() throws IOException {
-        DocumentType tensorType = types.getDocumentType("testtensor");
+        DocumentType documentTypeWithTensor = types.getDocumentType("testtensor");
         String docId = "id:unittest:testtensor::0";
-        Document doc = new Document(tensorType, docId);
-        doc.setFieldValue(tensorType.getField("tensorfield"), new TensorFieldValue());
+        Document doc = new Document(documentTypeWithTensor, docId);
+        Field tensorField = documentTypeWithTensor.getField("tensorfield");
+        doc.setFieldValue(tensorField, new TensorFieldValue(((TensorDataType)tensorField.getDataType()).getTensorType()));
         assertEqualJson(asDocument(docId, "{ \"tensorfield\": {} }"), JsonWriter.toByteArray(doc));
     }
 

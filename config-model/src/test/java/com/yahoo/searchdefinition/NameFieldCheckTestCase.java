@@ -6,14 +6,16 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 /**
  * Tests that "name" is not allowed as name for a field.
  * 
  * And that duplicate names are not allowed. 
  *
- * @author <a href="mailto:larschr@yahoo-inc.com">Lars Christian Jensen</a>
+ * @author Lars Christian Jensen
  */
 public class NameFieldCheckTestCase extends SearchDefinitionTestCase {
 
@@ -22,8 +24,8 @@ public class NameFieldCheckTestCase extends SearchDefinitionTestCase {
         try {
             SearchBuilder.buildFromFile("src/test/examples/name-check.sd");
             fail("Should throw exception.");
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception expected) {
+            // Success
         }
     }
 
@@ -33,8 +35,7 @@ public class NameFieldCheckTestCase extends SearchDefinitionTestCase {
             SearchBuilder.buildFromFile("src/test/examples/duplicatenamesinsearchdifferenttype.sd");
             fail("Should throw exception.");
         } catch (Exception e) {
-            e.printStackTrace();
-            assertTrue(e.getMessage().matches(".*Duplicate.*different type.*"));
+            assertEquals("For search 'duplicatenamesinsearch', field 'grpphotoids64': Incompatible types. Expected Array<long> for index field 'grpphotoids64', got string.", e.getMessage());
         }
     }
 
@@ -44,7 +45,6 @@ public class NameFieldCheckTestCase extends SearchDefinitionTestCase {
             SearchBuilder.buildFromFile("src/test/examples/duplicatenamesindoc.sd");
             fail("Should throw exception.");
         } catch (Exception e) {
-            e.printStackTrace();
             assertTrue(e.getMessage().matches(".*Duplicate.*"));
         }
     }

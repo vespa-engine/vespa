@@ -3,11 +3,12 @@ package com.yahoo.document.datatypes;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -20,12 +21,18 @@ import java.util.Optional;
 public class TensorFieldValue extends FieldValue {
 
     private Optional<Tensor> tensor;
+    
+    private final TensorDataType dataType;
 
-    public TensorFieldValue() {
-        tensor = Optional.empty();
+    /** Create an empty tensor field value */
+    public TensorFieldValue(TensorType type) {
+        this.dataType = new TensorDataType(type);
+        this.tensor = Optional.empty();
     }
 
+    /** Create a tensor field value containing the given tensor */
     public TensorFieldValue(Tensor tensor) {
+        this.dataType = new TensorDataType(tensor.type());
         this.tensor = Optional.of(tensor);
     }
 
@@ -34,8 +41,8 @@ public class TensorFieldValue extends FieldValue {
     }
 
     @Override
-    public DataType getDataType() {
-        return DataType.TENSOR;
+    public TensorDataType getDataType() {
+        return dataType;
     }
 
     @Override
@@ -51,15 +58,22 @@ public class TensorFieldValue extends FieldValue {
     @Override
     public void assign(Object o) {
         if (o == null) {
-            tensor = Optional.empty();
+            assignTensor(Optional.empty());
         } else if (o instanceof Tensor) {
-            tensor = Optional.of((Tensor)o);
+            assignTensor(Optional.of((Tensor)o));
         } else if (o instanceof TensorFieldValue) {
-            tensor = ((TensorFieldValue)o).getTensor();
+            assignTensor(((TensorFieldValue)o).getTensor());
         } else {
             throw new IllegalArgumentException("Expected class '" + getClass().getName() + "', got '" +
-                    o.getClass().getName() + "'.");
+                                               o.getClass().getName() + "'.");
         }
+    }
+    
+    public void assignTensor(Optional<Tensor> tensor) {
+        if (tensor.isPresent() && ! dataType.getTensorType().isAssignableTo(tensor.get().type()))
+            throw new IllegalArgumentException("Type mismatch: Cannot assign tensor of type " + tensor.get().type() +
+                                               " to field of type " + dataType.getTensorType());
+        this.tensor = tensor;
     }
 
     @Override
@@ -74,27 +88,14 @@ public class TensorFieldValue extends FieldValue {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TensorFieldValue)) {
-            return false;
-        }
-        TensorFieldValue rhs = (TensorFieldValue)o;
-        if (!Objects.equals(tensor, rhs.tensor)) {
-            return false;
-        }
+        if (this == o) return true;
+        if ( ! (o instanceof TensorFieldValue)) return false;
+
+        TensorFieldValue other = (TensorFieldValue)o;
+        if ( ! dataType.getTensorType().equals(other.dataType.getTensorType())) return false;
+        if ( ! tensor.equals(other.tensor)) return false;
         return true;
     }
 
-    public static PrimitiveDataType.Factory getFactory() {
-        return new PrimitiveDataType.Factory() {
-
-            @Override
-            public FieldValue create() {
-                return new TensorFieldValue();
-            }
-        };
-    }
 }
 
