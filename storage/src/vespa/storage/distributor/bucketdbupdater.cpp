@@ -163,9 +163,9 @@ BucketDBUpdater::removeSuperfluousBuckets(
 void
 BucketDBUpdater::ensureTransitionTimerStarted()
 {
-    if (!_pendingClusterState) {
-        // Don't overwrite start time if we're already processing a state, as
-        // that will make transition times appear artificially low.
+    // Don't overwrite start time if we're already processing a state, as
+    // that will make transition times appear artificially low.
+    if (!hasPendingClusterState()) {
         _transitionTimer = framework::MilliSecTimer(
                 _bucketSpaceComponent.getClock());
     }
