@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedapi;
 
+import com.google.common.base.Preconditions;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
@@ -9,6 +10,7 @@ import com.yahoo.clientmetrics.RouteMetricSet;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -25,59 +27,44 @@ public class SharedSender implements ReplyHandler {
     private SendSession sender;
 
     public static class PendingMap {
-        private static class Pending {
-            public int value = 1;
-        }
 
-        private Map<ResultCallback, Pending> map = new HashMap<>();
+        private ConcurrentHashMap<ResultCallback, Integer> pendingCountByCallback = new ConcurrentHashMap<>();
 
         public int postIncrement(ResultCallback owner) {
-            synchronized(map) {
-                Pending p = map.get(owner);
-                if (p != null) {
-                    synchronized(p) {
-                        return p.value++;
-                    }
-                } else {
-                    map.put(owner, new Pending());
-                    return 0;
-                }
+            Integer pendingCount = pendingCountByCallback.putIfAbsent(owner, 1);
+            synchronized(pendingCount) {
+                return pendingCount++;
             }
         }
 
         public void decrement(ResultCallback owner) {
-            synchronized(map) {
-                Pending p = map.get(owner);
-                if (p == null) {
-                    // IllegalArgumentException e = new IllegalArgumentException("owner "+owner+" not in map");
-                    // e.fillInStackTrace();
-                    // e.printStackTrace();
-                    return;
+            Integer pendingCount = pendingCountByCallback.get(owner);
+            if (pendingCount == null) {
+                // IllegalArgumentException e = new IllegalArgumentException("owner "+owner+" not in pendingCountByCallback");
+                // e.fillInStackTrace();
+                // e.printStackTrace();
+                return;
+            }
+            synchronized(pendingCount) {
+                if (--pendingCount == 0) {
+                    pendingCountByCallback.remove(owner);
+                    pendingCountByCallback.notify();
                 }
-                synchronized(p) {
-                    if (--p.value == 0) {
-                        map.remove(owner);
-                        map.notify();
-                    }
-                    p.notifyAll();
-                }
+                pendingCount.notifyAll();
             }
         }
 
         public void waitForPending(ResultCallback owner, int threshold)
             throws InterruptedException
         {
-            assert threshold >= 0;
-            Pending p;
-            synchronized(map) {
-                p = map.get(owner);
-            }
-            if (p == null) {
+            Preconditions.checkArgument(threshold >= 0);
+            Integer pendingCount = pendingCountByCallback.get(owner);
+            if (pendingCount == null) {
                 return;
             }
-            synchronized(p) {
-                while (p.value > threshold) {
-                    p.wait();
+            synchronized(pendingCount) {
+                while (pendingCount > threshold) {
+                    pendingCount.wait();
                 }
             }
         }
@@ -85,39 +72,29 @@ public class SharedSender implements ReplyHandler {
         public void waitForPending(ResultCallback owner, int threshold, long millis)
             throws InterruptedException
         {
-            assert threshold >= 0;
-            Pending p;
-            synchronized(map) {
-                p = map.get(owner);
-            }
-            if (p == null) {
+            Preconditions.checkArgument(threshold >= 0);
+            Integer pendingCount = pendingCountByCallback.get(owner);
+            if (pendingCount == null) {
                 return;
             }
-            synchronized(p) {
-                // yes this should be an "if":
-                if (p.value > threshold) {
-                    p.wait(millis);
+            synchronized(pendingCount) {
+                // yes this should be an "if": I DO NOT GET IT, WHILE SHOULD THERE NOT BE A LOOP AROUND HERE,
+                // THIS METHOD SEEMS WRONG?
+                if (pendingCount > threshold) {
+                    pendingCount.wait(millis);
                 }
             }
         }
 
         public void drain() throws InterruptedException {
-            synchronized(map) {
-                while (! map.isEmpty()) {
-                    map.wait(100);
-                }
+            while (! pendingCountByCallback.isEmpty()) {
+                pendingCountByCallback.wait(100);
             }
         }
 
         public int getValue(ResultCallback owner) {
-            synchronized(map) {
-                Pending p = map.get(owner);
-                if (p == null) {
-                    return 0;
-                } else {
-                    return p.value;
-                }
-            }
+            Integer pendingCount = pendingCountByCallback.get(owner);
+            return pendingCount == null ? 0 : pendingCount;
         }
     }
 
