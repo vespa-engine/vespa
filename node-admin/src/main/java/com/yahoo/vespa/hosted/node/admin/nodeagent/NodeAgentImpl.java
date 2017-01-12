@@ -292,8 +292,8 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void stopServices(ContainerName containerName) {
-            logger.info("Stopping services for " + containerName);
-            dockerOperations.stopServicesOnNode(containerName);
+        logger.info("Stopping services for " + containerName);
+        dockerOperations.stopServicesOnNode(containerName);
     }
 
     private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Container existingContainer) {
@@ -473,7 +473,7 @@ public class NodeAgentImpl implements NodeAgent {
             nodeSpec = lastNodeSpec;
         }
 
-        if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
+        if (nodeSpec == null || !vespaVersion.isPresent()) return;
         Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(nodeSpec.containerName);
         if ( ! containerStats.isPresent()) return;
 
