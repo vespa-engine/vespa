@@ -8,9 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class ArrayDataType extends CollectionDataType {
+
     // The global class identifier shared with C++.
     public static int classId = registerClass(Ids.document + 54, ArrayDataType.class);
 

@@ -11,6 +11,7 @@ import com.yahoo.searchdefinition.document.SDField;
  */
 public interface FieldOperation extends Comparable<FieldOperation> {
 
+    /** Apply this operation on the given field */
     void apply(SDField field);
     
     @Override

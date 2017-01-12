@@ -42,8 +42,8 @@ public class ToWsetExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext ctx) {
-        ctx.setValue(DataType.getWeightedSet(ctx.getValue(), createIfNonExistent, removeIfZero));
+    protected void doVerify(VerificationContext context) {
+        context.setValue(DataType.getWeightedSet(context.getValue(), createIfNonExistent, removeIfZero));
     }
 
     @Override

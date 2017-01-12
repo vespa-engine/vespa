@@ -5,6 +5,7 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.search.query.ranking.RankFeatures;
 import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
@@ -30,16 +31,18 @@ public class RankFeaturesTestCase {
 
     @Test
     public void requireThatSingleTensorIsBinaryEncoded() {
-        Tensor tensor = Tensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
-        assertTensorEncodingAndDecoding("query(my_tensor)", "my_tensor", tensor);
-        assertTensorEncodingAndDecoding("$my_tensor", "my_tensor", tensor);
+        TensorType type = new TensorType.Builder().mapped("x").mapped("y").mapped("z").build();
+        Tensor tensor = Tensor.from(type, "{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
+        assertTensorEncodingAndDecoding(type, "query(my_tensor)", "my_tensor", tensor);
+        assertTensorEncodingAndDecoding(type, "$my_tensor", "my_tensor", tensor);
     }
 
     @Test
     public void requireThatMultipleTensorsAreBinaryEncoded() {
-        Tensor tensor1 = Tensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
-        Tensor tensor2 = Tensor.from("{ {x:a, y:b, z:c}:5.0 }");
-        assertTensorEncodingAndDecoding(Arrays.asList(
+        TensorType type = new TensorType.Builder().mapped("x").mapped("y").mapped("z").build();
+        Tensor tensor1 = Tensor.from(type, "{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
+        Tensor tensor2 = Tensor.from(type, "{ {x:a, y:b, z:c}:5.0 }");
+        assertTensorEncodingAndDecoding(type, Arrays.asList(
                 new Entry("query(tensor1)", "tensor1", tensor1),
                 new Entry("$tensor2", "tensor2", tensor2)));
     }
@@ -55,11 +58,11 @@ public class RankFeaturesTestCase {
         }
     }
 
-    private static void assertTensorEncodingAndDecoding(List<Entry> entries) {
+    private static void assertTensorEncodingAndDecoding(TensorType type, List<Entry> entries) {
         RankProperties properties = createRankPropertiesWithTensors(entries);
         assertEquals(entries.size(), properties.asMap().size());
 
-        Map<String, Object> decodedProperties = decode(encode(properties));
+        Map<String, Object> decodedProperties = decode(type, encode(properties));
         assertEquals(entries.size() * 2, properties.asMap().size()); // tensor type info has been added
         assertEquals(entries.size() * 2, decodedProperties.size());
         for (Entry entry : entries) {
@@ -68,8 +71,8 @@ public class RankFeaturesTestCase {
         }
     }
 
-    private static void assertTensorEncodingAndDecoding(String key, String normalizedKey, Tensor tensor) {
-        assertTensorEncodingAndDecoding(Arrays.asList(new Entry(key, normalizedKey, tensor)));
+    private static void assertTensorEncodingAndDecoding(TensorType type, String key, String normalizedKey, Tensor tensor) {
+        assertTensorEncodingAndDecoding(type, Arrays.asList(new Entry(key, normalizedKey, tensor)));
     }
 
     private static RankProperties createRankPropertiesWithTensors(List<Entry> entries) {
@@ -91,7 +94,7 @@ public class RankFeaturesTestCase {
         return result;
     }
 
-    private static Map<String, Object> decode(byte[] encodedProperties) {
+    private static Map<String, Object> decode(TensorType type, byte[] encodedProperties) {
         GrowableByteBuffer buffer = GrowableByteBuffer.wrap(encodedProperties);
         byte[] mapNameBytes = new byte[buffer.getInt()];
         buffer.get(mapNameBytes);
@@ -106,7 +109,7 @@ public class RankFeaturesTestCase {
             if (key.contains(".type")) {
                 result.put(key, Utf8.toString(value));
             } else {
-                result.put(key, TypedBinaryFormat.decode(null, value)); // TODO: Pass type
+                result.put(key, TypedBinaryFormat.decode(type, value));
             }
         }
         return result;

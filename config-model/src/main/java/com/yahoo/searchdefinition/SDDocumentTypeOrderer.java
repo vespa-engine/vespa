@@ -11,9 +11,10 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SDDocumentTypeOrderer {
+
     private Map<DataTypeName, SDDocumentType> createdSDTypes = new LinkedHashMap<>();
     private Set<Integer> seenTypes = new LinkedHashSet<>();
     List<SDDocumentType> processingOrder = new LinkedList<>();
@@ -118,6 +119,8 @@ public class SDDocumentTypeOrderer {
         } else if (type instanceof AnnotationReferenceDataType) {
             //do nothing
         } else if (type instanceof PrimitiveDataType) {
+            //do nothing
+        } else if (type instanceof TensorDataType) {
             //do nothing
         } else {
             deployLogger.log(Level.WARNING, "Unknown type : " + type);

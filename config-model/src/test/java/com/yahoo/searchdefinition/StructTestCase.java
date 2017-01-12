@@ -10,26 +10,28 @@ import java.io.IOException;
 import static org.junit.Assert.fail;
 
 /**
- * tests importing of document containing array type fields
+ * Tests importing of document containing array type fields
  *
  * @author bratseth
  */
 public class StructTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testStruct() throws IOException, ParseException {
         assertConfigFile("src/test/examples/structresult.cfg",
-                new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")).toString() + "\n");
+                         new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")).toString() + "\n");
     }
+
     @Test
     public void testBadStruct() throws IOException {
         try {
             SearchBuilder.buildFromFile("src/test/examples/badstruct.sd");
             fail("Should throw exception.");
-        } catch (ParseException e) {
-            //ok!
-            //e.printStackTrace();
+        } catch (ParseException expected) {
+            // success
         }
     }
+
     @Test
     public void testStructAndDocumentWithSameNames() throws IOException, ParseException {
         try {
@@ -41,8 +43,6 @@ public class StructTestCase extends SearchDefinitionTestCase {
 
     /**
      * Declaring a struct before a document will fail, no doc type to add it to. 
-     * @throws IOException
-     * @throws ParseException
      */
     @Test(expected = IllegalArgumentException.class)
     public void testStructOutsideDocumentIllegal() throws IOException, ParseException {
