@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -227,14 +226,14 @@ public class LocalZoneUtils {
 
     public static void packageApp(Path pathToApp) {
         try {
-            InputStream is = Runtime.getRuntime().exec("mvn package", null, pathToApp.toFile()).getInputStream();
-
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader buff = new BufferedReader (isr);
+            Process process = Runtime.getRuntime().exec("mvn package", null, pathToApp.toFile());
+            BufferedReader buff = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
             String line;
             while((line = buff.readLine()) != null) System.out.println(line);
-        } catch (IOException e) {
+
+            assert process.waitFor() == 0;
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Failed to package application", e);
         }
     }
