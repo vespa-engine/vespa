@@ -17,39 +17,39 @@ import java.util.Set;
 
 /**
  * @author    baldersheim
- * @since     2010-02-19
  */
 public class DocumentManager {
 
-    public DocumentmanagerConfig.Builder produce(DocumentModel model, DocumentmanagerConfig.Builder docman) {
-        docman.enablecompression(false);
+    public DocumentmanagerConfig.Builder produce(DocumentModel model, 
+                                                 DocumentmanagerConfig.Builder documentConfigBuilder) {
+        documentConfigBuilder.enablecompression(false);
         Set<DataType> handled = new HashSet<>();
         for(NewDocumentType documentType : model.getDocumentManager().getTypes()) {
-            handle(documentType, docman, handled);
-            handleAnnotations(documentType.getAnnotations(), docman);
+            buildConfig(documentType, documentConfigBuilder, handled);
+            buildConfig(documentType.getAnnotations(), documentConfigBuilder);
             if ( documentType != VespaDocumentType.INSTANCE) {
-                DocumentmanagerConfig.Datatype.Builder dt = new DocumentmanagerConfig.Datatype.Builder();
-                docman.datatype(dt);
-                handleDataType(documentType, dt);
+                DocumentmanagerConfig.Datatype.Builder dataTypeBuilder = new DocumentmanagerConfig.Datatype.Builder();
+                documentConfigBuilder.datatype(dataTypeBuilder);
+                buildConfig(documentType, dataTypeBuilder);
             }
         }
-        return docman;
+        return documentConfigBuilder;
     }
 
-    private void handle(DataTypeCollection type, DocumentmanagerConfig.Builder docman, Set<DataType> handled) {
+    private void buildConfig(DataTypeCollection type, DocumentmanagerConfig.Builder documentConfigBuilder, Set<DataType> built) {
         for (DataType dataType : type.getTypes()) {
-            if (handled.contains(dataType)) continue;
-            handled.add(dataType);
+            if (built.contains(dataType)) continue;
+            built.add(dataType);
             if (dataType instanceof TemporaryStructuredDataType) continue;
-            if ((dataType.getId() < 0) || (DataType.lastPredefinedDataTypeId() < dataType.getId())) {
-                Datatype.Builder dtc = new Datatype.Builder();
-                docman.datatype(dtc);
-                handleDataType(dataType, dtc);
+            if ((dataType.getId() < 0) || (dataType.getId()> DataType.lastPredefinedDataTypeId())) {
+                Datatype.Builder dataTypeBuilder = new Datatype.Builder();
+                documentConfigBuilder.datatype(dataTypeBuilder);
+                buildConfig(dataType, dataTypeBuilder);
             }
         }
     }
 
-    private void handleAnnotation(AnnotationType type, DocumentmanagerConfig.Annotationtype.Builder atb) {
+    private void buildConfig(AnnotationType type, DocumentmanagerConfig.Annotationtype.Builder atb) {
         atb.
             id(type.getId()).
             name(type.getName());
@@ -62,34 +62,34 @@ public class DocumentManager {
             }
         }
     }
-    private void handleAnnotations(Collection<AnnotationType> types, DocumentmanagerConfig.Builder builder) {
+    private void buildConfig(Collection<AnnotationType> types, DocumentmanagerConfig.Builder builder) {
         for (AnnotationType type : types) {
             DocumentmanagerConfig.Annotationtype.Builder atb = new DocumentmanagerConfig.Annotationtype.Builder();
-            handleAnnotation(type, atb);
+            buildConfig(type, atb);
             builder.annotationtype(atb);
         }
     }
 
-    private void handleDataType(DataType type, Datatype.Builder dtc) {
-        dtc.id(type.getId());
+    private void buildConfig(DataType type, Datatype.Builder builder) {
+        builder.id(type.getId());
         if (type instanceof ArrayDataType) {
             CollectionDataType dt = (CollectionDataType) type;
-            dtc.arraytype(new Datatype.Arraytype.Builder().datatype(dt.getNestedType().getId()));
+            builder.arraytype(new Datatype.Arraytype.Builder().datatype(dt.getNestedType().getId()));
         } else if (type instanceof WeightedSetDataType) {
             WeightedSetDataType dt = (WeightedSetDataType) type;
-            dtc.weightedsettype(new Datatype.Weightedsettype.Builder().
+            builder.weightedsettype(new Datatype.Weightedsettype.Builder().
                     datatype(dt.getNestedType().getId()).
                     createifnonexistant(dt.createIfNonExistent()).
                     removeifzero(dt.removeIfZero()));
         } else if (type instanceof MapDataType) {
             MapDataType mtype = (MapDataType) type;
-            dtc.maptype(new Datatype.Maptype.Builder().
+            builder.maptype(new Datatype.Maptype.Builder().
                     keytype(mtype.getKeyType().getId()).
                     valtype(mtype.getValueType().getId()));
         } else if (type instanceof DocumentType) {
             DocumentType dt = (DocumentType) type;
             Datatype.Documenttype.Builder doc = new Datatype.Documenttype.Builder();
-            dtc.documenttype(doc);
+            builder.documenttype(doc);
             doc.
                 name(dt.getName()).
                 headerstruct(dt.getHeaderType().getId()).
@@ -100,7 +100,7 @@ public class DocumentManager {
         } else if (type instanceof NewDocumentType) {
             NewDocumentType dt = (NewDocumentType) type;
             Datatype.Documenttype.Builder doc = new Datatype.Documenttype.Builder();
-            dtc.documenttype(doc);
+            builder.documenttype(doc);
             doc.
                 name(dt.getName()).
                 headerstruct(dt.getHeader().getId()).
@@ -108,49 +108,56 @@ public class DocumentManager {
             for (NewDocumentType inherited : dt.getInherited()) {
                 doc.inherits(new Datatype.Documenttype.Inherits.Builder().name(inherited.getName()));
             }
-            handleFieldSets(dt.getFieldSets(), doc);
+            buildConfig(dt.getFieldSets(), doc);
         } else if (type instanceof TemporaryStructuredDataType) {
             //Ignored
         } else if (type instanceof StructDataType) {
-            StructDataType dt = (StructDataType) type;
-            Datatype.Structtype.Builder st = new Datatype.Structtype.Builder();
-            dtc.structtype(st);
-            st.name(dt.getName());
-            if (dt.getCompressionConfig().type.getCode() != 0) {
-                st.
-                    compresstype(Datatype.Structtype.Compresstype.Enum.valueOf(dt.getCompressionConfig().type.toString())).
-                    compresslevel(dt.getCompressionConfig().compressionLevel).
-                    compressthreshold((int)dt.getCompressionConfig().threshold).
-                    compressminsize((int)dt.getCompressionConfig().minsize);
+            StructDataType structType = (StructDataType) type;
+            Datatype.Structtype.Builder structBuilder = new Datatype.Structtype.Builder();
+            builder.structtype(structBuilder);
+            structBuilder.name(structType.getName());
+            if (structType.getCompressionConfig().type.getCode() != 0) {
+                structBuilder.
+                    compresstype(Datatype.Structtype.Compresstype.Enum.valueOf(structType.getCompressionConfig().type.toString())).
+                    compresslevel(structType.getCompressionConfig().compressionLevel).
+                    compressthreshold((int)structType.getCompressionConfig().threshold).
+                    compressminsize((int)structType.getCompressionConfig().minsize);
             }
-            for (com.yahoo.document.Field field : dt.getFieldsThisTypeOnly()) {
-                Datatype.Structtype.Field.Builder fb = new Datatype.Structtype.Field.Builder();
-                st.field(fb);
-                fb.name(field.getName());
+            for (com.yahoo.document.Field field : structType.getFieldsThisTypeOnly()) {
+                Datatype.Structtype.Field.Builder fieldBuilder = new Datatype.Structtype.Field.Builder();
+                structBuilder.field(fieldBuilder);
+                fieldBuilder.name(field.getName());
                 if (field.hasForcedId()) {
-                    fb.id(new Datatype.Structtype.Field.Id.Builder().id(field.getId()));
+                    fieldBuilder.id(new Datatype.Structtype.Field.Id.Builder().id(field.getId()));
                 }
-                fb.datatype(field.getDataType().getId());
+                fieldBuilder.datatype(field.getDataType().getId());
+
+                if (field.getDataType() instanceof TensorDataType)
+                    fieldBuilder.detailedtype(((TensorDataType)field.getDataType()).getTensorType().toString());
             }
-            for (StructDataType inherited : dt.getInheritedTypes()) {
-                st.inherits(new Datatype.Structtype.Inherits.Builder().name(inherited.getName()));
+            for (StructDataType inherited : structType.getInheritedTypes()) {
+                structBuilder.inherits(new Datatype.Structtype.Inherits.Builder().name(inherited.getName()));
             }
         } else if (type instanceof AnnotationReferenceDataType) {
             AnnotationReferenceDataType annotationRef = (AnnotationReferenceDataType) type;
-            dtc.annotationreftype(new Datatype.Annotationreftype.Builder().annotation(annotationRef.getAnnotationType().getName()));
+            builder.annotationreftype(new Datatype.Annotationreftype.Builder().annotation(annotationRef.getAnnotationType().getName()));
+        } else if (type instanceof TensorDataType) {
+            // Nothing to do; the type of the tensor is instead stored in each field as detailed type information
+            // to provide better compatibility. A tensor field can have its tensorType changed (in compatible ways)
+            // without changing the field type and thus requiring data refeed
         } else {
-            throw new IllegalArgumentException("Can not handle datatype '" + type.getName());
+            throw new IllegalArgumentException("Can not create config for data type '" + type.getName());
         }
     }
 
-    private void handleFieldSets(Set<FieldSet> fieldSets, Datatype.Documenttype.Builder doc) {
-
+    private void buildConfig(Set<FieldSet> fieldSets, Datatype.Documenttype.Builder doc) {
         for (FieldSet builtinFs : fieldSets) {
-            handleFieldSet(builtinFs, doc);
+            buildConfig(builtinFs, doc);
         }
     }
 
-    private void handleFieldSet(FieldSet fs, Datatype.Documenttype.Builder doc) {
+    private void buildConfig(FieldSet fs, Datatype.Documenttype.Builder doc) {
         doc.fieldsets(fs.getName(), new Datatype.Documenttype.Fieldsets.Builder().fields(fs.getFieldNames()));
     }
+
 }

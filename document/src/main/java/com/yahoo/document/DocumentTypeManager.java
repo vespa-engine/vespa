@@ -12,6 +12,7 @@ import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.VespaDocumentDeserializer42;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.tensor.TensorType;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -35,6 +36,16 @@ public class DocumentTypeManager {
     private final static Logger log = Logger.getLogger(DocumentTypeManager.class.getName());
     private ConfigSubscriber subscriber;
 
+    // *Configured data types* (not built-in/primitive) indexed by their id
+    //
+    // *Primitive* data types are always available and have a single id.
+    // 
+    // *Built-in dynamic* types: The tensor type.
+    // Any tensor type has the same id and is always available just like primitive types.
+    // However, unlike primitive types, each tensor type is a separate DataType instance
+    // (which carries additional type information (detailedType) supplied at runtime).
+    // The reason for this is that we want the data type to stay the same when we change the detailed tensor type
+    // to maintain compatibility on (some) tensor type changes.
     private Map<Integer, DataType> dataTypes = new LinkedHashMap<>();
     private Map<DataTypeName, DocumentType> documentTypes = new LinkedHashMap<>();
     private AnnotationTypeRegistry annotationTypeRegistry = new AnnotationTypeRegistry();
@@ -85,6 +96,7 @@ public class DocumentTypeManager {
     }
 
     public boolean hasDataType(String name) {
+        if (name.startsWith("tensor(")) return true; // built-in dynamic: Always present
         for (DataType type : dataTypes.values()) {
             if (type.getName().equalsIgnoreCase(name)) {
                 return true;
@@ -94,10 +106,14 @@ public class DocumentTypeManager {
     }
 
     public boolean hasDataType(int code) {
+        if (code == DataType.tensorDataTypeCode) return true; // built-in dynamic: Always present
         return dataTypes.containsKey(code);
     }
 
     public DataType getDataType(String name) {
+        if (name.startsWith("tensor(")) // built-in dynamic
+            return new TensorDataType(TensorType.fromSpec(name));
+        
         List<DataType> foundTypes = new ArrayList<>();
         for (DataType type : dataTypes.values()) {
             if (type.getName().equalsIgnoreCase(name)) {
@@ -125,7 +141,19 @@ public class DocumentTypeManager {
         return foundTypes.get(0);
     }
 
-    public DataType getDataType(int code) {
+    public DataType getDataType(int code) { return getDataType(code, ""); }
+    
+    /**
+     * Return a data type instance
+     * 
+     * @param code the code of the data type to return, which must be either built in or present in this manager
+     * @param detailedType detailed type information, or the empty string if none
+     * @return the appropriate DataType instance
+     */
+    public DataType getDataType(int code, String detailedType) {
+        if (code == DataType.tensorDataTypeCode) // built-in dynamic
+            return new TensorDataType(TensorType.fromSpec(detailedType));
+
         DataType type = dataTypes.get(code);
         if (type == null) {
             StringBuilder types=new StringBuilder();
@@ -138,11 +166,11 @@ public class DocumentTypeManager {
         }
     }
 
-    DataType getDataTypeAndReturnTemporary(int code) {
+    DataType getDataTypeAndReturnTemporary(int code, String detailedType) {
         if (hasDataType(code)) {
-            return getDataType(code);
+            return getDataType(code, detailedType);
         }
-        return new TemporaryDataType(code);
+        return new TemporaryDataType(code, detailedType);
     }
 
     /**
@@ -156,9 +184,11 @@ public class DocumentTypeManager {
 
     /**
      * Register a single datatype. Re-registering an existing, but equal, datatype is ok.
+     * 
      * @param type The datatype to register
      */
     void registerSingleType(DataType type) {
+        if (type instanceof TensorDataType) return; // built-in dynamic: Created on the fly
         if (dataTypes.containsKey(type.getId())) {
             DataType existingType = dataTypes.get(type.getId());
             if (((type instanceof TemporaryDataType) || (type instanceof TemporaryStructuredDataType))
@@ -188,7 +218,7 @@ public class DocumentTypeManager {
                 dataTypes.remove(existingType.getId());
             } else {
                 throw new IllegalStateException("Datatype " + existingType + " is not equal to datatype attempted registered "
-                        + type + ", but already uses id " + type.getId());
+                                                + type + ", but already uses id " + type.getId());
             }
         }
 
@@ -250,7 +280,8 @@ public class DocumentTypeManager {
     }
 
     /**
-     * A read only view of the registered data types
+     * Returns a read only view of the registered data types
+     * 
      * @return collection of types
      */
     public Collection<DataType> getDataTypes() {
@@ -318,7 +349,7 @@ public class DocumentTypeManager {
         for (Field field : structDataType.getFieldsThisTypeOnly()) {
             DataType fieldType = field.getDataType();
             if (fieldType instanceof TemporaryDataType) {
-                field.setDataType(getDataType(fieldType.getCode()));
+                field.setDataType(getDataType(fieldType.getCode(), ((TemporaryDataType)fieldType).getDetailedType()));
             } else {
                 if (!seenStructs.contains(fieldType)) {
                     replaceTemporaryTypes(fieldType, seenStructs);
@@ -329,7 +360,7 @@ public class DocumentTypeManager {
 
     private void replaceTemporaryTypesInCollection(CollectionDataType collectionDataType, List<DataType> seenStructs) {
         if (collectionDataType.getNestedType() instanceof TemporaryDataType) {
-            collectionDataType.setNestedType(getDataType(collectionDataType.getNestedType().getCode()));
+            collectionDataType.setNestedType(getDataType(collectionDataType.getNestedType().getCode(), ""));
         } else {
             replaceTemporaryTypes(collectionDataType.getNestedType(), seenStructs);
         }
@@ -337,13 +368,13 @@ public class DocumentTypeManager {
 
     private void replaceTemporaryTypesInMap(MapDataType mapDataType, List<DataType> seenStructs) {
         if (mapDataType.getValueType() instanceof TemporaryDataType) {
-            mapDataType.setValueType(getDataType(mapDataType.getValueType().getCode()));
+            mapDataType.setValueType(getDataType(mapDataType.getValueType().getCode(), ""));
         } else {
             replaceTemporaryTypes(mapDataType.getValueType(), seenStructs);
         }
 
         if (mapDataType.getKeyType() instanceof TemporaryDataType) {
-            mapDataType.setKeyType(getDataType(mapDataType.getKeyType().getCode()));
+            mapDataType.setKeyType(getDataType(mapDataType.getKeyType().getCode(), ""));
         } else {
             replaceTemporaryTypes(mapDataType.getKeyType(), seenStructs);
         }
@@ -351,7 +382,7 @@ public class DocumentTypeManager {
 
     private void replaceTemporaryTypesInWeightedSet(WeightedSetDataType weightedSetDataType, List<DataType> seenStructs) {
         if (weightedSetDataType.getNestedType() instanceof TemporaryDataType) {
-            weightedSetDataType.setNestedType(getDataType(weightedSetDataType.getNestedType().getCode()));
+            weightedSetDataType.setNestedType(getDataType(weightedSetDataType.getNestedType().getCode(), ""));
         } else {
             replaceTemporaryTypes(weightedSetDataType.getNestedType(), seenStructs);
         }

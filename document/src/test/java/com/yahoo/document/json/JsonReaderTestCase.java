@@ -38,6 +38,8 @@ import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.tensor.IndexedTensor;
+import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
@@ -136,8 +138,10 @@ public class JsonReaderTestCase {
         }
         {
             DocumentType x = new DocumentType("testtensor");
-            TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
-            x.addField(new Field("tensorfield", new TensorDataType(tensorType)));
+            x.addField(new Field("mappedtensorfield", 
+                                 new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
+            x.addField(new Field("indexedtensorfield", 
+                                 new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             types.registerDocumentType(x);
         }
         {
@@ -1026,73 +1030,88 @@ public class JsonReaderTestCase {
         Document doc = createPutWithoutTensor().getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals("id:unittest:testtensor::0", doc.getId().toString());
-        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("tensorfield"));
+        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("mappedtensorfield"));
         assertNull(fieldValue);
     }
 
     @Test
     public void testParsingOfEmptyTensor() {
-        assertTensorField("{}", createPutWithTensor("{}"));
+        assertMappedTensorField("tensor(x{},y{}):{}", createPutWithMappedTensor("{}"));
     }
 
     @Test
     public void testParsingOfTensorWithEmptyDimensions() {
-        assertTensorField("{}",
-                createPutWithTensor("{ "
-                        + "  \"dimensions\": [] "
-                        + "}"));
+        assertMappedTensorField("tensor(x{},y{}):{}",
+                                createPutWithMappedTensor("{ "
+                                                    + "  \"dimensions\": [] "
+                                                    + "}"));
     }
 
     @Test
     public void testParsingOfTensorWithEmptyCells() {
-        assertTensorField("{}",
-                createPutWithTensor("{ "
-                        + "  \"cells\": [] "
-                        + "}"));
+        assertMappedTensorField("tensor(x{},y{}):{}",
+                                createPutWithMappedTensor("{ "
+                                                    + "  \"cells\": [] "
+                                                    + "}"));
     }
 
     @Test
-    public void testParsingOfTensorWithCells() {
-        assertTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                createPutWithTensor("{ "
-                        + "  \"cells\": [ "
-                        + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
-                        + "      \"value\": 2.0 }, "
-                        + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
-                        + "      \"value\": 3.0 } "
-                        + "  ]"
-                        + "}"));
+    public void testParsingOfMappedTensorWithCells() {
+        Tensor tensor = assertMappedTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
+                                createPutWithMappedTensor("{ "
+                                                    + "  \"cells\": [ "
+                                                    + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
+                                                    + "      \"value\": 2.0 }, "
+                                                    + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
+                                                    + "      \"value\": 3.0 } "
+                                                    + "  ]"
+                                                    + "}"));
+        assertTrue(tensor instanceof MappedTensor); // any functional instance is fine
+    }
+
+    @Test
+    public void testParsingOfIndexedTensorWithCells() {
+        Tensor tensor = assertTensorField("{{x:0,y:0}:2.0,{x:1,y:0}:3.0}}",
+                           createPutWithTensor("{ "
+                                                + "  \"cells\": [ "
+                                                + "    { \"address\": { \"x\": \"0\", \"y\": \"0\" }, "
+                                                + "      \"value\": 2.0 }, "
+                                                + "    { \"address\": { \"x\": \"1\", \"y\": \"0\" }, "
+                                                + "      \"value\": 3.0 } "
+                                                + "  ]"
+                                                + "}", "indexedtensorfield"), "indexedtensorfield");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
 
     @Test
     public void testParsingOfTensorWithSingleCellInDifferentJsonOrder() {
-        assertTensorField("{{x:a,y:b}:2.0}",
-                createPutWithTensor("{ "
-                        + "  \"cells\": [ "
-                        + "    { \"value\": 2.0, "
-                        + "      \"address\": { \"x\": \"a\", \"y\": \"b\" } } "
-                        + "  ]"
-                        + "}"));
+        assertMappedTensorField("{{x:a,y:b}:2.0}",
+                                createPutWithMappedTensor("{ "
+                                                    + "  \"cells\": [ "
+                                                    + "    { \"value\": 2.0, "
+                                                    + "      \"address\": { \"x\": \"a\", \"y\": \"b\" } } "
+                                                    + "  ]"
+                                                    + "}"));
     }
 
     @Test
-    public void testParsingOfTensorWithSingleCellWithoutAddress() {
-        assertTensorField("{{}:2.0}",
-                createPutWithTensor("{ "
-                        + "  \"cells\": [ "
-                        + "    { \"value\": 2.0 } "
-                        + "  ]"
-                        + "}"));
+    public void testAssignUpdateOfEmptyMappedTensor() {
+        assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithMappedTensor("{}"));
     }
 
     @Test
-    public void testAssignUpdateOfEmptyTensor() {
-        assertTensorAssignUpdate("{}", createAssignUpdateWithTensor("{}"));
+    public void testAssignUpdateOfEmptyIndexedTensor() {
+        try {
+            assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithTensor("{}", "indexedtensorfield"));
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("An indexed tensor must have a value", "Tensor of type tensor(x[],y[]) has no values", e.getMessage());
+        }
     }
 
     @Test
     public void testAssignUpdateOfNullTensor() {
-        ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithTensor(null)).getValueUpdate(0);
+        ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithMappedTensor(null)).getValueUpdate(0);
         assertTrue(clearUpdate != null);
         assertTrue(clearUpdate.getValue() == null);
     }
@@ -1100,7 +1119,7 @@ public class JsonReaderTestCase {
     @Test
     public void testAssignUpdateOfTensorWithCells() {
         assertTensorAssignUpdate("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                createAssignUpdateWithTensor("{ "
+                createAssignUpdateWithMappedTensor("{ "
                         + "  \"cells\": [ "
                         + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                         + "      \"value\": 2.0 }, "
@@ -1188,10 +1207,13 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
-    private DocumentPut createPutWithTensor(String inputTensor) {
+    private DocumentPut createPutWithMappedTensor(String inputTensor) { 
+        return createPutWithTensor(inputTensor, "mappedtensorfield"); 
+    }
+    private DocumentPut createPutWithTensor(String inputTensor, String tensorFieldName) {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("["
-                        + "  { \"put\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"tensorfield\": "
+                        + "  { \"put\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"" + tensorFieldName + "\": "
                         + inputTensor
                         + "  }}"
                         + "]"));
@@ -1199,20 +1221,27 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
-    private DocumentUpdate createAssignUpdateWithTensor(String inputTensor) {
+    private DocumentUpdate createAssignUpdateWithMappedTensor(String inputTensor) {
+        return createAssignUpdateWithTensor(inputTensor, "mappedtensorfield");
+    }
+    private DocumentUpdate createAssignUpdateWithTensor(String inputTensor, String tensorFieldName) {
         InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("[ { \"update\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"tensorfield\": {"
+                Utf8.toBytes("[ { \"update\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"" + tensorFieldName + "\": {"
                         + "\"assign\": " + (inputTensor != null ? inputTensor : "null") + " } } } ]"));
         JsonReader reader = new JsonReader(types, rawDoc, parserFactory);
         return (DocumentUpdate) reader.next();
     }
 
-    private static void assertTensorField(String expectedTensor, DocumentPut put) {
+    private static Tensor assertMappedTensorField(String expectedTensor, DocumentPut put) {
+        return assertTensorField(expectedTensor, put, "mappedtensorfield");
+    }
+    private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
         final Document doc = put.getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, doc.getId().toString());
-        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("tensorfield"));
+        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField(tensorFieldName));
         assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
+        return fieldValue.getTensor().get();
     }
 
     private static void assertTensorAssignUpdate(String expectedTensor, DocumentUpdate update) {
@@ -1224,7 +1253,7 @@ public class JsonReaderTestCase {
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {
-        FieldUpdate fieldUpdate = update.getFieldUpdate("tensorfield");
+        FieldUpdate fieldUpdate = update.getFieldUpdate("mappedtensorfield");
         assertEquals(1, fieldUpdate.size());
         return fieldUpdate;
     }

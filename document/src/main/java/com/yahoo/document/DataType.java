@@ -51,13 +51,14 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     public final static PrimitiveDataType URI = new PrimitiveDataType("uri", 10, UriFieldValue.class, new UriFieldValue.Factory());
     public final static NumericDataType BYTE = new NumericDataType("byte", 16, ByteFieldValue.class, ByteFieldValue.getFactory());
     public final static PrimitiveDataType PREDICATE = new PrimitiveDataType("predicate", 20, PredicateFieldValue.class, PredicateFieldValue.getFactory());
+    public final static int tensorDataTypeCode = 21; // All TensorDataType instances have id=21 but carries additional type information serialized separately 
     // ADDITIONAL parametrized types added at runtime: map, struct, array, weighted set, annotation reference, tensor
 
     // Tags are converted to weightedset<string> when reading the search definition TODO: Remove it
     public final static WeightedSetDataType TAG = new WeightedSetDataType(DataType.STRING, true, true);
 
     public static int lastPredefinedDataTypeId() {
-        return 20;
+        return 21;
     }
 
     /** Set to true when this type is registered in a type manager. From that time we should refuse changes. */

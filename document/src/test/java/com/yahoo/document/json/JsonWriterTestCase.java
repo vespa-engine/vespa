@@ -301,7 +301,7 @@ public class JsonWriterTestCase {
 
     @Test
     public void testWritingOfEmptyTensor() throws IOException {
-        assertTensorRoundTripEquality("{}","{ \"cells\": [{\"address\": {}, \"value\": 0.0}] }");
+        assertTensorRoundTripEquality("{}","{ \"cells\": [] }");
     }
 
     @Test
@@ -319,15 +319,6 @@ public class JsonWriterTestCase {
                 + "      \"value\": 2.0 }, "
                 + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
                 + "      \"value\": 3.0 } "
-                + "  ]"
-                + "}");
-    }
-
-    @Test
-    public void testWritingOfTensorWithSingleCellWithEmptyAddress() throws IOException {
-        assertTensorRoundTripEquality("{ "
-                + "  \"cells\": [ "
-                + "    { \"address\": {}, \"value\": 2.0 } "
                 + "  ]"
                 + "}");
     }

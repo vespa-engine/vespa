@@ -18,9 +18,8 @@ public class TensorDataType extends DataType {
     public static int classId = registerClass(Ids.document + 59, TensorDataType.class);
 
     public TensorDataType(TensorType tensorType) {
-        super(tensorType.toString(), 0);
+        super(tensorType.toString(), DataType.tensorDataTypeCode);
         this.tensorType = tensorType;
-        setId(getName().toLowerCase().hashCode());
     }
 
     public TensorDataType clone() {
@@ -39,7 +38,10 @@ public class TensorDataType extends DataType {
 
     @Override
     public boolean isValueCompatible(FieldValue value) {
-        return value != null && TensorFieldValue.class.isAssignableFrom(value.getClass());
+        if (value == null) return false;
+        if ( ! TensorFieldValue.class.isAssignableFrom(value.getClass())) return false;
+        TensorFieldValue tensorValue = (TensorFieldValue)value;
+        return tensorValue.getDataType().getTensorType().isAssignableTo(tensorType);
     }
 
     /** Returns the type of the tensor this field can hold */

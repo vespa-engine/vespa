@@ -37,6 +37,8 @@ public final class Attribute implements Cloneable, Serializable {
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
     private double densePostingListThreshold = BooleanIndexDefinition.DEFAULT_DENSE_POSTING_LIST_THRESHOLD;
+    
+    /** This is set if the type of this is TENSOR */
     private Optional<TensorType> tensorType = Optional.empty();
 
     private boolean isPosition = false;
@@ -100,16 +102,21 @@ public final class Attribute implements Cloneable, Serializable {
     }
 
     /** Creates an attribute with default settings */
-    public Attribute(String name,DataType fieldType) {
-        this(name,convertDataType(fieldType), convertCollectionType(fieldType));
+    public Attribute(String name, DataType fieldType) {
+        this(name, convertDataType(fieldType), convertCollectionType(fieldType), convertTensorType(fieldType));
         setRemoveIfZero(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).removeIfZero() : false);
         setCreateIfNonExistent(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).createIfNonExistent() : false);
     }
 
-    public Attribute(String name,Type type, CollectionType collectionType) {
+    public Attribute(String name, Type type, CollectionType collectionType) {
+        this(name, type, collectionType, Optional.empty());
+    }
+
+    public Attribute(String name, Type type, CollectionType collectionType, Optional<TensorType> tensorType) {
         this.name=name;
         setType(type);
         setCollectionType(collectionType);
+        this.tensorType = tensorType;
     }
 
     /**
@@ -207,16 +214,23 @@ public final class Attribute implements Cloneable, Serializable {
     }
 
     /** Converts to the right attribute type from a field datatype */
-    public static CollectionType convertCollectionType(DataType fieldType) {
+    private static CollectionType convertCollectionType(DataType fieldType) {
         if (fieldType instanceof ArrayDataType) {
             return CollectionType.ARRAY;
         } else if (fieldType instanceof WeightedSetDataType) {
             return CollectionType.WEIGHTEDSET;
+        } else if (fieldType instanceof TensorDataType) {
+            return CollectionType.SINGLE;
         } else if (fieldType instanceof PrimitiveDataType) {
             return CollectionType.SINGLE;
         } else {
             throw new IllegalArgumentException("Field " + fieldType + " not supported in convertCollectionType");
         }
+    }
+    
+    private static Optional<TensorType> convertTensorType(DataType fieldType) {
+        if ( ! ( fieldType instanceof TensorDataType)) return Optional.empty();
+        return Optional.of(((TensorDataType)fieldType).getTensorType());
     }
 
     /** Converts to the right field type from an attribute type */
@@ -229,7 +243,7 @@ public final class Attribute implements Cloneable, Serializable {
             case DOUBLE: return DataType.DOUBLE;
             case BYTE: return DataType.BYTE;
             case PREDICATE: return DataType.PREDICATE;
-            case TENSOR: DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
+            case TENSOR: return DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
             default: throw new IllegalArgumentException("Unknown attribute type " + attributeType);
         }
     }
