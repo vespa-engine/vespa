@@ -18,7 +18,7 @@ public enum ValidationId {
     configModelVersionMismatch("config-model-version-mismatch"),
     skipOldConfigModels("skip-old-config-models"),
     skipAutomaticTenantUpgradeTests("skip-automatic-tenant-upgrade-test"),
-    enableAutomaticTenantUpgradeTests("enable-automatic-tenant-upgrade-test");
+    forceAutomaticTenantUpgradeTests("force-automatic-tenant-upgrade-test");
 
     private final String id;
 
