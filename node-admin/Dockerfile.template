@@ -33,8 +33,3 @@ ADD include/start-config-server.sh $VESPA_HOME/bin/start-config-server.sh
 # Included in base image, but here overridden with local modifications.
 # TODO: Update the source instead.
 ADD include/start-services.sh $VESPA_HOME/bin/start-services.sh
-
-# Override what's in the base image with local versions:
-ADD include/services.xml $VESPA_HOME/conf/node-admin-app/services.xml
-ADD target/docker-api-jar-with-dependencies.jar $VESPA_HOME/lib/jars/docker-api-jar-with-dependencies.jar
-ADD target/node-admin-jar-with-dependencies.jar $VESPA_HOME/lib/jars/node-admin-jar-with-dependencies.jar
