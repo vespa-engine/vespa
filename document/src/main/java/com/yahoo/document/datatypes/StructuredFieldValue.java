@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Håkon Humberset
+ * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
  */
 public abstract class StructuredFieldValue extends CompositeFieldValue {
 

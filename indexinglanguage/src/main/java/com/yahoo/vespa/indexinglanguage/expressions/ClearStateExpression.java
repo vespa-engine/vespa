@@ -15,8 +15,8 @@ public class ClearStateExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.clear();
+    protected void doVerify(VerificationContext ctx) {
+        ctx.clear();
     }
 
     @Override

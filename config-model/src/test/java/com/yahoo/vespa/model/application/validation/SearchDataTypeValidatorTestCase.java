@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * @author Simon Thoresen
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class SearchDataTypeValidatorTestCase {
 
@@ -37,5 +37,4 @@ public class SearchDataTypeValidatorTestCase {
                     "'simple' for cluster 'content').", e.getMessage());
         }
     }
-
 }

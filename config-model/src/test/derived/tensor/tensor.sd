@@ -2,16 +2,16 @@
 search tensor {
 
   document tensor {
-    field f1 type tensor(x[]) {
+    field f1 type tensor {
       indexing: summary
     }
-    field f2 type tensor(x[2],y[]) {
+    field f2 type tensor {
       indexing: attribute
     }
-    field f3 type tensor(x{}) {
+    field f3 type tensor {
       indexing: attribute | summary
     }
-    field f4 type tensor(x[],y[]) {
+    field f4 type tensor {
       indexing: attribute
       attribute: tensor(x[10],y[20])
     }

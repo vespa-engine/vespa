@@ -25,12 +25,12 @@ public class GetVarExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getVariable(varName);
+    protected void doVerify(VerificationContext ctx) {
+        DataType input = ctx.getVariable(varName);
         if (input == null) {
             throw new VerificationException(this, "Variable '" + varName + "' not found.");
         }
-        context.setValue(input);
+        ctx.setValue(input);
     }
 
     @Override

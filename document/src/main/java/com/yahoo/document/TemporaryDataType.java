@@ -4,15 +4,11 @@ package com.yahoo.document;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 class TemporaryDataType extends DataType {
-
-    private final String detailedType;
-    
-    TemporaryDataType(int dataTypeId, String detailedType) {
+    TemporaryDataType(int dataTypeId) {
         super("temporary_" + dataTypeId, dataTypeId);
-        this.detailedType = detailedType;
     }
 
     @Override
@@ -29,7 +25,4 @@ class TemporaryDataType extends DataType {
     public boolean isValueCompatible(FieldValue value) {
         return false;
     }
-
-    String getDetailedType() { return detailedType; }
-
 }
