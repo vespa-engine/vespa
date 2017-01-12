@@ -2,8 +2,14 @@
 
 #pragma once
 
+#include "values.h"
+#include "error.h"
+#include <vespa/fnet/context.h>
+
 #include <vespa/vespalib/util/atomic.h>
 
+class FNETConnection;
+class FNET_Packet;
 
 class FRT_IAbortHandler
 {
@@ -106,18 +112,9 @@ public:
 
     bool GetCompletionToken() { return (vespalib::Atomic::postInc(&_completed) == 0); }
 
-    void SetError(uint32_t errorCode, const char *errorMessage,
-                  uint32_t errorMessageLen)
-    {
-        _errorCode = errorCode;
-        _errorMessageLen = errorMessageLen;
-        _errorMessage = _tub.CopyString(errorMessage,
-                                        errorMessageLen);
-    }
-    void SetError(uint32_t errorCode, const char *errorMessage)
-    { SetError(errorCode, errorMessage, strlen(errorMessage)); }
-    void SetError(uint32_t errorCode)
-    { SetError(errorCode, FRT_GetDefaultErrorMessage(errorCode)); }
+    void SetError(uint32_t errorCode, const char *errorMessage, uint32_t errorMessageLen);
+    void SetError(uint32_t errorCode, const char *errorMessage);
+    void SetError(uint32_t errorCode);
 
     bool IsError() { return (_errorCode != FRTE_NO_ERROR); }
     uint32_t GetErrorCode() { return _errorCode; }
@@ -152,7 +149,7 @@ public:
     FNET_Packet *CreateReplyPacket();
 
     void SetDetachedPT(bool *detachedPT) { _detachedPT = detachedPT; }
-    void Detach() { assert(_detachedPT != NULL); *_detachedPT = true; }
+    void Detach() { *_detachedPT = true; }
 
     void SetAbortHandler(FRT_IAbortHandler *handler)
     { _abortHandler = handler; }
@@ -169,9 +166,7 @@ public:
         return _abortHandler->HandleAbort();
     }
 
-    void Return()
-    {
-        assert(_returnHandler != NULL);
+    void Return() {
         _returnHandler->HandleReturn();
     }
 

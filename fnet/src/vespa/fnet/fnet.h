@@ -12,44 +12,10 @@
 
 // DEFINES
 
-// THREAD/MUTEX STUFF
-
-#ifdef FASTOS_NO_THREADS
-
-#define FNET_HAS_THREADS false
-
-class FNET_Mutex
-{
-public:
-    FNET_Mutex(const char *, bool) {}
-    void Lock() {}
-    void Unlock() {}
-};
-
-class FNET_Cond : public FNET_Mutex
-{
-    bool Illegal(const char *name) {
-        fprintf(stderr, "FNET_Cond::%s called (FASTOS_NO_THREADS)\n", name);
-        abort();
-        return false;
-    }
-public:
-    FNET_Cond(const char *name, bool leaf)
-        : FNET_Mutex(name, leaf) {}
-    bool TimedWait(int) { return Illegal("TimedWait"); }
-    void Wait() { Illegal("Wait"); }
-    void Signal() { Illegal("Signal"); }
-    void Broadcast() { Illegal("Broadcast"); }
-};
-
-#else // FASTOS_NO_THREADS
-
 #define FNET_HAS_THREADS true
 
 typedef FastOS_Mutex FNET_Mutex;
 typedef FastOS_Cond  FNET_Cond;
-
-#endif
 
 // DEPRECATED
 

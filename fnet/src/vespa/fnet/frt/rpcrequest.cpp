@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/frt/frt.h>
+#include "rpcrequest.h"
+#include "packets.h"
+#include <vespa/fnet/info.h>
+#include <cassert>
 
 FRT_RPCRequest::FRT_RPCRequest()
     : _tub(),
@@ -28,6 +30,24 @@ FRT_RPCRequest::~FRT_RPCRequest()
     assert(_refcnt == 0);
 }
 
+void
+FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage, uint32_t errorMessageLen)
+{
+    _errorCode = errorCode;
+    _errorMessageLen = errorMessageLen;
+    _errorMessage = _tub.CopyString(errorMessage,
+                                    errorMessageLen);
+}
+void
+FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage) {
+    SetError(errorCode, errorMessage, strlen(errorMessage));
+}
+
+void
+FRT_RPCRequest::SetError(uint32_t errorCode)
+{
+    SetError(errorCode, FRT_GetDefaultErrorMessage(errorCode));
+}
 
 void
 FRT_RPCRequest::Reset()

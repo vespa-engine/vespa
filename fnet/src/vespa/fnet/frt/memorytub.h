@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <new>
+#include <vespa/vespalib/util/alloc.h>
+#include <cstring>
+
 
 class FRT_MemoryTub
 {

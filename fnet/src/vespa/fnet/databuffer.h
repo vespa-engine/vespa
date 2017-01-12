@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <cassert>
 
 /**
  * This is a buffer that may hold the stream representation of

@@ -13,7 +13,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FNET_IPacketFactory(void) { }
+    virtual ~FNET_IPacketFactory() { }
 
     /**
      * Create a packet.

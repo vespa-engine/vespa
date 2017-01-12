@@ -32,7 +32,7 @@ public:
     /**
      * @return true if we have support for threads
      **/
-    static bool HasThreads() { return FNET_HAS_THREADS; }
+    static bool HasThreads() { return true; }
 
     /**
      * @return the host endian (unknown/little/big)
