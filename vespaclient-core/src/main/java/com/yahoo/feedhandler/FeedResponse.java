@@ -123,8 +123,10 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
                 log.finest(str);
                 addError(str);
             }
-            isAborted = abortOnError;
-            return !abortOnError;
+            if (abortOnError) {
+                isAborted = true;
+                return false;
+            }
         }
         return numPending > 0;
     }
