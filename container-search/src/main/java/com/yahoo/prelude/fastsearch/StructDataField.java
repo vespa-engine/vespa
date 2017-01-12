@@ -8,7 +8,7 @@ import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.prelude.hitfield.JSONString;
 
 /**
- * Class representing a XML rendered structured data field in the result set
+ * A hit field containing JSON structured data
  */
 public class StructDataField extends JSONField {
 
@@ -22,9 +22,7 @@ public class StructDataField extends JSONField {
     }
 
     public Object convert(Inspector value) {
-        if (getEmulConfig().stringBackedStructuredData() ||
-            value.type() == Type.STRING)
-        {
+        if (getEmulConfig().stringBackedStructuredData() || value.type() == Type.STRING) {
             return super.convert(value);
         }
         return new StructuredData(value);

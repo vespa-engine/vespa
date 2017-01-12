@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-
 import java.nio.ByteBuffer;
 
 import com.yahoo.io.SlowInflate;
@@ -10,13 +9,13 @@ import com.yahoo.text.Utf8;
 import com.yahoo.data.access.*;
 import com.yahoo.data.access.simple.Value;
 
-
 /**
- * Class representing a JSON string field in the result set
+ * A hit field containing JSON structured data
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JSONField extends DocsumField implements VariableLengthField {
+
     public JSONField(String name) {
         super(name);
     }

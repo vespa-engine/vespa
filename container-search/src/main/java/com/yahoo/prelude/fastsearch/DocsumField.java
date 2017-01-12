@@ -13,8 +13,8 @@ import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.log.LogLevel;
 
 /**
- * @author <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Bjørn Borud
+ * @author Steinar Knutsen
  */
 public abstract class DocsumField {
 

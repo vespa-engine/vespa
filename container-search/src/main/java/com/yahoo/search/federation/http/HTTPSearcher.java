@@ -134,7 +134,7 @@ import java.util.logging.Logger;
  *     The content of any additional response header fields.
  * </dl>
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 
