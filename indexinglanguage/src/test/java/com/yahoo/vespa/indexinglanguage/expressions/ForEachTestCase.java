@@ -237,7 +237,7 @@ public class ForEachTestCase {
         }
 
         @Override
-        protected void doVerify(VerificationContext context) {
+        protected void doVerify(VerificationContext ctx) {
 
         }
 

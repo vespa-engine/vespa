@@ -2,7 +2,6 @@
 package com.yahoo.document.datatypes;
 
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -14,8 +13,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class TensorFieldValueTestCase {
 
-    private static TensorFieldValue createFieldValue(String tensorString) {
-        return new TensorFieldValue(Tensor.from(tensorString));
+    private static TensorFieldValue createFieldValue(String tensor) {
+        return new TensorFieldValue(Tensor.from(tensor));
     }
 
     @Test
@@ -24,27 +23,20 @@ public class TensorFieldValueTestCase {
     }
 
     @Test
-    public void requireThatDifferentTensorTypesWithEmptyValuesAreNotEqual() {
-        TensorFieldValue field1 = new TensorFieldValue(new TensorType.Builder().mapped("x").build());
-        TensorFieldValue field2 = new TensorFieldValue(new TensorType.Builder().indexed("y").build());
-        assertFalse(field1.equals(field2));
-    }
-
-    @Test
     public void requireThatDifferentTensorValuesAreNotEqual() {
-        TensorFieldValue field1 = createFieldValue("{{x:0}:2.0}");
-        TensorFieldValue field2 = createFieldValue("{{x:0}:3.0}");
-        assertFalse(field1.equals(field2));
-        assertFalse(field1.equals(new TensorFieldValue(TensorType.empty)));
+        TensorFieldValue lhs = createFieldValue("{{x:0}:2.0}");
+        TensorFieldValue rhs = createFieldValue("{{x:0}:3.0}");
+        assertFalse(lhs.equals(rhs));
+        assertFalse(lhs.equals(new TensorFieldValue()));
     }
 
     @Test
     public void requireThatSameTensorValueIsEqual() {
         Tensor tensor = Tensor.from("{{x:0}:2.0}");
-        TensorFieldValue field1 = new TensorFieldValue(tensor);
-        TensorFieldValue field2 = new TensorFieldValue(tensor);
-        assertTrue(field1.equals(field1));
-        assertTrue(field1.equals(field2));
-        assertTrue(field1.equals(createFieldValue("{{x:0}:2.0}")));
+        TensorFieldValue lhs = new TensorFieldValue(tensor);
+        TensorFieldValue rhs = new TensorFieldValue(tensor);
+        assertTrue(lhs.equals(lhs));
+        assertTrue(lhs.equals(rhs));
+        assertTrue(lhs.equals(createFieldValue("{{x:0}:2.0}")));
     }
 }

@@ -11,7 +11,6 @@ import java.util.Map;
  * @author baldersheim
  */
 public class DataTypeRepo implements DataTypeCollection {
-
     Map<Integer, DataType> typeById = new LinkedHashMap<>();
     Map<String, DataType> typeByName = new LinkedHashMap<>();
 
@@ -26,9 +25,10 @@ public class DataTypeRepo implements DataTypeCollection {
     public Collection<DataType> getTypes() { return typeById.values(); }
 
     public DataTypeRepo add(DataType type) {
-        if (typeByName.containsKey(type.getName()) || typeById.containsKey(type.getId())) {
-            throw new IllegalStateException("Data type '" + type.getName() + "', id '" + 
-                                            type.getId() + "' is already registered.");
+        if (typeByName.containsKey(type.getName()) ||
+            typeById.containsKey(type.getId()))
+        {
+            throw new IllegalStateException("Data type '" + type.getName() + "', id '" + type.getId() + "' is already registered.");
         }
         typeByName.put(type.getName(), type);
         typeById.put(type.getId(), type);

@@ -805,14 +805,13 @@ DataType dataType() :
     DataType mapType=null;
 	DataType arrayType=null;
     DataType wsetType=null;
-    TensorType tensorType;
+
 }
 {
     (   LOOKAHEAD(<ARRAY> <LESSTHAN>)       ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return DataType.getArray(arrayType); } )
       | LOOKAHEAD(<WEIGHTEDSET> <LESSTHAN>) ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return  DataType.getWeightedSet(wsetType); } )
       | LOOKAHEAD(<MAP> <LESSTHAN>)         ( mapType = mapDataType() { return mapType; } )
       | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
-      | LOOKAHEAD(<TENSOR_TYPE>)                 ( tensorType = tensorType("Field type") { return DataType.getTensor(tensorType); } )
       | ( typeName = identifier() ["[]" { isArrayOldStyle = true; }] )
     )
     {

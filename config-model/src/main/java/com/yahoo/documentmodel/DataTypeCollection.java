@@ -9,9 +9,7 @@ import java.util.Collection;
  * @author baldersheim
  */
 public interface DataTypeCollection {
-
-    DataType getDataType(String name);
-    DataType getDataType(int id);
-    Collection<DataType> getTypes();
-
+    public DataType getDataType(String name);
+    public DataType getDataType(int id);
+    public Collection<DataType> getTypes();
 }

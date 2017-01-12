@@ -2,11 +2,13 @@
 package com.yahoo.vespa.configmodel.producers;
 
 import com.yahoo.document.*;
+import com.yahoo.document.DocumenttypesConfig.Builder;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
+import com.yahoo.searchdefinition.FieldSets;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import java.util.*;
@@ -29,12 +31,12 @@ public class DocumentTypes {
             for (NewDocumentType inherited : documentType.getInherited()) {
                 produceInheritOrder(inherited, builder, produced);
             }
-            buildConfig(documentType, builder);
+            handle(documentType, builder);
             produced.put(documentType.getFullName(), documentType);
         }
     }
 
-    private void buildConfig(NewDocumentType documentType, DocumenttypesConfig.Builder builder) {
+    private void handle(NewDocumentType documentType, DocumenttypesConfig.Builder builder) {
         if (documentType == VespaDocumentType.INSTANCE) {
             return;
         }
@@ -44,40 +46,40 @@ public class DocumentTypes {
             name(documentType.getName()).
             headerstruct(documentType.getHeader().getId()).
             bodystruct(documentType.getBody().getId());
-        Set<Integer> built = new HashSet<>();
+        Set<Integer> handled = new HashSet<>();
         for (NewDocumentType inherited : documentType.getInherited()) {
             db.inherits(new DocumenttypesConfig.Documenttype.Inherits.Builder().id(inherited.getId()));
-            markAsBuilt(built, inherited.getAllTypes());
+            markAsHandled(handled, inherited.getAllTypes());
         }
         for (DataType dt : documentType.getTypes()) {
-            buildConfig(dt, db, built);
+            handle(dt, db, handled);
         }
         for(AnnotationType annotation : documentType.getAnnotations()) {
             DocumenttypesConfig.Documenttype.Annotationtype.Builder atb = new DocumenttypesConfig.Documenttype.Annotationtype.Builder();
             db.annotationtype(atb);
-            buildConfig(annotation, atb);
+            handle(annotation, atb);
         }
-        buildConfig(documentType.getFieldSets(), db);
+        handleFieldSets(documentType.getFieldSets(), db);
         builder.documenttype(db);
     }
 
-    private void buildConfig(Set<FieldSet> fieldSets, com.yahoo.document.DocumenttypesConfig.Documenttype.Builder db) {
+    private void handleFieldSets(Set<FieldSet> fieldSets, com.yahoo.document.DocumenttypesConfig.Documenttype.Builder db) {
         for (FieldSet fs : fieldSets) {
-            buildConfig(fs, db);
+            handleFieldSet(fs, db);
         }        
     }
 
-    private void buildConfig(FieldSet fs, DocumenttypesConfig.Documenttype.Builder db) {
+    private void handleFieldSet(FieldSet fs, DocumenttypesConfig.Documenttype.Builder db) {
         db.fieldsets(fs.getName(), new DocumenttypesConfig.Documenttype.Fieldsets.Builder().fields(fs.getFieldNames()));
     }
 
-    private void markAsBuilt(Set<Integer> built, DataTypeCollection typeCollection) {
+    private void markAsHandled(Set<Integer> handled, DataTypeCollection typeCollection) {
         for (DataType type : typeCollection.getTypes()) {
-            built.add(type.getId());
+            handled.add(type.getId());
         }
     }
 
-    private void buildConfig(AnnotationType annotation, DocumenttypesConfig.Documenttype.Annotationtype.Builder builder) {
+    private void handle(AnnotationType annotation, DocumenttypesConfig.Documenttype.Annotationtype.Builder builder) {
         builder.
             id(annotation.getId()).
             name(annotation.getName());
@@ -90,77 +92,67 @@ public class DocumentTypes {
         }
     }
 
-    private void buildConfig(DataType type, DocumenttypesConfig.Documenttype.Builder documentBuilder, Set<Integer> built) {
-        if ((VespaDocumentType.INSTANCE.getDataType(type.getId()) == null) && ! built.contains(type.getId())) {
-            built.add(type.getId());
-            DocumenttypesConfig.Documenttype.Datatype.Builder dataTypeBuilder = new DocumenttypesConfig.Documenttype.Datatype.Builder();
-            dataTypeBuilder.id(type.getId());
+    private void handle(DataType type, DocumenttypesConfig.Documenttype.Builder db, Set<Integer> handled) {
+        if ((VespaDocumentType.INSTANCE.getDataType(type.getId()) == null) && ! handled.contains(type.getId())) {
+            handled.add(type.getId());
+            DocumenttypesConfig.Documenttype.Datatype.Builder dtb = new DocumenttypesConfig.Documenttype.Datatype.Builder();
+            dtb.id(type.getId());
             if (type instanceof StructDataType) {
-                dataTypeBuilder.type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.STRUCT);
+                dtb.type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.valueOf("STRUCT"));
                 StructDataType dt = (StructDataType) type;
-                DocumenttypesConfig.Documenttype.Datatype.Sstruct.Builder structBuilder = new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Builder();
-                dataTypeBuilder.sstruct(structBuilder);
-                structBuilder.name(dt.getName());
+                DocumenttypesConfig.Documenttype.Datatype.Sstruct.Builder sb = new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Builder();
+                dtb.sstruct(sb);
+                sb.name(dt.getName());
                 if (dt.getCompressionConfig().type.getCode() != 0) {
-                    structBuilder.compression(new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Compression.Builder().
+                    sb.compression(new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Compression.Builder().
                             type(DocumenttypesConfig.Documenttype.Datatype.Sstruct.Compression.Type.Enum.valueOf(dt.getCompressionConfig().type.toString())).
                             level(dt.getCompressionConfig().compressionLevel).
                             threshold((int)dt.getCompressionConfig().threshold).
                             minsize((int)dt.getCompressionConfig().minsize));
                 }
                 for (com.yahoo.document.Field field : dt.getFields()) {
-                    DocumenttypesConfig.Documenttype.Datatype.Sstruct.Field.Builder builder =
-                            new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Field.Builder();
-                    builder.name(field.getName()).
+                    sb.field(new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Field.Builder().
+                            name(field.getName()).
                             id(field.getId()).
                             id_v6(field.getIdV6()).
-                            datatype(field.getDataType().getId());
-                    if (field.getDataType() instanceof TensorDataType)
-                        builder.detailedtype(((TensorDataType)field.getDataType()).getTensorType().toString());
-                    structBuilder.field(builder);
-                    buildConfig(field.getDataType(), documentBuilder, built);
+                            datatype(field.getDataType().getId()));
+                    handle(field.getDataType(), db, handled);
                 }
             } else if (type instanceof ArrayDataType) {
-                dataTypeBuilder.
-                    type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.ARRAY).
+                dtb.
+                    type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.valueOf("ARRAY")).
                     array(new DocumenttypesConfig.Documenttype.Datatype.Array.Builder().
                             element(new DocumenttypesConfig.Documenttype.Datatype.Array.Element.Builder().id(((ArrayDataType)type).getNestedType().getId())));
-                buildConfig(((ArrayDataType)type).getNestedType(), documentBuilder, built);
+                handle(((ArrayDataType)type).getNestedType(), db, handled);
             } else if (type instanceof WeightedSetDataType) {
-                dataTypeBuilder.type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.WSET).
+                dtb.type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.valueOf("WSET")).
                 wset(new DocumenttypesConfig.Documenttype.Datatype.Wset.Builder().
                         key(new DocumenttypesConfig.Documenttype.Datatype.Wset.Key.Builder().
                                 id(((WeightedSetDataType)type).getNestedType().getId())).
                         createifnonexistent(((WeightedSetDataType)type).createIfNonExistent()).
                         removeifzero(((WeightedSetDataType)type).removeIfZero()));
-                buildConfig(((WeightedSetDataType)type).getNestedType(), documentBuilder, built);
+                handle(((WeightedSetDataType)type).getNestedType(), db, handled);
             } else if (type instanceof MapDataType) {
-                dataTypeBuilder.
-                    type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.MAP).
+                dtb.
+                    type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.valueOf("MAP")).
                     map(new DocumenttypesConfig.Documenttype.Datatype.Map.Builder().
                         key(new DocumenttypesConfig.Documenttype.Datatype.Map.Key.Builder().
                             id(((MapDataType)type).getKeyType().getId())).
                         value(new DocumenttypesConfig.Documenttype.Datatype.Map.Value.Builder().
                             id(((MapDataType)type).getValueType().getId())));
-                buildConfig(((MapDataType)type).getKeyType(), documentBuilder, built);
-                buildConfig(((MapDataType)type).getValueType(), documentBuilder, built);
+                handle(((MapDataType)type).getKeyType(), db, handled);
+                handle(((MapDataType)type).getValueType(), db, handled);
             } else if (type instanceof AnnotationReferenceDataType) {
-                dataTypeBuilder.
-                    type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.ANNOTATIONREF).
+                dtb.
+                    type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.valueOf("ANNOTATIONREF")).
                     annotationref(new DocumenttypesConfig.Documenttype.Datatype.Annotationref.Builder().
                             annotation(new DocumenttypesConfig.Documenttype.Datatype.Annotationref.Annotation.Builder().
                                     id(((AnnotationReferenceDataType)type).getAnnotationType().getId())));
-            } else if (type instanceof TensorDataType) {
-                // The type of the tensor is not stored here but instead in each field as detailed type information
-                // to provide better compatibility. A tensor field can have its tensorType changed (in compatible ways)
-                // without changing the field type and thus requiring data refeed
-                return;
             } else {
                 return;
             }
-            documentBuilder.datatype(dataTypeBuilder);
+            db.datatype(dtb);
         }
     }
-
 }
 

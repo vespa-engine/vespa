@@ -10,7 +10,6 @@ import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,7 +43,6 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
 
     private final String documentId = "doc:something:foooo";
     private final String tensorField = "tensorfield";
-    private final TensorType tensorType = new TensorType.Builder().mapped("x").build();
 
     private Document createDocument() {
         return new Document(docMan.getDocumentType("foobar"), new DocumentId(documentId));
@@ -62,7 +60,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         DataType stringwset = DataType.getWeightedSet(DataType.STRING);
         docType.addField(new Field("strwset", stringwset));
 
-        docType.addField(new Field(tensorField, new TensorDataType(tensorType)));
+        docType.addField(new Field(tensorField, DataType.TENSOR));
         docMan.register(docType);
 
         docType2 = new DocumentType("otherdoctype");
@@ -627,7 +625,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     private DocumentUpdate createTensorAssignUpdate() {
         DocumentUpdate result = new DocumentUpdate(docType, new DocumentId(documentId));
         result.addFieldUpdate(FieldUpdate.createAssign(docType.getField(tensorField),
-                              createTensorFieldValue("{{x:0}:2.0}")));
+                createTensorFieldValue("{{x:0}:2.0}")));
         return result;
     }
 

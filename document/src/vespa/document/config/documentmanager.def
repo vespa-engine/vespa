@@ -60,10 +60,6 @@ datatype[].structtype[].field[].id[].id int
 ## one specified in config.
 datatype[].structtype[].field[].datatype int
 
-## Additional, optional type information which can be changed without
-## (necessarily) causing field incompatibility
-datatype[].structtype[].field[].detailedtype string default=""
-
 ## Specify a document type to inherit
 datatype[].structtype[].inherits[].name string
 
