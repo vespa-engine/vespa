@@ -24,6 +24,7 @@ public class SharedSender implements ReplyHandler {
 
     private SendSession sender;
     private RouteMetricSet metrics;
+    private Pending globalPending = new Pending();
 
     /**
      * Creates a new shared sender.
@@ -46,7 +47,10 @@ public class SharedSender implements ReplyHandler {
     }
 
     public void shutdown() {
-        // XXX may need to wait here?
+        try {
+            globalPending.waitForZero();
+        } catch (InterruptedException e) {
+        }
         sender.close();
     }
 
@@ -116,6 +120,7 @@ public class SharedSender implements ReplyHandler {
 
         msg.setContext(owner);
         owner.getPending().inc();
+        globalPending.inc();
 
         try {
             com.yahoo.messagebus.Result r = sender.send(msg, blockingQueue);
@@ -138,6 +143,7 @@ public class SharedSender implements ReplyHandler {
      */
     @Override
     public void handleReply(Reply r) {
+        globalPending.dec();
         ResultCallback owner = (ResultCallback) r.getContext();
 
         if (owner != null) {
