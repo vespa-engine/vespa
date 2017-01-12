@@ -170,6 +170,8 @@ private:
             const BucketDatabase::Entry& e,
             uint16_t node,
             BucketListMerger::BucketList& existing) const;
+    void ensureTransitionTimerStarted();
+    void completeTransitionTimer();
     /**
      * Adds all buckets contained in the bucket database
      * that are either contained
@@ -272,6 +274,7 @@ private:
     DistributorMessageSender& _sender;
     std::set<EnqueuedBucketRecheck> _enqueuedRechecks;
     std::unordered_set<uint16_t> _outdatedNodes;
+    framework::MilliSecTimer _transitionTimer;
 };
 
 }
