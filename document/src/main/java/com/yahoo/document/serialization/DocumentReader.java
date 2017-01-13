@@ -9,7 +9,7 @@ import com.yahoo.document.DocumentTypeManager;
 /**
  * This interface is used to implement custom deserialization of document updates.
  *
- * @author <a href="mailto:ravishar@yahoo-inc.com">Ravi Sharma</a>
+ * @author Ravi Sharma
  * @author baldersheim
  */
 public interface DocumentReader {

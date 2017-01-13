@@ -811,7 +811,7 @@ void checkDeserialization(const string &name, std::unique_ptr<Tensor> tensor) {
 
 TEST("Require that tensor deserialization matches Java") {
     checkDeserialization("non_existing_tensor", std::unique_ptr<Tensor>());
-    checkDeserialization("empty_tensor", createTensor({{{}, 0.0}}, {}));
+    checkDeserialization("empty_tensor", createTensor({}, {}));
     checkDeserialization("multi_cell_tensor",
                          createTensor({ {{{"dimX", "a"}, {"dimY", "bb"}}, 2.0 },
                                            {{{"dimX", "ccc"},
