@@ -33,7 +33,8 @@ public class SummaryClassField {
         LONGDATA("longdata"),
         XMLSTRING("xmlstring"),
         FEATUREDATA("featuredata"),
-        JSONSTRING("jsonstring");
+        JSONSTRING("jsonstring"),
+        TENSOR("tensor");
 
         private String name;
 
@@ -88,7 +89,7 @@ public class SummaryClassField {
         } else if (fval instanceof PredicateFieldValue) {
             return Type.STRING;
         } else if (fval instanceof TensorFieldValue) {
-            return Type.JSONSTRING;
+            return Type.TENSOR;
         } else if (fieldType instanceof CollectionDataType) {
             if (transform != null && transform.equals(SummaryTransform.POSITIONS)) {
                 return Type.XMLSTRING;
