@@ -12,8 +12,7 @@ FeatureSet::FeatureSet()
 {
 }
 
-FeatureSet::FeatureSet(const StringVector &names,
-                                 uint32_t expectDocs)
+FeatureSet::FeatureSet(const StringVector &names, uint32_t expectDocs)
     : _names(names),
       _docIds(),
       _values()

@@ -108,6 +108,9 @@ FeatureSet::SP
 MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
                            const std::vector<uint32_t> &docs, bool summaryFeatures)
 {
+    if (docs.empty()) {
+        return std::make_shared<FeatureSet>();
+    }
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     RankProgram::UP rankProgram = summaryFeatures ? matchTools->summary_program() :
             matchTools->dump_program();
@@ -122,7 +125,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     FeatureSet &fs = *retval.get();
 
     SearchIterator::UP search = matchTools->createSearch(rankProgram->match_data());
-    search->initFullRange();
+    search->initRange(docs.front(), docs.back()+1);
     for (uint32_t i = 0; i < docs.size(); ++i) {
         if (search->seek(docs[i])) {
             uint32_t docId = search->getDocId();
