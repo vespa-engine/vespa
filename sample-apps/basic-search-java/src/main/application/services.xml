@@ -7,7 +7,7 @@
     <jdisc version="1.0">
         <processing>
             <chain id="default">
-                <processor id="${package}.ExampleProcessor" bundle="${artifactId}">
+                <processor id="ExampleProcessor" bundle="basic-search-java">
                     <config name="example.example-processor">
                         <message>Hello, services!</message>
                     </config>
