@@ -108,9 +108,6 @@ FeatureSet::SP
 MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
                            const std::vector<uint32_t> &docs, bool summaryFeatures)
 {
-    if (docs.empty()) {
-        return std::make_shared<FeatureSet>();
-    }
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     RankProgram::UP rankProgram = summaryFeatures ? matchTools->summary_program() :
             matchTools->dump_program();
@@ -122,6 +119,9 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
         featureNames.emplace_back(resolver.name_of(i));
     }
     FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
+    if (!docs.empty()) {
+        return retval;
+    }
     FeatureSet &fs = *retval.get();
 
     SearchIterator::UP search = matchTools->createSearch(rankProgram->match_data());
