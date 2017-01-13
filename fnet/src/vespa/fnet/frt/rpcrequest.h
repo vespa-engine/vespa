@@ -55,7 +55,7 @@ class FRT_RPCRequest
 {
 private:
     using Stash = vespalib::Stash;
-    Stash         _tub;
+    Stash         _stash;
     FNET_Context  _context;
     FRT_Values    _params;
     FRT_Values    _return;
@@ -72,10 +72,9 @@ private:
     FRT_IReturnHandler  *_returnHandler;
     FRT_ICleanupHandler *_cleanupHandler;
 
-    FRT_RPCRequest(const FRT_RPCRequest &);
-    FRT_RPCRequest &operator=(const FRT_RPCRequest &);
-
 public:
+    FRT_RPCRequest(const FRT_RPCRequest &) = delete;
+    FRT_RPCRequest &operator=(const FRT_RPCRequest &) = delete;
     FRT_RPCRequest();
     ~FRT_RPCRequest();
 
@@ -95,7 +94,7 @@ public:
     void SetContext(FNET_Context context) { _context = context; }
     FNET_Context GetContext() { return _context; }
 
-    Stash * getStash() { return &_tub; }
+    Stash & getStash() { return _stash; }
 
     FRT_Values *GetParams() { return &_params; }
     FRT_Values *GetReturn() { return &_return; }

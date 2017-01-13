@@ -24,14 +24,14 @@ TEST("rpc packets in a queue") {
     {
         req->SetMethodName("foo");
         FNET_PacketQueue_NoLock q1(1, FNET_IPacketHandler::FNET_KEEP_CHANNEL);
-        q1.QueuePacket_NoLock(&req->getStash()->create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
-        q1.QueuePacket_NoLock(&req->getStash()->create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
-        q1.QueuePacket_NoLock(&req->getStash()->create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q1.QueuePacket_NoLock(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q1.QueuePacket_NoLock(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q1.QueuePacket_NoLock(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
         q1.Print();
         FNET_PacketQueue q2(2, FNET_IPacketHandler::FNET_KEEP_CHANNEL);
-        q2.QueuePacket(&req->getStash()->create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
-        q2.QueuePacket(&req->getStash()->create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
-        q2.QueuePacket(&req->getStash()->create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q2.QueuePacket(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q2.QueuePacket(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q2.QueuePacket(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
         q2.Print();
     }
     req->SubRef();

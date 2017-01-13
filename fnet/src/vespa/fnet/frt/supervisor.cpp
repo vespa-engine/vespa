@@ -206,7 +206,7 @@ FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler,
 {
     uint32_t chid;
     FNET_Packet *packet = req->CreateRequestPacket(true);
-    FRT_RPCAdapter *adapter = &req->getStash()->create<FRT_RPCAdapter>(scheduler.ptr, req, waiter);
+    FRT_RPCAdapter *adapter = &req->getStash().create<FRT_RPCAdapter>(scheduler.ptr, req, waiter);
     FNET_Channel *ch = (conn == nullptr)? nullptr : conn->OpenChannel(adapter, FNET_Context((void *)req), &chid);
 
     adapter->SetChannel(ch);
@@ -274,7 +274,7 @@ FRT_Supervisor::HandlePacket(FNET_Packet *packet, FNET_Context context)
     } else {
         req->SetError(FRTE_RPC_BAD_REQUEST);
     }
-    invoker = &req->getStash()->create<FRT_RPCInvoker>(this, req, noReply);
+    invoker = &req->getStash().create<FRT_RPCInvoker>(this, req, noReply);
     packet->Free();
 
     if (req->IsError()) {
@@ -480,7 +480,7 @@ FRT_Supervisor::ConnHooks::InvokeHook(FRT_Method *hook,
 {
     FRT_RPCRequest *req = _parent.AllocRPCRequest();
     req->SetMethodName(hook->GetName());
-    req->getStash()->create<FRT_HookInvoker>(req, hook, conn).Invoke();
+    req->getStash().create<FRT_HookInvoker>(req, hook, conn).Invoke();
 }
 
 

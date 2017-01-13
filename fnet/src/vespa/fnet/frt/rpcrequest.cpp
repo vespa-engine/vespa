@@ -6,10 +6,10 @@
 #include <cassert>
 
 FRT_RPCRequest::FRT_RPCRequest()
-    : _tub(),
+    : _stash(),
       _context(),
-      _params(&_tub),
-      _return(&_tub),
+      _params(&_stash),
+      _return(&_stash),
       _refcnt(1),
       _completed(0),
       _errorCode(FRTE_NO_ERROR),
@@ -33,7 +33,7 @@ FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage, uint32_t 
 {
     _errorCode = errorCode;
     _errorMessageLen = errorMessageLen;
-    _errorMessage = fnet::copyString(_tub.alloc(errorMessageLen + 1), errorMessage, errorMessageLen);
+    _errorMessage = fnet::copyString(_stash.alloc(errorMessageLen + 1), errorMessage, errorMessageLen);
 }
 void
 FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage) {
@@ -60,7 +60,7 @@ FRT_RPCRequest::CheckReturnTypes(const char *types) {
 void
 FRT_RPCRequest::SetMethodName(const char *methodName, uint32_t len) {
     _methodNameLen = len;
-    _methodName = fnet::copyString(_tub.alloc(len + 1), methodName, len);
+    _methodName = fnet::copyString(_stash.alloc(len + 1), methodName, len);
 }
 void
 FRT_RPCRequest::SetMethodName(const char *methodName) {
@@ -102,7 +102,7 @@ FRT_RPCRequest::Reset() {
     _context = FNET_Context();
     _params.Reset();
     _return.Reset();
-    _tub.clear();
+    _stash.clear();
     _errorCode = FRTE_NO_ERROR;
     _errorMessageLen = 0;
     _errorMessage = NULL;
@@ -166,7 +166,7 @@ FRT_RPCRequest::CreateRequestPacket(bool wantReply)
     else
         flags |= FLAG_FRT_RPC_NOREPLY;
 
-    return &_tub.create<FRT_RPCRequestPacket>(this, flags, true);
+    return &_stash.create<FRT_RPCRequestPacket>(this, flags, true);
 }
 
 
@@ -178,8 +178,8 @@ FRT_RPCRequest::CreateReplyPacket()
         flags |= FLAG_FRT_RPC_LITTLE_ENDIAN;
 
     if (IsError()) {
-        return &_tub.create<FRT_RPCErrorPacket>(this, flags, true);
+        return &_stash.create<FRT_RPCErrorPacket>(this, flags, true);
     } else {
-        return &_tub.create<FRT_RPCReplyPacket>(this, flags, true);
+        return &_stash.create<FRT_RPCReplyPacket>(this, flags, true);
     }
 }

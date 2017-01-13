@@ -251,19 +251,19 @@ FRT_PacketFactory::CreatePacket(uint32_t pcode, FNET_Context context)
     if (req == NULL || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0)
         return NULL;
 
-    vespalib::Stash *tub = req->getStash();
+    vespalib::Stash & stash = req->getStash();
     pcode &= 0xffff; // remove flags
 
     switch(pcode) {
 
     case PCODE_FRT_RPC_REQUEST:
-        return &tub->create<FRT_RPCRequestPacket>(req, flags, false);
+        return &stash.create<FRT_RPCRequestPacket>(req, flags, false);
 
     case PCODE_FRT_RPC_REPLY:
-        return &tub->create<FRT_RPCReplyPacket>(req, flags, false);
+        return &stash.create<FRT_RPCReplyPacket>(req, flags, false);
 
     case PCODE_FRT_RPC_ERROR:
-        return &tub->create<FRT_RPCErrorPacket>(req, flags, false);
+        return &stash.create<FRT_RPCErrorPacket>(req, flags, false);
     }
     return NULL;
 }
