@@ -64,7 +64,6 @@ FRT_Values::DiscardBlobs()
             value->_buf = NULL;
             value->_len = 0;
         }
-        ref->~BlobRef();
     }
 }
 
