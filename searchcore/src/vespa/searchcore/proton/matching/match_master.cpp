@@ -119,7 +119,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
         featureNames.emplace_back(resolver.name_of(i));
     }
     FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
-    if (!docs.empty()) {
+    if (docs.empty()) {
         return retval;
     }
     FeatureSet &fs = *retval.get();
