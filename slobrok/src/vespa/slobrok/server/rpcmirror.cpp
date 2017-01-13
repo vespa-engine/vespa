@@ -15,14 +15,10 @@ MirrorFetch::MirrorFetch(FRT_Supervisor *orb,
       _req(req),
       _map(map),
       _gen(gen)
-{
-}
+{ }
 
 
-MirrorFetch::~MirrorFetch()
-{
-    LOG_ABORT("Should never be called!");
-}
+MirrorFetch::~MirrorFetch() { }
 
 
 void
@@ -116,16 +112,10 @@ IncrementalFetch::IncrementalFetch(FRT_Supervisor *orb,
       _req(req),
       _map(map),
       _gen(gen)
-{
-}
+{ }
 
-
-IncrementalFetch::~IncrementalFetch()
-{
-    LOG_ABORT("Should never be called!");
-}
-
-
+IncrementalFetch::~IncrementalFetch() { }
+    
 void
 IncrementalFetch::completeReq()
 {
