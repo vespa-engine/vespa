@@ -394,6 +394,13 @@ public:
 constexpr size_t TensorSpec::Label::npos;
 constexpr size_t SimpleTensor::Label::npos;
 
+SimpleTensor::SimpleTensor(double value)
+    : Tensor(SimpleTensorEngine::ref()),
+      _type(ValueType::double_type()),
+      _cells({Cell({},value)})
+{
+}
+
 SimpleTensor::SimpleTensor(const ValueType &type_in, Cells &&cells_in)
     : Tensor(SimpleTensorEngine::ref()),
       _type(type_in),

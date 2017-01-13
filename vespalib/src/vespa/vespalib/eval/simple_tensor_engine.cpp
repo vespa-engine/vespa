@@ -78,6 +78,15 @@ SimpleTensorEngine::to_spec(const Tensor &tensor) const
     return spec;
 }
 
+const SimpleTensor &to_simple(const Value &value, Stash &stash) {
+    auto tensor = value.as_tensor();
+    if (tensor) {
+        assert(&tensor->engine() == &SimpleTensorEngine::ref());
+        return static_cast<const SimpleTensor &>(*tensor);
+    }
+    return stash.create<SimpleTensor>(value.as_double());
+}
+
 std::unique_ptr<eval::Tensor>
 SimpleTensorEngine::create(const TensorSpec &spec) const
 {
@@ -114,6 +123,15 @@ SimpleTensorEngine::apply(const BinaryOperation &op, const eval::Tensor &a, cons
     const SimpleTensor &simple_a = static_cast<const SimpleTensor&>(a);
     const SimpleTensor &simple_b = static_cast<const SimpleTensor&>(b);
     auto result = SimpleTensor::join(op, simple_a, simple_b);
+    return stash.create<TensorValue>(std::move(result));
+}
+
+const Value &
+SimpleTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
+{
+    const SimpleTensor &simple_a = to_simple(a, stash);
+    const SimpleTensor &simple_b = to_simple(b, stash);
+    auto result = SimpleTensor::concat(simple_a, simple_b, dimension);
     return stash.create<TensorValue>(std::move(result));
 }
 

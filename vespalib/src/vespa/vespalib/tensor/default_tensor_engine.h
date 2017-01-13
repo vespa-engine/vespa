@@ -30,6 +30,8 @@ public:
     const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const override;
     const Value &map(const UnaryOperation &op, const Tensor &a, Stash &stash) const override;
     const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const override;
+
+    const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const override;
 };
 
 } // namespace vespalib::tensor
