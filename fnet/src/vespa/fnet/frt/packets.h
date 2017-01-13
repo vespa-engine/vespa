@@ -5,6 +5,8 @@
 #include <vespa/fnet/packet.h>
 #include <vespa/fnet/ipacketfactory.h>
 
+class FRT_RPCRequest;
+
 enum {
     PCODE_FRT_RPC_FIRST          = 100,
     PCODE_FRT_RPC_REQUEST        = 100,

@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/frt/frt.h>
+#include "packets.h"
+#include "rpcrequest.h"
+#include <vespa/fnet/info.h>
+#include <vespa/fnet/databuffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 
-FRT_RPCPacket::~FRT_RPCPacket()
-{
-    assert(false);
-}
-
+FRT_RPCPacket::~FRT_RPCPacket() { }
 
 void
 FRT_RPCPacket::Free()
