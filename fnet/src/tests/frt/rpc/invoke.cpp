@@ -104,25 +104,25 @@ public:
 class EchoTest : public FRT_Invokable
 {
 private:
-    vespalib::Stash *_echo_tub;
+    vespalib::Stash *_echo_stash;
     FRT_Values      *_echo_args;
 
     EchoTest(const EchoTest &);
     EchoTest &operator=(const EchoTest &);
 
 public:
-    EchoTest() : _echo_tub(NULL), _echo_args(NULL) {}
+    EchoTest() : _echo_stash(NULL), _echo_args(NULL) {}
     ~EchoTest()
     {
         delete _echo_args;
-        delete _echo_tub;
+        delete _echo_stash;
     }
 
     void Init(FRT_Supervisor *supervisor)
     {
-        _echo_tub = new vespalib::Stash();
-        _echo_args = new FRT_Values(_echo_tub);
-        assert(_echo_tub != NULL && _echo_args != NULL);
+        _echo_stash = new vespalib::Stash();
+        _echo_args = new FRT_Values(_echo_stash);
+        assert(_echo_stash != NULL && _echo_args != NULL);
 
         FRT_ReflectionBuilder rb(supervisor);
         rb.DefineMethod("echo", "*", "*", true,

@@ -89,12 +89,12 @@ private:
     char          *_typeString;
     FRT_Value     *_values;
     fnet::BlobRef *_blobs;
-    Stash         *_tub;
+    Stash         *_stash;
 
 public:
     FRT_Values(const FRT_Values &) = delete;
     FRT_Values &operator=(const FRT_Values &) = delete;
-    FRT_Values(Stash *tub);
+    FRT_Values(Stash * stash);
     ~FRT_Values();
 
     void DiscardBlobs();
