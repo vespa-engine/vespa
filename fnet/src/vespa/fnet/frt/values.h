@@ -9,6 +9,7 @@
 namespace fnet {
     char * copyString(char *dst, const char *src, size_t len);
     char * copyData(char *dst, const void *src, size_t len);
+    class BlobRef;
 }
 class FNET_DataBuffer;
 
@@ -81,48 +82,13 @@ class FRT_Values
 public:
     using Stash = vespalib::Stash;
     using Alloc = vespalib::alloc::Alloc;
-    class LocalBlob : public FRT_ISharedBlob
-    {
-    public:
-        LocalBlob(Alloc data, uint32_t len) :
-            _data(std::move(data)),
-            _len(len)
-        { }
-        LocalBlob(const char *data, uint32_t len);
-        void addRef() override {}
-        void subRef() override { Alloc().swap(_data); }
-        uint32_t getLen() override { return _len; }
-        const char *getData() override { return static_cast<const char *>(_data.get()); }
-        char *getInternalData() { return static_cast<char *>(_data.get()); }
-    private:
-        LocalBlob(const LocalBlob &);
-        LocalBlob &operator=(const LocalBlob &);
-
-        Alloc _data;
-        uint32_t _len;
-    };
-
-    struct BlobRef
-    {
-        FRT_DataValue   *_value; // for blob inside data array
-        uint32_t         _idx;   // for blob as single data value
-        FRT_ISharedBlob *_blob;  // interface to shared data
-        BlobRef         *_next;  // next in list
-
-        BlobRef(FRT_DataValue *value, uint32_t idx, FRT_ISharedBlob *blob, BlobRef *next)
-            : _value(value), _idx(idx), _blob(blob), _next(next) { blob->addRef(); }
-        ~BlobRef() { _blob->subRef(); }
-    private:
-        BlobRef(const BlobRef &);
-        BlobRef &operator=(const BlobRef &);
-    };
 
 private:
     uint32_t       _maxValues;
     uint32_t       _numValues;
     char          *_typeString;
     FRT_Value     *_values;
-    BlobRef       *_blobs;
+    fnet::BlobRef *_blobs;
     Stash         *_tub;
 
 public:

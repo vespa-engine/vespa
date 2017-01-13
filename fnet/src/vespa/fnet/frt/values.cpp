@@ -24,7 +24,53 @@ char * copyData(char *dst, const void *src, size_t len) {
     return dst;
 }
 
+using vespalib::alloc::Alloc;
+class LocalBlob : public FRT_ISharedBlob
+{
+public:
+    LocalBlob(Alloc data, uint32_t len) :
+            _data(std::move(data)),
+            _len(len)
+    { }
+    LocalBlob(const char *data, uint32_t len);
+    void addRef() override {}
+    void subRef() override { Alloc().swap(_data); }
+    uint32_t getLen() override { return _len; }
+    const char *getData() override { return static_cast<const char *>(_data.get()); }
+    char *getInternalData() { return static_cast<char *>(_data.get()); }
+private:
+    LocalBlob(const LocalBlob &);
+    LocalBlob &operator=(const LocalBlob &);
+
+    Alloc _data;
+    uint32_t _len;
+};
+
+struct BlobRef
+{
+    FRT_DataValue   *_value; // for blob inside data array
+    uint32_t         _idx;   // for blob as single data value
+    FRT_ISharedBlob *_blob;  // interface to shared data
+    BlobRef         *_next;  // next in list
+
+    BlobRef(FRT_DataValue *value, uint32_t idx, FRT_ISharedBlob *blob, BlobRef *next)
+            : _value(value), _idx(idx), _blob(blob), _next(next) { blob->addRef(); }
+    ~BlobRef() { discard(); }
+    void discard() {
+        if (_blob != nullptr) {
+            _blob->subRef();
+            _blob = nullptr;
+        }
+    }
+private:
+    BlobRef(const BlobRef &);
+    BlobRef &operator=(const BlobRef &);
+};
+
 }
+
+using fnet::BlobRef;
+using fnet::LocalBlob;
 
 FRT_Values::FRT_Values(Stash *tub)
     : _maxValues(0),
@@ -37,7 +83,7 @@ FRT_Values::FRT_Values(Stash *tub)
 
 FRT_Values::~FRT_Values() { }
 
-FRT_Values::LocalBlob::LocalBlob(const char *data, uint32_t len) :
+LocalBlob::LocalBlob(const char *data, uint32_t len) :
         _data(Alloc::alloc(len)),
         _len(len)
 {
@@ -64,6 +110,7 @@ FRT_Values::DiscardBlobs()
             value->_buf = NULL;
             value->_len = 0;
         }
+        ref->~BlobRef();
     }
 }
 
