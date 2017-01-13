@@ -91,6 +91,8 @@ private:
     DocTypeName                   _docTypeName;
     vespalib::string              _baseDir;
     uint32_t                      _defaultExecutorTaskLimit;
+    uint32_t                      _semiUnboundExecutorTaskLimit;
+    uint32_t                      _indexingThreads;
     // Only one thread per executor, or dropFeedView() will fail.
     ExecutorThreadingService      _writeService;
     // threads for initializer tasks during proton startup
