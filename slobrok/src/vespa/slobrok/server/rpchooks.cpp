@@ -522,8 +522,8 @@ RPCHooks::rpc_mirrorFetch(FRT_RPCRequest *req)
     vespalib::GenCnt gencnt(args[0]._intval32);
     uint32_t msTimeout = args[1]._intval32;
 
-    (new (req->getStash())
-     MirrorFetch(_env.getSupervisor(), req, _rpcsrvmap.visibleMap(), gencnt))->invoke(msTimeout);
+    req->getStash()->create<MirrorFetch>(_env.getSupervisor(), req,
+                                         _rpcsrvmap.visibleMap(), gencnt).invoke(msTimeout);
 }
 
 void
@@ -535,8 +535,8 @@ RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req)
     vespalib::GenCnt gencnt(args[0]._intval32);
     uint32_t msTimeout = args[1]._intval32;
 
-    (new (req->getStash())
-     IncrementalFetch(_env.getSupervisor(), req, _rpcsrvmap.visibleMap(), gencnt))->invoke(msTimeout);
+    req->getStash()->create<IncrementalFetch>(_env.getSupervisor(), req,
+                                              _rpcsrvmap.visibleMap(), gencnt).invoke(msTimeout);
 }
 
 

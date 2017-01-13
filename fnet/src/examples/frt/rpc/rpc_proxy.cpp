@@ -142,20 +142,13 @@ RPCProxy::HOOK_Mismatch(FRT_RPCRequest *req)
     }
     req->Detach();
     req->SetError(FRTE_NO_ERROR, "");
-    if (req->GetConnection()->IsServer() &&
-        GetSession(req)->server != NULL)
+    if (req->GetConnection()->IsServer() && GetSession(req)->server != NULL)
     {
-        GetSession(req)->server->InvokeAsync(req, 60.0,
-                                             new (req->getStash())
-                                             ReqDone(*this));
-    } else if (req->GetConnection()->IsClient() &&
-               GetSession(req)->client != NULL)
+        GetSession(req)->server->InvokeAsync(req, 60.0, &req->getStash()->create<ReqDone>(*this));
+    } else if (req->GetConnection()->IsClient() && GetSession(req)->client != NULL)
     {
-        FRT_Supervisor::InvokeAsync(GetSession(req)->client->Owner(),
-                                    GetSession(req)->client,
-                                    req, 60.0,
-                                    new (req->getStash())
-                                    ReqDone(*this));
+        FRT_Supervisor::InvokeAsync(GetSession(req)->client->Owner(), GetSession(req)->client,
+                                    req, 60.0, &req->getStash()->create<ReqDone>(*this));
     } else {
         req->SetError(FRTE_RPC_CONNECTION);
         req->Return();

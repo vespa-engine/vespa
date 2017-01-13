@@ -166,7 +166,7 @@ FRT_RPCRequest::CreateRequestPacket(bool wantReply)
     else
         flags |= FLAG_FRT_RPC_NOREPLY;
 
-    return new (&_tub) FRT_RPCRequestPacket(this, flags, true);
+    return &_tub.create<FRT_RPCRequestPacket>(this, flags, true);
 }
 
 
@@ -177,8 +177,9 @@ FRT_RPCRequest::CreateReplyPacket()
     if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE)
         flags |= FLAG_FRT_RPC_LITTLE_ENDIAN;
 
-    if (IsError())
-        return new (&_tub) FRT_RPCErrorPacket(this, flags, true);
-    else
-        return new (&_tub) FRT_RPCReplyPacket(this, flags, true);
+    if (IsError()) {
+        return &_tub.create<FRT_RPCErrorPacket>(this, flags, true);
+    } else {
+        return &_tub.create<FRT_RPCReplyPacket>(this, flags, true);
+    }
 }

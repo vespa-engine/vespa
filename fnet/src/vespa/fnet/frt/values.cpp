@@ -241,7 +241,7 @@ FRT_Values::AddStringArray(uint32_t len) {
 void
 FRT_Values::AddSharedData(FRT_ISharedBlob *blob) {
     EnsureFree();
-    _blobs = new (_tub) BlobRef(NULL, _numValues, blob, _blobs);
+    _blobs = &_tub->create<BlobRef>(nullptr, _numValues, blob, _blobs);
     _values[_numValues]._data._buf = const_cast<char *>(blob->getData());
     _values[_numValues]._data._len = blob->getLen();
     _typeString[_numValues++] = FRT_VALUE_DATA;
@@ -249,13 +249,13 @@ FRT_Values::AddSharedData(FRT_ISharedBlob *blob) {
 
 void
 FRT_Values::AddData(vespalib::alloc::Alloc buf, uint32_t len) {
-    AddSharedData(new (_tub) LocalBlob(std::move(buf), len));
+    AddSharedData(&_tub->create<LocalBlob>(std::move(buf), len));
 }
 
 void
 FRT_Values::AddData(const char *buf, uint32_t len) {
     if (len > SHARED_LIMIT) {
-        return AddSharedData(new (_tub) LocalBlob(buf, len));
+        return AddSharedData(&_tub->create<LocalBlob>(buf, len));
     }
     EnsureFree();
     _values[_numValues]._data._buf = fnet::copyData(_tub->alloc(len), buf, len);
@@ -266,7 +266,7 @@ FRT_Values::AddData(const char *buf, uint32_t len) {
 char *
 FRT_Values::AddData(uint32_t len) {
     if (len > SHARED_LIMIT) {
-        LocalBlob *blob = new (_tub) LocalBlob(NULL, len);
+        LocalBlob *blob = &_tub->create<LocalBlob>(nullptr, len);
         AddSharedData(blob);
         return blob->getInternalData();
     }
@@ -303,8 +303,8 @@ void
 FRT_Values::SetData(FRT_DataValue *value, const char *buf, uint32_t len) {
     char *mybuf = NULL;
     if (len > SHARED_LIMIT) {
-        LocalBlob *blob = new (_tub) LocalBlob(buf, len);
-        _blobs = new (_tub) BlobRef(value, 0, blob, _blobs);
+        LocalBlob *blob = &_tub->create<LocalBlob>(buf, len);
+        _blobs = &_tub->create<BlobRef>(value, 0, blob, _blobs);
         mybuf = blob->getInternalData();
     } else {
         mybuf = fnet::copyData(_tub->alloc(len), buf, len);

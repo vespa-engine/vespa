@@ -259,13 +259,13 @@ FRT_PacketFactory::CreatePacket(uint32_t pcode, FNET_Context context)
     switch(pcode) {
 
     case PCODE_FRT_RPC_REQUEST:
-        return new (tub) FRT_RPCRequestPacket(req, flags, false);
+        return &tub->create<FRT_RPCRequestPacket>(req, flags, false);
 
     case PCODE_FRT_RPC_REPLY:
-        return new (tub) FRT_RPCReplyPacket(req, flags, false);
+        return &tub->create<FRT_RPCReplyPacket>(req, flags, false);
 
     case PCODE_FRT_RPC_ERROR:
-        return new (tub) FRT_RPCErrorPacket(req, flags, false);
+        return &tub->create<FRT_RPCErrorPacket>(req, flags, false);
     }
     return NULL;
 }

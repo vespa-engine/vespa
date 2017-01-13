@@ -261,9 +261,7 @@ public:
             if (delay == 0) {
                 req->Return();
             } else {
-                new (req->getStash()) DelayedReturn(_scheduler,
-                        req,
-                        ((double)delay) / 1000.0);
+                req->getStash()->create<DelayedReturn>(_scheduler, req, ((double)delay) / 1000.0);
             }
         } else {
 
