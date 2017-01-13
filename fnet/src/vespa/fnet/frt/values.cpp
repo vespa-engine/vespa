@@ -75,9 +75,9 @@ using fnet::LocalBlob;
 FRT_Values::FRT_Values(Stash * stash)
     : _maxValues(0),
       _numValues(0),
-      _typeString(NULL),
-      _values(NULL),
-      _blobs(NULL),
+      _typeString(nullptr),
+      _values(nullptr),
+      _blobs(nullptr),
       _stash(stash)
 { }
 
@@ -87,7 +87,7 @@ LocalBlob::LocalBlob(const char *data, uint32_t len) :
         _data(Alloc::alloc(len)),
         _len(len)
 {
-    if (data != NULL) {
+    if (data != nullptr) {
         memcpy(_data.get(), data, len);
     }
 }
@@ -95,19 +95,19 @@ LocalBlob::LocalBlob(const char *data, uint32_t len) :
 void
 FRT_Values::DiscardBlobs()
 {
-    while (_blobs != NULL) {
+    while (_blobs != nullptr) {
         BlobRef *ref = _blobs;
         _blobs = ref->_next;
         FRT_ISharedBlob *blob = ref->_blob;
         FRT_DataValue *value = ref->_value;
-        if (value == NULL) {
+        if (value == nullptr) {
             uint32_t idx = ref->_idx;
             assert(_numValues > idx);
             assert(_typeString[idx] == 'x');
             value = &_values[idx]._data;
         }
         if ((value->_buf == blob->getData()) && (value->_len == blob->getLen())) {
-            value->_buf = NULL;
+            value->_buf = nullptr;
             value->_len = 0;
         }
         ref->discard();
@@ -347,7 +347,7 @@ FRT_Values::SetString(FRT_StringValue *value, const char *str) {
 
 void
 FRT_Values::SetData(FRT_DataValue *value, const char *buf, uint32_t len) {
-    char *mybuf = NULL;
+    char *mybuf = nullptr;
     if (len > SHARED_LIMIT) {
         LocalBlob *blob = &_stash->create<LocalBlob>(buf, len);
         _blobs = &_stash->create<BlobRef>(value, 0, blob, _blobs);

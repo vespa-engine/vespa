@@ -51,7 +51,7 @@ RPCHooks::RPCHooks(SBEnv &env,
                    RpcServerManager& rpcsrvman)
     : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
       _cnts{0, 0, 0, 0, 0, 0, 0},
-      _m_reporter(NULL)
+      _m_reporter(nullptr)
 {
 }
 
@@ -469,7 +469,7 @@ RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req)
     LOG(debug, "RPC: lookupManaged(%s)", name);
     ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
 
-    if (found == NULL) {
+    if (found == nullptr) {
         req->SetError(FRTE_RPC_METHOD_FAILED, "Not found");
     } else {
         FRT_Values &dst = *req->GetReturn();
@@ -562,7 +562,7 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
     if (strncmp(vespalib::VersionTag, "V_", 2) == 0) {
         s += 2;
         do {
-            while (strchr("0123456789", *s) != NULL) {
+            while (strchr("0123456789", *s) != nullptr) {
                 ver.append(s++, 1);
             }
             if (strncmp(s, "_RELEASE", 8) == 0) {
@@ -571,7 +571,7 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
             }
             if (strncmp(s, "_RC", 3) == 0) {
                 char *e = strchr(s, '-');
-                if (e == NULL) {
+                if (e == nullptr) {
                     ver.append(s);
                 } else {
                     ver.append(s, e - s);
@@ -587,7 +587,7 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
         } while (*s && *s != '-');
     } else {
         char *e = strchr(s, '-');
-        if (e == NULL) {
+        if (e == nullptr) {
             ver.append(s);
         } else {
             ver.append(s, e - s);
@@ -597,7 +597,7 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
         ver.append("-");
         s = vespalib::VersionTagDate;
         char *e = strchr(s, '-');
-        if (e == NULL) {
+        if (e == nullptr) {
             ver.append(s);
         } else {
             ver.append(s, e - s);

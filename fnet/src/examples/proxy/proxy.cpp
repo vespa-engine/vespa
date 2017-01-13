@@ -55,7 +55,7 @@ private:
     Bridge &operator=(const Bridge &);
 
 public:
-    Bridge() : _client(NULL), _server(NULL) {}
+    Bridge() : _client(nullptr), _server(nullptr) {}
 
     enum packet_source {
         CLIENT = 0,
@@ -83,37 +83,37 @@ Bridge::HandlePacket(FNET_Packet *packet, FNET_Context context)
 
         if (context._value.INT == CLIENT) {
 
-            if (_server != NULL) {
+            if (_server != nullptr) {
                 LOG(info, "client connection lost");
                 _server->Owner()->Close(_server);
             }
             ret = FNET_FREE_CHANNEL;
-            _client = NULL;
+            _client = nullptr;
 
         } else if (context._value.INT == SERVER) {
 
-            if (_client != NULL) {
+            if (_client != nullptr) {
                 LOG(info, "server connection lost");
                 _client->GetConnection()->Owner()->Close(_client->GetConnection());
             }
             _server->SubRef();
-            _server = NULL;
+            _server = nullptr;
 
         }
 
-        if (_client == NULL && _server == NULL)
+        if (_client == nullptr && _server == nullptr)
             delete this;
 
     } else {
 
         if (context._value.INT == CLIENT) {
-            if (_server != NULL)
+            if (_server != nullptr)
                 _server->PostPacket(packet, FNET_NOID);
             else
                 packet->Free();
 
         } else if (context._value.INT == SERVER) {
-            if (_client != NULL)
+            if (_client != nullptr)
                 _client->Send(packet);
             else
                 packet->Free();
@@ -196,7 +196,7 @@ Proxy::InitAdminChannel(FNET_Channel *channel)
     Bridge *bridge = new Bridge();
     FNET_Connection *server = _transport.Connect(_argv[2], this, bridge,
                                                  FNET_Context(Bridge::SERVER));
-    if (server == NULL) {
+    if (server == nullptr) {
         channel->GetConnection()->Owner()->Close(channel->GetConnection());
         delete bridge;
         return false;
@@ -226,7 +226,7 @@ Proxy::Main()
 
     FNET_Connector *listener =
         _transport.Listen(_argv[1], this, this);
-    if (listener != NULL)
+    if (listener != nullptr)
         listener->SubRef();
 
     _transport.SetLogStats(true);

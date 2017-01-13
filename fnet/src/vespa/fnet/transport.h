@@ -73,7 +73,7 @@ public:
      * may supply a hostname as well, like this:
      * 'tcp/mycomputer.mydomain:8001'.
      *
-     * @return the connector object, or NULL if listen failed.
+     * @return the connector object, or nullptr if listen failed.
      * @param spec string specifying how and where to listen.
      * @param streamer custom packet streamer.
      * @param serverAdapter object for custom channel creation.
@@ -107,9 +107,9 @@ public:
      * @param connContext application context for the connection.
      **/
     FNET_Connection *Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                             FNET_IPacketHandler *adminHandler = NULL,
+                             FNET_IPacketHandler *adminHandler = nullptr,
                              FNET_Context adminContext = FNET_Context(),
-                             FNET_IServerAdapter *serverAdapter = NULL,
+                             FNET_IServerAdapter *serverAdapter = nullptr,
                              FNET_Context connContext = FNET_Context());
 
     /**

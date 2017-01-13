@@ -15,12 +15,12 @@ FRT_RPCRequest::FRT_RPCRequest()
       _errorCode(FRTE_NO_ERROR),
       _errorMessageLen(0),
       _methodNameLen(0),
-      _errorMessage(NULL),
-      _methodName(NULL),
-      _detachedPT(NULL),
-      _abortHandler(NULL),
-      _returnHandler(NULL),
-      _cleanupHandler(NULL)
+      _errorMessage(nullptr),
+      _methodName(nullptr),
+      _detachedPT(nullptr),
+      _abortHandler(nullptr),
+      _returnHandler(nullptr),
+      _cleanupHandler(nullptr)
 { }
 
 FRT_RPCRequest::~FRT_RPCRequest()
@@ -69,7 +69,7 @@ FRT_RPCRequest::SetMethodName(const char *methodName) {
 
 bool
 FRT_RPCRequest::Abort() {
-    if (_abortHandler == NULL) {
+    if (_abortHandler == nullptr) {
         return false;
     }
     return _abortHandler->HandleAbort();
@@ -82,16 +82,16 @@ FRT_RPCRequest::Return() {
 
 FNET_Connection *
 FRT_RPCRequest::GetConnection() {
-    if (_returnHandler == NULL)
-        return NULL;
+    if (_returnHandler == nullptr)
+        return nullptr;
     return _returnHandler->GetConnection();
 }
 
 void
 FRT_RPCRequest::Cleanup() {
-    if (_cleanupHandler != NULL) {
+    if (_cleanupHandler != nullptr) {
         _cleanupHandler->HandleCleanup();
-        _cleanupHandler = NULL;
+        _cleanupHandler = nullptr;
     }
 }
 
@@ -105,13 +105,13 @@ FRT_RPCRequest::Reset() {
     _stash.clear();
     _errorCode = FRTE_NO_ERROR;
     _errorMessageLen = 0;
-    _errorMessage = NULL;
+    _errorMessage = nullptr;
     _methodNameLen = 0;
-    _methodName = NULL;
-    _detachedPT = NULL;
+    _methodName = nullptr;
+    _detachedPT = nullptr;
     _completed = 0;
-    _abortHandler = NULL;
-    _returnHandler = NULL;
+    _abortHandler = nullptr;
+    _returnHandler = nullptr;
 }
 
 
@@ -141,9 +141,9 @@ FRT_RPCRequest::Print(uint32_t indent)
 {
     printf("%*sFRT_RPCRequest {\n", indent, "");
     printf("%*s  method: %s\n", indent, "",
-           (_methodName != NULL)? _methodName : "(N/A)");
+           (_methodName != nullptr)? _methodName : "(N/A)");
     printf("%*s  error(%d): %s\n", indent, "", _errorCode,
-           (_errorMessage != NULL)
+           (_errorMessage != nullptr)
            ? _errorMessage
            : FRT_GetDefaultErrorMessage(_errorCode));
     printf("%*s  params:\n", indent, "");

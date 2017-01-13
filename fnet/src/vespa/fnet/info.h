@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 /**
  * This class provides overall information about the FNET
  * implementation.
@@ -58,4 +59,3 @@ public:
      **/
     static void LogInfo();
 };
-

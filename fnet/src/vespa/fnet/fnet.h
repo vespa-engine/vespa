@@ -6,17 +6,6 @@
 #include <vespa/fastos/mutex.h>
 #include <vespa/fastos/cond.h>
 
-// FEATURES
-
-#include "features.h"
-
-// DEFINES
-
-#define FNET_HAS_THREADS true
-
-typedef FastOS_Mutex FNET_Mutex;
-typedef FastOS_Cond  FNET_Cond;
-
 // DEPRECATED
 
 #define DEPRECATED __attribute__((deprecated))
@@ -52,7 +41,6 @@ class FNET_Task;
 class FNET_Transport;
 class FNET_TransportThread;
 
-
 // CONTEXT CLASS (union of types)
 #include "context.h"
 
@@ -84,21 +72,4 @@ class FNET_TransportThread;
 #include "fdselector.h"
 #include "info.h"
 #include "signalshutdown.h"
-
-
-#define ASSERT_OBJECT(pt)                                               \
-    do {                                                                \
-        if (pt == NULL || !pt->CheckObject()) {                         \
-            fprintf(stderr, "%s:%d: ASSERT_OBJECT FAILED!\n", __FILE__, __LINE__); \
-            abort();                                                    \
-        }                                                               \
-    } while (false)
-
-#define ASSERT_OBJECT_NOLOCK(pt)                                        \
-    do {                                                                \
-        if (pt == NULL || !pt->CheckObject_NoLock()) {                  \
-            fprintf(stderr, "%s:%d: ASSERT_OBJECT FAILED!\n", __FILE__, __LINE__); \
-            abort();                                                    \
-        }                                                               \
-    } while (false)
 

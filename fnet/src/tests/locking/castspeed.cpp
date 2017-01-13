@@ -19,7 +19,7 @@ class C: public A
 public:
     B *otherB;
     virtual B* asB() { return otherB; }
-    C() : otherB(NULL) {}
+    C() : otherB(nullptr) {}
 };
 
 class B: public C

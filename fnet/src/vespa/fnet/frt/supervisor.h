@@ -104,7 +104,7 @@ public:
     FRT_Target *Get2WayTarget(const char *spec,
                               FNET_Context connContext = FNET_Context());
     FRT_Target *GetTarget(int port);
-    FRT_RPCRequest *AllocRPCRequest(FRT_RPCRequest *tradein = NULL);
+    FRT_RPCRequest *AllocRPCRequest(FRT_RPCRequest *tradein = nullptr);
 
     // special hooks (implemented as RPC methods)
     void SetSessionInitHook(FRT_METHOD_PT  method, FRT_Invokable *handler);

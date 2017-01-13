@@ -15,16 +15,16 @@ FNET_Scheduler::FNET_Scheduler(FastOS_Time *sampler,
       _sampler(sampler),
       _currIter(0),
       _currSlot(0),
-      _currPt(NULL),
-      _tailPt(NULL),
-      _performing(NULL),
+      _currPt(nullptr),
+      _tailPt(nullptr),
+      _performing(nullptr),
       _waitTask(false)
 {
     for (int i = 0; i < NUM_SLOTS; i++)
-        _slots[i] = NULL;
-    _slots[NUM_SLOTS] = NULL;
+        _slots[i] = nullptr;
+    _slots[NUM_SLOTS] = nullptr;
 
-    if (now != NULL) {
+    if (now != nullptr) {
         _next = *now;
     } else {
         _next.SetNow();
@@ -43,7 +43,7 @@ FNET_Scheduler::~FNET_Scheduler()
         dump << "  [slot=" << _currSlot << "][iter=" << _currIter << "]" << std::endl;
         for (int i = 0; i <= NUM_SLOTS; i++) {
             FNET_Task *pt = _slots[i];
-            if (pt != NULL) {
+            if (pt != nullptr) {
                 empty = false;
                 FNET_Task *end = pt;
                 do {
@@ -126,7 +126,7 @@ FNET_Scheduler::Print(FILE *dst)
     fprintf(dst, "  [slot=%d][iter=%d]\n", _currSlot, _currIter);
     for (int i = 0; i <= NUM_SLOTS; i++) {
         FNET_Task *pt = _slots[i];
-        if (pt != NULL) {
+        if (pt != nullptr) {
             FNET_Task *end = pt;
             do {
                 fprintf(dst, "  FNET_Task { slot=%d, iter=%d }\n",
@@ -143,7 +143,7 @@ FNET_Scheduler::Print(FILE *dst)
 void
 FNET_Scheduler::CheckTasks()
 {
-    if (_sampler != NULL) {
+    if (_sampler != nullptr) {
         _now = *_sampler;
     } else {
         _now.SetNow();
@@ -151,7 +151,7 @@ FNET_Scheduler::CheckTasks()
 
     // assume timely value propagation
 
-    if (_slots[NUM_SLOTS] == NULL && _now < _next)
+    if (_slots[NUM_SLOTS] == nullptr && _now < _next)
         return;
 
     Lock();
@@ -177,20 +177,20 @@ FNET_Scheduler::CheckTasks()
 void
 FNET_Scheduler::FirstTask(uint32_t slot) {
     _currPt = _slots[slot];
-    _tailPt = (_currPt != NULL) ?
-              _currPt->_task_prev : NULL;
+    _tailPt = (_currPt != nullptr) ?
+              _currPt->_task_prev : nullptr;
 }
 
 void
 FNET_Scheduler::NextTask() {
     _currPt = (_currPt != _tailPt) ?
-              _currPt->_task_next : NULL;
+              _currPt->_task_next : nullptr;
 }
 
 void
 FNET_Scheduler::AdjustCurrPt() {
     _currPt = (_currPt != _tailPt) ?
-              _currPt->_task_next : NULL;
+              _currPt->_task_next : nullptr;
 }
 
 void
@@ -202,7 +202,7 @@ void
 FNET_Scheduler::LinkIn(FNET_Task *task) {
     FNET_Task **head = &(_slots[task->_task_slot]);
 
-    if ((*head) == NULL) {
+    if ((*head) == nullptr) {
         (*head) = task;
         task->_task_next = task;
         task->_task_prev = task;
@@ -224,15 +224,15 @@ FNET_Scheduler::LinkOut(FNET_Task *task) {
         AdjustTailPt();
 
     if (task->_task_next == task) {
-        (*head) = NULL;
+        (*head) = nullptr;
     } else {
         task->_task_prev->_task_next = task->_task_next;
         task->_task_next->_task_prev = task->_task_prev;
         if ((*head) == task)
             (*head) = task->_task_next;
     }
-    task->_task_next = NULL;
-    task->_task_prev = NULL;
+    task->_task_next = nullptr;
+    task->_task_prev = nullptr;
 }
 
 void
@@ -244,7 +244,7 @@ FNET_Scheduler::BeforeTask(FNET_Task *task) {
 void
 FNET_Scheduler::AfterTask() {
     Lock();
-    _performing = NULL;
+    _performing = nullptr;
     if (_waitTask) {
         _waitTask = false;
         Broadcast();
@@ -262,7 +262,7 @@ FNET_Scheduler::WaitTask(FNET_Task *task) {
 void
 FNET_Scheduler::PerformTasks(uint32_t slot, uint32_t iter) {
     FirstTask(slot);
-    for (FNET_Task *task; (task = GetTask()) != NULL; ) {
+    for (FNET_Task *task; (task = GetTask()) != nullptr; ) {
         NextTask();
 
         if (task->_task_iter == iter) {
@@ -275,5 +275,5 @@ FNET_Scheduler::PerformTasks(uint32_t slot, uint32_t iter) {
 }
 
 bool FNET_Scheduler::IsActive(FNET_Task *task) {
-    return task->_task_next != NULL;
+    return task->_task_next != nullptr;
 }

@@ -78,10 +78,10 @@ TEST("schedule") {
 
   uint32_t   taskCnt = 1000000;
   MyTask   **tasks   = new MyTask*[taskCnt];
-  assert(tasks != NULL);
+  assert(tasks != nullptr);
   for (uint32_t i = 0; i < taskCnt; i++) {
     tasks[i] = new MyTask(rand() & 131071);
-    assert(tasks[i] != NULL);
+    assert(tasks[i] != nullptr);
   }
 
   FastOS_Time start;

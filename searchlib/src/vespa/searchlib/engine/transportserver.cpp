@@ -1,12 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".engine.transportserver");
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/common/packets.h>
 #include "packetconverter.h"
 #include "transportserver.h"
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/channel.h>
+#include <vespa/fnet/connection.h>
+#include <vespa/fnet/connector.h>
+#include <vespa/fnet/iexecutable.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".engine.transportserver");
 
 namespace search {
 namespace engine {

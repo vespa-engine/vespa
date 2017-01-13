@@ -3,6 +3,11 @@
 #pragma once
 
 #include <vespa/vespalib/util/atomic.h>
+#include <vespa/fnet/connection.h>
+
+class FNET_Scheduler;
+class FRT_RPCRequest;
+class FRT_IRequestWait;
 
 class FRT_Target
 {
@@ -35,22 +40,11 @@ public:
 
     bool IsValid()
     {
-        return ((_conn != NULL) &&
+        return ((_conn != nullptr) &&
                 (_conn->GetState() <= FNET_Connection::FNET_CONNECTED));
     }
 
-    void InvokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *waiter)
-    {
-        FRT_Supervisor::InvokeAsync(_scheduler, _conn, req, timeout, waiter);
-    }
-
-    void InvokeVoid(FRT_RPCRequest *req)
-    {
-        FRT_Supervisor::InvokeVoid(_conn, req);
-    }
-
-    void InvokeSync(FRT_RPCRequest *req, double timeout)
-    {
-        FRT_Supervisor::InvokeSync(_scheduler, _conn, req, timeout);
-    }
+    void InvokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *waiter);
+    void InvokeVoid(FRT_RPCRequest *req);
+    void InvokeSync(FRT_RPCRequest *req, double timeout);
 };

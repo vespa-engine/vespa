@@ -51,7 +51,7 @@ FRT_RPCInvoker::FRT_RPCInvoker(FRT_Supervisor *supervisor,
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
         LOG(debug, "invoke(server) init: '%s'", methodName.c_str());
     }
-    if (_method == NULL) {
+    if (_method == nullptr) {
         if (!req->IsError()) { // may be BAD_REQUEST
             req->SetError(FRTE_RPC_NO_SUCH_METHOD);
         }
@@ -159,7 +159,7 @@ FRT_RPCAdapter::FRT_RPCAdapter(FNET_Scheduler *scheduler,
     : FNET_Task(scheduler),
       _req(req),
       _waiter(waiter),
-      _channel(NULL)
+      _channel(nullptr)
 {
     if (LOG_WOULD_LOG(debug)) {
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
@@ -186,7 +186,7 @@ FRT_RPCAdapter::HandleAbort()
     if (!_req->GetCompletionToken()) { // too late
         return false;
     }
-    if (_channel != NULL) {
+    if (_channel != nullptr) {
         _channel->CloseAndFree();
     }
     Kill();
@@ -202,7 +202,7 @@ FRT_RPCAdapter::PerformTask()
     if (!_req->GetCompletionToken()) { // too late
         return;
     }
-    if (_channel != NULL) {
+    if (_channel != nullptr) {
         _channel->CloseAndFree();
     }
     if (!_req->IsError()) {

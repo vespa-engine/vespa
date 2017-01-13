@@ -146,13 +146,13 @@ TEST("testExplicitShared") {
     EXPECT_EQUAL(1, blob.refcnt);
     EXPECT_TRUE(strcmp(req->GetParamSpec(), "xixix") == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._len == 0);
-    EXPECT_TRUE(req->GetParams()->GetValue(0)._data._buf == NULL);
+    EXPECT_TRUE(req->GetParams()->GetValue(0)._data._buf == nullptr);
     EXPECT_TRUE(req->GetParams()->GetValue(1)._intval32 == 42);
     EXPECT_TRUE(req->GetParams()->GetValue(2)._data._len == 0);
-    EXPECT_TRUE(req->GetParams()->GetValue(2)._data._buf == NULL);
+    EXPECT_TRUE(req->GetParams()->GetValue(2)._data._buf == nullptr);
     EXPECT_TRUE(req->GetParams()->GetValue(3)._intval32 == 84);
     EXPECT_TRUE(req->GetParams()->GetValue(4)._data._len == 0);
-    EXPECT_TRUE(req->GetParams()->GetValue(4)._data._buf == NULL);
+    EXPECT_TRUE(req->GetParams()->GetValue(4)._data._buf == nullptr);
 
     EXPECT_EQUAL(1, blob.refcnt);
     req = orb.AllocRPCRequest(req);

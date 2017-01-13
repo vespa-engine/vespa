@@ -102,12 +102,12 @@ public:
     const char *GetParamSpec()
     {
         const char *spec = _params.GetTypeString();
-        return (spec != NULL) ? spec : "";
+        return (spec != nullptr) ? spec : "";
     }
     const char *GetReturnSpec()
     {
         const char *spec = _return.GetTypeString();
-        return (spec != NULL) ? spec : "";
+        return (spec != nullptr) ? spec : "";
     }
 
     bool GetCompletionToken() { return (vespalib::Atomic::postInc(&_completed) == 0); }

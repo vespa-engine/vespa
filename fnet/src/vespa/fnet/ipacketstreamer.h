@@ -2,6 +2,11 @@
 
 #pragma once
 
+#include "context.h"
+
+class FNET_DataBuffer;
+class FNET_Packet;
+
 /**
  * Class used to do custom streaming of packets on network
  * connections. The application is responsible for implementing the
@@ -15,7 +20,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FNET_IPacketStreamer(void) { }
+    virtual ~FNET_IPacketStreamer() { }
 
     /**
      * This method is called to obtain information about the next packet
@@ -58,7 +63,7 @@ public:
      * GetPacketInfo method are given as parameters to this method to
      * avoid the need to parse the packet header twice.
      *
-     * @return packet decoded from 'buf' or NULL on failure
+     * @return packet decoded from 'buf' or nullptr on failure
      * @param src buffer with the serialized packet
      * @param plen packet length as reported by @ref GetPacketInfo
      * @param pcode packet code as reported by @ref GetPacketInfo

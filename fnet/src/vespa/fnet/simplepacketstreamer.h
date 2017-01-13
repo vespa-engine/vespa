@@ -4,6 +4,8 @@
 
 #include "ipacketstreamer.h"
 
+class FNET_IPacketFactory;
+
 /**
  * This is a convenience class. Large applications may want to
  * implement the functionality offered by this class themselves to
@@ -30,13 +32,10 @@ private:
 
 public:
     FNET_SimplePacketStreamer(FNET_IPacketFactory *factory);
-    virtual ~FNET_SimplePacketStreamer();
+    ~FNET_SimplePacketStreamer();
 
-    bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen,
-                       uint32_t *pcode, uint32_t *chid,
-                       bool *broken);
-    FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen,
-                        uint32_t pcode, FNET_Context context);
-    void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst);
+    bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen, uint32_t *pcode, uint32_t *chid, bool *broken) override;
+    FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen, uint32_t pcode, FNET_Context context) override;
+    void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst) override;
 };
 

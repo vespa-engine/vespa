@@ -103,8 +103,8 @@ public:
         DiscardBlobs();
         _maxValues  = 0;
         _numValues  = 0;
-        _typeString = NULL;
-        _values     = NULL;
+        _typeString = nullptr;
+        _values     = nullptr;
     }
 
     void EnsureFree(uint32_t need = 1);

@@ -74,8 +74,8 @@ public:
      * @param now if given, indicates the current time. This value is
      *            used by the constructor to init internal variables.
      **/
-    FNET_Scheduler(FastOS_Time *sampler = NULL,
-                   FastOS_Time *now = NULL);
+    FNET_Scheduler(FastOS_Time *sampler = nullptr,
+                   FastOS_Time *now = nullptr);
     virtual ~FNET_Scheduler();
 
 

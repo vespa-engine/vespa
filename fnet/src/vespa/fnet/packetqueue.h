@@ -28,7 +28,7 @@ protected:
         FNET_Packet  *_packet;
         FNET_Context  _context;
     protected:
-        _QElem() : _packet(NULL), _context() {}
+        _QElem() : _packet(nullptr), _context() {}
     private:
         _QElem(const _QElem &);
         _QElem &operator=(const _QElem &);
@@ -119,10 +119,10 @@ public:
 
     /**
      * Remove the first packet from the queue and return it. If the
-     * queue was empty, NULL is returned. NOTE: packet handover (invoked
+     * queue was empty, nullptr is returned. NOTE: packet handover (invoked
      * object TO caller).
      *
-     * @return first packet in queue or NULL.
+     * @return first packet in queue or nullptr.
      * @param context where to store the packet context.
      **/
     FNET_Packet *DequeuePacket_NoLock(FNET_Context *context);
@@ -268,7 +268,7 @@ public:
      * available on the queue, but for no more than 'maxwait'
      * milliseconds. NOTE: packet handover (invoked object TO caller)
      *
-     * @return a packet obtained from the queue or NULL.
+     * @return a packet obtained from the queue or nullptr.
      * @param maxwait maximum number of milliseconds before this
      *        method call returns.
      * @param context where to store packet context.

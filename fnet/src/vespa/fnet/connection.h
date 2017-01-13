@@ -133,7 +133,7 @@ private:
     void WaitCallback(FNET_Channel *channel)
     {
         while (_flags._inCallback
-               && (_callbackTarget == channel || _callbackTarget == NULL)) {
+               && (_callbackTarget == channel || _callbackTarget == nullptr)) {
             _flags._callbackWait = true;
             Wait();
         }
@@ -282,7 +282,7 @@ public:
      *
      * @return true/false
      **/
-    bool CanAcceptChannels() const { return _serverAdapter != NULL; }
+    bool CanAcceptChannels() const { return _serverAdapter != nullptr; }
 
 
     /**
@@ -337,24 +337,24 @@ public:
 
     /**
      * Open a new channel on this connection. This method will return
-     * NULL of this connection is broken. Note that this method may only
+     * nullptr of this connection is broken. Note that this method may only
      * be invoked on connections in the client aspect. Channels on
      * server aspect connections are opened with help from a server
      * adapter.
      *
-     * @return an object representing the opened channel or NULL.
+     * @return an object representing the opened channel or nullptr.
      * @param handler the owner of the channel to be opened.
      * @param context application specific context.
-     * @param chid store the channel id at this location if not NULL
+     * @param chid store the channel id at this location if not nullptr
      **/
     FNET_Channel *OpenChannel(FNET_IPacketHandler *handler,
                               FNET_Context context,
-                              uint32_t *chid = NULL);
+                              uint32_t *chid = nullptr);
 
 
     /**
      * Open a new channel on this connection that may only be used to
-     * send packets. This method will never return NULL. Note that this
+     * send packets. This method will never return nullptr. Note that this
      * method may only be invoked on connections in the client
      * aspect. Channels on server aspect connections are opened with
      * help from a server adapter.

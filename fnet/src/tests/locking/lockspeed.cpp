@@ -7,7 +7,7 @@ TEST("lock speed") {
   FastOS_Time      start;
   FastOS_Time       stop;
   DummyLock        dummy;
-  FNET_Mutex        lock;
+  FastOS_Mutex     lock;
   double       dummyTime;
   double      actualTime;
   double        overhead;
@@ -85,16 +85,16 @@ TEST("lock speed") {
 
   start.SetNow();
   for (i = 0; i < 1000000; i++) {
-      FNET_Mutex lock0;
-      FNET_Mutex lock1;
-      FNET_Mutex lock2;
-      FNET_Mutex lock3;
-      FNET_Mutex lock4;
-      FNET_Mutex lock5;
-      FNET_Mutex lock6;
-      FNET_Mutex lock7;
-      FNET_Mutex lock8;
-      FNET_Mutex lock9;
+      FastOS_Mutex lock0;
+      FastOS_Mutex lock1;
+      FastOS_Mutex lock2;
+      FastOS_Mutex lock3;
+      FastOS_Mutex lock4;
+      FastOS_Mutex lock5;
+      FastOS_Mutex lock6;
+      FastOS_Mutex lock7;
+      FastOS_Mutex lock8;
+      FastOS_Mutex lock9;
   }
   stop.SetNow();
   stop -= start;
@@ -105,16 +105,16 @@ TEST("lock speed") {
 
   start.SetNow();
   for (i = 0; i < 1000000; i++) {
-      FNET_Cond cond0;
-      FNET_Cond cond1;
-      FNET_Cond cond2;
-      FNET_Cond cond3;
-      FNET_Cond cond4;
-      FNET_Cond cond5;
-      FNET_Cond cond6;
-      FNET_Cond cond7;
-      FNET_Cond cond8;
-      FNET_Cond cond9;
+      FastOS_Cond cond0;
+      FastOS_Cond cond1;
+      FastOS_Cond cond2;
+      FastOS_Cond cond3;
+      FastOS_Cond cond4;
+      FastOS_Cond cond5;
+      FastOS_Cond cond6;
+      FastOS_Cond cond7;
+      FastOS_Cond cond8;
+      FastOS_Cond cond9;
   }
   stop.SetNow();
   stop -= start;

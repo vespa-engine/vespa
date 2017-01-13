@@ -270,7 +270,7 @@ public:
 
     /**
      * Assign a FastOS_SocketEvent to this component. Before deleting an
-     * IOC, one must assign NULL as the socket event.
+     * IOC, one must assign nullptr as the socket event.
      *
      * @param event the socket event to register with.
      **/

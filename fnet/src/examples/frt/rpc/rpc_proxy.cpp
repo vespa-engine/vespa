@@ -13,8 +13,8 @@ struct Session
     uint32_t         id;
     uint32_t         finiCnt;
 
-    Session(uint32_t xid) : client(NULL), server(NULL), id(xid), finiCnt(0) {}
-    ~Session() { assert(client == NULL && server == NULL && finiCnt == 2); }
+    Session(uint32_t xid) : client(nullptr), server(nullptr), id(xid), finiCnt(0) {}
+    ~Session() { assert(client == nullptr && server == nullptr && finiCnt == 2); }
 
 private:
     Session(const Session &);
@@ -93,7 +93,7 @@ RPCProxy::GetPrefix(FRT_RPCRequest *req)
     (void) currTimePt;
 
     char rid[32];
-    if (req->GetContext()._value.CHANNEL != NULL) {
+    if (req->GetContext()._value.CHANNEL != nullptr) {
         sprintf(rid, "[rid=%u]", req->GetContext()._value.CHANNEL->GetID());
     } else {
         rid[0] = '\0';
@@ -142,10 +142,10 @@ RPCProxy::HOOK_Mismatch(FRT_RPCRequest *req)
     }
     req->Detach();
     req->SetError(FRTE_NO_ERROR, "");
-    if (req->GetConnection()->IsServer() && GetSession(req)->server != NULL)
+    if (req->GetConnection()->IsServer() && GetSession(req)->server != nullptr)
     {
         GetSession(req)->server->InvokeAsync(req, 60.0, &req->getStash().create<ReqDone>(*this));
-    } else if (req->GetConnection()->IsClient() && GetSession(req)->client != NULL)
+    } else if (req->GetConnection()->IsClient() && GetSession(req)->client != nullptr)
     {
         FRT_Supervisor::InvokeAsync(GetSession(req)->client->Owner(), GetSession(req)->client,
                                     req, 60.0, &req->getStash().create<ReqDone>(*this));
@@ -168,7 +168,7 @@ RPCProxy::HOOK_Init(FRT_RPCRequest *req)
         _supervisor.Get2WayTarget(_spec,
                                   FNET_Context((void *) session));
     session->client->SetContext(FNET_Context((void *) session));
-    if (session->server->GetConnection() == NULL ||
+    if (session->server->GetConnection() == nullptr ||
         session->server->GetConnection()->GetState()
         > FNET_Connection::FNET_CONNECTED)
     {
@@ -184,13 +184,13 @@ RPCProxy::HOOK_Down(FRT_RPCRequest *req)
 {
     Session *session = GetSession(req);
     if (req->GetConnection()->IsClient()) {
-        if (session->client != NULL) {
+        if (session->client != nullptr) {
             session->client->Owner()->Close(session->client);
         }
     } else {
         session->server->SubRef();
-        session->client = NULL;
-        session->server = NULL;
+        session->client = nullptr;
+        session->server = nullptr;
     }
 }
 

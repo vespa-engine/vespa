@@ -94,7 +94,7 @@ FRT_RPCRequestPacket::Print(uint32_t indent)
     vespalib::string s;
     s += vespalib::make_string("%*sFRT_RPCRequestPacket {\n", indent, "");
     s += vespalib::make_string("%*s  method name: %s\n", indent, "",
-           (_req->GetMethodName() != NULL)
+           (_req->GetMethodName() != nullptr)
            ? _req->GetMethodName() : "N/A");
     s += vespalib::make_string("%*s  params:\n", indent, "");
     _req->GetParams()->Print(indent + 2);
@@ -234,7 +234,7 @@ FRT_RPCErrorPacket::Print(uint32_t indent)
     s += vespalib::make_string("%*sFRT_RPCErrorPacket {\n", indent, "");
     s += vespalib::make_string("%*s  error code   : %d\n", indent, "", _req->GetErrorCode());
     s += vespalib::make_string("%*s  error message: %s\n", indent, "",
-           (_req->GetErrorMessage() != NULL)
+           (_req->GetErrorMessage() != nullptr)
            ? _req->GetErrorMessage() : "N/A");
     s += vespalib::make_string("%*s}\n", indent, "");
     return s;
@@ -248,8 +248,8 @@ FRT_PacketFactory::CreatePacket(uint32_t pcode, FNET_Context context)
     FRT_RPCRequest *req   = ((FRT_RPCRequest *)context._value.VOIDP);
     uint32_t        flags = (pcode >> 16) & 0xffff;
 
-    if (req == NULL || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0)
-        return NULL;
+    if (req == nullptr || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0)
+        return nullptr;
 
     vespalib::Stash & stash = req->getStash();
     pcode &= 0xffff; // remove flags
@@ -265,5 +265,5 @@ FRT_PacketFactory::CreatePacket(uint32_t pcode, FNET_Context context)
     case PCODE_FRT_RPC_ERROR:
         return &stash.create<FRT_RPCErrorPacket>(req, flags, false);
     }
-    return NULL;
+    return nullptr;
 }
