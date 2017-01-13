@@ -14,12 +14,12 @@
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/fastos/timestamp.h>
+#include <vector>
 
-namespace search
-{
+namespace search {
 
-namespace fs4transport
-{
+namespace fs4transport {
+
 using vespalib::string;
 
 enum fnet_feature_masks {
