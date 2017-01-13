@@ -115,7 +115,7 @@ IncrementalFetch::IncrementalFetch(FRT_Supervisor *orb,
 { }
 
 IncrementalFetch::~IncrementalFetch() { }
-    
+
 void
 IncrementalFetch::completeReq()
 {

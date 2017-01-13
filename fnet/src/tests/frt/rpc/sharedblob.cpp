@@ -130,7 +130,7 @@ TEST("testExplicitShared") {
     req->GetParams()->AddInt32(84);
     req->GetParams()->AddSharedData(&blob);
 
-    EXPECT_TRUE(blob.refcnt == 4);
+    EXPECT_EQUAL(4, blob.refcnt);
     EXPECT_TRUE(strcmp(req->GetParamSpec(), "xixix") == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._len == blob.getLen());
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._buf == blob.getData());
@@ -143,7 +143,7 @@ TEST("testExplicitShared") {
 
     req->CreateRequestPacket(true)->Free(); // fake request send.
 
-    EXPECT_TRUE(blob.refcnt == 1);
+    EXPECT_EQUAL(1, blob.refcnt);
     EXPECT_TRUE(strcmp(req->GetParamSpec(), "xixix") == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._len == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._buf == NULL);
@@ -154,7 +154,9 @@ TEST("testExplicitShared") {
     EXPECT_TRUE(req->GetParams()->GetValue(4)._data._len == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(4)._data._buf == NULL);
 
+    EXPECT_EQUAL(1, blob.refcnt);
     req = orb.AllocRPCRequest(req);
+    EXPECT_EQUAL(1, blob.refcnt);
 
     req->GetParams()->AddSharedData(&blob);
     req->GetParams()->AddInt32(42);
@@ -162,9 +164,9 @@ TEST("testExplicitShared") {
     req->GetParams()->AddInt32(84);
     req->GetParams()->AddSharedData(&blob);
 
-    EXPECT_TRUE(blob.refcnt == 4);
+    EXPECT_EQUAL(4, blob.refcnt);
     req->SubRef();
-    EXPECT_TRUE(blob.refcnt == 1);
+    EXPECT_EQUAL(1, blob.refcnt);
 }
 
 TEST("testImplicitShared") {
