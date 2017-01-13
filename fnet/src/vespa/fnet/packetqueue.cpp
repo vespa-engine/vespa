@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
-
+#include "packetqueue.h"
+#include "packet.h"
+#include <vespa/fastos/time.h>
 
 void
 FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)
@@ -13,7 +13,7 @@ FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)
     while (_bufsize < _bufused + needentries)
         _bufsize *= 2;
     _QElem *newbuf = static_cast<_QElem *>(malloc(sizeof(_QElem) * _bufsize));
-    assert(newbuf != NULL);
+    assert(newbuf != nullptr);
     if (_bufused == 0) {          // EMPTY
         // BUFFER: |....................|
         // USED:   |....................|
@@ -45,7 +45,7 @@ FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)
 
 FNET_PacketQueue_NoLock::FNET_PacketQueue_NoLock(uint32_t len,
                                                  HP_RetCode hpRetCode)
-    : _buf(NULL),
+    : _buf(nullptr),
       _bufsize(len),
       _bufused(0),
       _in_pos(0),
@@ -53,7 +53,7 @@ FNET_PacketQueue_NoLock::FNET_PacketQueue_NoLock(uint32_t len,
       _hpRetCode(hpRetCode)
 {
     _buf = static_cast<_QElem *>(malloc(sizeof(_QElem) * len));
-    assert(_buf != NULL);
+    assert(_buf != nullptr);
 }
 
 
@@ -77,7 +77,7 @@ void
 FNET_PacketQueue_NoLock::QueuePacket_NoLock(FNET_Packet *packet,
                                             FNET_Context context)
 {
-    if (packet == NULL)
+    if (packet == nullptr)
         return;
     EnsureFree();
     _buf[_in_pos]._packet = packet;
@@ -91,8 +91,8 @@ FNET_PacketQueue_NoLock::QueuePacket_NoLock(FNET_Packet *packet,
 FNET_Packet*
 FNET_PacketQueue_NoLock::DequeuePacket_NoLock(FNET_Context *context)
 {
-    assert(context != NULL);
-    FNET_Packet *packet = NULL;
+    assert(context != nullptr);
+    FNET_Packet *packet = nullptr;
     if (_bufused > 0) {
         packet = _buf[_out_pos]._packet;
         __builtin_prefetch(packet, 0);
@@ -188,7 +188,7 @@ FNET_PacketQueue::HandlePacket(FNET_Packet  *packet,
 void
 FNET_PacketQueue::QueuePacket(FNET_Packet *packet, FNET_Context context)
 {
-    assert(packet != NULL);
+    assert(packet != nullptr);
     Lock();
     EnsureFree();
     _buf[_in_pos]._packet = packet;  // insert packet ref.
@@ -205,7 +205,7 @@ FNET_PacketQueue::QueuePacket(FNET_Packet *packet, FNET_Context context)
 FNET_Packet*
 FNET_PacketQueue::DequeuePacket(FNET_Context *context)
 {
-    FNET_Packet *packet = NULL;
+    FNET_Packet *packet = nullptr;
     Lock();
     _waitCnt++;
     while (_bufused == 0)
@@ -224,7 +224,7 @@ FNET_PacketQueue::DequeuePacket(FNET_Context *context)
 FNET_Packet*
 FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context *context)
 {
-    FNET_Packet *packet = NULL;
+    FNET_Packet *packet = nullptr;
     FastOS_Time  startTime;
     int          waitTime;
 

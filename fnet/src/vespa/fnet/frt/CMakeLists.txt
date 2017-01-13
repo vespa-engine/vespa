@@ -3,7 +3,6 @@ vespa_add_library(fnet_frt OBJECT
     SOURCES
     error.cpp
     invoker.cpp
-    memorytub.cpp
     packets.cpp
     reflection.cpp
     rpcrequest.cpp

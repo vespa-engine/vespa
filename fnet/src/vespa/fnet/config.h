@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 /**
  * This class is used internally by the @ref FNET_Transport to keep
  * track of the current configuration.
@@ -19,6 +21,5 @@ public:
     bool      _directWrite;
 
     FNET_Config();
-    ~FNET_Config();
 };
 

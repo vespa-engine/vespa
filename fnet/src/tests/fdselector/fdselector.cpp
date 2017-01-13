@@ -80,7 +80,7 @@ struct State
 
 struct Selector : public FNET_FDSelector
 {
-    static FNET_Mutex mutex;
+    static FastOS_Mutex mutex;
     static int ctorCnt;
     static int dtorCnt;
 
@@ -100,7 +100,7 @@ struct Selector : public FNET_FDSelector
     }
 };
 
-FNET_Mutex Selector::mutex;
+FastOS_Mutex Selector::mutex;
 int Selector::ctorCnt = 0;
 int Selector::dtorCnt = 0;
 

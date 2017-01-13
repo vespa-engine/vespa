@@ -2,6 +2,12 @@
 
 #pragma once
 
+#include "iocomponent.h"
+#include "context.h"
+#include <vespa/fastos/socket.h>
+
+class FNET_FDSelector;
+class FNET_Transport;
 
 /**
  * Interface used to listen for events from a @ref FNET_FDSelector io

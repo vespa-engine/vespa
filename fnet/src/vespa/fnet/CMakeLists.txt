@@ -7,6 +7,7 @@ vespa_add_library(fnet
     connect_thread.cpp
     connection.cpp
     connector.cpp
+    context.cpp
     controlpacket.cpp
     databuffer.cpp
     dummypacket.cpp

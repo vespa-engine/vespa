@@ -3,7 +3,6 @@
 #include "channellookup.h"
 #include "vespa/fnet/channel.h"
 #include "controlpacket.h"
-#include "ipackethandler.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
 

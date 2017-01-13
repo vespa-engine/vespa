@@ -6,51 +6,6 @@
 #include <vespa/fastos/mutex.h>
 #include <vespa/fastos/cond.h>
 
-// FEATURES
-
-#include "features.h"
-
-// DEFINES
-
-// THREAD/MUTEX STUFF
-
-#ifdef FASTOS_NO_THREADS
-
-#define FNET_HAS_THREADS false
-
-class FNET_Mutex
-{
-public:
-    FNET_Mutex(const char *, bool) {}
-    void Lock() {}
-    void Unlock() {}
-};
-
-class FNET_Cond : public FNET_Mutex
-{
-    bool Illegal(const char *name) {
-        fprintf(stderr, "FNET_Cond::%s called (FASTOS_NO_THREADS)\n", name);
-        abort();
-        return false;
-    }
-public:
-    FNET_Cond(const char *name, bool leaf)
-        : FNET_Mutex(name, leaf) {}
-    bool TimedWait(int) { return Illegal("TimedWait"); }
-    void Wait() { Illegal("Wait"); }
-    void Signal() { Illegal("Signal"); }
-    void Broadcast() { Illegal("Broadcast"); }
-};
-
-#else // FASTOS_NO_THREADS
-
-#define FNET_HAS_THREADS true
-
-typedef FastOS_Mutex FNET_Mutex;
-typedef FastOS_Cond  FNET_Cond;
-
-#endif
-
 // DEPRECATED
 
 #define DEPRECATED __attribute__((deprecated))
@@ -86,7 +41,6 @@ class FNET_Task;
 class FNET_Transport;
 class FNET_TransportThread;
 
-
 // CONTEXT CLASS (union of types)
 #include "context.h"
 
@@ -118,21 +72,4 @@ class FNET_TransportThread;
 #include "fdselector.h"
 #include "info.h"
 #include "signalshutdown.h"
-
-
-#define ASSERT_OBJECT(pt)                                               \
-    do {                                                                \
-        if (pt == NULL || !pt->CheckObject()) {                         \
-            fprintf(stderr, "%s:%d: ASSERT_OBJECT FAILED!\n", __FILE__, __LINE__); \
-            abort();                                                    \
-        }                                                               \
-    } while (false)
-
-#define ASSERT_OBJECT_NOLOCK(pt)                                        \
-    do {                                                                \
-        if (pt == NULL || !pt->CheckObject_NoLock()) {                  \
-            fprintf(stderr, "%s:%d: ASSERT_OBJECT FAILED!\n", __FILE__, __LINE__); \
-            abort();                                                    \
-        }                                                               \
-    } while (false)
 

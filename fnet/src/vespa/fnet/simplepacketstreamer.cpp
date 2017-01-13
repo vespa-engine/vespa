@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
-
+#include "simplepacketstreamer.h"
+#include "databuffer.h"
+#include "ipacketfactory.h"
+#include "packet.h"
 
 FNET_SimplePacketStreamer::FNET_SimplePacketStreamer(FNET_IPacketFactory *factory)
     : _factory(factory)
@@ -39,10 +40,10 @@ FNET_SimplePacketStreamer::Decode(FNET_DataBuffer *src, uint32_t plen,
     FNET_Packet *packet;
 
     packet = _factory->CreatePacket(pcode, context);
-    if (packet != NULL) {
+    if (packet != nullptr) {
         if (!packet->Decode(src, plen)) {
             packet->Free();
-            packet = NULL;
+            packet = nullptr;
         }
     } else {
         src->DataToDead(plen);

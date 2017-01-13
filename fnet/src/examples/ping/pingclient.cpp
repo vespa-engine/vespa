@@ -33,7 +33,7 @@ PingClient::Main()
 
     uint32_t channelCnt = 0;
     for (uint32_t i = 0; i < 10; i++) {
-        channels[i] = (conn == NULL) ? NULL : conn->OpenChannel(&queue, FNET_Context(i));
+        channels[i] = (conn == nullptr) ? nullptr : conn->OpenChannel(&queue, FNET_Context(i));
         if (channels[i] == 0) {
             fprintf(stderr, "Could not make channel[%d] to %s\n", i, _argv[1]);
             break;
@@ -48,13 +48,13 @@ PingClient::Main()
     FNET_Context  context;
     while (channelCnt > 0) {
         packet = queue.DequeuePacket(5000, &context);
-        if (packet == NULL) {
+        if (packet == nullptr) {
             fprintf(stderr, "Timeout\n");
             for(int c = 0; c < 10; c++) {
-                if (channels[c] != NULL) {
+                if (channels[c] != nullptr) {
                     channels[c]->Close();
                     channels[c]->Free();
-                    channels[c] = NULL;
+                    channels[c] = nullptr;
                     fprintf(stderr, "Closed channel with context %d\n", c);
                 }
             }
@@ -67,17 +67,17 @@ PingClient::Main()
             fprintf(stderr, "Lost channel with context %d\n",
                     context._value.INT);
         }
-        if (channels[context._value.INT] != NULL) {
+        if (channels[context._value.INT] != nullptr) {
             channels[context._value.INT]->Close();
             channels[context._value.INT]->Free();
-            channels[context._value.INT] = NULL;
+            channels[context._value.INT] = nullptr;
             fprintf(stderr, "Closed channel with context %d\n",
                     context._value.INT);
             channelCnt--;
         }
         packet->Free();
     }
-    if (conn != NULL)
+    if (conn != nullptr)
         conn->SubRef();
     transport.ShutDown(true);
     pool.Close();

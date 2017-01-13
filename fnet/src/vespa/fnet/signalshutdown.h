@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "task.h"
+
+class FNET_Transport;
 /**
  * Utility class that will shut down a transport when the process gets
  * either INT or TERM.
@@ -12,10 +15,8 @@ private:
     FNET_Transport &_transport;
 
 public:
-    FNET_SignalShutDown(FNET_Transport &t) : FNET_Task(t.GetScheduler()), _transport(t) {
-        ScheduleNow();
-    }
-    virtual void PerformTask();
+    FNET_SignalShutDown(FNET_Transport &t);
+    void PerformTask() override;
 
     /**
      * Set up signal handling to hook appropriate signals.

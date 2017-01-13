@@ -1,19 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
+#include "iocomponent.h"
+#include "transport_thread.h"
+#include <vespa/fastos/socket.h>
 
 
 FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
-                                   FastOS_Socket *mysocket,
+                                   FastOS_SocketInterface *mysocket,
                                    const char *spec,
                                    bool shouldTimeOut)
-    : _ioc_next(NULL),
-      _ioc_prev(NULL),
+    : _ioc_next(nullptr),
+      _ioc_prev(nullptr),
       _ioc_owner(owner),
       _ioc_counters(_ioc_owner->GetStatCounters()),
       _ioc_socket(mysocket),
-      _ioc_spec(NULL),
+      _ioc_spec(nullptr),
       _flags(shouldTimeOut),
       _ioc_timestamp(fastos::ClockSystem::now()),
       _ioc_cond(),
@@ -22,7 +23,7 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
       _ioc_directDataWriteCnt(0)
 {
     _ioc_spec = strdup(spec);
-    assert(_ioc_spec != NULL);
+    assert(_ioc_spec != nullptr);
 }
 
 
@@ -31,6 +32,15 @@ FNET_IOComponent::~FNET_IOComponent()
     free(_ioc_spec);
 }
 
+FNET_Config *
+FNET_IOComponent::GetConfig() {
+    return _ioc_owner->GetConfig();
+}
+
+void
+FNET_IOComponent::UpdateTimeOut() {
+    _ioc_owner->UpdateTimeOut(this);
+}
 
 void
 FNET_IOComponent::AddRef()
@@ -94,7 +104,7 @@ FNET_IOComponent::SetSocketEvent(FastOS_SocketEvent *event)
     assert(rc); // XXX: error handling
     (void) rc;
 
-    if (event != NULL) {
+    if (event != nullptr) {
         _ioc_socket->EnableReadEvent(_flags._ioc_readEnabled);
         _ioc_socket->EnableWriteEvent(_flags._ioc_writeEnabled);
     }
@@ -105,7 +115,7 @@ void
 FNET_IOComponent::EnableReadEvent(bool enabled)
 {
     _flags._ioc_readEnabled = enabled;
-    if (_ioc_socket->GetSocketEvent() != NULL)
+    if (_ioc_socket->GetSocketEvent() != nullptr)
         _ioc_socket->EnableReadEvent(enabled);
 }
 
@@ -114,7 +124,7 @@ void
 FNET_IOComponent::EnableWriteEvent(bool enabled)
 {
     _flags._ioc_writeEnabled = enabled;
-    if (_ioc_socket->GetSocketEvent() != NULL)
+    if (_ioc_socket->GetSocketEvent() != nullptr)
         _ioc_socket->EnableWriteEvent(enabled);
 }
 

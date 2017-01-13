@@ -2,6 +2,14 @@
 
 #pragma once
 
+#include "rpcrequest.h"
+#include <vespa/fnet/task.h>
+#include <vespa/fnet/ipackethandler.h>
+#include <vespa/fastos/cond.h>
+#include <vespa/fastos/thread.h>
+
+class FRT_Method;
+class FRT_Supervisor;
 //-----------------------------------------------------------------------------
 
 class FRT_IRequestWait
@@ -21,27 +29,15 @@ public:
 class FRT_SingleReqWait : public FRT_IRequestWait
 {
 private:
-    FNET_Cond       _cond;
+    FastOS_Cond     _cond;
     bool            _done;
     bool            _waiting;
 
 public:
-    FRT_SingleReqWait()
-        : _cond(),
-          _done(false),
-          _waiting(false) {}
-    virtual ~FRT_SingleReqWait() {}
+    FRT_SingleReqWait();
+    virtual ~FRT_SingleReqWait();
 
-    void WaitReq()
-    {
-        _cond.Lock();
-        _waiting = true;
-        while(!_done)
-            _cond.Wait();
-        _waiting = false;
-        _cond.Unlock();
-    }
-
+    void WaitReq();
     virtual void RequestDone(FRT_RPCRequest *req);
 };
 
@@ -78,23 +74,12 @@ public:
                    bool noReply);
 
     void ForceMethod(FRT_Method *method) { _method = method; }
-    bool IsInstant() { return _method->IsInstant(); }
+    bool IsInstant();
 
     FRT_RPCRequest *GetRequest() { return _req; }
 
     void HandleDone(bool freeChannel);
-
-    bool Invoke(bool freeChannel)
-    {
-        bool detached = false;
-        _req->SetDetachedPT(&detached);
-        (_method->GetHandler()->*_method->GetMethod())(_req);
-        if (detached)
-            return false;
-        HandleDone(freeChannel);
-        return true;
-    }
-
+    bool Invoke(bool freeChannel);
     virtual void HandleReturn();
     virtual FNET_Connection *GetConnection();
     virtual void Run(FastOS_ThreadInterface *, void *);
@@ -123,15 +108,7 @@ public:
         _req->SetReturnHandler(this);
     }
 
-    void Invoke()
-    {
-        bool detached = false;
-        _req->SetDetachedPT(&detached);
-        (_hook->GetHandler()->*_hook->GetMethod())(_req);
-        assert(!detached);
-        _req->SubRef();
-    }
-
+    void Invoke();
     virtual void HandleReturn();
     virtual FNET_Connection *GetConnection();
 };

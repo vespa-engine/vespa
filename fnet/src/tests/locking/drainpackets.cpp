@@ -18,7 +18,7 @@ TEST("drain packets") {
   FastOS_Time     start;
   FastOS_Time     stop;
 
-  FNET_Mutex      lock;
+  FastOS_Mutex    lock;
 
   FNET_PacketQueue   q1(512);
   FNET_PacketQueue   q2(512);
@@ -110,13 +110,13 @@ TEST("drain packets") {
     FNET_Packet  *packet;
     FNET_Context  context;
 
-    while ((packet = q1.DequeuePacket(0, &context)) != NULL) {
+    while ((packet = q1.DequeuePacket(0, &context)) != nullptr) {
       q3.QueuePacket_NoLock(packet, context);
     }
 
     //------------------------
 
-    while ((packet = q3.DequeuePacket(0, &context)) != NULL) {
+    while ((packet = q3.DequeuePacket(0, &context)) != nullptr) {
       q1.QueuePacket_NoLock(packet, context);
     }
   }

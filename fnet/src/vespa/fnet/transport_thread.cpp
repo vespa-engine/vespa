@@ -1,9 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "transport_thread.h"
+#include "iexecutable.h"
+#include "iocomponent.h"
+#include "controlpacket.h"
+#include "connector.h"
+#include "connection.h"
+#include "transport.h"
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/fastos/socket.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
-#include <vespa/fnet/fnet.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace {
 
@@ -45,7 +53,7 @@ SplitString(char *input, const char *sep, int &argc, char **argv, int maxargs)
     }
     if (*(argv[argc]) != '\0')
         argc++;
-    return NULL;                    // COMPLETE
+    return nullptr;                    // COMPLETE
 }
 
 #ifndef IAM_DOXYGEN
@@ -62,20 +70,20 @@ FNET_TransportThread::AddComponent(FNET_IOComponent *comp)
 {
     if (comp->ShouldTimeOut()) {
         comp->_ioc_prev = _componentsTail;
-        comp->_ioc_next = NULL;
-        if (_componentsTail == NULL) {
+        comp->_ioc_next = nullptr;
+        if (_componentsTail == nullptr) {
             _componentsHead = comp;
         } else {
             _componentsTail->_ioc_next = comp;
         }
         _componentsTail = comp;
-        if (_timeOutHead == NULL)
+        if (_timeOutHead == nullptr)
             _timeOutHead = comp;
         _componentCnt++;
     } else {
-        comp->_ioc_prev = NULL;
+        comp->_ioc_prev = nullptr;
         comp->_ioc_next = _componentsHead;
-        if (_componentsHead == NULL) {
+        if (_componentsHead == nullptr) {
             _componentsTail = comp;
         } else {
             _componentsHead->_ioc_prev = comp;
@@ -95,9 +103,9 @@ FNET_TransportThread::RemoveComponent(FNET_IOComponent *comp)
         _timeOutHead = comp->_ioc_next;
     if (comp == _componentsTail)
         _componentsTail = comp->_ioc_prev;
-    if (comp->_ioc_prev != NULL)
+    if (comp->_ioc_prev != nullptr)
         comp->_ioc_prev->_ioc_next = comp->_ioc_next;
-    if (comp->_ioc_next != NULL)
+    if (comp->_ioc_next != nullptr)
         comp->_ioc_next->_ioc_prev = comp->_ioc_prev;
     _componentCnt--;
 }
@@ -118,7 +126,7 @@ FNET_TransportThread::AddDeleteComponent(FNET_IOComponent *comp)
     assert(!comp->_flags._ioc_delete);
     comp->_flags._ioc_added = false;
     comp->_flags._ioc_delete = true;
-    comp->_ioc_prev = NULL;
+    comp->_ioc_prev = nullptr;
     comp->_ioc_next = _deleteList;
     _deleteList = comp;
 }
@@ -127,7 +135,7 @@ FNET_TransportThread::AddDeleteComponent(FNET_IOComponent *comp)
 void
 FNET_TransportThread::FlushDeleteList()
 {
-    while (_deleteList != NULL) {
+    while (_deleteList != nullptr) {
         FNET_IOComponent *tmp = _deleteList;
         _deleteList = tmp->_ioc_next;
         assert(tmp->_flags._ioc_delete);
@@ -184,7 +192,7 @@ FNET_TransportThread::UpdateStats()
     double ms = _now.MilliSecs() - _statTime.MilliSecs();
     _statTime = _now;
     for (FNET_IOComponent *comp = _componentsHead;
-         comp != NULL; comp = comp->_ioc_next)
+         comp != nullptr; comp = comp->_ioc_next)
     {
         comp->Lock();
         comp->FlushDirectWriteStats();
@@ -210,11 +218,11 @@ extern "C" {
     {
         struct sigaction act;
         memset(&act, 0, sizeof(act));
-        sigaction(SIGPIPE, NULL, &act);
+        sigaction(SIGPIPE, nullptr, &act);
         if (act.sa_handler == SIG_DFL) {
             memset(&act, 0, sizeof(act));
             act.sa_handler = pipehandler;
-            sigaction(SIGPIPE, &act, NULL);
+            sigaction(SIGPIPE, &act, nullptr);
             LOG(warning, "missing signal handler for SIGPIPE (added no-op)");
         }
     }
@@ -231,13 +239,13 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _statsTask(&_scheduler, this),
       _statTime(),
       _config(),
-      _componentsHead(NULL),
-      _timeOutHead(NULL),
-      _componentsTail(NULL),
+      _componentsHead(nullptr),
+      _timeOutHead(nullptr),
+      _componentsTail(nullptr),
       _componentCnt(0),
-      _deleteList(NULL),
+      _deleteList(nullptr),
       _socketEvent(),
-      _events(NULL),
+      _events(nullptr),
       _queue(),
       _myQueue(),
       _cond(),
@@ -276,34 +284,34 @@ FNET_TransportThread::Listen(const char *spec, FNET_IPacketStreamer *streamer,
     assert(speclen < 1024);
     memcpy(tmp, spec, speclen);
     tmp[speclen] = '\0';
-    if (SplitString(tmp, "/", argc, argv, 32) != NULL
+    if (SplitString(tmp, "/", argc, argv, 32) != nullptr
         || argc != 2)
-        return NULL;    // wrong number of parameters
+        return nullptr;    // wrong number of parameters
 
     // handle different connection types (currently only TCP/IP support)
     if (strcasecmp(argv[0], "tcp") == 0) {
-        if (SplitString(argv[1], ":", argc, argv, 32) != NULL
+        if (SplitString(argv[1], ":", argc, argv, 32) != nullptr
             || argc < 1 || argc > 2)
-            return NULL;    // wrong number of parameters
+            return nullptr;    // wrong number of parameters
 
         int port = atoi(argv[argc - 1]); // last param is port
         if (port < 0)
-            return NULL;
+            return nullptr;
         if (port == 0 && strcmp(argv[argc - 1], "0") != 0)
-            return NULL;
+            return nullptr;
         FNET_Connector *connector;
         connector = new FNET_Connector(this, streamer, serverAdapter, spec, port,
-                                       500, NULL, (argc == 2) ? argv[0] : NULL);
+                                       500, nullptr, (argc == 2) ? argv[0] : nullptr);
         if (connector->Init()) {
             connector->AddRef_NoLock();
             Add(connector, /* needRef = */ false);
             return connector;
         } else {
             delete connector;
-            return NULL;
+            return nullptr;
         }
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -323,19 +331,19 @@ FNET_TransportThread::Connect(const char *spec, FNET_IPacketStreamer *streamer,
     assert(speclen < 1024);
     memcpy(tmp, spec, speclen);
     tmp[speclen] = '\0';
-    if (SplitString(tmp, "/", argc, argv, 32) != NULL
+    if (SplitString(tmp, "/", argc, argv, 32) != nullptr
         || argc != 2)
-        return NULL;    // wrong number of parameters
+        return nullptr;    // wrong number of parameters
 
     // handle different connection types (currently only TCP/IP support)
     if (strcasecmp(argv[0], "tcp") == 0) {
-        if (SplitString(argv[1], ":", argc, argv, 32) != NULL
+        if (SplitString(argv[1], ":", argc, argv, 32) != nullptr
             || argc != 2)
-            return NULL;    // wrong number of parameters
+            return nullptr;    // wrong number of parameters
 
         int port = atoi(argv[1]);
         if (port <= 0)
-            return NULL;
+            return nullptr;
         FastOS_Socket *mysocket = new FastOS_Socket();
         mysocket->SetAddress(port, argv[0]);
         FNET_Connection *conn = new FNET_Connection(this, streamer, serverAdapter,
@@ -347,10 +355,10 @@ FNET_TransportThread::Connect(const char *spec, FNET_IPacketStreamer *streamer,
             return conn;
         } else {
             delete conn;
-            return NULL;
+            return nullptr;
         }
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -494,7 +502,7 @@ FNET_TransportThread::InitEventLoop()
     }
 
     _events = new FastOS_IOEvent[EVT_MAX];
-    assert(_events != NULL);
+    assert(_events != nullptr);
 
     _now.SetNow();
     _startTime = _now;
@@ -507,9 +515,9 @@ FNET_TransportThread::InitEventLoop()
 bool
 FNET_TransportThread::EventLoopIteration()
 {
-    FNET_Packet        *packet    = NULL;
+    FNET_Packet        *packet    = nullptr;
     FNET_Context        context;
-    FNET_IOComponent   *component = NULL;
+    FNET_IOComponent   *component = nullptr;
     int                 evt_cnt   = 0;
     FastOS_IOEvent     *events    = _events;
     int                 msTimeout = FNET_Scheduler::SLOT_TICK;
@@ -559,7 +567,7 @@ FNET_TransportThread::EventLoopIteration()
             CountEvent(_queue.FlushPackets_NoLock(&_myQueue));
             Unlock();
 
-            while ((packet = _myQueue.DequeuePacket_NoLock(&context)) != NULL) {
+            while ((packet = _myQueue.DequeuePacket_NoLock(&context)) != nullptr) {
 
                 if (context._value.IOC->_flags._ioc_delete) {
                     context._value.IOC->SubRef();
@@ -614,7 +622,7 @@ FNET_TransportThread::EventLoopIteration()
         for (int i = 0; i < evt_cnt; i++) {
 
             component = (FNET_IOComponent *) events[i]._eventAttribute;
-            if (component == NULL || component->_flags._ioc_delete)
+            if (component == nullptr || component->_flags._ioc_delete)
                 continue;
 
             bool rc = true;
@@ -635,7 +643,7 @@ FNET_TransportThread::EventLoopIteration()
             FastOS_Time t = _now;
             t.SubtractMilliSecs((double)_config._iocTimeOut);
             fastos::TimeStamp oldest(t);
-            while (_timeOutHead != NULL &&
+            while (_timeOutHead != nullptr &&
                    oldest >= _timeOutHead->_ioc_timestamp) {
 
                 component = _timeOutHead;
@@ -666,7 +674,7 @@ FNET_TransportThread::EventLoopIteration()
     Unlock();
 
     // discard remaining events
-    while ((packet = _myQueue.DequeuePacket_NoLock(&context)) != NULL) {
+    while ((packet = _myQueue.DequeuePacket_NoLock(&context)) != nullptr) {
         if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_EXECUTE) {
             context._value.EXECUTABLE->execute();
         } else {
@@ -676,7 +684,7 @@ FNET_TransportThread::EventLoopIteration()
 
     // close and remove all I/O Components
     component = _componentsHead;
-    while (component != NULL) {
+    while (component != nullptr) {
         assert(component == _componentsHead);
         FNET_IOComponent *tmp = component;
         component = component->_ioc_next;
@@ -684,9 +692,9 @@ FNET_TransportThread::EventLoopIteration()
         tmp->Close();
         tmp->SubRef();
     }
-    assert(_componentsHead == NULL &&
-           _componentsTail == NULL &&
-           _timeOutHead    == NULL &&
+    assert(_componentsHead == nullptr &&
+           _componentsTail == nullptr &&
+           _timeOutHead    == nullptr &&
            _componentCnt   == 0    &&
            _queue.IsEmpty_NoLock() &&
            _myQueue.IsEmpty_NoLock());
@@ -708,14 +716,14 @@ FNET_TransportThread::EventLoopIteration()
 bool
 FNET_TransportThread::Start(FastOS_ThreadPool *pool)
 {
-    return (pool != NULL && pool->NewThread(this));
+    return (pool != nullptr && pool->NewThread(this));
 }
 
 
 void
 FNET_TransportThread::Main()
 {
-    Run(NULL, NULL);
+    Run(nullptr, nullptr);
 }
 
 
@@ -727,7 +735,7 @@ FNET_TransportThread::Run(FastOS_ThreadInterface *thisThread, void *)
         return;
     }
     while (EventLoopIteration()) {
-        if (thisThread != NULL && thisThread->GetBreakFlag())
+        if (thisThread != nullptr && thisThread->GetBreakFlag())
             ShutDown(false);
     }
 }

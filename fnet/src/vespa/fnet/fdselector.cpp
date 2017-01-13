@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
-
+#include "fdselector.h"
+#include "transport.h"
+#include "transport_thread.h"
 
 FNET_FDSelector::FNET_FDSelector(FNET_Transport *transport, int fd,
                                  FNET_IFDSelectorHandler *handler,
@@ -47,7 +47,7 @@ FNET_FDSelector::dispose()
 {
     Lock();
     waitEvent();
-    _handler = NULL;
+    _handler = nullptr;
     Unlock();
     Owner()->Close(this, false);
 }
@@ -55,14 +55,14 @@ FNET_FDSelector::dispose()
 
 FNET_FDSelector::~FNET_FDSelector()
 {
-    assert(_fdSocket.GetSocketEvent() == NULL);
+    assert(_fdSocket.GetSocketEvent() == nullptr);
 }
 
 
 void
 FNET_FDSelector::Close()
 {
-    SetSocketEvent(NULL);
+    SetSocketEvent(nullptr);
 }
 
 
@@ -75,7 +75,7 @@ FNET_FDSelector::HandleReadEvent()
     Lock();
     FNET_IFDSelectorHandler *handler = _handler;
     beforeEvent();
-    if (handler != NULL) {
+    if (handler != nullptr) {
         handler->readEvent(this);
     }
     afterEvent();
@@ -93,7 +93,7 @@ FNET_FDSelector::HandleWriteEvent()
     Lock();
     FNET_IFDSelectorHandler *handler = _handler;
     beforeEvent();
-    if (handler != NULL) {
+    if (handler != nullptr) {
         handler->writeEvent(this);
     }
     afterEvent();

@@ -2,6 +2,10 @@
 
 #pragma once
 
+#include <cstdint>
+
+#define FNET_NOID ((uint32_t)-1)
+
 class FNET_IOComponent;
 class FNET_Connector;
 class FNET_Connection;
@@ -15,7 +19,7 @@ class FNET_IExecutable;
 class FNET_Context
 {
 public:
-    FNET_Context() : _value()                    { _value.VOIDP   = NULL;  }
+    FNET_Context() : _value()                    { _value.VOIDP   = nullptr;  }
     FNET_Context(uint32_t value) : _value()      { _value.INT     = value; }
     FNET_Context(void *value) : _value()         { _value.VOIDP   = value; }
     FNET_Context(FNET_Channel *value) : _value() { _value.CHANNEL = value; }
@@ -39,12 +43,6 @@ public:
         FNET_IExecutable *EXECUTABLE;
     } _value;
 
-    void Print(uint32_t indent = 0)
-    {
-        printf("%*sFNET_Context {\n", indent, "");
-        printf("%*s  Value[INT]  : %d\n", indent, "", _value.INT);
-        printf("%*s  Value[VOIDP]: %p\n", indent, "", _value.VOIDP);
-        printf("%*s}\n", indent, "");
-    }
+    void Print(uint32_t indent = 0);
 };
 

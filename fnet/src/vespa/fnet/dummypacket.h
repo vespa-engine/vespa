@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "packet.h"
+
 /**
  * A dummy packet is neither a regular packet nor a control
  * packet. The idea with this class is that you subclass it to make

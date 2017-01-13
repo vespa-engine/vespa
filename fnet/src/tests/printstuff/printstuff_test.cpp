@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/packetqueue.h>
+#include <vespa/fnet/info.h>
+#include <vespa/fnet/frt/packets.h>
 
 void printError(uint32_t ecode) {
     fprintf(stderr, "error(%u): %s: %s\n",
@@ -24,14 +27,14 @@ TEST("rpc packets in a queue") {
     {
         req->SetMethodName("foo");
         FNET_PacketQueue_NoLock q1(1, FNET_IPacketHandler::FNET_KEEP_CHANNEL);
-        q1.QueuePacket_NoLock(new (req->GetMemoryTub()) FRT_RPCRequestPacket(req, 0, false), FNET_Context());
-        q1.QueuePacket_NoLock(new (req->GetMemoryTub()) FRT_RPCReplyPacket(req, 0, false), FNET_Context());
-        q1.QueuePacket_NoLock(new (req->GetMemoryTub()) FRT_RPCErrorPacket(req, 0, false), FNET_Context());
+        q1.QueuePacket_NoLock(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q1.QueuePacket_NoLock(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q1.QueuePacket_NoLock(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
         q1.Print();
         FNET_PacketQueue q2(2, FNET_IPacketHandler::FNET_KEEP_CHANNEL);
-        q2.QueuePacket(new (req->GetMemoryTub()) FRT_RPCRequestPacket(req, 0, false), FNET_Context());
-        q2.QueuePacket(new (req->GetMemoryTub()) FRT_RPCReplyPacket(req, 0, false), FNET_Context());
-        q2.QueuePacket(new (req->GetMemoryTub()) FRT_RPCErrorPacket(req, 0, false), FNET_Context());
+        q2.QueuePacket(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q2.QueuePacket(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
+        q2.QueuePacket(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
         q2.Print();
     }
     req->SubRef();

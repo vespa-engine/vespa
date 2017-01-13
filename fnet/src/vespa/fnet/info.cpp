@@ -1,18 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "info.h"
+#include <vespa/vespalib/component/vtag.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
-#include <vespa/fnet/fnet.h>
-
 
 uint32_t FNET_Info::_endian = FNET_Info::ENDIAN_UNKNOWN;
-FNET_Info global_fnet_info_object;
-
 
 FNET_Info::FNET_Info()
 {
-    uint8_t  *pt     = NULL;
+    uint8_t  *pt     = nullptr;
     uint64_t  cmp    = 0;
     uint32_t  endian = ENDIAN_UNKNOWN;
 

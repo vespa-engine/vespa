@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/frt/frt.h>
+#include "packets.h"
+#include "rpcrequest.h"
+#include <vespa/fnet/info.h>
+#include <vespa/fnet/databuffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 
-FRT_RPCPacket::~FRT_RPCPacket()
-{
-    assert(false);
-}
-
+FRT_RPCPacket::~FRT_RPCPacket() { }
 
 void
 FRT_RPCPacket::Free()
@@ -96,7 +94,7 @@ FRT_RPCRequestPacket::Print(uint32_t indent)
     vespalib::string s;
     s += vespalib::make_string("%*sFRT_RPCRequestPacket {\n", indent, "");
     s += vespalib::make_string("%*s  method name: %s\n", indent, "",
-           (_req->GetMethodName() != NULL)
+           (_req->GetMethodName() != nullptr)
            ? _req->GetMethodName() : "N/A");
     s += vespalib::make_string("%*s  params:\n", indent, "");
     _req->GetParams()->Print(indent + 2);
@@ -236,7 +234,7 @@ FRT_RPCErrorPacket::Print(uint32_t indent)
     s += vespalib::make_string("%*sFRT_RPCErrorPacket {\n", indent, "");
     s += vespalib::make_string("%*s  error code   : %d\n", indent, "", _req->GetErrorCode());
     s += vespalib::make_string("%*s  error message: %s\n", indent, "",
-           (_req->GetErrorMessage() != NULL)
+           (_req->GetErrorMessage() != nullptr)
            ? _req->GetErrorMessage() : "N/A");
     s += vespalib::make_string("%*s}\n", indent, "");
     return s;
@@ -250,22 +248,22 @@ FRT_PacketFactory::CreatePacket(uint32_t pcode, FNET_Context context)
     FRT_RPCRequest *req   = ((FRT_RPCRequest *)context._value.VOIDP);
     uint32_t        flags = (pcode >> 16) & 0xffff;
 
-    if (req == NULL || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0)
-        return NULL;
+    if (req == nullptr || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0)
+        return nullptr;
 
-    FRT_MemoryTub *tub = req->GetMemoryTub();
+    vespalib::Stash & stash = req->getStash();
     pcode &= 0xffff; // remove flags
 
     switch(pcode) {
 
     case PCODE_FRT_RPC_REQUEST:
-        return new (tub) FRT_RPCRequestPacket(req, flags, false);
+        return &stash.create<FRT_RPCRequestPacket>(req, flags, false);
 
     case PCODE_FRT_RPC_REPLY:
-        return new (tub) FRT_RPCReplyPacket(req, flags, false);
+        return &stash.create<FRT_RPCReplyPacket>(req, flags, false);
 
     case PCODE_FRT_RPC_ERROR:
-        return new (tub) FRT_RPCErrorPacket(req, flags, false);
+        return &stash.create<FRT_RPCErrorPacket>(req, flags, false);
     }
-    return NULL;
+    return nullptr;
 }

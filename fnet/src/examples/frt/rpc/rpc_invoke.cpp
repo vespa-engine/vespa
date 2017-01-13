@@ -15,22 +15,22 @@ private:
         const char *value = param + 2;
         switch (param[0]) {
         case 'b':
-            req->GetParams()->AddInt8(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt8(strtoll(value, nullptr, 0));
             break;
         case 'h':
-            req->GetParams()->AddInt16(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt16(strtoll(value, nullptr, 0));
             break;
         case 'i':
-            req->GetParams()->AddInt32(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt32(strtoll(value, nullptr, 0));
             break;
         case 'l':
-            req->GetParams()->AddInt64(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt64(strtoll(value, nullptr, 0));
             break;
         case 'f':
-            req->GetParams()->AddFloat(strtod(value, NULL));
+            req->GetParams()->AddFloat(strtod(value, nullptr));
             break;
         case 'd':
-            req->GetParams()->AddDouble(strtod(value, NULL));
+            req->GetParams()->AddDouble(strtod(value, nullptr));
             break;
         case 's':
             req->GetParams()->AddString(value);

@@ -185,20 +185,20 @@ void initTest() {
   _complexHandler2 = new ComplexHandler2();
   _complexHandler3 = new ComplexHandler3();
 
-  ASSERT_TRUE(_supervisor != NULL);
-  ASSERT_TRUE(_simpleHandler != NULL);
-  ASSERT_TRUE(_mediumHandler1 != NULL);
-  ASSERT_TRUE(_mediumHandler2 != NULL);
-  ASSERT_TRUE(_mediumHandler3 != NULL);
-  ASSERT_TRUE(_complexHandler1 != NULL);
-  ASSERT_TRUE(_complexHandler2 != NULL);
-  ASSERT_TRUE(_complexHandler3 != NULL);
+  ASSERT_TRUE(_supervisor != nullptr);
+  ASSERT_TRUE(_simpleHandler != nullptr);
+  ASSERT_TRUE(_mediumHandler1 != nullptr);
+  ASSERT_TRUE(_mediumHandler2 != nullptr);
+  ASSERT_TRUE(_mediumHandler3 != nullptr);
+  ASSERT_TRUE(_complexHandler1 != nullptr);
+  ASSERT_TRUE(_complexHandler2 != nullptr);
+  ASSERT_TRUE(_complexHandler3 != nullptr);
 
   ASSERT_TRUE(_supervisor->Listen(0));
   std::string spec = vespalib::make_string("tcp/localhost:%d",
                                            _supervisor->GetListenPort());
   _target = _supervisor->GetTarget(spec.c_str());
-  ASSERT_TRUE(_target != NULL);
+  ASSERT_TRUE(_target != nullptr);
 
   bool startOK = _supervisor->Start();
   ASSERT_TRUE(startOK);

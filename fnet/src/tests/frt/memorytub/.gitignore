@@ -1,6 +1,0 @@
-*.core
-.depend
-Makefile
-core
-memorytub_test
-fnet_memorytub_test_app

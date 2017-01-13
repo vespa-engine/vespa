@@ -2,6 +2,10 @@
 
 #pragma once
 
+#include <vespa/fnet/packet.h>
+#include <vespa/fnet/ipacketfactory.h>
+
+class FRT_RPCRequest;
 
 enum {
     PCODE_FRT_RPC_FIRST          = 100,
@@ -30,9 +34,7 @@ protected:
     FRT_RPCPacket &operator=(const FRT_RPCPacket &);
 
 public:
-    FRT_RPCPacket(FRT_RPCRequest *req,
-                  uint32_t flags,
-                  bool ownsRef)
+    FRT_RPCPacket(FRT_RPCRequest *req, uint32_t flags, bool ownsRef)
         : _req(req),
           _flags(flags),
           _ownsRef(ownsRef)

@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "fnet.h"
+#include "transport.h"
 #include "connect_thread.h"
+#include "transport_thread.h"
+#include "iocomponent.h"
 #include <vespa/vespalib/xxhash/xxhash.h>
 
 namespace {
@@ -164,4 +166,58 @@ FNET_Transport::Start(FastOS_ThreadPool *pool)
         result &= thread->Start(pool);
     }
     return result;
+}
+
+void
+FNET_Transport::Add(FNET_IOComponent *comp, bool needRef) {
+    comp->Owner()->Add(comp, needRef);
+}
+
+void
+FNET_Transport::EnableRead(FNET_IOComponent *comp, bool needRef) {
+    comp->Owner()->EnableRead(comp, needRef);
+}
+
+void
+FNET_Transport::DisableRead(FNET_IOComponent *comp, bool needRef) {
+    comp->Owner()->DisableRead(comp, needRef);
+}
+
+void
+FNET_Transport::EnableWrite(FNET_IOComponent *comp, bool needRef) {
+    comp->Owner()->EnableWrite(comp, needRef);
+}
+
+void
+FNET_Transport::DisableWrite(FNET_IOComponent *comp, bool needRef) {
+    comp->Owner()->DisableWrite(comp, needRef);
+}
+
+void
+FNET_Transport::Close(FNET_IOComponent *comp, bool needRef) {
+    comp->Owner()->Close(comp, needRef);
+}
+
+FastOS_TimeInterface *
+FNET_Transport::GetTimeSampler() {
+    assert(_threads.size() == 1);
+    return _threads[0]->GetTimeSampler();
+}
+
+bool
+FNET_Transport::InitEventLoop() {
+    assert(_threads.size() == 1);
+    return _threads[0]->InitEventLoop();
+}
+
+bool
+FNET_Transport::EventLoopIteration() {
+    assert(_threads.size() == 1);
+    return _threads[0]->EventLoopIteration();
+}
+
+void
+FNET_Transport::Main() {
+    assert(_threads.size() == 1);
+    _threads[0]->Main();
 }

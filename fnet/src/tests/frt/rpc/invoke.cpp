@@ -4,7 +4,7 @@
 
 //-------------------------------------------------------------
 
-FNET_Mutex   _delayedReturnCntLock;
+FastOS_Mutex   _delayedReturnCntLock;
 uint32_t     _delayedReturnCnt = 0;
 
 uint32_t _phase_simple_cnt   = 0;
@@ -20,10 +20,10 @@ uint32_t _phase_echo_cnt     = 0;
 
 struct LockedReqWait : public FRT_IRequestWait
 {
-    FNET_Cond  _cond;      // cond used to signal req done
+    FastOS_Cond  _cond;      // cond used to signal req done
     bool       _done;      // flag indicating req done
 
-    FNET_Mutex _lockLock;  // lock protecting virtual lock
+    FastOS_Mutex _lockLock;  // lock protecting virtual lock
     bool       _lock;      // virtual lock
     bool       _wasLocked; // was 'locked' when req done
 
@@ -104,25 +104,25 @@ public:
 class EchoTest : public FRT_Invokable
 {
 private:
-    FRT_MemoryTub *_echo_tub;
-    FRT_Values    *_echo_args;
+    vespalib::Stash *_echo_stash;
+    FRT_Values      *_echo_args;
 
     EchoTest(const EchoTest &);
     EchoTest &operator=(const EchoTest &);
 
 public:
-    EchoTest() : _echo_tub(NULL), _echo_args(NULL) {}
+    EchoTest() : _echo_stash(nullptr), _echo_args(nullptr) {}
     ~EchoTest()
     {
         delete _echo_args;
-        delete _echo_tub;
+        delete _echo_stash;
     }
 
     void Init(FRT_Supervisor *supervisor)
     {
-        _echo_tub = new FRT_MemoryTub();
-        _echo_args = new FRT_Values(_echo_tub);
-        assert(_echo_tub != NULL && _echo_args != NULL);
+        _echo_stash = new vespalib::Stash();
+        _echo_args = new FRT_Values(_echo_stash);
+        assert(_echo_stash != nullptr && _echo_args != nullptr);
 
         FRT_ReflectionBuilder rb(supervisor);
         rb.DefineMethod("echo", "*", "*", true,
@@ -261,9 +261,7 @@ public:
             if (delay == 0) {
                 req->Return();
             } else {
-                new (req->GetMemoryTub()) DelayedReturn(_scheduler,
-                        req,
-                        ((double)delay) / 1000.0);
+                req->getStash().create<DelayedReturn>(_scheduler, req, ((double)delay) / 1000.0);
             }
         } else {
 
@@ -272,7 +270,7 @@ public:
                 const char *suffix      = "testFast";
                 uint32_t    suffix_len  = strlen(suffix);
                 uint32_t    name_len    = req->GetMethodNameLen();
-                bool        remote      = req->GetContext()._value.VOIDP != NULL;
+                bool        remote      = req->GetContext()._value.VOIDP != nullptr;
                 bool        instant     = name_len > suffix_len &&
                                           strcmp(req->GetMethodName() + name_len - suffix_len, suffix) == 0;
 
@@ -281,7 +279,7 @@ public:
                     // block, but don't cripple server scheduler...
                     // (NB: in 'real life', instant methods should never block)
 
-                    FastOS_Time *now = _supervisor->GetTransport()->GetTimeSampler();
+                    FastOS_TimeInterface *now = _supervisor->GetTransport()->GetTimeSampler();
                     FNET_Scheduler *scheduler = _supervisor->GetScheduler();
                     assert(scheduler->GetTimeSampler() == now);
 
@@ -335,7 +333,7 @@ enum {
 };
 
 enum {
-    PHASE_NULL = 0,
+    PHASE_nullptr = 0,
     PHASE_SETUP,
     PHASE_SIMPLE,
     PHASE_VOID,
@@ -351,7 +349,7 @@ enum {
 
 const char phase_names[PHASE_ZZZ][32] =
 {
-    "NULL",
+    "nullptr",
     "SETUP",
     "SIMPLE",
     "VOID",
@@ -365,7 +363,7 @@ const char phase_names[PHASE_ZZZ][32] =
 };
 
 enum {
-    TIMING_NULL = 0,
+    TIMING_nullptr = 0,
     TIMING_INSTANT,
     TIMING_NON_INSTANT,
     TIMING_ZZZ
@@ -373,13 +371,13 @@ enum {
 
 const char timing_names[TIMING_ZZZ][32] =
 {
-    "NULL",
+    "nullptr",
     "INSTANT",
     "NON-INSTANT"
 };
 
 enum {
-    HANDLING_NULL = 0,
+    HANDLING_nullptr = 0,
     HANDLING_SYNC,
     HANDLING_ASYNC,
     HANDLING_ZZZ
@@ -387,7 +385,7 @@ enum {
 
 const char handling_names[HANDLING_ZZZ][32] =
 {
-    "NULL",
+    "nullptr",
     "SYNC",
     "ASYNC"
 };
@@ -413,12 +411,12 @@ struct State {
           _rpc(&_server, _client.GetScheduler()),
           _echo(),
           _peerSpec(),
-          _testPhase(PHASE_NULL),
-          _timing(TIMING_NULL),
-          _handling(HANDLING_NULL),
+          _testPhase(PHASE_nullptr),
+          _timing(TIMING_nullptr),
+          _handling(HANDLING_nullptr),
           _timeout(5.0),
-          _target(NULL),
-          _req(NULL)
+          _target(nullptr),
+          _req(nullptr)
     {
         _client.GetTransport()->SetTCPNoDelay(true);
         _server.GetTransport()->SetTCPNoDelay(true);
@@ -432,7 +430,7 @@ struct State {
 
     void NewReq()
     {
-        if (_req != NULL) {
+        if (_req != nullptr) {
             _req->SubRef();
         }
         _req = new FRT_RPCRequest();
@@ -440,15 +438,15 @@ struct State {
 
     void FreeReq()
     {
-        if (_req != NULL) {
+        if (_req != nullptr) {
             _req->SubRef();
         }
-        _req = NULL;
+        _req = nullptr;
     }
 
     void LostReq()
     {
-        _req = NULL;
+        _req = nullptr;
     }
 
     void PrepareTestMethod()
@@ -917,14 +915,14 @@ TEST_F("invoke test", State()) {
         }
     }
     _state->_testPhase  = PHASE_SHUTDOWN;
-    _state->_timing     = TIMING_NULL;
-    _state->_handling   = HANDLING_NULL;
+    _state->_timing     = TIMING_nullptr;
+    _state->_handling   = HANDLING_nullptr;
     EXPECT_TRUE(_state->WaitForDelayedReturnCount(0, 120.0));
     _state->FreeReq();
     _state->_client.ShutDown(true);
     _state->_server.ShutDown(true);
     _state->_target->SubRef();
-    _state->_target = NULL;
+    _state->_target = nullptr;
     EXPECT_TRUE(_delayedReturnCnt == 0);
     EXPECT_TRUE(_phase_simple_cnt == 1);
     EXPECT_TRUE(_phase_void_cnt == 1);

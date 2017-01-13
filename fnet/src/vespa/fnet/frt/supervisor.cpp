@@ -1,8 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/frt/frt.h>
-
+#include "supervisor.h"
+#include "invoker.h"
+#include "target.h"
+#include <vespa/fnet/channel.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/transport_thread.h>
+#include <vespa/fnet/connector.h>
+#include <vespa/fastos/thread.h>
 
 FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport,
                                FastOS_ThreadPool *threadPool)
@@ -11,11 +16,11 @@ FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport,
       _standAlone(false),
       _packetFactory(),
       _packetStreamer(&_packetFactory),
-      _connector(NULL),
+      _connector(nullptr),
       _reflectionManager(),
       _rpcHooks(&_reflectionManager),
       _connHooks(*this),
-      _methodMismatchHook(NULL)
+      _methodMismatchHook(nullptr)
 {
     _rpcHooks.InitRPC(this);
 }
@@ -23,22 +28,22 @@ FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport,
 
 FRT_Supervisor::FRT_Supervisor(uint32_t threadStackSize,
                                uint32_t maxThreads)
-    : _transport(NULL),
-      _threadPool(NULL),
+    : _transport(nullptr),
+      _threadPool(nullptr),
       _standAlone(true),
       _packetFactory(),
       _packetStreamer(&_packetFactory),
-      _connector(NULL),
+      _connector(nullptr),
       _reflectionManager(),
       _rpcHooks(&_reflectionManager),
       _connHooks(*this),
-      _methodMismatchHook(NULL)
+      _methodMismatchHook(nullptr)
 {
     _transport = new FNET_Transport();
-    assert(_transport != NULL);
+    assert(_transport != nullptr);
     if (threadStackSize > 0) {
         _threadPool = new FastOS_ThreadPool(threadStackSize, maxThreads);
-        assert(_threadPool != NULL);
+        assert(_threadPool != nullptr);
     }
     _rpcHooks.InitRPC(this);
 }
@@ -50,20 +55,22 @@ FRT_Supervisor::~FRT_Supervisor()
         delete _transport;
         delete _threadPool;
     }
-    if (_connector != NULL) {
+    if (_connector != nullptr) {
         _connector->SubRef();
     }
     delete _methodMismatchHook;
 }
 
+FNET_Scheduler *
+FRT_Supervisor::GetScheduler() { return _transport->GetScheduler(); }
 
 bool
 FRT_Supervisor::Listen(const char *spec)
 {
-    if (_connector != NULL)
+    if (_connector != nullptr)
         return false;
     _connector = _transport->Listen(spec, &_packetStreamer, this);
-    return (_connector != NULL);
+    return (_connector != nullptr);
 }
 
 
@@ -79,7 +86,7 @@ FRT_Supervisor::Listen(int port)
 uint32_t
 FRT_Supervisor::GetListenPort() const
 {
-    return (_connector != NULL) ? _connector->GetPortNumber() : 0;
+    return (_connector != nullptr) ? _connector->GetPortNumber() : 0;
 }
 
 
@@ -88,8 +95,8 @@ FRT_Supervisor::RunInvocation(FRT_RPCInvoker *invoker)
 {
     // XXX: implement queue with max length + max # threads
 
-    if (_threadPool == NULL ||
-        _threadPool->NewThread(invoker) == NULL)
+    if (_threadPool == nullptr ||
+        _threadPool->NewThread(invoker) == nullptr)
     {
         invoker->GetRequest()->SetError(FRTE_RPC_OVERLOAD,
                                         "Could not start thread");
@@ -114,7 +121,7 @@ FRT_Supervisor::Get2WayTarget(const char *spec, FNET_Context connContext)
     FNET_TransportThread *thread = _transport->select_thread(spec, strlen(spec));
     return new FRT_Target(thread->GetScheduler(),
                           thread->Connect(spec, &_packetStreamer,
-                                  NULL, FNET_Context(),
+                                  nullptr, FNET_Context(),
                                   this, connContext));
 }
 
@@ -131,7 +138,7 @@ FRT_Supervisor::GetTarget(int port)
 FRT_RPCRequest *
 FRT_Supervisor::AllocRPCRequest(FRT_RPCRequest *tradein)
 {
-    if (tradein != NULL) {
+    if (tradein != nullptr) {
         if (tradein->Recycle()) {
             return tradein;
         }
@@ -172,7 +179,7 @@ FRT_Supervisor::SetMethodMismatchHook(FRT_METHOD_PT  method,
     delete _methodMismatchHook;
     _methodMismatchHook = new FRT_Method("frt.hook.methodMismatch", "*", "*",
                                          true, method, handler);
-    assert(_methodMismatchHook != NULL);
+    assert(_methodMismatchHook != nullptr);
 }
 
 
@@ -180,7 +187,7 @@ void
 FRT_Supervisor::InvokeVoid(FNET_Connection *conn,
                            FRT_RPCRequest *req)
 {
-    if (conn != NULL) {
+    if (conn != nullptr) {
         FNET_Channel *ch = conn->OpenChannel();
         ch->Send(req->CreateRequestPacket(false));
         ch->Free();
@@ -199,11 +206,11 @@ FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler,
 {
     uint32_t chid;
     FNET_Packet *packet = req->CreateRequestPacket(true);
-    FRT_RPCAdapter *adapter = new (req->GetMemoryTub()) FRT_RPCAdapter(scheduler.ptr, req, waiter);
-    FNET_Channel *ch = (conn == NULL)? NULL : conn->OpenChannel(adapter, FNET_Context((void *)req), &chid);
+    FRT_RPCAdapter *adapter = &req->getStash().create<FRT_RPCAdapter>(scheduler.ptr, req, waiter);
+    FNET_Channel *ch = (conn == nullptr)? nullptr : conn->OpenChannel(adapter, FNET_Context((void *)req), &chid);
 
     adapter->SetChannel(ch);
-    if (ch == NULL) {
+    if (ch == nullptr) {
         packet->Free();
         req->SetError(FRTE_RPC_CONNECTION);
         adapter->ScheduleNow();
@@ -245,7 +252,7 @@ FRT_Supervisor::InitChannel(FNET_Channel *channel, uint32_t pcode)
         FRT_RPCRequest *req = AllocRPCRequest();
         channel->SetHandler(this);
         channel->SetContext((void *)req);
-        if (req != NULL) {
+        if (req != nullptr) {
             req->SetContext(FNET_Context(channel));
             rc = true;
         }
@@ -259,7 +266,7 @@ FRT_Supervisor::HandlePacket(FNET_Packet *packet, FNET_Context context)
 {
     uint32_t        pcode   = packet->GetPCODE() & 0xffff; // remove flags
     FRT_RPCRequest *req     = (FRT_RPCRequest *) context._value.VOIDP;
-    FRT_RPCInvoker *invoker = NULL;
+    FRT_RPCInvoker *invoker = nullptr;
     bool            noReply = false;
 
     if (pcode == PCODE_FRT_RPC_REQUEST) {
@@ -267,13 +274,13 @@ FRT_Supervisor::HandlePacket(FNET_Packet *packet, FNET_Context context)
     } else {
         req->SetError(FRTE_RPC_BAD_REQUEST);
     }
-    invoker = new (req->GetMemoryTub()) FRT_RPCInvoker(this, req, noReply);
+    invoker = &req->getStash().create<FRT_RPCInvoker>(this, req, noReply);
     packet->Free();
 
     if (req->IsError()) {
 
         if (req->GetErrorCode() != FRTE_RPC_BAD_REQUEST
-            && _methodMismatchHook != NULL)
+            && _methodMismatchHook != nullptr)
         {
             invoker->ForceMethod(_methodMismatchHook);
             return (invoker->Invoke(false)) ?
@@ -303,7 +310,7 @@ bool
 FRT_Supervisor::Start()
 {
     assert(_standAlone);
-    if (_threadPool == NULL)
+    if (_threadPool == nullptr)
         return false;
     return _transport->Start(_threadPool);
 }
@@ -406,7 +413,7 @@ FRT_Supervisor::RPCHooks::RPC_GetMethodInfo(FRT_RPCRequest *req)
     FRT_Values &arg = *req->GetParams();
 
     FRT_Method *info = _reflectionManager->LookupMethod(arg[0]._string._str);
-    if (info != NULL) {
+    if (info != nullptr) {
         info->GetDocumentation(req->GetReturn());
     } else {
         req->SetError(FRTE_RPC_METHOD_FAILED, "No such method");
@@ -419,9 +426,9 @@ FRT_Supervisor::RPCHooks::RPC_GetMethodInfo(FRT_RPCRequest *req)
 
 FRT_Supervisor::ConnHooks::ConnHooks(FRT_Supervisor &parent)
     : _parent(parent),
-      _sessionInitHook(NULL),
-      _sessionDownHook(NULL),
-      _sessionFiniHook(NULL)
+      _sessionInitHook(nullptr),
+      _sessionDownHook(nullptr),
+      _sessionFiniHook(nullptr)
 {
 }
 
@@ -441,7 +448,7 @@ FRT_Supervisor::ConnHooks::SetSessionInitHook(FRT_METHOD_PT  method,
     delete _sessionInitHook;
     _sessionInitHook = new FRT_Method("frt.hook.sessionInit", "", "",
                                       true, method, handler);
-    assert(_sessionInitHook != NULL);
+    assert(_sessionInitHook != nullptr);
 }
 
 
@@ -452,7 +459,7 @@ FRT_Supervisor::ConnHooks::SetSessionDownHook(FRT_METHOD_PT  method,
     delete _sessionDownHook;
     _sessionDownHook = new FRT_Method("frt.hook.sessionDown", "", "",
                                       true, method, handler);
-    assert(_sessionDownHook != NULL);
+    assert(_sessionDownHook != nullptr);
 }
 
 
@@ -463,7 +470,7 @@ FRT_Supervisor::ConnHooks::SetSessionFiniHook(FRT_METHOD_PT  method,
     delete _sessionFiniHook;
     _sessionFiniHook = new FRT_Method("frt.hook.sessionFini", "", "",
                                       true, method, handler);
-    assert(_sessionFiniHook != NULL);
+    assert(_sessionFiniHook != nullptr);
 }
 
 
@@ -473,7 +480,7 @@ FRT_Supervisor::ConnHooks::InvokeHook(FRT_Method *hook,
 {
     FRT_RPCRequest *req = _parent.AllocRPCRequest();
     req->SetMethodName(hook->GetName());
-    (new (req->GetMemoryTub()) FRT_HookInvoker(req, hook, conn))->Invoke();
+    req->getStash().create<FRT_HookInvoker>(req, hook, conn).Invoke();
 }
 
 
@@ -482,7 +489,7 @@ FRT_Supervisor::ConnHooks::InitAdminChannel(FNET_Channel *channel)
 {
     FNET_Connection *conn = channel->GetConnection();
     conn->SetCleanupHandler(this);
-    if (_sessionInitHook != NULL) {
+    if (_sessionInitHook != nullptr) {
         InvokeHook(_sessionInitHook, conn);
     }
     channel->SetHandler(this);
@@ -500,7 +507,7 @@ FRT_Supervisor::ConnHooks::HandlePacket(FNET_Packet *packet,
         return FNET_KEEP_CHANNEL;
     }
     FNET_Channel *ch = context._value.CHANNEL;
-    if (_sessionDownHook != NULL) {
+    if (_sessionDownHook != nullptr) {
         InvokeHook(_sessionDownHook, ch->GetConnection());
     }
     return FNET_FREE_CHANNEL;
@@ -510,7 +517,15 @@ FRT_Supervisor::ConnHooks::HandlePacket(FNET_Packet *packet,
 void
 FRT_Supervisor::ConnHooks::Cleanup(FNET_Connection *conn)
 {
-    if (_sessionFiniHook != NULL) {
+    if (_sessionFiniHook != nullptr) {
         InvokeHook(_sessionFiniHook, conn);
     }
 }
+
+FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_Transport *transport)
+    : ptr(transport->GetScheduler())
+{ }
+
+FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread *transport_thread)
+    : ptr(transport_thread->GetScheduler())
+{ }

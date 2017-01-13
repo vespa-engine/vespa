@@ -2,8 +2,19 @@
 
 #pragma once
 
+#include "scheduler.h"
+#include "config.h"
+#include "task.h"
+#include "packetqueue.h"
+#include "stats.h"
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/socketevent.h>
+#include <vespa/fastos/time.h>
+
+class FNET_Transport;
+class FNET_ControlPacket;
+class FNET_IPacketStreamer;
+class FNET_IServerAdapter;
 
 /**
  * This class represents a transport thread and handles a subset of
@@ -54,7 +65,7 @@ private:
     FastOS_IOEvent          *_events;         // I/O event array
     FNET_PacketQueue_NoLock  _queue;          // outer event queue
     FNET_PacketQueue_NoLock  _myQueue;        // inner event queue
-    FNET_Cond                _cond;           // used for synchronization
+    FastOS_Cond              _cond;           // used for synchronization
     bool                     _started;        // event loop started ?
     bool                     _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
@@ -257,7 +268,7 @@ public:
      * may supply a hostname as well, like this:
      * 'tcp/mycomputer.mydomain:8001'.
      *
-     * @return the connector object, or NULL if listen failed.
+     * @return the connector object, or nullptr if listen failed.
      * @param spec string specifying how and where to listen.
      * @param streamer custom packet streamer.
      * @param serverAdapter object for custom channel creation.
@@ -292,9 +303,9 @@ public:
      * @param connContext application context for the connection.
      **/
     FNET_Connection *Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                             FNET_IPacketHandler *adminHandler = NULL,
+                             FNET_IPacketHandler *adminHandler = nullptr,
                              FNET_Context adminContext = FNET_Context(),
-                             FNET_IServerAdapter *serverAdapter = NULL,
+                             FNET_IServerAdapter *serverAdapter = nullptr,
                              FNET_Context connContext = FNET_Context());
 
 

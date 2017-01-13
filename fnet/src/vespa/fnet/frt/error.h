@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 enum {
     FRTE_NO_ERROR            =   0,
     FRTE_RPC_FIRST           = 100,

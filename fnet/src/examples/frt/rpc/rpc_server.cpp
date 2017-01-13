@@ -14,7 +14,7 @@ private:
     RPCServer &operator=(const RPCServer &);
 
 public:
-    RPCServer() : _supervisor(NULL) {}
+    RPCServer() : _supervisor(nullptr) {}
     void InitRPC(FRT_Supervisor *s);
     void RPC_concat(FRT_RPCRequest *req);
     void RPC_addFloat(FRT_RPCRequest *req);
