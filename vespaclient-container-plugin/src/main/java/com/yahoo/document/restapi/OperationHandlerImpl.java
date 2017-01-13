@@ -41,13 +41,13 @@ public class OperationHandlerImpl implements OperationHandler {
     public static final int VISIT_TIMEOUT_MS = 120000;
     private final DocumentAccess documentAccess;
 
-    private static final class SyncSessionFactory extends ResourceFactory {
+    private static final class SyncSessionFactory extends ResourceFactory<SyncSession> {
         private final DocumentAccess documentAccess;
         SyncSessionFactory(DocumentAccess documentAccess) {
             this.documentAccess = documentAccess;
         }
         @Override
-        public Object create() {
+        public SyncSession create() {
             return documentAccess.createSyncSession(new SyncParameters());
         }
     }
