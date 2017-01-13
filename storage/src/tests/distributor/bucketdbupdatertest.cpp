@@ -69,6 +69,10 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(changed_distributor_set_implies_ownership_transfer);
     CPPUNIT_TEST(unchanged_distributor_set_implies_no_ownership_transfer);
     CPPUNIT_TEST(changed_distribution_config_implies_ownership_transfer);
+    CPPUNIT_TEST(transition_time_tracked_for_single_state_change);
+    CPPUNIT_TEST(transition_time_reset_across_non_preempting_state_changes);
+    CPPUNIT_TEST(transition_time_tracked_for_distribution_config_change);
+    CPPUNIT_TEST(transition_time_tracked_across_preempted_transitions);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -119,6 +123,10 @@ protected:
     void changed_distributor_set_implies_ownership_transfer();
     void unchanged_distributor_set_implies_no_ownership_transfer();
     void changed_distribution_config_implies_ownership_transfer();
+    void transition_time_tracked_for_single_state_change();
+    void transition_time_reset_across_non_preempting_state_changes();
+    void transition_time_tracked_for_distribution_config_change();
+    void transition_time_tracked_across_preempted_transitions();
 
     bool bucketExistsThatHasNode(int bucketCount, uint16_t node) const;
 
@@ -302,11 +310,10 @@ public:
         sortSentMessagesByIndex(_sender, sizeBeforeState);
     }
 
-    void setAndEnableClusterState(const lib::ClusterState& state,
-                                  uint32_t expectedMsgs,
-                                  uint32_t nBuckets) {
-        _sender.clear();
-        setSystemState(state);
+    void completeBucketInfoGathering(const lib::ClusterState& state,
+                                     uint32_t expectedMsgs,
+                                     uint32_t nBuckets = 1)
+    {
         CPPUNIT_ASSERT_EQUAL(size_t(expectedMsgs), _sender.commands.size());
 
         for (uint32_t i = 0; i < _sender.commands.size(); i++) {
@@ -323,6 +330,29 @@ public:
         }
     }
 
+    void setAndEnableClusterState(const lib::ClusterState& state,
+                                  uint32_t expectedMsgs,
+                                  uint32_t nBuckets)
+    {
+        _sender.clear();
+        setSystemState(state);
+        completeBucketInfoGathering(state, expectedMsgs, nBuckets);
+    }
+
+    void completeStateTransitionInSeconds(const std::string& stateStr,
+                                          uint32_t seconds,
+                                          uint32_t expectedMsgs)
+    {
+        _sender.clear();
+        lib::ClusterState state(stateStr);
+        setSystemState(state);
+        getClock().addSecondsToTime(seconds);
+        completeBucketInfoGathering(state, expectedMsgs);
+    }
+
+    uint64_t lastTransitionTimeInMillis() {
+        return uint64_t(getDistributor().getMetrics().stateTransitionTime.getLast());
+    }
 
     void setStorageNodes(uint32_t numStorageNodes) {
         _sender.clear();
@@ -2336,6 +2366,52 @@ BucketDBUpdaterTest::changed_distribution_config_implies_ownership_transfer()
     auto fixture = createPendingStateFixtureForDistributionChange(
             "distributor:2 storage:2");
     CPPUNIT_ASSERT(fixture->state->hasBucketOwnershipTransfer());
+}
+
+void
+BucketDBUpdaterTest::transition_time_tracked_for_single_state_change()
+{
+    completeStateTransitionInSeconds("distributor:2 storage:2", 5, 2);
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(5000), lastTransitionTimeInMillis());
+}
+
+void
+BucketDBUpdaterTest::transition_time_reset_across_non_preempting_state_changes()
+{
+    completeStateTransitionInSeconds("distributor:2 storage:2", 5, 2);
+    completeStateTransitionInSeconds("distributor:2 storage:3", 3, 1);
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(3000), lastTransitionTimeInMillis());
+}
+
+void
+BucketDBUpdaterTest::transition_time_tracked_for_distribution_config_change()
+{
+    lib::ClusterState state("distributor:2 storage:2");
+    setAndEnableClusterState(state, 2, 1);
+
+    _sender.clear();
+    std::string distConfig(getDistConfig3Nodes1Group());
+    setDistribution(distConfig);
+    getClock().addSecondsToTime(4);
+    completeBucketInfoGathering(state, 2);
+    CPPUNIT_ASSERT_EQUAL(uint64_t(4000), lastTransitionTimeInMillis());
+}
+
+void
+BucketDBUpdaterTest::transition_time_tracked_across_preempted_transitions()
+{
+    _sender.clear();
+    lib::ClusterState state("distributor:2 storage:2");
+    setSystemState(state);
+    getClock().addSecondsToTime(5);
+    // Pre-empted with new state here, which will push out the old pending
+    // state and replace it with a new one. We should still count the time
+    // used processing the old state.
+    completeStateTransitionInSeconds("distributor:2 storage:3", 3, 3);
+
+    CPPUNIT_ASSERT_EQUAL(uint64_t(8000), lastTransitionTimeInMillis());
 }
 
 } // distributor

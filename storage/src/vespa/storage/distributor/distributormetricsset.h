@@ -21,6 +21,7 @@ public:
     metrics::LoadMetric<PersistenceOperationMetricSet> stats;
     metrics::LoadMetric<PersistenceOperationMetricSet> multioperations;
     metrics::LoadMetric<VisitorMetricSet> visits;
+    metrics::DoubleAverageMetric stateTransitionTime;
     metrics::DoubleAverageMetric recoveryModeTime;
     metrics::LongValueMetric docsStored;
     metrics::LongValueMetric bytesStored;

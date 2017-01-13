@@ -28,7 +28,8 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
                                  DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _bucketSpaceComponent(owner, bucketSpace, compReg, "Bucket DB Updater"),
-      _sender(sender)
+      _sender(sender),
+      _transitionTimer(_bucketSpaceComponent.getClock())
 {
 }
 
@@ -160,9 +161,29 @@ BucketDBUpdater::removeSuperfluousBuckets(
 }
 
 void
+BucketDBUpdater::ensureTransitionTimerStarted()
+{
+    // Don't overwrite start time if we're already processing a state, as
+    // that will make transition times appear artificially low.
+    if (!hasPendingClusterState()) {
+        _transitionTimer = framework::MilliSecTimer(
+                _bucketSpaceComponent.getClock());
+    }
+}
+
+void
+BucketDBUpdater::completeTransitionTimer()
+{
+    _bucketSpaceComponent.getDistributor().getMetrics()
+            .stateTransitionTime.addValue(_transitionTimer.getElapsedTimeAsDouble());
+}
+
+void
 BucketDBUpdater::storageDistributionChanged(
         const lib::Distribution& distribution)
 {
+    ensureTransitionTimerStarted();
+
     removeSuperfluousBuckets(distribution,
             _bucketSpaceComponent.getClusterState());
 
@@ -204,6 +225,7 @@ BucketDBUpdater::onSetSystemState(
     if (state == oldState) {
         return false;
     }
+    ensureTransitionTimerStarted();
 
     removeSuperfluousBuckets(
             _bucketSpaceComponent.getDistribution(),
@@ -524,6 +546,7 @@ BucketDBUpdater::processCompletedPendingClusterState()
     _pendingClusterState.reset();
     _outdatedNodes.clear();
     sendAllQueuedBucketRechecks();
+    completeTransitionTimer();
 }
 
 void
