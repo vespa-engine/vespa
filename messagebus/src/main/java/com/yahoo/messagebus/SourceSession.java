@@ -8,6 +8,7 @@ import com.yahoo.text.Utf8String;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -16,7 +17,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
-public final class SourceSession implements ReplyHandler {
+public final class SourceSession implements ReplyHandler, MessageBus.SendBlockedMessages {
 
     private static Logger log = Logger.getLogger(SourceSession.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
@@ -30,7 +31,6 @@ public final class SourceSession implements ReplyHandler {
     private volatile int pendingCount = 0;
     private volatile boolean closed = false;
     private final Queue<BlockedMessage> blockedQ = new LinkedList<>();
-    private final Thread blockedMessageSender;
 
     /**
      * <p>The default constructor requires values for all final member variables
@@ -51,9 +51,7 @@ public final class SourceSession implements ReplyHandler {
         replyHandler = params.getReplyHandler();
         throttlePolicy = params.getThrottlePolicy();
         timeout = params.getTimeout();
-        blockedMessageSender = new Thread(this::blockedSendLoop);
-        blockedMessageSender.setDaemon(true);
-        blockedMessageSender.start();
+        mbus.register(this);
     }
 
     @Override
@@ -179,6 +177,14 @@ public final class SourceSession implements ReplyHandler {
         }
         sendBlockedMessages();
         expireStalledBlockedMessages();
+    }
+
+    @Override
+    public boolean trySend() {
+        if (closed) return false;
+        sendBlockedMessages();
+        expireStalledBlockedMessages();
+        return true;
     }
 
     private class BlockedMessage {

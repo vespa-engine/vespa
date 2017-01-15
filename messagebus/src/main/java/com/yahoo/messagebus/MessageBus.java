@@ -2,6 +2,7 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.metrics.MessageBusMetricSet;
 import com.yahoo.messagebus.network.Network;
@@ -13,6 +14,10 @@ import com.yahoo.text.Utf8String;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -65,7 +70,30 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private int maxPendingSize = 0;
     private int pendingCount = 0;
     private int pendingSize = 0;
+    private final ScheduledExecutorService trySendExecutor = new ScheduledThreadPoolExecutor(1);
+    private final ConcurrentHashMap<SendBlockedMessages, Long> blockedSenders = new ConcurrentHashMap<>();
     private MessageBusMetricSet metrics = new MessageBusMetricSet();
+
+    public interface SendBlockedMessages {
+        /**
+         * Do what you want, but dont block.
+         * You will be called regularly until you signal you are done
+         * @return true unless you are done
+         */
+        boolean trySend();
+    }
+
+    public void register(SendBlockedMessages sender) {
+        blockedSenders.put(sender, SystemTimer.INSTANCE.milliTime());
+    }
+
+    private void sendBlockedMessages() {
+        for (SendBlockedMessages sender : blockedSenders.keySet()) {
+            if ( ! sender.trySend() ) {
+                blockedSenders.remove(sender);
+            }
+        }
+    }
 
     /**
      * <p>Convenience constructor that proxies {@link #MessageBus(Network,
@@ -115,6 +143,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         } else {
             resender = null;
         }
+        trySendExecutor.scheduleWithFixedDelay(this::sendBlockedMessages, 0, 10, TimeUnit.MILLISECONDS);
 
         msn.start();
     }
