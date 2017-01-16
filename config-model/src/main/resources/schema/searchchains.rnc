@@ -10,12 +10,10 @@ SearchChains =
         GenericConfig*
    }
 
-# TODO: Cannot have generic config (see bug #4766780)
 OuterSearchChains =
     element searchchains {
         Searcher* &
-        SearchChainInQrservers* &
-        GenericConfig*  # TODO: Remove when we no longer need the QRServersV2 syntax (qrs without clusters)
+        SearchChainInQrservers*
    }
 
 SearchChainInQrservers =
