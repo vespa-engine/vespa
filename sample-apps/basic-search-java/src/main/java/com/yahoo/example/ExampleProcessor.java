@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-//package com.yahoo.example;
+package com.yahoo.example;
 
 import com.google.inject.Inject;
-import com.yahoo.example.ExampleProcessorConfig;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
