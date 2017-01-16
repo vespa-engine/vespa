@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class IndexingValidation extends Processor {
 
@@ -26,11 +26,11 @@ public class IndexingValidation extends Processor {
 
     @Override
     public void process() {
-        VerificationContext ctx = new VerificationContext(new MyAdapter(search));
+        VerificationContext context = new VerificationContext(new MyAdapter(search));
         for (SDField field : search.allFieldsList()) {
             ScriptExpression script = field.getIndexingScript();
             try {
-                script.verify(ctx);
+                script.verify(context);
                 MyConverter converter = new MyConverter();
                 for (StatementExpression exp : script) {
                     converter.convert(exp); // TODO: stop doing this explicitly when visiting a script does not branch
@@ -123,8 +123,7 @@ public class IndexingValidation extends Processor {
                 throw new UnsupportedOperationException();
             }
             if (!fieldType.isAssignableFrom(valueType) &&
-                !fieldType.isAssignableFrom(createCompatType(valueType)))
-            {
+                !fieldType.isAssignableFrom(createCompatType(valueType))) {
                 throw new VerificationException(exp, "Can not assign " + valueType.getName() + " to " + fieldDesc +
                                                      " '" + fieldName + "' which is " + fieldType.getName() + ".");
             }

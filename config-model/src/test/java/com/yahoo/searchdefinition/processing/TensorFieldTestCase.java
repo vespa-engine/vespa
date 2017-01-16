@@ -19,28 +19,28 @@ public class TensorFieldTestCase {
     public void requireThatTensorFieldCannotBeOfCollectionType() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'test', field 'f1': A field with collection type of tensor is not supported. Use simple type 'tensor' instead.");
-        SearchBuilder.createFromString(getSd("field f1 type array<tensor> {}"));
+        SearchBuilder.createFromString(getSd("field f1 type array<tensor(x{})> {}"));
     }
 
     @Test
     public void requireThatTensorFieldCannotBeIndexField() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'test', field 'f1': A field of type 'tensor' cannot be specified as an 'index' field.");
-        SearchBuilder.createFromString(getSd("field f1 type tensor { indexing: index }"));
+        SearchBuilder.createFromString(getSd("field f1 type tensor(x{}) { indexing: index }"));
     }
 
     @Test
     public void requireThatTensorAttributeCannotBeFastSearch() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For search 'test', field 'f1': An attribute of type 'tensor' cannot be 'fast-search'.");
-        SearchBuilder.createFromString(getSd("field f1 type tensor { indexing: attribute \n attribute: fast-search }"));
+        SearchBuilder.createFromString(getSd("field f1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }"));
     }
 
     @Test
     public void requireThatIllegalTensorTypeSpecThrowsException() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For attribute field 'f1': Illegal tensor type spec: Failed parsing element 'invalid' in type spec 'tensor(invalid)'");
-        SearchBuilder.createFromString(getSd("field f1 type tensor { indexing: attribute \n attribute: tensor(invalid) }"));
+        SearchBuilder.createFromString(getSd("field f1 type tensor(x{}) { indexing: attribute \n attribute: tensor(invalid) }"));
     }
 
     private static String getSd(String field) {

@@ -13,7 +13,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import com.yahoo.vespa.objects.Selectable;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class Expression extends Selectable {
 
@@ -30,9 +30,9 @@ public abstract class Expression extends Selectable {
         return adapter.getFullOutput();
     }
 
-    public static DocumentUpdate execute(Expression expression, AdapterFactory factory, DocumentUpdate upd) {
+    public static DocumentUpdate execute(Expression expression, AdapterFactory factory, DocumentUpdate update) {
         DocumentUpdate ret = null;
-        for (UpdateAdapter adapter : factory.newUpdateAdapterList(upd)) {
+        for (UpdateAdapter adapter : factory.newUpdateAdapterList(update)) {
             DocumentUpdate output = adapter.getExpression(expression).execute(adapter);
             if (output == null) {
                 // ignore
@@ -43,7 +43,7 @@ public abstract class Expression extends Selectable {
             }
         }
         if (ret != null) {
-            ret.setCreateIfNonExistent(upd.getCreateIfNonExistent());
+            ret.setCreateIfNonExistent(update.getCreateIfNonExistent());
         }
         return ret;
     }
@@ -57,10 +57,10 @@ public abstract class Expression extends Selectable {
         return execute(new ExecutionContext(adapter));
     }
 
-    public final FieldValue execute(ExecutionContext ctx) {
+    public final FieldValue execute(ExecutionContext context) {
         DataType inputType = requiredInputType();
         if (inputType != null) {
-            FieldValue input = ctx.getValue();
+            FieldValue input = context.getValue();
             if (input == null) {
                 return null;
             }
@@ -69,16 +69,16 @@ public abstract class Expression extends Selectable {
                                                    " input, got " + input.getDataType().getName() + ".");
             }
         }
-        doExecute(ctx);
+        doExecute(context);
         DataType outputType = createdOutputType();
         if (outputType != null) {
-            FieldValue output = ctx.getValue();
+            FieldValue output = context.getValue();
             if (output != null && !outputType.isValueCompatible(output)) {
                 throw new IllegalStateException("Expression '" + this + "' expected " + outputType.getName() +
                                                 " output, got " + output.getDataType().getName() + ".");
             }
         }
-        return ctx.getValue();
+        return context.getValue();
     }
 
     protected abstract void doExecute(ExecutionContext ctx);
@@ -132,12 +132,10 @@ public abstract class Expression extends Selectable {
         return verify(new VerificationContext(adapter));
     }
 
-    public final DataType verify(VerificationContext ctx) {
-//        System.err.println("enter_verify(exp = '" + this + "', req = " + requiredInputType(ctx) +
-//                           ", in = " + ctx.getValue() + ")");
+    public final DataType verify(VerificationContext context) {
         DataType inputType = requiredInputType();
         if (inputType != null) {
-            DataType input = ctx.getValue();
+            DataType input = context.getValue();
             if (input == null) {
                 throw new VerificationException(this, "Expected " + inputType.getName() + " input, got null.");
             }
@@ -149,12 +147,10 @@ public abstract class Expression extends Selectable {
                                                       input.getName() + ".");
             }
         }
-        doVerify(ctx);
+        doVerify(context);
         DataType outputType = createdOutputType();
-//        System.err.println("exit_verify(exp = '" + this + "', req = " + createdOutputType(ctx) +
-//                           ", out = " + ctx.getValue() + ")");
         if (outputType != null) {
-            DataType output = ctx.getValue();
+            DataType output = context.getValue();
             if (output == null) {
                 throw new VerificationException(this, "Expected " + outputType.getName() + " output, got null.");
             }
@@ -166,10 +162,10 @@ public abstract class Expression extends Selectable {
                                                       output.getName() + ".");
             }
         }
-        return ctx.getValue();
+        return context.getValue();
     }
 
-    protected abstract void doVerify(VerificationContext ctx);
+    protected abstract void doVerify(VerificationContext context);
 
     public abstract DataType requiredInputType();
 
@@ -203,12 +199,13 @@ public abstract class Expression extends Selectable {
         }
         return true;
     }
+
     // Convenience For testing
     public static Document execute(Expression expression, Document doc) {
         return expression.execute(new SimpleAdapterFactory(), doc);
     }
-    public static final DocumentUpdate execute(Expression expression, DocumentUpdate upd) {
-        return expression.execute(expression, new SimpleAdapterFactory(), upd);
+    public static final DocumentUpdate execute(Expression expression, DocumentUpdate update) {
+        return expression.execute(expression, new SimpleAdapterFactory(), update);
     }
     public final FieldValue execute() {
         return execute(new ExecutionContext());

@@ -16,7 +16,7 @@ import java.util.HashMap;
  * methods.
  *
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class Identifiable extends Selectable implements Cloneable {
 
@@ -177,7 +177,7 @@ public class Identifiable extends Selectable implements Cloneable {
      *
      * @param id   The class identifier to register with.
      * @param spec The class to register.
-     * @return The identifier argument.
+     * @return the identifier argument.
      */
     protected static int registerClass(int id, Class<? extends Identifiable> spec) {
         if (registry == null) {

@@ -27,8 +27,8 @@ public class ParenthesisExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext ctx) {
-        innerExp.verify(ctx);
+    protected void doVerify(VerificationContext context) {
+        innerExp.verify(context);
     }
 
     @Override

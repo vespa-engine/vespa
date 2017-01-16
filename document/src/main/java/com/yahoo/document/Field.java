@@ -13,7 +13,7 @@ import java.io.Serializable;
  * A name and type. Fields are contained in document types to describe their fields,
  * but is also used to represent name/type pairs which are not part of document types.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  * @author bratseth
  */
 public class Field extends FieldBase implements FieldSet, Comparable, Serializable {

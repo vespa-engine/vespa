@@ -9,6 +9,7 @@ import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
+import static org.junit.Assert.assertEquals;
 
 public class AttributeChangeValidatorTest {
 
@@ -110,8 +111,8 @@ public class AttributeChangeValidatorTest {
     @Test
     public void requireThatChangingTensorTypeOfTensorFieldRequiresRefeed() throws Exception {
         new Fixture(
-                "field f1 type tensor { indexing: attribute \n attribute: tensor(x[100]) }",
-                "field f1 type tensor { indexing: attribute \n attribute: tensor(y[]) }")
+                "field f1 type tensor(x[]) { indexing: attribute \n attribute: tensor(x[100]) }",
+                "field f1 type tensor(y[]) { indexing: attribute \n attribute: tensor(y[]) }")
                 .assertValidation(newRefeedAction(
                         "tensor-type-change",
                         ValidationOverrides.empty(),
@@ -119,10 +120,24 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatNotChangingTensorTypeOfTensorFieldIsOk() throws Exception {
+    public void requireThatCompatibleTensorTypeChangeIsOk() throws Exception {
         new Fixture(
-                "field f1 type tensor { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
-                "field f1 type tensor { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
+                "field f1 type tensor(x[],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
+                "field f1 type tensor(x[200],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
                 .assertValidation();
     }
+
+    @Test
+    public void requireIncompatibleTensorTypeChangeIsNotOk() throws Exception {
+        try {
+            new Fixture(
+                    "field f1 type tensor(x[],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
+                    "field f1 type tensor(x[100],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
+                    .assertValidation();
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 'f1': Incompatible types. Expected tensor(x[100],y[]) for attribute 'f1', got tensor(x[104],y[52]).", e.getMessage());
+        }
+    }
+
 }
