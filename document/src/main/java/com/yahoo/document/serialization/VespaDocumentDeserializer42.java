@@ -115,8 +115,8 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
         // Verify that we have correct version
         version = getShort(null);
         if (version < 6 || version > Document.SERIALIZED_VERSION) {
-            throw new DeserializationException("Unknown version " + version + ", expected " + 
-                                               Document.SERIALIZED_VERSION + ".");
+            throw new DeserializationException(
+                    "Unknown version " + version + ", expected " + Document.SERIALIZED_VERSION + ".");
         }
 
         int dataLength = 0;
@@ -278,7 +278,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
         int encodedTensorLength = buf.getInt1_4Bytes();
         if (encodedTensorLength > 0) {
             byte[] encodedTensor = getBytes(null, encodedTensorLength);
-            value.assign(TypedBinaryFormat.decode(value.getDataType().getTensorType(), encodedTensor));
+            value.assign(TypedBinaryFormat.decode(null, encodedTensor)); // TODO: Pass type
         } else {
             value.clear();
         }
@@ -328,7 +328,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
             fieldIdsAndLengths.add(new Tuple2<>(getInt1_4Bytes(null), getInt2_4_8Bytes(null)));
         }
 
-        // save a reference to the big buffer we're reading from:
+        //save a reference to the big buffer we're reading from:
         GrowableByteBuffer bigBuf = buf;
 
         if (version < 7) {

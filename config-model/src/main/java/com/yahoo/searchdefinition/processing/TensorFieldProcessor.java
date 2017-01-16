@@ -2,9 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
@@ -25,13 +23,12 @@ public class TensorFieldProcessor extends Processor {
     @Override
     public void process() {
         for (SDField field : search.allFieldsList()) {
-            if ( field.getDataType() instanceof TensorDataType ) {
+            if (field.getDataType() == DataType.TENSOR) {
                 warnUseOfTensorFieldAsAttribute(field);
                 validateIndexingScripsForTensorField(field);
                 validateAttributeSettingForTensorField(field);
-            }
-            else if (field.getDataType() instanceof CollectionDataType){
-                validateDataTypeForCollectionField(field);
+            } else {
+                validateDataTypeForField(field);
             }
         }
     }
@@ -58,9 +55,9 @@ public class TensorFieldProcessor extends Processor {
         }
     }
 
-    private void validateDataTypeForCollectionField(SDField field) {
-        if (((CollectionDataType)field.getDataType()).getNestedType() instanceof TensorDataType)
+    private void validateDataTypeForField(SDField field) {
+        if (field.getDataType().getPrimitiveType() == DataType.TENSOR) {
             fail(search, field, "A field with collection type of tensor is not supported. Use simple type 'tensor' instead.");
+        }
     }
-
 }

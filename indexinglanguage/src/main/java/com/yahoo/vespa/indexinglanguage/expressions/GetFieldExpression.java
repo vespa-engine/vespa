@@ -38,8 +38,8 @@ public class GetFieldExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+    protected void doVerify(VerificationContext ctx) {
+        DataType input = ctx.getValue();
         if (!(input instanceof StructuredDataType)) {
             throw new VerificationException(this, "Expected structured input, got " + input.getName() + ".");
         }
@@ -47,7 +47,7 @@ public class GetFieldExpression extends Expression {
         if (field == null) {
             throw new VerificationException(this, "Field '" + fieldName + "' not found.");
         }
-        context.setValue(field.getDataType());
+        ctx.setValue(field.getDataType());
     }
 
     @Override

@@ -12,7 +12,6 @@ import com.yahoo.document.predicate.FeatureRange;
 import com.yahoo.document.predicate.FeatureSet;
 import com.yahoo.document.predicate.Predicate;
 import com.yahoo.document.serialization.DeserializationException;
-import com.yahoo.tensor.TensorType;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
 
@@ -76,8 +75,8 @@ public class VespaXmlFieldReaderTestCase {
 
     @Test
     public void requireThatPutsForTensorFieldsAreNotSupported() throws Exception {
-        assertThrows(new Field("my_tensor", new TensorDataType(TensorType.empty)), "",
-                     "Field 'my_tensor': XML input for fields of type TENSOR is not supported. Please use JSON input instead.");
+        assertThrows(new Field("my_tensor", DataType.TENSOR), "",
+                "Field 'my_tensor': XML input for fields of type TENSOR is not supported. Please use JSON input instead.");
     }
 
     private class MockedReaderFixture {

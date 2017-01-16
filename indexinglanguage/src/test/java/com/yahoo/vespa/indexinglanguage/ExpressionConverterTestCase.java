@@ -264,7 +264,7 @@ public class ExpressionConverterTestCase {
         }
 
         @Override
-        protected void doVerify(VerificationContext context) {
+        protected void doVerify(VerificationContext ctx) {
 
         }
 

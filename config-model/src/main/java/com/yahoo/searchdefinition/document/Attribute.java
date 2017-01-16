@@ -25,6 +25,10 @@ public final class Attribute implements Cloneable, Serializable {
     private Type type;
     private CollectionType collectionType;
 
+    /** True if only the enum information should be read from this attribute
+     *  (i.e. the actual values are not relevant, only which documents have the
+     *   same values) Used for collapsing and unique.
+     */
     private boolean removeIfZero = false;
     private boolean createIfNonExistent = false;
     private boolean enableBitVectors = false;
@@ -37,8 +41,6 @@ public final class Attribute implements Cloneable, Serializable {
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
     private double densePostingListThreshold = BooleanIndexDefinition.DEFAULT_DENSE_POSTING_LIST_THRESHOLD;
-    
-    /** This is set if the type of this is TENSOR */
     private Optional<TensorType> tensorType = Optional.empty();
 
     private boolean isPosition = false;
@@ -102,21 +104,16 @@ public final class Attribute implements Cloneable, Serializable {
     }
 
     /** Creates an attribute with default settings */
-    public Attribute(String name, DataType fieldType) {
-        this(name, convertDataType(fieldType), convertCollectionType(fieldType), convertTensorType(fieldType));
+    public Attribute(String name,DataType fieldType) {
+        this(name,convertDataType(fieldType), convertCollectionType(fieldType));
         setRemoveIfZero(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).removeIfZero() : false);
         setCreateIfNonExistent(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).createIfNonExistent() : false);
     }
 
-    public Attribute(String name, Type type, CollectionType collectionType) {
-        this(name, type, collectionType, Optional.empty());
-    }
-
-    public Attribute(String name, Type type, CollectionType collectionType, Optional<TensorType> tensorType) {
+    public Attribute(String name,Type type, CollectionType collectionType) {
         this.name=name;
         setType(type);
         setCollectionType(collectionType);
-        this.tensorType = tensorType;
     }
 
     /**
@@ -214,42 +211,44 @@ public final class Attribute implements Cloneable, Serializable {
     }
 
     /** Converts to the right attribute type from a field datatype */
-    private static CollectionType convertCollectionType(DataType fieldType) {
+    public static CollectionType convertCollectionType(DataType fieldType) {
         if (fieldType instanceof ArrayDataType) {
             return CollectionType.ARRAY;
         } else if (fieldType instanceof WeightedSetDataType) {
             return CollectionType.WEIGHTEDSET;
-        } else if (fieldType instanceof TensorDataType) {
-            return CollectionType.SINGLE;
         } else if (fieldType instanceof PrimitiveDataType) {
             return CollectionType.SINGLE;
         } else {
             throw new IllegalArgumentException("Field " + fieldType + " not supported in convertCollectionType");
         }
     }
-    
-    private static Optional<TensorType> convertTensorType(DataType fieldType) {
-        if ( ! ( fieldType instanceof TensorDataType)) return Optional.empty();
-        return Optional.of(((TensorDataType)fieldType).getTensorType());
-    }
 
     /** Converts to the right field type from an attribute type */
-    private DataType toDataType(Type attributeType) {
-        switch (attributeType) {
-            case STRING : return DataType.STRING;
-            case INTEGER: return DataType.INT;
-            case LONG: return DataType.LONG;
-            case FLOAT: return DataType.FLOAT;
-            case DOUBLE: return DataType.DOUBLE;
-            case BYTE: return DataType.BYTE;
-            case PREDICATE: return DataType.PREDICATE;
-            case TENSOR: return DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
-            default: throw new IllegalArgumentException("Unknown attribute type " + attributeType);
+    public static DataType convertAttrType(Type attrType) {
+        if (attrType== Type.STRING) {
+            return DataType.STRING;
+        } else if (attrType== Type.INTEGER) {
+            return DataType.INT;
+        } else if (attrType== Type.LONG) {
+            return DataType.LONG;
+        } else if (attrType== Type.FLOAT) {
+            return DataType.FLOAT;
+        } else if (attrType== Type.DOUBLE) {
+            return DataType.DOUBLE;
+        } else if (attrType == Type.BYTE) {
+            return DataType.BYTE;
+        } else if (attrType == Type.PREDICATE) {
+            return DataType.PREDICATE;
+        } else if (attrType == Type.TENSOR) {
+            return DataType.TENSOR;
+        } else {
+            throw new IllegalArgumentException("Don't know which attribute type to " +
+                    "convert " + attrType + " to");
         }
     }
 
     public DataType getDataType() {
-        DataType dataType = toDataType(type);
+        DataType dataType = Attribute.convertAttrType(type);
         if (collectionType.equals(Attribute.CollectionType.ARRAY)) {
             return DataType.getArray(dataType);
         } else if (collectionType.equals(Attribute.CollectionType.WEIGHTEDSET)) {

@@ -44,12 +44,12 @@ public class JoinExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+    protected void doVerify(VerificationContext ctx) {
+        DataType input = ctx.getValue();
         if (!(input instanceof ArrayDataType)) {
             throw new VerificationException(this, "Expected Array input, got " + input.getName() + ".");
         }
-        context.setValue(createdOutputType());
+        ctx.setValue(createdOutputType());
     }
 
     @Override

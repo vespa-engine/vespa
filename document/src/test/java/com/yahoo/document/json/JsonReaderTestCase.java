@@ -19,7 +19,6 @@ import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.StructDataType;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
@@ -38,10 +37,7 @@ import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.tensor.IndexedTensor;
-import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
@@ -70,12 +66,11 @@ import static org.junit.Assert.*;
 /**
  * Basic test of JSON streams to Vespa document instances.
  *
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class JsonReaderTestCase {
-
-    private DocumentTypeManager types;
-    private JsonFactory parserFactory;
+    DocumentTypeManager types;
+    JsonFactory parserFactory;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -138,10 +133,7 @@ public class JsonReaderTestCase {
         }
         {
             DocumentType x = new DocumentType("testtensor");
-            x.addField(new Field("mappedtensorfield", 
-                                 new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
-            x.addField(new Field("indexedtensorfield", 
-                                 new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
+            x.addField(new Field("tensorfield", DataType.TENSOR));
             types.registerDocumentType(x);
         }
         {
@@ -1030,88 +1022,83 @@ public class JsonReaderTestCase {
         Document doc = createPutWithoutTensor().getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals("id:unittest:testtensor::0", doc.getId().toString());
-        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("mappedtensorfield"));
+        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("tensorfield"));
         assertNull(fieldValue);
     }
 
     @Test
     public void testParsingOfEmptyTensor() {
-        assertMappedTensorField("tensor(x{},y{}):{}", createPutWithMappedTensor("{}"));
+        assertTensorField("{}", createPutWithTensor("{}"));
     }
 
     @Test
     public void testParsingOfTensorWithEmptyDimensions() {
-        assertMappedTensorField("tensor(x{},y{}):{}",
-                                createPutWithMappedTensor("{ "
-                                                    + "  \"dimensions\": [] "
-                                                    + "}"));
+        assertTensorField("{}",
+                createPutWithTensor("{ "
+                        + "  \"dimensions\": [] "
+                        + "}"));
     }
 
     @Test
     public void testParsingOfTensorWithEmptyCells() {
-        assertMappedTensorField("tensor(x{},y{}):{}",
-                                createPutWithMappedTensor("{ "
-                                                    + "  \"cells\": [] "
-                                                    + "}"));
+        assertTensorField("{}",
+                createPutWithTensor("{ "
+                        + "  \"cells\": [] "
+                        + "}"));
     }
 
     @Test
-    public void testParsingOfMappedTensorWithCells() {
-        Tensor tensor = assertMappedTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                                createPutWithMappedTensor("{ "
-                                                    + "  \"cells\": [ "
-                                                    + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
-                                                    + "      \"value\": 2.0 }, "
-                                                    + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
-                                                    + "      \"value\": 3.0 } "
-                                                    + "  ]"
-                                                    + "}"));
-        assertTrue(tensor instanceof MappedTensor); // any functional instance is fine
-    }
-
-    @Test
-    public void testParsingOfIndexedTensorWithCells() {
-        Tensor tensor = assertTensorField("{{x:0,y:0}:2.0,{x:1,y:0}:3.0}}",
-                           createPutWithTensor("{ "
-                                                + "  \"cells\": [ "
-                                                + "    { \"address\": { \"x\": \"0\", \"y\": \"0\" }, "
-                                                + "      \"value\": 2.0 }, "
-                                                + "    { \"address\": { \"x\": \"1\", \"y\": \"0\" }, "
-                                                + "      \"value\": 3.0 } "
-                                                + "  ]"
-                                                + "}", "indexedtensorfield"), "indexedtensorfield");
-        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+    public void testParsingOfTensorWithCells() {
+        assertTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
+                createPutWithTensor("{ "
+                        + "  \"cells\": [ "
+                        + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
+                        + "      \"value\": 2.0 }, "
+                        + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
+                        + "      \"value\": 3.0 } "
+                        + "  ]"
+                        + "}"));
     }
 
     @Test
     public void testParsingOfTensorWithSingleCellInDifferentJsonOrder() {
-        assertMappedTensorField("{{x:a,y:b}:2.0}",
-                                createPutWithMappedTensor("{ "
-                                                    + "  \"cells\": [ "
-                                                    + "    { \"value\": 2.0, "
-                                                    + "      \"address\": { \"x\": \"a\", \"y\": \"b\" } } "
-                                                    + "  ]"
-                                                    + "}"));
+        assertTensorField("{{x:a,y:b}:2.0}",
+                createPutWithTensor("{ "
+                        + "  \"cells\": [ "
+                        + "    { \"value\": 2.0, "
+                        + "      \"address\": { \"x\": \"a\", \"y\": \"b\" } } "
+                        + "  ]"
+                        + "}"));
     }
 
     @Test
-    public void testAssignUpdateOfEmptyMappedTensor() {
-        assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithMappedTensor("{}"));
+    public void testParsingOfTensorWithSingleCellWithoutAddress() {
+        assertTensorField("{{}:2.0}",
+                createPutWithTensor("{ "
+                        + "  \"cells\": [ "
+                        + "    { \"value\": 2.0 } "
+                        + "  ]"
+                        + "}"));
     }
 
     @Test
-    public void testAssignUpdateOfEmptyIndexedTensor() {
-        try {
-            assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithTensor("{}", "indexedtensorfield"));
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("An indexed tensor must have a value", "Tensor of type tensor(x[],y[]) has no values", e.getMessage());
-        }
+    public void testParsingOfTensorWithSingleCellWithoutValue() {
+        assertTensorField("{{x:a}:0.0}",
+                createPutWithTensor("{ "
+                        + "  \"cells\": [ "
+                        + "    { \"address\": { \"x\": \"a\" } } "
+                        + "  ]"
+                        + "}"));
+    }
+
+    @Test
+    public void testAssignUpdateOfEmptyTensor() {
+        assertTensorAssignUpdate("{}", createAssignUpdateWithTensor("{}"));
     }
 
     @Test
     public void testAssignUpdateOfNullTensor() {
-        ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithMappedTensor(null)).getValueUpdate(0);
+        ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithTensor(null)).getValueUpdate(0);
         assertTrue(clearUpdate != null);
         assertTrue(clearUpdate.getValue() == null);
     }
@@ -1119,7 +1106,7 @@ public class JsonReaderTestCase {
     @Test
     public void testAssignUpdateOfTensorWithCells() {
         assertTensorAssignUpdate("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                createAssignUpdateWithMappedTensor("{ "
+                createAssignUpdateWithTensor("{ "
                         + "  \"cells\": [ "
                         + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                         + "      \"value\": 2.0 }, "
@@ -1207,13 +1194,10 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
-    private DocumentPut createPutWithMappedTensor(String inputTensor) { 
-        return createPutWithTensor(inputTensor, "mappedtensorfield"); 
-    }
-    private DocumentPut createPutWithTensor(String inputTensor, String tensorFieldName) {
+    private DocumentPut createPutWithTensor(String inputTensor) {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("["
-                        + "  { \"put\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"" + tensorFieldName + "\": "
+                        + "  { \"put\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"tensorfield\": "
                         + inputTensor
                         + "  }}"
                         + "]"));
@@ -1221,27 +1205,20 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
-    private DocumentUpdate createAssignUpdateWithMappedTensor(String inputTensor) {
-        return createAssignUpdateWithTensor(inputTensor, "mappedtensorfield");
-    }
-    private DocumentUpdate createAssignUpdateWithTensor(String inputTensor, String tensorFieldName) {
+    private DocumentUpdate createAssignUpdateWithTensor(String inputTensor) {
         InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("[ { \"update\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"" + tensorFieldName + "\": {"
+                Utf8.toBytes("[ { \"update\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"tensorfield\": {"
                         + "\"assign\": " + (inputTensor != null ? inputTensor : "null") + " } } } ]"));
         JsonReader reader = new JsonReader(types, rawDoc, parserFactory);
         return (DocumentUpdate) reader.next();
     }
 
-    private static Tensor assertMappedTensorField(String expectedTensor, DocumentPut put) {
-        return assertTensorField(expectedTensor, put, "mappedtensorfield");
-    }
-    private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
+    private static void assertTensorField(String expectedTensor, DocumentPut put) {
         final Document doc = put.getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, doc.getId().toString());
-        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField(tensorFieldName));
+        TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("tensorfield"));
         assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
-        return fieldValue.getTensor().get();
     }
 
     private static void assertTensorAssignUpdate(String expectedTensor, DocumentUpdate update) {
@@ -1253,7 +1230,7 @@ public class JsonReaderTestCase {
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {
-        FieldUpdate fieldUpdate = update.getFieldUpdate("mappedtensorfield");
+        FieldUpdate fieldUpdate = update.getFieldUpdate("tensorfield");
         assertEquals(1, fieldUpdate.size());
         return fieldUpdate;
     }

@@ -38,12 +38,12 @@ public class InputExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType val = context.getInputType(this, fieldName);
+    protected void doVerify(VerificationContext ctx) {
+        DataType val = ctx.getInputType(this, fieldName);
         if (val == null) {
             throw new VerificationException(this, "Field '" + fieldName + "' not found.");
         }
-        context.setValue(val);
+        ctx.setValue(val);
     }
 
     @Override

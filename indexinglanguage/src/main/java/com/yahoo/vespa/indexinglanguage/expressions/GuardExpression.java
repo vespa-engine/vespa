@@ -35,8 +35,8 @@ public class GuardExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        exp.verify(context);
+    protected void doVerify(VerificationContext ctx) {
+        exp.verify(ctx);
     }
 
     @Override

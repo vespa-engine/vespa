@@ -2,7 +2,6 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.document.DataType;
@@ -50,25 +49,22 @@ public class ValidateFieldTypes extends Processor {
         DataType seenType = seenFields.get(fieldName);
         if (seenType == null) {
             seenFields.put(fieldName, fieldType);
-        } else if ( ! compatibleTypes(seenType, fieldType)) {
-            throw newProcessException(searchName, fieldName, "Incompatible types. Expected " + 
+        } else if ( ! equalTypes(seenType, fieldType)) {
+            throw newProcessException(searchName, fieldName, "Duplicate field name with different types. Expected " + 
                                                              seenType.getName() + " for " + fieldDesc +
                                                              " '" + fieldName + "', got " + fieldType.getName() + ".");
         }
     }
 
-    private boolean compatibleTypes(DataType seenType, DataType fieldType) {
+    private boolean equalTypes(DataType d1, DataType d2) {
         // legacy tag field type compatibility; probably not needed any more (Oct 2016)
-        if ("tag".equals(seenType.getName())) {
-            return "tag".equals(fieldType.getName()) || "WeightedSet<string>".equals(fieldType.getName());
+        if ("tag".equals(d1.getName())) {
+            return "tag".equals(d2.getName()) || "WeightedSet<string>".equals(d2.getName());
         }
-        if ("tag".equals(fieldType.getName())) {
-            return "tag".equals(seenType.getName()) || "WeightedSet<string>".equals(seenType.getName());
+        if ("tag".equals(d2.getName())) {
+            return "tag".equals(d1.getName()) || "WeightedSet<string>".equals(d1.getName());
         }
-        if (seenType instanceof TensorDataType && fieldType instanceof TensorDataType) {
-            return fieldType.isAssignableFrom(seenType); // TODO: Just do this for all types
-        }
-        return seenType.equals(fieldType);
+        return d1.equals(d2);
     }
     
 }

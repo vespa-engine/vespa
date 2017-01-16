@@ -28,7 +28,7 @@ documenttype[].inherits[].id int
 documenttype[].datatype[].id int
 
 ## This is the type of the datatype.
-documenttype[].datatype[].type enum {STRUCT, ARRAY, WSET, MAP, ANNOTATIONREF, PRIMITIVE, TENSOR}
+documenttype[].datatype[].type enum {STRUCT, ARRAY, WSET, MAP, ANNOTATIONREF, PRIMITIVE}
 
 ## This is the id of the datatype of the element in the array.
 documenttype[].datatype[].array.element.id int default=0
@@ -81,10 +81,6 @@ documenttype[].datatype[].sstruct.field[].id_v6 int
 ## Specify the datatype of the field. Can only be a type defined in document
 ## or one of its inherited document types.
 documenttype[].datatype[].sstruct.field[].datatype int
-
-## Additional, optional type information which can be changed without
-## (necessarily) causing field incompatibility
-documenttype[].datatype[].sstruct.field[].detailedtype string default=""
 
 ## The id of the annotation type.
 documenttype[].annotationtype[].id int

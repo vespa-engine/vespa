@@ -45,26 +45,26 @@ public class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+    protected void doVerify(VerificationContext ctx) {
+        DataType input = ctx.getValue();
         if (input instanceof ArrayDataType || input instanceof WeightedSetDataType) {
-            context.setValue(((CollectionDataType)input).getNestedType()).execute(exp);
+            ctx.setValue(((CollectionDataType)input).getNestedType()).execute(exp);
             if (input instanceof ArrayDataType) {
-                context.setValue(DataType.getArray(context.getValue()));
+                ctx.setValue(DataType.getArray(ctx.getValue()));
             } else {
                 WeightedSetDataType wset = (WeightedSetDataType)input;
-                context.setValue(DataType.getWeightedSet(context.getValue(), wset.createIfNonExistent(), wset.removeIfZero()));
+                ctx.setValue(DataType.getWeightedSet(ctx.getValue(), wset.createIfNonExistent(), wset.removeIfZero()));
             }
         } else if (input instanceof StructDataType) {
             for (Field field : ((StructDataType)input).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType valueType = context.setValue(fieldType).execute(exp).getValue();
+                DataType valueType = ctx.setValue(fieldType).execute(exp).getValue();
                 if (!fieldType.isAssignableFrom(valueType)) {
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
                                                           valueType.getName() + ".");
                 }
             }
-            context.setValue(input);
+            ctx.setValue(input);
         } else {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
                                                   input.getName() + ".");

@@ -2,7 +2,6 @@
 package com.yahoo.document.serialization;
 
 import com.yahoo.document.Document;
-import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.io.GrowableByteBuffer;
 
 import java.io.IOException;

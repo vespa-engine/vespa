@@ -32,6 +32,7 @@ public class VespaDocumentType {
         vespa.add(PositionDataType.INSTANCE);
         vespa.add(DataType.URI);
         vespa.add(DataType.PREDICATE);
+        vespa.add(DataType.TENSOR);
         return vespa;
     }
 

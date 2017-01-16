@@ -14,10 +14,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 /**
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class FieldOfTypeDocumentTestCase extends SearchDefinitionTestCase {
-
     @Test
     public void testDocument() throws IOException, ParseException {
 
@@ -26,7 +25,7 @@ public class FieldOfTypeDocumentTestCase extends SearchDefinitionTestCase {
         sds.add("src/test/examples/fieldoftypedocument.sd");
         DocumentmanagerConfig.Builder value = Deriver.getDocumentManagerConfig(sds);
         assertConfigFile("src/test/examples/fieldoftypedocument.cfg",
-                         new DocumentmanagerConfig(value).toString() + "\n");
+                new DocumentmanagerConfig(value).toString() + "\n");
 
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "raw:" + new DocumentmanagerConfig(value).toString());
