@@ -54,6 +54,7 @@ public:
     bool is_sparse() const;
     bool is_dense() const;
     const std::vector<Dimension> &dimensions() const { return _dimensions; }
+    size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
     bool maybe_tensor() const { return (is_any() || is_tensor()); }
     bool unknown_dimensions() const { return (maybe_tensor() && _dimensions.empty()); }

@@ -13,6 +13,7 @@
 namespace vespalib {
 namespace tensor {
 
+using Value = eval::Value;
 using ErrorValue = eval::ErrorValue;
 using DoubleValue = eval::DoubleValue;
 using TensorValue = eval::TensorValue;
@@ -218,6 +219,15 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
     } else {
         return stash.create<ErrorValue>();
     }
+}
+
+const Value &
+DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
+{
+    (void) a;
+    (void) b;
+    (void) dimension;
+    return stash.create<ErrorValue>();
 }
 
 } // namespace vespalib::tensor

@@ -49,6 +49,10 @@ struct TensorEngine
     virtual const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;
     virtual const Value &map(const UnaryOperation &op, const Tensor &a, Stash &stash) const = 0;
     virtual const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const = 0;
+
+    // havardpe: new API, WIP
+    virtual const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const = 0;
+
     virtual ~TensorEngine() {}
 };
 
