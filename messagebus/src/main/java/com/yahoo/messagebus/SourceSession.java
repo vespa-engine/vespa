@@ -165,23 +165,9 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         return Result.ACCEPTED;
     }
 
-    public void blockedSendLoop()  {
-        while (!closed) {
-            sendBlockedMessages();
-            expireStalledBlockedMessages();
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                return;
-            }
-        }
-        sendBlockedMessages();
-        expireStalledBlockedMessages();
-    }
-
     @Override
     public boolean trySend() {
-        if (closed) return false;
+        if (destroyed.get()) return false;
         sendBlockedMessages();
         expireStalledBlockedMessages();
         return true;
