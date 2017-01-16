@@ -22,26 +22,26 @@ public abstract class DocsumField {
     private static FieldFactory fieldFactory;
 
     private static class FieldFactory {
+
         Map<String, Constructor<? extends DocsumField>> constructors = new HashMap<>();
 
-        void put(final String typename,
-                final Class<? extends DocsumField> fieldClass)
-                throws NoSuchMethodException, SecurityException
-        {
-            final Constructor<? extends DocsumField> constructor = fieldClass.getConstructor(String.class);
+        void put(String typename, Class<? extends DocsumField> fieldClass) 
+                throws NoSuchMethodException, SecurityException {
+            Constructor<? extends DocsumField> constructor = fieldClass.getConstructor(String.class);
             constructors.put(typename, constructor);
         }
 
-        DocsumField create(final String typename, final String name, final LegacyEmulationConfig emulConfig)
+        DocsumField create(String typename, String name, LegacyEmulationConfig emulConfig)
                 throws InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException
-        {
+                       IllegalArgumentException, InvocationTargetException {
             DocsumField f = constructors.get(typename).newInstance(name);
             f.emulConfig = emulConfig;
             return f;
         }
     }
+
     private LegacyEmulationConfig emulConfig;
+
     final LegacyEmulationConfig getEmulConfig() { return emulConfig; }
 
     static {
@@ -61,27 +61,27 @@ public abstract class DocsumField {
             fieldFactory.put("jsonstring", StructDataField.class);
             fieldFactory.put("featuredata", FeatureDataField.class);
             fieldFactory.put("xmlstring", XMLField.class);
-        } catch (final Exception e) {
-            log.log(LogLevel.ERROR,
-                    "Could not initialize docsum decoding properly.", e);
+            fieldFactory.put("tensor", TensorField.class);
+        } catch (Exception e) {
+            log.log(LogLevel.ERROR, "Could not initialize docsum decoding properly.", e);
         }
     }
 
     protected String name;
 
-    protected DocsumField(final String name) {
+    protected DocsumField(String name) {
         this.name = name;
     }
 
     /* for unit test only */
-    static DocsumField create(final String name, final String typename) {
+    static DocsumField create(String name, String typename) {
         return create(name, typename, new LegacyEmulationConfig());
     }
 
-    public static DocsumField create(final String name, final String typename, LegacyEmulationConfig emulConfig) {
+    public static DocsumField create(String name, String typename, LegacyEmulationConfig emulConfig) {
         try {
             return fieldFactory.create(typename, name, emulConfig);
-        } catch (final Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("Unknown field type '" + typename + "'", e);
         }
     }
@@ -90,7 +90,7 @@ public abstract class DocsumField {
         return name;
     }
 
-    public boolean isCompressed(final ByteBuffer b) {
+    public boolean isCompressed(ByteBuffer b) {
         return false;
     }
 
@@ -116,4 +116,5 @@ public abstract class DocsumField {
      * for this field.
      **/
     public abstract Object convert(Inspector value);
+
 }

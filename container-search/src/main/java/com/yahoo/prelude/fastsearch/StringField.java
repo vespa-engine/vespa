@@ -13,9 +13,10 @@ import com.yahoo.data.access.Inspector;
 
 
 /**
- * @author <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
+ * @author Bjørn Borud
  */
 public class StringField extends DocsumField implements VariableLengthField {
+
     public StringField(String name) {
         super(name);
     }
@@ -59,4 +60,5 @@ public class StringField extends DocsumField implements VariableLengthField {
     public Object convert(Inspector value) {
         return value.asString("");
     }
+
 }

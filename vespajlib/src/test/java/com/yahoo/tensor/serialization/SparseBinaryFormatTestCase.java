@@ -2,10 +2,12 @@
 package com.yahoo.tensor.serialization;
 
 import com.google.common.collect.Sets;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -46,7 +48,8 @@ public class SparseBinaryFormatTestCase {
 
     private void assertSerialization(Tensor tensor) {
         byte[] encodedTensor = TypedBinaryFormat.encode(tensor);
-        Tensor decodedTensor = TypedBinaryFormat.decode(tensor.type(), encodedTensor);
+        Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(tensor.type()), 
+                                                        GrowableByteBuffer.wrap(encodedTensor));
         assertEquals(tensor, decodedTensor);
     }
 

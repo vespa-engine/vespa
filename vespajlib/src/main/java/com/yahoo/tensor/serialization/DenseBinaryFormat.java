@@ -6,9 +6,9 @@ import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.text.Utf8;
 
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * Implementation of a dense binary format for a tensor on the form:
@@ -46,14 +46,23 @@ public class DenseBinaryFormat implements BinaryFormat {
     }
 
     @Override
-    public Tensor decode(TensorType type, GrowableByteBuffer buffer) {
-        DimensionSizes sizes = decodeDimensionSizes(type, buffer);        
+    public Tensor decode(Optional<TensorType> optionalType, GrowableByteBuffer buffer) {
+        TensorType type;
+        DimensionSizes sizes;
+        if (optionalType.isPresent()) {
+            type = optionalType.get();
+            sizes = decodeAndValidateDimensionSizes(type, buffer);
+        }
+        else {
+            type = decodeType(buffer);
+            sizes = sizesFromType(type);
+        }
         Tensor.Builder builder = Tensor.Builder.of(type, sizes);
         decodeCells(sizes, buffer, (IndexedTensor.BoundBuilder)builder);
         return builder.build();
     }
 
-    private DimensionSizes decodeDimensionSizes(TensorType type, GrowableByteBuffer buffer) {
+    private DimensionSizes decodeAndValidateDimensionSizes(TensorType type, GrowableByteBuffer buffer) {
         int dimensionCount = buffer.getInt1_4Bytes();
         if (type.dimensions().size() != dimensionCount)
             throw new IllegalArgumentException("Type/instance mismatch: Instance has " + dimensionCount + 
@@ -76,6 +85,22 @@ public class DenseBinaryFormat implements BinaryFormat {
 
             builder.set(i, encodedSize);
         }
+        return builder.build();
+    }
+
+    private TensorType decodeType(GrowableByteBuffer buffer) {
+        int dimensionCount = buffer.getInt1_4Bytes();
+        TensorType.Builder builder = new TensorType.Builder();
+        for (int i = 0; i < dimensionCount; i++)
+            builder.indexed(buffer.getUtf8String(), buffer.getInt1_4Bytes());
+        return builder.build();
+    }
+
+    /** Returns dimension sizes from a type consisting of fully specified, indexed dimensions only */
+    private DimensionSizes sizesFromType(TensorType type) {
+        DimensionSizes.Builder builder = new DimensionSizes.Builder(type.dimensions().size());
+        for (int i = 0; i < type.dimensions().size(); i++)
+            builder.set(i, type.dimensions().get(i).size().get());
         return builder.build();
     }
 

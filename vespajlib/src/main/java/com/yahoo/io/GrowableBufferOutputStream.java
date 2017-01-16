@@ -9,13 +9,11 @@ import java.util.LinkedList;
 import java.util.Iterator;
 import java.nio.ByteBuffer;
 
-
 /**
- *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjørn Borud
  */
 public class GrowableBufferOutputStream extends OutputStream {
-//    private static final int MINIMUM_BUFFERSIZE = (64 * 1024);
+
     private ByteBuffer lastBuffer;
     private ByteBuffer directBuffer;
     private LinkedList<ByteBuffer> bufferList = new LinkedList<>();

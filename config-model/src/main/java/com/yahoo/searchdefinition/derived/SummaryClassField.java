@@ -38,7 +38,7 @@ public class SummaryClassField {
 
         private String name;
 
-        private Type(String name) {
+        Type(String name) {
             this.name = name;
         }
 

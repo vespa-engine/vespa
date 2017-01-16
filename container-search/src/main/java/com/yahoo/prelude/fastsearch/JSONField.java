@@ -103,9 +103,7 @@ public class JSONField extends DocsumField implements VariableLengthField {
         }
     }
 
-    private static class ArrConv extends CompatibilityConverter
-        implements ArrayTraverser
-    {
+    private static class ArrConv extends CompatibilityConverter implements ArrayTraverser {
         @Override
         public void entry(int idx, Inspector value) {
             target.add(stringify(value));

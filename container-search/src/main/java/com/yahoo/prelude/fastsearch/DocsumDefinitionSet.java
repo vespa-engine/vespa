@@ -23,6 +23,7 @@ import java.util.logging.Logger;
  * @author Bjørn Borud
  */
 public final class DocsumDefinitionSet {
+
     public static final int SLIME_MAGIC_ID = 0x55555555;
     private final static Logger log = Logger.getLogger(DocsumDefinitionSet.class.getName());
 
@@ -73,6 +74,7 @@ public final class DocsumDefinitionSet {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         long docsumClassId = buffer.getInt();
         if (docsumClassId != SLIME_MAGIC_ID) {
+            // TODO: Not used, remove   - bratseth 2017-01-016
             DocsumDefinition docsumDefinition = lookupDocsum(docsumClassId);
             Docsum docsum = new Docsum(docsumDefinition, data);
             hit.addSummary(docsum);

@@ -279,10 +279,7 @@ public class FastHit extends Hit {
         for (DocsumField field : docsumDef.getFields()) {
             String fieldName = field.getName();
             if (value.type() == Type.STRING &&
-                (field instanceof LongstringField ||
-                 field instanceof StringField ||
-                 field instanceof XMLField))
-            {
+                (field instanceof LongstringField || field instanceof StringField || field instanceof XMLField)) {
                 setDocsumFieldIfNotPresent(fieldName, new LazyString(field, value));
             } else {
                 Inspector f = value.field(fieldName);
