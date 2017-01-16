@@ -173,6 +173,7 @@ install(FILES
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.server.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.servlet-paths.def
     jdisc_jmx_metrics/src/main/resources/configdefinitions/jmx-metric.def
+    jdisc_maven_archetype_component/src/main/resources/archetype-resources/src/main/resources/configdefinitions/example.def
     logd/src/main/resources/configdefinitions/logd.def
     messagebus/src/main/config/messagebus.def
     metrics/src/vespa/metrics/metricsmanager.def

@@ -1,0 +1,7 @@
+{
+  "name": "${artifactId}",
+  "version": "${version}",
+  "dependencies": {
+    "connect": ">=0.2.4"
+  },
+}
