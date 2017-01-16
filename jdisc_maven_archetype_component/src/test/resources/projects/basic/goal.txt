@@ -1,0 +1,1 @@
+Create plugins for vespa container(e.g. searcher, docproc, handler).
