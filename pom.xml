@@ -989,7 +989,7 @@
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>6.9.13.6</version>
+                <version>6.10</version>
             </dependency>
             <dependency>
                 <groupId>org.twdata.maven</groupId>
