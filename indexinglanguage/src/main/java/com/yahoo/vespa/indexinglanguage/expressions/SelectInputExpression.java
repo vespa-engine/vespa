@@ -42,16 +42,16 @@ public class SelectInputExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+    protected void doVerify(VerificationContext ctx) {
+        DataType input = ctx.getValue();
         for (Pair<String, Expression> entry : cases) {
-            DataType val = context.getInputType(this, entry.getFirst());
+            DataType val = ctx.getInputType(this, entry.getFirst());
             if (val == null) {
                 throw new VerificationException(this, "Field '" + entry.getFirst() + "' not found.");
             }
-            context.setValue(val).execute(entry.getSecond());
+            ctx.setValue(val).execute(entry.getSecond());
         }
-        context.setValue(input);
+        ctx.setValue(input);
     }
 
     @Override

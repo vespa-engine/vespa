@@ -28,6 +28,7 @@ public class DenseBinaryFormatTestCase {
     }
 
     @Test
+    @Ignore // TODO: Activate when encoding in this format is activated
     public void requireThatSerializationFormatDoNotChange() {
         byte[] encodedTensor = new byte[]{2, // binary format type
                                           2, // dimension count

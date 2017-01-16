@@ -30,8 +30,8 @@ public class SetValueExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setValue(value.getDataType());
+    protected void doVerify(VerificationContext ctx) {
+        ctx.setValue(value.getDataType());
     }
 
     @Override

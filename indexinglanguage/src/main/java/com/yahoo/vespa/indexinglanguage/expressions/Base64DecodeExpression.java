@@ -33,8 +33,8 @@ public class Base64DecodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+    protected void doVerify(VerificationContext ctx) {
+        ctx.setValue(createdOutputType());
     }
 
     @Override

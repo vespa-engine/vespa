@@ -9,17 +9,16 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @since 5.1.10
  */
 public class TemporaryDataTypeTestCase {
-
     @Test
     public void requireNulls() {
-        TemporaryDataType type = new TemporaryDataType(0, "");
+        TemporaryDataType type = new TemporaryDataType(0);
         assertThat(type.createFieldValue(new Object()), nullValue());
         assertThat(type.createFieldValue(), nullValue());
         assertThat(type.getValueClass(), nullValue());
         assertThat(type.isValueCompatible(new StringFieldValue("")), is(false));
     }
-
 }

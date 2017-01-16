@@ -31,7 +31,7 @@ public class EchoExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
+    protected void doVerify(VerificationContext ctx) {
         // empty
     }
 

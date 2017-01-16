@@ -95,13 +95,13 @@ public class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
-        context.setValue(input).execute(lhs);
-        context.setValue(input).execute(rhs);
-        context.setValue(input).execute(ifTrue);
-        context.setValue(input).execute(ifFalse);
-        context.setValue(input);
+    protected void doVerify(VerificationContext ctx) {
+        DataType input = ctx.getValue();
+        ctx.setValue(input).execute(lhs);
+        ctx.setValue(input).execute(rhs);
+        ctx.setValue(input).execute(ifTrue);
+        ctx.setValue(input).execute(ifFalse);
+        ctx.setValue(input);
     }
 
     @Override

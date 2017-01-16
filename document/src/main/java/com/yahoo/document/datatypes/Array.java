@@ -16,7 +16,7 @@ import java.util.*;
 /**
  * FieldValue which encapsulates a Array value
  *
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public final class Array<T extends FieldValue> extends CollectionFieldValue<T> implements List<T> {
 

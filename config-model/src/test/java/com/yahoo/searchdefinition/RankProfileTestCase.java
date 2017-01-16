@@ -102,9 +102,9 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         SearchBuilder builder = new SearchBuilder(registry);
         builder.importString("search test {\n" +
                 "  document test { \n" +
-                "    field a type tensor(x[]) { indexing: attribute \n attribute: tensor(x[10]) }\n" +
-                "    field b type tensor(y{}) { indexing: attribute \n attribute: tensor(y{}) }\n" +
-                "    field c type tensor(x[]) { indexing: attribute }\n" +
+                "    field a type tensor { indexing: attribute \n attribute: tensor(x[10]) }\n" +
+                "    field b type tensor { indexing: attribute \n attribute: tensor(y{}) }\n" +
+                "    field c type tensor { indexing: attribute }\n" +
                 "  }\n" +
                 "  rank-profile p1 {}\n" +
                 "  rank-profile p2 {}\n" +
@@ -123,7 +123,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         RawRankProfile rawProfile = new RawRankProfile(profile, new AttributeFields(search));
         assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.a").get());
         assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.attribute.b").get());
-        assertEquals("tensor(x[])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.c").get());
+        assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.attribute.c").isPresent());
     }
 
     @Test

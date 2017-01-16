@@ -42,11 +42,11 @@ public class OptimizePredicateExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        checkVariable(context, "arity", DataType.INT, true);
-        checkVariable(context, "lower_bound", DataType.LONG, false);
-        checkVariable(context, "upper_bound", DataType.LONG, false);
-        context.setValue(DataType.PREDICATE);
+    protected void doVerify(VerificationContext ctx) {
+        checkVariable(ctx, "arity", DataType.INT, true);
+        checkVariable(ctx, "lower_bound", DataType.LONG, false);
+        checkVariable(ctx, "upper_bound", DataType.LONG, false);
+        ctx.setValue(DataType.PREDICATE);
     }
 
     private void checkVariable(VerificationContext ctx, String var, DataType type, boolean required) {

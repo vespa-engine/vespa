@@ -26,7 +26,7 @@ import java.util.Map;
  * be removed soon.
  *
  * @author bratseth
- * @author Einar M R Rosenvinge
+ * @author <a href="einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class Document extends StructuredFieldValue {
 
@@ -267,9 +267,7 @@ public class Document extends StructuredFieldValue {
     }
 
     /** Returns true if the argument is a document which has the same set of values */
-    @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
         if (!(o instanceof Document)) return false;
         Document other = (Document) o;
         return (super.equals(o) && docId.equals(other.docId) &&
@@ -396,5 +394,4 @@ public class Document extends StructuredFieldValue {
         comp = body.compareTo(otherValue.body);
         return comp;
     }
-
 }

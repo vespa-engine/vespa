@@ -41,12 +41,12 @@ public class ScriptExpression extends ExpressionList<StatementExpression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+    protected void doVerify(VerificationContext ctx) {
+        DataType input = ctx.getValue();
         for (Expression exp : this) {
-            context.setValue(input).execute(exp);
+            ctx.setValue(input).execute(exp);
         }
-        context.setValue(input);
+        ctx.setValue(input);
     }
 
     @Override

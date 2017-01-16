@@ -25,14 +25,14 @@ public class SetVarExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType next = context.getValue();
-        DataType prev = context.getVariable(varName);
+    protected void doVerify(VerificationContext ctx) {
+        DataType next = ctx.getValue();
+        DataType prev = ctx.getVariable(varName);
         if (prev != null && !prev.equals(next)) {
             throw new VerificationException(this, "Attempting to assign conflicting types to variable '" + varName +
                                                   "', " + prev.getName() + " vs " + next.getName() + ".");
         }
-        context.setVariable(varName, next);
+        ctx.setVariable(varName, next);
     }
 
     @Override
