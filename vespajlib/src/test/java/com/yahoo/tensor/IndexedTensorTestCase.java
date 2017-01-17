@@ -3,6 +3,7 @@ package com.yahoo.tensor;
 import junit.framework.TestCase;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -61,6 +62,15 @@ public class IndexedTensorTestCase {
                                                   .indexed("y")
                                                   .indexed("z").build();
         assertBuildingVWXYZ(type);
+    }
+    
+    @Test
+    public void testUnderspecifiedBuilding() {
+        TensorType type = new TensorType.Builder().indexed("x").build();
+        Tensor.Builder builder = Tensor.Builder.of(type);
+        builder.cell(47.0, 98);
+        Tensor tensor = builder.build();
+        assertEquals(47.0, tensor.sum(Collections.singletonList("x")).asDouble(), 0.000001);
     }
     
     private void assertBuildingVWXYZ(TensorType type) {
