@@ -200,7 +200,8 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withUlimit("nofile", 16384, 16384)
                     .withUlimit("nproc", 409600, 409600)
                     .withUlimit("core", -1, -1)
-                    .withAddCapability("SYS_NICE"); // Needed for running secret-agent
+                    .withAddCapability("SYS_NICE") // Needed for running secret-agent
+                    .withAddCapability("SYS_PTRACE"); // Needed for gcore, pstack etc.
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
