@@ -13,15 +13,10 @@ import com.yahoo.searchdefinition.processing.BuiltInFieldSets;
 import java.util.*;
 
 /**
- * TODO: What is this and why?
- *
  * @author baldersheim
  */
 public final class NewDocumentType extends StructuredDataType implements DataTypeCollection {
 
-    /**
-     * TODO: What is this and why?
-     */
     public static final class Name {
 
         // TODO: privatize

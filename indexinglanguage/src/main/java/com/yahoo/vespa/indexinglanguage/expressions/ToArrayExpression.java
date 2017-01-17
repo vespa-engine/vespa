@@ -26,8 +26,8 @@ public class ToArrayExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext ctx) {
-        ctx.setValue(DataType.getArray(ctx.getValue()));
+    protected void doVerify(VerificationContext context) {
+        context.setValue(DataType.getArray(context.getValue()));
     }
 
     @Override

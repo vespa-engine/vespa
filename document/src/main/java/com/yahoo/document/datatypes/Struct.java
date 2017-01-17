@@ -215,7 +215,6 @@ public class Struct extends StructuredFieldValue {
         if (!super.equals(o)) return false;
 
         Struct struct = (Struct) o;
-
         return values.equals(struct.values);
     }
 
@@ -388,4 +387,5 @@ public class Struct extends StructuredFieldValue {
         }
         return fieldType.cast(fieldValue);
     }
+
 }

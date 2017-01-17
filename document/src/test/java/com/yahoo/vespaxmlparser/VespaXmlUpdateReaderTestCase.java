@@ -7,7 +7,9 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.serialization.DeserializationException;
+import com.yahoo.tensor.TensorType;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -215,8 +217,8 @@ public class VespaXmlUpdateReaderTestCase {
 
     @Test
     public void requireThatUpdatesForTensorFieldsAreNotSupported() throws Exception {
-        assertThrows(new Field("my_tensor", DataType.TENSOR), "<assign field='my_tensor'></assign>",
-                "Field 'my_tensor': XML input for fields of type TENSOR is not supported. Please use JSON input instead.");
+        assertThrows(new Field("my_tensor", new TensorDataType(TensorType.empty)), "<assign field='my_tensor'></assign>",
+                     "Field 'my_tensor': XML input for fields of type TENSOR is not supported. Please use JSON input instead.");
     }
 
     private static void assertThrows(Field field, String fieldXml, String expected) throws Exception {
