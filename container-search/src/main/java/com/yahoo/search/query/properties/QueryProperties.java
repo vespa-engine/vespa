@@ -71,8 +71,8 @@ public class QueryProperties extends Properties {
 
     @SuppressWarnings("deprecation")
     @Override
-    public Object get(final CompoundName key, Map<String,String> context,
-                                com.yahoo.processing.request.Properties substitution) {
+    public Object get(CompoundName key, Map<String,String> context,
+                      com.yahoo.processing.request.Properties substitution) {
         if (key.size()==2 && key.first().equals(Model.MODEL)) {
             if (key.last().equals(Model.QUERY_STRING)) return query.getModel().getQueryString();
             if (key.last().equals(Model.TYPE)) return query.getModel().getType();
@@ -145,7 +145,7 @@ public class QueryProperties extends Properties {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void set(final CompoundName key,Object value,Map<String,String> context) {
+    public void set(CompoundName key, Object value, Map<String,String> context) {
         // Note: The defaults here are never used
         try {
             if (key.size()==2 && key.first().equals(Model.MODEL)) {

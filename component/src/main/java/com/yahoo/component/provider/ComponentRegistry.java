@@ -38,7 +38,7 @@ public class ComponentRegistry<COMPONENT> {
     private Map<ComponentId, COMPONENT> componentsById =new LinkedHashMap<>();
 
     /** True when this cannot be changed any more */
-    private boolean frozen=false;
+    private boolean frozen = false;
 
     /**
      * Freezes this registry to prevent further changes. Override this to freeze internal data
