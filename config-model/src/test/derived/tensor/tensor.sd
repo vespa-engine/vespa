@@ -12,7 +12,7 @@ search tensor {
       indexing: attribute | summary
     }
     field f4 type tensor(x[],y[]) {
-      indexing: attribute
+      indexing: attribute | summary
       attribute: tensor(x[10],y[20])
     }
   }
