@@ -9,6 +9,7 @@ import com.yahoo.tensor.TensorType;
  * @author arnej
  */
 public class RankingConstant {
+
     /** The search definition-unique name of this constant */
     private final String name;
     private TensorType tensorType = null;
@@ -45,4 +46,5 @@ public class RankingConstant {
          .append("'");
         return b.toString();
     }
+
 }

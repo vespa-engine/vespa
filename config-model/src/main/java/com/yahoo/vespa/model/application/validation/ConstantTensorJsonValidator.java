@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  * @author Vegard Sjonfjell
  */
 public class ConstantTensorJsonValidator {
+
     private static final String FIELD_CELLS = "cells";
     private static final String FIELD_ADDRESS = "address";
     private static final String FIELD_VALUE = "value";
@@ -43,7 +44,7 @@ public class ConstantTensorJsonValidator {
     }
 
     @FunctionalInterface
-    private static interface SubroutineThrowingIOException {
+    private interface SubroutineThrowingIOException {
         void invoke() throws IOException;
     }
 
@@ -210,4 +211,5 @@ public class ConstantTensorJsonValidator {
             throw new InvalidConstantTensor(parser, String.format("Expected field name \"%s\", got \"%s\"", wantedFieldName, actualFieldName));
         }
     }
+
 }
