@@ -9,6 +9,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.inject.Inject;
 import com.yahoo.container.protect.ProcessTerminator;
@@ -141,6 +143,8 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
         volatile long lastThreadReturnTimeMillis = System.currentTimeMillis();
+        AtomicLong startedCount = new AtomicLong(0);
+        AtomicLong completedCount = new AtomicLong(0);
 
         public WorkerCompletionTimingThreadPoolExecutor(int corePoolSize,
                                                         int maximumPoolSize,
@@ -152,10 +156,22 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         }
 
         @Override
-        protected void afterExecute(Runnable r, Throwable t) {
-            lastThreadReturnTimeMillis = System.currentTimeMillis();
+        protected void beforeExecute(Thread t, Runnable r) {
+            super.beforeExecute(t, r);
+            startedCount.incrementAndGet();
         }
 
+        @Override
+        protected void afterExecute(Runnable r, Throwable t) {
+            super.afterExecute(r, t);
+            lastThreadReturnTimeMillis = System.currentTimeMillis();
+            completedCount.decrementAndGet();
+        }
+
+        @Override
+        public int getActiveCount() {
+            return (int)(startedCount.get() - completedCount.get());
+        }
     }
 
 }
