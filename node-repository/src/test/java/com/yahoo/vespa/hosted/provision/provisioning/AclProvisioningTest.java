@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.createConfig;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author mpolden
@@ -116,6 +118,34 @@ public class AclProvisioningTest {
     }
 
     @Test
+    public void trusted_nodes_for_docker_host() {
+        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+
+        // Populate repo
+        List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
+        Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
+        List<Node> dockerNodes = tester.makeReadyDockerNodes(5, "docker1",
+                dockerHostNodeUnderTest.hostname());
+
+        List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest);
+
+        // First ACL is for the Docker host itself
+        assertAcls(Arrays.asList(dockerHostNodes, configServers), acls.get(0));
+
+        // ... the rest are for each container on the Docker host
+        assertFalse(dockerNodes.isEmpty());
+        for (Node dockerNode : dockerNodes) {
+            NodeAcl nodeAcl = acls.stream()
+                    .filter(acl -> acl.node().equals(dockerNode))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + dockerNode.hostname()));
+            assertEquals(dockerHostNodeUnderTest.hostname(), dockerNode.parentHostname().get());
+            // Since the containers are unallocated, they only trust config servers
+            assertAcls(Collections.singletonList(configServers), nodeAcl);
+        }
+    }
+
+    @Test
     public void resolves_hostnames_from_connection_spec() {
         setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
         nameResolver.addRecord("cfg1", "127.0.0.1")
@@ -143,6 +173,10 @@ public class AclProvisioningTest {
     private List<Node> setConfigServers(String connectionSpec) {
         curator.setConnectionSpec(connectionSpec);
         return tester.nodeRepository().getConfigNodes();
+    }
+
+    private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {
+        assertAcls(expected, Collections.singletonList(actual));
     }
 
     private static void assertAcls(List<List<Node>> expected, List<NodeAcl> actual) {

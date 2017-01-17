@@ -49,6 +49,7 @@ public class NodeAclResponse extends HttpResponse {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
             object.setString("ipAddress", ipAddress);
+            object.setString("trustedBy", acl.node().hostname());
         })));
     }
 

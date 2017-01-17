@@ -123,6 +123,21 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
         return zkClient.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
+
+    /**
+     * Finds and returns all nodes that are children of the given parent node
+     *
+     * @param parent Parent node
+     * @return List of child nodes
+     */
+    public List<Node> getNodes(Node parent) {
+        return zkClient.getNodes().stream()
+                .filter(node -> node.parentHostname()
+                        .map(parentHostname -> parentHostname.equals(parent.hostname()))
+                        .orElse(false))
+                .collect(Collectors.toList());
+    }
+
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return zkClient.getNodes(id, inState); }
     public List<Node> getInactive() { return zkClient.getNodes(Node.State.inactive); }
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
@@ -154,6 +169,12 @@ public class NodeRepository extends AbstractComponent {
                 trustedNodes.addAll(getNodes(NodeType.proxy));
                 break;
 
+            case host:
+                // Docker hosts trust all config servers and all Docker hosts
+                trustedNodes.addAll(getConfigNodes());
+                trustedNodes.addAll(getNodes(NodeType.host));
+                break;
+
             default:
                 throw new IllegalArgumentException(
                         String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
@@ -175,6 +196,13 @@ public class NodeRepository extends AbstractComponent {
     public List<NodeAcl> getNodeAcls(Node node) {
         final List<NodeAcl> nodeAcls = new ArrayList<>();
         nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
+
+        // If a host node requests ACLs, we include ACLs for children of the node (e.g. containers on Docker hosts)
+        if (node.type() == NodeType.host) {
+            final List<Node> children = getNodes(node);
+            children.forEach(child -> nodeAcls.add(new NodeAcl(child, getTrustedNodes(child))));
+        }
+
         return Collections.unmodifiableList(nodeAcls);
     }
 

@@ -252,9 +252,9 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved foo.yahoo.com to ready\"}");
         Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}" +
                 "]}");
         assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/" + hostname), responsePattern);
     }
@@ -262,9 +262,9 @@ public class RestApiTest {
     @Test
     public void acl_request_by_config_server() throws Exception {
         Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}" +
                 "]}");
         assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
     }
@@ -277,11 +277,11 @@ public class RestApiTest {
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}," +
-                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"::1\"}," +
-                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"127.0.0.1\"}" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
+                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"::1\",\"trustedBy\":\"cfg1\"}," +
+                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"127.0.0.1\",\"trustedBy\":\"cfg1\"}" +
                 ".*]}");
         assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
     }
