@@ -11,10 +11,10 @@ import java.util.List;
  * An application file represents a file within an application package. This class can be used to traverse the entire
  * application package file structure, as well as read and write files to it, and create directories.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lillengen
  */
 public abstract class ApplicationFile implements Comparable<ApplicationFile> {
+
     private static final String metaDir = ".meta";
     public static final String ContentStatusNew = "new";
     public static final String ContentStatusChanged = "changed";
@@ -154,6 +154,7 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract MetaData getMetaData();
 
     public static class MetaData {
+
         public String status = "unknown";
         public String md5 = "";
 
@@ -173,7 +174,8 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
         }
     }
 
-    public static interface PathFilter {
+    public interface PathFilter {
         boolean accept(Path path);
     }
+
 }

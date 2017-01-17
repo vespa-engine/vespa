@@ -19,6 +19,7 @@ import java.io.Reader;
  */
 
 public class RankingConstantsValidator extends Validator {
+
     private static class ExceptionMessageCollector {
         public String combinedMessage;
         public boolean exceptionsOccurred = false;
@@ -42,8 +43,8 @@ public class RankingConstantsValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
-        final ApplicationPackage applicationPackage = deployState.getApplicationPackage();
-        final ExceptionMessageCollector exceptionMessageCollector = new ExceptionMessageCollector("Failed to validate constant tensor file(s):");
+        ApplicationPackage applicationPackage = deployState.getApplicationPackage();
+        ExceptionMessageCollector exceptionMessageCollector = new ExceptionMessageCollector("Failed to validate constant tensor file(s):");
 
         for (SearchDefinition sd : deployState.getSearchDefinitions()) {
             for (RankingConstant rc : sd.getSearch().getRankingConstants()) {
@@ -60,11 +61,11 @@ public class RankingConstantsValidator extends Validator {
         }
     }
 
-    public static void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage applicationPackage) throws FileNotFoundException {
-        final ApplicationFile tensorApplicationFile = applicationPackage.getFile(Path.fromString(rankingConstant.getFileName()));
-        final Reader tensorReader = tensorApplicationFile.createReader();
-
-        ConstantTensorJsonValidator tensorValidator = new ConstantTensorJsonValidator(tensorReader, rankingConstant.getTensorType());
-        tensorValidator.validate();
+    private void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage applicationPackage) throws FileNotFoundException {
+        ApplicationFile tensorApplicationFile = applicationPackage.getFile(Path.fromString(rankingConstant.getFileName()));
+        new ConstantTensorJsonValidator().validate(rankingConstant.getFileName(), 
+                                                   rankingConstant.getTensorType(),
+                                                   tensorApplicationFile.createReader());
     }
+
 }

@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  * @since 5.1
  */
 public class FilesApplicationFile extends ApplicationFile {
+
     private static final Logger log = Logger.getLogger("FilesApplicationFile");
     private final File file;
     private final ObjectMapper mapper = new ObjectMapper();
