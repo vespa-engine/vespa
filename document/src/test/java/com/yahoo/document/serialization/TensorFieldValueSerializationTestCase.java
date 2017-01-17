@@ -4,8 +4,10 @@ package com.yahoo.document.serialization;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -19,30 +21,31 @@ import static org.junit.Assert.assertEquals;
  */
 public class TensorFieldValueSerializationTestCase {
 
+    private final static TensorType tensorType = new TensorType.Builder().mapped("dimX").mapped("dimY").build();
     private final static String TENSOR_FIELD = "my_tensor";
     private final static String TENSOR_FILES = "src/test/resources/tensor/";
-    private final static TestDocumentFactory docFactory =
-            new TestDocumentFactory(createDocType(), "id:test:my_type::foo");
+    private final static TestDocumentFactory docFactory = new TestDocumentFactory(createDocType(), 
+                                                                                  "id:test:my_type::foo");
 
     private static DocumentType createDocType() {
         DocumentType type = new DocumentType("my_type");
-        type.addField(TENSOR_FIELD, DataType.TENSOR);
+        type.addField(TENSOR_FIELD, new TensorDataType(tensorType));
         return type;
     }
 
     @Test
     public void requireThatTensorFieldValueIsSerializedAndDeserialized() {
-        assertSerialization(new TensorFieldValue());
-        assertSerialization(createTensor("{}"));
-        assertSerialization(createTensor("{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e,dimY:ff}:5.0}"));
+        assertSerialization(new TensorFieldValue(tensorType));
+        assertSerialization(createTensor(tensorType, "{}"));
+        assertSerialization(createTensor(tensorType, "{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e,dimY:ff}:5.0}"));
     }
 
     @Test
     public void requireThatSerializationMatchesCpp() throws IOException {
-        assertSerializationMatchesCpp("non_existing_tensor", new TensorFieldValue());
-        assertSerializationMatchesCpp("empty_tensor", createTensor("{}"));
+        assertSerializationMatchesCpp("non_existing_tensor", new TensorFieldValue(tensorType));
+        assertSerializationMatchesCpp("empty_tensor", createTensor(tensorType, "{}"));
         assertSerializationMatchesCpp("multi_cell_tensor",
-                createTensor("{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e,dimY:ff}:5.0}"));
+                createTensor(tensorType, "{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e,dimY:ff}:5.0}"));
     }
 
     private static void assertSerialization(TensorFieldValue tensor) {
@@ -60,8 +63,8 @@ public class TensorFieldValueSerializationTestCase {
         SerializationTestUtils.assertSerializationMatchesCpp(TENSOR_FILES, fileName, document, docFactory);
     }
 
-    private static TensorFieldValue createTensor(String tensor) {
-        return new TensorFieldValue(Tensor.from(tensor));
+    private static TensorFieldValue createTensor(TensorType type, String tensorCellString) {
+        return new TensorFieldValue(Tensor.from(type, tensorCellString));
     }
 
 }

@@ -35,9 +35,9 @@ public class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext ctx) {
+    protected void doVerify(VerificationContext context) {
         for (Expression exp : this) {
-            ctx.execute(exp);
+            context.execute(exp);
         }
     }
 

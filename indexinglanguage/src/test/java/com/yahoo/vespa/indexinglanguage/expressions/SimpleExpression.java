@@ -47,9 +47,9 @@ class SimpleExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext ctx) {
+    protected void doVerify(VerificationContext context) {
         if (hasVerifyValue) {
-            ctx.setValue(verifyValue);
+            context.setValue(verifyValue);
         }
     }
 

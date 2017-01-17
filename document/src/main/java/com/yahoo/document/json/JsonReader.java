@@ -583,71 +583,41 @@ public class JsonReader {
     }
 
     private void fillTensor(TensorFieldValue tensorFieldValue) {
+        Tensor.Builder tensorBuilder = Tensor.Builder.of(tensorFieldValue.getDataType().getTensorType());
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
-        Tensor.Builder tensorBuilder = null;
         // read tensor cell fields and ignore everything else
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             if (TENSOR_CELLS.equals(buffer.currentName()))
-                tensorBuilder = readTensorCells(tensorBuilder);
+                readTensorCells(tensorBuilder);
         }
         expectObjectEnd(buffer.currentToken());
-        if (tensorBuilder == null) // no cells + no type: empty tensor type
-            tensorBuilder = Tensor.Builder.of(TensorType.empty);
         tensorFieldValue.assign(tensorBuilder.build());
     }
 
-    private Tensor.Builder readTensorCells(Tensor.Builder tensorBuilder) {
+    private void readTensorCells(Tensor.Builder tensorBuilder) {
         expectArrayStart(buffer.currentToken());
         int initNesting = buffer.nesting();
-        for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            tensorBuilder = readTensorCell(tensorBuilder);
-        }
+        for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
+            readTensorCell(tensorBuilder);
         expectCompositeEnd(buffer.currentToken());
-        return tensorBuilder;
     }
 
-    private Tensor.Builder readTensorCell(Tensor.Builder tensorBuilder) {
+    private void readTensorCell(Tensor.Builder tensorBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         double cellValue = 0.0;
-        Tensor.Builder.CellBuilder cellBuilder = null;
+        Tensor.Builder.CellBuilder cellBuilder = tensorBuilder.cell();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             String currentName = buffer.currentName();
             if (TENSOR_ADDRESS.equals(currentName)) {
-                if (tensorBuilder != null) {
-                    cellBuilder = tensorBuilder.cell();
-                    readTensorAddress(cellBuilder);
-                }
-                else { // gnarly temporary path to create a type on the fly TODO; Remove when we always have a type
-                    expectObjectStart(buffer.currentToken());
-                    int initNesting2 = buffer.nesting();
-                    List<Pair<String,String>> entries = new ArrayList<>();
-                    for (buffer.next(); buffer.nesting() >= initNesting2; buffer.next()) {
-                        String dimension = buffer.currentName();
-                        String label = buffer.currentText();
-                        entries.add(new Pair<>(dimension, label));
-                    }
-                    TensorType.Builder typeBuilder = new TensorType.Builder();
-                    for (Pair<String,String> entry : entries)
-                        typeBuilder.mapped(entry.getFirst());
-                    tensorBuilder = Tensor.Builder.of(typeBuilder.build());
-                    cellBuilder = tensorBuilder.cell();
-                    for (Pair<String,String> entry : entries)
-                        cellBuilder.label(entry.getFirst(), entry.getSecond());
-                    expectObjectEnd(buffer.currentToken());
-                }
+                readTensorAddress(cellBuilder);
             } else if (TENSOR_VALUE.equals(currentName)) {
                 cellValue = Double.valueOf(buffer.currentText());
             }
         }
         expectObjectEnd(buffer.currentToken());
-        if (tensorBuilder == null) { // no content TODO; This will go away with the above
-            tensorBuilder = Tensor.Builder.of(TensorType.empty);
-            cellBuilder = tensorBuilder.cell();
-        }
         cellBuilder.value(cellValue);
-        return tensorBuilder;
     }
 
     private void readTensorAddress(MappedTensor.Builder.CellBuilder cellBuilder) {

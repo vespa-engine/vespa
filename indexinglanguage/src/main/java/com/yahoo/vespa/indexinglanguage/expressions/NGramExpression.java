@@ -73,7 +73,7 @@ public class NGramExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext ctx) {
+    protected void doVerify(VerificationContext context) {
         // empty
     }
 

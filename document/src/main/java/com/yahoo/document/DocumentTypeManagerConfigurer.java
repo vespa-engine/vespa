@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 /**
  * Configures the Vespa document manager from a config id.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSubscriber<DocumentmanagerConfig>{
 
@@ -29,7 +29,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         return new CompressionConfig(toCompressorType(cfg.compresstype()), cfg.compresslevel(),
                                      cfg.compressthreshold(), cfg.compressminsize());
     }
-
 
     public static CompressionType toCompressorType(DocumentmanagerConfig.Datatype.Structtype.Compresstype.Enum value) {
         switch (value) {
@@ -82,21 +81,21 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 try {
                     for (Object o : thisDataType.arraytype()) {
                         DocumentmanagerConfig.Datatype.Arraytype array = (DocumentmanagerConfig.Datatype.Arraytype) o;
-                        DataType nestedType = manager.getDataType(array.datatype());
+                        DataType nestedType = manager.getDataType(array.datatype(), "");
                         ArrayDataType type = new ArrayDataType(nestedType, id);
                         manager.register(type);
                     }
                     for (Object o : thisDataType.maptype()) {
                         DocumentmanagerConfig.Datatype.Maptype map = (DocumentmanagerConfig.Datatype.Maptype) o;
-                        DataType keyType = manager.getDataType(map.keytype());
-                        DataType valType = manager.getDataType(map.valtype());
+                        DataType keyType = manager.getDataType(map.keytype(), "");
+                        DataType valType = manager.getDataType(map.valtype(), "");
                         MapDataType type = new MapDataType(keyType, valType, id);
                         manager.register(type);
                     }
                     for (Object o : thisDataType.weightedsettype()) {
                         DocumentmanagerConfig.Datatype.Weightedsettype wset =
                                     (DocumentmanagerConfig.Datatype.Weightedsettype) o;
-                        DataType nestedType = manager.getDataType(wset.datatype());
+                        DataType nestedType = manager.getDataType(wset.datatype(), "");
                         WeightedSetDataType type = new WeightedSetDataType(
                                 nestedType, wset.createifnonexistant(), wset.removeifzero(), id);
                         manager.register(type);
@@ -114,8 +113,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                             DocumentmanagerConfig.Datatype.Structtype.Field field =
                                     (DocumentmanagerConfig.Datatype.Structtype.Field) j;
                             DataType fieldType = (field.datatype() == id)
-                                               ? manager.getDataTypeAndReturnTemporary(field.datatype())
-                                               : manager.getDataType(field.datatype());
+                                               ? manager.getDataTypeAndReturnTemporary(field.datatype(), field.detailedtype())
+                                               : manager.getDataType(field.datatype(), field.detailedtype());
 
                             if (field.id().size() == 1) {
                                 type.addField(new Field(field.name(), field.id().get(0).id(), fieldType, true));
@@ -127,8 +126,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                     }
                     for (Object o : thisDataType.documenttype()) {
                         DocumentmanagerConfig.Datatype.Documenttype doc = (DocumentmanagerConfig.Datatype.Documenttype) o;
-                        StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct());
-                        StructDataType body = (StructDataType) manager.getDataType(doc.bodystruct());
+                        StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
+                        StructDataType body = (StructDataType) manager.getDataType(doc.bodystruct(), "");
                         for (Field field : body.getFields()) {
                             field.setHeader(false);
                         }
@@ -210,7 +209,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
     private static void addAnnotationTypePayloads(DocumentmanagerConfig config, DocumentTypeManager manager) {
         for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
             AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annType.id());
-            DataType payload = manager.getDataType(annType.datatype());
+            DataType payload = manager.getDataType(annType.datatype(), "");
             if (!payload.equals(DataType.NONE)) {
                 annotationType.setDataType(payload);
             }
@@ -234,7 +233,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             int id = thisDataType.id();
             for (Object o : thisDataType.structtype()) {
                 DocumentmanagerConfig.Datatype.Structtype struct = (DocumentmanagerConfig.Datatype.Structtype) o;
-                StructDataType thisStruct = (StructDataType) manager.getDataType(id);
+                StructDataType thisStruct = (StructDataType) manager.getDataType(id, "");
 
                 for (DocumentmanagerConfig.Datatype.Structtype.Inherits parent : struct.inherits()) {
                     StructDataType parentStruct = (StructDataType) manager.getDataType(parent.name());

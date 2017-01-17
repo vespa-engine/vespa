@@ -8,9 +8,10 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 import java.util.Objects;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class PrimitiveDataType extends DataType {
+
     public static abstract class Factory {
         public abstract FieldValue create();
     }

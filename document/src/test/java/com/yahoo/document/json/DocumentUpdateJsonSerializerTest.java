@@ -10,7 +10,9 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 
@@ -27,6 +29,7 @@ import static com.yahoo.test.json.JsonTestHelper.inputJson;
  */
 public class DocumentUpdateJsonSerializerTest {
 
+    final static TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
     final static DocumentTypeManager types = new DocumentTypeManager();
     final static JsonFactory parserFactory = new JsonFactory();
     final static DocumentType docType = new DocumentType("doctype");
@@ -39,7 +42,7 @@ public class DocumentUpdateJsonSerializerTest {
         docType.addField(new Field("float_field", DataType.FLOAT));
         docType.addField(new Field("double_field", DataType.DOUBLE));
         docType.addField(new Field("byte_field", DataType.BYTE));
-        docType.addField(new Field("tensor_field", DataType.TENSOR));
+        docType.addField(new Field("tensor_field", new TensorDataType(tensorType)));
         docType.addField(new Field("predicate_field", DataType.PREDICATE));
         docType.addField(new Field("raw_field", DataType.RAW));
         docType.addField(new Field("int_array", new ArrayDataType(DataType.INT)));

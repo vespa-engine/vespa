@@ -43,7 +43,7 @@ public class SearchDataTypeValidator extends Validator {
         for (Field field : doc.fieldSet()) {
             DataType fieldType = field.getDataType();
             disallowIndexingOfMaps(cluster, def, field);
-            if (!validateDataType(fieldType)) {
+            if ( ! isSupportedInSearchClusters(fieldType)) {
                 throw new IllegalArgumentException("Field type '" + fieldType.getName() + "' is illegal for search " +
                                                    "clusters (field '" + field.getName() + "' in definition '" +
                                                    def.getName() + "' for cluster '" + cluster.getClusterName() + "').");
@@ -51,28 +51,30 @@ public class SearchDataTypeValidator extends Validator {
         }
     }
 
-    private boolean validateDataType(DataType dataType) {
-        if (dataType instanceof ArrayDataType ||
-            dataType instanceof WeightedSetDataType)
-        {
-            return validateDataType(((CollectionDataType)dataType).getNestedType());
+    private boolean isSupportedInSearchClusters(DataType dataType) {
+        if (dataType instanceof ArrayDataType || dataType instanceof WeightedSetDataType) {
+            return isSupportedInSearchClusters(((CollectionDataType)dataType).getNestedType());
         }
-        if (dataType instanceof StructDataType) {
+        else if (dataType instanceof StructDataType) {
             return true; // Struct will work for summary TODO maybe check individual fields
         }
-        if (dataType instanceof MapDataType) {
+        else if (dataType instanceof MapDataType) {
             return true; // Maps will work for summary, see disallowIndexingOfMaps()
         }
-        return dataType.equals(DataType.INT) ||
-               dataType.equals(DataType.FLOAT) ||
-               dataType.equals(DataType.STRING) ||
-               dataType.equals(DataType.RAW) ||
-               dataType.equals(DataType.LONG) ||
-               dataType.equals(DataType.DOUBLE) ||
-               dataType.equals(DataType.URI) ||
-               dataType.equals(DataType.BYTE) ||
-               dataType.equals(DataType.PREDICATE) ||
-               dataType.equals(DataType.TENSOR);
+        else if (dataType instanceof TensorDataType) {
+            return true;
+        }
+        else {
+            return dataType.equals(DataType.INT) ||
+                   dataType.equals(DataType.FLOAT) ||
+                   dataType.equals(DataType.STRING) ||
+                   dataType.equals(DataType.RAW) ||
+                   dataType.equals(DataType.LONG) ||
+                   dataType.equals(DataType.DOUBLE) ||
+                   dataType.equals(DataType.URI) ||
+                   dataType.equals(DataType.BYTE) ||
+                   dataType.equals(DataType.PREDICATE);
+        }
     }
 
     private void disallowIndexingOfMaps(AbstractSearchCluster cluster, SearchDefinition def, Field field) {

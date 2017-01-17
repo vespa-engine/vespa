@@ -9,6 +9,7 @@ import java.util.Map;
  * @author baldersheim
  */
 public class DocumentTypeRepo implements DocumentTypeCollection {
+
     final Map<Integer, NewDocumentType> typeById = new LinkedHashMap<>();
     final Map<NewDocumentType.Name, NewDocumentType> typeByName = new LinkedHashMap<>();
 
@@ -36,4 +37,5 @@ public class DocumentTypeRepo implements DocumentTypeCollection {
         typeById.put(type.getFullName().getId(), type);
         return this;
     }
+
 }
