@@ -752,11 +752,11 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @return the parent, or null if not present and created is false
      */
     private QueryProfile lookupParentExact(CompoundName name, boolean create, DimensionBinding dimensionBinding) {
-        CompoundName rest=name.rest();
+        CompoundName rest = name.rest();
         if (rest.isEmpty()) return this;
 
-        QueryProfile topmostParent= getQueryProfileExact(name.first(), create, dimensionBinding);
-        if (topmostParent==null) return null;
+        QueryProfile topmostParent = getQueryProfileExact(name.first(), create, dimensionBinding);
+        if (topmostParent == null) return null;
         return topmostParent.lookupParentExact(rest, create, dimensionBinding.createFor(topmostParent.getDimensions()));
     }
 
@@ -775,9 +775,9 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         if (!create) return null;
 
         QueryProfile queryProfile=createSubProfile(localName,dimensionBinding);
-        if (type!=null) {
+        if (type != null) {
             Class<?> legalClass=type.getValueClass(localName);
-            if (legalClass==null || ! legalClass.isInstance(queryProfile))
+            if (legalClass == null || ! legalClass.isInstance(queryProfile))
                 throw new RuntimeException("'" + localName + "' is not a legal query profile reference name in " + this);
             queryProfile.setType(type.getType(localName));
         }
@@ -786,23 +786,23 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     }
 
     /** Do a variant-aware content lookup in this - without looking in any wrapped content. But by matching variant bindings exactly only */
-    private Object localExactLookup(String name,DimensionBinding dimensionBinding) {
-        if (dimensionBinding.isNull()) return content==null ? null : content.get(name);
-        if (variants==null) return null;
-        QueryProfileVariant variant=variants.getVariant(dimensionBinding.getValues(),false);
-        if (variant==null) return null;
+    private Object localExactLookup(String name, DimensionBinding dimensionBinding) {
+        if (dimensionBinding.isNull()) return content == null ? null : content.get(name);
+        if (variants == null) return null;
+        QueryProfileVariant variant = variants.getVariant(dimensionBinding.getValues(),false);
+        if (variant == null) return null;
         return variant.values().get(name);
     }
 
     /** Sets a value directly in this query profile (unless frozen) */
-    private void localPut(String localName,Object value,DimensionBinding dimensionBinding) {
+    private void localPut(String localName,Object value, DimensionBinding dimensionBinding) {
         ensureNotFrozen();
 
-        if (type!=null)
-            localName=type.unalias(localName);
+        if (type != null)
+            localName = type.unalias(localName);
 
         validateName(localName);
-        value=convertToSubstitutionString(value);
+        value = convertToSubstitutionString(value);
 
         if (dimensionBinding.isNull()) {
             Object combinedValue;
@@ -815,8 +815,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
                 content.put(localName,combinedValue);
         }
         else {
-            if (variants==null)
-                variants=new QueryProfileVariants(dimensionBinding.getDimensions(), this);
+            if (variants == null)
+                variants = new QueryProfileVariants(dimensionBinding.getDimensions(), this);
             variants.set(localName,dimensionBinding.getValues(),value);
         }
     }
