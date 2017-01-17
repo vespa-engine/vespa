@@ -130,7 +130,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Returns a list of nodes that should be trusted by the given node.
      */
-    public List<Node> getTrustedNodes(Node node) {
+    private List<Node> getTrustedNodes(Node node) {
         final List<Node> trustedNodes = new ArrayList<>();
 
         switch (node.type()) {
@@ -164,6 +164,18 @@ public class NodeRepository extends AbstractComponent {
         trustedNodes.sort(Comparator.comparing(Node::hostname));
 
         return Collections.unmodifiableList(trustedNodes);
+    }
+
+    /**
+     * Creates a list of node ACLs which identify which nodes the given node should trust
+     *
+     * @param node Node for which to generate ACLs
+     * @return List of node ACLs
+     */
+    public List<NodeAcl> getNodeAcls(Node node) {
+        final List<NodeAcl> nodeAcls = new ArrayList<>();
+        nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
+        return Collections.unmodifiableList(nodeAcls);
     }
 
     /** Get config node by hostname */
@@ -401,7 +413,8 @@ public class NodeRepository extends AbstractComponent {
         return resultingNodes;
     }
 
-    private List<Node> getConfigNodes() {
+    // Public for testing
+    public List<Node> getConfigNodes() {
         // TODO: Revisit this when config servers are added to the repository
         return Arrays.stream(curator.connectionSpec().split(","))
                 .map(hostPort -> hostPort.split(":")[0])

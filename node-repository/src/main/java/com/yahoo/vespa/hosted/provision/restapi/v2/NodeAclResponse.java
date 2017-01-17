@@ -7,6 +7,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeAcl;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.io.File;
@@ -40,15 +41,15 @@ public class NodeAclResponse extends HttpResponse {
         Node node = nodeRepository.getNode(hostname)
                 .orElseGet(() -> nodeRepository.getConfigNode(hostname)
                         .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
-        toSlime(nodeRepository.getTrustedNodes(node), object.setArray("trustedNodes"));
+        toSlime(nodeRepository.getNodeAcls(node), object.setArray("trustedNodes"));
     }
 
-    private void toSlime(List<Node> trustedNodes, Cursor array) {
-        trustedNodes.forEach(node -> node.ipAddresses().forEach(ipAddress -> {
+    private void toSlime(List<NodeAcl> nodeAcls, Cursor array) {
+        nodeAcls.forEach(acl -> acl.trustedNodes().forEach(node -> node.ipAddresses().forEach(ipAddress -> {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
             object.setString("ipAddress", ipAddress);
-        }));
+        })));
     }
 
     @Override
