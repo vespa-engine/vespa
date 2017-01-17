@@ -3,6 +3,8 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.tensor.TensorType;
 
+import java.util.Objects;
+
 /**
  * Represents a global ranking constant (declared in a .sd file)
  *
@@ -20,7 +22,11 @@ public class RankingConstant {
         this.name = name;
     }
 
-    public void setFileName(String fileName) { this.fileName = fileName; }
+    public void setFileName(String fileName) { 
+        Objects.requireNonNull(fileName, "Filename cannot be null");
+        this.fileName = fileName; 
+    }
+
     public void setFileReference(String fileRef) { this.fileRef = fileRef; }
     public void setType(TensorType tensorType) { this.tensorType = tensorType; }
 

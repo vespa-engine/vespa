@@ -12,13 +12,13 @@ import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensor;
 
 public class ConstantTensorJsonValidatorTest {
+
     private static Reader inputJsonToReader(String... lines) {
         return new StringReader(inputJson(lines));
     }
 
     private static void validateTensorJson(TensorType tensorType, Reader jsonTensorReader) {
-        ConstantTensorJsonValidator validator = new ConstantTensorJsonValidator(jsonTensorReader, tensorType);
-        validator.validate();
+        new ConstantTensorJsonValidator().validate("dummy.json", tensorType, jsonTensorReader);
     }
 
     @Rule
@@ -275,4 +275,5 @@ public class ConstantTensorJsonValidatorTest {
                         "   }",
                         "}"));
     }
+
 }

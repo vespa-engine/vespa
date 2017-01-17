@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * Superclass for search clusters.
  *
- * @author <a href="mailto:boros@yahoo-inc.com">Peter Boros</a>
+ * @author Peter Boros
  */
 public abstract class AbstractSearchCluster extends AbstractConfigProducer
     implements 
@@ -89,21 +89,18 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
         }
     }
 
-    public AbstractSearchCluster(AbstractConfigProducer parent,
-            String clusterName, int index) {
+    public AbstractSearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
         this.clusterName = clusterName;
         this.index = index;
     }
+
     public void addDocumentNames(SearchDefinition searchDefinition) {
         String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
         documentNames.add(dName);
     }
 
-    /**
-     * Returns a List with document names used in this search cluster
-     * @return  contained document names
-     */
+    /** Returns a List with document names used in this search cluster */
     public List<String> getDocumentNames() { return documentNames; }
 
     public List<SearchDefinitionSpec> getLocalSDS() {
@@ -138,4 +135,5 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     public abstract void getConfig(IlscriptsConfig.Builder builder);
     public abstract void getConfig(RankProfilesConfig.Builder builder);
     public abstract void getConfig(AttributesConfig.Builder builder);
+
 }
