@@ -4,7 +4,7 @@
 
 //-------------------------------------------------------------
 
-FastOS_Mutex   _delayedReturnCntLock;
+FastOS_Mutex _delayedReturnCntLock;
 uint32_t     _delayedReturnCnt = 0;
 
 uint32_t _phase_simple_cnt   = 0;
@@ -20,12 +20,12 @@ uint32_t _phase_echo_cnt     = 0;
 
 struct LockedReqWait : public FRT_IRequestWait
 {
-    FastOS_Cond  _cond;      // cond used to signal req done
-    bool       _done;      // flag indicating req done
+    FastOS_Cond _cond;      // cond used to signal req done
+    bool        _done;      // flag indicating req done
 
     FastOS_Mutex _lockLock;  // lock protecting virtual lock
-    bool       _lock;      // virtual lock
-    bool       _wasLocked; // was 'locked' when req done
+    bool         _lock;      // virtual lock
+    bool         _wasLocked; // was 'locked' when req done
 
     LockedReqWait() : _cond(), _done(false), _lockLock(), _lock(false), _wasLocked(false) {}
 
@@ -121,7 +121,7 @@ public:
     void Init(FRT_Supervisor *supervisor)
     {
         _echo_stash = new vespalib::Stash();
-        _echo_args = new FRT_Values(_echo_stash);
+        _echo_args = new FRT_Values(*_echo_stash);
         assert(_echo_stash != nullptr && _echo_args != nullptr);
 
         FRT_ReflectionBuilder rb(supervisor);
@@ -333,7 +333,7 @@ enum {
 };
 
 enum {
-    PHASE_nullptr = 0,
+    PHASE_NULL = 0,
     PHASE_SETUP,
     PHASE_SIMPLE,
     PHASE_VOID,
@@ -363,7 +363,7 @@ const char phase_names[PHASE_ZZZ][32] =
 };
 
 enum {
-    TIMING_nullptr = 0,
+    TIMING_NULL = 0,
     TIMING_INSTANT,
     TIMING_NON_INSTANT,
     TIMING_ZZZ
@@ -377,7 +377,7 @@ const char timing_names[TIMING_ZZZ][32] =
 };
 
 enum {
-    HANDLING_nullptr = 0,
+    HANDLING_NULL = 0,
     HANDLING_SYNC,
     HANDLING_ASYNC,
     HANDLING_ZZZ
@@ -411,9 +411,9 @@ struct State {
           _rpc(&_server, _client.GetScheduler()),
           _echo(),
           _peerSpec(),
-          _testPhase(PHASE_nullptr),
-          _timing(TIMING_nullptr),
-          _handling(HANDLING_nullptr),
+          _testPhase(PHASE_NULL),
+          _timing(TIMING_NULL),
+          _handling(HANDLING_NULL),
           _timeout(5.0),
           _target(nullptr),
           _req(nullptr)
@@ -915,8 +915,8 @@ TEST_F("invoke test", State()) {
         }
     }
     _state->_testPhase  = PHASE_SHUTDOWN;
-    _state->_timing     = TIMING_nullptr;
-    _state->_handling   = HANDLING_nullptr;
+    _state->_timing     = TIMING_NULL;
+    _state->_handling   = HANDLING_NULL;
     EXPECT_TRUE(_state->WaitForDelayedReturnCount(0, 120.0));
     _state->FreeReq();
     _state->_client.ShutDown(true);

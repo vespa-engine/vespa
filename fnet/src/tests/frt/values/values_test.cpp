@@ -163,13 +163,13 @@ void checkValues(FRT_Values &v1, FRT_Values &v2) {
     EXPECT_TRUE(v2.Equals(&v1));
 }
 
-TEST_FF("set and get", Stash(), FRT_Values(&f1)) {
+TEST_FF("set and get", Stash(), FRT_Values(f1)) {
     fillValues(f2);
     checkValues(f2);
 }
 
-TEST_FFFF("encode/decode big endian", Stash(), FRT_Values(&f1),
-         FNET_DataBuffer(), FRT_Values(&f1))
+TEST_FFFF("encode/decode big endian", Stash(), FRT_Values(f1),
+         FNET_DataBuffer(), FRT_Values(f1))
 {
     fillValues(f2);
     f2.EncodeBig(&f3);
@@ -178,8 +178,8 @@ TEST_FFFF("encode/decode big endian", Stash(), FRT_Values(&f1),
     checkValues(f2, f4);
 }
 
-TEST_FFFF("encode/decode host endian", Stash(), FRT_Values(&f1),
-          FNET_DataBuffer(), FRT_Values(&f1))
+TEST_FFFF("encode/decode host endian", Stash(), FRT_Values(f1),
+          FNET_DataBuffer(), FRT_Values(f1))
 {
     fillValues(f2);
     f2.EncodeCopy(&f3);
@@ -188,8 +188,8 @@ TEST_FFFF("encode/decode host endian", Stash(), FRT_Values(&f1),
     checkValues(f2, f4);
 }
 
-TEST_FFFF("decode little if host is little", Stash(), FRT_Values(&f1),
-          FNET_DataBuffer(), FRT_Values(&f1))
+TEST_FFFF("decode little if host is little", Stash(), FRT_Values(f1),
+          FNET_DataBuffer(), FRT_Values(f1))
 {
     if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
         fprintf(stderr, "little endian detected...\n");
@@ -203,7 +203,7 @@ TEST_FFFF("decode little if host is little", Stash(), FRT_Values(&f1),
     }
 }
 
-TEST_FF("print values", Stash(), FRT_Values(&f1)) {
+TEST_FF("print values", Stash(), FRT_Values(f1)) {
     fillValues(f2);
     f2.Print();
 }

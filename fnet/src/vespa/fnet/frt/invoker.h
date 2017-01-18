@@ -143,3 +143,6 @@ public:
 
 //-----------------------------------------------------------------------------
 
+VESPA_CAN_SKIP_DESTRUCTION(FRT_RPCAdapter)
+VESPA_CAN_SKIP_DESTRUCTION(FRT_RPCInvoker)
+VESPA_CAN_SKIP_DESTRUCTION(FRT_HookInvoker)
