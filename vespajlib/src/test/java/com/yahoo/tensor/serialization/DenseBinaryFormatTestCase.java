@@ -40,7 +40,7 @@ public class DenseBinaryFormatTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Type/instance mismatch: Instance has size 2 in x[1] in type tensor(x[1],y[1])", expected.getMessage());
+            assertEquals("Type/instance mismatch: A tensor of type tensor(x[2],y[2]) cannot be assigned to type tensor(x[1],y[1])", expected.getMessage());
         }
     }
 

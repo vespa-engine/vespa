@@ -51,7 +51,11 @@ public class DenseBinaryFormat implements BinaryFormat {
         DimensionSizes sizes;
         if (optionalType.isPresent()) {
             type = optionalType.get();
-            sizes = decodeAndValidateDimensionSizes(type, buffer);
+            TensorType serializedType = decodeType(buffer);
+            if ( ! type.isAssignableTo(serializedType))
+                throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType + 
+                                                   " cannot be assigned to type " + type);
+            sizes = sizesFromType(serializedType);
         }
         else {
             type = decodeType(buffer);
@@ -59,32 +63,6 @@ public class DenseBinaryFormat implements BinaryFormat {
         }
         Tensor.Builder builder = Tensor.Builder.of(type, sizes);
         decodeCells(sizes, buffer, (IndexedTensor.BoundBuilder)builder);
-        return builder.build();
-    }
-
-    private DimensionSizes decodeAndValidateDimensionSizes(TensorType type, GrowableByteBuffer buffer) {
-        int dimensionCount = buffer.getInt1_4Bytes();
-        if (type.dimensions().size() != dimensionCount)
-            throw new IllegalArgumentException("Type/instance mismatch: Instance has " + dimensionCount + 
-                                               " dimensions but type is " + type);
-        
-        DimensionSizes.Builder builder = new DimensionSizes.Builder(dimensionCount);
-        for (int i = 0; i < dimensionCount; i++) {
-            TensorType.Dimension expectedDimension = type.dimensions().get(i);
-
-            String encodedName = buffer.getUtf8String();
-            int encodedSize = buffer.getInt1_4Bytes();
-
-            if ( ! expectedDimension.name().equals(encodedName))
-                throw new IllegalArgumentException("Type/instance mismatch: Instance has '" + encodedName +
-                                                   "' as dimension " + i + " but type is " + type);
-
-            if (expectedDimension.size().isPresent() && expectedDimension.size().get() < encodedSize)
-                throw new IllegalArgumentException("Type/instance mismatch: Instance has size " + encodedSize + 
-                                                   " in " + expectedDimension  + " in type " + type);
-
-            builder.set(i, encodedSize);
-        }
         return builder.build();
     }
 

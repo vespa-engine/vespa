@@ -4,6 +4,7 @@ package com.yahoo.tensor.serialization;
 import com.google.common.collect.Sets;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for the sparse binary format.
@@ -31,6 +33,17 @@ public class SparseBinaryFormatTestCase {
     }
 
     @Test
+    public void testSerializationToSeparateType() {
+        try {
+            assertSerialization(Tensor.from("tensor(x{},y{}):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x{})"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("Type/instance mismatch: A tensor of type tensor(x{},y{}) cannot be assigned to type tensor(x{})", expected.getMessage());
+        }
+    }
+
+    @Test
     public void requireThatSerializationFormatDoNotChange() {
         byte[] encodedTensor = new byte[] {1, // binary format type
                 2, // num dimensions
@@ -47,8 +60,12 @@ public class SparseBinaryFormatTestCase {
     }
 
     private void assertSerialization(Tensor tensor) {
+        assertSerialization(tensor, tensor.type());
+    }
+
+    private void assertSerialization(Tensor tensor, TensorType expectedType) {
         byte[] encodedTensor = TypedBinaryFormat.encode(tensor);
-        Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(tensor.type()), 
+        Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(expectedType), 
                                                         GrowableByteBuffer.wrap(encodedTensor));
         assertEquals(tensor, decodedTensor);
     }

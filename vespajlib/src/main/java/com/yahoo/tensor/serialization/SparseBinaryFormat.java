@@ -58,7 +58,9 @@ class SparseBinaryFormat implements BinaryFormat {
         if (optionalType.isPresent()) {
             type = optionalType.get();
             TensorType serializedType = decodeType(buffer);
-            serializedType.isAssignableTo(type);
+            if ( ! type.isAssignableTo(serializedType))
+                throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType +
+                                                   " cannot be assigned to type " + type);
         }
         else {
             type = decodeType(buffer);
