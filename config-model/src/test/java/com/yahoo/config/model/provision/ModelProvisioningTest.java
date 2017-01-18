@@ -1060,8 +1060,7 @@ public class ModelProvisioningTest {
     public void testUsingHostaliasWithProvisioner() {
         String services =
                         "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<services>\n" +
-                        "\n" +
+                        "<services>" +
                         "<admin version='2.0'>" +
                         "  <adminserver hostalias='node1'/>\n"+
                         "</admin>\n" +
@@ -1074,9 +1073,8 @@ public class ModelProvisioningTest {
                         "  </nodes>" +
                         "</jdisc>" +
                         "</services>";
-        int numberOfHosts = 1;
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
+        tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
         assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
@@ -1096,6 +1094,28 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getHosts().size(), is(1));
         assertThat(model.getContainerClusters().size(), is(1));
+    }
+
+    @Test
+    public void testNoNodeTagMeans1Node() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <jdisc id='mydisc' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "  </jdisc>" +
+                "  <content version='1.0' id='foo'>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "  </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getAdmin().getSlobroks().size());
     }
 
     /** Recreate the combination used in some factory tests */
