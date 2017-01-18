@@ -149,7 +149,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addClientProviders(spec, cluster);
         addServerProviders(spec, cluster);
-        addLegacyFilters(spec, cluster);
+        addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
         addDefaultHandlers(cluster);
         addStatusHandlers(cluster, context);

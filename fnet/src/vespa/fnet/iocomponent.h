@@ -2,7 +2,15 @@
 
 #pragma once
 
-#include <vespa/fastos/socket.h>
+#include "stats.h"
+#include <vespa/fastos/cond.h>
+#include <vespa/fastos/timestamp.h>
+
+class FNET_TransportThread;
+class FNET_StatCounters;
+class FastOS_SocketInterface;
+class FNET_Config;
+class FastOS_SocketEvent;
 
 /**
  * This is the common superclass of all components that may be part of
@@ -38,11 +46,11 @@ protected:
     FNET_IOComponent        *_ioc_prev;          // prev in list
     FNET_TransportThread    *_ioc_owner;         // owner(TransportThread) ref.
     FNET_StatCounters       *_ioc_counters;      // stat counters
-    FastOS_Socket           *_ioc_socket;        // source of events.
+    FastOS_SocketInterface  *_ioc_socket;        // source of events.
     char                    *_ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
     fastos::TimeStamp        _ioc_timestamp;     // last I/O activity
-    FNET_Cond                _ioc_cond;          // synchronization
+    FastOS_Cond              _ioc_cond;          // synchronization
     uint32_t                 _ioc_refcnt;        // reference counter
 
     // direct write stats kept locally
@@ -63,7 +71,7 @@ public:
      * @param spec listen/connect spec for this IOC
      * @param shouldTimeOut should this IOC time out if idle ?
      **/
-    FNET_IOComponent(FNET_TransportThread *owner, FastOS_Socket *mysocket,
+    FNET_IOComponent(FNET_TransportThread *owner, FastOS_SocketInterface *mysocket,
                      const char *spec, bool shouldTimeOut);
 
 
@@ -160,7 +168,7 @@ public:
      *
      * @return config object.
      **/
-    FNET_Config *GetConfig() { return _ioc_owner->GetConfig(); }
+    FNET_Config *GetConfig();
 
 
     /**
@@ -174,7 +182,7 @@ public:
      * proxy-call to the owning transport object, calling
      * FNET_TransportThread::UpdateTimeOut() with itself as parameter.
      **/
-    void UpdateTimeOut() { _ioc_owner->UpdateTimeOut(this); }
+    void UpdateTimeOut();
 
 
     /**
@@ -262,7 +270,7 @@ public:
 
     /**
      * Assign a FastOS_SocketEvent to this component. Before deleting an
-     * IOC, one must assign NULL as the socket event.
+     * IOC, one must assign nullptr as the socket event.
      *
      * @param event the socket event to register with.
      **/

@@ -3,6 +3,18 @@
 #pragma once
 
 #include "ext_connectable.h"
+#include "context.h"
+#include <memory>
+#include <vector>
+
+class FastOS_TimeInterface;
+class FNET_TransportThread;
+class FastOS_ThreadPool;
+class FNET_Connector;
+class FNET_IPacketStreamer;
+class FNET_IServerAdapter;
+class FNET_IPacketHandler;
+class FNET_Scheduler;
 
 namespace fnet {
     class ConnectThread;
@@ -61,7 +73,7 @@ public:
      * may supply a hostname as well, like this:
      * 'tcp/mycomputer.mydomain:8001'.
      *
-     * @return the connector object, or NULL if listen failed.
+     * @return the connector object, or nullptr if listen failed.
      * @param spec string specifying how and where to listen.
      * @param streamer custom packet streamer.
      * @param serverAdapter object for custom channel creation.
@@ -95,9 +107,9 @@ public:
      * @param connContext application context for the connection.
      **/
     FNET_Connection *Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                             FNET_IPacketHandler *adminHandler = NULL,
+                             FNET_IPacketHandler *adminHandler = nullptr,
                              FNET_Context adminContext = FNET_Context(),
-                             FNET_IServerAdapter *serverAdapter = NULL,
+                             FNET_IServerAdapter *serverAdapter = nullptr,
                              FNET_Context connContext = FNET_Context());
 
     /**
@@ -246,52 +258,20 @@ public:
     // forward async IO Component operations to their owners
     //-------------------------------------------------------------------------
 
-    static void Add(FNET_IOComponent *comp, bool needRef = true) {
-        comp->Owner()->Add(comp, needRef);
-    }
-
-    static void EnableRead(FNET_IOComponent *comp, bool needRef = true) {
-        comp->Owner()->EnableRead(comp, needRef);
-    }
-
-    static void DisableRead(FNET_IOComponent *comp, bool needRef = true) {
-        comp->Owner()->DisableRead(comp, needRef);
-    }
-
-    static void EnableWrite(FNET_IOComponent *comp, bool needRef = true) {
-        comp->Owner()->EnableWrite(comp, needRef);
-    }
-
-    static void DisableWrite(FNET_IOComponent *comp, bool needRef = true) {
-        comp->Owner()->DisableWrite(comp, needRef);
-    }
-
-    static void Close(FNET_IOComponent *comp, bool needRef = true) {
-        comp->Owner()->Close(comp, needRef);
-    }
+    static void Add(FNET_IOComponent *comp, bool needRef = true);
+    static void EnableRead(FNET_IOComponent *comp, bool needRef = true);
+    static void DisableRead(FNET_IOComponent *comp, bool needRef = true);
+    static void EnableWrite(FNET_IOComponent *comp, bool needRef = true);
+    static void DisableWrite(FNET_IOComponent *comp, bool needRef = true);
+    static void Close(FNET_IOComponent *comp, bool needRef = true);
 
     //-------------------------------------------------------------------------
     // single-threaded API forwarding. num_threads must be 1. Note: Choose
     // only one of: (a) Start, (b) Main, (c) InitEventLoop + EventLoopIteration
     // -------------------------------------------------------------------------
 
-    FastOS_Time *GetTimeSampler() {
-        assert(_threads.size() == 1);
-        return _threads[0]->GetTimeSampler();
-    }
-
-    bool InitEventLoop() {
-        assert(_threads.size() == 1);
-        return _threads[0]->InitEventLoop();
-    }
-
-    bool EventLoopIteration() {
-        assert(_threads.size() == 1);
-        return _threads[0]->EventLoopIteration();
-    }
-
-    void Main() {
-        assert(_threads.size() == 1);
-        _threads[0]->Main();
-    }
+    FastOS_TimeInterface *GetTimeSampler();
+    bool InitEventLoop();
+    bool EventLoopIteration();
+    void Main();
 };

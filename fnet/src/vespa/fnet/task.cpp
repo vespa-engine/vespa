@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
-
+#include "task.h"
+#include "scheduler.h"
 
 FNET_Task::FNET_Task(FNET_Scheduler *scheduler)
     : _task_scheduler(scheduler),
       _task_slot(0),
       _task_iter(0),
-      _task_next(NULL),
-      _task_prev(NULL),
+      _task_next(nullptr),
+      _task_prev(nullptr),
       _killed(false)
 {
 }

@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
+#include "databuffer.h"
 
 FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
-    : _bufstart(NULL),
-      _bufend(NULL),
-      _datapt(NULL),
-      _freept(NULL)
+    : _bufstart(nullptr),
+      _bufend(nullptr),
+      _datapt(nullptr),
+      _freept(nullptr)
 {
     if (len > 0 && len < 256)
         len = 256;
@@ -16,9 +15,9 @@ FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
        Alloc::alloc(len).swap(_ownedBuf);
        memset(_ownedBuf.get(), 0x55, len);
         _bufstart = static_cast<char *>(_ownedBuf.get());
-        assert(_bufstart != NULL);
+        assert(_bufstart != nullptr);
     } else { // len == 0
-        _bufstart = NULL;
+        _bufstart = nullptr;
     }
     _bufend = _bufstart + len;
     _datapt = _freept = _bufstart;

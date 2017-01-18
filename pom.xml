@@ -989,7 +989,7 @@
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>6.9.13.6</version>
+                <version>6.10</version>
             </dependency>
             <dependency>
                 <groupId>org.twdata.maven</groupId>
@@ -1132,13 +1132,11 @@
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
-        <module>jdisc_container_maven_archetype_application</module>
         <module>jdisc_core</module>
         <module>jdisc_core_test</module>
         <module>jdisc_http_service</module>
         <module>jdisc_jetty</module>
         <module>jdisc_jmx_metrics</module>
-        <module>jdisc_maven_archetype_component</module>
         <module>jdisc_messagebus_service</module>
         <module>jrt</module>
         <module>libmlr</module>

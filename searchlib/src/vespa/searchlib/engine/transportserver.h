@@ -2,8 +2,13 @@
 
 #pragma once
 
+#include "transport_metrics.h"
+#include "source_description.h"
 #include <vespa/vespalib/util/atomic.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/iserveradapter.h>
+#include <vespa/fnet/ipackethandler.h>
+#include <vespa/fnet/task.h>
+#include <vespa/fnet/transport.h>
 #include <set>
 #include <queue>
 #include <vespa/searchlib/engine/searchapi.h>
@@ -11,8 +16,7 @@
 #include <vespa/searchlib/engine/monitorapi.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/util/sync.h>
-#include "transport_metrics.h"
-#include "source_description.h"
+#include <vespa/fastos/thread.h>
 
 namespace search {
 namespace engine {

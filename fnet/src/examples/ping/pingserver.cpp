@@ -48,7 +48,7 @@ PingServer::Main()
     FNET_SimplePacketStreamer  streamer(&factory);
     FNET_Connector *listener =
         transport.Listen(_argv[1], &streamer, this);
-    if (listener != NULL)
+    if (listener != nullptr)
         listener->SubRef();
 
     FNET_SignalShutDown ssd(transport);

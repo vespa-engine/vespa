@@ -119,10 +119,13 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
         featureNames.emplace_back(resolver.name_of(i));
     }
     FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
+    if (docs.empty()) {
+        return retval;
+    }
     FeatureSet &fs = *retval.get();
 
     SearchIterator::UP search = matchTools->createSearch(rankProgram->match_data());
-    search->initFullRange();
+    search->initRange(docs.front(), docs.back()+1);
     for (uint32_t i = 0; i < docs.size(); ++i) {
         if (search->seek(docs[i])) {
             uint32_t docId = search->getDocId();

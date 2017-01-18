@@ -2,7 +2,12 @@
 
 #pragma once
 
-#include <vespa/fastos/serversocket.h>
+#include "iocomponent.h"
+
+class FastOS_ServerSocket;
+class FNET_IPacketStreamer;
+class FNET_IServerAdapter;
+class FastOS_SocketFactory;
 
 /**
  * Class used to listen for incoming connections on a single TCP/IP
@@ -37,8 +42,8 @@ public:
                    FNET_IServerAdapter *serverAdapter,
                    const char *spec,
                    int port, int backlog = 500,
-                   FastOS_SocketFactory *factory = NULL,
-                   const char *strictBindHostName = NULL);
+                   FastOS_SocketFactory *factory = nullptr,
+                   const char *strictBindHostName = nullptr);
     ~FNET_Connector();
 
 
@@ -47,7 +52,7 @@ public:
      *
      * @return port number
      **/
-    uint32_t GetPortNumber() const { return _serverSocket->GetLocalPort(); }
+    uint32_t GetPortNumber() const;
 
     /**
      * Try to create a listening server socket at the port number

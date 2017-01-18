@@ -1,9 +1,30 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "invoker.h"
+#include "supervisor.h"
+#include <vespa/fnet/channel.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet.frt.invoker");
-#include <vespa/fnet/frt/frt.h>
+
+FRT_SingleReqWait::FRT_SingleReqWait()
+    : _cond(),
+      _done(false),
+      _waiting(false)
+{ }
+
+FRT_SingleReqWait::~FRT_SingleReqWait() {}
+
+void
+FRT_SingleReqWait::WaitReq()
+{
+    _cond.Lock();
+    _waiting = true;
+    while(!_done)
+        _cond.Wait();
+    _waiting = false;
+    _cond.Unlock();
+}
 
 
 void
@@ -30,7 +51,7 @@ FRT_RPCInvoker::FRT_RPCInvoker(FRT_Supervisor *supervisor,
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
         LOG(debug, "invoke(server) init: '%s'", methodName.c_str());
     }
-    if (_method == NULL) {
+    if (_method == nullptr) {
         if (!req->IsError()) { // may be BAD_REQUEST
             req->SetError(FRTE_RPC_NO_SUCH_METHOD);
         }
@@ -40,6 +61,21 @@ FRT_RPCInvoker::FRT_RPCInvoker(FRT_Supervisor *supervisor,
         req->SetError(FRTE_RPC_WRONG_PARAMS);
     }
     req->SetReturnHandler(this);
+}
+
+bool FRT_RPCInvoker::IsInstant() {
+    return _method->IsInstant();
+}
+
+bool FRT_RPCInvoker::Invoke(bool freeChannel)
+{
+    bool detached = false;
+    _req->SetDetachedPT(&detached);
+    (_method->GetHandler()->*_method->GetMethod())(_req);
+    if (detached)
+        return false;
+    HandleDone(freeChannel);
+    return true;
 }
 
 void
@@ -92,6 +128,15 @@ FRT_RPCInvoker::Run(FastOS_ThreadInterface *, void *)
 
 //-----------------------------------------------------------------------------
 
+void FRT_HookInvoker::Invoke()
+{
+    bool detached = false;
+    _req->SetDetachedPT(&detached);
+    (_hook->GetHandler()->*_hook->GetMethod())(_req);
+    assert(!detached);
+    _req->SubRef();
+}
+
 void
 FRT_HookInvoker::HandleReturn()
 {
@@ -114,7 +159,7 @@ FRT_RPCAdapter::FRT_RPCAdapter(FNET_Scheduler *scheduler,
     : FNET_Task(scheduler),
       _req(req),
       _waiter(waiter),
-      _channel(NULL)
+      _channel(nullptr)
 {
     if (LOG_WOULD_LOG(debug)) {
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
@@ -141,7 +186,7 @@ FRT_RPCAdapter::HandleAbort()
     if (!_req->GetCompletionToken()) { // too late
         return false;
     }
-    if (_channel != NULL) {
+    if (_channel != nullptr) {
         _channel->CloseAndFree();
     }
     Kill();
@@ -157,7 +202,7 @@ FRT_RPCAdapter::PerformTask()
     if (!_req->GetCompletionToken()) { // too late
         return;
     }
-    if (_channel != NULL) {
+    if (_channel != nullptr) {
         _channel->CloseAndFree();
     }
     if (!_req->IsError()) {

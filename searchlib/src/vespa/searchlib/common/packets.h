@@ -4,18 +4,22 @@
 
 #pragma once
 
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/context.h>
+#include <vespa/fnet/ipacketstreamer.h>
+#include <vespa/fnet/packet.h>
+#include <vespa/fnet/databuffer.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/util/compressionconfig.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/common/hitrank.h>
+#include <vespa/fastos/timestamp.h>
+#include <vector>
 
-namespace search
-{
+namespace search {
 
-namespace fs4transport
-{
+namespace fs4transport {
+
 using vespalib::string;
 
 enum fnet_feature_masks {

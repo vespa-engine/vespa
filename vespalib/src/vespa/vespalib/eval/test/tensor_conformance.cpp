@@ -376,6 +376,14 @@ struct Expr_TT : Eval {
     }
 };
 
+const Value &make_value(const TensorEngine &engine, const TensorSpec &spec, Stash &stash) {
+    if (spec.type() == "double") {
+        double number = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
+        return stash.create<DoubleValue>(number);
+    }
+    return stash.create<TensorValue>(engine.create(spec));
+}
+
 // evaluate tensor reduce operation using tensor engine immediate api
 struct ImmediateReduce : Eval {
     const BinaryOperation &op;
@@ -406,6 +414,18 @@ struct ImmediateApply : Eval {
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
         Stash stash;
         return Result(engine.apply(op, *engine.create(a), *engine.create(b), stash));
+    }
+};
+
+// evaluate tensor concat operation using tensor engine immediate api
+struct ImmediateConcat : Eval {
+    vespalib::string dimension;
+    ImmediateConcat(const vespalib::string &dimension_in) : dimension(dimension_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        Stash stash;
+        const auto &lhs = make_value(engine, a, stash);
+        const auto &rhs = make_value(engine, b, stash);
+        return Result(engine.concat(lhs, rhs, dimension, stash));
     }
 };
 
@@ -1013,6 +1033,38 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_concat(const TensorSpec &expect,
+                     const TensorSpec &a,
+                     const TensorSpec &b,
+                     const vespalib::string &dimension)
+    {
+        ImmediateConcat eval(dimension);
+        EXPECT_EQUAL(eval.eval(engine, a, b).tensor(), expect);
+    }
+
+    void test_concat() {
+        TEST_DO(test_concat(spec(x(2), Seq({10.0, 20.0})), spec(10.0), spec(20.0), "x"));
+        TEST_DO(test_concat(spec(x(2), Seq({10.0, 20.0})), spec(x(1), Seq({10.0})), spec(20.0), "x"));
+        TEST_DO(test_concat(spec(x(2), Seq({10.0, 20.0})), spec(10.0), spec(x(1), Seq({20.0})), "x"));
+        TEST_DO(test_concat(spec(x(5), Seq({1.0, 2.0, 3.0, 4.0, 5.0})),
+                            spec(x(3), Seq({1.0, 2.0, 3.0})),
+                            spec(x(2), Seq({4.0, 5.0})), "x"));
+        TEST_DO(test_concat(spec({x(2),y(4)}, Seq({1.0, 2.0, 5.0, 6.0, 3.0, 4.0, 5.0, 6.0})),
+                            spec({x(2),y(2)}, Seq({1.0, 2.0, 3.0, 4.0})),
+                            spec(y(2), Seq({5.0, 6.0})), "y"));
+        TEST_DO(test_concat(spec({x(4),y(2)}, Seq({1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 6.0, 6.0})),
+                            spec({x(2),y(2)}, Seq({1.0, 2.0, 3.0, 4.0})),
+                            spec(x(2), Seq({5.0, 6.0})), "x"));
+        TEST_DO(test_concat(spec({x(2),y(2),z(3)}, Seq({1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0})),
+                            spec(z(3), Seq({1.0, 2.0, 3.0})),
+                            spec(y(2), Seq({4.0, 5.0})), "x"));
+        TEST_DO(test_concat(spec({x(2), y(2)}, Seq({1.0, 2.0, 4.0, 5.0})),
+                            spec(y(3), Seq({1.0, 2.0, 3.0})),
+                            spec(y(2), Seq({4.0, 5.0})), "x"));
+    }
+
+    //-------------------------------------------------------------------------
+
     void run_tests() {
         TEST_DO(test_tensor_create_type());
         TEST_DO(test_tensor_equality());
@@ -1021,6 +1073,7 @@ struct TestContext {
         TEST_DO(test_tensor_map());
         TEST_DO(test_tensor_apply());
         TEST_DO(test_dot_product());
+        TEST_DO(test_concat());
     }
 };
 

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 
 class FRT_ISharedBlob
 {

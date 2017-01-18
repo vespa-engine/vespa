@@ -6,8 +6,6 @@
 #include "ipackethandler.h"
 #include <memory>
 
-#define FNET_NOID ((uint32_t)-1)
-
 class FNET_Connection;
 class FNET_IPacketHandler;
 /**

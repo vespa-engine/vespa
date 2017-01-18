@@ -56,7 +56,18 @@ using search::makeLambdaTask;
 
 namespace proton {
 
-namespace { constexpr uint32_t indexing_thread_stack_size = 128 * 1024; }
+namespace {
+
+constexpr uint32_t indexing_thread_stack_size = 128 * 1024;
+
+uint32_t semiUnboundTaskLimit(uint32_t semiUnboundExecutorTaskLimit,
+                              uint32_t indexingThreads)
+{
+    uint32_t taskLimit = semiUnboundExecutorTaskLimit / indexingThreads;
+    return taskLimit;
+}
+
+}
 
 DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        const DocumentDBConfig::SP & configSnapshot,
@@ -85,6 +96,8 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
       _defaultExecutorTaskLimit(protonCfg.indexing.tasklimit),
+      _semiUnboundExecutorTaskLimit(protonCfg.indexing.semiunboundtasklimit),
+      _indexingThreads(protonCfg.indexing.threads),
       _writeService(std::max(1, protonCfg.indexing.threads),
                     indexing_thread_stack_size,
                     _defaultExecutorTaskLimit),
@@ -182,6 +195,12 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     }
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->
                            getAttributeUsageFilterConfig());
+    fastos::TimeStamp visibilityDelay =
+        loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
+    _visibility.setVisibilityDelay(visibilityDelay);
+    if (_visibility.getVisibilityDelay() > 0) {
+        _writeService.setTaskLimit(semiUnboundTaskLimit(_semiUnboundExecutorTaskLimit, _indexingThreads));
+    }
 }
 
 void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
@@ -432,7 +451,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         _visibility.setVisibilityDelay(visibilityDelay);
     }
     if (_visibility.getVisibilityDelay() > 0) {
-        _writeService.setUnboundTaskLimit();
+        _writeService.setTaskLimit(semiUnboundTaskLimit(_semiUnboundExecutorTaskLimit, _indexingThreads));
     } else {
         _writeService.setTaskLimit(_defaultExecutorTaskLimit);
     }

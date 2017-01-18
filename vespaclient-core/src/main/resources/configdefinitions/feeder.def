@@ -19,7 +19,7 @@ maxpendingdocs int default=0
 maxpendingbytes int default=0
 
 ## Max number of busy threads
-maxbusythreads int default=32
+maxbusythreads int default=150
 
 ## Max number of operations to perform per second (0 == no max)
 maxfeedrate double default=0.0

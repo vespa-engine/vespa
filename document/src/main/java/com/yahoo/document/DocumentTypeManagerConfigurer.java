@@ -30,7 +30,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                                      cfg.compressthreshold(), cfg.compressminsize());
     }
 
-
     public static CompressionType toCompressorType(DocumentmanagerConfig.Datatype.Structtype.Compresstype.Enum value) {
         switch (value) {
             case NONE: return CompressionType.NONE;

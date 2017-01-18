@@ -2,12 +2,14 @@
 
 #pragma once
 
-#include <vespa/fnet/fnet.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <vespa/slobrok/cfg.h>
-#include <vespa/messagebus/network/oosmanager.h>
+#include <vespa/fnet/task.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/config/subscription/configuri.h>
 
+class FRT_Supervisor;
+
+namespace mbus { class OOSManager; }
+namespace slobrok { namespace api { class IMirrorAPI; }}
 namespace proton {
 
 class Proton;
@@ -29,11 +31,11 @@ public:
         {}
     };
 private:
-    FRT_Supervisor        & _orb;
-    OosParams               _params;
-    slobrok::api::MirrorAPI _sbmirror;
-    mbus::OOSManager        _oosmanager;
-    int                     _curState;
+    FRT_Supervisor                         & _orb;
+    OosParams                                _params;
+    std::unique_ptr<slobrok::api::IMirrorAPI> _sbmirror;
+    std::unique_ptr<mbus::OOSManager>        _oosmanager;
+    int                                      _curState;
 public:
     OosCli(const OosParams &params, FRT_Supervisor &orb);
     virtual ~OosCli();

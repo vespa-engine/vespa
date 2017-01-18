@@ -355,9 +355,15 @@ public class IndexedTensor implements Tensor {
                                offset + productOfDimensionsAfter(currentDimensionIndex, sizes) * i,
                                (List<Object>) currentDimension.get(i), sizes, values);
             } else { // last dimension - fill values
-                for (int i = 0; i < currentDimension.size(); i++)
-                    values[offset + i] = (double) currentDimension.get(i);
+                for (int i = 0; i < currentDimension.size(); i++) {
+                    values[offset + i] = nullAsZero((Double)currentDimension.get(i)); // fill missing values as zero
+                }
             }
+        }
+        
+        private double nullAsZero(Double value) {
+            if (value == null) return 0;
+            return value;
         }
 
         @Override

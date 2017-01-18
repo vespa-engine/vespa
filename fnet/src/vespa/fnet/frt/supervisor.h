@@ -2,6 +2,20 @@
 
 #pragma once
 
+#include "invokable.h"
+#include "packets.h"
+#include "reflection.h"
+#include <vespa/fnet/iserveradapter.h>
+#include <vespa/fnet/ipackethandler.h>
+#include <vespa/fnet/connection.h>
+#include <vespa/fnet/simplepacketstreamer.h>
+
+class FNET_Transport;
+class FRT_Target;
+class FastOS_ThreadPool;
+class FNET_Scheduler;
+class FRT_RPCInvoker;
+class FRT_IRequestWait;
 
 class FRT_Supervisor : public FNET_IServerAdapter,
                        public FNET_IPacketHandler
@@ -76,7 +90,7 @@ public:
 
     bool StandAlone() { return _standAlone; }
     FNET_Transport *GetTransport() { return _transport; }
-    FNET_Scheduler *GetScheduler() { return _transport->GetScheduler(); }
+    FNET_Scheduler *GetScheduler();
     FastOS_ThreadPool *GetThreadPool() { return _threadPool; }
     FRT_ReflectionManager *GetReflectionManager() { return &_reflectionManager; }
 
@@ -90,7 +104,7 @@ public:
     FRT_Target *Get2WayTarget(const char *spec,
                               FNET_Context connContext = FNET_Context());
     FRT_Target *GetTarget(int port);
-    FRT_RPCRequest *AllocRPCRequest(FRT_RPCRequest *tradein = NULL);
+    FRT_RPCRequest *AllocRPCRequest(FRT_RPCRequest *tradein = nullptr);
 
     // special hooks (implemented as RPC methods)
     void SetSessionInitHook(FRT_METHOD_PT  method, FRT_Invokable *handler);
@@ -102,10 +116,8 @@ public:
         FNET_Scheduler *ptr;
         SchedulerPtr(FNET_Scheduler *scheduler)
             : ptr(scheduler) {}
-        SchedulerPtr(FNET_Transport *transport)
-            : ptr(transport->GetScheduler()) {}
-        SchedulerPtr(FNET_TransportThread *transport_thread)
-            : ptr(transport_thread->GetScheduler()) {}
+        SchedulerPtr(FNET_Transport *transport);
+        SchedulerPtr(FNET_TransportThread *transport_thread);
     };
 
     // methods for performing rpc invocations

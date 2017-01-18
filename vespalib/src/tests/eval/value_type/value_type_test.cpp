@@ -59,6 +59,18 @@ TEST("require that dimension names can be obtained") {
                  std::vector<vespalib::string>({"x", "y", "z"}));
 }
 
+TEST("require that dimension index can be obtained") {
+    EXPECT_EQUAL(ValueType::error_type().dimension_index("x"), ValueType::Dimension::npos);
+    EXPECT_EQUAL(ValueType::any_type().dimension_index("x"), ValueType::Dimension::npos);
+    EXPECT_EQUAL(ValueType::double_type().dimension_index("x"), ValueType::Dimension::npos);
+    EXPECT_EQUAL(ValueType::tensor_type({}).dimension_index("x"), ValueType::Dimension::npos);
+    auto my_type = ValueType::tensor_type({{"y", 10}, {"x"}, {"z", 0}});
+    EXPECT_EQUAL(my_type.dimension_index("x"), 0);
+    EXPECT_EQUAL(my_type.dimension_index("y"), 1);
+    EXPECT_EQUAL(my_type.dimension_index("z"), 2);
+    EXPECT_EQUAL(my_type.dimension_index("w"), ValueType::Dimension::npos);
+}
+
 void verify_equal(const ValueType &a, const ValueType &b) {
     EXPECT_TRUE(a == b);
     EXPECT_TRUE(b == a);

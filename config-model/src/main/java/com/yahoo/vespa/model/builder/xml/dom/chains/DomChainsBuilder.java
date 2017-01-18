@@ -34,16 +34,6 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
                                String appPkgChainsDir) {
 
         this.outerChainsElem = outerChainsElem;
-
-        // XXX: hack to prevent 'config' in the outer chains elem.
-        // TODO: Remove when this can be handled by schema, i.e. when we don't need the non-cluster qrservers syntax anymore
-        if (outerChainsElem != null) {
-            if (XML.getChildren(outerChainsElem, "config").size() > 0) {
-                throw new RuntimeException("At node " + XML.getNodePath(outerChainsElem, " > ") + ": " +
-                        "'config' is not allowed in the outer chains element, please move it up one level!");
-            }
-        }
-
         this.allowedComponentTypes = new ArrayList<>(allowedComponentTypes);
         this.appPkgChainsDir = appPkgChainsDir;
     }

@@ -13,6 +13,9 @@ import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
  */
 public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQueryProfile> {
 
+    /** The empty, frozen registry */
+    public static final CompiledQueryProfileRegistry empty = CompiledQueryProfileRegistry.createFrozen();
+    
     private final QueryProfileTypeRegistry typeRegistry;
 
     /** Creates a compiled query profile registry with no types */
@@ -44,33 +47,40 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
      * which has a type which allows path matching is used. If there is no such profile, null is returned.
      */
     public CompiledQueryProfile findQueryProfile(String idString) {
-        if (idString==null || idString.isEmpty()) return getComponent("default");
-        ComponentSpecification id=new ComponentSpecification(idString);
-        CompiledQueryProfile profile=getComponent(id);
-        if (profile!=null) return profile;
+        if (idString == null || idString.isEmpty()) return getComponent("default");
+        ComponentSpecification id = new ComponentSpecification(idString);
+        CompiledQueryProfile profile = getComponent(id);
+        if (profile != null) return profile;
 
         return findPathParentQueryProfile(new ComponentSpecification(idString));
     }
 
     private CompiledQueryProfile findPathParentQueryProfile(ComponentSpecification id) {
         // Try the name with "/" appended - should have the same semantics with path matching
-        CompiledQueryProfile slashedProfile=getComponent(new ComponentSpecification(id.getName() + "/",id.getVersionSpecification()));
-        if (slashedProfile!=null && slashedProfile.getType()!=null && slashedProfile.getType().getMatchAsPath())
+        CompiledQueryProfile slashedProfile = getComponent(new ComponentSpecification(id.getName() + "/", 
+                                                                                      id.getVersionSpecification()));
+        if (slashedProfile != null && slashedProfile.getType() != null && slashedProfile.getType().getMatchAsPath())
             return slashedProfile;
 
         // Extract the parent (if any)
-        int slashIndex=id.getName().lastIndexOf("/");
-        if (slashIndex<1) return null;
-        String parentName=id.getName().substring(0,slashIndex);
+        int slashIndex = id.getName().lastIndexOf("/");
+        if (slashIndex < 1) return null;
+        String parentName = id.getName().substring(0, slashIndex);
         if (parentName.equals("")) return null;
 
-        ComponentSpecification parentId=new ComponentSpecification(parentName,id.getVersionSpecification());
+        ComponentSpecification parentId = new ComponentSpecification(parentName,id.getVersionSpecification());
 
-        CompiledQueryProfile pathParentProfile=getComponent(parentId);
+        CompiledQueryProfile pathParentProfile = getComponent(parentId);
 
-        if (pathParentProfile!=null && pathParentProfile.getType()!=null && pathParentProfile.getType().getMatchAsPath())
+        if (pathParentProfile!=null && pathParentProfile.getType() != null && pathParentProfile.getType().getMatchAsPath())
             return pathParentProfile;
         return findPathParentQueryProfile(parentId);
+    }
+    
+    private static CompiledQueryProfileRegistry createFrozen() {
+        CompiledQueryProfileRegistry registry = new CompiledQueryProfileRegistry();
+        registry.freeze();
+        return registry;
     }
 
 }

@@ -166,7 +166,6 @@ vespa_define_module(
     src/tests/memoryindex/fieldinverter
     src/tests/memoryindex/memoryindex
     src/tests/memoryindex/urlfieldinverter
-    src/tests/memorytub
     src/tests/nativerank
     src/tests/nearsearch
     src/tests/postinglistbm

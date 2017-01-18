@@ -2,6 +2,8 @@
 
 #pragma once
 
+class FRT_RPCRequest;
+
 class FRT_Invokable
 {
 public:

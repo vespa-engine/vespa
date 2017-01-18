@@ -2,6 +2,7 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.metrics.MessageBusMetricSet;
 import com.yahoo.messagebus.network.Network;
@@ -13,6 +14,7 @@ import com.yahoo.text.Utf8String;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -65,7 +67,38 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private int maxPendingSize = 0;
     private int pendingCount = 0;
     private int pendingSize = 0;
+    private final Thread careTaker = new Thread(this::sendBlockedMessages);
+    private final ConcurrentHashMap<SendBlockedMessages, Long> blockedSenders = new ConcurrentHashMap<>();
     private MessageBusMetricSet metrics = new MessageBusMetricSet();
+
+    public interface SendBlockedMessages {
+        /**
+         * Do what you want, but dont block.
+         * You will be called regularly until you signal you are done
+         * @return true unless you are done
+         */
+        boolean trySend();
+    }
+
+    public void register(SendBlockedMessages sender) {
+        blockedSenders.put(sender, SystemTimer.INSTANCE.milliTime());
+    }
+
+    private void sendBlockedMessages() {
+        while (! destroyed.get()) {
+            for (SendBlockedMessages sender : blockedSenders.keySet()) {
+                if (!sender.trySend()) {
+                    blockedSenders.remove(sender);
+                }
+            }
+            try {
+
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+    }
 
     /**
      * <p>Convenience constructor that proxies {@link #MessageBus(Network,
@@ -115,6 +148,8 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         } else {
             resender = null;
         }
+        careTaker.setDaemon(true);
+        careTaker.start();
 
         msn.start();
     }
@@ -149,6 +184,9 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      */
     public boolean destroy() {
         if (!destroyed.getAndSet(true)) {
+            try {
+                careTaker.join();
+            } catch (InterruptedException e) { }
             protocolRepository.clearPolicyCache();
             net.shutdown();
             msn.destroy();

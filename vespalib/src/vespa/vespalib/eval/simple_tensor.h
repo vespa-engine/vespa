@@ -70,14 +70,16 @@ private:
     Cells _cells;
 
 public:
+    explicit SimpleTensor(double value);
     SimpleTensor(const ValueType &type_in, Cells &&cells_in);
     const ValueType &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     std::unique_ptr<SimpleTensor> reduce(const BinaryOperation &op, const std::vector<vespalib::string> &dimensions) const;
     static std::unique_ptr<SimpleTensor> create(const TensorSpec &spec);
     static bool equal(const SimpleTensor &a, const SimpleTensor &b);
-    static std::unique_ptr<SimpleTensor> perform(const UnaryOperation &op, const SimpleTensor &a);
-    static std::unique_ptr<SimpleTensor> perform(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b);
+    static std::unique_ptr<SimpleTensor> map(const UnaryOperation &op, const SimpleTensor &a);
+    static std::unique_ptr<SimpleTensor> join(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b);
+    static std::unique_ptr<SimpleTensor> concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension);
 };
 
 } // namespace vespalib::eval

@@ -61,5 +61,5 @@ PingPacketFactory::CreatePacket(uint32_t pcode, FNET_Context)
     case PCODE_PING_REQUEST: return new PingRequest();
     case PCODE_PING_REPLY:   return new PingReply();
     }
-    return NULL;
+    return nullptr;
 }

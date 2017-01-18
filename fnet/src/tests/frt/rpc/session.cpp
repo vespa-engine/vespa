@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/frt/frt.h>
 
@@ -6,7 +7,7 @@
 class Session
 {
 private:
-  static FNET_Mutex _lock;
+  static FastOS_Mutex _lock;
   static int        _cnt;
   int               _val;
 
@@ -30,7 +31,7 @@ public:
   static int GetCnt() { return _cnt; }
 };
 
-FNET_Mutex Session::_lock;
+FastOS_Mutex Session::_lock;
 int Session::_cnt(0);
 
 
@@ -50,7 +51,7 @@ struct RPC : public FRT_Invokable
   {
     Session *session =
       (Session *)req->GetConnection()->GetContext()._value.VOIDP;
-    bogusFini |= (session == NULL);
+    bogusFini |= (session == nullptr);
     delete session;
   }
 

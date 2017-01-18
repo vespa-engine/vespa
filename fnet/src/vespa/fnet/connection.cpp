@@ -1,18 +1,56 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "connection.h"
+#include "dummypacket.h"
+#include "channel.h"
+#include "controlpacket.h"
+#include "ipacketstreamer.h"
+#include "iserveradapter.h"
+#include "config.h"
+#include "transport_thread.h"
+#include <vespa/fastos/socket.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
-#include <vespa/fnet/fnet.h>
+
+namespace {
+class SyncPacket : public FNET_DummyPacket {
+private:
+    FastOS_Cond _cond;
+    bool _done;
+    bool _waiting;
+
+public:
+    SyncPacket()
+            : _cond(),
+              _done(false),
+              _waiting(false) {}
+
+    virtual ~SyncPacket() {}
+
+    void WaitFree() {
+        _cond.Lock();
+        _waiting = true;
+        while (!_done)
+            _cond.Wait();
+        _waiting = false;
+        _cond.Unlock();
+    }
+
+    virtual void Free();
+};
+
 
 void
-FNET_Connection::SyncPacket::Free()
+SyncPacket::Free()
 {
     _cond.Lock();
     _done = true;
     if (_waiting)
         _cond.Signal();
     _cond.Unlock();
+}
+
 }
 
 ///////////////////////
@@ -35,7 +73,6 @@ FNET_Connection::GetStateString(State state)
         return "ILLEGAL";
     }
 }
-
 
 void
 FNET_Connection::SetState(State state)
@@ -68,7 +105,7 @@ FNET_Connection::SetState(State state)
             _flags._discarding = false;
         }
 
-        BeforeCallback(NULL);
+        BeforeCallback(nullptr);
         toDelete = _channels.Broadcast(&FNET_ControlPacket::ChannelLost);
         AfterCallback();
     }
@@ -78,7 +115,7 @@ FNET_Connection::SetState(State state)
 
         for (const FNET_Channel::UP & ch : toDelete) {
             if (ch.get() == ach) {
-                _adminChannel = NULL;
+                _adminChannel = nullptr;
             } else {
                 SubRef_NoLock();
             }
@@ -99,7 +136,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
     Lock();
     channel = _channels.Lookup(chid);
 
-    if (channel != NULL) { // deliver packet on open channel
+    if (channel != nullptr) { // deliver packet on open channel
         channel->prefetch(); // Prefetch in the shadow of the lock operation in BeforeCallback.
         __builtin_prefetch(&_streamer);
         __builtin_prefetch(&_input);
@@ -107,7 +144,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
         BeforeCallback(channel);
         __builtin_prefetch(channel->GetHandler(), 0);  // Prefetch the handler while packet is being decoded.
         packet = _streamer->Decode(&_input, plen, pcode, channel->GetContext());
-        hp_rc = (packet != NULL) ? channel->Receive(packet)
+        hp_rc = (packet != nullptr) ? channel->Receive(packet)
                 : channel->Receive(&FNET_ControlPacket::BadPacket);
         AfterCallback();
 
@@ -117,7 +154,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
 
             if (hp_rc == FNET_IPacketHandler::FNET_FREE_CHANNEL) {
                 if (channel == _adminChannel) {
-                    _adminChannel = NULL;
+                    _adminChannel = nullptr;
                 } else {
                     SubRef_NoLock();
                 }
@@ -136,7 +173,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
         if (_serverAdapter->InitChannel(channel, pcode)) {
 
             packet = _streamer->Decode(&_input, plen, pcode, channel->GetContext());
-            hp_rc = (packet != NULL) ? channel->Receive(packet)
+            hp_rc = (packet != nullptr) ? channel->Receive(packet)
                     : channel->Receive(&FNET_ControlPacket::BadPacket);
             AfterCallback();
 
@@ -360,12 +397,12 @@ FNET_Connection::Write(bool direct)
 FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketStreamer *streamer,
                                  FNET_IServerAdapter *serverAdapter,
-                                 FastOS_Socket *mySocket,
+                                 FastOS_SocketInterface *mySocket,
                                  const char *spec)
     : FNET_IOComponent(owner, mySocket, spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
-      _adminChannel(NULL),
+      _adminChannel(nullptr),
       _socket(mySocket),
       _context(),
       _state(FNET_CONNECTED), // <-- NB
@@ -380,10 +417,10 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _myQueue(256),
       _output(FNET_WRITE_SIZE * 2),
       _channels(),
-      _callbackTarget(NULL),
-      _cleanup(NULL)
+      _callbackTarget(nullptr),
+      _cleanup(nullptr)
 {
-    assert(_socket != NULL);
+    assert(_socket != nullptr);
     LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
         GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
 }
@@ -395,12 +432,12 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketHandler *adminHandler,
                                  FNET_Context adminContext,
                                  FNET_Context context,
-                                 FastOS_Socket *mySocket,
+                                 FastOS_SocketInterface *mySocket,
                                  const char *spec)
     : FNET_IOComponent(owner, mySocket, spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
-      _adminChannel(NULL),
+      _adminChannel(nullptr),
       _socket(mySocket),
       _context(context),
       _state(FNET_CONNECTING),
@@ -415,11 +452,11 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _myQueue(256),
       _output(FNET_WRITE_SIZE * 2),
       _channels(),
-      _callbackTarget(NULL),
-      _cleanup(NULL)
+      _callbackTarget(nullptr),
+      _cleanup(nullptr)
 {
-    assert(_socket != NULL);
-    if (adminHandler != NULL) {
+    assert(_socket != nullptr);
+    if (adminHandler != nullptr) {
         FNET_Channel::UP admin(new FNET_Channel(FNET_NOID, this, adminHandler, adminContext));
         _adminChannel = admin.get();
         _channels.Register(admin.release());
@@ -429,12 +466,12 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
 
 FNET_Connection::~FNET_Connection()
 {
-    if (_adminChannel != NULL) {
+    if (_adminChannel != nullptr) {
         _channels.Unregister(_adminChannel);
         delete _adminChannel;
     }
-    assert(_cleanup == NULL);
-    assert(_socket->GetSocketEvent() == NULL);
+    assert(_cleanup == nullptr);
+    assert(_socket->GetSocketEvent() == nullptr);
     assert(!_flags._writeLock);
     delete _socket;
 }
@@ -452,7 +489,7 @@ FNET_Connection::Init()
     }
 
     // init server admin channel
-    if (rc && CanAcceptChannels() && _adminChannel == NULL) {
+    if (rc && CanAcceptChannels() && _adminChannel == nullptr) {
         FNET_Channel::UP ach(new FNET_Channel(FNET_NOID, this));
         if (_serverAdapter->InitAdminChannel(ach.get())) {
             AddRef_NoLock();
@@ -496,10 +533,10 @@ FNET_Connection::OpenChannel(FNET_IPacketHandler *handler,
     Lock();
     if (__builtin_expect(_state < FNET_CLOSING, true)) {
         newChannel->SetID(GetNextID());
-        if (chid != NULL) {
+        if (chid != nullptr) {
             *chid = newChannel->GetID();
         }
-        WaitCallback(NULL);
+        WaitCallback(nullptr);
         AddRef_NoLock();
         ret = newChannel.release();
         _channels.Register(ret);
@@ -558,12 +595,12 @@ FNET_Connection::CloseAdminChannel()
 {
     Lock();
     FNET_Channel::UP toDelete;
-    if (_adminChannel != NULL) {
+    if (_adminChannel != nullptr) {
         WaitCallback(_adminChannel);
-        if (_adminChannel != NULL) {
+        if (_adminChannel != nullptr) {
             _channels.Unregister(_adminChannel);
             toDelete.reset(_adminChannel);
-            _adminChannel = NULL;
+            _adminChannel = nullptr;
         }
     }
     Unlock();
@@ -575,7 +612,7 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
 {
     uint32_t writeWork;
 
-    assert(packet != NULL);
+    assert(packet != nullptr);
     Lock();
     if (_state >= FNET_CLOSING) {
         if (_flags._discarding) {
@@ -633,9 +670,9 @@ FNET_Connection::Sync()
 void
 FNET_Connection::CleanupHook()
 {
-    if (_cleanup != NULL) {
+    if (_cleanup != nullptr) {
         _cleanup->Cleanup(this);
-        _cleanup = NULL;
+        _cleanup = nullptr;
     }
 }
 
@@ -643,7 +680,7 @@ FNET_Connection::CleanupHook()
 void
 FNET_Connection::Close()
 {
-    SetSocketEvent(NULL);
+    SetSocketEvent(nullptr);
     SetState(FNET_CLOSED);
     _socket->Shutdown();
     _socket->Close();

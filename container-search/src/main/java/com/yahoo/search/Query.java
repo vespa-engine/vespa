@@ -84,7 +84,7 @@ import java.util.logging.Logger;
  * <p>
  * The identity of a query is determined by its content.
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  * @author bratseth
  */
 public class Query extends com.yahoo.processing.Request implements Cloneable {
@@ -318,7 +318,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
-                    chain(new QueryProperties(this, new CompiledQueryProfileRegistry())).
+                    chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty)).
                     chain(new PropertyMap()).
                     chain(new DefaultProperties());
             setPropertiesFromRequestMap(requestMap, properties());
