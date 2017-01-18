@@ -72,8 +72,7 @@ public:
               _start(rhs._start),
               _entry(rhs._entry),
               _repo(rhs._repo)
-        {
-        }
+        { }
 
         Entry& operator=(const Entry &rhs)
         {
@@ -89,32 +88,18 @@ public:
 
         /** Entries in iterators gotten from DocumentList::end() are invalid. */
         bool valid() const { return (_start != 0); }
-        bool isRemoveEntry() const
-            { return _metaEntry->flags & MetaEntry::REMOVE_ENTRY; }
-        bool isBodyStripped() const
-            { return _metaEntry->flags & MetaEntry::BODY_STRIPPED; }
-        bool hasBodyInHeader() const
-            { return _metaEntry->flags & MetaEntry::BODY_IN_HEADER; }
-        bool isUpdateEntry() const
-            { return _metaEntry->flags & MetaEntry::UPDATE_ENTRY; }
-        bool isCompressed() const
-            { return _metaEntry->flags & MetaEntry::COMPRESSED; }
+        bool isRemoveEntry() const { return _metaEntry->flags & MetaEntry::REMOVE_ENTRY; }
+        bool isBodyStripped() const { return _metaEntry->flags & MetaEntry::BODY_STRIPPED; }
+        bool isUpdateEntry() const { return _metaEntry->flags & MetaEntry::UPDATE_ENTRY; }
 
         uint8_t getFlags() const { return _metaEntry->flags; }
         Timestamp getTimestamp() const { return _metaEntry->timestamp; }
-
         void setTimestamp(Timestamp t) const { _metaEntry->timestamp = t; }
 
         document::DocumentId getDocumentId() const;
-
-        /** Deserialize and get the document this entry points to. */
-        document::Document::UP getDocument(
-                const document::DocumentType *anticipatedType = 0) const;
-        document::Document::UP getHeader(
-                const document::DocumentType *anticipatedType = 0) const;
+        document::Document::UP getDocument(const document::DocumentType *anticipatedType = 0) const;
         std::unique_ptr<document::DocumentUpdate> getUpdate() const;
-        bool getDocument(document::Document&, bool longLivedBuffer=false) const;
-        bool getHeader(document::Document&) const;
+    public:
         bool getUpdate(document::DocumentUpdate&) const;
 
         typedef std::pair<char*, uint32_t> BufferPosition;
@@ -133,10 +118,8 @@ public:
                     + sizeof(MetaEntry);
         }
 
-        void print(std::ostream& out, bool verbose,
-                   const std::string& indent) const;
-        bool operator==(const Entry& e) const
-            { return (_start == e._start && _entry == e._entry); }
+        void print(std::ostream& out, bool verbose, const std::string& indent) const;
+        bool operator==(const Entry& e) const { return (_start == e._start && _entry == e._entry); }
     };
 
     class const_iterator {
@@ -163,7 +146,8 @@ public:
      * Create a new documentlist, using the given buffer.
      * @param keepexisting If set to true, assume buffer is already filled.
      */
-    DocumentList(const document::DocumentTypeRepo::SP & repo, char* buffer, uint32_t bufferSize, bool keepexisting = false);
+    DocumentList(const document::DocumentTypeRepo::SP & repo, char* buffer,
+                 uint32_t bufferSize, bool keepexisting = false);
 
     DocumentList(const DocumentList& source, char* buffer, uint32_t bufferSize);
 
@@ -172,10 +156,8 @@ public:
     DocumentList(const DocumentList &rhs);
 
     /** return number of bytes free space (in the middle of the buffer) */
-    uint32_t countFree() const
-    {
-        return (_freePtr - _buffer) - sizeof(uint32_t)
-                    - sizeof(MetaEntry) * size();
+    uint32_t countFree() const {
+        return (_freePtr - _buffer) - sizeof(uint32_t) - sizeof(MetaEntry) * size();
     }
 
     void clear() { docCount() = 0; _freePtr = _buffer + _bufferSize; }
@@ -185,9 +167,7 @@ public:
     const char* getBuffer() const { return _buffer; }
 
     const_iterator begin() const {
-        return const_iterator(
-                Entry((_freePtr < _buffer + _bufferSize ? _buffer : 0), 0,
-                      *_repo));
+        return const_iterator(Entry((_freePtr < _buffer + _bufferSize ? _buffer : 0), 0, *_repo));
     }
     const_iterator end() const { return const_iterator(Entry()); }
     uint32_t size() const { return (_buffer == 0 ? 0 : docCount()); }
@@ -204,19 +184,7 @@ public:
     }
 
     void checkConsistency(bool do_memset = false);
-
-    /** fill any free space in the buffer with FF bytes */
-    void fillFreespace() {
-        if (_buffer == 0) return;
-        checkConsistency(true);
-        char *startOfFree = _buffer + sizeof(uint32_t) + docCount() * sizeof(MetaEntry);
-        assert(startOfFree < _freePtr);
-        memset(startOfFree, 0xff, _freePtr - startOfFree);
-    }
-
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
-
+    void print(std::ostream& out, bool verbose, const std::string& indent) const;
     const document::DocumentTypeRepo::SP & getTypeRepo() const { return _repo; }
 
 protected:
@@ -228,15 +196,11 @@ protected:
     uint32_t docCount() const { return *reinterpret_cast<uint32_t*>(_buffer); }
 
     uint32_t& docCount() { return *reinterpret_cast<uint32_t*>(_buffer); }
-    const MetaEntry& getMeta(uint32_t index) const
-    {
-        return *reinterpret_cast<MetaEntry*>(_buffer + sizeof(uint32_t)
-                                                + index * sizeof(MetaEntry));
+    const MetaEntry& getMeta(uint32_t index) const {
+        return *reinterpret_cast<MetaEntry*>(_buffer + sizeof(uint32_t) + index * sizeof(MetaEntry));
     }
-    MetaEntry& getMeta(uint32_t index)
-    {
-        return *reinterpret_cast<MetaEntry*>(_buffer + sizeof(uint32_t)
-                                                + index * sizeof(MetaEntry));
+    MetaEntry& getMeta(uint32_t index) {
+        return *reinterpret_cast<MetaEntry*>(_buffer + sizeof(uint32_t) + index * sizeof(MetaEntry));
     }
 private:
     void init(bool keepExisting);
