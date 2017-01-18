@@ -105,7 +105,7 @@ public:
         return _retriesEnabled;
     }
 
-    static std::string getValidZKServers(const std::string &input, bool allowDNSFailure);
+    static std::string getValidZKServers(const std::string &input, bool ignoreDNSFailure);
 
 private:
     class RegistrationGuard {

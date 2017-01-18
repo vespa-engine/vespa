@@ -302,8 +302,8 @@ ZKFacade::invokeWatcher(void* watcherContext) {
 /********** End live watchers ***************************************/
 
 std::string
-ZKFacade::getValidZKServers(const std::string &input, bool allowDNSFailure) {
-    if (allowDNSFailure) {
+ZKFacade::getValidZKServers(const std::string &input, bool ignoreDNSFailure) {
+    if (ignoreDNSFailure) {
         vespalib::StringTokenizer tokenizer(input, ",");
         vespalib::string validServers;
         for (vespalib::string spec : tokenizer) {
