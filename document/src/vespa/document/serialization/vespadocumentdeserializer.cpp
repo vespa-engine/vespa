@@ -2,7 +2,6 @@
 
 #include "vespadocumentdeserializer.h"
 #include "annotationdeserializer.h"
-#include "util.h"
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
@@ -18,14 +17,9 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/repo/fixedtyperepo.h>
-#include <vespa/document/util/compressionconfig.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
-#include <vespa/vespalib/data/slime/memory.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
@@ -42,7 +36,6 @@ using vespalib::asciistream;
 using vespalib::nbostream;
 using vespalib::slime::Memory;
 using vespalib::stringref;
-
 
 namespace document {
 

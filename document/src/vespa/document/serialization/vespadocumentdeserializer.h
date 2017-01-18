@@ -43,15 +43,13 @@ public:
         _stream(stream),
         _repo(repo),
         _version(version)
-    {
-    }
+    { }
 
     VespaDocumentDeserializer(const FixedTypeRepo &repo, vespalib::nbostream &stream, uint16_t version) :
         _stream(stream),
         _repo(repo),
         _version(version)
-    {
-    }
+    { }
 
     // returns NULL if the read doc type equals guess.
     const DocumentType *readDocType(const DocumentType &guess);
