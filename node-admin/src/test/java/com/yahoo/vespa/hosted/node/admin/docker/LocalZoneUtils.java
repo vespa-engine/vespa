@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
+import com.yahoo.vespa.hosted.dockerapi.DockerTestUtils;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -17,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -75,11 +77,11 @@ public class LocalZoneUtils {
     }
 
     public static void startNodeAdminIfNeeded(Docker docker, Environment environment, Path pathToContainerStorage) {
-        Optional<Container> container = docker.getContainer(NODE_ADMIN_HOSTNAME);
-        if (container.isPresent()) {
-            if (container.get().isRunning) return;
-            else docker.deleteContainer(NODE_ADMIN_CONTAINER_NAME);
-        }
+        Optional<Docker.ContainerStats> containerStats = docker.getContainerStats(NODE_ADMIN_CONTAINER_NAME);
+        if (containerStats.isPresent())
+            return;
+        else
+            docker.deleteContainer(NODE_ADMIN_CONTAINER_NAME);
 
         Docker.CreateContainerCommand createCmd = docker.createContainerCommand(VESPA_LOCAL_IMAGE,
                 NODE_ADMIN_CONTAINER_NAME, NODE_ADMIN_HOSTNAME)
@@ -261,7 +263,17 @@ public class LocalZoneUtils {
     }
 
     private static String getParentHostHostname() {
-        return HostName.getLocalhost();
+        String hostname = HostName.getLocalhost();
+        // Avoid issue with hostname not being FQDN on MacOs
+        if (DockerTestUtils.getSystemOS() == DockerTestUtils.OS.Mac_OS_X) {
+            try {
+                InetAddress ipAddress = InetAddress.getByName(hostname);
+                return InetAddress.getByAddress(ipAddress.getAddress()).getHostName();
+            } catch (UnknownHostException e) {
+                throw new RuntimeException("Could not find hostname");
+            }
+        }
+        return hostname;
     }
 }
 
