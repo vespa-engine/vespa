@@ -93,7 +93,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                    const ZookeepersConfig& zooKeepersConfig,
                    const FiledistributorConfig& fileDistributorConfig,
                    const FiledistributorrpcConfig& rpcConfig)
-            :_zk(track(new ZKFacade(zooKeepersConfig.zookeeperserverlist))),
+            :_zk(track(new ZKFacade(zooKeepersConfig.zookeeperserverlist, false))),
              _model(track(new FileDistributionModelImpl(fileDistributorConfig.hostname, fileDistributorConfig.torrentport, _zk))),
              _tracker(track(new FileDistributorTrackerImpl(_model))),
              _downloader(track(new FileDownloader(_tracker, fileDistributorConfig.hostname, fileDistributorConfig.torrentport, Path(fileDistributorConfig.filedbpath)))),

@@ -73,7 +73,7 @@ public:
 
     ZKFacade(const ZKFacade &) = delete;
     ZKFacade & operator = (const ZKFacade &) = delete;
-    ZKFacade(const std::string& zkservers);
+    ZKFacade(const std::string& zkservers, bool allowDNSFailure);
     ~ZKFacade();
 
     bool hasNode(const Path&);
@@ -104,6 +104,8 @@ public:
     bool retriesEnabled() {
         return _retriesEnabled;
     }
+
+    static std::string getValidZKServers(const std::string &input, bool allowDNSFailure);
 
 private:
     class RegistrationGuard {

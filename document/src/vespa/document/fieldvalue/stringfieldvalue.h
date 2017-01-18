@@ -57,6 +57,7 @@ private:
         typedef std::vector<char> BackingBlob;
         typedef std::unique_ptr<AnnotationData> UP;
         VESPA_DLL_LOCAL AnnotationData(const AnnotationData & rhs);
+        AnnotationData & operator = (const AnnotationData &) = delete;
         VESPA_DLL_LOCAL AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo &repo,
                                        uint8_t version, bool isSerializedDataLongLived);
 

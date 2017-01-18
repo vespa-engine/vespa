@@ -1,13 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 
 #include "zkfacade.h"
-
-#include <iostream>
-#include <unistd.h>
-#include <signal.h>
-#include <cassert>
-#include <cstdio>
+#include <vespa/vespalib/net/socket_address.h>
 #include <sstream>
 #include <thread>
 #include <boost/function_output_iterator.hpp>
@@ -16,6 +10,7 @@
 #include <vespa/filedistribution/common/logfwd.h>
 #include <vespa/defaults.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 typedef std::unique_lock<std::mutex> UniqueLock;
 
@@ -75,7 +70,7 @@ toErrorMsg(int zkStatus) {
       case ZNOTHING:
         return "Zookeeper: No server responses to process(ZNOTHING)";
       default:
-        std::cerr <<"In ZKGenericException::what(): Invalid error code " << zkStatus <<std::endl;
+        LOGFWD(error, "In ZKGenericException::what(): Invalid error code %d", zkStatus);
         return "Zookeeper: Invalid error code.";
     }
 }
@@ -306,11 +301,32 @@ ZKFacade::invokeWatcher(void* watcherContext) {
 
 /********** End live watchers ***************************************/
 
+std::string
+ZKFacade::getValidZKServers(const std::string &input, bool allowDNSFailure) {
+    if (allowDNSFailure) {
+        vespalib::StringTokenizer tokenizer(input, ",");
+        vespalib::string validServers;
+        for (vespalib::string spec : tokenizer) {
+            vespalib::StringTokenizer addrTokenizer(spec, ":");
+            vespalib::string address = addrTokenizer[0];
+            vespalib::string port = addrTokenizer[1];
+            if ( !vespalib::SocketAddress::resolve(atoi(port.c_str()), address.c_str()).empty()) {
+                if ( !validServers.empty() ) {
+                    validServers += ',';
+                }
+                validServers += spec;
+            }
+        }
+        return validServers;
+    }
+    return input;
+}
 
-ZKFacade::ZKFacade(const std::string& zkservers)
+
+ZKFacade::ZKFacade(const std::string& zkservers, bool allowDNSFailure)
     :_retriesEnabled(true),
      _watchersEnabled(true),
-     _zhandle(zookeeper_init(zkservers.c_str(),
+     _zhandle(zookeeper_init(getValidZKServers(zkservers, allowDNSFailure).c_str(),
                              &ZKFacade::stateWatchingFun,
                              _zkSessionTimeOut,
                              0, //clientid,
@@ -573,7 +589,7 @@ ZKLogging::ZKLogging() :
     filename.append("/tmp/zookeeper.log");
     _file = std::fopen(filename.c_str(), "w");
     if (_file == nullptr) {
-         std::cerr <<"Could not open file " <<filename << std::endl;
+         LOGFWD(error, "Could not open file '%s'", filename.c_str());
     } else {
          zoo_set_log_stream(_file);
     }
