@@ -123,6 +123,21 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
         return zkClient.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
+
+    /**
+     * Finds and returns all nodes that are children of the given parent node
+     *
+     * @param parent Parent node
+     * @return List of child nodes
+     */
+    public List<Node> getNodes(Node parent) {
+        return zkClient.getNodes().stream()
+                .filter(node -> node.parentHostname()
+                        .map(parentHostname -> parentHostname.equals(parent.hostname()))
+                        .orElse(false))
+                .collect(Collectors.toList());
+    }
+
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return zkClient.getNodes(id, inState); }
     public List<Node> getInactive() { return zkClient.getNodes(Node.State.inactive); }
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
@@ -130,7 +145,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Returns a list of nodes that should be trusted by the given node.
      */
-    public List<Node> getTrustedNodes(Node node) {
+    private List<Node> getTrustedNodes(Node node) {
         final List<Node> trustedNodes = new ArrayList<>();
 
         switch (node.type()) {
@@ -154,6 +169,12 @@ public class NodeRepository extends AbstractComponent {
                 trustedNodes.addAll(getNodes(NodeType.proxy));
                 break;
 
+            case host:
+                // Docker hosts trust all config servers and all Docker hosts
+                trustedNodes.addAll(getConfigNodes());
+                trustedNodes.addAll(getNodes(NodeType.host));
+                break;
+
             default:
                 throw new IllegalArgumentException(
                         String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
@@ -164,6 +185,25 @@ public class NodeRepository extends AbstractComponent {
         trustedNodes.sort(Comparator.comparing(Node::hostname));
 
         return Collections.unmodifiableList(trustedNodes);
+    }
+
+    /**
+     * Creates a list of node ACLs which identify which nodes the given node should trust
+     *
+     * @param node Node for which to generate ACLs
+     * @return List of node ACLs
+     */
+    public List<NodeAcl> getNodeAcls(Node node) {
+        final List<NodeAcl> nodeAcls = new ArrayList<>();
+        nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
+
+        // If a host node requests ACLs, we include ACLs for children of the node (e.g. containers on Docker hosts)
+        if (node.type() == NodeType.host) {
+            final List<Node> children = getNodes(node);
+            children.forEach(child -> nodeAcls.add(new NodeAcl(child, getTrustedNodes(child))));
+        }
+
+        return Collections.unmodifiableList(nodeAcls);
     }
 
     /** Get config node by hostname */
@@ -401,7 +441,8 @@ public class NodeRepository extends AbstractComponent {
         return resultingNodes;
     }
 
-    private List<Node> getConfigNodes() {
+    // Public for testing
+    public List<Node> getConfigNodes() {
         // TODO: Revisit this when config servers are added to the repository
         return Arrays.stream(curator.connectionSpec().split(","))
                 .map(hostPort -> hostPort.split(":")[0])
