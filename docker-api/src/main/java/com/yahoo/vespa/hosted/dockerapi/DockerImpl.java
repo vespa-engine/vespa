@@ -156,7 +156,7 @@ public class DockerImpl implements Docker {
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to copy container " + sourcePath + " to " +
-                    destinationPath + ":" + destinationPath, e);
+                    destinationContainer + ":" + destinationPath, e);
         }
     }
 
