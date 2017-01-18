@@ -4,6 +4,7 @@ package com.yahoo.tensor.serialization;
 import com.google.common.collect.Sets;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for the dense binary format.
@@ -27,6 +29,19 @@ public class DenseBinaryFormatTestCase {
         assertSerialization("tensor(x[],y[]):{{x:0,y:0}:2.0}");
         assertSerialization("tensor(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
         assertSerialization("tensor(x[1],y[2],z[3]):{{y:0,x:0,z:0}:2.0}");
+    }
+    
+    @Test
+    public void testSerializationToSeparateType() {
+        assertSerialization(Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x[],y[])"));
+        assertSerialization(Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x[2],y[2])"));
+        try {
+            assertSerialization(Tensor.from("tensor(x[2],y[2]):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x[1],y[1])"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("Type/instance mismatch: Instance has size 2 in x[1] in type tensor(x[1],y[1])", expected.getMessage());
+        }
     }
 
     @Test
@@ -47,8 +62,12 @@ public class DenseBinaryFormatTestCase {
     }
 
     private void assertSerialization(Tensor tensor) {
+        assertSerialization(tensor, tensor.type());
+    }
+    
+    private void assertSerialization(Tensor tensor, TensorType expectedType) {
         byte[] encodedTensor = TypedBinaryFormat.encode(tensor);
-        Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(tensor.type()), GrowableByteBuffer.wrap(encodedTensor));
+        Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(expectedType), GrowableByteBuffer.wrap(encodedTensor));
         assertEquals(tensor, decodedTensor);
     }
 

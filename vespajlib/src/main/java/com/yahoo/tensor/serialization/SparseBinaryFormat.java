@@ -57,7 +57,8 @@ class SparseBinaryFormat implements BinaryFormat {
         TensorType type;
         if (optionalType.isPresent()) {
             type = optionalType.get();
-            consumeAndValidateDimensions(optionalType.get(), buffer);
+            TensorType serializedType = decodeType(buffer);
+            serializedType.isAssignableTo(type);
         }
         else {
             type = decodeType(buffer);
@@ -65,21 +66,6 @@ class SparseBinaryFormat implements BinaryFormat {
         Tensor.Builder builder = Tensor.Builder.of(type);
         decodeCells(buffer, builder, type);
         return builder.build();
-    }
-
-    private void consumeAndValidateDimensions(TensorType type, GrowableByteBuffer buffer) {
-        int dimensionCount = buffer.getInt1_4Bytes();
-        if (type.dimensions().size() != dimensionCount)
-            throw new IllegalArgumentException("Type/instance mismatch: Instance has " + dimensionCount +
-                                               " dimensions but type is " + type);
-
-        for (int i = 0; i < dimensionCount; ++i) {
-            TensorType.Dimension expectedDimension = type.dimensions().get(i);
-            String encodedName = buffer.getUtf8String();
-            if ( ! expectedDimension.name().equals(encodedName))
-                throw new IllegalArgumentException("Type/instance mismatch: Instance has '" + encodedName +
-                                                   "' as dimension " + i + " but type is " + type);
-        }
     }
 
     private TensorType decodeType(GrowableByteBuffer buffer) {
