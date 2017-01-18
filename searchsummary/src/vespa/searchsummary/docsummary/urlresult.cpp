@@ -419,6 +419,7 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
             break;
         }
 
+        case RES_TENSOR:
         case RES_LONG_DATA: {
 
             uint32_t ldlen;

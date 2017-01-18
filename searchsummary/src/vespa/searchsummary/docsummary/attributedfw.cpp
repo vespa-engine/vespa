@@ -8,7 +8,8 @@
 #include "attributedfw.h"
 #include "docsumstate.h"
 #include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/serialization/slime_binary_format.h>
+#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
@@ -44,7 +45,13 @@ ResType inferType(const IAttributeVector & vec) {
             } else if (vec.isFloatingPointType()) {
                 retval = (fw == sizeof(float)) ? RES_FLOAT : RES_DOUBLE;
             } else {
-                retval = RES_STRING;
+                BasicType::Type t = vec.getBasicType();
+                switch (t) {
+                case BasicType::TENSOR:
+                    retval = RES_TENSOR;
+                default:
+                    retval = RES_STRING;
+                }
             }
         }
     }
@@ -133,34 +140,27 @@ SingleAttrDFW::WriteField(uint32_t docid,
         target->append(s, slen);
         return (sizeof(slen) + slen);
         break; }
-    case RES_JSONSTRING: {
+    case RES_TENSOR: {
+        vespalib::nbostream str;
         BasicType::Type t = v.getBasicType();
         switch (t) {
         case BasicType::TENSOR: {
             const tensor::TensorAttribute &tv =
                 static_cast<const tensor::TensorAttribute &>(v);
             const auto tensor = tv.getTensor(docid);
-            vespalib::string str;
             if (tensor) {
-                auto slime =
-                    vespalib::tensor::SlimeBinaryFormat::serialize(*tensor);
-                vespalib::slime::SimpleBuffer buf;
-                vespalib::slime::JsonFormat::encode(*slime, buf, true);
-                str = buf.get().make_string();
-            } else {
-                // No tensor value => empty object
-                str = "";
+                vespalib::tensor::TypedBinaryFormat::serialize(str, *tensor);
             }
-            uint32_t slen = str.size();
-            target->append(&slen, sizeof(slen));
-            target->append(str.c_str(), slen);
-            return (sizeof(slen) + slen);
         }
         default:
             break;
-        };
+        }
+        uint32_t slen = str.size();
+        target->append(&slen, sizeof(slen));
+        target->append(str.peek(), slen);
+        return (sizeof(slen) + slen);
     }
-        /* FALLTHROUGH */
+    case RES_JSONSTRING:
     case RES_XMLSTRING:
     case RES_FEATUREDATA:
     case RES_LONG_STRING:
@@ -222,7 +222,7 @@ SingleAttrDFW::insertField(uint32_t docid,
         target.insertLong(val);
         break;
     }
-    case RES_JSONSTRING: {
+    case RES_TENSOR: {
         BasicType::Type t = v.getBasicType();
         switch (t) {
         case BasicType::TENSOR: {
@@ -230,17 +230,17 @@ SingleAttrDFW::insertField(uint32_t docid,
                 static_cast<const tensor::TensorAttribute &>(v);
             const auto tensor = tv.getTensor(docid);
             if (tensor) {
-                vespalib::tensor::SlimeBinaryFormat::serialize(target, *tensor);
-            } else {
-                // No tensor value => no object
+                vespalib::nbostream str;
+                vespalib::tensor::TypedBinaryFormat::serialize(str, *tensor);
+                target.insertData(vespalib::slime::Memory(str.peek(), str.size()));
             }
-            return;
         }
         default:
-            break;
-        };
+            ;
+        }
     }
-        /* FALLTHROUGH */
+        break;
+    case RES_JSONSTRING:
     case RES_XMLSTRING:
     case RES_FEATUREDATA:
     case RES_LONG_STRING:
