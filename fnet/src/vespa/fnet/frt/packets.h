@@ -4,6 +4,7 @@
 
 #include <vespa/fnet/packet.h>
 #include <vespa/fnet/ipacketfactory.h>
+#include <vespa/vespalib/util/traits.h>
 
 class FRT_RPCRequest;
 
@@ -102,3 +103,6 @@ public:
     FNET_Packet *CreatePacket(uint32_t pcode, FNET_Context context);
 };
 
+VESPA_CAN_SKIP_DESTRUCTION(FRT_RPCRequestPacket)
+VESPA_CAN_SKIP_DESTRUCTION(FRT_RPCReplyPacket)
+VESPA_CAN_SKIP_DESTRUCTION(FRT_RPCErrorPacket)
