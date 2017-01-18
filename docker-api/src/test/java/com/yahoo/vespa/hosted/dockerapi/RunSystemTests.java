@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -70,12 +72,24 @@ public class RunSystemTests {
      *                        tests/search/basicsearch/basic_search.rb
      */
     void runSystemTest(ContainerName systemtestHost, Path systemtestToRun, String... arguments) throws InterruptedException, ExecutionException, IOException {
-        startSystemTestNodeIfNeeded(systemtestHost);
+        runSystemTest(Collections.singletonList(systemtestHost), systemtestToRun, arguments);
+    }
 
-        Path pathToSystetestToRun = pathToSystemtestsInContainer.resolve(systemtestToRun);
+    /**
+     * @param systemtestHosts name of the containers that will be used in the test, if some of them doe not exist, new
+     *                       ones will be started. First in list will be used as system test controller
+     * @param systemtestToRun relative path from the root of systemtests to the test to run, f.ex.
+     *                        tests/search/basicsearch/basic_search.rb
+     */
+    void runSystemTest(List<ContainerName> systemtestHosts, Path systemtestToRun, String... arguments) throws InterruptedException, ExecutionException, IOException {
+        for (ContainerName systemtestHost : systemtestHosts) {
+            startSystemTestNodeIfNeeded(systemtestHost);
+        }
 
-        logger.info("Running test " + pathToSystetestToRun);
-        Integer testExitCode = runTest(systemtestHost, pathToSystetestToRun, arguments);
+        Path pathToSystestToRun = pathToSystemtestsInContainer.resolve(systemtestToRun);
+
+        logger.info("Running test " + pathToSystestToRun);
+        Integer testExitCode = runTest(systemtestHosts.get(0), pathToSystestToRun, arguments);
         assertEquals("Test did not finish with exit code 0", Integer.valueOf(0), testExitCode);
     }
 
@@ -83,7 +97,7 @@ public class RunSystemTests {
      * This method runs mvn install inside container to update container's local repository, then copies any
      * existing and updated file from target to /home/y/lib/jars.
      *
-     * Because it runs as root we have to temporarly move around the target/ otherwise mvn will overwrite it and
+     * Because it runs as root we have to temporarily move around the target/ otherwise mvn will overwrite it and
      * as root, making mvn on host fail next time it runs.
      *
      * @param containerName name of the container to install modules in, if it does not exist, a new
@@ -137,6 +151,7 @@ public class RunSystemTests {
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(nodeInetAddress)
                 .withEnvironment("USER", "root")
+                .withEnvironment("VESPA_SYSTEM_TEST_USE_TLS", "false")
                 .withUlimit("nofile", 16384, 16384)
                 .withUlimit("nproc", 409600, 409600)
                 .withUlimit("core", -1, -1)
