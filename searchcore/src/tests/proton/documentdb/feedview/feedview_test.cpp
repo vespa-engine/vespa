@@ -22,6 +22,7 @@ LOG_SETUP("feedview_test");
 #include <vespa/searchcore/proton/test/dummy_summary_manager.h>
 #include <vespa/searchcore/proton/test/mock_index_writer.h>
 #include <vespa/searchcore/proton/test/mock_index_manager.h>
+#include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/docstore/cachestats.h>
@@ -181,10 +182,12 @@ struct MyDocumentStore : public test::DummyDocumentStore
     typedef std::map<DocumentIdT, document::Document::SP> DocMap;
     DocMap           _docs;
     uint64_t         _lastSyncToken;
+    uint32_t         _compactLidSpaceLidLimit;
     MyDocumentStore()
         : test::DummyDocumentStore("."),
           _docs(),
-          _lastSyncToken(0)
+          _lastSyncToken(0),
+          _compactLidSpaceLidLimit(0)
     {}
     virtual Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const {
         DocMap::const_iterator itr = _docs.find(lid);
@@ -206,6 +209,9 @@ struct MyDocumentStore : public test::DummyDocumentStore
         return syncToken;
     }
     virtual uint64_t lastSyncToken() const { return _lastSyncToken; }
+    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override {
+        _compactLidSpaceLidLimit = wantedDocLidLimit;
+    }
 };
 
 struct MySummaryManager : public test::DummySummaryManager
@@ -215,11 +221,11 @@ struct MySummaryManager : public test::DummySummaryManager
     virtual search::IDocumentStore &getBackingStore() { return _store; }
 };
 
-struct MySummaryAdapter : public ISummaryAdapter
+struct MySummaryAdapter : public test::MockSummaryAdapter
 {
     ISummaryManager::SP _sumMgr;
     MyDocumentStore    &_store;
-    MyLidVector           _removes;
+    MyLidVector         _removes;
 
     MySummaryAdapter()
         : _sumMgr(new MySummaryManager()),
@@ -227,25 +233,26 @@ struct MySummaryAdapter : public ISummaryAdapter
           _removes()
     {
     }
-    virtual void put(SerialNum serialNum, const document::Document &doc,
-                     const DocumentIdT lid) {
+    virtual void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid) override {
         (void) serialNum;
         _store.write(serialNum, doc, lid);
     }
-    virtual void remove(SerialNum serialNum, const DocumentIdT lid) {
+    virtual void remove(SerialNum serialNum, const DocumentIdT lid) override {
         LOG(info,
             "MySummaryAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)",
             serialNum, lid);
         _store.remove(serialNum, lid);
         _removes.push_back(lid);
     }
-    virtual void heartBeat(SerialNum) {}
-    virtual const search::IDocumentStore &getDocumentStore() const {
+    virtual const search::IDocumentStore &getDocumentStore() const override {
         return _store;
     }
     virtual std::unique_ptr<document::Document> get(const search::DocumentIdT lid,
-                                                    const document::DocumentTypeRepo &repo) {
+                                                    const document::DocumentTypeRepo &repo) override {
         return _store.read(lid, repo);
+    }
+    virtual void compactLidSpace(uint32_t wantedDocIdLimit) override {
+        _store.compactLidSpace(wantedDocIdLimit);
     }
 };
 
@@ -537,6 +544,9 @@ struct FixtureBase
 
     const IDocumentMetaStore &getMetaStore() const {
         return _dmsc->get();
+    }
+    const MyDocumentStore &getDocumentStore() const {
+        return msa._store;
     }
 
     BucketDBOwner::Guard getBucketDB() const {
@@ -1028,7 +1038,7 @@ TEST_F("require that update() to tensor attribute updates attribute and document
     requireThatUpdateUpdatesAttributeAndDocumentStore(f, "a3");
 }
 
-TEST_F("require that compactLidSpace() propagates to document meta store and "
+TEST_F("require that compactLidSpace() propagates to document meta store and document store and "
        "blocks lid space shrinkage until generation is no longer used",
        SearchableFeedViewFixture)
 {
@@ -1040,12 +1050,13 @@ TEST_F("require that compactLidSpace() propagates to document meta store and "
     // in master thread.
     EXPECT_TRUE(assertThreadObserver(3, 1, f.writeServiceObserver()));
     EXPECT_EQUAL(99u, f.metaStoreObserver()._compactLidSpaceLidLimit);
+    EXPECT_EQUAL(99u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
     EXPECT_EQUAL(99u, f._docIdLimit.get());
 }
 
 TEST_F("require that compactLidSpace() doesn't propagate to "
-       "document meta store and "
+       "document meta store and document store and "
        "blocks lid space shrinkage until generation is no longer used",
        SearchableFeedViewFixture)
 {
@@ -1056,6 +1067,7 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
     EXPECT_TRUE(assertThreadObserver(2, 0, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
+    EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
 }
 

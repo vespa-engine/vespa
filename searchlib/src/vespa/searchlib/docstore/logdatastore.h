@@ -195,6 +195,13 @@ public:
     virtual std::vector<DataStoreFileChunkStats>
     getFileChunkStats() const override;
 
+    /**
+     * Implements common::ICompactableLidSpace
+     */
+    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
+    virtual bool canShrinkLidSpace() const override;
+    virtual void shrinkLidSpace() override;
+
 private:
     class WrapVisitor;
     class WrapVisitorProgress;

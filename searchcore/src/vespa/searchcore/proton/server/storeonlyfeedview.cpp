@@ -854,6 +854,9 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
         commitContext->holdUnblockShrinkLidSpace();
         forceCommit(serialNum, commitContext);
     }
+    if (useDocumentStore(serialNum)) {
+        _summaryAdapter->compactLidSpace(op.getLidLimit());
+    }
 }
 
 const ISimpleDocumentMetaStore *

@@ -3,9 +3,10 @@
 #pragma once
 
 #include "data_store_file_chunk_stats.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/fastos/timestamp.h>
+#include <vespa/searchlib/common/i_compactable_lid_space.h>
+#include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
 namespace vespalib { class DataBuffer; }
@@ -34,7 +35,7 @@ public:
  * Changes are held in memory until flush() is called.
  * A sync token is associated with each flush().
  **/
-class IDataStore
+class IDataStore : public common::ICompactableLidSpace
 {
 public:
     typedef std::vector<uint32_t> LidVector;

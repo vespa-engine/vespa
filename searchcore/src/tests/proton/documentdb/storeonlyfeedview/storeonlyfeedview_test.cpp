@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/storeonlyfeedview.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -37,7 +38,7 @@ using namespace proton;
 
 namespace {
 
-class MySummaryAdapter : public ISummaryAdapter {
+class MySummaryAdapter : public test::MockSummaryAdapter {
     int &_rm_count;
     int &_put_count;
     int &_heartbeat_count;
@@ -48,15 +49,9 @@ public:
           _put_count(put_count),
           _heartbeat_count(heartbeat_count) {
     }
-    virtual void put(SerialNum, const Document &, DocumentIdT)
-    { ++ _put_count; }
-    virtual void remove(SerialNum, DocumentIdT) { ++_rm_count; }
-    virtual void heartBeat(SerialNum) { ++_heartbeat_count; }
-    virtual const search::IDocumentStore &getDocumentStore() const
-    { return *reinterpret_cast<const search::IDocumentStore *>(0); }
-
-    virtual Document::UP get(const DocumentIdT, const DocumentTypeRepo &)
-    { return Document::UP(); }
+    virtual void put(SerialNum, const Document &, DocumentIdT) override { ++ _put_count; }
+    virtual void remove(SerialNum, DocumentIdT) override { ++_rm_count; }
+    virtual void heartBeat(SerialNum) override { ++_heartbeat_count; }
 };
 
 DocumentTypeRepo::SP myGetDocumentTypeRepo() {

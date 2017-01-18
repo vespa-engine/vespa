@@ -35,6 +35,8 @@ public:
     virtual std::unique_ptr<document::Document>
     get(const search::DocumentIdT lid,
         const document::DocumentTypeRepo &repo) = 0;
+
+    virtual void compactLidSpace(uint32_t wantedDocIdLimit) = 0;
 };
 
 } // namespace proton

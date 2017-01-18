@@ -46,20 +46,19 @@ struct DummyDocumentStore : public search::IDocumentStore
                         search::IDocumentStoreVisitorProgress &,
                         const document::DocumentTypeRepo &) {}
 
-    virtual double
-    getVisitCost() const
-    {
-        return 1.0;
-    }
+    virtual double getVisitCost() const { return 1.0; }
     virtual search::DataStoreStorageStats getStorageStats() const override {
         return search::DataStoreStorageStats(0, 0, 0.0, 0, 0);
     }
     virtual search::MemoryUsage getMemoryUsage() const override { return search::MemoryUsage(); }
-    virtual std::vector<search::DataStoreFileChunkStats>
-    getFileChunkStats() const override {
+    virtual std::vector<search::DataStoreFileChunkStats> getFileChunkStats() const override {
         std::vector<search::DataStoreFileChunkStats> result;
         return result;
     }
+
+    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override { (void) wantedDocLidLimit; }
+    virtual bool canShrinkLidSpace() const override { return false; }
+    virtual void shrinkLidSpace() override {}
 };
 
 } // namespace test
