@@ -135,5 +135,13 @@ SimpleTensorEngine::concat(const Value &a, const Value &b, const vespalib::strin
     return stash.create<TensorValue>(std::move(result));
 }
 
+const Value &
+SimpleTensorEngine::rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const
+{
+    const SimpleTensor &simple_a = to_simple(a, stash);
+    auto result = simple_a.rename(from, to);
+    return stash.create<TensorValue>(std::move(result));
+}
+
 } // namespace vespalib::eval
 } // namespace vespalib

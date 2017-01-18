@@ -30,6 +30,7 @@ public:
     const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const override;
 
     const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const override;
+    const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const override;
 };
 
 } // namespace vespalib::eval

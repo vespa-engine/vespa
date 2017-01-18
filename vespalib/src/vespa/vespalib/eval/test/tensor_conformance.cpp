@@ -429,6 +429,19 @@ struct ImmediateConcat : Eval {
     }
 };
 
+// evaluate tensor rename operation using tensor engine immediate api
+struct ImmediateRename : Eval {
+    std::vector<vespalib::string> from;
+    std::vector<vespalib::string> to;
+    ImmediateRename(const std::vector<vespalib::string> &from_in, const std::vector<vespalib::string> &to_in)
+        : from(from_in), to(to_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        Stash stash;
+        const auto &lhs = make_value(engine, a, stash);
+        return Result(engine.rename(lhs, from, to, stash));
+    }
+};
+
 const size_t tensor_id_a = 11;
 const size_t tensor_id_b = 12;
 const size_t map_operation_id = 22;
@@ -1065,6 +1078,26 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_rename(const TensorSpec &expect,
+                     const TensorSpec &input,
+                     const std::vector<vespalib::string> &from,
+                     const std::vector<vespalib::string> &to)
+    {
+        ImmediateRename eval(from, to);
+        EXPECT_EQUAL(eval.eval(engine, input).tensor(), expect);
+    }
+
+    void test_rename() {
+        TEST_DO(test_rename(spec(y(5), N()), spec(x(5), N()), {"x"}, {"y"}));
+        TEST_DO(test_rename(spec({x(5),z(5)}, N()), spec({y(5),z(5)}, N()), {"y"}, {"x"}));
+        TEST_DO(test_rename(spec({y(5),x(5)}, N()), spec({y(5),z(5)}, N()), {"z"}, {"x"}));
+        TEST_DO(test_rename(spec({z(5),y(5)}, N()), spec({x(5),y(5)}, N()), {"x"}, {"z"}));
+        TEST_DO(test_rename(spec({x(5),z(5)}, N()), spec({x(5),y(5)}, N()), {"y"}, {"z"}));
+        TEST_DO(test_rename(spec({y(5),x(5)}, N()), spec({x(5),y(5)}, N()), {"x","y"}, {"y","x"}));
+    }
+
+    //-------------------------------------------------------------------------
+
     void run_tests() {
         TEST_DO(test_tensor_create_type());
         TEST_DO(test_tensor_equality());
@@ -1074,6 +1107,7 @@ struct TestContext {
         TEST_DO(test_tensor_apply());
         TEST_DO(test_dot_product());
         TEST_DO(test_concat());
+        TEST_DO(test_rename());
     }
 };
 
