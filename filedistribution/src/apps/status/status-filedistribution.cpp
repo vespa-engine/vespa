@@ -60,7 +60,7 @@ printWaitingForHosts(const StatusByHostName& notFinishedHosts)
 //TODO:refactor
 int printStatus(const std::string& zkservers)
 {
-    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers));
+    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers, true));
 
     std::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
 

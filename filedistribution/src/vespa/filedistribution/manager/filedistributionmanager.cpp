@@ -87,7 +87,7 @@ void initMockFileDBModel(NativeFileDistributionManager& manager)
 void initFileDBModel(NativeFileDistributionManager& manager, const std::string& zkServers)
 {
     //Ignored for now, since we're not installing any watchers.
-    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkServers));
+    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkServers, true));
     manager._fileDBModel.reset(new ZKFileDBModel(zk));
 }
 } //end anonymous namespace

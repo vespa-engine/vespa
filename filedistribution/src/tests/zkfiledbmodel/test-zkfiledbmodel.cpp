@@ -25,7 +25,7 @@ struct Fixture {
 
     Fixture() {
         zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181"));
+        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181", false));
         zk->setData("/vespa", "", 0);
 
         model = _componentsDeleter.track(new ZKFileDBModel(zk));
