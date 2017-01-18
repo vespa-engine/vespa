@@ -1,1 +1,0 @@
-Create vespa application along with plugins for vespa container(e.g. searcher, docproc, handler).
