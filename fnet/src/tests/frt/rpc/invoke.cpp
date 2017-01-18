@@ -121,7 +121,7 @@ public:
     void Init(FRT_Supervisor *supervisor)
     {
         _echo_stash = new vespalib::Stash();
-        _echo_args = new FRT_Values(_echo_stash);
+        _echo_args = new FRT_Values(*_echo_stash);
         assert(_echo_stash != nullptr && _echo_args != nullptr);
 
         FRT_ReflectionBuilder rb(supervisor);

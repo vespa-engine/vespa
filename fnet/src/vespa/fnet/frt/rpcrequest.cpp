@@ -8,8 +8,8 @@
 FRT_RPCRequest::FRT_RPCRequest()
     : _stash(),
       _context(),
-      _params(&_stash),
-      _return(&_stash),
+      _params(_stash),
+      _return(_stash),
       _refcnt(1),
       _completed(0),
       _errorCode(FRTE_NO_ERROR),
