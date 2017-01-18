@@ -5,18 +5,17 @@
  */
 package com.yahoo.prelude.fastsearch;
 
-
 import java.nio.ByteBuffer;
 
 import com.yahoo.io.SlowInflate;
 import com.yahoo.text.Utf8;
 import com.yahoo.data.access.Inspector;
 
-
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
+ * @author Bjørn Borud
  */
 public class LongstringField extends DocsumField implements VariableLengthField {
+
     public LongstringField(String name) {
         super(name);
     }

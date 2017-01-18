@@ -23,7 +23,8 @@ public class TensorField extends DocsumField implements VariableLengthField {
 
     @Override
     public Tensor decode(ByteBuffer buffer) {
-        int length = ((int) buffer.getShort()) & 0xffff;
+        int length = buffer.getInt();
+        if (length == 0) return null;
         ByteBuffer contentBuffer = ByteBuffer.wrap(buffer.array(), buffer.arrayOffset() + buffer.position(), length);
         Tensor tensor = TypedBinaryFormat.decode(Optional.empty(), new GrowableByteBuffer(contentBuffer));
         buffer.position(buffer.position() + length);
@@ -45,14 +46,14 @@ public class TensorField extends DocsumField implements VariableLengthField {
     @Override
     public int getLength(ByteBuffer b) {
         int offset = b.position();
-        int len = ((int) b.getShort()) & 0xffff;
-        b.position(offset + len + (Short.SIZE >> 3));
-        return len + (Short.SIZE >> 3);
+        int length = b.getInt();
+        b.position(offset + length);
+        return length;
     }
 
     @Override
     public int sizeOfLength() {
-        return Short.SIZE >> 3;
+        return 4;
     }
 
     @Override

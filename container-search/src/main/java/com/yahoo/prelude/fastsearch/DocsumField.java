@@ -106,8 +106,8 @@ public abstract class DocsumField {
     public abstract Object decode(ByteBuffer b);
 
     /**
-     * Get the number of bytes this field occupies in the given buffer and set
-     * the position of the first byte after this field.
+     * Get the number of bytes this field occupies in the given buffer 
+     * AND SET(!) the position to the first byte after this field.
      */
     public abstract int getLength(ByteBuffer b);
 

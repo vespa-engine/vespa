@@ -9,6 +9,7 @@ package com.yahoo.prelude.fastsearch;
  */
 public interface VariableLengthField {
 
+    /** Returns the size of the length preceeding the data of this field, in bytes */
     int sizeOfLength();
 
 }
