@@ -93,6 +93,10 @@ public class LocalZoneUtils {
                 .withEnvironment("REGION", environment.getRegion())
                 .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME);
 
+        if (DockerTestUtils.getSystemOS() == DockerTestUtils.OS.Mac_OS_X) {
+            createCmd.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
+        }
+
         Arrays.asList(
                     "/home/y/logs",
                     "/home/y/var/cache",
