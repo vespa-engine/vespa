@@ -408,7 +408,7 @@ void
 DomainPart::commit(SerialNum firstSerial, const Packet &packet)
 {
     int64_t firstPos(_transLog.GetPosition());
-    nbostream h(packet.getHandle().c_str(), packet.getHandle().size());
+    nbostream_longlivedbuf h(packet.getHandle().c_str(), packet.getHandle().size());
     if (_range.from() == 0) {
         _range.from(firstSerial);
     }
