@@ -364,6 +364,7 @@ public class StorageGroup {
          * <li>only group is present: This is a nonleaf group</li>
          * <li>only nodes is present: This is the implicitly specified toplevel leaf group, or a set of groups
          *                            specified using a group count attribute.
+         * <li>Neither element is present: Create a single node.
          * </ul>
          */
         private GroupBuilder collectGroup(Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
@@ -384,13 +385,17 @@ public class StorageGroup {
             explicitNodes.addAll(collectExplicitNodes(groupElement));
             explicitNodes.addAll(collectExplicitNodes(nodesElement));
 
-            if (subGroups.size() > 0 && explicitNodes.size() > 0)
-                throw new IllegalArgumentException("A group can contain either nodes or groups, but not both.");
-
-            Optional<NodesSpecification> nodeRequirement =
-                nodesElement.isPresent() && nodesElement.get().getStringAttribute("count") != null ? Optional.of(NodesSpecification.from(nodesElement.get())) : Optional.empty();
-            if (nodeRequirement.isPresent() && subGroups.size() > 0)
+            if (subGroups.size() > 0 && nodesElement.isPresent())
                 throw new IllegalArgumentException("A group can contain either explicit subgroups or a nodes specification, but not both.");
+
+            Optional<NodesSpecification> nodeRequirement;
+            if (nodesElement.isPresent() && nodesElement.get().getStringAttribute("count") != null ) // request these nodes
+                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get()));
+            else if (! nodesElement.isPresent() && subGroups.isEmpty()) // request one node
+                nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1));
+            else // Nodes or groups explicitly listed - resolve in GroupBuilder
+                nodeRequirement = Optional.empty();
+
             return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement, deployLogger);
         }
 

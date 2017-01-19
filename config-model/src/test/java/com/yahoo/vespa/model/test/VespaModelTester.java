@@ -36,6 +36,8 @@ import java.util.Map;
 public class VespaModelTester {
 
     private final ConfigModelRegistry configModelRegistry;
+
+    private boolean hosted = true;
     private Map<String, Collection<Host>> hosts = new HashMap<>();
 
     public VespaModelTester() {
@@ -56,6 +58,9 @@ public class VespaModelTester {
         this.hosts.put(flavor.isEmpty() ? "default" : flavor, hosts);
         return new Hosts(hosts);
     }
+
+    /** Sets whether this sets up a model for a hosted system. Default: true */
+    public void setHosted(boolean hosted) { this.hosted = hosted; }
 
     /** Creates a model which uses 0 as start index and fails on out of capacity */
     public VespaModel createModel(String services, String ... retiredHostNames) {
@@ -79,7 +84,7 @@ public class VespaModelTester {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(new InMemoryProvisioner(hosts, failOnOutOfCapacity, startIndexForClusters, retiredHostNames))
-                .properties((new DeployProperties.Builder()).hostedVespa(true).build()).build();
+                .properties((new DeployProperties.Builder()).hostedVespa(hosted).build()).build();
         return modelCreatorWithMockPkg.create(false, deployState, configModelRegistry);
     }
 

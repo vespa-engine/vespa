@@ -54,8 +54,6 @@ import java.util.logging.Logger;
  */
 public class DeployState implements ConfigDefinitionStore {
 
-    private static final Logger log = Logger.getLogger(DeployState.class.getName());
-
     private final DeployLogger logger;
     private final FileRegistry fileRegistry;
     private final DocumentModel documentModel;
