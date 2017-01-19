@@ -4,4 +4,4 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.osgi.annotation.ExportPackage;
 
-/** Implements the provisioning API to perform node provisioning form a node repository */
+/** Implements the provisioning API to perform node provisioning from a node repository */

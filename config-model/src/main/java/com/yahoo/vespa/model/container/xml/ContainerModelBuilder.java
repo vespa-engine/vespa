@@ -378,8 +378,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addNodesFromXml(ContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) { // default single node on localhost
-            System.out.println("Is hosted vespa: " + cluster.getRoot().isHostedVespa());
-            System.out.println("Is hosted vespa according to deploy state: " + cluster.getRoot().getDeployState().isHosted());
             Container node = new Container(cluster, "container.0", 0);
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
@@ -444,7 +442,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     
     /** Creates a single host when there is no nodes tag */
     private HostResource allocateSingleNodeHost(ContainerCluster cluster, DeployLogger logger, Element containerElement, ConfigModelContext context) {
-        if (cluster.isHostedVespa()) {
+        if (cluster.getRoot().getDeployState().isHosted()) {
             Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
             if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node 
                 return singleContentHost.get();

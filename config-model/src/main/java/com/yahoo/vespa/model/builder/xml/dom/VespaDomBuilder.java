@@ -181,6 +181,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         /**
          * Allocates a host to the service using host file or create service spec for provisioner to use later
          * Pre-condition: producerSpec is non-null
+         * 
          * @param service the service to allocate a host for
          * @param hostSystem a {@link HostSystem}
          * @param producerSpec xml element for the service

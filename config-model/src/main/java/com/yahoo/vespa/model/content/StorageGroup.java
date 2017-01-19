@@ -11,6 +11,7 @@ import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
+import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 
@@ -252,13 +253,25 @@ public class StorageGroup {
                 for (XmlNodeBuilder nodeBuilder : nodeBuilders) {
                     storageGroup.nodes.add(nodeBuilder.build(owner, storageGroup));
                 }
-
+                
+                if ( ! parent.isPresent() && subGroups.isEmpty() && nodeBuilders.isEmpty()) // no nodes or groups: create single node
+                    storageGroup.nodes.add(buildSingleNode(owner));
+                    
                 if ( ! parent.isPresent())
                     owner.redundancy().setTotalNodes(storageGroup.countNodes());
 
                 return storageGroup;
             }
 
+            private StorageNode buildSingleNode(ContentCluster parent) {
+                int distributionKey = 0;
+                StorageNode sNode = new StorageNode(parent.getStorageNodes(), 1.0, distributionKey , false);
+                sNode.setHostResource(parent.getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
+                PersistenceEngine provider = parent.getPersistence().create(sNode, storageGroup, null);
+                new Distributor(parent.getDistributorNodes(), distributionKey, null, provider);
+                return sNode;
+            }
+            
             /**
              * Builds a storage group for a hosted environment
              *
@@ -340,6 +353,7 @@ public class StorageGroup {
         }
 
         private static class XmlNodeBuilder {
+
             private final ModelElement clusterElement;
             private final ModelElement element;
 
@@ -391,9 +405,9 @@ public class StorageGroup {
             Optional<NodesSpecification> nodeRequirement;
             if (nodesElement.isPresent() && nodesElement.get().getStringAttribute("count") != null ) // request these nodes
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get()));
-            else if (! nodesElement.isPresent() && subGroups.isEmpty()) // request one node
+            else if (! nodesElement.isPresent() && subGroups.isEmpty() && owner.getRoot().getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1));
-            else // Nodes or groups explicitly listed - resolve in GroupBuilder
+            else // Nodes or groups explicitly listed, and/opr not hosted - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
 
             return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement, deployLogger);

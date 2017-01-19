@@ -1121,6 +1121,24 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testNoNodeTagMeans1NodeNoContent() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <jdisc id='foo' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "  </jdisc>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+    }
+
+    @Test
     public void testNoNodeTagMeans1NodeNonHosted() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1133,6 +1151,33 @@ public class ModelProvisioningTest {
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
+                "  </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(false);
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().recursiveGetNodes().size());
+    }
+
+    @Test
+    public void testSingleNodeNonHosted() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <jdisc id='foo' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "    <nodes><node hostalias='foo'/></nodes>"+
+                "  </jdisc>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "    <nodes><node hostalias='foo' distribution-key='0'/></nodes>"+
                 "  </content>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester();

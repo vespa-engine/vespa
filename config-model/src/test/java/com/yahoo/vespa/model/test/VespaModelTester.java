@@ -4,11 +4,13 @@ package com.yahoo.vespa.model.test;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
+import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -81,9 +83,14 @@ public class VespaModelTester {
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
         VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
+
+        HostProvisioner provisioner = hosted ? 
+                                      new InMemoryProvisioner(hosts, failOnOutOfCapacity, startIndexForClusters, retiredHostNames) :
+                                      new SingleNodeProvisioner();
+
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)
-                .modelHostProvisioner(new InMemoryProvisioner(hosts, failOnOutOfCapacity, startIndexForClusters, retiredHostNames))
+                .modelHostProvisioner(provisioner)
                 .properties((new DeployProperties.Builder()).hostedVespa(hosted).build()).build();
         return modelCreatorWithMockPkg.create(false, deployState, configModelRegistry);
     }

@@ -17,8 +17,9 @@ public abstract class PersistenceEngine extends AbstractConfigProducer implement
     /**
      * Creates a config producer for the engines provider at a given node.
      */
-    public static interface PersistenceFactory {
-        public PersistenceEngine create(StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement);
+    public interface PersistenceFactory {
+
+        PersistenceEngine create(StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement);
 
         /**
          * If a write request succeeds on some nodes and fails on others, causing request to
@@ -26,7 +27,7 @@ public abstract class PersistenceEngine extends AbstractConfigProducer implement
          * reverts are supported. (Typically require backend to keep multiple entries of the
          * same document identifier persisted at the same time)
          */
-        public boolean supportRevert();
+        boolean supportRevert();
 
         /**
          * Multi level splitting can increase split performance a lot where documents have been
@@ -34,8 +35,10 @@ public abstract class PersistenceEngine extends AbstractConfigProducer implement
          * is cheap. Backends where split is cheaper than fetching document identifiers will
          * not want to enable multi level splitting.
          */
-        public boolean enableMultiLevelSplitting();
+        boolean enableMultiLevelSplitting();
 
-        public ContentCluster.DistributionMode getDefaultDistributionMode();
+        ContentCluster.DistributionMode getDefaultDistributionMode();
+
     }
+
 }
