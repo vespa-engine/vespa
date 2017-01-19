@@ -142,7 +142,7 @@ public class RunSystemTests {
             else docker.deleteContainer(containerName);
         }
 
-        logger.info("Starting systemtests host");
+        logger.info("Starting systemtests container " + containerName.asString());
         InetAddress nodeInetAddress = InetAddress.getByName(containerName.asString());
         docker.createContainerCommand(
                 SYSTEMTESTS_DOCKER_IMAGE,
