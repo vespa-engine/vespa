@@ -1,0 +1,5 @@
+Core Java library for the Cluster Controller.
+
+The Cluster Controller makes and publish singular decisions about node states in content clusters,
+using ZooKeeper for leader election. Node state decisions must be singular because
+they decide bucket mastering (distributor node) and storage (storage node) distribution.

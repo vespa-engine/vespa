@@ -1,0 +1,4 @@
+Java library for linguistic operations in Vespa.
+
+This API is pluggable - multiple implementations may be supplied.
+This module contains a default pure Java implementation, "simple".

@@ -1,0 +1,1 @@
+Component for distributing binary files from config servers to cluster nodes, using BitTorrent.
