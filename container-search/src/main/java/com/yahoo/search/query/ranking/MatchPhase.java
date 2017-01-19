@@ -46,7 +46,7 @@ public class MatchPhase implements Cloneable {
     private String attribute = null;
     private boolean ascending = false;
     private Long maxHits = null;
-    private Double maxFilterCoverage = 1.0;
+    private Double maxFilterCoverage = 0.2;
     private Diversity diversity = new Diversity();
 
     /**
