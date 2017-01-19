@@ -83,8 +83,7 @@ DocumentList::Entry::getDocument(
         if (_metaEntry->bodyLen == 0) {
             doc.reset(new document::Document(*_repo, hbuf, anticipatedType));
         } else {
-            doc.reset(new document::Document(*_repo, hbuf, bbuf,
-                                             anticipatedType));
+            doc.reset(new document::Document(*_repo, hbuf, bbuf, anticipatedType));
         }
     } catch (const document::DeserializeException& e) {
         std::ostringstream ss;
@@ -100,29 +99,6 @@ DocumentList::Entry::getDocument(
             doc->getId().toString().c_str(),
             hbuf.getPos(), hbuf.getLength(),
             bbuf.getPos(), bbuf.getLength()), VESPA_STRLOC);
-    }
-    doc->setLastModified(_metaEntry->timestamp);
-    return doc;
-}
-
-std::unique_ptr<document::Document>
-DocumentList::Entry::getHeader(
-        const document::DocumentType *anticipatedType) const
-{
-    if (isUpdateEntry()) {
-        throw vespalib::IllegalStateException("Entry contains an update. "
-                "Call getUpdate(), not getDocument()", VESPA_STRLOC);
-    }
-    ByteBuffer hbuf(_start + _metaEntry->headerPos, _metaEntry->headerLen);
-    std::unique_ptr<document::Document> doc(
-            new document::Document(*_repo, hbuf, anticipatedType));
-    if (hbuf.getRemaining() != 0) {
-        assert(hbuf.getPos() + hbuf.getRemaining() == hbuf.getLength());
-        throw document::DeserializeException(vespalib::make_string(
-                "Deserializing header of document %s, only %lu of %lu header "
-                "bytes were consumed.",
-                doc->getId().toString().c_str(),
-                hbuf.getPos(), hbuf.getLength()), VESPA_STRLOC);
     }
     doc->setLastModified(_metaEntry->timestamp);
     return doc;
@@ -148,41 +124,6 @@ DocumentList::Entry::getUpdate() const
                 buf.getPos(), buf.getLength()), VESPA_STRLOC);
     }
     return update;
-}
-
-bool
-DocumentList::Entry::getDocument(document::Document& doc, bool longLivedBuffer) const
-{
-    if (isUpdateEntry()) {
-        throw vespalib::IllegalStateException("Entry contains an update. "
-                "Call getUpdate(), not getDocument()", VESPA_STRLOC);
-    }
-    ByteBuffer hbuf(_start + _metaEntry->headerPos, _metaEntry->headerLen);
-
-    if (_metaEntry->flags & MetaEntry::BODY_IN_HEADER ||
-        _metaEntry->bodyLen == 0)
-    {
-        doc.deserialize(*_repo, hbuf, longLivedBuffer);
-        doc.setLastModified(getTimestamp());
-    } else {
-        ByteBuffer cbuf(_start + _metaEntry->bodyPos, _metaEntry->bodyLen);
-        doc.deserialize(*_repo, hbuf, cbuf, longLivedBuffer);
-        doc.setLastModified(getTimestamp());
-    }
-    return true;
-}
-
-bool
-DocumentList::Entry::getHeader(document::Document& doc) const
-{
-    if (isUpdateEntry()) {
-        throw vespalib::IllegalStateException("Entry contains an update. "
-                "Call getUpdate(), not getDocument()", VESPA_STRLOC);
-    }
-    ByteBuffer hbuf(_start + _metaEntry->headerPos, _metaEntry->headerLen);
-    doc.deserialize(*_repo, hbuf);
-    doc.setLastModified(_metaEntry->timestamp);
-    return (hbuf.getRemaining() == 0);
 }
 
 bool

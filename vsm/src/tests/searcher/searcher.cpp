@@ -2,19 +2,18 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
-#include <vespa/vsm/searcher/strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 
 using namespace document;
 using search::EmptyQueryNodeResult;

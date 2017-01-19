@@ -18,6 +18,7 @@ LOG_SETUP(".document.structfieldvalue");
 
 using std::vector;
 using vespalib::nbostream;
+using vespalib::nbostream_longlivedbuf;
 
 namespace document {
 
@@ -200,7 +201,7 @@ StructFieldValue::getFieldValue(const Field& field, FieldValue& value) const
 
     vespalib::ConstBufferRef buf = getRawField(fieldId);
     if (buf.size() > 0) {
-        nbostream stream(buf.c_str(), buf.size(), true);
+        nbostream_longlivedbuf stream(buf.c_str(), buf.size());
         if ((_repo == NULL) && (_doc_type != NULL)) {
             DocumentTypeRepo::UP tmpRepo(new DocumentTypeRepo(*_doc_type));
             createFV(value, *tmpRepo, stream, *_doc_type, _version);

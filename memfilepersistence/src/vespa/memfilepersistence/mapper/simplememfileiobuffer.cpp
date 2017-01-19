@@ -74,7 +74,7 @@ SimpleMemFileIOBuffer::getDocumentHeader(
     document::ByteBuffer buf(data.buf->getBuffer() + data.pos,
                              data.buf->getSize() - data.pos);
 
-    doc->deserializeHeader(repo, buf, false);
+    doc->deserializeHeader(repo, buf);
     return doc;
 }
 
@@ -103,7 +103,7 @@ SimpleMemFileIOBuffer::readBody(
     document::ByteBuffer buf(data.buf->getBuffer() + data.pos,
                              data.buf->getSize() - data.pos);
 
-    doc.deserializeBody(repo, buf, false);
+    doc.deserializeBody(repo, buf);
 }
 
 DataLocation

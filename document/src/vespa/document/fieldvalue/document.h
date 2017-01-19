@@ -129,12 +129,12 @@ public:
     void serializeBody(vespalib::nbostream& stream) const;
 
     /** Deserialize document contained in given bytebuffer. */
-    void deserialize(const DocumentTypeRepo& repo, ByteBuffer& data, bool longLivedBuffer=false);
+    void deserialize(const DocumentTypeRepo& repo, ByteBuffer& data);
     void deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & os);
     /** Deserialize document contained in given bytebuffers. */
-    void deserialize(const DocumentTypeRepo& repo, ByteBuffer& body, ByteBuffer& header, bool longLivedBuffer=false);
-    void deserializeHeader(const DocumentTypeRepo& repo, ByteBuffer& header, bool longLivedBuffer=false);
-    void deserializeBody(const DocumentTypeRepo& repo, ByteBuffer& body, bool longLivedBuffer=false);
+    void deserialize(const DocumentTypeRepo& repo, ByteBuffer& body, ByteBuffer& header);
+    void deserializeHeader(const DocumentTypeRepo& repo, ByteBuffer& header);
+    void deserializeBody(const DocumentTypeRepo& repo, ByteBuffer& body);
 
     size_t getSerializedSize() const;
 

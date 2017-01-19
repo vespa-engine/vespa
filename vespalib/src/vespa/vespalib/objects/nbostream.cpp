@@ -2,8 +2,7 @@
 #include "nbostream.hpp"
 #include "hexdump.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/optimized.h>
+
 
 namespace vespalib {
 
@@ -25,6 +24,18 @@ nbostream::nbostream(const void * buf, size_t sz, bool longLivedBuffer) :
     _wp(sz),
     _state(ok),
     _longLivedBuffer(longLivedBuffer)
+{ }
+
+nbostream_longlivedbuf::nbostream_longlivedbuf(const void * buf, size_t sz) :
+    nbostream(buf, sz, true)
+{ }
+
+nbostream_longlivedbuf::nbostream_longlivedbuf(size_t initialSize) :
+    nbostream(initialSize)
+{ }
+
+nbostream::nbostream(const void * buf, size_t sz) :
+    nbostream(buf, sz, false)
 { }
 
 nbostream::nbostream(Alloc && buf, size_t sz) :

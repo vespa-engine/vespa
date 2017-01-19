@@ -155,8 +155,9 @@ Value::deserializeDocument(const document::DocumentTypeRepo &repo) {
 }
 
 
-void BackingStore::visit(const IDocumentStore::LidVector &lids, const document::DocumentTypeRepo &repo,
-                                        IDocumentVisitor &visitor) const {
+void
+BackingStore::visit(const IDocumentStore::LidVector &lids, const document::DocumentTypeRepo &repo,
+                    IDocumentVisitor &visitor) const {
     DocumentVisitorAdapter adapter(repo, visitor);
     _backingStore.read(lids, adapter);
 }

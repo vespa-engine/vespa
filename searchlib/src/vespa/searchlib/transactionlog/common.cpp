@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "common.h"
+#include <vespa/fastos/file.h>
 
-namespace search
-{
+namespace search {
 
-namespace transactionlog
-{
+namespace transactionlog {
 
 using vespalib::nbostream;
+using vespalib::nbostream_longlivedbuf;
 
 int makeDirectory(const char * dir)
 {
@@ -37,9 +37,9 @@ Packet::Packet(const void * buf, size_t sz) :
      _count(0),
      _range(),
      _limit(sz),
-     _buf(static_cast<const char *>(buf), sz, true)
+     _buf(static_cast<const char *>(buf), sz)
 {
-    nbostream os(_buf.c_str(), sz, true);
+    nbostream_longlivedbuf os(_buf.c_str(), sz);
     while ( os.size() > 0 ) {
         Entry e;
         e.deserialize(os);

@@ -22,7 +22,10 @@ class nbostream
     using Alloc = alloc::Alloc;
     enum State { ok=0, eof=0x01};
     nbostream(size_t initialSize=1024);
-    nbostream(const void * buf, size_t sz, bool longLivedBuffer=false);
+protected:
+    nbostream(const void * buf, size_t sz, bool longLivedBuffer);
+public:
+    nbostream(const void * buf, size_t sz);
     nbostream(Alloc && buf, size_t sz);
     nbostream(const nbostream & rhs);
     ~nbostream();
@@ -233,6 +236,12 @@ class nbostream
     size_t         _wp;
     State          _state;
     const bool     _longLivedBuffer;
+};
+
+class nbostream_longlivedbuf : public nbostream {
+public:
+    nbostream_longlivedbuf(size_t initialSize=1024);
+    nbostream_longlivedbuf(const void * buf, size_t sz);
 };
 
 }

@@ -81,10 +81,10 @@ public:
     size_t             sizeBytes() const { return _buf.size(); }
     bool merge(const Packet & packet);
 private:
-    size_t               _count;
-    SerialNumRange       _range;
-    size_t               _limit;
-    vespalib::nbostream  _buf;
+    size_t                            _count;
+    SerialNumRange                    _range;
+    size_t                            _limit;
+    vespalib::nbostream_longlivedbuf  _buf;
 };
 
 int makeDirectory(const char * dir);
