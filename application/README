@@ -1,0 +1,6 @@
+API for creating Vespa applications from Java code.
+
+This has two usages:
+- Create fully functional container instances - including HTTP servers - in an existing Java runtime.
+- Mock Vespa applications for unit testing.
+

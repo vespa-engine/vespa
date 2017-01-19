@@ -1,1 +1,3 @@
-This package contains the tools for building the Vespa model.
+Java models of Vespa system instances derived from application packages,
+used to create configuration for the distributed components of the system.
+

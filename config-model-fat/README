@@ -1,1 +1,4 @@
-This package contains the necessary tools to build the fat config-model bundle.
+Repackaging of the config model with all dependencies includes, such that it can be deployed
+as a separate bundle to a config server. This allows the config servers to host multiple code
+versions of the config model at the same time, to support applications on different versions
+at the same time from the same config server.
