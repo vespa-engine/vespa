@@ -33,7 +33,7 @@ template <typename T>
 void
 RcuVectorBase<T>::ensure_size(size_t n, T fill) {
     if (n > capacity()) {
-        expand(calcSize(n));
+        expand(calcNewSize(n));
     }
     while (size() < n) {
         _data.push_back(fill);
@@ -62,13 +62,14 @@ RcuVectorBase<T>::expand(size_t newCapacity) {
     size_t holdSize = tmpData->size() * sizeof(T);
     vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
     _genHolder.hold(std::move(hold));
+    onExpand();
 }
 
 template <typename T>
 void
 RcuVectorBase<T>::expandAndInsert(const T & v)
 {
-    expand(calcSize());
+    expand(calcNewSize());
     assert(_data.size() < _data.capacity());
     _data.push_back(v);
 }
@@ -79,7 +80,7 @@ RcuVectorBase<T>::shrink(size_t newSize)
 {
     assert(newSize <= _data.size());
     _data.resize(newSize);
-    size_t wantedCapacity = calcSize(newSize);
+    size_t wantedCapacity = calcNewSize(newSize);
     if (wantedCapacity >= _data.capacity()) {
         return;
     }
@@ -145,9 +146,11 @@ RcuVectorBase<T>::getMemoryUsage() const
 
 template <typename T>
 void
-RcuVector<T>::expandAndInsert(const T & v)
-{
-    RcuVectorBase<T>::expandAndInsert(v);
+RcuVectorBase<T>::onExpand() { }
+
+template <typename T>
+void
+RcuVector<T>::onExpand() {
     _genHolderStore.transferHoldLists(_generation);
 }
 
