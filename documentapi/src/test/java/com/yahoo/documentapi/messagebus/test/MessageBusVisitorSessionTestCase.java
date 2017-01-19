@@ -2448,9 +2448,11 @@ public class MessageBusVisitorSessionTestCase {
                 mc.receiver.repliesToString());
     }
 
-    private MockComponents createTimeoutMocksAtInitialTime(long timeoutMillis, long currentTimeMillis, int maxPending) {
+    private MockComponents createTimeoutMocksAtInitialTime(long messageTimeoutMillis, long sessionTimeoutMillis,
+                                                           long currentTimeMillis, int maxPending) {
         MockComponentsBuilder builder = new MockComponentsBuilder();
-        builder.params.setTimeoutMs(timeoutMillis);
+        builder.params.setTimeoutMs(messageTimeoutMillis);
+        builder.params.setSessionTimeoutMs(sessionTimeoutMillis);
         builder.params.setControlHandler(builder.controlHandler);
         MockComponents mc = builder.createMockComponents();
         mc.sender.setMaxPending(maxPending);
@@ -2463,18 +2465,18 @@ public class MessageBusVisitorSessionTestCase {
     }
 
     @Test
-    public void visitor_command_timeout_set_to_remaining_session_timeout() {
-        MockComponents mc = createTimeoutMocksAtInitialTime(10_000, 10_000, 1);
+    public void visitor_command_timeout_set_to_min_of_message_timeout_and_remaining_session_timeout() {
+        MockComponents mc = createTimeoutMocksAtInitialTime(6_000, 10_000, 10_000, 1);
 
         // Superbucket 1 of 2
         assertEquals("CreateVisitorMessage(buckets=[\n" +
                         "BucketId(0x0400000000000000)\n" +
                         "BucketId(0x0000000000000000)\n" +
                         "]\n" +
-                        "time remaining=10000\n)",
+                        "time remaining=6000\n)",
                 replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET));
 
-        mc.clock.setMonotonicTime(14, TimeUnit.SECONDS); // 4 seconds elapsed from baseline
+        mc.clock.setMonotonicTime(15, TimeUnit.SECONDS); // 5 seconds elapsed from baseline
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectAndProcessTasks(1); // send create visitors
         // Superbucket 2 of 2
@@ -2482,13 +2484,37 @@ public class MessageBusVisitorSessionTestCase {
                         "BucketId(0x0400000000000001)\n" +
                         "BucketId(0x0000000000000000)\n" +
                         "]\n" +
+                        "time remaining=5000\n)", // No timeout greater than 5s can be used, or session will have timed out
+                replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET));
+    }
+
+    @Test
+    public void infinite_session_timeout_does_not_affect_message_timeout() {
+        MockComponents mc = createTimeoutMocksAtInitialTime(6_000, -1, 10_000, 1);
+
+        assertEquals("CreateVisitorMessage(buckets=[\n" +
+                        "BucketId(0x0400000000000000)\n" +
+                        "BucketId(0x0000000000000000)\n" +
+                        "]\n" +
                         "time remaining=6000\n)",
                 replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET));
     }
 
     @Test
+    public void message_timeout_greater_than_session_timeout_is_bounded() {
+        MockComponents mc = createTimeoutMocksAtInitialTime(6_000, 3_000, 10_000, 1);
+
+        assertEquals("CreateVisitorMessage(buckets=[\n" +
+                        "BucketId(0x0400000000000000)\n" +
+                        "BucketId(0x0000000000000000)\n" +
+                        "]\n" +
+                        "time remaining=3000\n)",
+                replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET));
+    }
+
+    @Test
     public void fail_session_with_timeout_if_timeout_has_elapsed() {
-        MockComponents mc = createTimeoutMocksAtInitialTime(4_000, 20_000, 1);
+        MockComponents mc = createTimeoutMocksAtInitialTime(1_000, 4_000, 20_000, 1);
 
         replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 1 of 2
         mc.clock.setMonotonicTime(24_000, TimeUnit.MILLISECONDS); // 4 second timeout expired
@@ -2505,7 +2531,7 @@ public class MessageBusVisitorSessionTestCase {
 
     @Test
     public void timeout_with_pending_messages_does_not_close_session_until_all_replies_received() {
-        MockComponents mc = createTimeoutMocksAtInitialTime(5_000, 20_000, 2);
+        MockComponents mc = createTimeoutMocksAtInitialTime(1_000, 5_000, 20_000, 2);
 
         assertEquals(2, mc.sender.getMessageCount());
 
