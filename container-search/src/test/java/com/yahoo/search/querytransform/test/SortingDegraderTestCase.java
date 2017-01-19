@@ -28,7 +28,7 @@ public class SortingDegraderTestCase {
         assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
         assertTrue(query.getRanking().getMatchPhase().getAscending());
         assertEquals(1400l, query.getRanking().getMatchPhase().getMaxHits().longValue());
-        assertEquals(1.0, query.getRanking().getMatchPhase().getMaxFilterCoverage().doubleValue(), 1e-16);
+        assertEquals(0.2, query.getRanking().getMatchPhase().getMaxFilterCoverage().doubleValue(), 1e-16);
     }
 
     @Test
