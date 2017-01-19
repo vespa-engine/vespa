@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * <pre>
- * Requires docker daemon, see {@link com.yahoo.vespa.hosted.dockerapi.DockerTestUtils} for more details.
+ * Requires docker daemon, see node-admin/README.md for how to install and configure.
  *
  * To get started:
  *  1. Add system test host hostnames to /etc/hosts:
@@ -117,7 +117,7 @@ public class RunSystemTests {
             }
 
             try {
-                executeInContainer(containerName, "mvn", "-DskipTests", "-e",
+                executeInContainer(containerName, "mvn", "-DskipTests", "-Dmaven.javadoc.skip=true", "-e",
                         "-f=" + pathToModule.resolve("pom.xml"), "install");
 
                 executeInContainer(containerName, "rsync", "--archive", "--existing", "--update",

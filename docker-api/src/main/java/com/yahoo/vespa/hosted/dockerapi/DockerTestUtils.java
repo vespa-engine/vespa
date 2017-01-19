@@ -24,7 +24,8 @@ public class DockerTestUtils {
             .clientCertPath(operatingSystem == OS.Mac_OS_X ? prefix + "cert.pem" : "")
             .clientKeyPath( operatingSystem == OS.Mac_OS_X ? prefix + "key.pem" : "")
             .uri(           operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376")
-            .connectTimeoutMillis(100)
+            .connectTimeoutMillis(5000)
+            .readTimeoutMillis(5000)
             .secondsToWaitBeforeKillingContainer(0));
     private static DockerImpl docker;
 
