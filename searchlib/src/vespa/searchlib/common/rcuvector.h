@@ -101,7 +101,9 @@ public:
     void unsafe_reserve(size_t n);
     void ensure_size(size_t n, T fill = T());
     void reserve(size_t n) {
-        expand(n);
+        if (n > capacity()) {
+            expand(calcNewSize(n));
+        }
     }
     void push_back(const T & v) {
         if (_data.size() < _data.capacity()) {
@@ -111,10 +113,7 @@ public:
         }
     }
 
-    bool empty() const {
-        return _data.empty();
-    }
-
+    bool empty() const { return _data.empty(); }
     size_t size() const { return _data.size(); }
     size_t capacity() const { return _data.capacity(); }
     void clear() { _data.clear(); }
