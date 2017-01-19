@@ -191,16 +191,17 @@ public class NodeRepository extends AbstractComponent {
      * Creates a list of node ACLs which identify which nodes the given node should trust
      *
      * @param node Node for which to generate ACLs
+     * @param children Return ACLs for the children of the given node (e.g. containers on a Docker host)
      * @return List of node ACLs
      */
-    public List<NodeAcl> getNodeAcls(Node node) {
+    public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         final List<NodeAcl> nodeAcls = new ArrayList<>();
-        nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
 
-        // If a host node requests ACLs, we include ACLs for children of the node (e.g. containers on Docker hosts)
-        if (node.type() == NodeType.host) {
-            final List<Node> children = getNodes(node);
-            children.forEach(child -> nodeAcls.add(new NodeAcl(child, getTrustedNodes(child))));
+        if (children) {
+            final List<Node> childNodes = getNodes(node);
+            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode))));
+        } else {
+            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
         }
 
         return Collections.unmodifiableList(nodeAcls);

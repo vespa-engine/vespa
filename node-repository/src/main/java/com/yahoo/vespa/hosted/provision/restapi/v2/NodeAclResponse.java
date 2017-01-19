@@ -20,13 +20,17 @@ import java.util.List;
  */
 public class NodeAclResponse extends HttpResponse {
 
+    private static final String CHILDREN_REQUEST_PROPERTY = "children";
+
     private final NodeRepository nodeRepository;
     private final Slime slime;
+    private final boolean aclsForChildren;
 
     public NodeAclResponse(HttpRequest request, NodeRepository nodeRepository) {
         super(200);
         this.nodeRepository = nodeRepository;
         this.slime = new Slime();
+        this.aclsForChildren = request.getBooleanProperty(CHILDREN_REQUEST_PROPERTY);
 
         final Cursor root = slime.setObject();
         final String hostname = baseName(request.getUri().getPath());
@@ -41,7 +45,7 @@ public class NodeAclResponse extends HttpResponse {
         Node node = nodeRepository.getNode(hostname)
                 .orElseGet(() -> nodeRepository.getConfigNode(hostname)
                         .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
-        toSlime(nodeRepository.getNodeAcls(node), object.setArray("trustedNodes"));
+        toSlime(nodeRepository.getNodeAcls(node, aclsForChildren), object.setArray("trustedNodes"));
     }
 
     private void toSlime(List<NodeAcl> nodeAcls, Cursor array) {
