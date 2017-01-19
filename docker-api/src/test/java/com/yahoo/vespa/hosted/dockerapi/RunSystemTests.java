@@ -39,8 +39,7 @@ import static org.junit.Assert.assertEquals;
      runSystemTests.mavenInstallModules(systemtestsHost, "docproc", "container-search-and-docproc", "container-dev");
 
      Path systemTestToRun = Paths.get("tests/search/basicsearch/basic_search.rb");
-     // When using mavenInstallModules(), add --vespa-version argument
-     runSystemTests.runSystemTest(systemtestsHost, systemTestToRun, "--vespa-version=6-SNAPSHOT");
+     runSystemTests.runSystemTest(systemtestsHost, systemTestToRun);
  * </pre>
  *
  * @author freva
