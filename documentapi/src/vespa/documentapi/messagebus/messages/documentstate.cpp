@@ -38,8 +38,7 @@ DocumentState::DocumentState(document::ByteBuffer& buf)
     uint8_t hasDocId;
     buf.getByte(hasDocId);
     if (hasDocId) {
-        vespalib::nbostream stream(
-                buf.getBufferAtPos(), buf.getRemaining(), false);
+        vespalib::nbostream stream(buf.getBufferAtPos(), buf.getRemaining());
         _docId.reset(new document::DocumentId(stream));
         buf.incPos(stream.rp());
     }

@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/transactionlog/domainpart.h>
+
+#include "domainpart.h"
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/vespalib/xxhash/xxhash.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <stdexcept>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".transactionlog.domainpart");
@@ -21,6 +19,7 @@ using vespalib::getLastErrorString;
 using vespalib::IllegalHeaderException;
 using vespalib::LockGuard;
 using vespalib::nbostream;
+using vespalib::nbostream_longlivedbuf;
 using vespalib::alloc::Alloc;
 using search::common::FileHeaderContext;
 using std::runtime_error;
@@ -409,7 +408,7 @@ void
 DomainPart::commit(SerialNum firstSerial, const Packet &packet)
 {
     int64_t firstPos(_transLog.GetPosition());
-    nbostream h(packet.getHandle().c_str(), packet.getHandle().size(), true);
+    nbostream h(packet.getHandle().c_str(), packet.getHandle().size());
     if (_range.from() == 0) {
         _range.from(firstSerial);
     }
@@ -504,7 +503,7 @@ DomainPart::visit(SerialNumRange &r, Packet &packet)
                 }
             } else {
                 const nbostream & tmp = start->second.getHandle();
-                nbostream h(tmp.c_str(), tmp.size(), true);
+                nbostream_longlivedbuf h(tmp.c_str(), tmp.size());
                 LOG(debug, "Visit partial[%" PRIu64 ", %" PRIu64 "] (%zd, %zd, %zd)",
                            start->second.range().from(), start->second.range().to(), h.rp(), h.size(), h.capacity());
                 Packet newPacket(h.size());
@@ -641,7 +640,7 @@ DomainPart::read(FastOS_FileInterface &file,
         if (!retval) {
             retval = handleReadError("packet blob", file, len, rlen, lastKnownGoodPos, allowTruncate);
         } else {
-            nbostream is(buf.get(), len, true);
+            nbostream_longlivedbuf is(buf.get(), len);
             entry.deserialize(is);
             int32_t crc(0);
             is >> crc;

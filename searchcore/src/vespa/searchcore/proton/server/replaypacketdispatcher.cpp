@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "replaypacketdispatcher.h"
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/util/serializableexceptions.h>
 
@@ -30,9 +29,7 @@ ReplayPacketDispatcher::ReplayPacketDispatcher(IReplayPacketHandler &handler)
 void
 ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
 {
-    vespalib::nbostream is(entry.data().c_str(),
-                           entry.data().size(),
-                           false);
+    vespalib::nbostream is(entry.data().c_str(), entry.data().size());
     switch (entry.type()) {
     case FeedOperation::PUT: {
         PutOperation op;

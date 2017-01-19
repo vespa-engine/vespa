@@ -1,14 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vsm/common/document.h>
 
-namespace vsm
-{
+namespace vsm {
 
 typedef vespalib::CloneablePtr<document::FieldValue> FieldValueContainer;
 typedef document::FieldPath FieldPath; // field path to navigate a field value
@@ -23,8 +19,7 @@ class StorageDocument : public Document
   public:
       SubDocument() :
           _fieldValue(NULL)
-      {
-      }
+      { }
       SubDocument(document::FieldValue * fv, FieldPath::const_iterator it, FieldPath::const_iterator mt) :
           _fieldValue(fv),
           _it(it),

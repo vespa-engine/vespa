@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/transactionlog/domain.h>
+
+#include "domain.h"
 #include <limits>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/fastlib/io/bufferedfile.h>
-#include <stdexcept>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/util/closuretask.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
@@ -278,7 +275,7 @@ void Domain::cleanSessions()
 void Domain::commit(const Packet & packet)
 {
     DomainPart::SP dp(_parts.rbegin()->second);
-    vespalib::nbostream is(packet.getHandle().c_str(), packet.getHandle().size(), true);
+    vespalib::nbostream_longlivedbuf is(packet.getHandle().c_str(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
     if (dp->byteSize() > _domainPartSize) {

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "feedstates.h"
 #include "feedconfigstore.h"
-#include "ireplaypackethandler.h"
 #include "replaypacketdispatcher.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/closuretask.h>
@@ -45,9 +44,7 @@ handleProgress(TlsReplayProgress &progress, SerialNum currentSerial)
 void
 handlePacket(PacketWrapper::SP wrap, EntryHandler entryHandler)
 {
-    vespalib::nbostream handle(wrap->packet.getHandle().c_str(),
-                               wrap->packet.getHandle().size(),
-                               true);
+    vespalib::nbostream_longlivedbuf handle(wrap->packet.getHandle().c_str(), wrap->packet.getHandle().size());
     while (handle.size() > 0) {
         Packet::Entry entry;
         entry.deserialize(handle);

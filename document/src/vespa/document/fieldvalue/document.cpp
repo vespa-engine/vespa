@@ -1,13 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document.h"
-
-#include <memory>
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
@@ -357,7 +351,7 @@ Document::deserializeDocHeader(ByteBuffer& buffer, DocumentId& id) {
     if (len > (long)buffer.getRemaining()) {
         notEnoughDocumentError(len, buffer.getRemaining());
     } else {
-        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining(), false);
+        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
         id = DocumentId(stream);
         buffer.incPos(stream.rp());
         unsigned char contentByte;
@@ -396,30 +390,27 @@ void Document::deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & o
     }
 }
 
-void Document::deserialize(const DocumentTypeRepo& repo, ByteBuffer& data,
-                           bool longLivedBuffer) {
-    nbostream stream(data.getBufferAtPos(), data.getRemaining(), longLivedBuffer);
+void Document::deserialize(const DocumentTypeRepo& repo, ByteBuffer& data) {
+    nbostream stream(data.getBufferAtPos(), data.getRemaining());
     deserialize(repo, stream);
     data.incPos(data.getRemaining() - stream.size());
 }
 
-void Document::deserialize(const DocumentTypeRepo& repo, ByteBuffer& header,
-                           ByteBuffer& body, bool longLivedBuffer) {
-    deserializeHeader(repo, header, longLivedBuffer);
-    deserializeBody(repo, body, longLivedBuffer);
+void Document::deserialize(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer& body) {
+    deserializeHeader(repo, header);
+    deserializeBody(repo, body);
 }
 
 void Document::deserializeHeader(const DocumentTypeRepo& repo,
-                           ByteBuffer& header, bool longLivedBuffer) {
-    nbostream stream(header.getBufferAtPos(), header.getRemaining(), longLivedBuffer);
+                           ByteBuffer& header) {
+    nbostream stream(header.getBufferAtPos(), header.getRemaining());
     VespaDocumentDeserializer deserializer(repo, stream, 0);
     deserializer.read(*this);
     header.incPos(header.getRemaining() - stream.size());
 }
 
-void Document::deserializeBody(const DocumentTypeRepo& repo,
-                           ByteBuffer& body, bool longLivedBuffer) {
-    nbostream body_stream(body.getBufferAtPos(), body.getRemaining(), longLivedBuffer);
+void Document::deserializeBody(const DocumentTypeRepo& repo, ByteBuffer& body) {
+    nbostream body_stream(body.getBufferAtPos(), body.getRemaining());
     VespaDocumentDeserializer
         body_deserializer(repo, body_stream, getFields().getVersion());
     body_deserializer.readStructNoReset(getFields());

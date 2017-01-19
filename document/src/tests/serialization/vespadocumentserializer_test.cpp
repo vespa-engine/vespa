@@ -49,6 +49,7 @@ using document::DocumenttypesConfig;
 using vespalib::File;
 using vespalib::Slime;
 using vespalib::nbostream;
+using vespalib::nbostream_longlivedbuf;
 using vespalib::slime::Cursor;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorBuilder;
@@ -119,7 +120,7 @@ void testDeserializeAndClone(const T& value, const nbostream &stream, bool check
     T read_value = newFieldValue(value);
     vespalib::MallocPtr buf(stream.size());
     memcpy(buf.str(), stream.peek(), stream.size());
-    nbostream is(buf.c_str(), buf.size(), true);
+    nbostream_longlivedbuf is(buf.c_str(), buf.size());
     VespaDocumentDeserializer deserializer(repo, is, 8);
     deserializer.read(read_value);
 
@@ -666,7 +667,7 @@ void deserializeAndCheck(const string &file_name, FieldValueT &value,
     size_t r = file.read(&content[0], content.size(), 0);
     ASSERT_EQUAL(content.size(), r);
 
-    nbostream stream(&content[0], content.size(), true);
+    nbostream_longlivedbuf stream(&content[0], content.size());
     Document doc;
     VespaDocumentDeserializer deserializer(myrepo, stream, 8);
     deserializer.read(doc);

@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documenttypemapping.h"
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.common.documenttypemapping");
-
-#define DEBUGMASK 0x00
 
 namespace vsm {
 

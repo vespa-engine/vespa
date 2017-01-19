@@ -26,6 +26,18 @@ nbostream::nbostream(const void * buf, size_t sz, bool longLivedBuffer) :
     _longLivedBuffer(longLivedBuffer)
 { }
 
+nbostream_longlivedbuf::nbostream_longlivedbuf(const void * buf, size_t sz) :
+    nbostream(buf, sz, true)
+{ }
+
+nbostream_longlivedbuf::nbostream_longlivedbuf(size_t initialSize) :
+    nbostream(initialSize)
+{ }
+
+nbostream::nbostream(const void * buf, size_t sz) :
+    nbostream(buf, sz, false)
+{ }
+
 nbostream::nbostream(Alloc && buf, size_t sz) :
     _wbuf(std::move(buf), sz),
     _rbuf(&_wbuf[0], sz),

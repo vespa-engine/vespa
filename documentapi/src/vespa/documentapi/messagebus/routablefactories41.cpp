@@ -45,7 +45,7 @@ RoutableFactories41::decodeLong(document::ByteBuffer &in)
 document::DocumentId
 RoutableFactories41::decodeDocumentId(document::ByteBuffer &in)
 {
-    nbostream stream(in.getBufferAtPos(), in.getRemaining(), false);
+    nbostream stream(in.getBufferAtPos(), in.getRemaining());
     document::DocumentId ret(stream);
     in.incPos(stream.rp());
     return ret;

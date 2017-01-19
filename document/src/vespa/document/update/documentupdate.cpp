@@ -1,14 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
+#include "documentupdate.h"
+#include "documentupdateflags.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/update/documentupdateflags.h>
-#include <vespa/document/update/fieldupdate.h>
-#include <vespa/document/update/valueupdate.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bufferexceptions.h>
@@ -186,8 +180,7 @@ DocumentUpdate::serializeFlags(int size_) const
 namespace {
     std::pair<const DocumentType *, DocumentId>
     deserializeTypeAndId(const DocumentTypeRepo& repo, ByteBuffer& buffer) {
-        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining(),
-                         false);
+        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
         DocumentId docId(stream);
         buffer.incPos(stream.rp());
 
@@ -265,7 +258,7 @@ DocumentUpdate::deserializeHEAD(const DocumentTypeRepo &repo, ByteBuffer &buffer
 {
     int pos = buffer.getPos();
     try {
-        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining(), false);
+        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
         _documentId = DocumentId(stream);
         buffer.incPos(stream.rp());
 

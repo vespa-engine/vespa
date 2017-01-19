@@ -79,7 +79,7 @@ public:
 
 RPC::Result CallBackTest::receive(const Packet & p)
 {
-    vespalib::nbostream  h(p.getHandle().c_str(), p.getHandle().size(), true);
+    nbostream_longlivedbuf  h(p.getHandle().c_str(), p.getHandle().size());
     LOG(info,"CallBackTest::receive (%zu, %zu, %zu)(%s)", h.rp(), h.size(), h.capacity(), myhex(h.peek(), h.size()).c_str());
     while(h.size() > 0) {
         Packet::Entry e;
@@ -107,7 +107,7 @@ public:
 
 RPC::Result CallBackManyTest::receive(const Packet & p)
 {
-    nbostream h(p.getHandle().c_str(), p.getHandle().size(), true);
+    nbostream_longlivedbuf h(p.getHandle().c_str(), p.getHandle().size());
     for(;h.size() > 0; _count++, _value++) {
         Packet::Entry e;
         e.deserialize(h);
@@ -141,7 +141,7 @@ public:
 
 RPC::Result CallBackUpdate::receive(const Packet & packet)
 {
-    nbostream h(packet.getHandle().c_str(), packet.getHandle().size(), true);
+    nbostream_longlivedbuf h(packet.getHandle().c_str(), packet.getHandle().size());
     while (h.size() > 0) {
         Packet::Entry e;
         e.deserialize(h);
@@ -195,7 +195,7 @@ public:
 
 RPC::Result CallBackStatsTest::receive(const Packet & p)
 {
-    nbostream h(p.getHandle().c_str(), p.getHandle().size(), true);
+    nbostream_longlivedbuf h(p.getHandle().c_str(), p.getHandle().size());
     for(;h.size() > 0; ++_count) {
         Packet::Entry e;
         e.deserialize(h);
