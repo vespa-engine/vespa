@@ -58,7 +58,7 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
-        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node);
+        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is active nodes in same application, proxy nodes and config servers
         assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers), nodeAcls);
@@ -74,7 +74,7 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for the first ready node
         Node node = readyNodes.get(0);
-        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node);
+        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is proxy nodes and config servers
         assertAcls(Arrays.asList(proxyNodes, configServers), nodeAcls);
@@ -95,7 +95,7 @@ public class AclProvisioningTest {
         // Get trusted nodes for the first config server
         Node node = tester.nodeRepository().getConfigNode("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
-        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node);
+        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is all tenant nodes, all proxy nodes and all config servers
         assertAcls(Arrays.asList(tenantNodes, proxyNodes, configServers), nodeAcls);
@@ -111,7 +111,7 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for first proxy node
         Node node = proxyNodes.get(0);
-        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node);
+        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is all config servers and all proxy nodes
         assertAcls(Arrays.asList(proxyNodes, configServers), nodeAcls);
@@ -123,17 +123,28 @@ public class AclProvisioningTest {
 
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
+
+        List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodes.get(0), false);
+
+        // Trusted nodes is all Docker hosts and all config servers
+        assertAcls(Arrays.asList(dockerHostNodes, configServers), acls.get(0));
+    }
+
+    @Test
+    public void trusted_nodes_for_child_nodes_of_docker_host() {
+        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+
+        // Populate repo
+        List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
         List<Node> dockerNodes = tester.makeReadyDockerNodes(5, "docker1",
                 dockerHostNodeUnderTest.hostname());
 
-        List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest);
+        List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);
 
-        // First ACL is for the Docker host itself
-        assertAcls(Arrays.asList(dockerHostNodes, configServers), acls.get(0));
-
-        // ... the rest are for each container on the Docker host
+        // ACLs for each container on the Docker host
         assertFalse(dockerNodes.isEmpty());
+        assertEquals(dockerNodes.size(), acls.size());
         for (Node dockerNode : dockerNodes) {
             NodeAcl nodeAcl = acls.stream()
                     .filter(acl -> acl.node().equals(dockerNode))
@@ -153,7 +164,7 @@ public class AclProvisioningTest {
                 .addRecord("cfg3", "127.0.0.3");
 
         List<Node> readyNodes = tester.makeReadyNodes(1, "default", NodeType.tenant);
-        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(readyNodes.get(0));
+        List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(readyNodes.get(0), false);
 
         assertEquals(3, nodeAcls.get(0).trustedNodes().size());
         assertEquals(singleton("127.0.0.1"), nodeAcls.get(0).trustedNodes().get(0).ipAddresses());
