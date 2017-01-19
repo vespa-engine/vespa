@@ -36,7 +36,12 @@ public class OverrideProcessorTest {
                 "  <content id=\"foo\" version=\"1.0\">" +
                 "    <redundancy>1</redundancy>" +
                 "    <documents>" +
-                "      <document mode=\"index\" type=\"music.sd\"/>" +
+                "      <document mode='index' type='music'/>\n" +
+                "      <document mode='index' type='music2'/>\n" +
+                "      <document deploy:environment='prod' deploy:region='us-east-3' mode='index' type='music'/>\n" +
+                "      <document deploy:environment='prod' deploy:region='us-east-3' mode='index' type='music2'/>\n" +
+                "      <document deploy:environment='prod' deploy:region='us-west' mode='index' type='music3'/>\n" +
+                "      <document deploy:environment='prod' deploy:region='us-west' mode='index' type='music4'/>\n" +
                 "    </documents>" +
                 "    <nodes>" +
                 "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -78,7 +83,8 @@ public class OverrideProcessorTest {
                 "  <content id=\"foo\" version=\"1.0\">" +
                 "    <redundancy>1</redundancy>" +
                 "    <documents>" +
-                "      <document mode=\"index\" type=\"music.sd\"/>" +
+                "      <document mode=\"index\" type=\"music\"/>" +
+                "      <document mode=\"index\" type=\"music2\"/>" +
                 "    </documents>" +
                 "    <nodes>" +
                 "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -106,7 +112,8 @@ public class OverrideProcessorTest {
                 "  <content id=\"foo\" version=\"1.0\">" +
                 "    <redundancy>1</redundancy>" +
                 "    <documents>" +
-                "      <document mode=\"index\" type=\"music.sd\"/>" +
+                "      <document mode=\"index\" type=\"music3\"/>" +
+                "      <document mode=\"index\" type=\"music4\"/>" +
                 "    </documents>" +
                 "    <nodes>" +
                 "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -138,7 +145,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music.sd\"/>" +
+                        "      <document mode=\"index\" type=\"music\"/>" +
+                        "      <document mode=\"index\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -169,7 +177,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music.sd\"/>" +
+                        "      <document mode=\"index\" type=\"music\"/>" +
+                        "      <document mode=\"index\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -200,7 +209,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music.sd\"/>" +
+                        "      <document mode=\"index\" type=\"music\"/>" +
+                        "      <document mode=\"index\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -228,7 +238,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music.sd\"/>" +
+                        "      <document mode=\"index\" type=\"music\"/>" +
+                        "      <document mode=\"index\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -256,7 +267,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music.sd\"/>" +
+                        "      <document mode=\"index\" type=\"music\"/>" +
+                        "      <document mode=\"index\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node1\"/>" +

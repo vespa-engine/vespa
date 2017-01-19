@@ -3,7 +3,6 @@ package com.yahoo.config.application;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.data.access.simple.Value;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
@@ -124,40 +123,53 @@ class OverrideProcessor implements PreProcessor {
      * Find the most specific element and remove all others.
      */
     private void retainMostSpecificEnvironmentAndRegion(Element parent, List<Element> children, Context context) {
-        Element bestMatchElement = null;
+        // Keep track of elements with highest number of matches (might be more than one element with same tag, need a list)
+        List<Element> bestMatchElements = new ArrayList<>();
         int bestMatch = 0;
         for (Element child : children) {
-            int currentMatch = 1;
-            Optional<Environment> elementEnvironment = hasEnvironment(child) ? getEnvironment(child) : context.environment;
-            RegionName elementRegion = hasRegion(child) ? getRegion(child) : context.region;
-            if (elementEnvironment.isPresent() && elementEnvironment.get().equals(environment))
-                currentMatch++;
-            if ( ! elementRegion.isDefault() && elementRegion.equals(region))
-                currentMatch++;
-
-            if (currentMatch > bestMatch) {
-                bestMatchElement = child;
-                bestMatch = currentMatch;
+            int overrideCount = getNumberOfOverrides(child, context);
+            if (overrideCount >= bestMatch) {
+                updateBestMatchElements(bestMatchElements, child, overrideCount, bestMatch);
+                bestMatch = overrideCount;
             }
         }
 
-        if (bestMatch > 1) // there was a region/environment specific overriode
-            doElementSpecificProcessingOnOverride(bestMatchElement);
-
-        // Remove elements not specific
-        for (Element child : children) {
-            if (child != bestMatchElement) {
-                parent.removeChild(child);
+        if (bestMatch > 1) { // there was a region/environment specific override
+            doElementSpecificProcessingOnOverride(bestMatchElements);
+            for (Element child : children) {
+                // Remove elements not specific
+                if ( ! bestMatchElements.contains(child))
+                    parent.removeChild(child);
             }
         }
     }
 
+    private void updateBestMatchElements(List<Element> bestMatchElements, Element child, int currentMatch, int bestMatch) {
+        if (bestMatch != currentMatch)
+            bestMatchElements.clear();
+
+        bestMatchElements.add(child);
+    }
+
+    private int getNumberOfOverrides(Element child, Context context) {
+        int currentMatch = 1;
+        Optional<Environment> elementEnvironment = hasEnvironment(child) ? getEnvironment(child) : context.environment;
+        RegionName elementRegion = hasRegion(child) ? getRegion(child) : context.region;
+        if (elementEnvironment.isPresent() && elementEnvironment.get().equals(environment))
+            currentMatch++;
+        if ( ! elementRegion.isDefault() && elementRegion.equals(region))
+            currentMatch++;
+        return currentMatch;
+    }
+
     /** Called on each element which is selected by matching some override condition */
-    private void doElementSpecificProcessingOnOverride(Element element) {
-        // if node capacity is specified explicitly for some evn/region we should require that capacity
-        if ( element.getTagName().equals("nodes"))
-            if (element.getChildNodes().getLength() == 0) // specifies capacity, not a list of nodes
-                element.setAttribute("required", "true");
+    private void doElementSpecificProcessingOnOverride(List<Element> bestMatchElements) {
+        // if node capacity is specified explicitly for some env/region we should require that capacity
+        bestMatchElements.forEach(element -> {
+            if (element.getTagName().equals("nodes"))
+                if (element.getChildNodes().getLength() == 0) // specifies capacity, not a list of nodes
+                    element.setAttribute("required", "true");
+        });
     }
     
     /**
