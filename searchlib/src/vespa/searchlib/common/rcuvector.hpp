@@ -59,7 +59,7 @@ RcuVectorBase<T>::expand(size_t newCapacity) {
     tmpData->resize(_data.size());
     memcpy(tmpData->begin(), _data.begin(), _data.size() * sizeof(T));
     tmpData->swap(_data); // atomic switch of underlying data
-    size_t holdSize = tmpData->size() * sizeof(T);
+    size_t holdSize = tmpData->capacity() * sizeof(T);
     vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
     _genHolder.hold(std::move(hold));
     onExpand();

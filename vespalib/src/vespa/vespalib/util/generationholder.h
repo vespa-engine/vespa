@@ -63,7 +63,7 @@ private:
 
     HoldList _hold1List;
     HoldList _hold2List;
-    size_t _heldBytes;
+    size_t   _heldBytes;
 
     /**
      * Transfer holds from hold1 to hold2 lists, assigning generation.
@@ -76,8 +76,8 @@ private:
     void trimHoldListsSlow(generation_t usedGen);
 
 public:
-    GenerationHolder(void);
-    ~GenerationHolder(void);
+    GenerationHolder();
+    ~GenerationHolder();
 
     /**
      * Add the given data pointer to this holder.
@@ -102,8 +102,8 @@ public:
         }
     }
 
-    void clearHoldLists(void);
-    size_t getHeldBytes(void) const { return _heldBytes; }
+    void clearHoldLists();
+    size_t getHeldBytes() const { return _heldBytes; }
 };
 
 }
