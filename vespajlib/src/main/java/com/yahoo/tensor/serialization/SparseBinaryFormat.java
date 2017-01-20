@@ -53,26 +53,29 @@ class SparseBinaryFormat implements BinaryFormat {
     }
 
     @Override
-    public Tensor decode(TensorType type, GrowableByteBuffer buffer) {
-        consumeAndValidateDimensions(type, buffer);
+    public Tensor decode(Optional<TensorType> optionalType, GrowableByteBuffer buffer) {
+        TensorType type;
+        if (optionalType.isPresent()) {
+            type = optionalType.get();
+            TensorType serializedType = decodeType(buffer);
+            if ( ! serializedType.isAssignableTo(type))
+                throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType +
+                                                   " cannot be assigned to type " + type);
+        }
+        else {
+            type = decodeType(buffer);
+        }
         Tensor.Builder builder = Tensor.Builder.of(type);
         decodeCells(buffer, builder, type);
         return builder.build();
     }
 
-    private void consumeAndValidateDimensions(TensorType type, GrowableByteBuffer buffer) {
-        int dimensionCount = buffer.getInt1_4Bytes();
-        if (type.dimensions().size() != dimensionCount)
-            throw new IllegalArgumentException("Type/instance mismatch: Instance has " + dimensionCount +
-                                               " dimensions but type is " + type);
-
-        for (int i = 0; i < dimensionCount; ++i) {
-            TensorType.Dimension expectedDimension = type.dimensions().get(i);
-            String encodedName = buffer.getUtf8String();
-            if ( ! expectedDimension.name().equals(encodedName))
-                throw new IllegalArgumentException("Type/instance mismatch: Instance has '" + encodedName +
-                                                   "' as dimension " + i + " but type is " + type);
-        }
+    private TensorType decodeType(GrowableByteBuffer buffer) {
+        int numDimensions = buffer.getInt1_4Bytes();
+        TensorType.Builder builder = new TensorType.Builder();
+        for (int i = 0; i < numDimensions; ++i)
+            builder.mapped(buffer.getUtf8String());
+        return builder.build();
     }
 
     private void decodeCells(GrowableByteBuffer buffer, Tensor.Builder builder, TensorType type) {

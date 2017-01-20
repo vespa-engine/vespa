@@ -109,7 +109,7 @@ public class RankFeaturesTestCase {
             if (key.contains(".type")) {
                 result.put(key, Utf8.toString(value));
             } else {
-                result.put(key, TypedBinaryFormat.decode(type, value));
+                result.put(key, TypedBinaryFormat.decode(Optional.of(type), GrowableByteBuffer.wrap(value)));
             }
         }
         return result;

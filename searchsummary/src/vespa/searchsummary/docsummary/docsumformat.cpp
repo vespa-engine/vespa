@@ -97,6 +97,7 @@ DocsumFormat::addEmpty(ResType type, search::RawBuf &target)
     case RES_LONG_DATA:
     case RES_XMLSTRING:
     case RES_JSONSTRING:
+    case RES_TENSOR:
     case RES_FEATUREDATA:
         return addLongData(target, "", 0);
     }

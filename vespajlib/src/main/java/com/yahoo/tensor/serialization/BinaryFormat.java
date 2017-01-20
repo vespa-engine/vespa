@@ -6,6 +6,8 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Optional;
+
 /**
  * Representation of a specific binary format with functions for serializing a Tensor object into
  * this format or de-serializing binary data into a Tensor object.
@@ -23,9 +25,9 @@ interface BinaryFormat {
     /**
      * Deserialize the given binary data into a Tensor object.
      * 
-     * @param type the expected abstract type of the tensor to serialize
+     * @param type the expected abstract type of the tensor to serialize, or empty to use type information from the data
      * @param buffer the buffer containing the tensor binary data
      */
-    Tensor decode(TensorType type, GrowableByteBuffer buffer);
+    Tensor decode(Optional<TensorType> type, GrowableByteBuffer buffer);
 
 }

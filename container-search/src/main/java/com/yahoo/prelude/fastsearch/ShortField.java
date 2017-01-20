@@ -12,9 +12,8 @@ import com.yahoo.search.result.NanNumber;
 import com.yahoo.data.access.Inspector;
 
 /**
- * @author <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
+ * @author Bjørn Borud
  */
-
 public class ShortField extends DocsumField {
     static final short EMPTY_VALUE = Short.MIN_VALUE;
 

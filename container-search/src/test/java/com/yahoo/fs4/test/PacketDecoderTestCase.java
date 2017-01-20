@@ -17,9 +17,10 @@ import static junit.framework.TestCase.*;
 /**
  * Tests the PacketDecoder
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjørn Borud
  */
 public class PacketDecoderTestCase {
+
     static byte[] queryResultPacketData
         = new byte[] {0,0,0,104,
                       0,0,0,217-256,
@@ -43,7 +44,6 @@ public class PacketDecoderTestCase {
         ByteBuffer data = ByteBuffer.allocate(len);
         data.put(queryResultPacketData);
         data.flip();
-
 
         // not really necessary for testing, but these help visualize
         // the state the buffer should be in so a reader of this test

@@ -70,7 +70,7 @@ public class TensorFieldValue extends FieldValue {
     }
     
     public void assignTensor(Optional<Tensor> tensor) {
-        if (tensor.isPresent() && ! dataType.getTensorType().isAssignableTo(tensor.get().type()))
+        if (tensor.isPresent() && ! tensor.get().type().isAssignableTo(dataType.getTensorType()))
             throw new IllegalArgumentException("Type mismatch: Cannot assign tensor of type " + tensor.get().type() +
                                                " to field of type " + dataType.getTensorType());
         this.tensor = tensor;

@@ -55,6 +55,7 @@ ResultConfig::GetResTypeName(ResType type)
     case RES_LONG_DATA:   return "longdata";
     case RES_XMLSTRING:   return "xmlstring";
     case RES_JSONSTRING:  return "jsonstring";
+    case RES_TENSOR:  return "tensor";
     case RES_FEATUREDATA: return "featuredata";
     }
     return "unknown-type";
@@ -172,6 +173,8 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
                 rc = resClass->AddConfigEntry(fieldname, RES_XMLSTRING);
             } else if (strcmp(fieldtype, "jsonstring") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_JSONSTRING);
+            } else if (strcmp(fieldtype, "tensor") == 0) {
+                rc = resClass->AddConfigEntry(fieldname, RES_TENSOR);
             } else if (strcmp(fieldtype, "featuredata") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_FEATUREDATA);
             } else {         // FAIL: unknown field type

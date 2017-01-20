@@ -5,8 +5,11 @@ package com.yahoo.prelude.fastsearch;
  * Interface to easier find the start of the actual data for variable length
  * fields.
  *
- * @author  <a href="mailt:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface VariableLengthField {
-    public int sizeOfLength();
+
+    /** Returns the size of the length preceeding the data of this field, in bytes */
+    int sizeOfLength();
+
 }

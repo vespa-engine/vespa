@@ -150,6 +150,7 @@ class Test : public vespalib::TestApp {
 
     void checkString(const string &str, const FieldValue *value);
     void checkData(const search::RawBuf &data, const FieldValue *value);
+    void checkTensor(const Tensor::UP &tensor, const FieldValue *value);
     template <unsigned int N>
     void checkArray(const char *(&str)[N], const FieldValue *value);
     void setSummaryField(const string &name);
@@ -170,7 +171,7 @@ class Test : public vespalib::TestApp {
     void requireThatSearchDataTypeUsesDefaultDataTypes();
     void requireThatLinguisticsAnnotationUsesDefaultDataTypes();
     void requireThatPredicateIsPrinted();
-    void requireThatTensorIsPrinted();
+    void requireThatTensorIsNotConverted();
     const DocumentType &getDocType() const { return *_documentType; }
     Document makeDocument();
     StringFieldValue annotateTerm(const string &term);
@@ -245,7 +246,7 @@ Test::Main()
     TEST_CALL(requireThatSearchDataTypeUsesDefaultDataTypes());
     TEST_CALL(requireThatLinguisticsAnnotationUsesDefaultDataTypes());
     TEST_CALL(requireThatPredicateIsPrinted());
-    TEST_CALL(requireThatTensorIsPrinted());
+    TEST_CALL(requireThatTensorIsNotConverted());
 
     TEST_DONE();
 }
@@ -428,6 +429,17 @@ void Test::checkData(const search::RawBuf &buf, const FieldValue *value) {
     auto got = s->getAsRaw();
     EXPECT_EQUAL(buf.GetUsedLen(), got.second);
     EXPECT_TRUE(memcmp(buf.GetDrainPos(), got.first, got.second) == 0);
+}
+
+void Test::checkTensor(const Tensor::UP &tensor, const FieldValue *value) {
+    ASSERT_TRUE(value);
+    const TensorFieldValue *s = dynamic_cast<const TensorFieldValue *>(value);
+    ASSERT_TRUE(s);
+    const Tensor::UP &tvalue = s->getAsTensorPtr();
+    EXPECT_EQUAL(tensor.get() != nullptr, tvalue.get() != nullptr);
+    if (tensor) {
+        EXPECT_EQUAL(*tensor, *tvalue);
+    }
 }
 
 template <unsigned int N>
@@ -649,7 +661,7 @@ createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
 }
 
 void
-Test::requireThatTensorIsPrinted()
+Test::requireThatTensorIsNotConverted()
 {
     TensorFieldValue tensorFieldValue;
     tensorFieldValue = createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
@@ -658,30 +670,17 @@ Test::requireThatTensorIsPrinted()
     doc.setRepo(*_documentRepo);
     doc.setValue("tensor", tensorFieldValue);
 
-    FieldBlock expect1("{ dimensions: [ 'x', 'y' ], cells: ["
-                       "{ address: { x:'4', y:'5' }, value: 7.0 }"
-                       "] }");
-
-    TEST_CALL(checkString(expect1.json,
+    TEST_CALL(checkTensor(createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
+                                       {"x", "y"}),
                           SFC::convertSummaryField(false,
                                                    *doc.getValue("tensor"),
-                                                   false).get()));
-    TEST_CALL(checkData(expect1.binary,
-                        SFC::convertSummaryField(false,
-                                                 *doc.getValue("tensor"),
-                                                 true).get()));
+                                                   true).get()));
     doc.setValue("tensor", TensorFieldValue());
 
-    FieldBlock expect2("{ }");
-
-    TEST_CALL(checkString(expect2.json,
+    TEST_CALL(checkTensor(Tensor::UP(),
                           SFC::convertSummaryField(false,
                                                    *doc.getValue("tensor"),
-                                                   false).get()));
-    TEST_CALL(checkData(expect2.binary,
-                        SFC::convertSummaryField(false,
-                                                 *doc.getValue("tensor"),
-                                                 true).get()));
+                                                   true).get()));
 }
 
 }  // namespace

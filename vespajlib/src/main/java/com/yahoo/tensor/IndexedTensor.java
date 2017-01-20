@@ -207,8 +207,9 @@ public class IndexedTensor implements Tensor {
             for (int i = 0; i < sizes.dimensions(); i++ ) {
                 Optional<Integer> size = type.dimensions().get(i).size();
                 if (size.isPresent() && size.get() < sizes.size(i))
-                    throw new IllegalArgumentException("Size of " + type.dimensions() + " is " + sizes.size(i) +
-                                                       " but cannot be larger than " + size.get());
+                    throw new IllegalArgumentException("Size of dimension " + type.dimensions().get(i).name() + " is " + 
+                                                       sizes.size(i) +
+                                                       " but cannot be larger than " + size.get() + " in " + type);
             }
             
             return new BoundBuilder(type, sizes);
