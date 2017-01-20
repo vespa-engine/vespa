@@ -34,32 +34,31 @@ public:
 template <typename T>
 class RcuVectorBase
 {
+private:
     static_assert(std::is_trivially_destructible<T>::value,
                   "Value type must be trivially destructible");
 
-protected:
     using Array = vespalib::Array<T>;
     using Alloc = vespalib::alloc::Alloc;
+protected:
     using generation_t = vespalib::GenerationHandler::generation_t;
     using GenerationHolder = vespalib::GenerationHolder;
+private:
     Array              _data;
     size_t             _growPercent;
     size_t             _growDelta;
     GenerationHolder   &_genHolder;
 
-    size_t
-    calcSize(size_t baseSize) const
-    {
+    size_t calcNewSize(size_t baseSize) const {
         size_t delta = (baseSize * _growPercent / 100) + _growDelta;
         return baseSize + std::max(delta, static_cast<size_t>(1));
     }
-    size_t
-    calcSize() const
-    {
-        return calcSize(_data.capacity());
+    size_t calcNewSize() const {
+        return calcNewSize(_data.capacity());
     }
     void expand(size_t newCapacity);
     void expandAndInsert(const T & v);
+    virtual void onExpand();
 
 public:
     using ValueType = T;
@@ -81,7 +80,7 @@ public:
                   GenerationHolder &genHolder,
                   const Alloc &initialAlloc = Alloc::alloc());
 
-    ~RcuVectorBase();
+    virtual ~RcuVectorBase();
 
     /**
      * Return whether all capacity has been used.  If true the next
@@ -93,7 +92,7 @@ public:
     /**
      * Return the combined memory usage for this instance.
      **/
-    MemoryUsage getMemoryUsage() const;
+    virtual MemoryUsage getMemoryUsage() const;
 
     // vector interface
     // no swap method, use reset() to forget old capacity and holds
@@ -101,6 +100,11 @@ public:
     void unsafe_resize(size_t n);
     void unsafe_reserve(size_t n);
     void ensure_size(size_t n, T fill = T());
+    void reserve(size_t n) {
+        if (n > capacity()) {
+            expand(calcNewSize(n));
+        }
+    }
     void push_back(const T & v) {
         if (_data.size() < _data.capacity()) {
             _data.push_back(v);
@@ -109,10 +113,7 @@ public:
         }
     }
 
-    bool empty() const {
-        return _data.empty();
-    }
-
+    bool empty() const { return _data.empty(); }
     size_t size() const { return _data.size(); }
     size_t capacity() const { return _data.capacity(); }
     void clear() { _data.clear(); }
@@ -129,11 +130,10 @@ class RcuVector : public RcuVectorBase<T>
 private:
     typedef typename RcuVectorBase<T>::generation_t generation_t;
     typedef typename RcuVectorBase<T>::GenerationHolder GenerationHolder;
-    using RcuVectorBase<T>::_data;
     generation_t       _generation;
     GenerationHolder   _genHolderStore;
 
-    void expandAndInsert(const T & v);
+    void onExpand() override;
 
 public:
     RcuVector();
@@ -146,9 +146,7 @@ public:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
     RcuVector(size_t initialCapacity, size_t growPercent, size_t growDelta);
-
     RcuVector(GrowStrategy growStrategy);
-
     ~RcuVector();
 
     generation_t getGeneration() const { return _generation; }
@@ -159,17 +157,7 @@ public:
      **/
     void removeOldGenerations(generation_t firstUsed);
 
-    void
-    push_back(const T & v)
-    {
-        if (_data.size() < _data.capacity()) {
-            _data.push_back(v);
-        } else {
-            expandAndInsert(v);
-        }
-    }
-
-    MemoryUsage getMemoryUsage() const;
+    MemoryUsage getMemoryUsage() const override;
 };
 
 }

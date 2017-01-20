@@ -110,8 +110,9 @@ CondensedBitVectorT<T>::computeTail(T mask, CountVector & cv, F func, size_t i) 
 
 template <typename T>
 void
-CondensedBitVectorT<T>:: adjustDocIdLimit(uint32_t docId)
+CondensedBitVectorT<T>::adjustDocIdLimit(uint32_t docId)
 {
+    _v.reserve(docId+1);
     while (_v.size() <= docId) {
         _v.push_back(0);
     }

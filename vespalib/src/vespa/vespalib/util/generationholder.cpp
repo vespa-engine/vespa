@@ -4,7 +4,7 @@
 
 namespace vespalib {
 
-GenerationHeldBase::~GenerationHeldBase(void)
+GenerationHeldBase::~GenerationHeldBase()
 {
 }
 
@@ -14,19 +14,19 @@ GenerationHeldMalloc::GenerationHeldMalloc(size_t size, void *data)
 {
 }
 
-GenerationHeldMalloc::~GenerationHeldMalloc(void)
+GenerationHeldMalloc::~GenerationHeldMalloc()
 {
     free(_data);
 };
 
-GenerationHolder::GenerationHolder(void)
+GenerationHolder::GenerationHolder()
     : _hold1List(),
       _hold2List(),
       _heldBytes(0)
 {
 }
 
-GenerationHolder::~GenerationHolder(void)
+GenerationHolder::~GenerationHolder()
 {
     assert(_hold1List.empty());
     assert(_hold2List.empty());
@@ -69,7 +69,7 @@ GenerationHolder::trimHoldListsSlow(generation_t usedGen)
 }
 
 void
-GenerationHolder::clearHoldLists(void)
+GenerationHolder::clearHoldLists()
 {
     _hold1List.clear();
     _hold2List.clear();

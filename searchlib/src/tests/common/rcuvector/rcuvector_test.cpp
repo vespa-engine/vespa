@@ -166,6 +166,29 @@ TEST("test generation handling")
     EXPECT_EQUAL(24u, v.getMemoryUsage().allocatedBytesOnHold());
 }
 
+TEST("test reserve") {
+    RcuVector<int32_t> v(2, 0, 2);
+    EXPECT_EQUAL(2u, v.capacity());
+    EXPECT_EQUAL(0u, v.size());
+    v.push_back(0);
+    v.push_back(10);
+    EXPECT_EQUAL(2u, v.size());
+    EXPECT_EQUAL(2u, v.capacity());
+    EXPECT_EQUAL(0u, v.getMemoryUsage().allocatedBytesOnHold());
+    v.reserve(30);
+    EXPECT_EQUAL(2u, v.size());
+    EXPECT_EQUAL(32u, v.capacity());
+    EXPECT_EQUAL(8u, v.getMemoryUsage().allocatedBytesOnHold());
+    v.reserve(32);
+    EXPECT_EQUAL(2u, v.size());
+    EXPECT_EQUAL(32u, v.capacity());
+    EXPECT_EQUAL(8u, v.getMemoryUsage().allocatedBytesOnHold());
+    v.reserve(100);
+    EXPECT_EQUAL(2u, v.size());
+    EXPECT_EQUAL(102u, v.capacity());
+    EXPECT_EQUAL(8u + 32u*4u, v.getMemoryUsage().allocatedBytesOnHold());
+}
+
 TEST("test memory usage")
 {
     RcuVector<int8_t> v(2, 0, 2);

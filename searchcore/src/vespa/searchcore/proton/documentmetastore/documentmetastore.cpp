@@ -145,6 +145,7 @@ DocumentMetaStore::peekFreeLid()
 void
 DocumentMetaStore::ensureSpace(DocId lid)
 {
+    _metaDataStore.reserve(lid+1);
     while (lid >= _metaDataStore.size()) {
         _metaDataStore.push_back(RawDocumentMetaData());
     }
@@ -155,8 +156,7 @@ DocumentMetaStore::ensureSpace(DocId lid)
 }
 
 bool
-DocumentMetaStore::insert(DocId lid,
-                          const RawDocumentMetaData &metaData)
+DocumentMetaStore::insert(DocId lid, const RawDocumentMetaData &metaData)
 {
     ensureSpace(lid);
     _metaDataStore[lid] = metaData;
@@ -247,7 +247,7 @@ DocumentMetaStore::onLoad()
     unload();
     size_t numElems = reader.getNumElems();
     size_t docIdLimit = reader.getDocIdLimit();
-    _metaDataStore.unsafe_reserve(numElems);
+    _metaDataStore.unsafe_reserve(std::max(numElems, docIdLimit));
     TreeType::Builder treeBuilder(_gidToLidMap.getAllocator());
     assert(docIdLimit > 0); // lid 0 is reserved
     ensureSpace(docIdLimit - 1);
