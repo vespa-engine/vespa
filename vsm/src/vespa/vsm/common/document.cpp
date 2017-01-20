@@ -58,11 +58,11 @@ size_t StringFieldIdTMap::highestFieldNo() const
 {
   size_t maxFNo(0);
   for (const auto & field : _map) {
-    if (field.second > maxFNo) {
-      maxFNo = field.second;
+    if (field.second >= maxFNo) {
+      maxFNo = field.second + 1;
     }
   }
-  return maxFNo+1;
+  return maxFNo;
 }
 
 Document::~Document() { }

@@ -76,7 +76,7 @@ DocumentTest::testStorageDocument()
 void DocumentTest::testStringFieldIdTMap()
 {
     StringFieldIdTMap m;
-    EXPECT_EQUAL(1u, m.highestFieldNo());
+    EXPECT_EQUAL(0u, m.highestFieldNo());
     EXPECT_TRUE(StringFieldIdTMap::npos == m.fieldNo("unknown"));
     m.add("f1");
     EXPECT_EQUAL(0u, m.fieldNo("f1"));
