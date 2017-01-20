@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/attribute/multinumericattribute.h>
+#include "multinumericattribute.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/common/rcuvector.h>
 
@@ -22,9 +22,8 @@ private:
         typedef FlagAttributeT<B> Attribute;
         SearchContext(QueryTermSimple::UP qTerm, const FlagAttributeT<B> & toBeSearched);
 
-        virtual std::unique_ptr<queryeval::SearchIterator>
-        createIterator(fef::TermFieldMatchData * matchData,
-                       bool strict);
+        std::unique_ptr<queryeval::SearchIterator>
+        createIterator(fef::TermFieldMatchData * matchData, bool strict) override;
 
     private:
         bool _zeroHits;
@@ -32,21 +31,19 @@ private:
         template <class SC> friend class FlagAttributeIteratorT;
         template <class SC> friend class FlagAttributeIteratorStrict;
     };
-    virtual bool onLoad();
-
-    virtual bool onLoadEnumerated(ReaderBase &attrReader);
-
+    bool onLoad() override;
+    bool onLoadEnumerated(ReaderBase &attrReader) override;
     AttributeVector::SearchContext::UP
     getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
-    virtual void clearOldValues(DocId doc);
-    virtual void setNewValues(DocId doc, const std::vector<typename B::WType> & values);
+    void clearOldValues(DocId doc) override;
+    void setNewValues(DocId doc, const std::vector<typename B::WType> & values) override;
 
 public:
-    void
-    setNewBVValue(DocId doc, typename B::WType::ValueType value);
+    void setNewBVValue(DocId doc, typename B::WType::ValueType value);
 
 private:
     virtual bool onAddDoc(DocId doc);
+    void onAddDocs(DocId docIdLimit) override;
     void ensureGuardBit(BitVector & bv);
     void ensureGuardBit();
     void clearGuardBit(DocId doc);

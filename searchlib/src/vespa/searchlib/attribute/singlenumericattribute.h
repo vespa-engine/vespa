@@ -30,7 +30,7 @@ private:
     typedef attribute::RcuVectorBase<T> DataVector;
     DataVector _data;
 
-    virtual T getFromEnum(EnumHandle e) const {
+    T getFromEnum(EnumHandle e) const override {
         (void) e;
         return T();
     }
@@ -75,7 +75,7 @@ private:
 
 
 protected:
-    virtual bool findEnum(T value, EnumHandle & e) const {
+    bool findEnum(T value, EnumHandle & e) const override {
         (void) value; (void) e;
         return false;
     }
@@ -88,20 +88,20 @@ public:
                                         attribute::CollectionType::SINGLE));
 
 
-    virtual
-    ~SingleValueNumericAttribute(void);
+    ~SingleValueNumericAttribute();
 
-    virtual uint32_t getValueCount(DocId doc) const {
+    uint32_t getValueCount(DocId doc) const override {
         if (doc >= B::getNumDocs()) {
             return 0;
         }
         return 1;
     }
-    virtual void onCommit();
-    virtual void onUpdateStat();
-    virtual void removeOldGenerations(generation_t firstUsed);
-    virtual void onGenerationChange(generation_t generation);
-    virtual bool addDoc(DocId & doc) {
+    void onCommit() override;
+    void onAddDocs(DocId lidLimit) override;
+    void onUpdateStat() override;
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
+    bool addDoc(DocId & doc) override {
         bool incGen = _data.isFull();
         _data.push_back(attribute::getUndefined<T>());
         std::atomic_thread_fence(std::memory_order_release);
@@ -114,7 +114,7 @@ public:
             this->removeAllOldGenerations();
         return true;
     }
-    virtual bool onLoad();
+    bool onLoad() override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
@@ -132,70 +132,66 @@ public:
     //-------------------------------------------------------------------------
     // new read api
     //-------------------------------------------------------------------------
-    virtual T get(DocId doc) const {
+    T get(DocId doc) const override {
         return getFast(doc);
     }
-    virtual largeint_t getInt(DocId doc) const {
+    largeint_t getInt(DocId doc) const override {
         return static_cast<largeint_t>(getFast(doc));
     }
-    virtual void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const {
+    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
         (void) v;
         (void) e;
         (void) sz;
     }
-    virtual double getFloat(DocId doc) const {
+    double getFloat(DocId doc) const override {
         return static_cast<double>(_data[doc]);
     }
-    virtual uint32_t getEnum(DocId doc) const {
+    uint32_t getEnum(DocId doc) const override {
         (void) doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    virtual uint32_t getAll(DocId doc, T * v, uint32_t sz) const {
+    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
         (void) sz;
         v[0] = _data[doc];
         return 1;
     }
-    virtual uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const {
+    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         (void) sz;
         v[0] = static_cast<largeint_t>(_data[doc]);
         return 1;
     }
-    virtual uint32_t get(DocId doc, double * v, uint32_t sz) const {
+    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
         (void) sz;
         v[0] = static_cast<double>(_data[doc]);
         return 1;
     }
-    virtual uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const {
+    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
         (void) sz;
         e[0] = getEnum(doc);
         return 1;
     }
-    virtual uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const {
+    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
         (void) doc; (void) v; (void) sz;
         return 0;
     }
-    virtual uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         (void) sz;
         v[0] = WeightedInt(static_cast<largeint_t>(_data[doc]));
         return 1;
     }
-    virtual uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
         (void) sz;
         v[0] = WeightedFloat(static_cast<double>(_data[doc]));
         return 1;
     }
-    virtual uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
         (void) doc; (void) e; (void) sz;
         return 0;
     }
 
-    virtual void
-    clearDocs(DocId lidLow, DocId lidLimit);
-
-    virtual void
-    onShrinkLidSpace();
-
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void onShrinkLidSpace() override;
+    std::unique_ptr<AttributeSaver> onInitSave() override;
 };
 
 }

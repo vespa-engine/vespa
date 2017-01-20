@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "multi_value_mapping.h"
 #include <vespa/searchlib/datastore/array_store.hpp>
 #include <vespa/searchlib/common/rcuvector.hpp>
 

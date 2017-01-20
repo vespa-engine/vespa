@@ -40,14 +40,14 @@ private:
     typedef typename MultiValueAttribute<B, M>::MultiValueType    MultiValueType; // = B::BaseType
     using MultiValueArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
 
-    virtual bool extractChangeData(const Change & c, MValueType & data) {
+    bool extractChangeData(const Change & c, MValueType & data) override {
         data = static_cast<MValueType>(c._data.get());
         return true;
     }
 
-    virtual T getFromEnum(EnumHandle e) const;
-    virtual bool findEnum(T value, EnumHandle & e) const;
-    virtual void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const {
+    T getFromEnum(EnumHandle e) const override;
+    bool findEnum(T value, EnumHandle & e) const override;
+    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
         (void) v;
         (void) e;
         (void) sz;
@@ -166,13 +166,13 @@ public:
     MultiValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c =
                                AttributeVector::Config(AttributeVector::BasicType::fromType(T()),
                                                        attribute::CollectionType::ARRAY));
-    virtual uint32_t getValueCount(DocId doc) const;
-    virtual void onCommit();
-    virtual void onUpdateStat();
-    virtual void removeOldGenerations(generation_t firstUsed);
+    uint32_t getValueCount(DocId doc) const override;
+    void onCommit() override;
+    void onUpdateStat() override;
+    void removeOldGenerations(generation_t firstUsed) override;
 
-    virtual void onGenerationChange(generation_t generation);
-    virtual bool onLoad();
+    void onGenerationChange(generation_t generation) override;
+    bool onLoad() override;
     virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
@@ -184,29 +184,29 @@ public:
     //-------------------------------------------------------------------------
     // new read api
     //-------------------------------------------------------------------------
-    virtual T get(DocId doc) const {
+    T get(DocId doc) const {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
         return ((values.size() > 0) ? values[0].value() : T());
     }
-    virtual largeint_t getInt(DocId doc) const {
+    largeint_t getInt(DocId doc) const {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
         return static_cast<largeint_t>((values.size() > 0) ? values[0].value() : T());
     }
-    virtual double getFloat(DocId doc) const {
+    double getFloat(DocId doc) const {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
         return static_cast<double>((values.size() > 0) ? values[0].value() : T());
     }
-    virtual EnumHandle getEnum(DocId doc) const {
+    EnumHandle getEnum(DocId doc) const {
         (void) doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    virtual uint32_t getAll(DocId doc, T * v, uint32_t sz) const {
+    uint32_t getAll(DocId doc, T * v, uint32_t sz) const {
         return getHelper(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const {
+    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const {
         return getHelper(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, double * v, uint32_t sz) const {
+    uint32_t get(DocId doc, double * v, uint32_t sz) const {
         return getHelper(doc, v, sz);
     }
     template <typename BufferType>
@@ -218,10 +218,10 @@ public:
         }
         return ret;
     }
-    virtual uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const {
+    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
         return getEnumHelper(doc, e, sz);
     }
-    virtual uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
         return getEnumHelper(doc, e, sz);
     }
     template <typename E>
@@ -234,13 +234,13 @@ public:
         }
         return available;
     }
-    virtual uint32_t getAll(DocId doc, Weighted * v, uint32_t sz)      const {
+    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override{
         return getWeightedHelper<Weighted, T>(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, WeightedInt * v, uint32_t sz)      const {
+    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz)    const {
+    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedFloat, double>(doc, v, sz);
     }
     template <typename WeightedType, typename ValueType>
@@ -254,7 +254,7 @@ public:
         return ret;
     }
 
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    std::unique_ptr<AttributeSaver> onInitSave() override;
 };
 
 }
