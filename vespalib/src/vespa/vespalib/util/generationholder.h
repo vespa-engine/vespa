@@ -25,18 +25,8 @@ public:
           _size(size)
     { }
 
-    virtual ~GenerationHeldBase(void);
-    size_t getSize(void) const { return _size; }
-};
-
-class GenerationHeldMalloc : public GenerationHeldBase
-{
-    void *_data;
-
-public:
-    GenerationHeldMalloc(size_t size, void *data);
-
-    virtual ~GenerationHeldMalloc(void);
+    virtual ~GenerationHeldBase();
+    size_t getSize() const { return _size; }
 };
 
 template<typename A>

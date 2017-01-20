@@ -4,27 +4,13 @@
 
 namespace vespalib {
 
-GenerationHeldBase::~GenerationHeldBase()
-{
-}
-
-GenerationHeldMalloc::GenerationHeldMalloc(size_t size, void *data)
-    : GenerationHeldBase(size),
-      _data(data)
-{
-}
-
-GenerationHeldMalloc::~GenerationHeldMalloc()
-{
-    free(_data);
-};
+GenerationHeldBase::~GenerationHeldBase() { }
 
 GenerationHolder::GenerationHolder()
     : _hold1List(),
       _hold2List(),
       _heldBytes(0)
-{
-}
+{ }
 
 GenerationHolder::~GenerationHolder()
 {
