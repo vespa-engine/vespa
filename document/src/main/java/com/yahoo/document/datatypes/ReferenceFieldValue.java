@@ -94,11 +94,11 @@ public class ReferenceFieldValue extends FieldValue {
 
     @Override
     public void serialize(Field field, FieldWriter writer) {
-
+        writer.write(field, this);
     }
 
     @Override
     public void deserialize(Field field, FieldReader reader) {
-
+        reader.read(field, this);
     }
 }

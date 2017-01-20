@@ -278,6 +278,18 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         }
     }
 
+    @Override
+    public void write(FieldBase field, ReferenceFieldValue value) {
+        if (value.getDocumentId().isPresent()) {
+            // We piggyback on DocumentId's existing serialization code, but need to know
+            // whether or not it's present or merely the empty string.
+            buf.put((byte)1);
+            write(value.getDocumentId().get());
+        } else {
+            buf.put((byte)0);
+        }
+    }
+
     /**
      * Write out the value of struct field
      *

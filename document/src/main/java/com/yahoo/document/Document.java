@@ -83,7 +83,7 @@ public class Document extends StructuredFieldValue {
     private void internalSetId(DocumentId id, DocumentType docType) {
         if (id != null && id.hasDocType() && docType != null && !id.getDocType().equals(docType.getName())) {
             throw new IllegalArgumentException("Trying to set a document id (type " + id.getDocType() +
-                                               ") that don't match the document type (" + getDataType().getName() + ").");
+                                               ") that doesn't match the document type (" + getDataType().getName() + ").");
         }
         docId = id;
     }
@@ -113,7 +113,7 @@ public class Document extends StructuredFieldValue {
     public void setDataType(DataType type) {
         if (docId != null && docId.hasDocType() && !docId.getDocType().equals(type.getName())) {
             throw new IllegalArgumentException("Trying to set a document type (" + type.getName() +
-                                               ") that don't match the document id (" + docId + ").");
+                                               ") that doesn't match the document id (" + docId + ").");
         }
         super.setDataType(type);
         setNewType((DocumentType)type);

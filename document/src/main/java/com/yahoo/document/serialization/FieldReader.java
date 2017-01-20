@@ -126,6 +126,14 @@ public interface FieldReader extends Deserializer {
     void read(FieldBase field, TensorFieldValue value);
 
     /**
+     * Read in the value of the given reference field.
+     *
+     * @param field field description (name and data type)
+     * @param value reference field value
+     */
+    void read(FieldBase field, ReferenceFieldValue value);
+
+    /**
      * Read in the value of struct field
      *
      * @param field - field description (name and data type)

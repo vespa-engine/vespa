@@ -128,7 +128,7 @@ public class ReferenceFieldValueTestCase {
     @Test
     public void hash_code_takes_type_and_id_into_account() {
         ReferenceFieldValue fooField = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad"));
-        ReferenceFieldValue barField = new ReferenceFieldValue(referenceTypeBar(), docId("id:ns:foo::toad"));
+        ReferenceFieldValue barField = new ReferenceFieldValue(referenceTypeBar(), docId("id:ns:bar::toad"));
         ReferenceFieldValue fooFieldWithDifferentId = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::luigi"));
 
         // ... with a very high probability:
