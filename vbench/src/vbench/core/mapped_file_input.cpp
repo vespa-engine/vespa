@@ -25,9 +25,9 @@ MappedFileInput::MappedFileInput(const string &name)
 }
 
 Memory
-MappedFileInput::obtain(size_t bytes, size_t)
+MappedFileInput::obtain()
 {
-    return Memory(_data + _pos, std::min(bytes, (_size - _pos)));
+    return Memory(_data + _pos, (_size - _pos));
 }
 
 Input &

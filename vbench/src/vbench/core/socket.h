@@ -25,10 +25,10 @@ public:
     Socket(const string host, int port);
     virtual ~Socket();
     virtual bool eof() const { return _eof; }
-    virtual Memory obtain(size_t bytes, size_t lowMark);
+    virtual Memory obtain();
     virtual Input &evict(size_t bytes);
     virtual WritableMemory reserve(size_t bytes);
-    virtual Output &commit(size_t bytes, size_t hiMark);
+    virtual Output &commit(size_t bytes);
     virtual const Taint &tainted() const { return _taint; }
 };
 

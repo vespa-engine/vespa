@@ -13,8 +13,8 @@ void stripCR(string &dst) {
 }
 } // namespace vbench::<unnamed>
 
-LineReader::LineReader(Input &input, size_t chunkSize)
-    : _input(input, chunkSize)
+LineReader::LineReader(Input &input)
+    : _input(input)
 {
 }
 

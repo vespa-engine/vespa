@@ -22,7 +22,7 @@ private:
 
 public:
     InputFileReader(const string &name)
-        : _file(name), _lines(_file, 4096) {}
+        : _file(name), _lines(_file) {}
 
     /**
      * Read a single line from the input file and put it into

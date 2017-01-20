@@ -12,7 +12,7 @@ TEST("mapped file input") {
     {
         MappedFileInput file(TEST_PATH("file.txt"));
         EXPECT_TRUE(!file.tainted());
-        LineReader reader(file, 3);
+        LineReader reader(file);
         string line;
         EXPECT_TRUE(reader.readLine(line));
         EXPECT_EQUAL("file content", line);

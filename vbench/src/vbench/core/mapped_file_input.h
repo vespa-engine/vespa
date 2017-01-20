@@ -24,7 +24,7 @@ private:
 public:
     MappedFileInput(const string &name);
     Memory get() const { return Memory(_data, _size); }
-    virtual Memory obtain(size_t bytes, size_t lowMark);
+    virtual Memory obtain();
     virtual Input &evict(size_t bytes);
     virtual const Taint &tainted() const { return _taint; }
 };

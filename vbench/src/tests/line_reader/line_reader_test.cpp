@@ -16,7 +16,7 @@ TEST("line reader") {
         dst.append("zzz");
     }
     {
-        LineReader src(buffer, 3);
+        LineReader src(buffer);
         string str;
         EXPECT_TRUE(src.readLine(str));
         EXPECT_EQUAL("foo", str);
