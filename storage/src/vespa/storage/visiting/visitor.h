@@ -11,20 +11,20 @@
 
 #pragma once
 
-#include <list>
-#include <deque>
+#include "visitormessagesession.h"
+#include "memory_bounded_trace.h"
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/document/select/orderingspecification.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/visitorfactory.h>
-#include <vespa/storage/visiting/visitormessagesession.h>
-#include <vespa/storage/visiting/memory_bounded_trace.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
 #include <vespa/storageframework/storageframework.h>
+#include <list>
+#include <deque>
 
 namespace document {
 class Document;

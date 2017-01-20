@@ -95,10 +95,10 @@ using DocumentId = document::DocumentId;
 using GlobalId = document::GlobalId;
 using TimestampList = std::vector<Timestamp>;
 using string = vespalib::string;
-using DocumentUP = std::unique_ptr<Document>;
-using DocumentIdUP = std::unique_ptr<DocumentId>;
-using DocumentSP = std::shared_ptr<Document>;
-using DocumentUpdateSP = std::shared_ptr<DocumentUpdate>;
+using DocumentUP = std::unique_ptr<document::Document>;
+using DocumentIdUP = std::unique_ptr<document::DocumentId>;
+using DocumentSP = std::shared_ptr<document::Document>;
+using DocumentUpdateSP = std::shared_ptr<document::DocumentUpdate>;
 
 enum IncludedVersions {
     NEWEST_DOCUMENT_ONLY,

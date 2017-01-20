@@ -47,14 +47,12 @@ typedef vespalib::stringref FieldRef;
 class Document
 {
  public:
-  typedef std::shared_ptr<Document> SP;
-  Document();
-  Document(const search::DocumentIdT & doc, size_t maxFieldCount);
+  Document(size_t maxFieldCount) : _docId(0), _fieldCount(maxFieldCount) { }
+  Document(search::DocumentIdT doc, size_t maxFieldCount) : _docId(doc), _fieldCount(maxFieldCount) { }
   virtual ~Document();
   const search::DocumentIdT & getDocId()        const { return _docId; }
   size_t getFieldCount()                        const { return _fieldCount; }
   void setDocId(const search::DocumentIdT & v)        { _docId = v; }
-  void setFieldCount(size_t v)                        { _fieldCount = v; }
   virtual const document::FieldValue * getField(FieldIdT fId) const = 0;
   /**
    Returns true, if not possible to set.
@@ -62,7 +60,7 @@ class Document
   virtual bool setField(FieldIdT fId, document::FieldValue::UP fv) = 0;
  private:
   search::DocumentIdT _docId;
-  size_t              _fieldCount;
+  const size_t        _fieldCount;
 };
 
 }

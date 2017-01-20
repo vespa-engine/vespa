@@ -41,11 +41,8 @@ DocumentTest::testStorageDocument()
     ASSERT_TRUE((*fpmap)[1].size() == 1);
     ASSERT_TRUE((*fpmap)[2].size() == 0);
 
-    StorageDocument sdoc(std::move(doc));
+    StorageDocument sdoc(std::move(doc), fpmap, 3);
     ASSERT_TRUE(sdoc.valid());
-    sdoc.setFieldCount(3);
-    sdoc.fieldPathMap(fpmap);
-    sdoc.init();
 
     EXPECT_EQUAL(std::string("foo"), sdoc.getField(0)->getAsString());
     EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
@@ -69,16 +66,10 @@ DocumentTest::testStorageDocument()
     EXPECT_EQUAL(std::string("qux"), sdoc.getField(1)->getAsString());
     EXPECT_EQUAL(std::string("quux"), sdoc.getField(2)->getAsString());
 
-    // reset cached field values
-    sdoc.init();
-    EXPECT_EQUAL(std::string("foo"), sdoc.getField(0)->getAsString());
-    EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
-    EXPECT_TRUE(sdoc.getField(2) == NULL);
-
     EXPECT_TRUE(!sdoc.setField(3, FieldValue::UP(new StringFieldValue("thud"))));
 
     SharedFieldPathMap fim;
-    StorageDocument s2(fim);
+    StorageDocument s2(std::make_unique<document::Document>(), fim, 0);
     EXPECT_EQUAL(vespalib::string("null::"), s2.docDoc().getId().toString());
 }
 

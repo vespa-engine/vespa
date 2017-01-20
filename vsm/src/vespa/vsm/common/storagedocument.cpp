@@ -2,51 +2,29 @@
 #include "storagedocument.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/datatype/datatype.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.storagedocument");
 
 namespace vsm {
 
-StorageDocument::StorageDocument(const SharedFieldPathMap & fim) :
-    Document(),
-    _doc(new document::Document()),
+StorageDocument::StorageDocument(document::Document::UP doc, const SharedFieldPathMap & fim, size_t fieldNoLimit) :
+    Document(fieldNoLimit),
+    _doc(std::move(doc)),
     _fieldMap(fim),
-    _cachedFields(),
-    _backedFields()
-{ }
-
-StorageDocument::StorageDocument(document::Document::UP doc) :
-    Document(),
-    _doc(doc.release()),
-    _fieldMap(),
-    _cachedFields(),
+    _cachedFields(getFieldCount()),
     _backedFields()
 { }
 
 StorageDocument::~StorageDocument() { }
-
-void StorageDocument::init()
-{
-    _cachedFields.clear();
-    _cachedFields.resize(getFieldCount());
-}
 
 namespace {
     FieldPath _emptyFieldPath;
     StorageDocument::SubDocument _empySubDocument(NULL, _emptyFieldPath.begin(), _emptyFieldPath.end());
 }
 
-void StorageDocument::SubDocument::swap(SubDocument & rhs)
-{
-    std::swap(_fieldValue, rhs._fieldValue);
-    std::swap(_it, rhs._it);
-    std::swap(_mt, rhs._mt);
-}
-
-
-const StorageDocument::SubDocument & StorageDocument::getComplexField(FieldIdT fId) const
+const StorageDocument::SubDocument &
+StorageDocument::getComplexField(FieldIdT fId) const
 {
     if (_cachedFields[fId].getFieldValue() == NULL) {
         const FieldPath & fp = (*_fieldMap)[fId];
@@ -68,7 +46,7 @@ const StorageDocument::SubDocument & StorageDocument::getComplexField(FieldIdT f
     return _cachedFields[fId];
 }
 
-void StorageDocument::saveCachedFields()
+void StorageDocument::saveCachedFields() const
 {
     size_t m(_cachedFields.size());
     _backedFields.reserve(m);
@@ -80,7 +58,8 @@ void StorageDocument::saveCachedFields()
     }
 }
 
-const document::FieldValue * StorageDocument::getField(FieldIdT fId) const
+const document::FieldValue *
+StorageDocument::getField(FieldIdT fId) const
 {
     return getComplexField(fId).getFieldValue();
 }

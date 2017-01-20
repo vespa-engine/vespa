@@ -5,8 +5,6 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchvisitor/hitcollector.h>
-#include <vespa/vdslib/container/searchresult.h>
-#include <vespa/vsm/common/storagedocument.h>
 
 using namespace document;
 using namespace search::fef;
@@ -64,7 +62,7 @@ void
 HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const char *sortData, size_t sortDataSize)
 {
     document::Document::UP doc(new document::Document(_docType, DocumentId("doc::")));
-    StorageDocument::SP sdoc(new StorageDocument(std::move(doc)));
+    StorageDocument::LP sdoc(new StorageDocument(std::move(doc), SharedFieldPathMap(), 0));
     ASSERT_TRUE(sdoc->valid());
     MatchData md(MatchData::params());
     hc.addHit(sdoc, docId, md, score, sortData, sortDataSize);

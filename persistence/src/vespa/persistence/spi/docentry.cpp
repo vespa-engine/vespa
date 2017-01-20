@@ -2,7 +2,6 @@
 
 #include "docentry.h"
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/base/documentid.h>
 #include <sstream>
 
 namespace storage {
