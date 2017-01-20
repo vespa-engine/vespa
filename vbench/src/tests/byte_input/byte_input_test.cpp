@@ -12,7 +12,7 @@ TEST("byte input") {
     }
     EXPECT_EQUAL(8u, buffer.get().size);
     {
-        ByteInput in(buffer, 3);
+        ByteInput in(buffer);
         EXPECT_EQUAL('a', in.get());
         EXPECT_EQUAL('b', in.get());
         EXPECT_EQUAL('c', in.get());
@@ -20,7 +20,7 @@ TEST("byte input") {
     }
     EXPECT_EQUAL(4u, buffer.get().size);
     {
-        ByteInput in(buffer, 3);
+        ByteInput in(buffer);
         EXPECT_EQUAL('e', in.get());
         EXPECT_EQUAL('f', in.get());
         EXPECT_EQUAL('g', in.get());
@@ -30,7 +30,7 @@ TEST("byte input") {
     }
     EXPECT_EQUAL(0u, buffer.get().size);
     {
-        ByteInput in(buffer, 3);
+        ByteInput in(buffer);
         EXPECT_EQUAL(-1, in.get());
     }
     EXPECT_EQUAL(0u, buffer.get().size);

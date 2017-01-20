@@ -27,9 +27,8 @@ struct Output
      *
      * @return this object, for chaining
      * @param bytes number of bytes to commit
-     * @param hiMark maximum number of unflushed bytes after commit
      **/
-    virtual Output &commit(size_t bytes, size_t hiMark) = 0;
+    virtual Output &commit(size_t bytes) = 0;
 
     virtual ~Output() {}
 };

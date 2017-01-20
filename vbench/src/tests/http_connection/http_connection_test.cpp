@@ -15,7 +15,7 @@ TEST("http connection") {
     EXPECT_FALSE(client.fresh());
     EXPECT_TRUE(client.mayReuse(5.1));
     server.reset();
-    client.stream().obtain(1, 1); // trigger eof
+    client.stream().obtain(); // trigger eof
     EXPECT_FALSE(client.mayReuse(5.1));
 }
 

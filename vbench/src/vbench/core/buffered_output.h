@@ -21,7 +21,7 @@ private:
 
     void ensureFree(size_t bytes) {
         if ((_pos + bytes) > _data.size) {
-            _data = _output.commit(_pos, 0).reserve(std::max(bytes, _chunkSize));
+            _data = _output.commit(_pos).reserve(std::max(bytes, _chunkSize));
             _pos = 0;
         }
     }
@@ -29,7 +29,7 @@ private:
 public:
     BufferedOutput(Output &output, size_t chunkSize)
         : _output(output), _data(), _pos(), _chunkSize(chunkSize) {}
-    ~BufferedOutput() { _output.commit(_pos, 0); }
+    ~BufferedOutput() { _output.commit(_pos); }
 
     BufferedOutput &append(char c) {
         ensureFree(1);

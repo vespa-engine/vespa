@@ -12,14 +12,14 @@ bool endsWith(const Memory &mem, const string &str) {
 }
 
 void readUntil(Input &input, SimpleBuffer &buffer, const string &end) {
-    ByteInput in(input, 256);
+    ByteInput in(input);
     while (!endsWith(buffer.get(), end)) {
         int c = in.get();
         if (c < 0) {
             return;
         }
         buffer.reserve(1).data[0] = c;
-        buffer.commit(1, 0);
+        buffer.commit(1);
     }
 }
 

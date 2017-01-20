@@ -26,10 +26,10 @@ private:
 public:
     SimpleBuffer();
     Memory get() const { return Memory(&_data[0], _used); }
-    virtual Memory obtain(size_t bytes, size_t lowMark);
+    virtual Memory obtain();
     virtual Input &evict(size_t bytes);
     virtual WritableMemory reserve(size_t bytes);
-    virtual Output &commit(size_t bytes, size_t hiMark);
+    virtual Output &commit(size_t bytes);
     bool operator==(const SimpleBuffer &rhs) const;
 };
 

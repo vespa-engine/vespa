@@ -12,9 +12,9 @@ SimpleBuffer::SimpleBuffer()
 }
 
 Memory
-SimpleBuffer::obtain(size_t bytes, size_t)
+SimpleBuffer::obtain()
 {
-    return Memory(&_data[0], std::min(bytes, _used));
+    return Memory(&_data[0], _used);
 }
 
 Input &
@@ -34,7 +34,7 @@ SimpleBuffer::reserve(size_t bytes)
 }
 
 Output &
-SimpleBuffer::commit(size_t bytes, size_t)
+SimpleBuffer::commit(size_t bytes)
 {
     assert(bytes <= (_data.size() - _used));
     _used += bytes;
