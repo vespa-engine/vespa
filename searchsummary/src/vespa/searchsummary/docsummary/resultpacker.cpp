@@ -121,6 +121,7 @@ ResultPacker::AddEmpty()
         case RES_JSONSTRING:
         case RES_FEATUREDATA:
         case RES_LONG_STRING: return AddLongString(NULL, 0);
+        case RES_TENSOR:      return AddSerializedTensor(NULL, 0);
         case RES_LONG_DATA:   return AddLongData(NULL, 0);
         }
     }
@@ -243,6 +244,17 @@ bool
 ResultPacker::AddLongData(const char *buf, uint32_t buflen)
 {
     if (CheckEntry(RES_LONG_DATA)) {
+        _buf.append(&buflen, sizeof(buflen));
+        _buf.append(buf, buflen);
+    }
+    return !_error;
+}
+
+
+bool
+ResultPacker::AddSerializedTensor(const char *buf, uint32_t buflen)
+{
+    if (CheckEntry(RES_TENSOR)) {
         _buf.append(&buflen, sizeof(buflen));
         _buf.append(buf, buflen);
     }

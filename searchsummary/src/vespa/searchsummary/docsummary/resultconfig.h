@@ -164,6 +164,8 @@ public:
         case RES_DATA:
         case RES_LONG_DATA:
             return (b == RES_DATA || b == RES_LONG_DATA);
+        case RES_TENSOR:
+            return (b == RES_TENSOR);
         case RES_FEATUREDATA:
             return (b == RES_FEATUREDATA);
         }

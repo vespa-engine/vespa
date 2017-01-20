@@ -151,6 +151,7 @@ DynamicDocsumWriter::RepackDocsum(GeneralResult *gres,
                     written += slen;
                     break; }
 
+                case RES_TENSOR:
                 case RES_LONG_DATA: {
                     uint32_t flen = entry->_len;
                     uint32_t dlen = entry->_get_length();
@@ -304,6 +305,7 @@ static void convertEntry(GetDocsumsState *state,
         inserter.insertString(Memory(ptr, len));
         break;
     case RES_DATA:
+    case RES_TENSOR:
     case RES_LONG_DATA:
         entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
         inserter.insertData(Memory(ptr, len));

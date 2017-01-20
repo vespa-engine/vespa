@@ -42,6 +42,8 @@
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/tensor/serialization/slime_binary_format.h>
+#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -472,7 +474,7 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     }
 
     virtual void visit(const TensorFieldValue &value) override {
-        _field_value = _structuredFieldConverter.convert(value);
+        visitPrimitive(value);
     }
 
 public:
@@ -632,12 +634,11 @@ class SlimeFiller : public ConstFieldValueVisitor {
 
     virtual void visit(const TensorFieldValue &value) override {
         const auto &tensor = value.getAsTensorPtr();
+        vespalib::nbostream s;
         if (tensor) {
-            vespalib::tensor::SlimeBinaryFormat::serialize(_inserter, *tensor);
-        } else {
-            // No tensor value => empty object
-            _inserter.insertObject();
+            vespalib::tensor::TypedBinaryFormat::serialize(s, *tensor);
         }
+        _inserter.insertData(vespalib::slime::Memory(s.peek(), s.size()));
     }
 
 public:
