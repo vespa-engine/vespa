@@ -2,7 +2,6 @@
 vespa_add_library(vsm_vsmcommon OBJECT
     SOURCES
     charbuffer.cpp
-    docsum.cpp
     document.cpp
     documenttypemapping.cpp
     fieldmodifier.cpp

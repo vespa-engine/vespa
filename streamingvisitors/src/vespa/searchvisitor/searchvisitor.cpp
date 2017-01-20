@@ -4,27 +4,12 @@
 #include "searchenvironment.h"
 #include "searchvisitor.h"
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/common/packets.h>
-#include <vespa/searchlib/common/sortspec.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/fastlib/text/wordfolder.h>
-#include <vespa/vdslib/container/documentlist.h>
-#include <vespa/vsm/config/vsm-cfif.h>
 #include <vespa/vespalib/geo/zcurve.h>
-#include <vespa/vsm/vsm/docsumfilter.h>
-#include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -33,37 +18,16 @@ LOG_SETUP(".visitor.instance.searchvisitor");
 
 namespace storage {
 
-using vsm::VSMAdapter;
 using vsm::DocsumFilter;
-using vsm::DocsumTools;
-using vsm::DocsumToolsPtr;
-using vsm::DocSumCache;
-using vsm::FieldIdTSearcherMap;
-using vsm::FieldPathMapT;
-using vsm::FieldSearcher;
-using vsm::FieldSearchSpecMap;
-using vsm::VsmfieldsHandle;
 using vsm::FieldPath;
 using vsm::StorageDocument;
 using vsm::StringFieldIdTMap;
-using search::IAttributeManager;
 using search::AttributeGuard;
-using search::AttributeManager;
 using search::AttributeVector;
 using search::attribute::IAttributeVector;
-using search::EmptyQueryNodeResult;
-using search::Query;
-using search::QueryPacketT;
-using search::FeatureSet;
-using search::fs4transport::FS4Packet_DOCSUM;
-using search::fs4transport::FS4Packet_EOL;
-using search::fs4transport::PacketArray;
-using namespace search::docsummary;
-using namespace search::aggregation;
-using namespace search::expression;
+using search::aggregation::HitsAggregationResult;
+using search::expression::ConfigureStaticParams;
 using vdslib::Parameters;
-using vdslib::DocumentList;
-
 
 class ForceWordfolderInit
 {
@@ -87,8 +51,7 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
 {
     const document::DataType * ndt = fv.getDataType();
     if (ndt->inherits(document::CollectionDataType::classId)) {
-        ndt = &(static_cast<const document::CollectionDataType *>(ndt))
-              ->getNestedType();
+        ndt = &(static_cast<const document::CollectionDataType *>(ndt))->getNestedType();
     }
     LOG(debug, "Create %s attribute '%s' with data type '%s' (%s)",
         arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), fv.getClass().name());
@@ -133,7 +96,7 @@ createAttribute(const vespalib::string & name, const document::FieldValue & fv)
 }
 
 SearchVisitor::SummaryGenerator::SummaryGenerator() :
-    search::aggregation::HitsAggregationResult::SummaryGenerator(),
+    HitsAggregationResult::SummaryGenerator(),
     _callback(),
     _docsumState(_callback),
     _docsumFilter(),
@@ -142,7 +105,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator() :
 {
 }
 
-vespalib::ConstBufferRef SearchVisitor::SummaryGenerator::fillSummary(search::AttributeVector::DocId lid, const search::aggregation::HitsAggregationResult::SummaryClassType & summaryClass)
+vespalib::ConstBufferRef SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass)
 {
     if (_docsumWriter != NULL) {
         _rawBuf.reset();
@@ -155,14 +118,14 @@ vespalib::ConstBufferRef SearchVisitor::SummaryGenerator::fillSummary(search::At
 
 void SearchVisitor::HitsResultPreparator::execute(vespalib::Identifiable & obj)
 {
-    search::aggregation::HitsAggregationResult & hitsAggr(static_cast<search::aggregation::HitsAggregationResult &>(obj));
+    HitsAggregationResult & hitsAggr(static_cast<HitsAggregationResult &>(obj));
     hitsAggr.setSummaryGenerator(_summaryGenerator);
     _numHitsAggregators++;
 }
 
 bool SearchVisitor::HitsResultPreparator::check(const vespalib::Identifiable & obj) const
 {
-    return obj.getClass().inherits(search::aggregation::HitsAggregationResult::classId);
+    return obj.getClass().inherits(HitsAggregationResult::classId);
 }
 
 SearchVisitor::GroupingEntry::GroupingEntry(Grouping * grouping) :
@@ -320,7 +283,7 @@ void SearchVisitor::init(const Parameters & params)
         if ( params.get("query", queryBlob) ) {
             LOG(spam, "Received query blob of %zd bytes", queryBlob.size());
             QueryTermData resultAddOn;
-            _query = Query(resultAddOn, QueryPacketT(static_cast<const char *>(queryBlob.data()), queryBlob.size()));
+            _query = search::Query(resultAddOn, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
             LOG(debug, "Query tree: '%s'", _query.asString().c_str());
             _searchBuffer->reserve(0x10000);
 
@@ -464,7 +427,7 @@ SearchVisitor::RankController::processHintedAttributes(const IndexEnvironment & 
                 found = (attributeFields[j]._field == fid);
             }
             if (!found) {
-                search::AttributeGuard::UP attr(attrMan.getAttribute(name));
+                AttributeGuard::UP attr(attrMan.getAttribute(name));
                 if (attr->valid()) {
                     LOG(debug, "Add attribute '%s' with field id '%u' to the list of needed attributes", name.c_str(), fid);
                     attributeFields.push_back(AttrInfo(fid, std::move(attr)));
@@ -558,23 +521,24 @@ bool
 SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
                                                       SearchVisitor & visitor,
                                                       const std::vector<char> & tmpSortBuffer,
-                                                      const vsm::StorageDocument::SP & document)
+                                                      const StorageDocument::LP & document)
 {
     bool amongTheBest(false);
     uint32_t docId = _rankProcessor->getDocId();
     if (!hasSorting) {
-        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(), _rankProcessor->getRankScore());
+        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(),
+                                                                _rankProcessor->getRankScore());
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(vsm::StorageDocument::SP(NULL), docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
+            _dumpProcessor->getHitCollector().addHit(StorageDocument::LP(NULL), docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
         }
     } else {
         size_t pos = visitor.fillSortBuffer();
         LOG(spam, "SortBlob is %ld bytes", pos);
-        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(), _rankProcessor->getRankScore(),
-                                                 &tmpSortBuffer[0], pos);
+        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(),
+                                                                _rankProcessor->getRankScore(), &tmpSortBuffer[0], pos);
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(vsm::StorageDocument::SP(NULL), docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore(),
-                                                     &tmpSortBuffer[0], pos);
+            _dumpProcessor->getHitCollector().addHit(StorageDocument::LP(NULL), docId, _dumpProcessor->getMatchData(),
+                                                     _dumpProcessor->getRankScore(), &tmpSortBuffer[0], pos);
         }
     }
     return amongTheBest;
@@ -617,13 +581,13 @@ SearchVisitor::SyntheticFieldsController::setup(const StringFieldIdTMap & fieldR
 }
 
 void
-SearchVisitor::SyntheticFieldsController::onDocument(vsm::StorageDocument & document)
+SearchVisitor::SyntheticFieldsController::onDocument(StorageDocument & document)
 {
     (void) document;
 }
 
 void
-SearchVisitor::SyntheticFieldsController::onDocumentMatch(vsm::StorageDocument & document,
+SearchVisitor::SyntheticFieldsController::onDocumentMatch(StorageDocument & document,
                                                           const vespalib::string & documentId)
 {
     document.setField(_documentIdFId, document::FieldValue::UP(new document::StringFieldValue(documentId)));
@@ -633,9 +597,9 @@ void
 SearchVisitor::registerAdditionalFields(const std::vector<vsm::DocsumTools::FieldSpec> & docsumSpec,
                                         std::vector<vespalib::string> & fieldList)
 {
-    for (size_t i = 0; i < docsumSpec.size(); ++i) {
-        fieldList.push_back(docsumSpec[i].getOutputName());
-        const std::vector<vespalib::string> & inputNames = docsumSpec[i].getInputNames();
+    for (const vsm::DocsumTools::FieldSpec & spec : docsumSpec) {
+        fieldList.push_back(spec.getOutputName());
+        const std::vector<vespalib::string> & inputNames = spec.getInputNames();
         for (size_t j = 0; j < inputNames.size(); ++j) {
             fieldList.push_back(inputNames[j]);
             if (document::PositionDataType::isZCurveFieldName(inputNames[j])) {
@@ -691,11 +655,10 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
             _fieldSearchSpecMap.documentTypeMap().size());
     }
     _fieldsUnion = fieldsInQuery.map();
-    for(vsm::StringFieldIdTMapT::const_iterator it(_fieldSearchSpecMap.nameIdMap().map().begin()),
-                                           mt(_fieldSearchSpecMap.nameIdMap().map().end()); it != mt; it++) {
-        if (_fieldsUnion.find(it->first) == _fieldsUnion.end()) {
-            LOG(debug, "Adding field '%s' from _fieldSearchSpecMap", it->first.c_str());
-            _fieldsUnion[it->first] = it->second;
+    for(const auto & entry :_fieldSearchSpecMap.nameIdMap().map()) {
+        if (_fieldsUnion.find(entry.first) == _fieldsUnion.end()) {
+            LOG(debug, "Adding field '%s' from _fieldSearchSpecMap", entry.first.c_str());
+            _fieldsUnion[entry.first] = entry.second;
         }
     }
     // Init based on default document type and mapping from field name to field id
@@ -707,7 +670,8 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
 void
 SearchVisitor::setupDocsumObjects()
 {
-    std::unique_ptr<DocsumFilter> docsumFilter(new DocsumFilter(_vsmAdapter->getDocsumTools(), _rankController.getRankProcessor()->getHitCollector()));
+    std::unique_ptr<DocsumFilter> docsumFilter(new DocsumFilter(_vsmAdapter->getDocsumTools(),
+                                                                _rankController.getRankProcessor()->getHitCollector()));
     docsumFilter->init(_fieldSearchSpecMap.nameIdMap(), *_fieldPathMap);
     docsumFilter->setSnippetModifiers(_snippetModifierManager.getModifiers());
     _summaryGenerator.setFilter(std::move(docsumFilter));
@@ -747,53 +711,52 @@ SearchVisitor::setupDocsumObjects()
 void
 SearchVisitor::setupAttributeVectors()
 {
-    const FieldPathMapT & fm = *_fieldPathMap;
-    for (FieldPathMapT::const_iterator it(fm.begin()), mt(fm.end()); it != mt; it++) {
-        if ( ! it->empty() ) {
-            vespalib::string attrName(it->front().getName());
-            for (FieldPath::const_iterator ft(it->begin()+1), fmt(it->end()); ft != fmt; ft++) {
-                attrName.append(".");
-                attrName.append(ft->getName());
-            }
-
-            enum FieldDataType {
-                OTHER = 0,
-                ARRAY,
-                WSET
-            };
-            FieldDataType typeSeen = OTHER;
-            for (FieldPath::const_iterator ft(it->begin()), fmt(it->end()); ft != fmt; ft++) {
-                int dataTypeId(ft->getDataType().getClass().id());
-                if (dataTypeId == document::ArrayDataType::classId) {
-                    typeSeen = ARRAY;
-                } else if (dataTypeId == document::MapDataType::classId) {
-                    typeSeen = ARRAY;
-                } else if (dataTypeId == document::WeightedSetDataType::classId) {
-                    typeSeen = WSET;
-                }
-            }
-            const document::FieldValue & fv = it->back().getFieldValueToSet();
-            AttributeVector::SP attr;
-            if (typeSeen == ARRAY) {
-                attr = createMultiValueAttribute(attrName, fv, true);
-            } else if (typeSeen == WSET) {
-                attr = createMultiValueAttribute (attrName, fv, false);
-            } else {
-                attr = createAttribute(attrName, fv);
-            }
-
-            if (attr.get()) {
-                LOG(debug, "Adding attribute '%s' for field '%s' with data type '%s' (%s)",
-                    attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.getClass().name());
-                if ( ! _attrMan.add(attr) ) {
-                    LOG(warning, "Failed adding attribute '%s' for field '%s' with data type '%s' (%s)",
-                        attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.getClass().name());
-                }
-            } else {
-                LOG(debug, "Cannot setup attribute for field '%s' with data type '%s' (%s). Aggregation and sorting will not work for this field",
-                    attrName.c_str(), fv.getDataType()->getName().c_str(), fv.getClass().name());
-            }
+    for (const FieldPath & fieldPath : *_fieldPathMap) {
+        if ( ! fieldPath.empty() ) {
+            setupAttributeVector(fieldPath);
         }
+    }
+}
+
+void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
+    vespalib::string attrName(fieldPath.front().getName());
+    for (FieldPath::const_iterator ft(fieldPath.begin() + 1), fmt(fieldPath.end()); ft != fmt; ft++) {
+        attrName.append(".");
+        attrName.append(ft->getName());
+    }
+
+    enum FieldDataType { OTHER = 0, ARRAY, WSET };
+    FieldDataType typeSeen = OTHER;
+    for (const document::FieldPathEntry & entry : fieldPath) {
+        int dataTypeId(entry.getDataType().getClass().id());
+        if (dataTypeId == document::ArrayDataType::classId) {
+            typeSeen = ARRAY;
+        } else if (dataTypeId == document::MapDataType::classId) {
+            typeSeen = ARRAY;
+        } else if (dataTypeId == document::WeightedSetDataType::classId) {
+            typeSeen = WSET;
+        }
+    }
+    const document::FieldValue & fv = fieldPath.back().getFieldValueToSet();
+    AttributeVector::SP attr;
+    if (typeSeen == ARRAY) {
+        attr = createMultiValueAttribute(attrName, fv, true);
+    } else if (typeSeen == WSET) {
+        attr = createMultiValueAttribute (attrName, fv, false);
+    } else {
+        attr = createAttribute(attrName, fv);
+    }
+
+    if (attr.get()) {
+        LOG(debug, "Adding attribute '%s' for field '%s' with data type '%s' (%s)",
+            attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.getClass().name());
+        if ( ! _attrMan.add(attr) ) {
+            LOG(warning, "Failed adding attribute '%s' for field '%s' with data type '%s' (%s)",
+                attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.getClass().name());
+        }
+    } else {
+        LOG(debug, "Cannot setup attribute for field '%s' with data type '%s' (%s). Aggregation and sorting will not work for this field",
+            attrName.c_str(), fv.getDataType()->getName().c_str(), fv.getClass().name());
     }
 }
 
@@ -801,8 +764,7 @@ void
 SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & sortList)
 {
     if ( ! sortList.empty() ) {
-        for (size_t i(0), m(sortList.size()); i < m; i++) {
-            const search::common::SortInfo & sInfo(sortList[i]);
+        for (const search::common::SortInfo & sInfo : sortList) {
             vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(sInfo._field);
             if ( fid != StringFieldIdTMap::npos ) {
                 AttributeGuard::UP attr(_attrMan.getAttribute(sInfo._field));
@@ -851,7 +813,7 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
         grouping.select(attr2Doc, attr2Doc);
         LOG(debug, "Grouping # %ld with id(%d)", i, grouping.getId());
         try {
-            search::expression::ConfigureStaticParams stuff(_attrCtx.get(), &_docTypeMapping.getCurrentDocumentType());
+            ConfigureStaticParams stuff(_attrCtx.get(), &_docTypeMapping.getCurrentDocumentType());
             grouping.configureStaticStuff(stuff);
             HitsResultPreparator preparator(_summaryGenerator);
             grouping.select(preparator, preparator);
@@ -870,13 +832,13 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
 class SingleDocumentStore : public vsm::IDocSumCache
 {
 public:
-    SingleDocumentStore(const vsm::StorageDocument & doc) : _doc(doc) { }
+    SingleDocumentStore(const StorageDocument & doc) : _doc(doc) { }
     virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const {
         (void) docId;
         return _doc;
     }
 private:
-    const vsm::StorageDocument & _doc;
+    const StorageDocument & _doc;
 };
 
 bool
@@ -904,30 +866,20 @@ SearchVisitor::handleDocuments(const document::BucketId&,
         return;
     }
     document::DocumentId emptyId;
-    LOG(debug, "SearchVisitor '%s' handling block of %zu documents",
-        _id.c_str(), entries.size());
+    LOG(debug, "SearchVisitor '%s' handling block of %zu documents", _id.c_str(), entries.size());
     size_t highestFieldNo(_fieldSearchSpecMap.nameIdMap().highestFieldNo());
 
-    const document::DocumentType* defaultDocType =
-        _docTypeMapping.getDefaultDocumentType();
+    const document::DocumentType* defaultDocType = _docTypeMapping.getDefaultDocumentType();
     assert(defaultDocType);
-    for (size_t i = 0; i< entries.size(); ++i) {
-        spi::DocEntry& entry(*entries[i]);
-        vsm::StorageDocument::SP document(
-                new StorageDocument(entry.releaseDocument()));
-        document->fieldPathMap(_fieldPathMap);
-        document->setFieldCount(highestFieldNo);
+    for (const auto & entry : entries) {
+        StorageDocument::LP document(new StorageDocument(entry->releaseDocument(), _fieldPathMap, highestFieldNo));
 
         try {
-            document->init();
             if (defaultDocType != NULL
-                && !compatibleDocumentTypes(*defaultDocType,
-                                            document->docDoc().getType()))
+                && !compatibleDocumentTypes(*defaultDocType, document->docDoc().getType()))
             {
-                LOG(debug, "Skipping document of type '%s' when "
-                    "handling only documents of type '%s'",
-                    document->docDoc().getType().getName().c_str(),
-                    defaultDocType->getName().c_str());
+                LOG(debug, "Skipping document of type '%s' when handling only documents of type '%s'",
+                    document->docDoc().getType().getName().c_str(), defaultDocType->getName().c_str());
             } else {
                 if (handleDocument(document)) {
                     _backingDocuments.push_back(document);
@@ -935,14 +887,13 @@ SearchVisitor::handleDocuments(const document::BucketId&,
             }
         } catch (const std::exception & e) {
             LOG(warning, "Caught exception handling document '%s'. Exception='%s'",
-                document->docDoc().getId().getScheme().toString().c_str(),
-                e.what());
+                document->docDoc().getId().getScheme().toString().c_str(), e.what());
         }
     }
 }
 
 bool
-SearchVisitor::handleDocument(const vsm::StorageDocument::SP & document)
+SearchVisitor::handleDocument(const StorageDocument::LP & document)
 {
     bool needToKeepDocument(false);
     _syntheticFieldsController.onDocument(*document);
@@ -994,8 +945,7 @@ void
 SearchVisitor::group(const document::Document & doc, search::HitRank rank, bool all)
 {
     LOG(spam, "Group all: %s",  all ? "true" : "false");
-    for(GroupingList::iterator it(_groupingList.begin()), mt(_groupingList.end()); it != mt; it++) {
-        GroupingEntry & grouping(*it);
+    for(GroupingEntry & grouping : _groupingList) {
         if (all == grouping->getAll()) {
             grouping.aggregate(doc, rank);
             LOG(spam, "Actually group document with id '%s'", doc.getId().getScheme().toString().c_str());
@@ -1004,11 +954,10 @@ SearchVisitor::group(const document::Document & doc, search::HitRank rank, bool 
 }
 
 bool
-SearchVisitor::match(const vsm::StorageDocument & doc)
+SearchVisitor::match(const StorageDocument & doc)
 {
-    for (FieldIdTSearcherMap::iterator it = _fieldSearcherMap.begin(), mt = _fieldSearcherMap.end(); it != mt; it++) {
-        FieldSearcher & fSearch = *(*it);
-        fSearch.search(doc);
+    for (vsm::FieldSearcherContainer & fSearch : _fieldSearcherMap) {
+        fSearch->search(doc);
     }
     bool hit(_query.evaluate());
     if (hit) {
@@ -1025,8 +974,7 @@ SearchVisitor::match(const vsm::StorageDocument & doc)
 void
 SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const StorageDocument & document)
 {
-    for (size_t i(0), im(_attributeFields.size()); i < im; i++) {
-        const AttrInfo & finfo = _attributeFields[i];
+    for (const AttrInfo & finfo : _attributeFields) {
         const AttributeGuard &finfoGuard(*finfo._attr);
         bool isPosition = finfoGuard->getClass().inherits(search::IntegerAttribute::classId) && document::PositionDataType::isZCurveFieldName(finfoGuard->getName());
         LOG(debug, "Filling attribute '%s',  isPosition='%s'", finfoGuard->getName().c_str(), isPosition ? "true" : "false");
@@ -1062,9 +1010,9 @@ size_t
 SearchVisitor::fillSortBuffer()
 {
     size_t pos(0);
-    for(size_t i(0), m(_sortList.size()); i != m; i++) {
+    for (size_t index : _sortList) {
+        const AttrInfo & finfo = _attributeFields[index];
         int written(0);
-        const AttrInfo & finfo = _attributeFields[_sortList[i]];
         const AttributeGuard &finfoGuard(*finfo._attr);
         LOG(debug, "Adding sortdata for document %d for attribute '%s'",
             finfoGuard->getNumDocs() - 1, finfoGuard->getName().c_str());
@@ -1132,8 +1080,8 @@ void
 SearchVisitor::generateGroupingResults()
 {
     vdslib::SearchResult & searchResult(_queryResult->getSearchResult());
-    for (GroupingList::iterator it(_groupingList.begin()), mt(_groupingList.end()); it != mt; it++) {
-        Grouping & grouping(**it);
+    for (auto & groupingPtr : _groupingList) {
+        Grouping & grouping(*groupingPtr);
         LOG(debug, "grouping before postAggregate: %s", grouping.asString().c_str());
         grouping.postAggregate();
         grouping.postMerge();

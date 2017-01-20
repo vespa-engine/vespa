@@ -57,23 +57,13 @@ FieldIdT StringFieldIdTMap::fieldNo(const vespalib::string & fName) const
 size_t StringFieldIdTMap::highestFieldNo() const
 {
   size_t maxFNo(0);
-  for (StringFieldIdTMapT::const_iterator it = _map.begin(), mt = _map.end(); it != mt; it++) {
-    if (it->second >= maxFNo) {
-      maxFNo = it->second + 1;
+  for (const auto & field : _map) {
+    if (field.second > maxFNo) {
+      maxFNo = field.second;
     }
   }
-  return maxFNo;
+  return maxFNo+1;
 }
-
-Document::Document(const DocumentIdT & doc, size_t maxField) :
-  _docId(doc),
-  _fieldCount(maxField)
-{ }
-
-Document::Document() :
-  _docId(0),
-  _fieldCount(0)
-{ }
 
 Document::~Document() { }
 
