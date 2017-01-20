@@ -47,10 +47,16 @@ public:
     }
     bool hasSpanTrees() const { return _annotationData ? _annotationData->hasSpanTrees() : false; }
     static const SpanTree *findTree(const SpanTrees &trees, const vespalib::stringref &name);
+    void clearSpanTrees() {
+        if (_annotationData) {
+            doClearSpanTrees();
+        }
+    }
 
     using LiteralFieldValueB::operator=;
     DECLARE_IDENTIFIABLE(StringFieldValue);
 private:
+    void doClearSpanTrees();
 
     class AnnotationData {
     public:

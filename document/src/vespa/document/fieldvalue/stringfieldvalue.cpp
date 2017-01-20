@@ -80,6 +80,11 @@ StringFieldValue::SpanTrees StringFieldValue::getSpanTrees() const {
     return trees;
 }
 
+void
+StringFieldValue::doClearSpanTrees() {
+    _annotationData.reset();
+}
+
 const SpanTree * StringFieldValue::findTree(const SpanTrees & trees, const stringref & name)
 {
     for(const auto & tree : trees) {
