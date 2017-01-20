@@ -66,10 +66,6 @@ DocumentTest::testStorageDocument()
     EXPECT_EQUAL(std::string("qux"), sdoc.getField(1)->getAsString());
     EXPECT_EQUAL(std::string("quux"), sdoc.getField(2)->getAsString());
 
-    EXPECT_EQUAL(std::string("foo"), sdoc.getField(0)->getAsString());
-    EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
-    EXPECT_TRUE(sdoc.getField(2) == NULL);
-
     EXPECT_TRUE(!sdoc.setField(3, FieldValue::UP(new StringFieldValue("thud"))));
 
     SharedFieldPathMap fim;
@@ -80,7 +76,7 @@ DocumentTest::testStorageDocument()
 void DocumentTest::testStringFieldIdTMap()
 {
     StringFieldIdTMap m;
-    EXPECT_EQUAL(0u, m.highestFieldNo());
+    EXPECT_EQUAL(1u, m.highestFieldNo());
     EXPECT_TRUE(StringFieldIdTMap::npos == m.fieldNo("unknown"));
     m.add("f1");
     EXPECT_EQUAL(0u, m.fieldNo("f1"));
