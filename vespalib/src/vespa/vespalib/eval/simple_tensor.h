@@ -75,6 +75,7 @@ public:
     const ValueType &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     std::unique_ptr<SimpleTensor> reduce(const BinaryOperation &op, const std::vector<vespalib::string> &dimensions) const;
+    std::unique_ptr<SimpleTensor> rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const;
     static std::unique_ptr<SimpleTensor> create(const TensorSpec &spec);
     static bool equal(const SimpleTensor &a, const SimpleTensor &b);
     static std::unique_ptr<SimpleTensor> map(const UnaryOperation &op, const SimpleTensor &a);

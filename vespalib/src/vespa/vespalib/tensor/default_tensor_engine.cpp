@@ -230,5 +230,14 @@ DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::stri
     return stash.create<ErrorValue>();
 }
 
+const Value &
+DefaultTensorEngine::rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const
+{
+    (void) a;
+    (void) from;
+    (void) to;
+    return stash.create<ErrorValue>();
+}
+
 } // namespace vespalib::tensor
 } // namespace vespalib

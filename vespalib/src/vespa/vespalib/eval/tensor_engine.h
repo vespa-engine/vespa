@@ -52,6 +52,7 @@ struct TensorEngine
 
     // havardpe: new API, WIP
     virtual const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const = 0;
+    virtual const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
 
     virtual ~TensorEngine() {}
 };

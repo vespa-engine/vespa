@@ -70,6 +70,19 @@ size_t get_dimension_index(const Address &addr, size_t dim_idx) {
     return addr[dim_idx].index;
 }
 
+const vespalib::string &reverse_rename(const vespalib::string &name,
+                                       const std::vector<vespalib::string> &from,
+                                       const std::vector<vespalib::string> &to)
+{
+    assert(from.size() == to.size());
+    for (size_t idx = 0; idx < to.size(); ++idx) {
+        if (to[idx] == name) {
+            return from[idx];
+        }
+    }
+    return name;
+}
+
 /**
  * Helper class used when building SimpleTensors. While a tensor
  * in its final form simply contains a collection of cells, the
@@ -428,6 +441,21 @@ SimpleTensor::reduce(const BinaryOperation &op, const std::vector<vespalib::stri
             value = op.eval(value, pos->get().value);
         }
         builder.set(select(range.begin()->get().address, selector), value);
+    }
+    return builder.build();
+}
+
+std::unique_ptr<SimpleTensor>
+SimpleTensor::rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const
+{
+    ValueType result_type = _type.rename(from, to);
+    Builder builder(result_type);   
+    IndexList selector;
+    for (const auto &dim: result_type.dimensions()) {
+        selector.push_back(_type.dimension_index(reverse_rename(dim.name, from, to)));
+    }
+    for (auto &cell: _cells) {
+        builder.set(select(cell.address, selector), cell.value);
     }
     return builder.build();
 }
