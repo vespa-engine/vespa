@@ -2,6 +2,8 @@
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.language.Language;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
@@ -45,7 +47,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class QueryTestCase {
 
@@ -604,7 +606,7 @@ public class QueryTestCase {
     @Test
     public void testModelProperties() {
         {
-            Query query=new Query();
+            Query query = new Query();
             query.properties().set("model.searchPath", "foo");
             assertEquals("Set dynamic get dynamic works","foo",query.properties().get("model.searchPath"));
             assertEquals("Set dynamic get static works","foo",query.getModel().getSearchPath());
@@ -628,10 +630,25 @@ public class QueryTestCase {
 
     @Test
     public void testPositiveTerms() {
-        Query q = new Query(QueryTestCase.httpEncode("/?query=-a \"b c\" d e"));
+        Query q = new Query(httpEncode("/?query=-a \"b c\" d e"));
         Item i = q.getModel().getQueryTree().getRoot();
         List<IndexedItem> l = QueryTree.getPositiveTerms(i);
         assertEquals(3, l.size());
+    }
+    
+    @Test
+    public void testMultipleLanguages() {
+        {
+            Query q = new Query(httpEncode("/?query=headline:\"彭 博士 觀 風向\" content:\"彭 博士 觀 風向\" description:\"彭 博士 觀 風向\""));
+            q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, null, new SimpleLinguistics())));
+            assertEquals(Language.CHINESE_TRADITIONAL, q.getModel().getParsingLanguage());
+        }
+
+        {
+            Query q = new Query(httpEncode("/?query=headline:\"彭 博士 觀 風向\" content:\"彭 博士 觀 風向\" description:\"彭 博士 觀 風向\" tags:ymedia:type=story tags:ymedia:type=blogpost tags:ymedia:type=slideshow tags:ymedia:type=cavideo tags:ymedia:type=photo -tags:ymedia:hosted=no sddocname:contentindexing!0 embargo:<1484665288753!0 expires:>1484665288753!0"));
+            q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, null, new SimpleLinguistics())));
+            assertEquals(Language.ENGLISH, q.getModel().getParsingLanguage());
+        }
     }
 
     protected boolean contains(String lineSubstring,String[] lines) {

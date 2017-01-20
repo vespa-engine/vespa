@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author Ulf Carlin
  */
 public class MetricsSearcherTestCase {
     private MetricsSearcher metricsSearcher = new MetricsSearcher();

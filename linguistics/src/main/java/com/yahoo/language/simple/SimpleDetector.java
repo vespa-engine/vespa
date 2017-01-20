@@ -19,8 +19,8 @@ import java.nio.ByteBuffer;
  * Japanese or Chinese characters, so their presence is a good indication of Korean.  If a string contains phonetic
  * japanese, this is a good indication of Japanese.  However, Japanese and Chinese characters occupy many of the same
  * character blocks, so if there are no definitive signs of Japanese then it is assumed that the String is Chinese.</p>
-
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ *
+ * @author Rich Pito
  */
 public class SimpleDetector implements Detector {
 
@@ -46,6 +46,12 @@ public class SimpleDetector implements Detector {
     }
 
     public static Language guessLanguage(String input) {
+        Language language = guessLanguage2(input);
+        System.out.println("Detecting language of '" + input + "' as " + language);
+        return language;
+    }
+
+    public static Language guessLanguage2(String input) {
         if (input == null || input.length() == 0) {
             return Language.UNKNOWN;
         }
@@ -176,4 +182,5 @@ public class SimpleDetector implements Detector {
             return "ISO-8859-1";
         }
     }
+
 }

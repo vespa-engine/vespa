@@ -196,14 +196,14 @@ public abstract class AbstractParser implements CustomParser {
      * @param input The string to normalize.
      * @return The normalized string.
      */
-    protected String normalize(final String input) {
+    protected String normalize(String input) {
         if (input == null || input.length() == 0) {
             return input;
         }
         return environment.getLinguistics().getNormalizer().normalize(input);
     }
 
-    protected void setState(final Language queryLanguage, IndexFacts.Session indexFacts) {
+    protected void setState(Language queryLanguage, IndexFacts.Session indexFacts) {
         this.indexFacts = indexFacts;
         language = queryLanguage;
         submodes.reset();
@@ -229,18 +229,18 @@ public abstract class AbstractParser implements CustomParser {
      * @param unwashed The item whose phrases to simplify.
      * @return The simplified item.
      */
-    public static Item simplifyPhrases(final Item unwashed) {
+    public static Item simplifyPhrases(Item unwashed) {
         if (unwashed == null) {
             return unwashed;
         } else if (unwashed instanceof PhraseItem) {
             return collapsePhrase((PhraseItem) unwashed);
         } else if (unwashed instanceof CompositeItem) {
-            final CompositeItem composite = (CompositeItem) unwashed;
-            final ListIterator<Item> i = composite.getItemIterator();
+            CompositeItem composite = (CompositeItem) unwashed;
+            ListIterator<Item> i = composite.getItemIterator();
 
             while (i.hasNext()) {
-                final Item original = i.next();
-                final Item transformed = simplifyPhrases(original);
+                Item original = i.next();
+                Item transformed = simplifyPhrases(original);
 
                 if (original != transformed) {
                     i.set(transformed);
@@ -252,11 +252,10 @@ public abstract class AbstractParser implements CustomParser {
         }
     }
 
-    private static Item collapsePhrase(final PhraseItem phrase) {
+    private static Item collapsePhrase(PhraseItem phrase) {
         if (phrase.getItemCount() == 1 && phrase.getItem(0) instanceof WordItem) {
             // TODO: Other stuff which needs propagation?
-            final WordItem word = (WordItem) phrase.getItem(0);
-
+            WordItem word = (WordItem) phrase.getItem(0);
             word.setWeight(phrase.getWeight());
             return word;
         } else {
@@ -270,8 +269,8 @@ public abstract class AbstractParser implements CustomParser {
     // internally
     // -JSB
     // TODO: Use segmenting for forced phrase searches?
-    protected Item segment(final Token token) {
-        final String normalizedToken = normalize(token.toString());
+    protected Item segment(Token token) {
+        String normalizedToken = normalize(token.toString());
 
         if (token.isSpecial()) {
             final WordItem w = new WordItem(token.toString(), true, token.substring);
@@ -294,11 +293,10 @@ public abstract class AbstractParser implements CustomParser {
             return new WordItem(segments.get(0), "", true, token.substring);
         }
 
-        final CompositeItem composite = new PhraseSegmentItem(token.toString(),
-                normalizedToken, true, false, token.substring);
+        CompositeItem composite = new PhraseSegmentItem(token.toString(), normalizedToken, true, false, token.substring);
         int n = 0;
-        for (final String segment : segments) {
-            final WordItem w = new WordItem(segment, "", true, token.substring);
+        for (String segment : segments) {
+            WordItem w = new WordItem(segment, "", true, token.substring);
             w.setFromSegmented(true);
             w.setSegmentIndex(n++);
             w.setStemmed(false);

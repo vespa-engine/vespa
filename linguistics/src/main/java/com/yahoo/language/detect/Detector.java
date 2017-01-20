@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 /**
  * Abstract superclass of all Detectors used for language and encoding detection.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public interface Detector {
 
@@ -20,7 +20,7 @@ public interface Detector {
      * @return an array of possible language/encoding pairs, sorted by decreasing confidence (possibly empty, but never null)
      * @throws DetectionException if detection fails
      */
-    public abstract Detection detect(byte[] input, int offset, int length, Hint hint);
+    Detection detect(byte[] input, int offset, int length, Hint hint);
 
     /**
      * Detects language and encoding of the supplied ByteBuffer, possibly using a language/encoding hint.
@@ -30,7 +30,7 @@ public interface Detector {
      * @return an array of possible language/encoding pairs, sorted by decreasing confidence (possibly empty, but never null)
      * @throws DetectionException if detection fails
      */
-    public abstract Detection detect(ByteBuffer input, Hint hint);
+    Detection detect(ByteBuffer input, Hint hint);
 
     /**
      * Detects language of the supplied String, possibly using a language hint.
@@ -40,5 +40,6 @@ public interface Detector {
      * @return an array of possible language/encoding pairs, sorted by decreasing confidence (possibly empty, but never null)
      * @throws DetectionException if detection fails
      */
-    public abstract Detection detect(String input, Hint hint);
+    Detection detect(String input, Hint hint);
+
 }

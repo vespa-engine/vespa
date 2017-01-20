@@ -15,7 +15,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
 /**
  * Parser for queries of type any.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class AnyParser extends SimpleParser {
 
