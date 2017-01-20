@@ -277,6 +277,7 @@ public class VdsVisitorTestCase {
 
         // Verify parameters based only on query
         assertEquals(qa.timeout*1000, params.getTimeoutMs());
+        assertEquals(qa.timeout*1000, params.getSessionTimeoutMs());
         assertEquals("searchvisitor", params.getVisitorLibrary());
         assertEquals(Integer.MAX_VALUE, params.getMaxPending());
         assertEquals(qa.traceLevel, params.getTraceLevel());
