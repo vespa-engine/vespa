@@ -18,11 +18,11 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * session.getIndex(indexName).[get index info]
  * </code></pre>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 // TODO: We should replace this with a better representation of search definitions
 //       which is immutable, models clusters and search definitions inside clusters properly,
-//       and uses better names.
+//       and uses better names. -bratseth
 public class IndexFacts {
 
     private Map<String, List<String>> clusterByDocument;

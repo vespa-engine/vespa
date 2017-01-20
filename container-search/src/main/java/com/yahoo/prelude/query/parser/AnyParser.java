@@ -35,7 +35,7 @@ public class AnyParser extends SimpleParser {
         Item filterRoot;
 
         setState(queryLanguage, indexFacts);
-        tokenize(filter, null, indexFacts);
+        tokenize(filter, null, indexFacts, queryLanguage);
 
         filterRoot = anyItems(true);
 
@@ -134,7 +134,7 @@ public class AnyParser extends SimpleParser {
 
     Item applyFilter(Item root, String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
         setState(queryLanguage, indexFacts);
-        tokenize(filter, null, indexFacts);
+        tokenize(filter, null, indexFacts, queryLanguage);
         return filterItems(root);
     }
 

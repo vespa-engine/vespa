@@ -647,7 +647,7 @@ public class QueryTestCase {
         {
             Query q = new Query(httpEncode("/?query=headline:\"彭 博士 觀 風向\" content:\"彭 博士 觀 風向\" description:\"彭 博士 觀 風向\" tags:ymedia:type=story tags:ymedia:type=blogpost tags:ymedia:type=slideshow tags:ymedia:type=cavideo tags:ymedia:type=photo -tags:ymedia:hosted=no sddocname:contentindexing!0 embargo:<1484665288753!0 expires:>1484665288753!0"));
             q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, null, new SimpleLinguistics())));
-            assertEquals(Language.ENGLISH, q.getModel().getParsingLanguage());
+            assertEquals(Language.CHINESE_TRADITIONAL, q.getModel().getParsingLanguage());
         }
     }
 

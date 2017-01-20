@@ -74,7 +74,7 @@ public class Model implements Cloneable {
     private String filter = null;
     private Language language = null;
     private Locale locale = null;
-    private QueryTree queryTree = null; // The actual query. This is lazily created from the program
+    private QueryTree queryTree = null; // The query tree to execute. This is lazily created from the program
     private String defaultIndex = null;
     private Query.Type type = Query.Type.ALL;
     private Query parent;
@@ -431,7 +431,8 @@ public class Model implements Cloneable {
         return (Model)q.properties().get(argumentTypeName);
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "query representation [queryTree: " + queryTree + ", filter: " + filter + "]";
     }
 

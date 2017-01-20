@@ -134,14 +134,15 @@ public abstract class AbstractParser implements CustomParser {
     @Override
     public final Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
                             IndexFacts.Session indexFacts, String defaultIndexName) {
-        if (queryToParse == null) {
-            return null;
-        }
+        if (queryToParse == null) return null;
+
+        tokenize(queryToParse, defaultIndexName, indexFacts, parsingLanguage);
+
         if (parsingLanguage == null) {
             parsingLanguage = environment.getLinguistics().getDetector().detect(queryToParse, null).getLanguage();
         }
         setState(parsingLanguage, indexFacts);
-        tokenize(queryToParse, defaultIndexName, indexFacts);
+
         Item root = parseItems();
         if (filterToParse != null) {
             AnyParser filterParser = new AnyParser(environment);
@@ -167,25 +168,19 @@ public abstract class AbstractParser implements CustomParser {
      * @param defaultIndex The default index to assign.
      * @param item         The item to check.
      */
-    private static void assignDefaultIndex(final String defaultIndex,
-            final Item item) {
-        if (defaultIndex == null || item == null) {
-            return;
-        }
+    private static void assignDefaultIndex(final String defaultIndex, Item item) {
+        if (defaultIndex == null || item == null) return;
 
         if (item instanceof IndexedItem) {
-            final IndexedItem indexName = (IndexedItem) item;
+            IndexedItem indexName = (IndexedItem) item;
 
-            if ("".equals(indexName.getIndexName())) {
+            if ("".equals(indexName.getIndexName()))
                 indexName.setIndexName(defaultIndex);
-            }
-        } else if (item instanceof CompositeItem) {
-            final Iterator<Item> items = ((CompositeItem) item)
-                    .getItemIterator();
-            while (items.hasNext()) {
-                final Item i = items.next();
-                assignDefaultIndex(defaultIndex, i);
-            }
+        } 
+        else if (item instanceof CompositeItem) {
+            Iterator<Item> items = ((CompositeItem)item).getItemIterator();
+            while (items.hasNext())
+                assignDefaultIndex(defaultIndex, items.next());
         }
     }
 
@@ -215,10 +210,11 @@ public abstract class AbstractParser implements CustomParser {
      * @param query            the string to tokenize.
      * @param defaultIndexName the name of the index to use as default.
      * @param indexFacts       resolved information about the index we are searching
+     * @param language         the language set for this query, or null if none
      */
-    protected void tokenize(String query, String defaultIndexName, IndexFacts.Session indexFacts) {
+    protected void tokenize(String query, String defaultIndexName, IndexFacts.Session indexFacts, Language language) {
         Tokenizer tokenizer = new Tokenizer(environment.getLinguistics());
-        tokenizer.setSubstringSpecialTokens(language.isCjk());
+        tokenizer.setSubstringSpecialTokens(language != null && language.isCjk());
         tokenizer.setSpecialTokens(environment.getSpecialTokens());
         tokens.initialize(tokenizer.tokenize(query, defaultIndexName, indexFacts));
     }
@@ -265,9 +261,8 @@ public abstract class AbstractParser implements CustomParser {
 
     // TODO: The segmenting stuff is a mess now, this will fix it:
     // - Make Segmenter a class which is instantiated per parsing
-    // - Make the instance know the language, etc and do all dispatching
-    // internally
-    // -JSB
+    // - Make the instance know the language, etc and do all dispatching internally
+    // -bratseth
     // TODO: Use segmenting for forced phrase searches?
     protected Item segment(Token token) {
         String normalizedToken = normalize(token.toString());

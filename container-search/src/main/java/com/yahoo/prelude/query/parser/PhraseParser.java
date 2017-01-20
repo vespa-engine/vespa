@@ -8,7 +8,7 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 /**
  * Parser for queries of type phrase.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class PhraseParser extends AbstractParser {
 

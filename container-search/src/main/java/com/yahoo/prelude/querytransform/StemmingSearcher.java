@@ -78,11 +78,11 @@ public class StemmingSearcher extends Searcher {
     public String getFunctionName() { return "Stemming"; }
 
     private Item replaceTerms(Query q, IndexFacts.Session indexFacts) {
-        Language l = q.getModel().getParsingLanguage();
-        if (l == Language.UNKNOWN) {
+        Language language = q.getModel().getParsingLanguage();
+        if (language == Language.UNKNOWN) {
             return q.getModel().getQueryTree().getRoot();
         }
-        return scan(q.getModel().getQueryTree().getRoot(), l.isCjk(), l, indexFacts,
+        return scan(q.getModel().getQueryTree().getRoot(), language.isCjk(), language, indexFacts,
                     createReverseConnectivities(q.getModel().getQueryTree().getRoot()));
     }
 
