@@ -35,6 +35,10 @@ SingleValueSmallNumericAttribute::~SingleValueSmallNumericAttribute(void)
     getGenerationHolder().clearHoldLists();
 }
 
+void
+SingleValueSmallNumericAttribute::onAddDocs(DocId lidLimit) {
+    _wordData.reserve((lidLimit >> _wordShift) + 1);
+}
 
 void
 SingleValueSmallNumericAttribute::onCommit()
@@ -65,6 +69,26 @@ SingleValueSmallNumericAttribute::onCommit()
     _changes.clear();
 }
 
+bool
+SingleValueSmallNumericAttribute::addDoc(DocId & doc) {
+    if ((B::getNumDocs() & _valueShiftMask) == 0) {
+        bool incGen = _wordData.isFull();
+        _wordData.push_back(Word());
+        std::atomic_thread_fence(std::memory_order_release);
+        B::incNumDocs();
+        doc = B::getNumDocs() - 1;
+        updateUncommittedDocIdLimit(doc);
+        if (incGen) {
+            this->incGeneration();
+        } else
+            this->removeAllOldGenerations();
+    } else {
+        B::incNumDocs();
+        doc = B::getNumDocs() - 1;
+        updateUncommittedDocIdLimit(doc);
+    }
+    return true;
+}
 
 void
 SingleValueSmallNumericAttribute::onUpdateStat()

@@ -150,4 +150,6 @@ NotImplementedAttribute::getSearch(QueryTermSimpleUP, const SearchContext::Param
     return SearchContext::UP();
 }
 
+void NotImplementedAttribute::onAddDocs(DocId ) { }
+    
 }

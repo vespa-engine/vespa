@@ -101,19 +101,7 @@ public:
     void onUpdateStat() override;
     void removeOldGenerations(generation_t firstUsed) override;
     void onGenerationChange(generation_t generation) override;
-    bool addDoc(DocId & doc) override {
-        bool incGen = _data.isFull();
-        _data.push_back(attribute::getUndefined<T>());
-        std::atomic_thread_fence(std::memory_order_release);
-        B::incNumDocs();
-        doc = B::getNumDocs() - 1;
-        this->updateUncommittedDocIdLimit(doc);
-        if (incGen) {
-            this->incGeneration();
-        } else
-            this->removeAllOldGenerations();
-        return true;
-    }
+    bool addDoc(DocId & doc) override;
     bool onLoad() override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);

@@ -26,6 +26,12 @@ SingleValueEnumAttribute<B>::~SingleValueEnumAttribute()
 }
 
 template <typename B>
+void
+SingleValueEnumAttribute<B>::onAddDocs(DocId limit) {
+    _enumIndices.reserve(limit);
+}
+
+template <typename B>
 bool
 SingleValueEnumAttribute<B>::addDoc(DocId & doc)
 {

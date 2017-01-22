@@ -52,19 +52,22 @@ public:
         : Super(name, Config(BasicType::fromType(T()),
                              attribute::CollectionType::SINGLE)) {}
 
-    virtual bool addDoc(typename Super::DocId &docId) {
+    bool addDoc(typename Super::DocId &docId) override {
         docId = this->_data.size();
         this->_data.push_back(attribute::getUndefined<T>());
         this->incNumDocs();
         this->setCommittedDocIdLimit(this->getNumDocs());
         return true;
     }
-    virtual bool add(typename AddValueType<T>::Type v, int32_t = 1) {
+    bool add(typename AddValueType<T>::Type v, int32_t = 1) override {
         this->_data.back() = v;
         return true;
     }
-    virtual bool onLoad() override {
+    bool onLoad() override {
         return false; // Emulate that this attribute is never loaded
+    }
+    void onAddDocs(typename Super::DocId lidLimit) override {
+        this->_data.reserve(lidLimit);
     }
 };
 
@@ -83,11 +86,12 @@ class SingleStringExtAttribute
     IExtendAttribute * getExtendInterface() override { return this; }
 public:
     SingleStringExtAttribute(const vespalib::string & name);
-    virtual bool addDoc(DocId & docId);
-    virtual bool add(const char * v, int32_t w = 1);
-    virtual bool onLoad() override {
+    bool addDoc(DocId & docId) override;
+    bool add(const char * v, int32_t w = 1) override;
+    bool onLoad() override {
         return false; // Emulate that this attribute is never loaded
     }
+    void onAddDocs(DocId ) override { }
 };
 
 //******************** CollectionType::ARRAY ********************//
@@ -121,22 +125,25 @@ public:
         : Super(name, Config(BasicType::fromType(static_cast<T>(0)),
                              attribute::CollectionType::ARRAY)) {}
 
-    virtual bool addDoc(typename Super::DocId &docId) {
+    bool addDoc(typename Super::DocId &docId) override {
         docId = this->_idx.size() - 1;
         this->_idx.push_back(this->_idx.back());
         this->incNumDocs();
         this->setCommittedDocIdLimit(this->getNumDocs());
         return true;
     }
-    virtual bool add(typename AddValueType<T>::Type v, int32_t = 1) {
+    bool add(typename AddValueType<T>::Type v, int32_t = 1) override {
         this->_data.push_back(v);
         std::vector<uint32_t> &idx = this->_idx;
         idx.back()++;
         this->checkSetMaxValueCount(idx.back() - idx[idx.size() - 2]);
         return true;
     }
-    virtual bool onLoad() override {
+    bool onLoad() override {
         return false; // Emulate that this attribute is never loaded
+    }
+    void onAddDocs(uint32_t lidLimit) override {
+        this->_data.reserve(lidLimit);
     }
 };
 
@@ -158,11 +165,12 @@ protected:
 
 public:
     MultiStringExtAttribute(const vespalib::string & name);
-    virtual bool addDoc(DocId & docId);
-    virtual bool add(const char * v, int32_t w = 1);
-    virtual bool onLoad() override {
+    bool addDoc(DocId & docId) override;
+    bool add(const char * v, int32_t w = 1) override;
+    bool onLoad() override {
         return false; // Emulate that this attribute is never loaded
     }
+    void onAddDocs(DocId ) override { }
 };
 
 
@@ -200,8 +208,8 @@ class WeightedSetIntegerExtAttribute
     }
 public:
     WeightedSetIntegerExtAttribute(const vespalib::string & name);
-    virtual bool add(int64_t v, int32_t w = 1);
-    virtual uint32_t get(DocId doc, AttributeVector::WeightedInt * v, uint32_t sz) const;
+    bool add(int64_t v, int32_t w = 1) override;
+    uint32_t get(DocId doc, AttributeVector::WeightedInt * v, uint32_t sz) const override;
 };
 
 class WeightedSetFloatExtAttribute
@@ -216,8 +224,8 @@ class WeightedSetFloatExtAttribute
     }
 public:
     WeightedSetFloatExtAttribute(const vespalib::string & name);
-    virtual bool add(double v, int32_t w = 1);
-    virtual uint32_t get(DocId doc, AttributeVector::WeightedFloat * v, uint32_t sz) const;
+    bool add(double v, int32_t w = 1) override;
+    uint32_t get(DocId doc, AttributeVector::WeightedFloat * v, uint32_t sz) const override;
 };
 
 class WeightedSetStringExtAttribute
@@ -240,9 +248,9 @@ private:
 
 public:
     WeightedSetStringExtAttribute(const vespalib::string & name);
-    virtual bool add(const char * v, int32_t w = 1);
-    virtual uint32_t get(DocId doc, AttributeVector::WeightedString * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, AttributeVector::WeightedConstChar * v, uint32_t sz) const;
+    bool add(const char * v, int32_t w = 1) override;
+    uint32_t get(DocId doc, AttributeVector::WeightedString * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, AttributeVector::WeightedConstChar * v, uint32_t sz) const override;
 };
 
 }  // namespace search

@@ -124,25 +124,7 @@ public:
     void onUpdateStat() override;
     void removeOldGenerations(generation_t firstUsed) override;
     void onGenerationChange(generation_t generation) override;
-    bool addDoc(DocId & doc) override {
-        if ((B::getNumDocs() & _valueShiftMask) == 0) {
-            bool incGen = _wordData.isFull();
-            _wordData.push_back(Word());
-            std::atomic_thread_fence(std::memory_order_release);
-            B::incNumDocs();
-            doc = B::getNumDocs() - 1;
-            updateUncommittedDocIdLimit(doc);
-            if (incGen) {
-                this->incGeneration();
-            } else
-                this->removeAllOldGenerations();
-        } else {
-            B::incNumDocs();
-            doc = B::getNumDocs() - 1;
-            updateUncommittedDocIdLimit(doc);
-        }
-        return true;
-    }
+    bool addDoc(DocId & doc) override;
     bool onLoad() override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
 
