@@ -21,9 +21,10 @@ import java.util.Map;
  * A StringFieldValue is a wrapper class that holds a String in {@link com.yahoo.document.Document}s and
  * other {@link com.yahoo.document.datatypes.FieldValue}s.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class StringFieldValue extends FieldValue {
+
     private static class Factory extends PrimitiveDataType.Factory {
         public FieldValue create() {
             return new StringFieldValue();

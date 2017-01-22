@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.serialization.FieldReader;
@@ -10,7 +9,6 @@ import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.Objects;
 import java.util.Optional;
 
 /**

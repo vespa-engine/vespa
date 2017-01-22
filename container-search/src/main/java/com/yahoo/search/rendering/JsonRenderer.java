@@ -12,11 +12,15 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
 
+import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.tensor.Tensor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -628,6 +632,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             renderNumberField((Number) field);
         } else if (field instanceof TreeNode) {
             generator.writeTree((TreeNode) field);
+        } else if (field instanceof Tensor) {
+            renderTensor(Optional.of((Tensor)field));
         } else if (field instanceof JsonProducer) {
             generator.writeRawValue(((JsonProducer) field).toJson());
         } else if (field instanceof Inspectable) {
@@ -636,7 +642,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeRawValue(intermediate.toString());
         } else if (field instanceof StringFieldValue) {
             // This needs special casing as JsonWriter hides empty strings now
-            generator.writeString(((StringFieldValue) field).getString());
+            generator.writeString(((StringFieldValue)field).getString());
+        } else if (field instanceof TensorFieldValue) {
+            renderTensor(((TensorFieldValue)field).getTensor());
         } else if (field instanceof FieldValue) {
             // the null below is the field which has already been written
             ((FieldValue) field).serialize(null, new JsonWriter(generator));
@@ -672,6 +680,29 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         } else {
             generator.writeNumber(field.doubleValue());
         }
+    }
+
+    private void renderTensor(Optional<Tensor> tensor) throws IOException {
+        if ( ! tensor.isPresent()) return;
+
+        generator.writeStartObject();
+        generator.writeArrayFieldStart("cells");
+        for (Iterator<Tensor.Cell> i = tensor.get().cellIterator(); i.hasNext(); ) {
+            Tensor.Cell cell = i.next();
+            
+            generator.writeStartObject();
+
+            generator.writeObjectFieldStart("address");
+            for (int d = 0; d < cell.getKey().size(); d++)
+                generator.writeObjectField(tensor.get().type().dimensions().get(d).name(), cell.getKey().label(d));            
+            generator.writeEndObject();
+
+            generator.writeObjectField("value", cell.getValue());
+
+            generator.writeEndObject();
+        }
+        generator.writeEndArray();
+        generator.writeEndObject();
     }
 
     /**
@@ -783,5 +814,5 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     void setTimeSource(LongSupplier timeSource) {
         this.timeSource = timeSource;
     }
-
+    
 }
