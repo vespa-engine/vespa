@@ -683,23 +683,23 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private void renderTensor(Optional<Tensor> tensor) throws IOException {
-        if ( ! tensor.isPresent()) return;
-
         generator.writeStartObject();
         generator.writeArrayFieldStart("cells");
-        for (Iterator<Tensor.Cell> i = tensor.get().cellIterator(); i.hasNext(); ) {
-            Tensor.Cell cell = i.next();
-            
-            generator.writeStartObject();
+        if (tensor.isPresent()) {
+            for (Iterator<Tensor.Cell> i = tensor.get().cellIterator(); i.hasNext(); ) {
+                Tensor.Cell cell = i.next();
 
-            generator.writeObjectFieldStart("address");
-            for (int d = 0; d < cell.getKey().size(); d++)
-                generator.writeObjectField(tensor.get().type().dimensions().get(d).name(), cell.getKey().label(d));            
-            generator.writeEndObject();
+                generator.writeStartObject();
 
-            generator.writeObjectField("value", cell.getValue());
+                generator.writeObjectFieldStart("address");
+                for (int d = 0; d < cell.getKey().size(); d++)
+                    generator.writeObjectField(tensor.get().type().dimensions().get(d).name(), cell.getKey().label(d));
+                generator.writeEndObject();
 
-            generator.writeEndObject();
+                generator.writeObjectField("value", cell.getValue());
+
+                generator.writeEndObject();
+            }
         }
         generator.writeEndArray();
         generator.writeEndObject();
