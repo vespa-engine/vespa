@@ -14,7 +14,7 @@ TEST("buffered output") {
         dst.printf("%d + %d = %d\n", 2, 2, 4);
     }
     { // verify data
-        LineReader src(buffer, 3);
+        LineReader src(buffer);
         string str;
         EXPECT_TRUE(src.readLine(str));
         EXPECT_EQUAL("abc", str);

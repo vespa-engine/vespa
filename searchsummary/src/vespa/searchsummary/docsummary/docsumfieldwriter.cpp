@@ -164,6 +164,7 @@ CopyDFW::insertField(uint32_t /*docid*/,
             target.insertString(value);
             break; }
 
+        case RES_TENSOR:
         case RES_LONG_DATA:
         case RES_DATA: {
             uint32_t    len;
@@ -259,6 +260,7 @@ CopyDFW::WriteField(uint32_t docid,
 
             break; }
 
+        case RES_TENSOR:
         case RES_LONG_DATA: {
 
             uint32_t flen = entry->_len;

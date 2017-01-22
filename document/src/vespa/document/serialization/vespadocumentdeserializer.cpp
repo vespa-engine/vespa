@@ -278,6 +278,8 @@ void VespaDocumentDeserializer::read(StringFieldValue &value) {
         value.setSpanTrees(vespalib::ConstBufferRef(_stream.peek(), serializedAnnotationsSize),
                            _repo, _version, _stream.isLongLivedBuffer());
         _stream.adjustReadPos(serializedAnnotationsSize);
+    } else {
+        value.clearSpanTrees();
     }
 }
 

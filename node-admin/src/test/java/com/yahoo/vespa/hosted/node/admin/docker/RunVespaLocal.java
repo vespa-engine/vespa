@@ -48,7 +48,7 @@ public class RunVespaLocal {
     private final Docker docker;
     private final Logger logger = Logger.getLogger("RunVespaLocal");
 
-    RunVespaLocal() {
+    public RunVespaLocal() {
         this.docker = DockerTestUtils.getDocker();
     }
 
@@ -56,7 +56,7 @@ public class RunVespaLocal {
      * Pulls the base image and builds the vespa-local image
      * @param vespaBaseImage Vespa docker image to use as base for the image that the config-server and nodes will run
      */
-    void buildVespaLocalImage(DockerImage vespaBaseImage) throws ExecutionException, InterruptedException, IOException {
+    public void buildVespaLocalImage(DockerImage vespaBaseImage) throws ExecutionException, InterruptedException, IOException {
         if (!docker.imageIsDownloaded(vespaBaseImage)) {
             logger.info("Pulling " + vespaBaseImage.asString() + " (This may take a while)");
             docker.pullImageAsync(vespaBaseImage).get();
@@ -69,7 +69,7 @@ public class RunVespaLocal {
     /**
      * Starts config server, provisions numNodesToProvision and puts them in ready state
      */
-    void startLocalZoneWithNodes(int numNodesToProvision) throws IOException {
+    public void startLocalZoneWithNodes(int numNodesToProvision) throws IOException {
         logger.info("Starting config-server");
         LocalZoneUtils.startConfigServerIfNeeded(docker, environmentBuilder.build());
 
@@ -89,7 +89,7 @@ public class RunVespaLocal {
      *                     be stored, the path must exist and must be writeable by user,
      *                     normally /home/docker/container-storage
      */
-    void startNodeAdminInIDE(PathResolver pathResolver) {
+    public void startNodeAdminInIDE(PathResolver pathResolver) {
         logger.info("Starting node-admin");
         environmentBuilder.pathResolver(pathResolver);
         new ComponentsProviderImpl(
@@ -105,7 +105,7 @@ public class RunVespaLocal {
      * @param pathToContainerStorage Path to where the container data will be stored, the path must exist and must
      *                               be writeable by user, normally /home/docker/container-storage
      */
-    void startNodeAdminAsContainer(Path pathToNodeAdminApp, Path pathToContainerStorage) throws UnknownHostException {
+    public void startNodeAdminAsContainer(Path pathToNodeAdminApp, Path pathToContainerStorage) throws UnknownHostException {
         logger.info("Starting node-admin");
         String parentHostHostname = LocalZoneUtils.NODE_ADMIN_HOSTNAME;
         LocalZoneUtils.startNodeAdminIfNeeded(docker, environmentBuilder.build(), pathToContainerStorage);
@@ -130,7 +130,7 @@ public class RunVespaLocal {
      * Packages, deploys an app and waits for the node to come up
      * @param pathToApp Path to the directory of the application to deploy
      */
-    void deployApplication(Path pathToApp) {
+    public void deployApplication(Path pathToApp) {
         logger.info("Packaging application");
         LocalZoneUtils.packageApp(pathToApp);
         logger.info("Deploying application");
@@ -146,7 +146,7 @@ public class RunVespaLocal {
         }
     }
 
-    void deleteApplication() {
+    public void deleteApplication() {
         logger.info("Deleting application");
         LocalZoneUtils.deleteApplication();
     }

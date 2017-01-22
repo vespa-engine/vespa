@@ -24,7 +24,7 @@ SimpleHttpResultHandler::handleContent(const Memory &data)
 {
     WritableMemory wm = _content.reserve(data.size);
     memcpy(wm.data, data.data, data.size);
-    _content.commit(data.size, 0);
+    _content.commit(data.size);
 }
 
 void

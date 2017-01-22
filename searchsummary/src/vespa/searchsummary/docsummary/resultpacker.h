@@ -230,6 +230,14 @@ public:
      **/
     bool AddLongData(const char *buf, uint32_t buflen);
 
+    /*
+     * Add a 'tensor' field to the docsum blob we are currently creating.
+     *
+     * @return true(ok)/false(error).
+     * @param buf pointer to serialized tensor to add.
+     * @param buflen length of serialized tensor to add.
+     **/
+    bool AddSerializedTensor(const char *buf, uint32_t buflen);
 
     /**
      * Obtain a pointer to, and the length of, the created docsum

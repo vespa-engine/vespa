@@ -7,6 +7,8 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Optional;
+
 /**
  * Class used by clients for serializing a Tensor object into binary format or
  * de-serializing binary data into a Tensor object.
@@ -38,8 +40,15 @@ public class TypedBinaryFormat {
         return result;
     }
 
-    public static Tensor decode(TensorType type, byte[] data) {
-        GrowableByteBuffer buffer = GrowableByteBuffer.wrap(data);
+    /** 
+     * Decode some data to a tensor 
+     * 
+     * @param type the type to decode and validate to, or empty to use the type given in the data
+     * @param buffer the buffer containing the data, use GrowableByteByffer.wrap(byte[]) if you have a byte array
+     * @return the resulting tensor
+     * @throws IllegalArgumentException if the tensor data was invalid
+     */
+    public static Tensor decode(Optional<TensorType> type, GrowableByteBuffer buffer) {
         int formatType = buffer.getInt1_4Bytes();
         switch (formatType) {
             case SPARSE_BINARY_FORMAT_TYPE: return new SparseBinaryFormat().decode(type, buffer);

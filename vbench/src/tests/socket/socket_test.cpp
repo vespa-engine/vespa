@@ -17,7 +17,7 @@ struct Agent {
         out.append("\n");
     }
     void read(const char *prefix) {
-        LineReader reader(*socket, 32);
+        LineReader reader(*socket);
         for (size_t lines = 0; true; ++lines) {
             string line;
             reader.readLine(line);
@@ -60,7 +60,7 @@ TEST("socket") {
     serverThread.join();
     {
         server.socket.reset();
-        LineReader reader(*client.socket, 32);
+        LineReader reader(*client.socket);
         string line;
         EXPECT_FALSE(reader.readLine(line));
         EXPECT_TRUE(line.empty());

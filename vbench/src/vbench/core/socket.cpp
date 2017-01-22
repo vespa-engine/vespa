@@ -5,6 +5,8 @@
 
 namespace vbench {
 
+constexpr size_t READ_SIZE = 32768;
+
 Socket::Socket(std::unique_ptr<FastOS_SocketInterface> socket)
     : _socket(std::move(socket)),
       _input(),
@@ -38,20 +40,20 @@ Socket::~Socket()
 }
 
 Memory
-Socket::obtain(size_t bytes, size_t lowMark)
+Socket::obtain()
 {
-    if (_input.get().size < bytes && _input.get().size < lowMark && !_eof && !_taint) {
-        WritableMemory buf = _input.reserve(bytes - _input.get().size);
+    if ((_input.get().size == 0) && !_eof && !_taint) {
+        WritableMemory buf = _input.reserve(READ_SIZE);
         ssize_t res = _socket->Read(buf.data, buf.size);
         if (res > 0) {
-            _input.commit(res, 0);
+            _input.commit(res);
         } else if (res < 0) {
             _taint.reset("socket read error");
         } else {
             _eof = true;
         }
     }
-    return _input.obtain(bytes, 1);
+    return _input.obtain();
 }
 
 Input &
@@ -68,11 +70,11 @@ Socket::reserve(size_t bytes)
 }
 
 Output &
-Socket::commit(size_t bytes, size_t hiMark)
+Socket::commit(size_t bytes)
 {
-    _output.commit(bytes, 0);
-    while (_output.get().size > hiMark && !_taint) {
-        Memory buf = _output.obtain(_output.get().size, 1);
+    _output.commit(bytes);
+    while ((_output.get().size > 0) && !_taint) {
+        Memory buf = _output.obtain();
         ssize_t res = _socket->Write(buf.data, buf.size);
         if (res > 0) {
             _output.evict(res);

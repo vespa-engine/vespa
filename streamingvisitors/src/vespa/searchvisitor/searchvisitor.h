@@ -2,6 +2,12 @@
 
 #pragma once
 
+#include "hitcollector.h"
+#include "indexenvironment.h"
+#include "queryenvironment.h"
+#include "rankmanager.h"
+#include "rankprocessor.h"
+#include "searchenvironment.h"
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/common/documenttypemapping.h>
 #include <vespa/vsm/common/storagedocument.h>
@@ -20,12 +26,6 @@
 #include <vespa/searchlib/common/sortspec.h>
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
-#include "hitcollector.h"
-#include "indexenvironment.h"
-#include "queryenvironment.h"
-#include "rankmanager.h"
-#include "rankprocessor.h"
-#include "searchenvironment.h"
 
 using namespace search::aggregation;
 
@@ -60,8 +60,7 @@ private:
             _ascending(true),
             _converter(NULL),
             _attr(std::move(attr))
-        {
-        }
+        { }
         /**
          * Construct a new object.
          *
@@ -75,8 +74,7 @@ private:
             _ascending(ascending),
             _converter(converter),
             _attr(std::move(attr))
-        {
-        }
+        { }
         vsm::FieldIdT          _field;
         bool                   _ascending;
         const search::common::BlobConverter * _converter;
@@ -189,7 +187,7 @@ private:
         bool collectMatchedDocument(bool hasSorting,
                                     SearchVisitor & visitor,
                                     const std::vector<char> & tmpSortBuffer,
-                                    const vsm::StorageDocument::SP & documentId);
+                                    const vsm::StorageDocument::LP & documentId);
         /**
          * Callback function that is called when visiting is completed.
          * Perform second phase ranking and calculate summary features / rank features if asked for.
@@ -308,7 +306,7 @@ private:
      * @param document Document to process.
      * @return true if the underlying buffer is needed later on, then it must be kept.
      */
-    bool handleDocument(const vsm::StorageDocument::SP & document);
+    bool handleDocument(const vsm::StorageDocument::LP & document);
 
     /**
      * Collect the given document for grouping.
@@ -379,7 +377,7 @@ private:
         size_t _limit;
     };
     typedef std::vector< GroupingEntry > GroupingList;
-    typedef std::vector<vsm::StorageDocument::SP> DocumentVector;
+    typedef std::vector<vsm::StorageDocument::LP> DocumentVector;
 
     class SummaryGenerator : public HitsAggregationResult::SummaryGenerator
     {
@@ -394,7 +392,7 @@ private:
     private:
         vsm::GetDocsumsStateCallback            _callback;
         GetDocsumsState                         _docsumState;
-        std::unique_ptr<vsm::DocsumFilter>        _docsumFilter;
+        std::unique_ptr<vsm::DocsumFilter>      _docsumFilter;
         search::docsummary::IDocsumWriter     * _docsumWriter;
         search::RawBuf                          _rawBuf;
     };
@@ -448,6 +446,8 @@ private:
     RankController                          _rankController;
     DocumentVector                          _backingDocuments;
     vsm::StringFieldIdTMapT                 _fieldsUnion;
+
+    void setupAttributeVector(const vsm::FieldPath &fieldPath);
 };
 
 class SearchVisitorFactory : public VisitorFactory {

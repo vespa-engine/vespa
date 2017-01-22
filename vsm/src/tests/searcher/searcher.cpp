@@ -300,9 +300,7 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
     // setup document
     SharedFieldPathMap sfim(new FieldPathMapT());
     sfim->push_back(FieldPath());
-    StorageDocument doc(sfim);
-    doc.setFieldCount(1);
-    doc.init();
+    StorageDocument doc(std::make_unique<document::Document>(), sfim, 1);
     doc.setField(0, document::FieldValue::UP(fv.clone()));
 
     fs.search(doc);

@@ -174,8 +174,7 @@ public class FastHit extends Hit {
     }
 
     /**
-     *
-     * @param useRowInIndexUri Sets whether to use the row in the index uri. See FastSearcher for details.
+     * Sets whether to use the row in the index uri. See FastSearcher for details.
      */
     public void setUseRowInIndexUri(boolean useRowInIndexUri) {
         this.useRowInIndexUri = useRowInIndexUri;
@@ -189,7 +188,7 @@ public class FastHit extends Hit {
     }
 
     /**
-     *  @return the row number where this hit originated, or 0 if not known
+     *  Returns the row number where this hit originated, or 0 if not known
      * */
     public int getRow() {
         if (rowBits == 0) {
@@ -214,17 +213,20 @@ public class FastHit extends Hit {
      * filled returns the following types, even when the field has no actual value:</p>
      *
      * <ul>
-     *     <li><b>Dynamic summary string fields</b>: A Java String before JuniperSearcher and a HitField after.</li>
-     *     <li><b>string/uri/content</b>: A Java String.<br>
+     *     <li><b>string and uri fields</b>: A Java String.<br>
      *     The empty string ("") if no value is assigned in the document.
      *
+     *     <li><b>Dynamic summary string fields</b>: A Java String before JuniperSearcher and a HitField after.</li>
+     *     
      *     <li><b>Numerics</b>: The corresponding numeric Java type.<br>
      *     If the field has <i>no value</i> assigned in the document,
      *     the special numeric {@link com.yahoo.search.result.NanNumber#NaN} is returned.
      *
-     *     <li><b>raw</b>: A {@link com.yahoo.prelude.hitfield.RawData} instance
+     *     <li><b>raw fields</b>: A {@link com.yahoo.prelude.hitfield.RawData} instance
      *
-     *     <li><b>multivalue fields</b>: A {@link com.yahoo.prelude.hitfield.JSONString} instance
+     *     <li><b>tensor fields</b>: A {@link com.yahoo.tensor.Tensor} instance
+     *
+     *     <li><b>multivalue fields</b>: A {@link com.yahoo.data.access.Inspector} instance
      * </ul>
      */
     @Override
@@ -277,10 +279,7 @@ public class FastHit extends Hit {
         for (DocsumField field : docsumDef.getFields()) {
             String fieldName = field.getName();
             if (value.type() == Type.STRING &&
-                (field instanceof LongstringField ||
-                 field instanceof StringField ||
-                 field instanceof XMLField))
-            {
+                (field instanceof LongstringField || field instanceof StringField || field instanceof XMLField)) {
                 setDocsumFieldIfNotPresent(fieldName, new LazyString(field, value));
             } else {
                 Inspector f = value.field(fieldName);

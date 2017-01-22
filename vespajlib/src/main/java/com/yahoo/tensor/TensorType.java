@@ -75,19 +75,19 @@ public class TensorType {
     }
 
     /** 
-     * Returns whether a tensor of the given type can be assigned to this type,
-     * i.e of this type is a generalization of the given type.
+     * Returns whether this type can be assigned to the given type,
+     * i.e if the given type is a generalization of this type.
      */
-    public boolean isAssignableTo(TensorType other) {
-        if (other.dimensions().size() != this.dimensions().size()) return false;
-        for (int i = 0; i < other.dimensions().size(); i++) {
+    public boolean isAssignableTo(TensorType generalization) {
+        if (generalization.dimensions().size() != this.dimensions().size()) return false;
+        for (int i = 0; i < generalization.dimensions().size(); i++) {
             Dimension thisDimension = this.dimensions().get(i);
-            Dimension otherDimension = other.dimensions().get(i);
-            if (thisDimension.isIndexed() != otherDimension.isIndexed()) return false;
-            if ( ! thisDimension.name().equals(otherDimension.name())) return false;
-            if (thisDimension.size().isPresent()) {
-                if ( ! otherDimension.size().isPresent()) return false;
-                if (otherDimension.size().get() > thisDimension.size().get() ) return false;
+            Dimension generalizationDimension = generalization.dimensions().get(i);
+            if (thisDimension.isIndexed() != generalizationDimension.isIndexed()) return false;
+            if ( ! thisDimension.name().equals(generalizationDimension.name())) return false;
+            if (generalizationDimension.size().isPresent()) {
+                if ( ! thisDimension.size().isPresent()) return false;
+                if (thisDimension.size().get() > generalizationDimension.size().get() ) return false;
             }
         }
         return true;

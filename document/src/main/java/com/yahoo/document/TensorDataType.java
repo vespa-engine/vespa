@@ -41,7 +41,7 @@ public class TensorDataType extends DataType {
         if (value == null) return false;
         if ( ! TensorFieldValue.class.isAssignableFrom(value.getClass())) return false;
         TensorFieldValue tensorValue = (TensorFieldValue)value;
-        return tensorValue.getDataType().getTensorType().isAssignableTo(tensorType);
+        return tensorType.isAssignableTo(tensorValue.getDataType().getTensorType());
     }
 
     /** Returns the type of the tensor this field can hold */

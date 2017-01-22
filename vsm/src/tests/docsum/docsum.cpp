@@ -245,35 +245,6 @@ DocsumTest::requireThatJSONDocsumWriterHandlesMap()
     }
 }
 
-void
-DocsumTest::testDocSumCache()
-{
-    Document::SP d1(new TestDocument(0, 1));
-    d1->setField(0, FieldValue::UP(new StringFieldValue("aa")));
-    Document::SP d2(new TestDocument(1, 2));
-    d2->setField(0, FieldValue::UP(new StringFieldValue("bbb")));
-    d2->setField(1, FieldValue::UP(new StringFieldValue("cccc")));
-    DocSumCache cac1;
-    cac1.push_back(d1);
-    cac1.push_back(d2);
-    EXPECT_EQUAL(cac1.cache().size(), 2u);
-
-    Document::SP d3(new TestDocument(2, 1));
-    d3->setField(0, FieldValue::UP(new StringFieldValue("ddddd")));
-    DocSumCache cac2;
-    cac2.push_back(d3);
-    cac1.insert(cac2);
-    EXPECT_EQUAL(cac1.cache().size(), 3u);
-
-    Document::SP d4(new TestDocument(2, 1));
-    d4->setField(0, FieldValue::UP(new StringFieldValue("eeeeee")));
-    DocSumCache cac3;
-    cac3.push_back(d4);
-    cac1.insert(cac3);
-    EXPECT_EQUAL(cac1.cache().size(), 3u);
-    EXPECT_EQUAL(2u, cac1.getDocSum(2).getDocId());
-}
-
 int
 DocsumTest::Main()
 {
@@ -282,7 +253,6 @@ DocsumTest::Main()
     testFlattenDocsumWriter();
     testJSONDocsumWriter();
     requireThatJSONDocsumWriterHandlesMap();
-    testDocSumCache();
 
     TEST_DONE();
 }

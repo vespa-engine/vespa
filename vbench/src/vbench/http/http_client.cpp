@@ -24,7 +24,7 @@ HttpClient::writeRequest() {
 bool
 HttpClient::readStatus()
 {
-    LineReader reader(_conn->stream(), READ_SIZE);
+    LineReader reader(_conn->stream());
     if (reader.readLine(_line) && (splitstr(_line, "\t ", _split) >= 2)) {
         if (_split[0] == "HTTP/1.0") {
             _header.version = 0;
@@ -53,7 +53,7 @@ HttpClient::readStatus()
 bool
 HttpClient::readHeaders()
 {
-    LineReader reader(_conn->stream(), READ_SIZE);
+    LineReader reader(_conn->stream());
     while (reader.readLine(_line)) {
         if (_line.empty()) {
             return true;
@@ -99,7 +99,7 @@ bool
 HttpClient::readContent(size_t len) {
     Input &input = _conn->stream();
     while (len > 0) {
-        Memory mem = input.obtain(READ_SIZE, 1);
+        Memory mem = input.obtain();
         mem.size = std::min(len, mem.size);
         if (mem.size == 0) {
             _handler.handleFailure(strfmt("short read: missing %zu bytes", len));
@@ -115,7 +115,7 @@ HttpClient::readContent(size_t len) {
 bool
 HttpClient::readChunkSize(bool first, size_t &size)
 {
-    LineReader reader(_conn->stream(), READ_SIZE);
+    LineReader reader(_conn->stream());
     if (!first && (!reader.readLine(_line) || !_line.empty())) {
         return false;
     }
@@ -130,7 +130,7 @@ HttpClient::readChunkSize(bool first, size_t &size)
 bool
 HttpClient::skipTrailers()
 {
-    LineReader reader(_conn->stream(), READ_SIZE);
+    LineReader reader(_conn->stream());
     while (reader.readLine(_line)) {
         if (_line.empty()) {
             return true;
@@ -164,7 +164,7 @@ HttpClient::readContent()
         }
         Input &input = _conn->stream();
         for (;;) {
-            Memory mem = input.obtain(READ_SIZE, 1);
+            Memory mem = input.obtain();
             if (mem.size == 0) {
                 if (_conn->stream().tainted()) {
                     _handler.handleFailure(strfmt("read error: '%s'",
@@ -182,7 +182,7 @@ bool
 HttpClient::perform()
 {
     writeRequest();
-    if (!_conn->fresh() && (_conn->stream().obtain(READ_SIZE, 1).size == 0)) {
+    if (!_conn->fresh() && (_conn->stream().obtain().size == 0)) {
         _conn.reset(new HttpConnection(_conn->server()));
         writeRequest();
     }

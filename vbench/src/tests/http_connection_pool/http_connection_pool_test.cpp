@@ -19,7 +19,7 @@ TEST_MT_F("http connection pool", 2, ServerSocket()) {
         EXPECT_TRUE(conn.get() == 0);
         conn = pool.getConnection(ServerSpec("localhost", f1.port()));
         EXPECT_TRUE(conn.get() != 0);
-        conn->stream().obtain(1, 1); // trigger eof
+        conn->stream().obtain(); // trigger eof
         pool.putConnection(std::move(conn));
         EXPECT_TRUE(conn.get() == 0);
         conn = pool.getConnection(ServerSpec("localhost", f1.port()));
@@ -38,7 +38,7 @@ TEST_MT_FFFF("stress http connection pool", 256, ServerSocket(), Timer(), HttpCo
             HttpConnection::UP conn = f3.getConnection(ServerSpec("localhost", f1.port()));
             EXPECT_TRUE(conn.get() != 0);
             if (thread_id > (num_threads / 2)) {
-                conn->stream().obtain(1, 1); // trigger eof
+                conn->stream().obtain(); // trigger eof
             }
             f3.putConnection(std::move(conn));
             EXPECT_TRUE(conn.get() == 0);

@@ -2,7 +2,6 @@
 
 #include "hitcollector.h"
 #include <vespa/searchlib/fef/feature_resolver.h>
-#include <stdexcept>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.hitcollector");
@@ -32,14 +31,14 @@ HitCollector::getDocSum(const search::DocumentIdT & docId) const
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument::SP & doc, uint32_t docId, const search::fef::MatchData & data, double score)
+HitCollector::addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data, double score)
 {
     Hit h(doc, docId, data, score);
     return addHit(h);
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument::SP & doc, uint32_t docId, const search::fef::MatchData & data,
+HitCollector::addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data,
                      double score, const void * sortData, size_t sortDataLen)
 {
     Hit h(doc, docId, data, score, sortData, sortDataLen);
@@ -109,17 +108,17 @@ void
 HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
 {
     sortByDocId();
-    for (HitVector::const_iterator it(_hits.begin()), mt(_hits.end()); it != mt; it++) {
-        vespalib::string documentId(it->getDocument()->docDoc().getId().toString());
-        search::DocumentIdT docId = it->getDocId();
-        SearchResult::RankType rank = it->getRankScore();
+    for (const Hit & hit : _hits) {
+        vespalib::string documentId(hit.getDocument()->docDoc().getId().toString());
+        search::DocumentIdT docId = hit.getDocId();
+        SearchResult::RankType rank = hit.getRankScore();
 
         LOG(debug, "fillSearchResult: gDocId(%s), lDocId(%u), rank(%f)", documentId.c_str(), docId, (float)rank);
 
-        if (it->getSortBlob().empty()) {
+        if (hit.getSortBlob().empty()) {
             searchResult.addHit(docId, documentId.c_str(), rank);
         } else {
-            searchResult.addHit(docId, documentId.c_str(), rank, it->getSortBlob().c_str(), it->getSortBlob().size());
+            searchResult.addHit(docId, documentId.c_str(), rank, hit.getSortBlob().c_str(), hit.getSortBlob().size());
         }
     }
 }
@@ -138,9 +137,9 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
         names.emplace_back(resolver.name_of(i));
     }
     FeatureSet::SP retval = FeatureSet::SP(new FeatureSet(names, _hits.size()));
-    for (HitVector::iterator it(_hits.begin()), mt(_hits.end()); it != mt; ++it) {
-        rankProgram.run(it->getDocId(), it->getMatchData());
-        uint32_t docId = it->getDocId();
+    for (const Hit & hit : _hits) {
+        rankProgram.run(hit.getDocId(), hit.getMatchData());
+        uint32_t docId = hit.getDocId();
         search::feature_t * f = retval->getFeaturesByIndex(retval->addDocId(docId));
         for (uint32_t j = 0; j < names.size(); ++j) {
             f[j] = *resolver.resolve_number(j);

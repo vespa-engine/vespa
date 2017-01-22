@@ -26,6 +26,8 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
@@ -300,10 +302,18 @@ private:
                  uint32_t id,
                  uint32_t resultClassID);
 
+    void
+    assertTensor(const Tensor::UP &exp,
+                 const std::string &fieldName,
+                 const DocsumReply &reply,
+                 uint32_t id,
+                 uint32_t resultClassID);
+
     bool
     assertSlime(const std::string &exp,
                 const DocsumReply &reply,
-                uint32_t id);
+                uint32_t id,
+                bool relaxed = false);
 
     void
     requireThatAdapterHandlesAllFieldTypes();
@@ -400,8 +410,26 @@ Test::assertString(const std::string & exp, const std::string & fieldName,
 }
 
 
+void
+Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
+                   const DocsumReply & reply,
+                   uint32_t id, uint32_t resultClassID)
+{
+    GeneralResultPtr res = getResult(reply, id, resultClassID);
+    const void *data = res->GetEntry(fieldName.c_str())->_stringval;
+    size_t len = res->GetEntry(fieldName.c_str())->_stringlen;
+    EXPECT_EQUAL(exp.get() == nullptr, len == 0u);
+    if (exp) {
+        vespalib::nbostream serialized(data, len);
+        Tensor::UP tensor = vespalib::tensor::TypedBinaryFormat::deserialize(serialized);
+        EXPECT_TRUE(tensor.get() != nullptr);
+        EXPECT_EQUAL(*exp, *tensor);
+    }
+}
+
+
 bool
-Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id)
+Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id, bool relaxed)
 {
     const DocsumReply::Docsum & docsum = reply.docsums[id];
     uint32_t classId;
@@ -414,6 +442,14 @@ Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id)
     size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized,
                                                              slime);
     ASSERT_EQUAL(decodeRes, serialized.size);
+    if (relaxed) {
+        vespalib::slime::SimpleBuffer buf;
+        vespalib::slime::JsonFormat::encode(slime, buf, false);
+        vespalib::Slime tmpSlime;
+        size_t used = vespalib::slime::JsonFormat::decode(buf.get(), tmpSlime);
+        EXPECT_EQUAL(buf.get().size, used);
+        slime = std::move(tmpSlime);
+    }
     vespalib::Slime expSlime;
     size_t used = vespalib::slime::JsonFormat::decode(exp, expSlime);
     EXPECT_EQUAL(exp.size(), used);
@@ -726,7 +762,7 @@ Test::requireThatAttributesAreUsed()
            endElement().
            endField().
            startAttributeField("bj").
-           addTensor(createTensor({ {{}, 3} }, { "x", "y"})).
+           addTensor(createTensor({ {{{"x","f"},{"y","g"}}, 3} }, { "x", "y"})).
            endField().
            endDocument(),
            2);
@@ -755,9 +791,8 @@ Test::requireThatAttributesAreUsed()
                             *rep, 0, rclass));
     EXPECT_TRUE(assertString("[[\"quux\",7],[\"qux\",6]]",  "bi",
                             *rep, 0, rclass));
-    EXPECT_TRUE(assertString("{\"dimensions\":[\"x\",\"y\"],"
-                             "\"cells\":[{\"address\":{},\"value\":3}]}",
-                             "bj", *rep, 0, rclass));
+    TEST_DO(assertTensor(createTensor({ {{{"x","f"},{"y","g"}}, 3} }, { "x", "y"}),
+                         "bj", *rep, 0, rclass));
 
     // empty doc
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>
@@ -771,7 +806,7 @@ Test::requireThatAttributesAreUsed()
     EXPECT_TRUE(assertString("[]", "bg", *rep, 1, rclass));
     EXPECT_TRUE(assertString("[]", "bh", *rep, 1, rclass));
     EXPECT_TRUE(assertString("[]", "bi", *rep, 1, rclass));
-    EXPECT_TRUE(assertString("", "bj", *rep, 1, rclass));
+    TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager =
         dc._ddb->getReadySubDB()->getAttributeManager();
@@ -785,14 +820,13 @@ Test::requireThatAttributesAreUsed()
     attributeFieldWriter.
         execute("bj",
                 [&]() { bjTensorAttr->setTensor(3,
-                            *createTensor({ {{}, 4} }, { "x"}));
+                                                *createTensor({ {{{"x", "a"},{"y", "b"}}, 4} }, { "x"}));
                            bjTensorAttr->commit(); });
     attributeFieldWriter.sync();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
-    EXPECT_TRUE(assertString("{\"dimensions\":[\"x\",\"y\"],"
-                             "\"cells\":[{\"address\":{},\"value\":4}]}",
-                             "bj", *rep2, 1, rclass));
+    TEST_DO(assertTensor(createTensor({ {{{"x","a"},{"y","b"}}, 4} }, { "x", "y"}),
+                         "bj", *rep2, 1, rclass));
 
     DocsumRequest req3;
     req3.resultClassName = "class3";
@@ -802,9 +836,8 @@ Test::requireThatAttributesAreUsed()
 
     EXPECT_TRUE(assertSlime("{bd:[],be:[],bf:[],bg:[],"
                             "bh:[],bi:[],"
-                            "bj:{dimensions:['x','y'],"
-                            "cells:[{address:{},value:4.0}]}}",
-                            *rep3, 0));
+                            "bj:'0x01020178017901016101624010000000000000'}",
+                            *rep3, 0, true));
 }
 
 

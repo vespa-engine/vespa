@@ -17,7 +17,6 @@ namespace vbench {
 class HttpClient
 {
 private:
-    static const size_t READ_SIZE  = 8000;
     static const size_t WRITE_SIZE = 2000;
 
     struct HeaderInfo {

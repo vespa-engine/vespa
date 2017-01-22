@@ -14,14 +14,11 @@ namespace vbench {
 struct Input
 {
     /**
-     * Obtain more input data. You will never obtain more data than
-     * requested, but you may obtain less.
+     * Obtain more input data.
      *
      * @return the obtained input data
-     * @param bytes the number of bytes requested
-     * @param lowMark minimum bytes in byffer before refilling
      **/
-    virtual Memory obtain(size_t bytes, size_t lowMark) = 0;
+    virtual Memory obtain() = 0;
 
     /**
      * Evict processed input data. Never evict more data than you have

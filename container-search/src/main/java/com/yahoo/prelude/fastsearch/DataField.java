@@ -16,11 +16,11 @@ import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.Inspector;
 
-
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
+ * @author Bjørn Borud
  */
 public class DataField extends DocsumField implements VariableLengthField {
+
     public DataField(String name) {
         super(name);
     }
@@ -67,4 +67,5 @@ public class DataField extends DocsumField implements VariableLengthField {
     public Object convert(Inspector value) {
         return convert(value.asData(Value.empty().asData()));
     }
+
 }

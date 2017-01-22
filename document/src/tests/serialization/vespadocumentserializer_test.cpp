@@ -233,6 +233,38 @@ TEST("requireThatStringFieldValueCanBeSerialized") {
     TEST_DO(checkStringFieldValueWithAnnotation());
 }
 
+TEST("require that strings can be redesrialized") {
+    StringFieldValue value("foo");
+    nbostream streamNotAnnotated;
+    VespaDocumentSerializer serializer(streamNotAnnotated);
+    serializer.write(value);
+
+    Span::UP root(new Span(2, 3));
+    SpanTree::UP tree(new SpanTree("test", std::move(root)));
+    AnnotationType annotation_type(42, "foo_type");
+    tree->annotate(tree->getRoot(), annotation_type);
+
+    setSpanTree(value, *tree);
+
+    nbostream streamAnnotated;
+    VespaDocumentSerializer serializerAnnotated(streamAnnotated);
+    serializerAnnotated.write(value);
+
+    StringFieldValue deserialized;
+    {
+        VespaDocumentDeserializer deserializer(repo, streamAnnotated, 8);
+        deserializer.read(deserialized);
+    }
+    EXPECT_EQUAL("foo", deserialized.getValueRef());
+    EXPECT_TRUE(deserialized.hasSpanTrees());
+    {
+        VespaDocumentDeserializer deserializer(repo, streamNotAnnotated, 8);
+        deserializer.read(deserialized);
+    }
+    EXPECT_EQUAL("foo", deserialized.getValueRef());
+    EXPECT_FALSE(deserialized.hasSpanTrees());
+}
+
 template <typename SizeType>
 void checkRawFieldValue(const string &val) {
     RawFieldValue value(val);

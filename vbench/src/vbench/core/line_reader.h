@@ -22,9 +22,8 @@ public:
      * Wrap an Input to read one line at a time.
      *
      * @param input the underlying Input
-     * @param chunkSize how much data to request from the input per transaction
      **/
-    LineReader(Input &input, size_t chunkSize);
+    LineReader(Input &input);
 
     /**
      * Read the next line of input. Lines are separated by '\n'. '\r'

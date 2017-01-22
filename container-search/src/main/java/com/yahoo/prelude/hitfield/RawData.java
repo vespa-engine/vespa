@@ -2,7 +2,7 @@
 package com.yahoo.prelude.hitfield;
 
 /**
- * A representation of some random data with unknown semantics
+ * A representation of some binary data with unknown semantics
  *
  * @author arnej27959
  */
