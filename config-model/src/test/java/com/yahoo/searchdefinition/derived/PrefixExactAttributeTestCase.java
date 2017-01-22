@@ -12,8 +12,10 @@ import java.io.IOException;
  * @author  bratseth
  */
 public class PrefixExactAttributeTestCase extends AbstractExportingTestCase {
+
     @Test
     public void testTypes() throws IOException, ParseException {
         assertCorrectDeriving("prefixexactattribute");
     }
+
 }

@@ -115,6 +115,10 @@ public class Model implements Cloneable {
         }
     }
 
+    public Language getParsingLanguage() {
+        return getParsingLanguage(queryString);
+    }
+
     /**
      * Gets the language to use for parsing. If this is explicitly set in the model, that language is returned.
      * Otherwise, if a query tree is already produced and any node in it specifies a language the first such 
@@ -127,7 +131,7 @@ public class Model implements Cloneable {
     // TODO: We can support multiple languages per query by changing searchers which call this
     //       to look up the query to use at each point from item.getLanguage
     //       with this as fallback for query branches where no parent item specifies language
-    public Language getParsingLanguage() {
+    public Language getParsingLanguage(String languageDetectionText) {
         Language language = getLanguage();
         if (language != null) return language;
 
@@ -140,7 +144,7 @@ public class Model implements Cloneable {
         
         Linguistics linguistics = execution.context().getLinguistics();
         if (linguistics != null)
-            language = linguistics.getDetector().detect(queryString, null).getLanguage();
+            language = linguistics.getDetector().detect(languageDetectionText, null).getLanguage(); // TODO: Set language if detected
         if (language != Language.UNKNOWN) return language;
 
         return Language.ENGLISH;

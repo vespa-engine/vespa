@@ -32,12 +32,10 @@ search attributes {
       indexing: summary
     }
 
-    # Unique only - not searchable. No match-group since the attribute is not to be used for searching
     field a5 type string {
       indexing: attribute | summary | index
     }
 
-    # Not searchable
     field a6 type string {
       indexing: attribute | summary | index
     }

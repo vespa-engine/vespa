@@ -3,7 +3,14 @@ package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.detect.Detection;
+import com.yahoo.language.detect.Detector;
+import com.yahoo.language.detect.Hint;
+import com.yahoo.language.simple.SimpleDetector;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
@@ -637,23 +644,57 @@ public class QueryTestCase {
     }
     
     @Test
-    public void testMultipleLanguages() {
-        {
-            Query q = new Query(httpEncode("/?query=headline:\"彭 博士 觀 風向\" content:\"彭 博士 觀 風向\" description:\"彭 博士 觀 風向\""));
-            q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, null, new SimpleLinguistics())));
-            assertEquals(Language.CHINESE_TRADITIONAL, q.getModel().getParsingLanguage());
-        }
+    public void testHeuristicLanguageDetectionTextExtraction() {
+        assertDetectionText("b ", "a:b", "text:a", "text:default");
+        assertDetectionText("b ", "b", "text:default");
+        assertDetectionText("b ", "b","text:b", "text:default");
+        assertDetectionText("a b ", "a:b","text:b", "text:default");
+        assertDetectionText("foo bar fuz ", "foo a:bar --() fuz","text:a", "text:default");
+        assertDetectionText(" 彭 博士 觀 風向  彭 博士 觀 風向  彭 博士 觀 風向 ","headline:\"彭 博士 觀 風向\" content:\"彭 博士 觀 風向\" description:\"彭 博士 觀 風向\" sddocname:contentindexing!0 embargo:<1484665288753!0 expires:>1484665288753!0",
+                            "text:headline", "text:content", "text:description", "text:default", "nontext:tags", "nontext:sddocname", "nontext:embargo", "nontext:expires");
+    }
 
-        {
-            Query q = new Query(httpEncode("/?query=headline:\"彭 博士 觀 風向\" content:\"彭 博士 觀 風向\" description:\"彭 博士 觀 風向\" tags:ymedia:type=story tags:ymedia:type=blogpost tags:ymedia:type=slideshow tags:ymedia:type=cavideo tags:ymedia:type=photo -tags:ymedia:hosted=no sddocname:contentindexing!0 embargo:<1484665288753!0 expires:>1484665288753!0"));
-            q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, null, new SimpleLinguistics())));
-            assertEquals(Language.CHINESE_TRADITIONAL, q.getModel().getParsingLanguage());
+    private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {
+        Query q = new Query(httpEncode("/?query=" + queryString));
+        IndexFacts indexFacts = new IndexFacts();
+        for (String indexSpec : indexSpecs) {
+            String[] specParts = indexSpec.split(":");
+            Index tokenIndex = new Index(specParts[1]);
+            if (specParts[0].equals("text"))
+                tokenIndex.setPlainTokens(true);
+            indexFacts.addIndex("testSearchDefinition", tokenIndex);
         }
+        MockLinguistics mockLinguistics = new MockLinguistics();
+        q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, indexFacts, mockLinguistics)));
+        q.getModel().getQueryTree(); // cause parsing
+        assertEquals(expectedDetectionText, mockLinguistics.detector.lastDetectionText);
+    }
+    
+    /** A linguistics instance which records the last language detection text passed to it */
+    private static class MockLinguistics extends SimpleLinguistics {
+
+        final MockDetector detector = new MockDetector();
+        
+        @Override
+        public Detector getDetector() { return detector; }
+        
+    }
+    
+    private static class MockDetector extends SimpleDetector {
+
+        String lastDetectionText = null;
+        
+        @Override
+        public Detection detect(String input, Hint hint) {
+            lastDetectionText = input;
+            return super.detect(input, hint);
+        }
+        
     }
 
     protected boolean contains(String lineSubstring,String[] lines) {
         for (String line : lines)
-            if (line.indexOf(lineSubstring)>=0) return true;
+            if (line.contains(lineSubstring)) return true;
         return false;
     }
 

@@ -25,8 +25,7 @@ import java.util.Set;
  * <p>In case you are parsing the content of a {@link Model}, you can use the {@link #fromQueryModel(Model)} factory for
  * convenience.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- * @since 5.1.4
+ * @author Simon Thoresen
  */
 public final class Parsable {
 
@@ -35,8 +34,11 @@ public final class Parsable {
     private String query;
     private String filter;
     private String defaultIndexName;
-    private Language language;
+    private Language language; // TODO: Initialize to UNKNOWN
     private Optional<Language> explicitLanguage = Optional.empty();
+
+    /** If this is set it will be used to determine the language, if not set explicitly */
+    private Optional<Model> model = Optional.empty();
 
     public String getQuery() {
         return query;
@@ -69,14 +71,26 @@ public final class Parsable {
      * Returns the language to use when parsing, 
      * if not decided by the item under parsing. This is never null or UNKNOWN 
      */
-    public Language getLanguage() { return language; }
+    public Language getLanguage() {
+        return language;
+    }
+
+    /**
+     * Returns the language to use when parsing, with a text to use for detection if necessary.
+     * if not decided by the item under parsing. This is never null or UNKNOWN 
+     */
+    public Language getOrDetectLanguage(String languageDetectionText) {
+        if (language != null  && language != Language.UNKNOWN) return language;
+        if (model.isPresent()) return model.get().getParsingLanguage(languageDetectionText);
+        return Language.UNKNOWN; // against the promise in the JavaDoc, but it is not locally ensured
+    }
 
     public Parsable setLanguage(Language language) {
         Objects.requireNonNull(language, "Language cannot be null");
         this.language = language;
         return this;
     }
-
+    
     /** Returns the language explicitly set to be used when parsing, or empty if none is set. */
     public Optional<Language> getExplicitLanguage() { return explicitLanguage; }
 
@@ -86,6 +100,12 @@ public final class Parsable {
         return this;
     }
 
+    public Parsable setModel(Model model) {
+        Objects.requireNonNull(model, "Model cannot be null");
+        this.model = Optional.of(model);
+        return this;
+    }
+    
     public Set<String> getSources() {
         return sourceList;
     }
@@ -116,9 +136,9 @@ public final class Parsable {
 
     public static Parsable fromQueryModel(Model model) {
         return new Parsable()
+                .setModel(model)
                 .setQuery(model.getQueryString())
                 .setFilter(model.getFilter())
-                .setLanguage(model.getParsingLanguage())
                 .setExplicitLanguage(Optional.ofNullable(model.getLanguage()))
                 .setDefaultIndexName(model.getDefaultIndex())
                 .addSources(model.getSources())

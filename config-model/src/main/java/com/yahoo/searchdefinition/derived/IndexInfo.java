@@ -144,6 +144,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (normalizeAccents(field)) {
                 addIndexCommand(field, CMD_NORMALIZE);
             }
+            if (field.getMatching() == null || field.getMatching().getType().equals(Matching.Type.TEXT)) {
+                addIndexCommand(field, CMD_PLAIN_TOKENS);
+            }
         }
 
         if (isUriField(field)) {
@@ -285,9 +288,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         builder.indexinfo(iiB);
     }
 
-    // TODO: This implementation is completely brain dead.
-    // Move it to the FieldSetValidity processor (and rename it) as that already has to look at this.
-    // Also add more explicit testing of this, e.g to indexinfo_fieldsets in ExportingTestCase. - Jon
+    // TODO: Move this to the FieldSetValidity processor (and rename it) as that already has to look at this.
     private void addFieldSetCommands(IndexInfoConfig.Indexinfo.Builder iiB, FieldSet fieldSet) {
         // Explicit query commands on the field set, overrides everything.
         if (!fieldSet.queryCommands().isEmpty()) {
@@ -351,6 +352,12 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                         .indexname(fieldSet.getName())
                         .command(CMD_INDEX));
             if ( ! isExactMatch(fieldSetMatching)) {
+                if (fieldSetMatching == null || fieldSetMatching.getType().equals(Matching.Type.TEXT)) {
+                    iiB.command(
+                            new IndexInfoConfig.Indexinfo.Command.Builder()
+                                    .indexname(fieldSet.getName())
+                                    .command(CMD_PLAIN_TOKENS));
+                }
                 if (anyStemming) {
                     iiB.command(
                         new IndexInfoConfig.Indexinfo.Command.Builder()
@@ -441,13 +448,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         return false;
     }
     
-    /**
-     * Returns a read only iterator over the index commands of this
-     */
-    public Iterator<IndexCommand> indexCommandIterator() {
-        return Collections.unmodifiableSet(commands).iterator();
-    }
-
     protected String getDerivedName() {
         return "index-info";
     }

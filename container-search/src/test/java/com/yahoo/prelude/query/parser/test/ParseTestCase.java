@@ -1916,7 +1916,7 @@ public class ParseTestCase {
     @Test
     public void testChineseSpecialTokens() {
         tester.assertParsed("AND \"cat tcp/ip zu\" \"foo dotnet bar dotnet dotnet c# c++ bar dotnet dotnet wiz\"",
-                     "cattcp/ipzu foo.netbar.net.netC#c++bar.net.netwiz","",Query.Type.ALL,Language.CHINESE_SIMPLIFIED);
+                     "cattcp/ipzu foo.netbar.net.netC#c++bar.net.netwiz","", Query.Type.ALL, Language.CHINESE_SIMPLIFIED);
     }
 
     /**

@@ -115,6 +115,8 @@ public abstract class AbstractParser implements CustomParser {
         }
     }
 
+    // TODO: Deprecate the unwanted method signatures below
+    
     @Override
     public final QueryTree parse(Parsable query) {
         Item root = null;
@@ -123,7 +125,8 @@ public abstract class AbstractParser implements CustomParser {
                          query.getFilter(),
                          query.getLanguage(),
                          environment.getIndexFacts().newSession(query.getSources(), query.getRestrict()),
-                         query.getDefaultIndexName());
+                         query.getDefaultIndexName(),
+                         query);
         }
         if (root == null) {
             root = new NullItem();
@@ -134,12 +137,20 @@ public abstract class AbstractParser implements CustomParser {
     @Override
     public final Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
                             IndexFacts.Session indexFacts, String defaultIndexName) {
+        return parse(queryToParse, filterToParse, parsingLanguage, indexFacts, defaultIndexName, null);
+    }
+
+    private Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
+                       IndexFacts.Session indexFacts, String defaultIndexName, Parsable parsable) {
         if (queryToParse == null) return null;
 
         tokenize(queryToParse, defaultIndexName, indexFacts, parsingLanguage);
 
-        if (parsingLanguage == null) {
-            parsingLanguage = environment.getLinguistics().getDetector().detect(queryToParse, null).getLanguage();
+        if (parsingLanguage == null && parsable != null) {
+            String detectionText = generateLanguageDetectionTextFrom(tokens, indexFacts, defaultIndexName);
+            if (detectionText.isEmpty()) // heuristic detection text extraction is fallible
+                detectionText = queryToParse;
+            parsingLanguage = parsable.getOrDetectLanguage(detectionText);
         }
         setState(parsingLanguage, indexFacts);
 
@@ -159,6 +170,70 @@ public abstract class AbstractParser implements CustomParser {
         return root;
     }
 
+    /**
+     * Do a best-effort attempt at creating a single string for language detection from only the relevant
+     * subset of tokens. 
+     * The relevant tokens are text tokens which follows names of indexes which are tokenized.
+     * 
+     * This method does not modify the position of the given token stream.
+     */
+    private String generateLanguageDetectionTextFrom(TokenPosition tokens, IndexFacts.Session indexFacts, String defaultIndex) {
+        StringBuilder detectionText = new StringBuilder();
+        int initialPosition = tokens.getPosition();
+        while (tokens.hasNext()) { // look for occurrences of text and text:text
+            while (!tokens.currentIs(Token.Kind.WORD) && tokens.hasNext()) // skip nonwords
+                tokens.next();
+            if (!tokens.hasNext()) break;
+
+            String queryText;
+            Index index;
+
+            Token word1 = tokens.next();
+            if (is(Token.Kind.COLON, tokens.currentNoIgnore())) {
+                tokens.next(); // colon
+                Token word2 = tokens.next();
+                if ( is(Token.Kind.WORD, word2))
+                    queryText = word2.image;
+                else
+                    queryText = "";
+                index = indexFacts.getIndex(word1.image);
+                if (index.isNull()) { // interpret both as words
+                    index = indexFacts.getIndex(defaultIndex);
+                    queryText = word1.image + " " + queryText;
+                }
+            } else if (is(Token.Kind.COLON, tokens.currentNoIgnore()) && is(Token.Kind.QUOTE, tokens.currentNoIgnore(1))) {
+                tokens.next(); // colon
+                tokens.next(); // quote
+                StringBuilder quotedContent = new StringBuilder();
+                while (!tokens.currentIs(Token.Kind.QUOTE) && tokens.hasNext()) {
+                    Token token = tokens.next();
+                    if (is(Token.Kind.WORD, token))
+                        quotedContent.append(token.image).append(" ");
+                }
+                tokens.next();
+                queryText = quotedContent.toString();
+                index = indexFacts.getIndex(word1.image);
+                if (index.isNull()) { // interpret both as words
+                    index = indexFacts.getIndex(defaultIndex);
+                    queryText = word1.image + " " + queryText;
+                }
+            } else {
+                index = indexFacts.getIndex(defaultIndex);
+                queryText = word1.image;
+            }
+
+            if (queryText != null && index.hasPlainTokens())
+                detectionText.append(queryText).append(" ");
+        }
+        tokens.setPosition(initialPosition);
+        return detectionText.toString();
+    }
+
+    private boolean is(Token.Kind kind, Token tokenOrNull) {
+        if (tokenOrNull == null) return false;
+        return kind.equals(tokenOrNull.kind);
+    }
+    
     protected abstract Item parseItems();
 
     /**
@@ -264,11 +339,19 @@ public abstract class AbstractParser implements CustomParser {
     // - Make the instance know the language, etc and do all dispatching internally
     // -bratseth
     // TODO: Use segmenting for forced phrase searches?
+    //
+    // Language detection currently depends on tokenization (see generateLanguageDetectionTextFrom), but 
+    // - the API's was originally not constructed for that, so a careful nd somewhat unsatisfactory dance
+    //   most be carried out to make it work
+    // - it should really depend on parsing
+    // This can be solved by making the segment method language independent by
+    // always producing a query item containing the token text and resolve it to a WordItem or
+    // SegmentItem after parsing and language detection.
     protected Item segment(Token token) {
         String normalizedToken = normalize(token.toString());
 
         if (token.isSpecial()) {
-            final WordItem w = new WordItem(token.toString(), true, token.substring);
+            WordItem w = new WordItem(token.toString(), true, token.substring);
             w.setWords(false);
             w.setFromSpecialToken(true);
             return w;

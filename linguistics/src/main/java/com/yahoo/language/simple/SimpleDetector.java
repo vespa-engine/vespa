@@ -46,12 +46,6 @@ public class SimpleDetector implements Detector {
     }
 
     public static Language guessLanguage(String input) {
-        Language language = guessLanguage2(input);
-        System.out.println("Detecting language of '" + input + "' as " + language);
-        return language;
-    }
-
-    public static Language guessLanguage2(String input) {
         if (input == null || input.length() == 0) {
             return Language.UNKNOWN;
         }

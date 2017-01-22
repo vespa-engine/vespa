@@ -698,8 +698,7 @@ abstract class StructuredParser extends AbstractParser {
                 if (tokens.currentIsNoIgnore(LBRACE)) {
                     braceLevelURL++;
                 }
-                if (tokens.hasNext() && !tokens.currentIsNoIgnore(SPACE)
-                        && braceLevelURL >= 0) {
+                if (tokens.hasNext() && !tokens.currentIsNoIgnore(SPACE) && braceLevelURL >= 0) {
                     tokens.skip();
                     skipped = true;
                 }

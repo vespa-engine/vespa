@@ -128,19 +128,15 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testInheritance() throws IOException, ParseException {
-        try {
-            String dir = "src/test/derived/inheritance/";
-            SearchBuilder builder = new SearchBuilder();
-            builder.importFile(dir + "grandparent.sd");
-            builder.importFile(dir + "father.sd");
-            builder.importFile(dir + "mother.sd");
-            builder.importFile(dir + "child.sd");
-            builder.build();
-        } catch (IllegalArgumentException e) {
-            assertEquals(
-                    "Inherited document 'datatype grandparent (code: -154107656)' already contains field 'overridden'. Can not override with 'overridden'.",
-                    e.getMessage());
-        }
+        String dir = "src/test/derived/inheritance/";
+        SearchBuilder builder = new SearchBuilder();
+        builder.importFile(dir + "grandparent.sd");
+        builder.importFile(dir + "father.sd");
+        builder.importFile(dir + "mother.sd");
+        builder.importFile(dir + "child.sd");
+        builder.build();
+        derive("inheritance", builder, builder.getSearch("child"));
+        assertCorrectConfigFiles("inheritance");
     }
 
     @Test
