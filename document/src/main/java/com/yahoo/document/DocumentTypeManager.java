@@ -331,11 +331,13 @@ public class DocumentTypeManager {
         } else if (type instanceof StructDataType) {
             replaceTemporaryTypesInStruct((StructDataType) type, seenStructs);
         } else if (type instanceof PrimitiveDataType) {
-            //OK
+            //OK because these types are always present
         } else if (type instanceof AnnotationReferenceDataType) {
-            //OK
+            //OK because this type is always present
         } else if (type instanceof DocumentType) {
-            //OK
+            //OK because this type is always present
+        } else if (type instanceof TensorDataType) {
+            //OK because this type is always present
         } else if (type instanceof TemporaryDataType) {
             throw new IllegalStateException("TemporaryDataType registered in DocumentTypeManager, BUG!!");
         } else {
