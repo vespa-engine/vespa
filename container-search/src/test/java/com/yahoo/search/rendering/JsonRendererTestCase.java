@@ -16,6 +16,7 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.predicate.Predicate;
 
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -102,7 +103,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testDocumentId() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testDocumentId() throws IOException, InterruptedException, ExecutionException, JSONException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -139,7 +140,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public final void testDataTypes() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testDataTypes() throws IOException, InterruptedException, ExecutionException, JSONException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -152,7 +153,9 @@ public class JsonRendererTestCase {
                 + "                    \"object\": \"thingie\",\n"
                 + "                    \"string\": \"stuff\",\n"
                 + "                    \"predicate\": \"a in [b]\",\n"
-                + "                    \"tensor\": { \"cells\": [ { \"address\": {\"x\": \"a\"}, \"value\":2.0 } ] }\n"
+                + "                    \"tensor1\": { \"cells\": [ { \"address\": {\"x\": \"a\"}, \"value\":2.0 } ] },\n"
+                + "                    \"tensor2\": { \"cells\": [] },\n"
+                + "                    \"tensor3\": { \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] }\n"
                 + "                },\n"
                 + "                \"id\": \"datatypestuff\",\n"
                 + "                \"relevance\": 1.0\n"
@@ -174,7 +177,9 @@ public class JsonRendererTestCase {
         h.setField("long", 4398046511104L);
         h.setField("string", "stuff");
         h.setField("predicate", Predicate.fromString("a in [b]"));
-        h.setField("tensor", new TensorFieldValue(Tensor.from("{ {x:a}: 2.0}")));
+        h.setField("tensor1", new TensorFieldValue(Tensor.from("{ {x:a}: 2.0}")));
+        h.setField("tensor2", new TensorFieldValue(TensorType.empty));
+        h.setField("tensor3", Tensor.from("{ {x:a, y:0}: 2.0, {x:a, y:1}: -1 }"));
         h.setField("object", new Thingie());
         r.hits().add(h);
         r.setTotalHitCount(1L);
@@ -223,8 +228,7 @@ public class JsonRendererTestCase {
                 + "    }\n"
                 + "}\n";
         Query q = new Query("/?query=a&tracelevel=1");
-        Execution execution = new Execution(
-                Execution.Context.createContextStub());
+        Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
 
         execution.search(q);
@@ -251,8 +255,7 @@ public class JsonRendererTestCase {
                 + "    }\n"
                 + "}\n";
         Query q = new Query("/?query=a&tracelevel=0");
-        Execution execution = new Execution(
-                Execution.Context.createContextStub());
+        Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
 
         execution.search(q);
@@ -302,7 +305,7 @@ public class JsonRendererTestCase {
         Result r = new Result(q);
 
         execution.search(q);
-        new Execution(new Chain<Searcher>(), execution.context());
+        new Execution(new Chain<>(), execution.context());
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
         assertTrue(f.get());
