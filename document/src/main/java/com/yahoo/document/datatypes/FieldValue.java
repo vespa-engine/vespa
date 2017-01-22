@@ -15,7 +15,7 @@ import com.yahoo.vespa.objects.Serializer;
 import com.yahoo.document.config.DocumentmanagerConfig.Datatype.Structtype.Compresstype;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public abstract class FieldValue extends Identifiable implements Comparable<FieldValue> {
 
