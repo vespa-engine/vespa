@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.node;
+package com.yahoo.config.provision;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
+import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,7 @@ public class Flavor {
      * Creates a Flavor, but does not set the replacesFlavors.
      * @param flavorConfig config to be used for Flavor.
      */
-    public Flavor(NodeRepositoryConfig.Flavor flavorConfig) {
+    public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this.name = flavorConfig.name();
         this.replacesFlavors = new ArrayList<>();
         this.cost = flavorConfig.cost();
@@ -123,7 +123,7 @@ public class Flavor {
     public String toString() { return "flavor '" + name + "'"; }
 
     public enum Type {
-        undefined, // Default value in config (node-repository.def)
+        undefined, // Default value in config (flavors.def)
         BARE_METAL,
         VIRTUAL_MACHINE,
         DOCKER_CONTAINER

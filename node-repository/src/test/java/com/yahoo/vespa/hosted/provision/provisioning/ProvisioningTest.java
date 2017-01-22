@@ -13,9 +13,9 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -482,9 +482,9 @@ public class ProvisioningTest {
     private void assertCorrectFlavorPreferences(boolean largeIsStock) {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10).stock(largeIsStock);
-        NodeRepositoryConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
+        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
         b.addReplaces("large", largeVariant);
-        NodeRepositoryConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
+        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
         b.addReplaces("large-variant", largeVariantVariant);
 
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), b.build());

@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
+import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -19,15 +20,15 @@ public class NodeFlavorsTest {
 
     @Test
     public void testReplacesWithBadValue() {
-        NodeRepositoryConfig.Builder builder = new NodeRepositoryConfig.Builder();
-        List<NodeRepositoryConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
-        NodeRepositoryConfig.Flavor.Builder flavorBuilder = new NodeRepositoryConfig.Flavor.Builder();
-        NodeRepositoryConfig.Flavor.Replaces.Builder flavorReplacesBuilder = new NodeRepositoryConfig.Flavor.Replaces.Builder();
+        FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
+        List<FlavorsConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
+        FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+        FlavorsConfig.Flavor.Replaces.Builder flavorReplacesBuilder = new FlavorsConfig.Flavor.Replaces.Builder();
         flavorReplacesBuilder.name("non-existing-config");
         flavorBuilder.name("strawberry").cost(2).replaces.add(flavorReplacesBuilder);
         flavorBuilderList.add(flavorBuilder);
         builder.flavor(flavorBuilderList);
-        NodeRepositoryConfig config = new NodeRepositoryConfig(builder);
+        FlavorsConfig config = new FlavorsConfig(builder);
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Replaces for strawberry pointing to a non existing flavor: non-existing-config");
         new NodeFlavors(config);
@@ -35,22 +36,22 @@ public class NodeFlavorsTest {
 
     @Test
     public void testConfigParsing() {
-        NodeRepositoryConfig.Builder builder = new NodeRepositoryConfig.Builder();
-        List<NodeRepositoryConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
+        FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
+        List<FlavorsConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
         {
-            NodeRepositoryConfig.Flavor.Builder flavorBuilder = new NodeRepositoryConfig.Flavor.Builder();
-            NodeRepositoryConfig.Flavor.Replaces.Builder flavorReplacesBuilder = new NodeRepositoryConfig.Flavor.Replaces.Builder();
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            FlavorsConfig.Flavor.Replaces.Builder flavorReplacesBuilder = new FlavorsConfig.Flavor.Replaces.Builder();
             flavorReplacesBuilder.name("banana");
             flavorBuilder.name("strawberry").cost(2).replaces.add(flavorReplacesBuilder);
             flavorBuilderList.add(flavorBuilder);
         }
         {
-            NodeRepositoryConfig.Flavor.Builder flavorBuilder = new NodeRepositoryConfig.Flavor.Builder();
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
             flavorBuilder.name("banana").cost(3);
             flavorBuilderList.add(flavorBuilder);
         }
         builder.flavor(flavorBuilderList);
-        NodeRepositoryConfig config = new NodeRepositoryConfig(builder);
+        FlavorsConfig config = new FlavorsConfig(builder);
         NodeFlavors nodeFlavors = new NodeFlavors(config);
         assertThat(nodeFlavors.getFlavor("banana").get().cost(), is(3));
     }

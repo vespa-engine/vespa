@@ -1,6 +1,6 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Configuration of the node repository
-namespace=vespa.config.nodes
+namespace=config.provisioning
 
 # A node flavor which (may) be available in this zone.
 # This is to allow configuration per flavor.

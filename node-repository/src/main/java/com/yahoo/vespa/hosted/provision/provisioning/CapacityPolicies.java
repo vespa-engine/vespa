@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 
 import java.util.Optional;
 

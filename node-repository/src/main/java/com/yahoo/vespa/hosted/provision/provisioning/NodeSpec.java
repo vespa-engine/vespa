@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
+import com.yahoo.config.provision.Flavor;
 
 import java.util.Objects;
 
