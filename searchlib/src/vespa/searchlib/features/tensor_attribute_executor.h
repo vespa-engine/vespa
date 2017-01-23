@@ -4,9 +4,9 @@
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/vespalib/eval/value.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/eval/tensor/default_tensor.h>
 
 namespace search {
 namespace tensor { class TensorAttribute; }

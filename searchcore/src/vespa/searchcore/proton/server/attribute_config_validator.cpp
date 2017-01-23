@@ -4,7 +4,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.attribute_config_validator");
 #include "attribute_config_validator.h"
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespa::config::search::AttributesConfig;

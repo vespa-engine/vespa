@@ -2,7 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchlib/fef/featurenameparser.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>

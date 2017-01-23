@@ -17,7 +17,7 @@ LOG_SETUP(".features.attributefeature");
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
 
 using search::attribute::IAttributeVector;

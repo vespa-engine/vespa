@@ -3,7 +3,7 @@
 #include "generic_tensor_attribute.h"
 #include "generic_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
-#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>

@@ -10,7 +10,7 @@
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using namespace document;

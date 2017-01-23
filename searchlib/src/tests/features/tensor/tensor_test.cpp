@@ -10,12 +10,12 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using search::feature_t;

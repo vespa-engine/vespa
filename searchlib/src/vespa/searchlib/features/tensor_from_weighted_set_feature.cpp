@@ -14,11 +14,11 @@ LOG_SETUP(".features.tensor_from_weighted_set_feature");
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/default_tensor.h>
 #include <memory>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
 
 using namespace search::fef;

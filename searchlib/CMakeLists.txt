@@ -5,6 +5,7 @@ vespa_define_module(
     vespalog
     vespalib
     staging_vespalib
+    eval
     fnet
     configdefinitions
     metrics

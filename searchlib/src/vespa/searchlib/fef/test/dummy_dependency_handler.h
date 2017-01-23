@@ -6,7 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <vespa/searchlib/fef/feature_type.h>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <map>
 
 namespace search {

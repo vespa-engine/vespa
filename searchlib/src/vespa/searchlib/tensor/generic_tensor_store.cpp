@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generic_tensor_store.h"
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/macro.h>

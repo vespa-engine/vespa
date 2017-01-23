@@ -5,7 +5,7 @@
 
 #include <vespa/searchcore/proton/matching/constant_value_repo.h>
 #include <vespa/searchcore/proton/matching/error_constant_value.h>
-#include <vespa/vespalib/eval/value_cache/constant_value.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
 
 using namespace proton::matching;
 using namespace vespalib::eval;

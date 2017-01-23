@@ -6,7 +6,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/tablemanager.h>
-#include <vespa/vespalib/eval/value_cache/constant_value.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
 #include <string>
 #include <vector>
 

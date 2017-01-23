@@ -15,7 +15,7 @@
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/rankresult.h>
-#include <vespa/vespalib/eval/value.h>
+#include <vespa/eval/eval/value.h>
 
 namespace search {
 namespace fef {

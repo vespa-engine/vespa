@@ -9,7 +9,7 @@
 #include <vespa/searchlib/fef/test/plugin/sum.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/verify_feature.h>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
 
 using namespace search::fef;

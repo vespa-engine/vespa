@@ -3,8 +3,8 @@
 #include "dense_tensor_attribute.h"
 #include "dense_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "rank_program.h"
-#include <vespa/vespalib/eval/value.h>
+#include <vespa/eval/eval/value.h>
 #include <map>
 
 namespace search {

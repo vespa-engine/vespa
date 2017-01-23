@@ -10,13 +10,13 @@ LOG_SETUP(".features.queryfeature");
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor_mapper.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_mapper.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <memory>
 #include "utils.h"
 #include "valuefeature.h"
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
 
 using namespace search::fef;

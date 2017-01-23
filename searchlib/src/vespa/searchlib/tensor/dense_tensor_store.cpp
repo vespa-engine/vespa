@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_store.h"
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor_view.h>
-#include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
+#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 
 using search::datastore::Handle;

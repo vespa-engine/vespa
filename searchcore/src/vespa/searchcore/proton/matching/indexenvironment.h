@@ -8,7 +8,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/vespalib/eval/value_cache/constant_value.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
 
 namespace proton {
 namespace matching {

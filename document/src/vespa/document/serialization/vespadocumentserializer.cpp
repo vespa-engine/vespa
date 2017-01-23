@@ -26,7 +26,7 @@
 #include <vespa/document/util/compressionconfig.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <utility>
 #include <vector>
 

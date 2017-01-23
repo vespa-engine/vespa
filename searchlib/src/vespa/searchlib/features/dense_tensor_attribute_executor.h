@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/vespalib/eval/value.h>
-#include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 
 namespace search {
 namespace tensor { class DenseTensorAttribute; }

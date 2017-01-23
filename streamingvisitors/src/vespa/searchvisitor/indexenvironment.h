@@ -7,7 +7,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
-#include <vespa/vespalib/eval/value_cache/constant_value.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <set>

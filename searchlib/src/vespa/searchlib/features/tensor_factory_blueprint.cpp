@@ -6,7 +6,7 @@ LOG_SETUP(".features.tensor_factory_blueprint");
 
 #include "tensor_factory_blueprint.h"
 
-#include <vespa/vespalib/eval/function.h>
+#include <vespa/eval/eval/function.h>
 
 using namespace search::fef;
 using vespalib::eval::Function;

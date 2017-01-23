@@ -4,8 +4,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.elementsimilarity");
 #include "element_similarity_feature.h"
-#include <vespa/vespalib/eval/llvm/compiled_function.h>
-#include <vespa/vespalib/eval/llvm/compile_cache.h>
+#include <vespa/eval/eval/llvm/compiled_function.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
 
 namespace search {
 namespace features {

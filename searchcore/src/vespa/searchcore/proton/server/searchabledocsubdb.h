@@ -19,8 +19,8 @@
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/matching/constant_value_repo.h>
 #include <vespa/searchcore/config/config-proton.h>
-#include <vespa/vespalib/eval/value_cache/constant_tensor_loader.h>
-#include <vespa/vespalib/eval/value_cache/constant_value_cache.h>
+#include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
+#include <vespa/eval/eval/value_cache/constant_value_cache.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/varholder.h>
 

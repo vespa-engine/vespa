@@ -7,8 +7,8 @@
 #include "docsumwriter.h"
 #include "attributedfw.h"
 #include "docsumstate.h"
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/slime/slime.h>
 

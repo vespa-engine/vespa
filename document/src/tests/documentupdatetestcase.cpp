@@ -18,10 +18,10 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/nbostream.h>
 

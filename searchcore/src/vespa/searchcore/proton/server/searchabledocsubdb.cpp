@@ -12,7 +12,7 @@
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using vespa::config::search::AttributesConfig;

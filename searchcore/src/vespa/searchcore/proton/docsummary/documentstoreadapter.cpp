@@ -3,8 +3,8 @@
 #include "documentstoreadapter.h"
 #include "summaryfieldconverter.h"
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/log/log.h>

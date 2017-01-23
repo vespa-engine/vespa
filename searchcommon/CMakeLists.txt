@@ -6,6 +6,7 @@ vespa_define_module(
     vespalib
     config_cloudconfig
     configdefinitions
+    eval
 
     TESTS
     src/tests/attribute/config

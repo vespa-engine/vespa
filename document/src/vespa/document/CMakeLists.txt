@@ -16,5 +16,5 @@ vespa_add_library(document
     $<TARGET_OBJECTS:document_predicate>
     INSTALL lib64
     DEPENDS
-    vespalib_vespalib_tensor
+    eval
 )

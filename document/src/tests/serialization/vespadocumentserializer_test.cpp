@@ -32,11 +32,11 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/tensor_builder.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
 #include <stdlib.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/slime.h>
