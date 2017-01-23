@@ -79,9 +79,15 @@ public class ReferenceFieldValue extends FieldValue {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
         ReferenceFieldValue that = (ReferenceFieldValue) o;
         return Objects.equals(referenceType, that.referenceType) &&
                 Objects.equals(documentId, that.documentId);
