@@ -1,3 +1,4 @@
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
 import com.yahoo.document.DataType;
@@ -5,6 +6,9 @@ import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
+ * Represents a reference field inside a SD document. This is temporary AST structure that only referes to the
+ * target document type by name ({@link TemporaryStructuredDataType}.
+ *
  * @author bjorncs
  */
 public class TemporaryReferenceField extends DataType {
