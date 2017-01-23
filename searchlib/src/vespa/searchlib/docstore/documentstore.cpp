@@ -508,5 +508,23 @@ CacheStats DocumentStore::getCacheStats() const {
     return singleStats;
 }
 
+void
+DocumentStore::compactLidSpace(uint32_t wantedDocLidLimit)
+{
+    _backingStore.compactLidSpace(wantedDocLidLimit);
+}
+
+bool
+DocumentStore::canShrinkLidSpace() const
+{
+    return _backingStore.canShrinkLidSpace();
+}
+
+void
+DocumentStore::shrinkLidSpace()
+{
+    _backingStore.shrinkLidSpace();
+}
+
 } // namespace search
 

@@ -20,6 +20,7 @@
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
+#include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -228,20 +229,7 @@ Fixture::initViewSet(ViewSet &views)
 }
 
 
-struct MySummaryAdapter : public ISummaryAdapter
-{
-    virtual void put(search::SerialNum, const document::Document &, const search::DocumentIdT) {}
-    virtual void remove(search::SerialNum, const search::DocumentIdT) {}
-    virtual void heartBeat(search::SerialNum) {}
-    virtual const search::IDocumentStore &getDocumentStore() const {
-        const search::IDocumentStore *store = NULL;
-        return *store;
-    }
-    virtual std::unique_ptr<document::Document> get(const search::DocumentIdT,
-            const document::DocumentTypeRepo &) {
-        return std::unique_ptr<document::Document>();
-    }
-};
+using MySummaryAdapter = test::MockSummaryAdapter;
 
 struct MyFastAccessFeedView
 {

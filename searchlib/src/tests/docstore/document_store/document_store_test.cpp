@@ -36,6 +36,9 @@ struct NullDataStore : IDataStore {
         std::vector<DataStoreFileChunkStats> result;
         return result;
     }
+    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override { (void) wantedDocLidLimit; }
+    virtual bool canShrinkLidSpace() const override { return false; }
+    virtual void shrinkLidSpace() override {}
 };
 
 TEST_FFF("require that uncache docstore lookups are counted",

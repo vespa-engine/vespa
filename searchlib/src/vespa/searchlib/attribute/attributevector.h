@@ -13,8 +13,9 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/common/range.h>
+#include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/common/identifiable.h>
+#include <vespa/searchlib/common/range.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/identifiable.h>
@@ -106,7 +107,8 @@ public:
 };
 
 class AttributeVector : public vespalib::Identifiable,
-                        public attribute::IAttributeVector
+                        public attribute::IAttributeVector,
+                        public common::ICompactableLidSpace
 {
 protected:
     using Config = search::attribute::Config;
@@ -691,11 +693,11 @@ public:
     bool hasPostings();
     virtual uint64_t getUniqueValueCount() const;
     virtual uint64_t getTotalValueCount() const;
-    virtual void compactLidSpace(uint32_t wantedLidLimit);
+    virtual void compactLidSpace(uint32_t wantedLidLimit) override;
     virtual void clearDocs(DocId lidLow, DocId lidLimit);
     bool wantShrinkLidSpace(void) const { return _committedDocIdLimit < getNumDocs(); }
-    virtual bool canShrinkLidSpace() const;
-    void shrinkLidSpace();
+    virtual bool canShrinkLidSpace() const override;
+    virtual void shrinkLidSpace() override;
     virtual void onShrinkLidSpace();
 
     void setInterlock(const std::shared_ptr<attribute::Interlock> &interlock);

@@ -3,8 +3,9 @@
 #pragma once
 
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchlib/query/base.h>
+#include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/docstore/idatastore.h>
+#include <vespa/searchlib/query/base.h>
 
 namespace search {
 
@@ -47,7 +48,7 @@ private:
  * updates will be held in memory until flush() is called.
  * Uses a Local ID as key.
  **/
-class IDocumentStore
+class IDocumentStore : public common::ICompactableLidSpace
 {
 public:
     /**

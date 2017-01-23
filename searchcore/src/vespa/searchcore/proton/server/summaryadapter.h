@@ -22,24 +22,23 @@ public:
      */
     virtual void put(search::SerialNum serialNum,
                      const document::Document &doc,
-                     const search::DocumentIdT lid);
+                     const search::DocumentIdT lid) override;
     virtual void remove(search::SerialNum serialNum,
-                        const search::DocumentIdT lid);
+                        const search::DocumentIdT lid) override;
 
-    virtual void
-    heartBeat(search::SerialNum serialNum);
+    virtual void heartBeat(search::SerialNum serialNum) override;
 
-    virtual const search::IDocumentStore &
-    getDocumentStore(void) const
-    {
+    virtual const search::IDocumentStore &getDocumentStore() const {
         return _imgr->getBackingStore();
     }
 
-    virtual std::unique_ptr<document::Document>
-    get(const search::DocumentIdT lid,
-        const document::DocumentTypeRepo &repo)
-    {
+    virtual std::unique_ptr<document::Document> get(const search::DocumentIdT lid,
+                                                    const document::DocumentTypeRepo &repo) override {
         return _imgr->getBackingStore().read(lid, repo);
+    }
+
+    virtual void compactLidSpace(uint32_t wantedDocIdLimit) override {
+        _mgr->getBackingStore().compactLidSpace(wantedDocIdLimit);
     }
 };
 

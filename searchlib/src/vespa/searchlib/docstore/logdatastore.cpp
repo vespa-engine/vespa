@@ -1102,4 +1102,21 @@ LogDataStore::getFileChunkStats() const
     return std::move(result);
 }
 
+void
+LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit)
+{
+    (void) wantedDocLidLimit;
+}
+
+bool
+LogDataStore::canShrinkLidSpace() const
+{
+    return false;
+}
+
+void
+LogDataStore::shrinkLidSpace()
+{
+}
+
 } // namespace search
