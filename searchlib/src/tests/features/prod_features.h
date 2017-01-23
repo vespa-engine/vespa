@@ -32,6 +32,7 @@ public:
     void testQuery();
     void testQueryTermCount();
     void testRandom();
+    void testRandomNormal();
     void testRankingExpression();
     void testTerm();
     void testTermDistance();
