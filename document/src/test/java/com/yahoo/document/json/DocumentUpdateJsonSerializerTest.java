@@ -10,6 +10,7 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.tensor.TensorType;
@@ -33,16 +34,20 @@ public class DocumentUpdateJsonSerializerTest {
     final static DocumentTypeManager types = new DocumentTypeManager();
     final static JsonFactory parserFactory = new JsonFactory();
     final static DocumentType docType = new DocumentType("doctype");
+    final static DocumentType refTargetDocType = new DocumentType("target_doctype");
 
     final static String DEFAULT_DOCUMENT_ID = "id:test:doctype::1";
 
     static {
+        types.registerDocumentType(refTargetDocType);
+
         docType.addField(new Field("string_field", DataType.STRING));
         docType.addField(new Field("int_field", DataType.INT));
         docType.addField(new Field("float_field", DataType.FLOAT));
         docType.addField(new Field("double_field", DataType.DOUBLE));
         docType.addField(new Field("byte_field", DataType.BYTE));
         docType.addField(new Field("tensor_field", new TensorDataType(tensorType)));
+        docType.addField(new Field("reference_field", new ReferenceDataType(refTargetDocType, 777)));
         docType.addField(new Field("predicate_field", DataType.PREDICATE));
         docType.addField(new Field("raw_field", DataType.RAW));
         docType.addField(new Field("int_array", new ArrayDataType(DataType.INT)));
@@ -246,6 +251,20 @@ public class DocumentUpdateJsonSerializerTest {
                 "                    { 'address': { 'x': 'c', 'y': 'b' }, 'value': 3.0 }",
                 "                ]",
                 "            }",
+                "        }",
+                "    }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void reference_field_id_can_be_update_assigned_new_id() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fields': {",
+                "        'reference_field': {",
+                "            'assign': 'id:ns:target_doctype::foo'",
                 "        }",
                 "    }",
                 "}"

@@ -42,7 +42,7 @@ import static com.yahoo.document.json.JsonSerializationHelper.*;
 /**
  * Serialize Document and other FieldValue instances as JSON.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JsonWriter implements DocumentWriter {
 
@@ -184,7 +184,7 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, ReferenceFieldValue value) {
-        // TODO!
+        serializeReferenceField(generator, field, value);
     }
 
     @Override

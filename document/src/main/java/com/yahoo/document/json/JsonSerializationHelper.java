@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -104,6 +105,15 @@ public class JsonSerializationHelper {
         generator.writeEndObject();
     }
 
+    public static void serializeReferenceField(JsonGenerator generator, FieldBase field, ReferenceFieldValue value) {
+        wrapIOException(() -> {
+            fieldNameIfNotNull(generator, field);
+            // TODO need testing of empty reference!
+            if (value.getDocumentId().isPresent()) {
+                generator.writeString(value.getDocumentId().get().toString());
+            }
+        });
+    }
 
     public static void serializeStringField(JsonGenerator generator, FieldBase field, StringFieldValue value) {
         // Hide empty strings

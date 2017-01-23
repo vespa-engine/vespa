@@ -273,7 +273,7 @@ public class DocumentUpdateJsonSerializer
 
         @Override
         public void write(FieldBase field, ReferenceFieldValue value) {
-            // TODO!
+            serializeReferenceField(generator, field, value);
         }
 
         @Override
