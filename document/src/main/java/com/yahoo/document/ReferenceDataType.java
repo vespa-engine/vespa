@@ -14,16 +14,14 @@ public class ReferenceDataType extends DataType {
     }
 
     private ReferenceDataType(DocumentType targetType) {
-        super(buildTypeName(targetType), 0);
-        setId(getName().hashCode());
-        this.targetType = targetType;
+        this(targetType, buildTypeName(targetType).hashCode());
     }
 
     private static String buildTypeName(DocumentType targetType) {
         return "Reference<" + targetType.getName() + ">";
     }
 
-    // Creates a new type where the numeric ID is based no the hash of targetType
+    // Creates a new type where the numeric ID is based on the hash of targetType
     public static ReferenceDataType createWithInferredId(DocumentType targetType) {
         return new ReferenceDataType(targetType);
     }
