@@ -3,7 +3,6 @@ vespa_add_executable(vespalib_dense_tensor_address_combiner_test_app TEST
     SOURCES
     dense_tensor_address_combiner_test.cpp
     DEPENDS
-    vespalib
-    vespalib_vespalib_tensor
+    eval
 )
 vespa_add_test(NAME vespalib_dense_tensor_address_combiner_test_app COMMAND vespalib_dense_tensor_address_combiner_test_app)

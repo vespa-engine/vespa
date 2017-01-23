@@ -4,6 +4,5 @@ vespa_add_executable(vespalib_eval_expr_app
     eval_expr.cpp
     INSTALL bin
     DEPENDS
-    vespalib
-#    vespalib_vespalib_eval
+    eval
 )

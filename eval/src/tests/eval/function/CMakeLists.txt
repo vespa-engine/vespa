@@ -3,6 +3,6 @@ vespa_add_executable(vespalib_function_test_app TEST
     SOURCES
     function_test.cpp
     DEPENDS
-    vespalib
+    eval
 )
 vespa_add_test(NAME vespalib_function_test_app COMMAND vespalib_function_test_app)

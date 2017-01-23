@@ -3,7 +3,6 @@ vespa_add_executable(vespalib_compile_cache_test_app TEST
     SOURCES
     compile_cache_test.cpp
     DEPENDS
-    vespalib
-    vespalib_vespalib_eval_llvm
+    eval
 )
 vespa_add_test(NAME vespalib_compile_cache_test_app COMMAND vespalib_compile_cache_test_app)

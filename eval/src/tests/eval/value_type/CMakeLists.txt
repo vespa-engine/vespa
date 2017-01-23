@@ -3,6 +3,6 @@ vespa_add_executable(vespalib_value_type_test_app TEST
     SOURCES
     value_type_test.cpp
     DEPENDS
-    vespalib
+    eval
 )
 vespa_add_test(NAME vespalib_value_type_test_app NO_VALGRIND COMMAND vespalib_value_type_test_app)

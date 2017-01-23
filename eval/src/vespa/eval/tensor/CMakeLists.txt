@@ -1,5 +1,5 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(vespalib_vespalib_tensor
+vespa_add_library(eval_tensor OBJECT
     SOURCES
     default_tensor_engine.cpp
     tensor.cpp
@@ -7,10 +7,4 @@ vespa_add_library(vespalib_vespalib_tensor
     tensor_apply.cpp
     tensor_factory.cpp
     tensor_mapper.cpp
-    $<TARGET_OBJECTS:vespalib_vespalib_tensor_sparse>
-    $<TARGET_OBJECTS:vespalib_vespalib_tensor_dense>
-    $<TARGET_OBJECTS:vespalib_vespalib_tensor_serialization>
-    INSTALL lib64
-    DEPENDS
-    vespalib
 )

@@ -31,6 +31,7 @@ vespa_define_module(
     src/tests/tensor/tensor_slime_serialization
 
     LIBS
+    src/vespa/eval
     src/vespa/eval/eval
     src/vespa/eval/eval/test
     src/vespa/eval/eval/value_cache

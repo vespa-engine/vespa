@@ -3,13 +3,13 @@ vespa_add_executable(vespalib_value_cache_test_app TEST
     SOURCES
     value_cache_test.cpp
     DEPENDS
-    vespalib
+    eval
 )
 vespa_add_test(NAME vespalib_value_cache_test_app COMMAND vespalib_value_cache_test_app)
 vespa_add_executable(vespalib_tensor_loader_test_app TEST
     SOURCES
     tensor_loader_test.cpp
     DEPENDS
-    vespalib
+    eval
 )
 vespa_add_test(NAME vespalib_tensor_loader_test_app COMMAND vespalib_tensor_loader_test_app)
