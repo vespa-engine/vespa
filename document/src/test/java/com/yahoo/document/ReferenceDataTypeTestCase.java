@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
 import com.yahoo.document.datatypes.ReferenceFieldValue;
@@ -13,15 +13,9 @@ import static org.junit.Assert.fail;
 
 public class ReferenceDataTypeTestCase {
 
-    private static DocumentType createDocumentType(String name) {
-        DocumentType type = new DocumentType(name);
-        type.addField(new Field("foo", DataType.STRING));
-        return type;
-    }
-
     @Test
     public void parameters_are_propagated_to_base_data_type() {
-        DocumentType docType = createDocumentType("bjarne");
+        DocumentType docType = new DocumentType("bjarne");
         ReferenceDataType refType = new ReferenceDataType(docType, 1234);
         assertEquals("Reference<bjarne>", refType.getName());
         assertEquals(1234, refType.getId());
@@ -30,7 +24,7 @@ public class ReferenceDataTypeTestCase {
 
     @Test
     public void empty_reference_field_value_instance_can_be_created_from_type() {
-        ReferenceDataType refType = new ReferenceDataType(createDocumentType("foo"), 123);
+        ReferenceDataType refType = new ReferenceDataType(new DocumentType("foo"), 123);
         ReferenceFieldValue fv = refType.createFieldValue();
         assertNotNull(fv);
         assertEquals(refType, fv.getDataType());
@@ -38,17 +32,16 @@ public class ReferenceDataTypeTestCase {
 
     @Test
     public void reference_data_type_has_reference_field_value_class() {
-        ReferenceDataType refType = new ReferenceDataType(createDocumentType("foo"), 123);
+        ReferenceDataType refType = new ReferenceDataType(new DocumentType("foo"), 123);
         assertEquals(ReferenceFieldValue.class, refType.getValueClass());
     }
 
     private static class MultiTypeFixture {
-        final DocumentType docType                        = createDocumentType("bar");
+        final DocumentType docType                        = new DocumentType("bar");
         final ReferenceDataType  refType                  = new ReferenceDataType(docType, 123);
         final ReferenceDataType  refTypeClone             = new ReferenceDataType(docType, 123);
         final ReferenceDataType  typeWithDifferentId      = new ReferenceDataType(docType, 456);
-        // Technically this shouldn't be possible, right? But test it anyway.
-        final ReferenceDataType  typeWithDifferentDocType = new ReferenceDataType(createDocumentType("stuff"), 123);
+        final ReferenceDataType  typeWithDifferentDocType = new ReferenceDataType(new DocumentType("stuff"), 123);
     }
 
     @Test

@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
 import com.yahoo.document.DataType;
@@ -16,7 +16,6 @@ import static org.junit.Assert.fail;
 
 public class ReferenceFieldValueTestCase {
 
-    // TODO de-dupe
     private static DocumentType createDocumentType(String name) {
         DocumentType type = new DocumentType(name);
         type.addField(new Field("foo", DataType.STRING));
