@@ -108,10 +108,10 @@ public class JsonSerializationHelper {
     public static void serializeReferenceField(JsonGenerator generator, FieldBase field, ReferenceFieldValue value) {
         wrapIOException(() -> {
             fieldNameIfNotNull(generator, field);
-            // TODO need testing of empty reference!
-            if (value.getDocumentId().isPresent()) {
-                generator.writeString(value.getDocumentId().get().toString());
-            }
+            final String refValue = value.getDocumentId().isPresent()
+                    ? value.getDocumentId().get().toString()
+                    : "";
+            generator.writeString(refValue);
         });
     }
 

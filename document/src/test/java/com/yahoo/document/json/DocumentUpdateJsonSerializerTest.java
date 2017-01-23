@@ -258,13 +258,27 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void reference_field_id_can_be_update_assigned_new_id() {
+    public void reference_field_id_can_be_update_assigned_non_empty_id() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fields': {",
                 "        'reference_field': {",
                 "            'assign': 'id:ns:target_doctype::foo'",
+                "        }",
+                "    }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void reference_field_id_can_be_update_assigned_empty_id() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fields': {",
+                "        'reference_field': {",
+                "            'assign': ''",
                 "        }",
                 "    }",
                 "}"

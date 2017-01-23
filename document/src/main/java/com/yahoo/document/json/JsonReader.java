@@ -648,13 +648,19 @@ public class JsonReader {
         } else if (expectedType.equals(PositionDataType.INSTANCE)) {
             return PositionDataType.fromString(buffer.currentText());
         } else if (expectedType instanceof ReferenceDataType) {
-            // TODO wrappu wrappu
-            FieldValue value = expectedType.createFieldValue();
-            value.assign(new DocumentId(buffer.currentText()));
-            return value;
+            return readReferenceFieldValue(expectedType);
         } else {
             return expectedType.createFieldValue(buffer.currentText());
         }
+    }
+
+    private FieldValue readReferenceFieldValue(DataType expectedType) {
+        final FieldValue value = expectedType.createFieldValue();
+        final String refText = buffer.currentText();
+        if (!refText.isEmpty()) {
+            value.assign(new DocumentId(buffer.currentText()));
+        }
+        return value;
     }
 
     private void bufferFields(JsonToken current) {

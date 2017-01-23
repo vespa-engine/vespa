@@ -20,6 +20,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
@@ -36,7 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Functional tests for com.yahoo.document.json.JsonWriter.
@@ -384,6 +387,26 @@ public class JsonWriterTestCase {
                 "{ \"ref_field\": \"id:unittest:smoke::and_mirrors_too\" }");
     }
 
-    // TODO empty ref fields
+    @Test
+    public void non_empty_reference_field_results_in_reference_value_with_doc_id_present() {
+        final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld",
+                "{ \"ref_field\": \"id:unittest:smoke::and_mirrors_too\" }");
+        ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
+        assertTrue(ref.getDocumentId().isPresent());
+        assertEquals(new DocumentId("id:unittest:smoke::and_mirrors_too"), ref.getDocumentId().get());
+    }
+
+    @Test
+    public void empty_reference_field_is_roundtrip_json_serialized() throws IOException {
+        roundTripEquality("id:unittest:testrefs::helloworld",
+                "{ \"ref_field\": \"\" }");
+    }
+
+    @Test
+    public void empty_reference_field_results_in_reference_value_without_doc_id_present() {
+        final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld", "{ \"ref_field\": \"\" }");
+        ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
+        assertFalse(ref.getDocumentId().isPresent());
+    }
 
 }
