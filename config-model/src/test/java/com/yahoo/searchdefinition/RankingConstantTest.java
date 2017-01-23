@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static com.yahoo.searchdefinition.TestUtils.joinLines;
 
 /**
  * @author gjoranv
@@ -101,7 +102,4 @@ public class RankingConstantTest {
         assertEquals("simplename", constant.getFileName());
     }
 
-    private static String joinLines(String... lines) {
-        return String.join("\n", lines);
-    }
 }
