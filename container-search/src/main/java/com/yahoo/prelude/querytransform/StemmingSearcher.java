@@ -29,9 +29,9 @@ import static com.yahoo.prelude.querytransform.CJKSearcher.TERM_ORDER_RELAXATION
 /**
  * Replaces query terms with their stems
  *
- * @author  <a href="mailto:mathiasm@yahoo-inc.com">Mathias Lidal</a>
- * @author  bratseth
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Mathias Lidal
+ * @author bratseth
+ * @author Steinar Knutsen
  */
 @After({PhaseNames.UNBLENDED_RESULT, TERM_ORDER_RELAXATION})
 @Provides(StemmingSearcher.STEMMING)
@@ -135,7 +135,7 @@ public class StemmingSearcher extends Searcher {
         if (b instanceof PrefixItem || !b.isWords()) return (Item) b;
 
         if (b.isFromQuery() && !b.isStemmed()) {
-            final Index index = indexFacts.getIndex(b.getIndexName());
+            Index index = indexFacts.getIndex(b.getIndexName());
             StemMode stemMode = index.getStemMode();
             if (stemMode != StemMode.NONE) return stem(b, isCJK, language, reverseConnectivity, index);
         }

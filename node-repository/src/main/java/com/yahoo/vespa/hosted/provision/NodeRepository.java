@@ -13,6 +13,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
@@ -64,6 +65,7 @@ public class NodeRepository extends AbstractComponent {
 
     private final CuratorDatabaseClient zkClient;
     private final Curator curator;
+    private final Clock clock;
     private final NodeFlavors flavors;
     private final NameResolver nameResolver;
 
@@ -83,6 +85,7 @@ public class NodeRepository extends AbstractComponent {
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
         this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone, nameResolver);
         this.curator = curator;
+        this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
 
@@ -453,6 +456,9 @@ public class NodeRepository extends AbstractComponent {
                 .collect(Collectors.toList());
     }
 
+    /** Returns the time keeper of this system */
+    public Clock clock() { return clock; }
+    
     /** Create a lock which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application) { return zkClient.lock(application); }
 

@@ -150,7 +150,7 @@ public class CuratorDatabaseClient {
                                     newNodeStatus(node, toState),
                                     toState,
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
-                                    newNodeHistory(node, toState),
+                                    node.history().recordStateTransition(node.state(), toState, clock.instant()),
                                     node.type());
             curatorTransaction.add(CuratorOperations.delete(toPath(node).getAbsolute()))
                               .add(CuratorOperations.create(toPath(toState, newNode.hostname()).getAbsolute(), nodeSerializer.toJson(newNode)));
@@ -180,16 +180,6 @@ public class CuratorDatabaseClient {
     /** In automated test environments, nodes need to be reused quickly to achieve fast test turnaronud time */
     private boolean needsFastNodeReuse(Zone zone) {
         return zone.environment() == Environment.staging || zone.environment() == Environment.test;
-    }
-
-    private History newNodeHistory(Node node, Node.State toState) {
-        History history = node.history();
-
-        // wipe history when a node *becomes* ready to avoid expiring based on events under the previous allocation
-        if (node.state() != Node.State.ready && toState == Node.State.ready)
-            history = History.empty();
-
-        return history.recordStateTransition(node.state(), toState, clock.instant());
     }
 
     /**

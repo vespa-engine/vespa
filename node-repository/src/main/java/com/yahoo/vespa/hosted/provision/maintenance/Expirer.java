@@ -41,10 +41,6 @@ public abstract class Expirer extends Maintainer {
         this.expiryTime = expiryTime;
     }
 
-    private static Duration min(Duration a, Duration b) {
-        return a.toMillis() < b.toMillis() ? a : b;
-    }
-
     @Override
     protected void maintain() {
         List<Node> expired = new ArrayList<>();

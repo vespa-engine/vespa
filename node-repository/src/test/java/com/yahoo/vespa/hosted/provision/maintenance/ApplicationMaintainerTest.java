@@ -48,7 +48,7 @@ public class ApplicationMaintainerTest {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                new MockNameResolver().mockAnyLookup());
+                                                           new MockNameResolver().mockAnyLookup());
 
         createReadyNodes(15, nodeRepository, nodeFlavors);
         createHostNodes(2, nodeRepository, nodeFlavors);

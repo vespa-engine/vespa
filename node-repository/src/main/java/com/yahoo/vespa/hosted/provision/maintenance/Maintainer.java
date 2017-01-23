@@ -37,6 +37,10 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     /** Returns the node repository */
     protected NodeRepository nodeRepository() { return nodeRepository; }
 
+    protected static Duration min(Duration a, Duration b) {
+        return a.toMillis() < b.toMillis() ? a : b;
+    }
+
     /** Returns the rate at which this job is set to run */
     protected Duration rate() { return rate; }
 

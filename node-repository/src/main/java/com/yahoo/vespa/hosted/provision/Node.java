@@ -201,6 +201,15 @@ public final class Node {
                         allocation, history, type);
     }
 
+    /** Returns a copy of this node with the current reboot generation set to the given number at the given instant */
+    public Node withCurrentRebootGeneration(long generation, Instant instant) {
+        Status newStatus = status().withReboot(status().reboot().withCurrent(generation));
+        History newHistory = history();
+        if (generation > status().reboot().current())
+            newHistory = history.with(new History.Event(History.Event.Type.rebooted, instant));
+        return this.with(newStatus).with(newHistory);
+    }
+    
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
         return new Node(openStackId, ipAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);

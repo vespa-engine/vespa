@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * An immutable record of the last event of each type happening to this node.
@@ -47,7 +48,7 @@ public class History {
         return new History(builder.build());
     }
 
-    /** Returns a copy of this history with the given event type removed (or an identical if it was not present) */
+    /** Returns a copy of this history with the given event type removed (or an identical history if it was not present) */
     public History without(Event.Type type) {
         return new History(builderWithout(type).build());
     }
@@ -64,7 +65,7 @@ public class History {
     public History recordStateTransition(Node.State from, Node.State to, Instant at) {
         if (from == to) return this;
         switch (to) {
-            case ready:    return this.with(new Event(Event.Type.readied, at));
+            case ready:    return this.withoutApplicationEvents().with(new Event(Event.Type.readied, at));
             case active:   return this.with(new Event(Event.Type.activated, at));
             case inactive: return this.with(new Event(Event.Type.deactivated, at));
             case reserved: return this.with(new Event(Event.Type.reserved, at));
@@ -72,6 +73,14 @@ public class History {
             case dirty:    return this.with(new Event(Event.Type.deallocated, at));
             default:       return this;
         }
+    }
+    
+    /** 
+     * Events can be application or node level. 
+     * This returns a copy of this history with all application level events removed. 
+     */
+    private History withoutApplicationEvents() {
+        return new History(events().stream().filter(e -> ! e.type().isApplicationLevel()).collect(Collectors.toList()));
     }
 
     /** Returns the empty history */
@@ -107,12 +116,28 @@ public class History {
         public enum Type { 
             // State move events
             readied, reserved, activated, deactivated, failed, deallocated, 
-            // An active node was retired
+            // The active node was retired
             retired,
-            // An active node went down according to the service monitor
+            // The active node went down according to the service monitor
             down, 
-            // A node made a config request, indicating it is live
-            requested 
+            // The node made a config request, indicating it is live
+            requested,
+            // The node was rebooted
+            rebooted(false);
+            
+            private final boolean applicationLevel;
+            
+            /** Creates an application level event */
+            Type() {
+                this.applicationLevel = true;
+            }
+
+            Type(boolean applicationLevel) {
+                this.applicationLevel = applicationLevel;
+            }
+            
+            /** Returns true if this is an application level event and false it it is a node level event */
+            public boolean isApplicationLevel() { return applicationLevel; }
         }
 
         @Override
