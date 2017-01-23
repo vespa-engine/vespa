@@ -23,6 +23,7 @@ public class VisitorParameters extends Parameters {
     private String visitorLibrary = "DumpVisitor";
     private int maxPending = 32;
     private long timeoutMs = -1;
+    private long sessionTimeoutMs = -1;
     private long fromTimestamp = 0;
     private long toTimestamp = 0;
     boolean visitRemoves = false;
@@ -113,8 +114,14 @@ public class VisitorParameters extends Parameters {
     /** @return The maximum number of messages each storage visitor will have pending before waiting for acks from client. */
     public int getMaxPending() { return maxPending; }
 
-    /** @return The timeout for the visitor in milliseconds. */
+    /** @return The timeout for each sent visitor operation in milliseconds. */
     public long getTimeoutMs() { return timeoutMs; }
+
+    /**
+     * @return Session timeout in milliseconds, or -1 if not timeout has been set. -1 implies
+     *         that session will run to completion without automatically timing out.
+     */
+    public long getSessionTimeoutMs() { return sessionTimeoutMs; }
 
     /** @return The minimum timestamp (in microsecs) of documents the visitor will visit. */
     public long getFromTimestamp() { return fromTimestamp; }
@@ -191,8 +198,18 @@ public class VisitorParameters extends Parameters {
     /** Set maximum pending messages one storage visitor will have pending to this client before stalling, waiting for acks. */
     public void setMaxPending(int maxPending) { this.maxPending = maxPending; }
 
-    /** Set the timeout for the visitor in milliseconds. */
+    /** Set the timeout for each visitor command in milliseconds. */
     public void setTimeoutMs(long timeoutMs) { this.timeoutMs = timeoutMs; }
+
+    /**
+     * Sets timeout for the entire visiting session, in milliseconds. -1 implies infinity.
+     *
+     * If the session takes more time than this to complete, it will automatically
+     * be failed with CompletionCode.TIMEOUT.
+     * If no session timeout has been explicitly set (or it has been set to -1), visiting will
+     * continue until it completes or abort()/destroy() is called on the session instance.
+     */
+    public void setSessionTimeoutMs(long timeoutMs) { this.sessionTimeoutMs = timeoutMs; }
 
     /** Set from timestamp in microseconds. Documents put/updated before this timestamp will not be visited. */
     public void setFromTimestamp(long timestamp) { fromTimestamp = timestamp; }

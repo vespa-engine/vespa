@@ -125,7 +125,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         } else if (query.properties().getString(streamingSelection) != null) {
             params.setDocumentSelection(query.properties().getString(streamingSelection));
         }
-        params.setTimeoutMs(query.getTimeout());
+        params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
+        params.setSessionTimeoutMs(query.getTimeout());
         params.setVisitorLibrary("searchvisitor");
         params.setLocalDataHandler(this);
         params.setVisitHeadersOnly(query.properties().getBoolean(streamingHeadersonly));

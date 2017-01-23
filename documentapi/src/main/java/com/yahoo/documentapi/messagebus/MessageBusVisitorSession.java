@@ -386,7 +386,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 return;
             }
             transitionTo(new StateDescription(State.WORKING));
-            taskExecutor.submitTask(new SendCreateVisitorsTask(sessionTimeoutMillis()));
+            taskExecutor.submitTask(new SendCreateVisitorsTask(computeBoundedMessageTimeoutMillis(0)));
         }
     }
 
@@ -937,12 +937,27 @@ public class MessageBusVisitorSession implements VisitorSession {
                     || enoughHitsReceived());
     }
 
+    private long messageTimeoutMillis() {
+        return !isInfiniteTimeout(params.getTimeoutMs()) ? params.getTimeoutMs() : 5 * 60 * 1000;
+    }
+
     private long sessionTimeoutMillis() {
-        return (params.getTimeoutMs() != -1) ? params.getTimeoutMs() : 5 * 60 * 1000;
+        return params.getSessionTimeoutMs();
     }
 
     private long elapsedTimeMillis() {
         return TimeUnit.NANOSECONDS.toMillis(clock.monotonicNanoTime() - startTimeNanos);
+    }
+
+    private static boolean isInfiniteTimeout(long timeoutMillis) {
+        return timeoutMillis < 0;
+    }
+
+    private long computeBoundedMessageTimeoutMillis(long elapsedMs) {
+        final long messageTimeoutMillis = messageTimeoutMillis();
+        return !isInfiniteTimeout(sessionTimeoutMillis())
+                ? Math.min(sessionTimeoutMillis() - elapsedMs, messageTimeoutMillis)
+                : messageTimeoutMillis;
     }
 
     /**
@@ -952,9 +967,8 @@ public class MessageBusVisitorSession implements VisitorSession {
      */
     private void scheduleSendCreateVisitorsIfApplicable(long delay, TimeUnit unit) {
         final long elapsedMillis = elapsedTimeMillis();
-        final long timeoutMillis = sessionTimeoutMillis();
-        if (elapsedMillis >= timeoutMillis) {
-            transitionTo(new StateDescription(State.TIMED_OUT, String.format("Session timeout of %d ms expired", timeoutMillis)));
+        if (!isInfiniteTimeout(sessionTimeoutMillis()) && (elapsedMillis >= sessionTimeoutMillis())) {
+            transitionTo(new StateDescription(State.TIMED_OUT, String.format("Session timeout of %d ms expired", sessionTimeoutMillis())));
             if (visitingCompleted()) {
                 markSessionCompleted();
             }
@@ -963,7 +977,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         if (!mayScheduleCreateVisitorsTask()) {
             return;
         }
-        final long messageTimeoutMillis = timeoutMillis - elapsedMillis;
+        final long messageTimeoutMillis = computeBoundedMessageTimeoutMillis(elapsedMillis);
         taskExecutor.scheduleTask(new SendCreateVisitorsTask(messageTimeoutMillis), delay, unit);
         scheduledSendCreateVisitors = true;
     }
