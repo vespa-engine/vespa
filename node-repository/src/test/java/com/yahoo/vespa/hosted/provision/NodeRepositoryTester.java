@@ -3,10 +3,10 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -48,7 +48,7 @@ public class NodeRepositoryTester {
         return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
     }
 
-    private NodeRepositoryConfig createConfig() {
+    private FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
         b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);

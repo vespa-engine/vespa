@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;

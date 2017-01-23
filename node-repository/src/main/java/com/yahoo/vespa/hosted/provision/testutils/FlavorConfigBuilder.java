@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
-import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 
 /**
  * Simplifies creation of a node-repository config containing flavors.
@@ -13,14 +13,14 @@ import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
  */
 public class FlavorConfigBuilder {
 
-    private NodeRepositoryConfig.Builder builder = new NodeRepositoryConfig.Builder();
+    private FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
 
-    public NodeRepositoryConfig build() {
-        return new NodeRepositoryConfig(builder);
+    public FlavorsConfig build() {
+        return new FlavorsConfig(builder);
     }
 
-    public NodeRepositoryConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
-        NodeRepositoryConfig.Flavor.Builder flavor = new NodeRepositoryConfig.Flavor.Builder();
+    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
+        FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.description("Flavor-name-is-" + flavorName);
         flavor.minDiskAvailableGb(disk);
@@ -31,8 +31,8 @@ public class FlavorConfigBuilder {
         return flavor;
     }
 
-    public NodeRepositoryConfig.Flavor.Builder addNonStockFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
-        NodeRepositoryConfig.Flavor.Builder flavor = new NodeRepositoryConfig.Flavor.Builder();
+    public FlavorsConfig.Flavor.Builder addNonStockFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
+        FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.description("Flavor-name-is-" + flavorName);
         flavor.minDiskAvailableGb(disk);
@@ -44,13 +44,13 @@ public class FlavorConfigBuilder {
         return flavor;
     }
 
-    public void addReplaces(String replaces, NodeRepositoryConfig.Flavor.Builder flavor) {
-        NodeRepositoryConfig.Flavor.Replaces.Builder flavorReplaces = new NodeRepositoryConfig.Flavor.Replaces.Builder();
+    public void addReplaces(String replaces, FlavorsConfig.Flavor.Builder flavor) {
+        FlavorsConfig.Flavor.Replaces.Builder flavorReplaces = new FlavorsConfig.Flavor.Replaces.Builder();
         flavorReplaces.name(replaces);
         flavor.replaces(flavorReplaces);
     }
 
-    public void addCost(int cost, NodeRepositoryConfig.Flavor.Builder flavor) {
+    public void addCost(int cost, FlavorsConfig.Flavor.Builder flavor) {
         flavor.cost(cost);
     }
 

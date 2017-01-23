@@ -16,10 +16,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;

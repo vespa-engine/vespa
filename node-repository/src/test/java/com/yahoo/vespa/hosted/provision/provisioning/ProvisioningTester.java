@@ -14,7 +14,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -22,8 +22,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
@@ -64,11 +64,11 @@ public class ProvisioningTester implements AutoCloseable {
         this(zone, createConfig());
     }
 
-    public ProvisioningTester(Zone zone, NodeRepositoryConfig config) {
+    public ProvisioningTester(Zone zone, FlavorsConfig config) {
         this(zone, config, new MockCurator(), new MockNameResolver().mockAnyLookup());
     }
 
-    public ProvisioningTester(Zone zone, NodeRepositoryConfig config, Curator curator, NameResolver nameResolver) {
+    public ProvisioningTester(Zone zone, FlavorsConfig config, Curator curator, NameResolver nameResolver) {
         try {
             this.nodeFlavors = new NodeFlavors(config);
             this.clock = new ManualClock();
@@ -83,7 +83,7 @@ public class ProvisioningTester implements AutoCloseable {
         }
     }
 
-    public static NodeRepositoryConfig createConfig() {
+    public static FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
         b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);
@@ -91,12 +91,12 @@ public class ProvisioningTester implements AutoCloseable {
         b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Type.VIRTUAL_MACHINE).cost(4);
         b.addFlavor("old-large1", 2., 4., 100, Flavor.Type.BARE_METAL).cost(6);
         b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(14);
-        NodeRepositoryConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
+        FlavorsConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
         b.addReplaces("old-large1", large);
         b.addReplaces("old-large2", large);
-        NodeRepositoryConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
+        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
         b.addReplaces("large", largeVariant);
-        NodeRepositoryConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
+        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
         b.addReplaces("large-variant", largeVariantVariant);
         return b.build();
     }

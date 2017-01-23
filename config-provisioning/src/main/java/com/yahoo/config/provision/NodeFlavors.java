@@ -1,17 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.node;
+package com.yahoo.config.provision;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.yahoo.config.provisioning.FlavorsConfig;
 
 /**
  * All the available node flavors.
@@ -24,7 +24,7 @@ public class NodeFlavors {
     private final ImmutableMap<String, Flavor> flavors;
 
     @Inject
-    public NodeFlavors(NodeRepositoryConfig config) {
+    public NodeFlavors(FlavorsConfig config) {
         ImmutableMap.Builder<String, Flavor> b = new ImmutableMap.Builder<>();
         for (Flavor flavor : toFlavors(config))
             b.put(flavor.name(), flavor);
@@ -47,16 +47,16 @@ public class NodeFlavors {
         return flavors.values().stream().map(Flavor::canonicalName).distinct().sorted().collect(Collectors.toList());
     }
 
-    private static Collection<Flavor> toFlavors(NodeRepositoryConfig config) {
+    private static Collection<Flavor> toFlavors(FlavorsConfig config) {
         Map<String, Flavor> flavors = new HashMap<>();
         // First pass, create all flavors, but do not include flavorReplacesConfig.
-        for (NodeRepositoryConfig.Flavor flavorConfig : config.flavor()) {
+        for (FlavorsConfig.Flavor flavorConfig : config.flavor()) {
             flavors.put(flavorConfig.name(), new Flavor(flavorConfig));
         }
         // Second pass, set flavorReplacesConfig to point to correct flavor.
-        for (NodeRepositoryConfig.Flavor flavorConfig : config.flavor()) {
+        for (FlavorsConfig.Flavor flavorConfig : config.flavor()) {
             Flavor flavor = flavors.get(flavorConfig.name());
-            for (NodeRepositoryConfig.Flavor.Replaces flavorReplacesConfig : flavorConfig.replaces()) {
+            for (FlavorsConfig.Flavor.Replaces flavorReplacesConfig : flavorConfig.replaces()) {
                 if (! flavors.containsKey(flavorReplacesConfig.name())) {
                     throw new IllegalStateException("Replaces for " + flavor.name() + 
                                                     " pointing to a non existing flavor: " + flavorReplacesConfig.name());

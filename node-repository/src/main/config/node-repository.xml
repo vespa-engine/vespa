@@ -4,7 +4,7 @@
 <component id="NodeRepository" class="com.yahoo.vespa.hosted.provision.NodeRepository" bundle="node-repository"/>
 <component id="com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance" bundle="node-repository"/>
 <component id="com.yahoo.vespa.hosted.provision.monitoring.ProvisionMetrics" bundle="node-repository" />
-<component id="com.yahoo.vespa.hosted.provision.node.NodeFlavors" bundle="node-repository" />
+<component id="com.yahoo.config.provision.NodeFlavors" bundle="config-provisioning" />
 
 <rest-api path="hack" jersey2="true">
     <components bundle="node-repository" />

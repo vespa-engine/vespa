@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
 
 import java.time.Clock;
 import java.util.ArrayList;
