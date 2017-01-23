@@ -1778,14 +1778,16 @@ Test::testRandomNormal()
 
     { // Test setting of mean and stddev values
         FtFeatureTest ft1(_factory, "randomNormal(0.0,0.1)");
-        FtFeatureTest ft2(_factory, "randomNormal(100.0,0.2)");
+        FtFeatureTest ft2(_factory, "randomNormal(1.0,0.2)");
+        ft1.getIndexEnv().getProperties().add("randomNormal(0.0,0.1).seed", "100");
+        ft2.getIndexEnv().getProperties().add("randomNormal(1.0,0.2).seed", "100");
         ASSERT_TRUE(ft1.setup());
         ASSERT_TRUE(ft2.setup());
         RankResult rr;
         for (uint32_t i = 0; i < 5; ++i) {
             rr.clear();
             ASSERT_TRUE(ft1.executeOnly(rr, i + 1));
-            ASSERT_FALSE(ft2.execute(rr.getScore("randomNormal(0.0,0.1)"), 1.0, i + 1));
+            ASSERT_TRUE(ft2.execute(((rr.getScore("randomNormal(0.0,0.1)")-0.0)/0.1) * 0.2 + 1.0, EPS, i + 1));
         }
     }
 }
