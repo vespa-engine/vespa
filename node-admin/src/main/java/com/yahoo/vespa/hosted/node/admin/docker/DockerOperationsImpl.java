@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,12 +78,18 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final Environment environment;
+    private final Consumer<List<String>> commandExecutor;
     private GaugeWrapper numberOfRunningContainersGauge;
 
     public DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver) {
+        this(docker, environment, metricReceiver, DockerOperationsImpl::runCommand);
+    }
+
+    DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver, Consumer<List<String>> commandExecutor) {
         this.docker = docker;
         this.environment = environment;
         setMetrics(metricReceiver);
+        this.commandExecutor = commandExecutor;
     }
 
     @Override
@@ -262,7 +270,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
         for (int retry = 0; retry < 30; ++retry) {
             try {
-                runCommand(command);
+                commandExecutor.accept(command);
                 logger.info("Done setting up network");
                 return;
             } catch (Exception e) {
@@ -275,18 +283,6 @@ public class DockerOperationsImpl implements DockerOperations {
                     logger.warning("Sleep interrupted", e1);
                 }
             }
-        }
-    }
-
-    private void runCommand(final List<String> command) throws Exception {
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
-        int resultCode = process.waitFor();
-        if (resultCode != 0) {
-            throw new Exception("Command " + Joiner.on(' ').join(command) + " failed: " + output);
         }
     }
 
@@ -331,6 +327,31 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
+    public void executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
+        final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+        final Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName)
+                .orElseThrow(() -> new RuntimeException("Container " + containerName + " does not exist"));
+        final Integer containerPid = containerInfo.getPid()
+                .orElseThrow(() -> new RuntimeException("Container " + containerName + " isn't running (pid not found)"));
+
+        final List<String> wrappedCommand = new LinkedList<>();
+        wrappedCommand.add("sudo");
+        wrappedCommand.add("-n"); // Run non-interactively and fail if a password is required
+        wrappedCommand.add("nsenter");
+        wrappedCommand.add(String.format("--net=/host/proc/%d/ns/net", containerPid));
+        wrappedCommand.add("--");
+        wrappedCommand.addAll(Arrays.asList(command));
+
+        try {
+            commandExecutor.accept(wrappedCommand);
+        } catch (Exception e) {
+            logger.error(String.format("Failed to execute %s in network namespace for %s (PID = %d)",
+                    Arrays.toString(command), containerName.asString(), containerPid));
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public void resumeNode(ContainerName containerName) {
         executeCommandInContainer(containerName, RESUME_NODE_COMMAND);
     }
@@ -369,5 +390,20 @@ public class DockerOperationsImpl implements DockerOperations {
 
         // Some containers could already be running, count them and initialize to that value
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
+    }
+
+    private static void runCommand(final List<String> command) {
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.redirectErrorStream(true);
+        try {
+            Process process = builder.start();
+            String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
+            int resultCode = process.waitFor();
+            if (resultCode != 0) {
+                throw new RuntimeException("Command " + Joiner.on(' ').join(command) + " failed: " + output);
+            }
+        } catch (IOException|InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

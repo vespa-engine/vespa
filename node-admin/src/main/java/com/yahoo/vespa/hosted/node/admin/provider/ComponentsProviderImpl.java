@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.maintenance.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
@@ -60,8 +61,10 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         final Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
                         storageMaintainer, metricReceiver, environment);
+        final AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository);
+
         final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
-                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver);
+                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, Optional.of(aclMaintainer));
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS,
                 NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
 

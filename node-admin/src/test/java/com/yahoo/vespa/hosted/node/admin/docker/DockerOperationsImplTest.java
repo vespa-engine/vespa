@@ -11,11 +11,17 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyVararg;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -122,5 +128,32 @@ public class DockerOperationsImplTest {
     @Test
     public void vespaVersionIsNotParsedFromUnexpectedContent() {
         assertThat(DockerOperationsImpl.parseVespaVersion("No such command 'vespanodectl'"), CoreMatchers.is(Optional.empty()));
+    }
+
+    @Test
+    public void runsCommandInNetworkNamespace() {
+        ContainerName container = makeContainer("container-42", 42);
+        List<String> capturedArgs = new ArrayList<>();
+        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation), capturedArgs::addAll);
+
+        dockerOperations.executeCommandInNetworkNamespace(container, new String[]{"iptables", "-nvL"});
+
+        assertEquals(Arrays.asList(
+                "sudo",
+                "-n",
+                "nsenter",
+                "--net=/host/proc/42/ns/net",
+                "--",
+                "iptables",
+                "-nvL"), capturedArgs);
+    }
+
+    private ContainerName makeContainer(String hostname, int pid) {
+        ContainerName containerName = new ContainerName(hostname);
+        Docker.ContainerInfo containerInfo = mock(Docker.ContainerInfo.class);
+        when(containerInfo.getPid()).thenReturn(Optional.of(pid));
+        when(docker.inspectContainer(eq(containerName))).thenReturn(Optional.of(containerInfo));
+        return containerName;
     }
 }

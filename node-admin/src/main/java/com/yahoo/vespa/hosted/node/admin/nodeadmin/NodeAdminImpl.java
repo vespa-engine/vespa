@@ -3,14 +3,15 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.maintenance.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -31,8 +32,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 /**
  * Administers a host (for now only docker hosts) and its nodes (docker containers nodes).
  *
@@ -40,11 +39,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
-    private final ScheduledExecutorService metricsFetcherScheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final Optional<StorageMaintainer> storageMaintainer;
+    private final Optional<AclMaintainer> aclMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
@@ -56,11 +56,12 @@ public class NodeAdminImpl implements NodeAdmin {
     private CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
     public NodeAdminImpl(final DockerOperations dockerOperations, final Function<String, NodeAgent> nodeAgentFactory,
-                         final Optional<StorageMaintainer> storageMaintainer, int nodeAgentScanIntervalMillis,
-                         final MetricReceiverWrapper metricReceiver) {
+                         final Optional<StorageMaintainer> storageMaintainer, final int nodeAgentScanIntervalMillis,
+                         final MetricReceiverWrapper metricReceiver, final Optional<AclMaintainer> aclMaintainer) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
+        this.aclMaintainer = aclMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
         Dimensions dimensions = new Dimensions.Builder()
@@ -71,13 +72,15 @@ public class NodeAdminImpl implements NodeAdmin {
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(dimensions, "nodes.unhandled_exceptions");
 
-        metricsFetcherScheduler.scheduleWithFixedDelay(() -> {
+        scheduler.scheduleWithFixedDelay(() -> {
             try {
                 nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics);
             } catch (Throwable e) {
                 logger.warning("Metric fetcher scheduler failed", e);
             }
-        }, 0, 30000, MILLISECONDS);
+        }, 0, 30000, TimeUnit.MILLISECONDS);
+
+        this.aclMaintainer.ifPresent(maintainer -> scheduler.scheduleAtFixedRate(maintainer, 30, 60, TimeUnit.SECONDS));
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
@@ -174,9 +177,9 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void shutdown() {
-        metricsFetcherScheduler.shutdown();
+        scheduler.shutdown();
         try {
-            if (! metricsFetcherScheduler.awaitTermination(30, TimeUnit.SECONDS)) {
+            if (! scheduler.awaitTermination(30, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Did not manage to shutdown node-agent metrics update metricsFetcherScheduler.");
             }
         } catch (InterruptedException e) {

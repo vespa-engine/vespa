@@ -51,7 +51,7 @@ public class NodeAdminImplTest {
         final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
 
         final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty());
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
