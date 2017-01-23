@@ -949,15 +949,15 @@ public class MessageBusVisitorSession implements VisitorSession {
         return TimeUnit.NANOSECONDS.toMillis(clock.monotonicNanoTime() - startTimeNanos);
     }
 
-    private static boolean isInfiniteTimeout(long timeoutMs) {
-        return timeoutMs < 0;
+    private static boolean isInfiniteTimeout(long timeoutMillis) {
+        return timeoutMillis < 0;
     }
 
     private long computeBoundedMessageTimeoutMillis(long elapsedMs) {
-        final long messageTimeoutMs = messageTimeoutMillis();
+        final long messageTimeoutMillis = messageTimeoutMillis();
         return !isInfiniteTimeout(sessionTimeoutMillis())
-                ? Math.min(sessionTimeoutMillis() - elapsedMs, messageTimeoutMs)
-                : messageTimeoutMs;
+                ? Math.min(sessionTimeoutMillis() - elapsedMs, messageTimeoutMillis)
+                : messageTimeoutMillis;
     }
 
     /**
