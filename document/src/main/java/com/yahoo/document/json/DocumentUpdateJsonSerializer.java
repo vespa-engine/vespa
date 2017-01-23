@@ -18,6 +18,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -268,6 +269,11 @@ public class DocumentUpdateJsonSerializer
         @Override
         public void write(FieldBase field, TensorFieldValue value) {
             serializeTensorField(generator, field, value);
+        }
+
+        @Override
+        public void write(FieldBase field, ReferenceFieldValue value) {
+            serializeReferenceField(generator, field, value);
         }
 
         @Override

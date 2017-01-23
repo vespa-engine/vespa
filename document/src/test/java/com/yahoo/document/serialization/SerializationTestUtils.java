@@ -2,6 +2,7 @@
 package com.yahoo.document.serialization;
 
 import com.yahoo.document.Document;
+import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.io.GrowableByteBuffer;
 
@@ -34,6 +35,16 @@ public class SerializationTestUtils {
         Document document = factory.createDocument();
         DocumentDeserializerFactory.create42(factory.typeManager(), new GrowableByteBuffer(ByteBuffer.wrap(buf))).read(document);
         return document;
+    }
+
+    public static void assertFieldInDocumentSerialization(TestDocumentFactory documentFactory, String fieldName,
+                                                          FieldValue serializableFieldValue) {
+        Document document = documentFactory.createDocument();
+        document.setFieldValue(fieldName, serializableFieldValue);
+        byte[] buf = serializeDocument(document);
+        Document deserializedDocument = deserializeDocument(buf, documentFactory);
+        assertEquals(document, deserializedDocument);
+        assertEquals(serializableFieldValue, deserializedDocument.getFieldValue(fieldName));
     }
 
     public static void assertSerializationMatchesCpp(String binaryFilesFolder, String fileName,

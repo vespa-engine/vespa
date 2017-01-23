@@ -1,6 +1,7 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.Array;
@@ -14,6 +15,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -104,6 +106,12 @@ public class JsonSerializationHelper {
         generator.writeEndObject();
     }
 
+    public static void serializeReferenceField(JsonGenerator generator, FieldBase field, ReferenceFieldValue value) {
+        wrapIOException(() -> {
+            fieldNameIfNotNull(generator, field);
+            generator.writeString(value.getDocumentId().map(DocumentId::toString).orElse(""));
+        });
+    }
 
     public static void serializeStringField(JsonGenerator generator, FieldBase field, StringFieldValue value) {
         // Hide empty strings

@@ -432,8 +432,17 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
 
     @Override
     public void read(FieldBase field, TensorFieldValue value) {
+        throwOnlyJsonSupportedException(field, "TENSOR");
+    }
+
+    @Override
+    public void read(FieldBase field, ReferenceFieldValue value) {
+        throwOnlyJsonSupportedException(field, "REFERENCE");
+    }
+
+    private static void throwOnlyJsonSupportedException(FieldBase field, String fieldType) {
         throw new DeserializationException("Field '"+ (field != null ? field.getName() : "null") + "': "
-                + "XML input for fields of type TENSOR is not supported. Please use JSON input instead.");
+                + "XML input for fields of type " + fieldType + " is not supported. Please use JSON input instead.");
     }
 
     public void read(FieldBase field, AnnotationReference value) {

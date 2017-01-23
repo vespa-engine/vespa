@@ -49,12 +49,7 @@ public class TensorFieldValueSerializationTestCase {
     }
 
     private static void assertSerialization(TensorFieldValue tensor) {
-        Document document = docFactory.createDocument();
-        document.setFieldValue(TENSOR_FIELD, tensor);
-        byte[] buf = serializeDocument(document);
-        Document deserializedDocument = deserializeDocument(buf, docFactory);
-        assertEquals(document, deserializedDocument);
-        assertEquals(tensor, deserializedDocument.getFieldValue(TENSOR_FIELD));
+        SerializationTestUtils.assertFieldInDocumentSerialization(docFactory, TENSOR_FIELD, tensor);
     }
 
     private static void assertSerializationMatchesCpp(String fileName, TensorFieldValue tensor) throws IOException {

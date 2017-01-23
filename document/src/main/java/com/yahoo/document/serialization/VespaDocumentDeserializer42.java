@@ -37,6 +37,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -280,6 +281,16 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
             byte[] encodedTensor = getBytes(null, encodedTensorLength);
             value.assign(TypedBinaryFormat.decode(Optional.of(value.getDataType().getTensorType()), 
                                                   GrowableByteBuffer.wrap(encodedTensor)));
+        } else {
+            value.clear();
+        }
+    }
+
+    @Override
+    public void read(FieldBase field, ReferenceFieldValue value) {
+        final boolean documentIdPresent = (buf.get() != 0);
+        if (documentIdPresent) {
+            value.assign(readDocumentId());
         } else {
             value.clear();
         }

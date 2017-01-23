@@ -21,6 +21,7 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.CollectionFieldValue;
@@ -49,7 +50,7 @@ import java.util.Optional;
  * Initialize Vespa documents/updates/removes from an InputStream containing a
  * valid JSON representation of a feed.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @since 5.1.25
  */
 @Beta
@@ -646,9 +647,20 @@ public class JsonReader {
             return expectedType.createFieldValue(new Base64().decode(buffer.currentText()));
         } else if (expectedType.equals(PositionDataType.INSTANCE)) {
             return PositionDataType.fromString(buffer.currentText());
+        } else if (expectedType instanceof ReferenceDataType) {
+            return readReferenceFieldValue(expectedType);
         } else {
             return expectedType.createFieldValue(buffer.currentText());
         }
+    }
+
+    private FieldValue readReferenceFieldValue(DataType expectedType) {
+        final FieldValue value = expectedType.createFieldValue();
+        final String refText = buffer.currentText();
+        if (!refText.isEmpty()) {
+            value.assign(new DocumentId(buffer.currentText()));
+        }
+        return value;
     }
 
     private void bufferFields(JsonToken current) {

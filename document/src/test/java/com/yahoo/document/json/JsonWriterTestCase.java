@@ -2,9 +2,7 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
@@ -18,9 +16,11 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
@@ -37,7 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Functional tests for com.yahoo.document.json.JsonWriter.
@@ -52,75 +54,109 @@ public class JsonWriterTestCase {
     @Before
     public void setUp() throws Exception {
         types = new DocumentTypeManager();
-        {
-            DocumentType x = new DocumentType("smoke");
-            x.addField(new Field("something", DataType.STRING));
-            x.addField(new Field("nalle", DataType.STRING));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("mirrors");
-            StructDataType woo = new StructDataType("woo");
-            woo.addField(new Field("sandra", DataType.STRING));
-            woo.addField(new Field("cloud", DataType.STRING));
-            x.addField(new Field("skuggsjaa", woo));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testarray");
-            DataType d = new ArrayDataType(DataType.STRING);
-            x.addField(new Field("actualarray", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testset");
-            DataType d = new WeightedSetDataType(DataType.STRING, true, true);
-            x.addField(new Field("actualset", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testmap");
-            DataType d = new MapDataType(DataType.STRING, DataType.STRING);
-            x.addField(new Field("actualmap", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testraw");
-            DataType d = DataType.RAW;
-            x.addField(new Field("actualraw", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testpredicate");
-            DataType d = DataType.PREDICATE;
-            x.addField(new Field("actualpredicate", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testMapStringToArrayOfInt");
-            DataType value = new ArrayDataType(DataType.INT);
-            DataType d = new MapDataType(DataType.STRING, value);
-            x.addField(new Field("actualMapStringToArrayOfInt", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testsinglepos");
-            DataType d = PositionDataType.INSTANCE;
-            x.addField(new Field("singlepos", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testmultipos");
-            DataType d = new ArrayDataType(PositionDataType.INSTANCE);
-            x.addField(new Field("multipos", d));
-            types.registerDocumentType(x);
-        }
-        {
-            DocumentType x = new DocumentType("testtensor");
-            TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
-            x.addField(new Field("tensorfield", new TensorDataType(tensorType)));
-            types.registerDocumentType(x);
-        }
+        registerAllTestDocumentTypes();
+    }
+
+    private void registerAllTestDocumentTypes() {
+        registerSmokeDocumentType();
+        registerMirrorsDocumentType();
+        registerArrayDocumentType();
+        registerSetDocumentType();
+        registerMapDocumentType();
+        registerRawDocumentType();
+        registerPredicateDocumentType();
+        registerMapToStringToArrayDocumentType();
+        registerSinglePositionDocumentType();
+        registerMultiPositionDocumentType();
+        registerTensorDocumentType();
+        registerReferenceDocumentType();
+    }
+
+    private void registerReferenceDocumentType() {
+        DocumentType docTypeWithRef = new DocumentType("testrefs");
+        ReferenceDataType type = ReferenceDataType.createWithInferredId(types.getDocumentType("smoke"));
+        docTypeWithRef.addField(new Field("ref_field", type));
+        types.registerDocumentType(docTypeWithRef);
+    }
+
+    private void registerTensorDocumentType() {
+        DocumentType x = new DocumentType("testtensor");
+        TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
+        x.addField(new Field("tensorfield", new TensorDataType(tensorType)));
+        types.registerDocumentType(x);
+    }
+
+    private void registerMultiPositionDocumentType() {
+        DocumentType x = new DocumentType("testmultipos");
+        DataType d = new ArrayDataType(PositionDataType.INSTANCE);
+        x.addField(new Field("multipos", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerSinglePositionDocumentType() {
+        DocumentType x = new DocumentType("testsinglepos");
+        DataType d = PositionDataType.INSTANCE;
+        x.addField(new Field("singlepos", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerMapToStringToArrayDocumentType() {
+        DocumentType x = new DocumentType("testMapStringToArrayOfInt");
+        DataType value = new ArrayDataType(DataType.INT);
+        DataType d = new MapDataType(DataType.STRING, value);
+        x.addField(new Field("actualMapStringToArrayOfInt", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerPredicateDocumentType() {
+        DocumentType x = new DocumentType("testpredicate");
+        DataType d = DataType.PREDICATE;
+        x.addField(new Field("actualpredicate", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerRawDocumentType() {
+        DocumentType x = new DocumentType("testraw");
+        DataType d = DataType.RAW;
+        x.addField(new Field("actualraw", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerMapDocumentType() {
+        DocumentType x = new DocumentType("testmap");
+        DataType d = new MapDataType(DataType.STRING, DataType.STRING);
+        x.addField(new Field("actualmap", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerSetDocumentType() {
+        DocumentType x = new DocumentType("testset");
+        DataType d = new WeightedSetDataType(DataType.STRING, true, true);
+        x.addField(new Field("actualset", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerArrayDocumentType() {
+        DocumentType x = new DocumentType("testarray");
+        DataType d = new ArrayDataType(DataType.STRING);
+        x.addField(new Field("actualarray", d));
+        types.registerDocumentType(x);
+    }
+
+    private void registerMirrorsDocumentType() {
+        DocumentType x = new DocumentType("mirrors");
+        StructDataType woo = new StructDataType("woo");
+        woo.addField(new Field("sandra", DataType.STRING));
+        woo.addField(new Field("cloud", DataType.STRING));
+        x.addField(new Field("skuggsjaa", woo));
+        types.registerDocumentType(x);
+    }
+
+    private void registerSmokeDocumentType() {
+        DocumentType x = new DocumentType("smoke");
+        x.addField(new Field("something", DataType.STRING));
+        x.addField(new Field("nalle", DataType.STRING));
+        types.registerDocumentType(x);
     }
 
     @After
@@ -343,6 +379,34 @@ public class JsonWriterTestCase {
         String docId = "id:unittest:testtensor::0";
         Document doc = readDocumentFromJson(docId, inputFields);
         assertEqualJson(asDocument(docId, outputFields), JsonWriter.toByteArray(doc));
+    }
+
+    @Test
+    public void non_empty_reference_field_is_roundtrip_json_serialized() throws IOException {
+        roundTripEquality("id:unittest:testrefs::helloworld",
+                "{ \"ref_field\": \"id:unittest:smoke::and_mirrors_too\" }");
+    }
+
+    @Test
+    public void non_empty_reference_field_results_in_reference_value_with_doc_id_present() {
+        final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld",
+                "{ \"ref_field\": \"id:unittest:smoke::and_mirrors_too\" }");
+        ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
+        assertTrue(ref.getDocumentId().isPresent());
+        assertEquals(new DocumentId("id:unittest:smoke::and_mirrors_too"), ref.getDocumentId().get());
+    }
+
+    @Test
+    public void empty_reference_field_is_roundtrip_json_serialized() throws IOException {
+        roundTripEquality("id:unittest:testrefs::helloworld",
+                "{ \"ref_field\": \"\" }");
+    }
+
+    @Test
+    public void empty_reference_field_results_in_reference_value_without_doc_id_present() {
+        final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld", "{ \"ref_field\": \"\" }");
+        ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
+        assertFalse(ref.getDocumentId().isPresent());
     }
 
 }

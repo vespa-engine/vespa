@@ -17,6 +17,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -37,7 +38,7 @@ import java.util.Map;
 /**
  * Render a Document instance as XML.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @SuppressWarnings("deprecation")
 public final class XmlDocumentWriter implements DocumentWriter {
@@ -191,6 +192,11 @@ public final class XmlDocumentWriter implements DocumentWriter {
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
         throw new IllegalArgumentException("write() for tensor field value not implemented yet");
+    }
+
+    @Override
+    public void write(FieldBase field, ReferenceFieldValue value) {
+        throw new IllegalArgumentException("write() for reference field value not implemented yet");
     }
 
     private void optionalWrapperStart(FieldBase field) {

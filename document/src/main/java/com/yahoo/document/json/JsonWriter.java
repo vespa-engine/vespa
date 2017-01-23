@@ -19,6 +19,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -41,7 +42,7 @@ import static com.yahoo.document.json.JsonSerializationHelper.*;
 /**
  * Serialize Document and other FieldValue instances as JSON.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JsonWriter implements DocumentWriter {
 
@@ -179,6 +180,11 @@ public class JsonWriter implements DocumentWriter {
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
         serializeTensorField(generator, field, value);
+    }
+
+    @Override
+    public void write(FieldBase field, ReferenceFieldValue value) {
+        serializeReferenceField(generator, field, value);
     }
 
     @Override

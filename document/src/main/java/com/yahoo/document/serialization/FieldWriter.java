@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -164,6 +165,14 @@ public interface FieldWriter extends Serializer {
      * @param value tensor field value
      */
     void write(FieldBase field, TensorFieldValue value);
+
+    /**
+     * Write out the value of the given reference field value.
+     *
+     * @param field field description (name and data type)
+     * @param value reference field value
+     */
+    void write(FieldBase field, ReferenceFieldValue value);
 
     /**
      * Write out the value of struct field
