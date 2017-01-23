@@ -4,6 +4,13 @@ package com.yahoo.document;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 
+/**
+ * A <code>ReferenceDataType</code> specifies a particular concrete document type that a
+ * {@link ReferenceFieldValue} instance binds to.
+ *
+ * @author vekterli
+ * @since 6.65
+ */
 public class ReferenceDataType extends DataType {
 
     private final DocumentType targetType;

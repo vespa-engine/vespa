@@ -23,8 +23,10 @@ public class TestDocumentFactory {
         typeManager.register(docType);
     }
 
-    // Utility constructor for setting up a factory with a preexisting document manager.
-    // Does _not_ automatically register docType in typeManager, but assumes it's already registered.
+    /**
+     * Utility constructor for setting up a factory with a preexisting document manager.
+     * Does <em>not</em> automatically register docType in typeManager, but assumes it's already registered.
+     */
     public TestDocumentFactory(DocumentTypeManager typeManager, DocumentType docType, String defaultId) {
         this.docType = docType;
         this.defaultId = defaultId;

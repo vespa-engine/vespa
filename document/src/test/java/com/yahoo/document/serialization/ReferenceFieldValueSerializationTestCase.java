@@ -9,6 +9,10 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 import org.junit.Test;
 
+/**
+ * @author vekterli
+ * @since 6.65
+ */
 public class ReferenceFieldValueSerializationTestCase {
 
     static class Fixture {

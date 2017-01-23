@@ -12,16 +12,44 @@ import com.yahoo.document.serialization.XmlStream;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * A reference field value allows search queries to access fields in other document instances
+ * as if they were fields natively stored within the searched document. This allows modelling
+ * one-to-many relations such as a parent document with many children containing references
+ * back to the parent.
+ *
+ * Each <code>ReferenceFieldValue</code> may contain a single document ID which specifies the
+ * instance the field should refer to. This document ID must have a type matching that of the
+ * reference data type of the field itself.
+ *
+ * Note that references are not polymorphic. This means that if you have a document type
+ * "foo" inheriting "bar", you cannot have a <code>reference&lt;bar&gt;</code> field containing
+ * a document ID for a "foo" document.
+ *
+ * @author vekterli
+ * @since 6.65
+ */
 public class ReferenceFieldValue extends FieldValue {
 
     private final ReferenceDataType referenceType;
     private Optional<DocumentId> documentId;
 
+    /**
+     * Creates an empty reference of the provided reference type.
+     * @param referenceType reference target type
+     */
     public ReferenceFieldValue(ReferenceDataType referenceType) {
         this.referenceType = referenceType;
         this.documentId = Optional.empty();
     }
 
+    /**
+     * Creates a reference pointing to a particular document instance in the document
+     * type referenced by <code>referenceType</code>.
+     * @param referenceType reference target type
+     * @param documentId document ID of the same document type as that given by <code>referenceType</code>
+     * @throws IllegalArgumentException if documentId is not of the expected document type
+     */
     public ReferenceFieldValue(ReferenceDataType referenceType, DocumentId documentId) {
         requireIdOfMatchingType(referenceType, documentId);
         this.referenceType = referenceType;

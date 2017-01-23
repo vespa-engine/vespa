@@ -12,8 +12,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+/**
+ * @author vekterli
+ * @since 6.65
+ */
 public class ReferenceFieldValueTestCase {
 
     private static DocumentType createDocumentType(String name) {
