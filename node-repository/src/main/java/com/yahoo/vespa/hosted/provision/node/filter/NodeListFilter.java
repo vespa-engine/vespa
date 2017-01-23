@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.node.filter;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -25,6 +26,10 @@ public class NodeListFilter extends NodeFilter {
     @Override
     public boolean matches(Node node) {
         return nodes.contains(node);
+    }
+
+    public static NodeListFilter from(Node nodes) {
+        return new NodeListFilter(Collections.singletonList(nodes), null);
     }
 
     public static NodeListFilter from(List<Node> nodes) {

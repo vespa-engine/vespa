@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
 import java.util.Optional;
 
 /**
@@ -24,15 +25,17 @@ import java.util.Optional;
 public class NodePatcher {
 
     private final NodeFlavors nodeFlavors;
-
     private final Inspector inspector;
+    private final Clock clock;
+
     private Node node;
 
-    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node) {
+    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, Clock clock) {
         try {
+            this.nodeFlavors = nodeFlavors;
             inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
             this.node = node;
-            this.nodeFlavors = nodeFlavors;
+            this.clock = clock;
         }
         catch (IOException e) {
             throw new RuntimeException("Error reading request body", e);
@@ -59,7 +62,7 @@ public class NodePatcher {
             case "convergedStateVersion" :
                 return node.with(node.status().withStateVersion(asString(value)));
             case "currentRebootGeneration" :
-                return node.with(node.status().withReboot(node.status().reboot().withCurrent(asLong(value))));
+                return node.withCurrentRebootGeneration(asLong(value), clock.instant());
             case "currentRestartGeneration" :
                 return patchCurrentRestartGeneration(asLong(value));
             case "currentDockerImage" :

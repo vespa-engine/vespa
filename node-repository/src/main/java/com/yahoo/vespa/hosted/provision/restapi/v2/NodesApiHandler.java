@@ -122,7 +122,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         if ( ! path.startsWith("/nodes/v2/node/")) return ErrorResponse.notFoundError("Nothing at '" + path + "'");
         Node node = nodeFromRequest(request);
-        nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node).apply());
+        nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.clock()).apply());
         return new MessageResponse("Updated " + node.hostname());
     }
 

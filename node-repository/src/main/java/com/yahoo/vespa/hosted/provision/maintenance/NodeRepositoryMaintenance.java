@@ -31,6 +31,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final RetiredExpirer retiredExpirer;
     private final FailedExpirer failedExpirer;
     private final DirtyExpirer dirtyExpirer;
+    private final NodeRebooter nodeRebooter;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
@@ -51,6 +52,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         inactiveExpirer = new InactiveExpirer(nodeRepository, clock, fromEnv("inactive_expiry").orElse(defaults.inactiveExpiry));
         failedExpirer = new FailedExpirer(nodeRepository, zone, clock, fromEnv("failed_expiry").orElse(defaults.failedExpiry));
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, fromEnv("dirty_expiry").orElse(defaults.dirtyExpiry));
+        nodeRebooter = new NodeRebooter(nodeRepository, clock, fromEnv("reboot_interval").orElse(defaults.rebootInterval));
     }
 
     private Optional<Duration> fromEnv(String envVariable) {
@@ -68,6 +70,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         retiredExpirer.deconstruct();
         failedExpirer.deconstruct();
         dirtyExpirer.deconstruct();
+        nodeRebooter.deconstruct();
     }
 
     private static class DefaultTimes {
@@ -85,6 +88,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration retiredExpiry;
         private final Duration failedExpiry;
         private final Duration dirtyExpiry;
+        private final Duration rebootInterval;
 
         DefaultTimes(Environment environment) {
             if (environment.equals(Environment.prod)) {
@@ -98,6 +102,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 retiredExpiry = Duration.ofDays(4); // enough time to migrate data
                 failedExpiry = Duration.ofDays(4); // enough time to recover data even if it happens friday night
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
+                rebootInterval = Duration.ofDays(30); 
             } else {
                 // These values ensure tests and development is not delayed due to nodes staying around
                 // Use non-null values as these also determine the maintenance interval
@@ -109,6 +114,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 retiredExpiry = Duration.ofMinutes(1);
                 failedExpiry = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofMinutes(30);
+                rebootInterval = Duration.ofDays(30);
             }
         }
 

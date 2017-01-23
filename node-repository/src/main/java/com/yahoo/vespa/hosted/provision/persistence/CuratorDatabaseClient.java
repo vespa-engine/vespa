@@ -150,7 +150,7 @@ public class CuratorDatabaseClient {
                                     newNodeStatus(node, toState),
                                     toState,
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
-                                    newNodeHistory(node, toState),
+                                    node.history().recordStateTransition(node.state(), toState, clock.instant()),
                                     node.type());
             curatorTransaction.add(CuratorOperations.delete(toPath(node).getAbsolute()))
                               .add(CuratorOperations.create(toPath(toState, newNode.hostname()).getAbsolute(), nodeSerializer.toJson(newNode)));

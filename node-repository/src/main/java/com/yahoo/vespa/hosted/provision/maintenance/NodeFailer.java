@@ -68,10 +68,6 @@ public class NodeFailer extends Maintainer {
         constructionTime = clock.instant();
     }
 
-    private static Duration min(Duration d1, Duration d2) {
-        return d1.toMillis() < d2.toMillis() ? d1 : d2;
-    }
-
     @Override
     protected void maintain() {
         // Ready nodes
