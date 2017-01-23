@@ -110,6 +110,7 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
+    _data.unsafe_reserve(numDocs);
 
     fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
     assert((udatBuffer->size() % sizeof(T)) == 0);

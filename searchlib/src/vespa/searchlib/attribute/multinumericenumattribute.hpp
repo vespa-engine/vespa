@@ -64,6 +64,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
     this->fillEnum0(udatBuffer->buffer(), udatBuffer->size(), eidxs);
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
+    this->_mvMapping.reserve(numDocs);
     LoadedEnumAttributeVector loaded;
     EnumVector enumHist;
     if (this->hasPostings()) {
@@ -114,6 +115,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoad()
     if (numDocs > 0) {
         this->onAddDoc(numDocs - 1);
     }
+    this->_mvMapping.reserve(numDocs);
     loadAllAtOnce(attrReader, numDocs, numValues);
 
     return true;

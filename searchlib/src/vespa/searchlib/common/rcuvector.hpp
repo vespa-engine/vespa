@@ -32,9 +32,7 @@ RcuVectorBase<T>::unsafe_reserve(size_t n) {
 template <typename T>
 void
 RcuVectorBase<T>::ensure_size(size_t n, T fill) {
-    if (n > capacity()) {
-        expand(calcNewSize(n));
-    }
+    reserve(n);
     while (size() < n) {
         _data.push_back(fill);
     }

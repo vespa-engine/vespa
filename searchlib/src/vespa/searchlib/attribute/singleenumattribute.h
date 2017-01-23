@@ -101,7 +101,7 @@ protected:
      *
      * Should return true if underlying structures were resized.
      **/
-    virtual bool onAddDoc(DocId doc) { (void) doc; return false; }
+    virtual bool onAddDoc(DocId doc);
 
 public:
     SingleValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);

@@ -145,10 +145,8 @@ DocumentMetaStore::peekFreeLid()
 void
 DocumentMetaStore::ensureSpace(DocId lid)
 {
-    _metaDataStore.reserve(lid+1);
-    while (lid >= _metaDataStore.size()) {
-        _metaDataStore.push_back(RawDocumentMetaData());
-    }
+    _metaDataStore.ensure_size(lid+1);
+
     setNumDocs(_metaDataStore.size());
     unsigned int newSize = _metaDataStore.size();
     unsigned int newCapacity = _metaDataStore.capacity();
