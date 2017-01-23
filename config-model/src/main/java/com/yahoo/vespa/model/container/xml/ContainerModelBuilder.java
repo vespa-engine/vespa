@@ -158,7 +158,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
         //TODO: overview handler, see DomQrserverClusterBuilder
-        //TODO: cache options.
     }
 
     private void addRoutingAliases(ContainerCluster cluster, Element spec, Environment environment) {
