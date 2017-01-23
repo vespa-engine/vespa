@@ -8,8 +8,6 @@ LOG_SETUP(".features.randomnormalfeature");
 #include "random_normal_feature.h"
 #include "utils.h"
 
-#include <iostream>
-
 namespace search {
 namespace features {
 
