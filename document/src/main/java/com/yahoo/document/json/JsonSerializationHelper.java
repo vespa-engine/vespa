@@ -1,6 +1,7 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.Array;
@@ -108,10 +109,7 @@ public class JsonSerializationHelper {
     public static void serializeReferenceField(JsonGenerator generator, FieldBase field, ReferenceFieldValue value) {
         wrapIOException(() -> {
             fieldNameIfNotNull(generator, field);
-            final String refValue = value.getDocumentId().isPresent()
-                    ? value.getDocumentId().get().toString()
-                    : "";
-            generator.writeString(refValue);
+            generator.writeString(value.getDocumentId().map(DocumentId::toString).orElse(""));
         });
     }
 
