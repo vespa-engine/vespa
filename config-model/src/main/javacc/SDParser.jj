@@ -60,6 +60,7 @@ import com.yahoo.search.query.ranking.Diversity;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * A search definition parser
@@ -193,6 +194,8 @@ TOKEN :
 | < FIELDS: "fields" >
 | < FIELDSET: "fieldset" >
 | < STRUCTFIELD: "struct-field" >
+| < IMPORT: "import" >
+| < AS: "as" >
 | < INDEXING: "indexing" >
 | < SUMMARYTO: "summary-to" >
 | < DOCUMENTSUMMARY: "document-summary" >
@@ -420,7 +423,8 @@ Object rootSearchItem(Search search) : { }
       | useDocument(search)
       | structOutside(search)
       | annotationOutside(search)
-      | fieldSet(search) )
+      | fieldSet(search)
+      | importField(search) )
     { return null; }
 }
 
@@ -2371,6 +2375,34 @@ TensorType tensorType(String errorMessage) :
     }
 }
 
+void importField(Search search) :
+{
+    TemporaryFieldReference reference;
+    String fieldName;
+}
+{
+    <IMPORT> <FIELD> reference = fieldReference() <AS> fieldName = identifier() lbrace()
+    <RBRACE>
+    {
+        search.importedFields().add(new TemporaryImportedField(fieldName, reference));
+    }
+}
+
+TemporaryFieldReference fieldReference() :
+{
+    String fieldRefSpec;
+}
+{
+    fieldRefSpec = identifier()
+    {
+        if (StringUtils.countMatches(fieldRefSpec, ".") != 1) {
+            throw new IllegalArgumentException("Illegal field reference spec '" + fieldRefSpec + "': Does not include a single '.'");
+        }
+        int indexOfDot = fieldRefSpec.indexOf('.');
+        return new TemporaryFieldReference(fieldRefSpec.substring(0, indexOfDot), fieldRefSpec.substring(indexOfDot + 1));
+    }
+}
+
 /**
  * This rule consumes an expression token and returns its image.
  *
@@ -2401,6 +2433,7 @@ String identifier() : { }
       | <ANNOTATIONREFERENCE>
       | <ARITY>
       | <ARRAY>
+      | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
       | <BODY>
@@ -2439,6 +2472,7 @@ String identifier() : { }
       | <IDENTICAL>
       | <IDENTIFIER>
       | <IGNOREDEFAULTRANKFEATURES>
+      | <IMPORT>
       | <INDEX>
       | <INDEXING>
       | <INDEXINGREWRITE>
