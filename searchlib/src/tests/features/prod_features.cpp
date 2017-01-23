@@ -1756,27 +1756,7 @@ Test::testRandomNormal()
         }
     }
 
-    { // Test executor (seed specified through config)
-        FtFeatureTest ft1(_factory, "randomNormal");
-        FtFeatureTest ft2(_factory, "randomNormal");
-        FtFeatureTest ft3(_factory, "randomNormal");
-        ft1.getIndexEnv().getProperties().add("randomNormal.seed", "100");
-        ft2.getIndexEnv().getProperties().add("randomNormal.seed", "100");
-        ft3.getIndexEnv().getProperties().add("randomNormal.seed", "42");
-        ASSERT_TRUE(ft1.setup());
-        ASSERT_TRUE(ft2.setup());
-        ASSERT_TRUE(ft3.setup());
-
-        RankResult rr;
-        for (uint32_t i = 0; i < 5; ++i) {
-            rr.clear();
-            ASSERT_TRUE(ft1.executeOnly(rr, i + 1));
-            ASSERT_TRUE(ft2.execute(rr.getScore("randomNormal"), EPS, i + 1));
-            ASSERT_FALSE(ft3.execute(rr.getScore("randomNormal"), EPS, i + 1));
-        }
-    }
-
-    { // Test setting of mean and stddev values
+    { // Test setting of mean and stddev values, and seed
         FtFeatureTest ft1(_factory, "randomNormal(0.0,0.1)");
         FtFeatureTest ft2(_factory, "randomNormal(1.0,0.2)");
         ft1.getIndexEnv().getProperties().add("randomNormal(0.0,0.1).seed", "100");
