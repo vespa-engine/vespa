@@ -5,9 +5,9 @@
 #include "sparse_binary_format.h"
 #include "dense_binary_format.h"
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
 
 using vespalib::nbostream;
 

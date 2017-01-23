@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
+#include <vespa/eval/tensor/dense/dense_tensor_builder.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using namespace vespalib::tensor;

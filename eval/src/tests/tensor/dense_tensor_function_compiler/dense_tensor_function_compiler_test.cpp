@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/tensor/dense/dense_dot_product_function.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor_function_compiler.h>
+#include <vespa/eval/tensor/dense/dense_dot_product_function.h>
+#include <vespa/eval/tensor/dense/dense_tensor_function_compiler.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::operation;

@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/tensor/cell_function.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/tensor_address.h>
+#include <vespa/eval/tensor/cell_function.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/tensor_address.h>
 #include "sparse_tensor_address_ref.h"
-#include <vespa/vespalib/tensor/types.h>
+#include <vespa/eval/tensor/types.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stash.h>

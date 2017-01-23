@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "dense_binary_format.h"
-#include <vespa/vespalib/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 

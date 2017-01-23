@@ -3,7 +3,7 @@
 #pragma once
 
 #include "sparse_tensor_address_builder.h"
-#include <vespa/vespalib/tensor/types.h>
+#include <vespa/eval/tensor/types.h>
 #include "sparse_tensor_address_decoder.h"
 #include <cassert>
 

@@ -4,8 +4,8 @@
 #include "dense_dot_product_function.h"
 #include "dense_tensor.h"
 #include "dense_tensor_view.h"
-#include <vespa/vespalib/eval/value.h>
-#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/tensor/tensor.h>
 
 namespace vespalib {
 namespace tensor {

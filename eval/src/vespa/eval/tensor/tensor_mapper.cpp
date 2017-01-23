@@ -3,8 +3,8 @@
 #include "tensor_mapper.h"
 #include "tensor.h"
 #include "tensor_visitor.h"
-#include <vespa/vespalib/tensor/sparse/direct_sparse_tensor_builder.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
 #include "tensor_address_element_iterator.h"
 #include "default_tensor.h"
 

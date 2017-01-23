@@ -4,7 +4,7 @@
 
 #include "sparse_tensor_apply.h"
 #include "sparse_tensor_address_combiner.h"
-#include <vespa/vespalib/tensor/direct_tensor_builder.h>
+#include <vespa/eval/tensor/direct_tensor_builder.h>
 #include "direct_sparse_tensor_builder.h"
 
 namespace vespalib {

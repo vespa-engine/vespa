@@ -3,7 +3,7 @@
 #pragma once
 
 #include "constant_value.h"
-#include <vespa/vespalib/eval/tensor_engine.h>
+#include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {

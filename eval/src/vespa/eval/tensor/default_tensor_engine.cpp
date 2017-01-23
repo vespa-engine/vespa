@@ -2,9 +2,9 @@
 
 #include <vespa/fastos/fastos.h>
 #include "default_tensor_engine.h"
-#include <vespa/vespalib/eval/value.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/eval/operation_visitor.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/operation_visitor.h>
 #include "tensor.h"
 #include "dense/dense_tensor_builder.h"
 #include "dense/dense_tensor_function_compiler.h"

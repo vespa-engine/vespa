@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "compile_cache.h"
-#include <vespa/vespalib/eval/key_gen.h>
+#include <vespa/eval/eval/key_gen.h>
 #include <thread>
 
 namespace vespalib {

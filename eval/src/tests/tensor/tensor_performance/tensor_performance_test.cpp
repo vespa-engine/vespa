@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/interpreted_function.h>
-#include <vespa/vespalib/eval/tensor_nodes.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
-#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/tensor_builder.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/tensor_nodes.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
+#include <vespa/eval/tensor/dense/dense_tensor_builder.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/tensor_builder.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;

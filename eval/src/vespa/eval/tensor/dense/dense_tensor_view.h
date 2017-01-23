@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/eval/value_type.h>
 #include "dense_tensor_cells_iterator.h"
 
 namespace vespalib {

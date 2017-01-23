@@ -5,8 +5,8 @@
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_unsorted_address_builder.h"
-#include <vespa/vespalib/tensor/tensor_builder.h>
-#include <vespa/vespalib/tensor/tensor_address.h>
+#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/tensor_address.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/stash.h>
 

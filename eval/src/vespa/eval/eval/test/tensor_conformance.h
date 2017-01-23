@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/eval/tensor_engine.h>
+#include <vespa/eval/eval/tensor_engine.h>
 
 namespace vespalib {
 namespace eval {

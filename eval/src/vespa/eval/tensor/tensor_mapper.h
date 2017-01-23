@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 
 namespace vespalib {
 namespace tensor {

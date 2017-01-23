@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/operator_nodes.h>
-#include <vespa/vespalib/eval/node_traverser.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/operator_nodes.h>
+#include <vespa/eval/eval/node_traverser.h>
 #include <set>
-#include <vespa/vespalib/eval/test/eval_spec.h>
-#include <vespa/vespalib/eval/check_type.h>
+#include <vespa/eval/eval/test/eval_spec.h>
+#include <vespa/eval/eval/check_type.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;

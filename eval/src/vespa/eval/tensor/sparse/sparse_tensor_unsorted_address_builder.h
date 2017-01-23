@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
-#include <vespa/vespalib/tensor/types.h>
+#include <vespa/eval/tensor/types.h>
 
 namespace vespalib {
 namespace eval { class ValueType; }

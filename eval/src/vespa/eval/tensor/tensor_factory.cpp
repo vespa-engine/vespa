@@ -4,7 +4,7 @@
 #include "tensor.h"
 #include "tensor_factory.h"
 #include "tensor_builder.h"
-#include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
+#include <vespa/eval/tensor/dense/dense_tensor_builder.h>
 
 namespace vespalib {
 namespace tensor {

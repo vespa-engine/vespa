@@ -2,10 +2,10 @@
 
 #include <vespa/fastos/fastos.h>
 #include "sparse_binary_format.h"
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/tensor_builder.h>
-#include <vespa/vespalib/tensor/tensor_visitor.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/tensor_visitor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <sstream>
 

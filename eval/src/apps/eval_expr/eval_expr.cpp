@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/interpreted_function.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/interpreted_function.h>
 
 using namespace vespalib::eval;
 

@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
-#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
-#include <vespa/vespalib/tensor/serialization/slime_binary_format.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/serialization/slime_binary_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <iostream>
 

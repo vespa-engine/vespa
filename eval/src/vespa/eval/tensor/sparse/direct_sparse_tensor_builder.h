@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/tensor/direct_tensor_builder.h>
+#include <vespa/eval/tensor/direct_tensor_builder.h>
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_address_padder.h"

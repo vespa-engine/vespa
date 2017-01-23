@@ -3,7 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "sparse_tensor_address_combiner.h"
 #include "sparse_tensor_address_decoder.h"
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 
 namespace vespalib {
 namespace tensor {

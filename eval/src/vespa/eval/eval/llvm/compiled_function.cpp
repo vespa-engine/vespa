@@ -3,9 +3,9 @@
 #include <vespa/fastos/fastos.h>
 #include "compiled_function.h"
 #include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/vespalib/eval/node_traverser.h>
-#include <vespa/vespalib/eval/check_type.h>
-#include <vespa/vespalib/eval/tensor_nodes.h>
+#include <vespa/eval/eval/node_traverser.h>
+#include <vespa/eval/eval/check_type.h>
+#include <vespa/eval/eval/tensor_nodes.h>
 #include <vespa/vespalib/util/classname.h>
 
 namespace vespalib {

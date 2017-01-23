@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/gbdt.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/gbdt.h>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>

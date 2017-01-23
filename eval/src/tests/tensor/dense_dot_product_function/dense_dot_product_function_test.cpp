@@ -4,11 +4,11 @@
 LOG_SETUP("dense_dot_product_function_test");
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/tensor_function.h>
-#include <vespa/vespalib/tensor/dense/dense_dot_product_function.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor_view.h>
+#include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/tensor/dense/dense_dot_product_function.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/dense/dense_tensor_builder.h>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 

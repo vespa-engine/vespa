@@ -4,7 +4,7 @@
 #include "dense_tensor.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/eval/operation.h>
+#include <vespa/eval/eval/operation.h>
 #include <sstream>
 
 using vespalib::eval::TensorSpec;

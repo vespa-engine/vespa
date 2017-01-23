@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/tensor/tensor_operation.h>
+#include <vespa/eval/tensor/tensor_operation.h>
 
 namespace vespalib {
 namespace tensor {

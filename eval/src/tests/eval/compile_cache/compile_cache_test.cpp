@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/llvm/compile_cache.h>
-#include <vespa/vespalib/eval/key_gen.h>
-#include <vespa/vespalib/eval/test/eval_spec.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/eval/eval/key_gen.h>
+#include <vespa/eval/eval/test/eval_spec.h>
 #include <set>
 
 using namespace vespalib::eval;

@@ -3,8 +3,8 @@
 #include <vespa/fastos/fastos.h>
 #include "dense_dot_product_function.h"
 #include "dense_tensor_function_compiler.h"
-#include <vespa/vespalib/eval/operation_visitor.h>
-#include <vespa/vespalib/eval/operation_visitor.h>
+#include <vespa/eval/eval/operation_visitor.h>
+#include <vespa/eval/eval/operation_visitor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <iostream>
 

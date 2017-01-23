@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/eval/gbdt.h>
+#include <vespa/eval/eval/gbdt.h>
 #include "llvm_wrapper.h"
 
 namespace vespalib {

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/eval/tensor_function.h>
+#include <vespa/eval/eval/tensor_function.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace vespalib {

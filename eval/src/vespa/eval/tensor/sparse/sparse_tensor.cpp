@@ -5,10 +5,10 @@
 #include "sparse_tensor_match.h"
 #include "sparse_tensor_apply.hpp"
 #include "sparse_tensor_reduce.hpp"
-#include <vespa/vespalib/tensor/tensor_address_builder.h>
-#include <vespa/vespalib/tensor/tensor_apply.h>
-#include <vespa/vespalib/tensor/tensor_visitor.h>
-#include <vespa/vespalib/eval/operation.h>
+#include <vespa/eval/tensor/tensor_address_builder.h>
+#include <vespa/eval/tensor/tensor_apply.h>
+#include <vespa/eval/tensor/tensor_visitor.h>
+#include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <vespa/vespalib/util/array_equal.hpp>

@@ -4,7 +4,7 @@
 
 #include "dense_tensor.h"
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/tensor_builder.h>
 
 namespace vespalib {
 namespace tensor {

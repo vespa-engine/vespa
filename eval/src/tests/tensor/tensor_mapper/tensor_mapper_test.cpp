@@ -2,14 +2,14 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
-#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor.h>
-#include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
-#include <vespa/vespalib/tensor/tensor_mapper.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/dense/dense_tensor_builder.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/tensor_mapper.h>
+#include <vespa/eval/tensor/default_tensor.h>
 #include <ostream>
 
 using vespalib::eval::ValueType;

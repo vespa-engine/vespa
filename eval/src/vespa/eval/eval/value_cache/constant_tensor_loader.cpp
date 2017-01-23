@@ -6,9 +6,9 @@
 #include "constant_tensor_loader.h"
 #include <set>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/eval/tensor.h>
-#include <vespa/vespalib/eval/tensor_engine.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
+#include <vespa/eval/eval/tensor.h>
+#include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/eval/eval/tensor_spec.h>
 
 LOG_SETUP(".vespalib.eval.value_cache.constant_tensor_loader");
 

@@ -7,9 +7,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/tensor/tensor_address_builder.h>
-#include <vespa/vespalib/tensor/tensor_visitor.h>
-#include <vespa/vespalib/eval/operation.h>
+#include <vespa/eval/tensor/tensor_address_builder.h>
+#include <vespa/eval/tensor/tensor_visitor.h>
+#include <vespa/eval/eval/operation.h>
 #include <sstream>
 
 using vespalib::eval::TensorSpec;

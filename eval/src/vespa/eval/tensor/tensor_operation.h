@@ -3,7 +3,7 @@
 #pragma once
 
 #include "direct_tensor_builder.h"
-#include <vespa/vespalib/tensor/sparse/direct_sparse_tensor_builder.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 
 namespace vespalib {
 namespace tensor {

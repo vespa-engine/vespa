@@ -5,9 +5,9 @@
 #include "cell_function.h"
 #include "tensor_address.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/eval/tensor.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/tensor.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_type.h>
 
 namespace vespalib {
 namespace eval { class BinaryOperation; }

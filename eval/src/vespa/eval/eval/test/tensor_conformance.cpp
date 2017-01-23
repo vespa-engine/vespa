@@ -4,11 +4,11 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "tensor_conformance.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/eval/simple_tensor_engine.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/tensor_function.h>
-#include <vespa/vespalib/eval/interpreted_function.h>
+#include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/eval/interpreted_function.h>
 
 namespace vespalib {
 namespace eval {

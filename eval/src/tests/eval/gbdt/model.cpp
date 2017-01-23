@@ -2,7 +2,7 @@
 #pragma once
 
 #include <random>
-#include <vespa/vespalib/eval/function.h>
+#include <vespa/eval/eval/function.h>
 
 using vespalib::make_string;
 using vespalib::eval::Function;
