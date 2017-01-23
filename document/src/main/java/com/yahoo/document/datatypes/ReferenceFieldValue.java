@@ -32,7 +32,7 @@ public class ReferenceFieldValue extends FieldValue {
         return new ReferenceFieldValue(referenceType);
     }
 
-    private void requireIdOfMatchingType(ReferenceDataType referenceType, DocumentId id) {
+    private static void requireIdOfMatchingType(ReferenceDataType referenceType, DocumentId id) {
         final String expectedTypeName = referenceType.getTargetType().getName();
         if (!id.getDocType().equals(expectedTypeName)) {
             throw new IllegalArgumentException(String.format(
