@@ -145,7 +145,7 @@ DocumentMetaStore::peekFreeLid()
 void
 DocumentMetaStore::ensureSpace(DocId lid)
 {
-    _metaDataStore.ensure_size(lid+1);
+    _metaDataStore.ensure_size(lid+1, RawDocumentMetaData());
 
     setNumDocs(_metaDataStore.size());
     unsigned int newSize = _metaDataStore.size();
