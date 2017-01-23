@@ -286,7 +286,7 @@ public class RestApiTest {
     private String doRest(HttpRequestBase request) throws IOException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpResponse response = client.execute(request);
-        assertThat(response.getEntity().getContentType().getValue().toString(), is("application/json; charset=UTF-8"));
+        assertThat(response.getEntity().getContentType().getValue().toString(), is("application/json;charset=utf-8"));
         HttpEntity entity = response.getEntity();
         return EntityUtils.toString(entity);
     }
