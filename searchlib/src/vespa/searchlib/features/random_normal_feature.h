@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -20,8 +20,8 @@ namespace features {
 class RandomNormalExecutor : public search::fef::FeatureExecutor {
 private:
     Rand48 _rnd;
-    double _mu;
-    double _sigma;
+    double _mean;
+    double _stddev;
 
     bool _hasSpare;
     double _spare;
@@ -30,7 +30,7 @@ public:
     /**
      * Constructs a new executor.
      **/
-    RandomNormalExecutor(uint64_t seed, double mu, double sigma);
+    RandomNormalExecutor(uint64_t seed, double mean, double stddev);
     virtual void execute(uint32_t docId);
 };
 
@@ -41,8 +41,8 @@ public:
 class RandomNormalBlueprint : public search::fef::Blueprint {
 private:
     uint64_t _seed;
-    double   _mu;
-    double   _sigma;
+    double   _mean;
+    double   _stddev;
 
 public:
     /**
@@ -63,15 +63,15 @@ public:
             // Can run without parameters:
             desc().
 
-            // Can run with two parameters (mu and sigma):
+            // Can run with two parameters (mean and stddev):
             desc().
-            number(). // mu (mean)
-            number(). // sigma (stddev)
+            number(). // mean
+            number(). // stddev
 
             // Can run with three parameters:
             desc().
-            number(). // mu (mean)
-            number(). // sigma (stddev)
+            number(). // mean
+            number(). // stddev
             string(); // in order to name different features
     }
 

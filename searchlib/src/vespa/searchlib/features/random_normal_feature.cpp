@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
@@ -11,17 +11,17 @@ LOG_SETUP(".features.randomnormalfeature");
 namespace search {
 namespace features {
 
-RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mu, double sigma) :
+RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double stddev) :
     search::fef::FeatureExecutor(),
     _rnd(),
-    _mu(mu),
-    _sigma(sigma),
+    _mean(mean),
+    _stddev(stddev),
     _hasSpare(false),
     _spare(0.0)
 
 {
-    LOG(debug, "RandomNormalExecutor: seed=%" PRIu64 ", mu=%f, sigma=%f",
-        seed, mu, sigma);
+    LOG(debug, "RandomNormalExecutor: seed=%" PRIu64 ", mean=%f, stddev=%f",
+        seed, mean, stddev);
     _rnd.srand48(seed);
 }
 
@@ -50,24 +50,22 @@ RandomNormalExecutor::execute(uint32_t)
         result = u * s;
     }
 
-    outputs().set_number(0, _mu + _sigma * result);
+    outputs().set_number(0, _mean + _stddev * result);
 }
 
 
 RandomNormalBlueprint::RandomNormalBlueprint() :
     search::fef::Blueprint("randomNormal"),
     _seed(0),
-    _mu(0.0),
-    _sigma(1.0)
+    _mean(0.0),
+    _stddev(1.0)
 {
-    // empty
 }
 
 void
 RandomNormalBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
                                    search::fef::IDumpFeatureVisitor &) const
 {
-    // empty
 }
 
 search::fef::Blueprint::UP
@@ -86,10 +84,10 @@ RandomNormalBlueprint::setup(const search::fef::IIndexEnvironment & env,
     }
 
     if (params.size() > 0) {
-        _mu = params[0].asDouble();
+        _mean = params[0].asDouble();
     }
     if (params.size() > 1) {
-        _sigma = params[1].asDouble();
+        _stddev = params[1].asDouble();
     }
 
     describeOutput("out" , "A random value drawn from the Gaussian distribution");
@@ -107,7 +105,7 @@ RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &, ve
         seed = static_cast<uint64_t>(time.MicroSecs()) ^
                 reinterpret_cast<uint64_t>(&seed); // results in different seeds in different threads
     }
-    return stash.create<RandomNormalExecutor>(seed, _mu, _sigma);
+    return stash.create<RandomNormalExecutor>(seed, _mean, _stddev);
 }
 
 
