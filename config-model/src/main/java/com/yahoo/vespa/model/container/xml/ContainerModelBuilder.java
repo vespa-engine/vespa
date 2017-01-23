@@ -135,13 +135,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(cluster, spec);
         addHandlers(cluster, spec);
 
-        addHttp(spec, cluster);
         addRestApis(spec, cluster);
         addServlets(spec, cluster);
         addProcessing(spec, cluster);
         addSearch(spec, cluster, context.getDeployState().getQueryProfiles(), context.getDeployState().getSemanticRules());
         addDocproc(spec, cluster);
         addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
+
+        addDefaultHandlers(cluster);
+        addStatusHandlers(cluster, context);
+        addDefaultComponents(cluster);
+        setDefaultMetricConsumerFactory(cluster);
+
+        addHttp(spec, cluster);
 
         addAccessLogs(cluster, spec);
         addRoutingAliases(cluster, spec, context.getDeployState().zone().environment());
@@ -151,13 +157,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addServerProviders(spec, cluster);
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
-        addDefaultHandlers(cluster);
-        addStatusHandlers(cluster, context);
-        addDefaultComponents(cluster);
-        setDefaultMetricConsumerFactory(cluster);
-
         //TODO: overview handler, see DomQrserverClusterBuilder
-        //TODO: cache options.
     }
 
     private void addRoutingAliases(ContainerCluster cluster, Element spec, Environment environment) {
