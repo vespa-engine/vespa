@@ -7,6 +7,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 
 import javax.xml.transform.TransformerException;
 import java.util.*;
@@ -27,6 +28,8 @@ class OverrideProcessor implements PreProcessor {
     private static final String ATTR_ID  = "id";
     private static final String ATTR_ENV = "environment";
     private static final String ATTR_REG = "region";
+    private static final String ATTR_ENV_FULL_NAME = "deploy:" + ATTR_ENV;
+    private static final String ATTR_REG_FULL_NAME = "deploy:" + ATTR_REG;
 
     public OverrideProcessor(Environment environment, RegionName region) {
         this.environment = environment;
@@ -123,23 +126,30 @@ class OverrideProcessor implements PreProcessor {
      * Find the most specific element and remove all others.
      */
     private void retainMostSpecificEnvironmentAndRegion(Element parent, List<Element> children, Context context) {
-        // Keep track of elements with highest number of matches (might be more than one element with same tag, need a list)
-        List<Element> bestMatchElements = new ArrayList<>();
-        int bestMatch = 0;
-        for (Element child : children) {
-            int overrideCount = getNumberOfOverrides(child, context);
-            if (overrideCount >= bestMatch) {
-                updateBestMatchElements(bestMatchElements, child, overrideCount, bestMatch);
-                bestMatch = overrideCount;
-            }
-        }
+        // Put elements with same attributes in a map with a key that is the concatenation of attribute names
+        // (except the override attribute names) and process values for each key
+        Map<String, List<Element>> elementsByEqualAttributeSet = elementsByEqualAttributeSet(children);
+        for (Map.Entry<String, List<Element>> entry : elementsByEqualAttributeSet.entrySet()) {
+            List<Element> elements = entry.getValue();
 
-        if (bestMatch > 1) { // there was a region/environment specific override
-            doElementSpecificProcessingOnOverride(bestMatchElements);
-            for (Element child : children) {
-                // Remove elements not specific
-                if ( ! bestMatchElements.contains(child))
-                    parent.removeChild(child);
+            // Keep track of elements with highest number of matches (might be more than one element with same tag, need a list)
+            List<Element> bestMatchElements = new ArrayList<>();
+            int bestMatch = 0;
+            for (Element child : elements) {
+                int overrideCount = getNumberOfOverrides(child, context);
+                if (overrideCount >= bestMatch) {
+                    updateBestMatchElements(bestMatchElements, child, overrideCount, bestMatch);
+                    bestMatch = overrideCount;
+                }
+            }
+
+            if (bestMatch > 1) { // there was a region/environment specific override
+                doElementSpecificProcessingOnOverride(bestMatchElements);
+                for (Element child : elements) {
+                    // Remove elements not specific
+                    if (!bestMatchElements.contains(child))
+                        parent.removeChild(child);
+                }
             }
         }
     }
@@ -229,6 +239,36 @@ class OverrideProcessor implements PreProcessor {
             elementsByTagName.get(key).add(child);
         }
         return elementsByTagName;
+    }
+
+    private Map<String, List<Element>> elementsByEqualAttributeSet(List<Element> children) {
+        Map<String, List<Element>> elementsByEqualAttributeSet = new LinkedHashMap<>();
+        // Index by a concatenation of attribute names (except override attribute names)
+        for (Element child : children) {
+            NamedNodeMap attributes = child.getAttributes();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < attributes.getLength(); i++) {
+                String nodeName = attributes.item(i).getNodeName();
+                if ( ! (nodeName.equals(ATTR_ENV_FULL_NAME) || nodeName.equals(ATTR_REG_FULL_NAME)))
+                    sb.append(nodeName);
+            }
+            String key = sb.toString();
+            if ( ! elementsByEqualAttributeSet.containsKey(key)) {
+                elementsByEqualAttributeSet.put(key, new ArrayList<>());
+            }
+            elementsByEqualAttributeSet.get(key).add(child);
+        }
+        return elementsByEqualAttributeSet;
+    }
+
+    // For debugging
+    private static String getPrintableElement(Element element) {
+        StringBuilder sb = new StringBuilder(element.getTagName());
+        final NamedNodeMap attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            sb.append(" ").append(attributes.item(i).getNodeName());
+        }
+        return sb.toString();
     }
 
     /**
