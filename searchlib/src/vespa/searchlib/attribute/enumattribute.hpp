@@ -102,8 +102,8 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
         // perform compaction on EnumStore if necessary
         if (extraBytesNeeded > this->_enumStore.getRemaining() ||
             this->_enumStore.getPendingCompact()) {
-            this->_enumStore.clearPendingCompact();
             this->removeAllOldGenerations();
+            this->_enumStore.clearPendingCompact();
             if (!this->_enumStore.performCompaction(extraBytesNeeded)) {
                 // fallback to resize strategy
                 this->_enumStore.fallbackResize(extraBytesNeeded);

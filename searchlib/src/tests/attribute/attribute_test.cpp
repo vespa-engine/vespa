@@ -139,6 +139,9 @@ private:
     typedef AttributeVector::SP AttributePtr;
 
     void addDocs(const AttributePtr & v, size_t sz);
+    void addClearedDocs(const AttributePtr & v, size_t sz);
+    template <typename VectorType>
+    void populateSimple(VectorType &ptr, uint32_t docIdLow, uint32_t docIdHigh);
     template <typename VectorType>
     void populate(VectorType & ptr, unsigned seed);
     template <typename VectorType, typename BufferType>
@@ -242,6 +245,8 @@ private:
     void testReaderDuringLastUpdate(const Config &config);
     void testReaderDuringLastUpdate();
 
+    void testPendingCompaction();
+
 public:
     AttributeTest() { }
     int Main();
@@ -298,6 +303,21 @@ void AttributeTest::addDocs(const AttributePtr & v, size_t sz)
         AttributeVector::DocId docId;
         for(size_t i(0); i< sz; i++) {
             EXPECT_TRUE( v->addDoc(docId) );
+        }
+        EXPECT_TRUE( docId+1 == sz );
+        EXPECT_TRUE( v->getNumDocs() == sz );
+        commit(v);
+    }
+}
+
+
+void AttributeTest::addClearedDocs(const AttributePtr & v, size_t sz)
+{
+    if (sz) {
+        AttributeVector::DocId docId;
+        for(size_t i(0); i< sz; i++) {
+            EXPECT_TRUE( v->addDoc(docId) );
+            v->clearDoc(i);
         }
         EXPECT_TRUE( docId+1 == sz );
         EXPECT_TRUE( v->getNumDocs() == sz );
@@ -365,6 +385,16 @@ void AttributeTest::populate(StringAttribute & v, unsigned seed)
         } else {
             EXPECT_TRUE( v.update(i, rnd.getRandomString(2, 50)) );
         }
+    }
+    v.commit();
+}
+
+template <>
+void AttributeTest::populateSimple(IntegerAttribute & v, uint32_t docIdLow, uint32_t docIdHigh)
+{
+    for(uint32_t docId(docIdLow); docId < docIdHigh; ++docId) {
+        v.clearDoc(docId);
+        EXPECT_TRUE( v.update(docId, docId + 1) );
     }
     v.commit();
 }
@@ -2254,6 +2284,23 @@ AttributeTest::testReaderDuringLastUpdate()
 }
 
 void
+AttributeTest::testPendingCompaction()
+{
+    Config cfg(BasicType::INT32, CollectionType::SINGLE);
+    cfg.setFastSearch(true);
+    AttributePtr v = createAttribute("sfsint32_pc", cfg);
+    IntegerAttribute &iv = static_cast<IntegerAttribute &>(*v.get());
+    addClearedDocs(v, 1000);   // first compaction, success
+    AttributeGuard guard1(v);
+    populateSimple(iv, 1, 3);  // 2nd compaction, success
+    AttributeGuard guard2(v);
+    populateSimple(iv, 3, 6);  // 3rd compaction, fail => fallbackResize
+    guard1 = AttributeGuard(); // allow next compaction to succeed
+    populateSimple(iv, 6, 10); // 4th compaction, success
+    populateSimple(iv, 1, 2);  // should not trigger new compaction
+}
+
+void
 deleteDataDirs()
 {
     vespalib::rmdir(tmpDir, true);
@@ -2297,6 +2344,7 @@ int AttributeTest::Main()
     TEST_DO(testCompactLidSpace());
     TEST_DO(requireThatAddressSpaceUsageIsReported());
     testReaderDuringLastUpdate();
+    TEST_DO(testPendingCompaction());
 
     deleteDataDirs();
     TEST_DONE();
