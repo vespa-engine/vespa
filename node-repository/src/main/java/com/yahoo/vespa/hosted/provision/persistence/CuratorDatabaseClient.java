@@ -182,16 +182,6 @@ public class CuratorDatabaseClient {
         return zone.environment() == Environment.staging || zone.environment() == Environment.test;
     }
 
-    private History newNodeHistory(Node node, Node.State toState) {
-        History history = node.history();
-
-        // wipe history when a node *becomes* ready to avoid expiring based on events under the previous allocation
-        if (node.state() != Node.State.ready && toState == Node.State.ready)
-            history = History.empty();
-
-        return history.recordStateTransition(node.state(), toState, clock.instant());
-    }
-
     /**
      * Returns all nodes which are in one of the given states.
      * If no states are given this returns all nodes.
