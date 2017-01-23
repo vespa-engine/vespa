@@ -3,8 +3,8 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/vespalib/eval/interpreted_function.h>
-#include <vespa/vespalib/eval/llvm/compile_cache.h>
+#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
 
 namespace search {
 namespace features {

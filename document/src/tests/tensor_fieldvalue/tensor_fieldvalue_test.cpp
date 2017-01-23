@@ -6,10 +6,10 @@ LOG_SETUP("fieldvalue_test");
 #include <vespa/fastos/fastos.h>
 
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
 
 #include <vespa/vespalib/testkit/testapp.h>
 

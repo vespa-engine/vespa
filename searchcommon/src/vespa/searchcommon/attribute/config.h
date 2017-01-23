@@ -6,7 +6,7 @@
 #include <vespa/searchcommon/attribute/collectiontype.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchcommon/common/compaction_strategy.h>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 
 namespace search {
 namespace attribute {

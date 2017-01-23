@@ -11,8 +11,8 @@ LOG_SETUP(".features.tensor_from_labels_feature");
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
 
 using namespace search::fef;

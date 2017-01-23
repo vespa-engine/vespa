@@ -5,8 +5,8 @@
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/log/log.h>

@@ -4,11 +4,11 @@
 LOG_SETUP("dense_tensor_store_test");
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/tensor/dense_tensor_store.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/eval/value_type.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 
 using search::tensor::DenseTensorStore;
 using vespalib::eval::TensorSpec;

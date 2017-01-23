@@ -7,17 +7,17 @@ LOG_SETUP(".features.rankingexpression");
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/interpreted_function.h>
-#include <vespa/vespalib/eval/llvm/compiled_function.h>
-#include <vespa/vespalib/eval/llvm/compile_cache.h>
-#include <vespa/vespalib/eval/node_types.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/llvm/compiled_function.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/eval/eval/node_types.h>
 #include "rankingexpressionfeature.h"
 #include "utils.h"
 #include <stdexcept>
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/feature_type.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 
 using vespalib::eval::Function;
 using vespalib::eval::PassParams;

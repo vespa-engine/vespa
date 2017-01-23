@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/eval/function.h>
+#include <vespa/eval/eval/function.h>
 
 namespace search {
 namespace features {

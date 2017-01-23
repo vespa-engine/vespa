@@ -7,7 +7,7 @@ LOG_SETUP(".features.constant_feature");
 
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include "valuefeature.h"
-#include <vespa/vespalib/eval/value_cache/constant_value.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
 
 using namespace search::fef;
 

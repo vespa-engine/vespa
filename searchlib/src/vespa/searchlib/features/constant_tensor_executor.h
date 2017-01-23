@@ -3,10 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/eval/value.h>
-#include <vespa/vespalib/eval/value_type.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <memory>
 
 namespace search {

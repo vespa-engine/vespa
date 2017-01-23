@@ -5,7 +5,6 @@ vespa_define_module(
     vespalog
 
     APPS
-    src/apps/eval_expr
     src/apps/make_fixture_macros
 
     TESTS
@@ -24,17 +23,6 @@ vespa_define_module(
     src/tests/delegatelist
     src/tests/dotproduct
     src/tests/dual_merge_director
-    src/tests/eval/compile_cache
-    src/tests/eval/compiled_function
-    src/tests/eval/function
-    src/tests/eval/function_speed
-    src/tests/eval/gbdt
-    src/tests/eval/interpreted_function
-    src/tests/eval/node_types
-    src/tests/eval/simple_tensor
-    src/tests/eval/tensor_function
-    src/tests/eval/value_cache
-    src/tests/eval/value_type
     src/tests/eventbarrier
     src/tests/exception_classes
     src/tests/executor
@@ -72,17 +60,6 @@ vespa_define_module(
     src/tests/stllike
     src/tests/stringfmt
     src/tests/sync
-    src/tests/tensor/sparse_tensor_builder
-    src/tests/tensor/dense_dot_product_function
-    src/tests/tensor/dense_tensor_address_combiner
-    src/tests/tensor/dense_tensor_builder
-    src/tests/tensor/dense_tensor_function_compiler
-    src/tests/tensor/tensor_address
-    src/tests/tensor/tensor_conformance
-    src/tests/tensor/tensor_mapper
-    src/tests/tensor/tensor_performance
-    src/tests/tensor/tensor_serialization
-    src/tests/tensor/tensor_slime_serialization
     src/tests/testapp-debug
     src/tests/testapp-generic
     src/tests/testapp-main
@@ -118,20 +95,12 @@ vespa_define_module(
     src/vespa/vespalib/component
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
-    src/vespa/vespalib/eval
-    src/vespa/vespalib/eval/test
-    src/vespa/vespalib/eval/value_cache
-    src/vespa/vespalib/eval/llvm
     src/vespa/vespalib/geo
     src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
-    src/vespa/vespalib/tensor
-    src/vespa/vespalib/tensor/sparse
-    src/vespa/vespalib/tensor/dense
-    src/vespa/vespalib/tensor/serialization
     src/vespa/vespalib/test
     src/vespa/vespalib/testkit
     src/vespa/vespalib/text

@@ -12,10 +12,10 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
-#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/tensor.h>
 
 using search::feature_t;
 using namespace search::fef;

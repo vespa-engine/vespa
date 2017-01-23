@@ -15,9 +15,9 @@ LOG_SETUP("verify_ranksetup");
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#include <vespa/vespalib/eval/tensor_spec.h>
-#include <vespa/vespalib/eval/value_cache/constant_value.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 
 using config::ConfigContext;
 using config::ConfigHandle;

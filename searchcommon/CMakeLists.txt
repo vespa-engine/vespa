@@ -4,9 +4,9 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
-    vespalib_vespalib_tensor
     config_cloudconfig
     configdefinitions
+    eval
 
     TESTS
     src/tests/attribute/config

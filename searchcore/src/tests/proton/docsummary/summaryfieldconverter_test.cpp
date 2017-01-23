@@ -42,10 +42,10 @@
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using vespa::config::search::SummarymapConfig;

@@ -4,8 +4,8 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
-    vespalib_vespalib_eval_llvm
     staging_vespalib
+    eval
     fnet
     configdefinitions
     metrics

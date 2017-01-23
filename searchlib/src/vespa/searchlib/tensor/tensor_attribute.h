@@ -5,7 +5,7 @@
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include "tensor_store.h"
 #include <vespa/searchlib/common/rcuvector.h>
-#include <vespa/vespalib/tensor/tensor_mapper.h>
+#include <vespa/eval/tensor/tensor_mapper.h>
 
 namespace vespalib { namespace tensor { class Tensor; } }
 

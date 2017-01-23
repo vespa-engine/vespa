@@ -31,10 +31,10 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/types.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/types.h>
+#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 
 

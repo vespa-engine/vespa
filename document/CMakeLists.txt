@@ -6,6 +6,7 @@ vespa_define_module(
     vespalib
     staging_vespalib
     config_cloudconfig
+    eval
 
     EXTERNAL_DEPENDS
     lz4

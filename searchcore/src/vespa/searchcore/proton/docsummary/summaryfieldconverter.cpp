@@ -41,8 +41,8 @@
 #include <vespa/vespalib/data/slime/convenience.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/json_format.h>
-#include <vespa/vespalib/tensor/serialization/slime_binary_format.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/serialization/slime_binary_format.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/util/exceptions.h>

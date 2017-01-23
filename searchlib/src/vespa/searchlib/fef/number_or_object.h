@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
-#include <vespa/vespalib/eval/value.h>
+#include <vespa/eval/eval/value.h>
 
 namespace search {
 namespace fef {

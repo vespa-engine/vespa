@@ -3,7 +3,7 @@
 #pragma once
 
 #include "tensor_store.h"
-#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/eval/eval/value_type.h>
 
 namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
 

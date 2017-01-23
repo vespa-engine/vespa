@@ -20,13 +20,13 @@
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/vespalib/tensor/tensor_factory.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>

@@ -21,8 +21,8 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/backtrace.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
