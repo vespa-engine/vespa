@@ -106,4 +106,13 @@ public class RestUriTest {
         new RestUri(createUri("/document/v1/namespace/doctype/Q/myid", ""));
     }
 
+    @Test
+    public void testDocIdAsIs() throws Exception {
+        RestUri restUri = new RestUri(new URI("/document/v1/test/newsarticle/docid/http://vn.news.yahoo.com/gi-th-ng-t-n-ng-khoa-h-205000458.html").normalize());
+        assertThat(restUri.getNamespace(), is("test"));
+        assertThat(restUri.getDocumentType(), is("newsarticle"));
+        assertThat(restUri.getDocId(), is("http://vn.news.yahoo.com/gi-th-ng-t-n-ng-khoa-h-205000458.html"));
+        assertThat(restUri.generateFullId(), is("id:test:newsarticle::http://vn.news.yahoo.com/gi-th-ng-t-n-ng-khoa-h-205000458.html"));
+    }
+
 }
