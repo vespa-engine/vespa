@@ -16,7 +16,7 @@ import java.util.Random;
 /**
  * This schedules periodic reboot of all nodes.
  * We reboot nodes periodically to surface problems at reboot with a smooth frequency rather than
- * potentially in burst when many bodes need to be rebooted for external reasons.
+ * potentially in burst when many nodes need to be rebooted for external reasons.
  * 
  * @author bratseth
  */
@@ -30,17 +30,16 @@ public class NodeRebooter extends Maintainer {
         super(nodeRepository, min(Duration.ofMinutes(25), rebootInterval));
         this.rebootInterval = rebootInterval;
         this.clock = clock;
-        random = new Random(clock.millis()); // seed with clock for test determinism
-        
+        this.random = new Random(clock.millis()); // seed with clock for test determinism   
     }
 
     @Override
     protected void maintain() {
         // Reboot candidates: Nodes in long-term states, which we know an safely orchestrate a reboot
-        List<Node> rebootCanididates = nodeRepository().getNodes(NodeType.tenant, Node.State.active, Node.State.ready);
-        rebootCanididates.addAll(nodeRepository().getNodes(NodeType.proxy, Node.State.active, Node.State.ready));
+        List<Node> rebootCandidates = nodeRepository().getNodes(NodeType.tenant, Node.State.active, Node.State.ready);
+        rebootCandidates.addAll(nodeRepository().getNodes(NodeType.proxy, Node.State.active, Node.State.ready));
 
-        for (Node node : rebootCanididates) {
+        for (Node node : rebootCandidates) {
             if (shouldReboot(node))
                 nodeRepository().reboot(NodeListFilter.from(node));
         }

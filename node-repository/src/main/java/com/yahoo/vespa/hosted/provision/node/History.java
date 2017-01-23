@@ -101,7 +101,7 @@ public class History {
 
         private final Instant at;
         private final Event.Type type;
-        
+
         public Event(Event.Type type, Instant at) {
             this.type = type;
             this.at = at;
