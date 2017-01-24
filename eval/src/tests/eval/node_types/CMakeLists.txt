@@ -3,6 +3,6 @@ vespa_add_executable(eval_node_types_test_app TEST
     SOURCES
     node_types_test.cpp
     DEPENDS
-    eval
+    vespaeval
 )
 vespa_add_test(NAME eval_node_types_test_app COMMAND eval_node_types_test_app)

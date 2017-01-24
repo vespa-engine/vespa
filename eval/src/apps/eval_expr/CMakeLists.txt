@@ -2,7 +2,8 @@
 vespa_add_executable(eval_eval_expr_app
     SOURCES
     eval_expr.cpp
+    OUTPUT_NAME vespa-eval-expr
     INSTALL bin
     DEPENDS
-    eval
+    vespaeval
 )

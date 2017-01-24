@@ -3,13 +3,13 @@ vespa_add_executable(eval_gbdt_test_app TEST
     SOURCES
     gbdt_test.cpp
     DEPENDS
-    eval
+    vespaeval
 )
 vespa_add_test(NAME eval_gbdt_test_app COMMAND eval_gbdt_test_app)
 vespa_add_executable(eval_gbdt_benchmark_app
     SOURCES
     gbdt_benchmark.cpp
     DEPENDS
-    eval
+    vespaeval
 )
 vespa_add_test(NAME eval_gbdt_benchmark_app COMMAND eval_gbdt_benchmark_app BENCHMARK)

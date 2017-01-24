@@ -3,6 +3,6 @@ vespa_add_executable(eval_tensor_slime_serialization_test_app TEST
     SOURCES
     tensor_slime_serialization_test.cpp
     DEPENDS
-    eval
+    vespaeval
 )
 vespa_add_test(NAME eval_tensor_slime_serialization_test_app COMMAND eval_tensor_slime_serialization_test_app)
