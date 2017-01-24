@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
  * @author tonytv
  */
 class FutureWaiter {
+
     private class Future {
         final FutureResult result;
         final long timeoutInMilliseconds;
@@ -32,7 +33,7 @@ class FutureWaiter {
     public void waitForFutures() {
         sortFuturesByTimeoutDescending();
 
-        final long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
 
         for (Future future : futures) {
             long timeToWait = startTime + future.timeoutInMilliseconds - System.currentTimeMillis();
@@ -55,4 +56,5 @@ class FutureWaiter {
             }
         });
     }
+
 }
