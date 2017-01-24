@@ -461,21 +461,12 @@ public class HttpRequest {
     }
 
     /**
-     * Get the full normalized URI corresponding to this request.
+     * Get the full URI corresponding to this request.
      *
      * @return the URI of this request
      */
     public URI getUri() {
         return parentRequest.getUri();
-    }
-
-    /**
-     * Get the full original URI corresponding to this request.
-     *
-     * @return the URI of this request
-     */
-    public URI getRawUri() {
-        return parentRequest.getRawUri();
     }
 
     /**

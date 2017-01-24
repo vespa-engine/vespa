@@ -46,7 +46,6 @@ public class Request extends AbstractResource {
     private TimeoutManager timeoutManager;
     private boolean serverRequest;
     private Long timeout;
-    private URI rawUri;
     private URI uri;
 
     /**
@@ -126,7 +125,7 @@ public class Request extends AbstractResource {
     }
 
     /**
-     * <p>Returns the normalized Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
+     * <p>Returns the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
      * RequestHandler} for this Request.</p>
      *
      * @return The resource identifier.
@@ -134,17 +133,6 @@ public class Request extends AbstractResource {
      */
     public URI getUri() {
         return uri;
-    }
-
-    /**
-     * <p>Returns the original raw Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
-     * RequestHandler} for this Request.</p>
-     *
-     * @return The resource identifier.
-     * @see #setUri(URI)
-     */
-    public URI getRawUri() {
-        return rawUri;
     }
 
     /**
@@ -157,7 +145,6 @@ public class Request extends AbstractResource {
      * @see #getUri()
      */
     public Request setUri(URI uri) {
-        this.rawUri = uri;
         this.uri = uri.normalize();
         return this;
     }

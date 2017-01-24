@@ -115,7 +115,7 @@ public class RestApi extends LoggingRequestHandler {
     protected HttpResponse handleInternal(HttpRequest request) {
         final RestUri restUri;
         try {
-            restUri = new RestUri(request.getRawUri());
+            restUri = new RestUri(request.getUri());
         } catch (RestApiException e) {
             return e.getResponse();
         } catch (Exception e2) {
