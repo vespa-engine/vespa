@@ -20,7 +20,7 @@ public class RestApiMaxThreadTest {
     private  class RestApiMocked extends RestApi {
 
         public RestApiMocked() {
-            super(mock(Executor.class), null, (OperationHandler)null);
+            super(mock(Executor.class), null, (OperationHandler)null, 20);
         }
 
         @Override
