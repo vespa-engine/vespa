@@ -63,6 +63,22 @@ public class RequestTestCase {
     }
 
     @Test
+    public void requireThatOriginalUriIsRetained() {
+        MyTimer timer = new MyTimer();
+        timer.currentTime = 69;
+
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(timer);
+        driver.activateContainer(driver.newContainerBuilder());
+        Request request = new Request(driver, URI.create("http://foo/bar"));
+        assertEquals("http://foo/bar", request.getUri().toString());
+        assertEquals("http://foo/bar", request.getRawUri().toString());
+
+        request = new Request(driver, URI.create("http://foo//bar"));
+        assertEquals("http://foo/bar", request.getUri().toString());
+        assertEquals("http://foo//bar", request.getRawUri().toString());
+    }
+
+    @Test
     public void requireThatCancelWorks() {
         MyTimer timer = new MyTimer();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(timer);
