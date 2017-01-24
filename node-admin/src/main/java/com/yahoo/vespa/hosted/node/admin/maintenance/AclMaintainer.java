@@ -56,13 +56,7 @@ public class AclMaintainer implements Runnable {
             dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.flushChain());
             aclSpecs.stream()
                     .map(ContainerAclSpec::ipAddress)
-                    .filter(ipAddress -> {
-                        final boolean isIpv6 = isIpv6(ipAddress);
-                        if (!isIpv6) {
-                            log.warning("Skipping unexpected IPv4 address in ACL configuration: " + ipAddress);
-                        }
-                        return isIpv6;
-                    })
+                    .filter(AclMaintainer::isIpv6)
                     .forEach(ipAddress -> dockerOperations.executeCommandInNetworkNamespace(containerName,
                             IpTables.allowFromAddress(ipAddress)));
             dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.chainPolicy(Policy.DROP));
