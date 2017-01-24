@@ -129,6 +129,7 @@ SingleValueNumericEnumAttribute<B>::onLoad()
     if (numDocs > 0) {
         this->onAddDoc(numDocs - 1);
     }
+
     for (uint32_t docIdx = 0; docIdx < numDocs; ++docIdx) {
         loaded[docIdx]._docId = docIdx;
         loaded[docIdx]._idx = 0;

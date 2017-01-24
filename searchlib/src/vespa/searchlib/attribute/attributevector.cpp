@@ -231,6 +231,7 @@ bool
 AttributeVector::addDocs(DocId &startDoc, DocId &lastDoc, uint32_t numDocs)
 {
     if (numDocs != 0) {
+        onAddDocs(getNumDocs() + numDocs);
         if (!addDoc(startDoc)) {
             return false;
         }

@@ -613,6 +613,12 @@ public:
     virtual const EnumStoreBase *getEnumStoreBase() const;
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
 private:
+    /**
+     * This is called before adding docs will commence.
+     * The attributes can then ensure space is available to avoid reallocation as it grows.
+     * @param docIdLimit
+     */
+    virtual void onAddDocs(DocId docIdLimit) = 0;
     void divideByZeroWarning();
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
     virtual void onSave(IAttributeSaveTarget & saveTarget);

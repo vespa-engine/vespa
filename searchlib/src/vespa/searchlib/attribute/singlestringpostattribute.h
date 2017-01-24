@@ -70,8 +70,8 @@ public:
     using PostingParent::getPostingList;
 
 private:
-    virtual void freezeEnumDictionary();
-    virtual void mergeMemoryStats(MemoryUsage & total);
+    void freezeEnumDictionary() override;
+    void mergeMemoryStats(MemoryUsage & total) override;
     void applyUpdateValueChange(const Change & c,
                                 EnumStore & enumStore,
                                 std::map<DocId, EnumIndex> &currEnumIndices);
@@ -82,41 +82,35 @@ private:
                       const std::map<DocId, EnumIndex> &currEnumIndices,
                       PostingMap &changePost);
 
-    virtual void applyValueChanges(EnumStoreBase::IndexVector & unused);
+    virtual void applyValueChanges(EnumStoreBase::IndexVector & unused) override;
 public:
     SingleValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                                        AttributeVector::Config(AttributeVector::BasicType::STRING));
     ~SingleValueStringPostingAttributeT();
 
-    virtual void removeOldGenerations(generation_t firstUsed);
-    virtual void onGenerationChange(generation_t generation);
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
 
     AttributeVector::SearchContext::UP
     getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 
-    virtual bool
-    onAddDoc(DocId doc)
-    {
-        return forwardedOnAddDoc(doc,
-                                 this->_enumIndices.size(),
-                                 this->_enumIndices.capacity());
+    virtual bool onAddDoc(DocId doc) {
+        return forwardedOnAddDoc(doc, this->_enumIndices.size(), this->_enumIndices.capacity());
     }
-    
-    virtual void
-    fillPostings(LoadedVector & loaded)
-    {
+
+    void onAddDocs(DocId lidLimit) override {
+        forwardedOnAddDoc(lidLimit, this->_enumIndices.size(), this->_enumIndices.capacity());
+    }
+
+    void fillPostings(LoadedVector & loaded) override {
         handleFillPostings(loaded);
     }
 
-    virtual attribute::IPostingListAttributeBase *
-    getIPostingListAttributeBase()
-    {
+    attribute::IPostingListAttributeBase * getIPostingListAttributeBase() override {
         return this;
     }
 
-    virtual void
-    fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded)
-    {
+    void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) override {
         fillPostingsFixupEnumBase(loaded);
     }
 };

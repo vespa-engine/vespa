@@ -68,6 +68,28 @@ SingleValueNumericAttribute<B>::onUpdateStat()
 
 template <typename B>
 void
+SingleValueNumericAttribute<B>::onAddDocs(DocId lidLimit) {
+    _data.reserve(lidLimit);
+}
+
+template <typename B>
+bool
+SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
+    bool incGen = _data.isFull();
+    _data.push_back(attribute::getUndefined<T>());
+    std::atomic_thread_fence(std::memory_order_release);
+    B::incNumDocs();
+    doc = B::getNumDocs() - 1;
+    this->updateUncommittedDocIdLimit(doc);
+    if (incGen) {
+        this->incGeneration();
+    } else
+        this->removeAllOldGenerations();
+    return true;
+}
+
+template <typename B>
+void
 SingleValueNumericAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
     getGenerationHolder().trimHoldLists(firstUsed);
@@ -88,6 +110,7 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
+    _data.unsafe_reserve(numDocs);
 
     fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
     assert((udatBuffer->size() % sizeof(T)) == 0);

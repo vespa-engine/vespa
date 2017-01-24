@@ -50,30 +50,27 @@ protected:
      **/
     virtual bool onAddDoc(DocId doc) { (void) doc; return false; }
 
-    virtual AddressSpace getMultiValueAddressSpaceUsage() const override;
+    AddressSpace getMultiValueAddressSpaceUsage() const override;
 
 public:
     MultiValueAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
     virtual ~MultiValueAttribute();
 
-    virtual bool addDoc(DocId & doc);
-    virtual uint32_t getValueCount(DocId doc) const;
-    virtual const attribute::MultiValueMappingBase *getMultiValueBase() const override {
+    bool addDoc(DocId & doc) override;
+    uint32_t getValueCount(DocId doc) const override;
+    const attribute::MultiValueMappingBase *getMultiValueBase() const override {
         return &getMultiValueMapping();
     }
 
 private:
-    virtual int32_t getWeight(DocId doc, uint32_t idx) const;
+    int32_t getWeight(DocId doc, uint32_t idx) const override;
 
-    virtual uint64_t
-    getTotalValueCount(void) const;
+    uint64_t getTotalValueCount(void) const override;
 
 public:
-    virtual void
-    clearDocs(DocId lidLow, DocId lidLimit);
-
-    virtual void
-    onShrinkLidSpace();
+    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void onShrinkLidSpace() override ;
+    void onAddDocs(DocId lidLimit) override;
 };
 
 } // namespace search

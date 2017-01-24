@@ -43,35 +43,34 @@ public:
                                 AttributeVector::Config(AttributeVector::BasicType::STRING));
     ~SingleValueStringAttributeT();
 
-    virtual void
-    freezeEnumDictionary(void);
+    void freezeEnumDictionary() override;
 
     //-------------------------------------------------------------------------
     // Attribute read API
     //-------------------------------------------------------------------------
-    virtual bool isUndefined(DocId doc) const { return get(doc)[0] == '\0'; }
-    virtual const char * get(DocId doc) const {
+    bool isUndefined(DocId doc) const override { return get(doc)[0] == '\0'; }
+    const char * get(DocId doc) const override {
         return this->_enumStore.getValue(this->_enumIndices[doc]);
     }
-    virtual uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const {
+    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = get(doc);
         }
         return 1;
     }
-    virtual uint32_t get(DocId doc, const char ** v, uint32_t sz) const {
+    uint32_t get(DocId doc, const char ** v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = get(doc);
         }
         return 1;
     }
-    virtual uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override{
         if (sz > 0) {
             v[0] = WeightedString(get(doc), 1);
         }
         return 1;
     }
-    virtual uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override{
         if (sz > 0) {
             v[0] = WeightedConstChar(get(doc), 1);
         }

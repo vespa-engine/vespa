@@ -48,6 +48,7 @@ public:
     bool isFull() const { return _indices.isFull(); }
     void addDoc(uint32_t &docId);
     void shrink(uint32_t docidLimit);
+    void reserve(uint32_t lidLimit);
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc);
     uint32_t size() const { return _indices.size(); }
 

@@ -156,6 +156,13 @@ MultiValueAttribute<B, M>::addDoc(DocId & doc)
 }
 
 template <typename B, typename M>
+void
+MultiValueAttribute<B, M>::onAddDocs(DocId  lidLimit) {
+    this->_mvMapping.reserve(lidLimit);
+}
+
+
+template <typename B, typename M>
 uint32_t
 MultiValueAttribute<B, M>::getValueCount(DocId doc) const
 {

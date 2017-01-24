@@ -870,10 +870,7 @@ LogDataStore::setLid(const LockGuard & guard, uint32_t lid, const LidInfo & meta
             _fileChunks[prev.getFileId()]->remove(lid, prev.size());
         }
     } else {
-        _lidInfo.reserve(lid+1);
-        while (lid >= _lidInfo.size()) {
-            _lidInfo.push_back(LidInfo());
-        }
+        _lidInfo.ensure_size(lid+1, LidInfo());
         _lidInfo.setGeneration(_genHandler.getNextGeneration());
         _genHandler.incGeneration();
         _genHandler.updateFirstUsedGeneration();

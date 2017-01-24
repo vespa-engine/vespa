@@ -43,6 +43,12 @@ MultiValueMappingBase::addDoc(uint32_t & docId)
 }
 
 void
+MultiValueMappingBase::reserve(uint32_t lidLimit)
+{
+    _indices.reserve(lidLimit);
+}
+
+void
 MultiValueMappingBase::shrink(uint32_t docIdLimit)
 {
     assert(docIdLimit < _indices.size());

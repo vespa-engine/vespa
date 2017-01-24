@@ -175,6 +175,15 @@ FlagAttributeT<B>::onAddDoc(DocId doc)
 
 template <typename B>
 void
+FlagAttributeT<B>::onAddDocs(DocId docidLimit)
+{
+    if (docidLimit > _bitVectorSize) {
+        resizeBitVectors(docidLimit);
+    }
+}
+
+template <typename B>
+void
 FlagAttributeT<B>::ensureGuardBit(BitVector & bv)
 {
     if (this->getNumDocs() < bv.size()) {

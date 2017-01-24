@@ -113,6 +113,7 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(ReaderBase & attrReader)
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
+    this->_mvMapping.reserve(numDocs+1);
 
     LoadedBuffer::UP udatBuffer(this->loadUDAT());
     assert((udatBuffer->size() % sizeof(T)) == 0);
@@ -147,6 +148,7 @@ MultiValueNumericAttribute<B, M>::onLoad()
     std::vector<MultiValueType> values;
     B::setNumDocs(numDocs);
     B::setCommittedDocIdLimit(numDocs);
+    this->_mvMapping.reserve(numDocs+1);
     for (DocId doc = 0; doc < numDocs; ++doc) {
         const uint32_t valueCount(attrReader.getNextValueCount());
         for (uint32_t i(0); i < valueCount; i++) {

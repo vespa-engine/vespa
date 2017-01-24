@@ -64,39 +64,34 @@ private:
 
 protected:
     // from EnumAttribute
-    virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques);
-    virtual void reEnumerate();
+    void considerAttributeChange(const Change & c, UniqueSet & newUniques) override;
+    void reEnumerate() override;
 
     // implemented by single value numeric enum attribute.
     virtual void considerUpdateAttributeChange(const Change & c) { (void) c; }
     virtual void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques) { (void) c; (void) newUniques; }
 
     // update enum index vector with new values according to change vector
-    virtual void applyValueChanges(EnumStoreBase::IndexVector & unused);
+    virtual void applyValueChanges(EnumStoreBase::IndexVector & unused) ;
     virtual void applyArithmeticValueChange(const Change & c, EnumStoreBase::IndexVector & unused) {
         (void) c; (void) unused;
     }
     void updateEnumRefCounts(const Change & c, EnumIndex newIdx, EnumIndex oldIdx, EnumStoreBase::IndexVector & unused);
 
-    virtual void
-    freezeEnumDictionary()
-    {
+    virtual void freezeEnumDictionary() {
         this->getEnumStore().freezeTree();
     }
 
     virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
-
     virtual void fillValues(LoadedVector & loaded);
 
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumStoreBase::IndexVector &eidxs,
-                LoadedEnumAttributeVector &loaded);
+    void fillEnumIdx(ReaderBase &attrReader,
+                     const EnumStoreBase::IndexVector &eidxs,
+                     LoadedEnumAttributeVector &loaded) override;
     
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumStoreBase::IndexVector &eidxs,
-                EnumStoreBase::EnumVector &enumHist);
+    void fillEnumIdx(ReaderBase &attrReader,
+                     const EnumStoreBase::IndexVector &eidxs,
+                     EnumStoreBase::EnumVector &enumHist) override;
     
     /**
      * Called when a new document has been added.
@@ -106,41 +101,38 @@ protected:
      *
      * Should return true if underlying structures were resized.
      **/
-    virtual bool onAddDoc(DocId doc) { (void) doc; return false; }
+    virtual bool onAddDoc(DocId doc);
 
 public:
     SingleValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
-    virtual ~SingleValueEnumAttribute();
+    ~SingleValueEnumAttribute();
 
-    virtual bool addDoc(DocId & doc);
-    virtual uint32_t getValueCount(DocId doc) const;
-    virtual void onCommit();
-    virtual void onUpdateStat();
-    virtual void removeOldGenerations(generation_t firstUsed);
-    virtual void onGenerationChange(generation_t generation);
-    virtual EnumHandle getEnum(DocId doc) const {
+    bool addDoc(DocId & doc) override;
+    uint32_t getValueCount(DocId doc) const override;
+    void onCommit() override;
+    void onUpdateStat() override;
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
+    EnumHandle getEnum(DocId doc) const override {
        return getE(doc);
     }
-    virtual uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const {
+    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
         if (sz > 0) {
             e[0] = getE(doc);
         }
         return 1;
     }
-    virtual uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
         if (sz > 0) {
             e[0] = WeightedEnum(getE(doc), 1);
         }
         return 1;
     }
 
-    virtual void
-    clearDocs(DocId lidLow, DocId lidLimit);
-
-    virtual void
-    onShrinkLidSpace();
-
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void onShrinkLidSpace() override;
+    std::unique_ptr<AttributeSaver> onInitSave() override;
+    void onAddDocs(DocId lidLimit) override;
 };
 
 } // namespace search
