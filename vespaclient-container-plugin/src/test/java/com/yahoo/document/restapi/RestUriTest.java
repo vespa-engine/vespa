@@ -111,7 +111,7 @@ public class RestUriTest {
         RestUri restUri = new RestUri(new URI("/document/v1/test/newsarticle/docid/http://vn.news.yahoo.com/gi-th-ng-t-n-ng-khoa-h-205000458.html"));
         assertThat(restUri.getNamespace(), is("test"));
         assertThat(restUri.getDocumentType(), is("newsarticle"));
-        assertThat(restUri.getDocId(), is("http://vn.news.yahoo.com//gi-th-ng-t-n-ng-khoa-h-205000458.html"));
+        assertThat(restUri.getDocId(), is("http://vn.news.yahoo.com/gi-th-ng-t-n-ng-khoa-h-205000458.html"));
         assertThat(restUri.generateFullId(), is("id:test:newsarticle::http://vn.news.yahoo.com/gi-th-ng-t-n-ng-khoa-h-205000458.html"));
     }
 
