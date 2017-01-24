@@ -69,9 +69,11 @@ public class RestApi extends LoggingRequestHandler {
     public RestApi(
             Executor executor,
             AccessLog accessLog,
-            OperationHandler operationHandler) {
+            OperationHandler operationHandler,
+            int threadsAvailable) {
         super(executor, accessLog);
         this.operationHandler = operationHandler;
+        this.threadsAvailableForApi.set(threadsAvailable);
     }
     
     @Override

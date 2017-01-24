@@ -22,7 +22,7 @@ public class RestApiWithTestDocumentHandler extends RestApi{
             Executor executor,
             AccessLog accessLog,
             OperationHandler operationHandler) {
-        super(executor, accessLog, operationHandler);
+        super(executor, accessLog, operationHandler, 20);
 
         DocumentType documentType = new DocumentType("testdocument");
 
