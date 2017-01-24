@@ -73,4 +73,37 @@ public class ReferenceDataTypeTestCase {
         assertTrue(fixture.refType.isValueCompatible(fixture.refTypeClone.createFieldValue()));
     }
 
+    @Test
+    public void reference_type_can_be_constructed_with_temporary_structured_data_type() {
+        TemporaryStructuredDataType tempType = new TemporaryStructuredDataType("cooldoc");
+        ReferenceDataType refType = new ReferenceDataType(tempType, 321);
+        assertEquals("Reference<cooldoc>", refType.getName());
+        assertEquals(321, refType.getId());
+        assertEquals(tempType, refType.getTargetType());
+    }
+
+    @Test
+    public void can_replace_temporary_target_data_type() {
+        TemporaryStructuredDataType tempType = new TemporaryStructuredDataType("cooldoc");
+        ReferenceDataType refType = new ReferenceDataType(tempType, 321);
+        DocumentType concreteType = new DocumentType("cooldoc");
+        refType.setTargetType(concreteType);
+        assertEquals("Reference<cooldoc>", refType.getName());
+        assertEquals(321, refType.getId());
+        assertEquals(concreteType, refType.getTargetType());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void replacing_already_concrete_type_throws_illegal_state_exception() {
+        ReferenceDataType refType = new ReferenceDataType(new DocumentType("foo"), 123);
+        refType.setTargetType(new DocumentType("foo"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void replacing_temporary_type_with_concrete_type_of_different_name_throws_illegal_argument_exception() {
+        TemporaryStructuredDataType tempType = new TemporaryStructuredDataType("cooldoc");
+        ReferenceDataType refType = new ReferenceDataType(tempType, 321);
+        refType.setTargetType(new DocumentType("uncooldoc"));
+    }
+
 }
