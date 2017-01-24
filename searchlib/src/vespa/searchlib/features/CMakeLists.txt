@@ -42,6 +42,7 @@ vespa_add_library(searchlib_features OBJECT
     queryterm.cpp
     querytermcountfeature.cpp
     randomfeature.cpp
+    random_normal_feature.cpp
     rankingexpressionfeature.cpp
     raw_score_feature.cpp
     reverseproximityfeature.cpp

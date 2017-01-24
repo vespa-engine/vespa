@@ -32,6 +32,7 @@ LOG_SETUP("prod_features_test");
 #include <vespa/searchlib/features/queryfeature.h>
 #include <vespa/searchlib/features/querytermcountfeature.h>
 #include <vespa/searchlib/features/randomfeature.h>
+#include <vespa/searchlib/features/random_normal_feature.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termfeature.h>
@@ -88,7 +89,7 @@ Test::Main()
     TEST_DO(testAttribute());           TEST_FLUSH();
     TEST_DO(testAttributeMatch());      TEST_FLUSH();
     TEST_DO(testCloseness());           TEST_FLUSH();
-    TEST_DO(testMatchCount());        TEST_FLUSH();
+    TEST_DO(testMatchCount());          TEST_FLUSH();
     TEST_DO(testDistance());            TEST_FLUSH();
     TEST_DO(testDistanceToPath());      TEST_FLUSH();
     TEST_DO(testDotProduct());          TEST_FLUSH();
@@ -104,6 +105,7 @@ Test::Main()
     TEST_DO(testQuery());               TEST_FLUSH();
     TEST_DO(testQueryTermCount());      TEST_FLUSH();
     TEST_DO(testRandom());              TEST_FLUSH();
+    TEST_DO(testRandomNormal());        TEST_FLUSH();
     TEST_DO(testRankingExpression());   TEST_FLUSH();
     TEST_DO(testTerm());                TEST_FLUSH();
     TEST_DO(testTermDistance());        TEST_FLUSH();
@@ -1725,6 +1727,50 @@ Test::testRandom()
     }
 }
 
+void
+Test::testRandomNormal()
+{
+    { // Test blueprint.
+        RandomNormalBlueprint pt;
+
+        EXPECT_TRUE(assertCreateInstance(pt, "randomNormal"));
+
+        StringList params, in, out;
+        FT_SETUP_OK (pt, params, in, out.add("out"));
+        FT_SETUP_OK (pt, params.add("0.5").add("1.0"), in, out);
+        FT_SETUP_OK (pt, params.add("val1"), in, out);
+
+        FT_DUMP_EMPTY(_factory, "randomNormal");
+    }
+
+    { // Test executor (current time used as seed)
+        FtFeatureTest ft(_factory, "randomNormal");
+        ASSERT_TRUE(ft.setup());
+        RankResult rr;
+        rr.addScore("randomNormal", 1000.0);
+        for (uint32_t i = 0; i < 5; ++i) {
+            feature_t last = rr.getScore("randomNormal");
+            rr.clear();
+            ASSERT_TRUE(ft.executeOnly(rr, i + 1));
+            ASSERT_TRUE(last != rr.getScore("randomNormal"));
+        }
+    }
+
+    { // Test setting of mean and stddev values, and seed
+        FtFeatureTest ft1(_factory, "randomNormal(0.0,0.1)");
+        FtFeatureTest ft2(_factory, "randomNormal(1.0,0.2)");
+        ft1.getIndexEnv().getProperties().add("randomNormal(0.0,0.1).seed", "100");
+        ft2.getIndexEnv().getProperties().add("randomNormal(1.0,0.2).seed", "100");
+        ASSERT_TRUE(ft1.setup());
+        ASSERT_TRUE(ft2.setup());
+        RankResult rr;
+        for (uint32_t i = 0; i < 5; ++i) {
+            rr.clear();
+            ASSERT_TRUE(ft1.executeOnly(rr, i + 1));
+            ASSERT_TRUE(ft2.execute(((rr.getScore("randomNormal(0.0,0.1)")-0.0)/0.1) * 0.2 + 1.0, EPS, i + 1));
+        }
+    }
+}
 
 void
 Test::testRankingExpression()
