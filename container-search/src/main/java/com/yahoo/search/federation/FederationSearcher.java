@@ -218,48 +218,31 @@ public class FederationSearcher extends ForkingSearcher {
         Execution newExecution = new Execution(target.getChain(), execution.context());
         if (strictSearchchain) {
             query.resetTimeout();
-            return newExecution.search(createFederationQuery(query, query,
-                                                             windowParameters(query.getHits(), query.getOffset()), timeout, target));
+            return newExecution.search(createFederationQuery(query, query, Window.from(query), timeout, target));
         } else {
-            return newExecution.search(cloneFederationQuery(query,
-                                                            windowParameters(query.getHits(), query.getOffset()), timeout, target));
+            return newExecution.search(cloneFederationQuery(query, Window.from(query), timeout, target));
         }
     }
 
     private FederationResult search(Query query, Execution execution, Collection<Target> targets) {
         FederationResult.Builder result = new FederationResult.Builder();
-        Map<String, Object> windowParameters;
-        if (targets.size() == 1) // preserve requested top-level offset by default as an optimization
-            windowParameters = Collections.unmodifiableMap(windowParameters(query.getHits(), query.getOffset()));
-        else // request from offset 0 to enable correct upstream blending into a single top-level hit list
-            windowParameters = Collections.unmodifiableMap(windowParameters(query.getHits() + query.getOffset(), 0));
-
         for (Target target : targets)
-            result.add(target, searchAsynchronously(query, execution, windowParameters, target));
+            result.add(target, searchAsynchronously(query, execution, Window.from(targets, query), target));
         return result.build();
     }
 
-    private Map<String, Object> windowParameters(int hits, int offset) {
-        Map<String, Object> params = new HashMap<>();
-        params.put(Query.HITS.toString(), hits);
-        params.put(Query.OFFSET.toString(), offset);
-        return params;
-    }
-
-    private FutureResult searchAsynchronously(Query query, Execution execution, Map<String, Object> windowParameters, Target target) {
+    private FutureResult searchAsynchronously(Query query, Execution execution, Window window, Target target) {
         long timeout = target.federationOptions().getSearchChainExecutionTimeoutInMilliseconds(query.getTimeLeft());
-        Query clonedQuery = cloneFederationQuery(query, windowParameters, timeout, target);
+        Query clonedQuery = cloneFederationQuery(query, window, timeout, target);
         return new AsyncExecution(target.getChain(), execution).search(clonedQuery);
     }
 
-    private Query cloneFederationQuery(Query query,
-                                       Map<String, Object> windowParameters, long timeout, Target target) {
+    private Query cloneFederationQuery(Query query, Window window, long timeout, Target target) {
         Query clonedQuery = Query.createNewQuery(query);
-        return createFederationQuery(query, clonedQuery, windowParameters, timeout, target);
+        return createFederationQuery(query, clonedQuery, window, timeout, target);
     }
 
-    private Query createFederationQuery(Query query, Query outgoing,
-                                        Map<String, Object> windowParameters, long timeout, Target target) {
+    private Query createFederationQuery(Query query, Query outgoing, Window window, long timeout, Target target) {
         ComponentId chainId = target.getChain().getId();
 
         String sourceName = chainId.getName();
@@ -273,11 +256,11 @@ public class FederationSearcher extends ForkingSearcher {
 
         switch (propagateSourceProperties) {
             case ALL:
-                propagatePerSourceQueryProperties(query, outgoing, windowParameters, sourceName, providerName,
+                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName,
                                                   QueryProperties.PER_SOURCE_QUERY_PROPERTIES);
                 break;
             case OFFSET_HITS:
-                propagatePerSourceQueryProperties(query, outgoing, windowParameters, sourceName, providerName,
+                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName,
                                                   new CompoundName[]{Query.OFFSET, Query.HITS});
                 break;
         }
@@ -288,12 +271,11 @@ public class FederationSearcher extends ForkingSearcher {
         return outgoing;
     }
 
-    private void propagatePerSourceQueryProperties(Query original, Query outgoing,
-                                                   Map<String, Object> windowParameters,
+    private void propagatePerSourceQueryProperties(Query original, Query outgoing, Window window,
                                                    String sourceName, String providerName,
                                                    CompoundName[] queryProperties) {
         for (CompoundName key : queryProperties) {
-            Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, windowParameters.get(key.toString()));
+            Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
             if (value != null)
                 outgoing.properties().set(key, value);
         }
@@ -822,6 +804,36 @@ public class FederationSearcher extends ForkingSearcher {
         @Override
         public String toString() {
             return PROVIDER + super.toString();
+        }
+
+    }
+    
+    private static class Window {
+        
+        private final int hits;
+        private final int offset;
+        
+        public Window(int hits, int offset) {
+            this.hits = hits;
+            this.offset = offset;
+        }
+
+        public Integer get(CompoundName parameterName) {
+            if (parameterName.equals(Query.HITS)) return hits;
+            if (parameterName.equals(Query.OFFSET)) return offset;
+            return null;
+        }
+        
+        public static Window from(Query query) {
+            return new Window(query.getHits(), query.getOffset());
+        }
+
+
+        public static Window from(Collection<Target> targets, Query query) {
+            if (targets.size() == 1) // preserve requested top-level offsets
+                return Window.from(query);
+            else // request from offset 0 to enable correct upstream blending into a single top-level hit list
+                return new Window(query.getHits() + query.getOffset(), 0);
         }
 
     }

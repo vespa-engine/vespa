@@ -21,7 +21,7 @@ import com.yahoo.search.searchchain.Execution;
  *
  * @see FederationSearcher
  * @since 5.0.13
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @After("*")
 public class ForwardingSearcher extends PingableSearcher {
