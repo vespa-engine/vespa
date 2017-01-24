@@ -60,9 +60,10 @@ class FederationResult {
 
     private TargetResult targetWithSmallestTimeout(List<TargetResult> results, int queryTimeout) {
         TargetResult smallest = null;
-        for (TargetResult result : results)
+        for (TargetResult result : results) {
             if (smallest == null || result.timeout(queryTimeout) < smallest.timeout(queryTimeout))
                 smallest = result;
+        }
         return smallest;        
     }
     
