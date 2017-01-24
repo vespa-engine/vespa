@@ -12,6 +12,8 @@ import org.w3c.dom.NamedNodeMap;
 import javax.xml.transform.TransformerException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Handles overrides in a XML document according to the rules defined for multi environment application packages.
@@ -253,18 +255,12 @@ class OverrideProcessor implements PreProcessor {
         // Index by a concatenation of tag name + attribute names (except override attribute names)
         for (Element child : children) {
             NamedNodeMap attributes = child.getAttributes();
-            Set<String> attributeNames = new HashSet<>();
-            for (int i = 0; i < attributes.getLength(); i++) {
-                String nodeName = attributes.item(i).getNodeName();
-                if (nodeName.equals(ATTR_ENV_FULL_NAME) || nodeName.equals(ATTR_REG_FULL_NAME))
-                    continue;
-                attributeNames.add(nodeName);
-            }
-            List<String> names = new ArrayList<>(attributeNames);
-            Collections.sort(names);
-            StringBuilder sb = new StringBuilder(child.getTagName());
-            names.forEach(sb::append);
-            String key = sb.toString();
+            String attributeNames = IntStream.range(0, attributes.getLength())
+                                             .mapToObj(i -> attributes.item(i).getNodeName())
+                                             .filter(nodeName -> !(nodeName.equals(ATTR_ENV_FULL_NAME) || nodeName.equals(ATTR_REG_FULL_NAME)))
+                                             .sorted()
+                                             .collect(Collectors.joining());
+            String key = child.getTagName() + attributeNames;
             if ( ! elementsByEqualAttributeSet.containsKey(key)) {
                 elementsByEqualAttributeSet.put(key, new ArrayList<>());
             }
