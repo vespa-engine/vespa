@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
@@ -8,7 +9,10 @@ import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -18,10 +22,12 @@ import java.util.stream.Collectors;
  * @author dybis
  */
 public class NodeRepoMock implements NodeRepository {
-    private List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
-    private final CallOrderVerifier callOrderVerifier;
 
     private static final Object monitor = new Object();
+
+    private List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
+    private final Map<String, List<ContainerAclSpec>> acls = new HashMap<>();
+    private final CallOrderVerifier callOrderVerifier;
 
     public NodeRepoMock(CallOrderVerifier callOrderVerifier) {
         this.callOrderVerifier = callOrderVerifier;
@@ -40,6 +46,14 @@ public class NodeRepoMock implements NodeRepository {
             return containerNodeSpecs.stream()
                     .filter(containerNodeSpec -> containerNodeSpec.hostname.equals(hostName))
                     .findFirst();
+        }
+    }
+
+    @Override
+    public List<ContainerAclSpec> getContainerAclSpecs(String hostName) {
+        synchronized (monitor) {
+            return Optional.ofNullable(acls.get(hostName))
+                    .orElseGet(Collections::emptyList);
         }
     }
 
@@ -94,6 +108,16 @@ public class NodeRepoMock implements NodeRepository {
     public int getNumberOfContainerSpecs() {
         synchronized (monitor) {
             return containerNodeSpecs.size();
+        }
+    }
+
+    public void addContainerAclSpecs(String hostname, List<ContainerAclSpec> containerAclSpecs) {
+        synchronized (monitor) {
+            if (this.acls.containsKey(hostname)) {
+                this.acls.get(hostname).addAll(containerAclSpecs);
+            } else {
+                this.acls.put(hostname, containerAclSpecs);
+            }
         }
     }
 }

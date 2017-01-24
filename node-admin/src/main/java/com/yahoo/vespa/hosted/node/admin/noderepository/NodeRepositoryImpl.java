@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.noderepository;
 
+import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeReadyResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
@@ -15,10 +17,12 @@ import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author stiankri, dybis
@@ -76,6 +80,19 @@ public class NodeRepositoryImpl implements NodeRepository {
             return Optional.of(createContainerNodeSpec(nodeResponse));
         } catch (ConfigServerHttpRequestExecutor.NotFoundException e) {
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public List<ContainerAclSpec> getContainerAclSpecs(String hostName) {
+        try {
+            final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
+            final GetAclResponse response = requestExecutor.get(path, port, GetAclResponse.class);
+            return response.trustedNodes.stream()
+                    .map(node -> new ContainerAclSpec(node.hostname, node.ipAddress, node.trustedBy))
+                    .collect(Collectors.toList());
+        } catch (ConfigServerHttpRequestExecutor.NotFoundException e) {
+            return Collections.emptyList();
         }
     }
 

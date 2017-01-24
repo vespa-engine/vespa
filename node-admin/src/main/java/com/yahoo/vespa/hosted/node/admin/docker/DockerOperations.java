@@ -27,6 +27,8 @@ public interface DockerOperations {
 
     void executeCommandInContainer(ContainerName containerName, String[] command);
 
+    void executeCommandInNetworkNamespace(ContainerName containerName, String[] command);
+
     void resumeNode(ContainerName containerName);
 
     void restartServicesOnNode(ContainerName containerName);
