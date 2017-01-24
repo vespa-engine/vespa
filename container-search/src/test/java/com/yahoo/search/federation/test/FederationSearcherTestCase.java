@@ -38,7 +38,7 @@ import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceP
  * Test for federation searcher. The searcher is also tested in
  * com.yahoo.prelude.searcher.test.BlendingSearcherTestCase.
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 @SuppressWarnings("deprecation")
 public class FederationSearcherTestCase {

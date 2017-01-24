@@ -83,9 +83,7 @@ public class FederationOptions implements Cloneable {
     }
 
     public long getSearchChainExecutionTimeoutInMilliseconds(long queryTimeout) {
-        return getTimeoutInMilliseconds() >= 0 ?
-                getTimeoutInMilliseconds() :
-                queryTimeout;
+        return getTimeoutInMilliseconds() >= 0 ? getTimeoutInMilliseconds() : queryTimeout;
     }
 
     public boolean getUseByDefault() {

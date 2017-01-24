@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain;
 
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -16,6 +17,8 @@ import com.yahoo.search.result.ErrorMessage;
 
 /**
  * Extends a {@code FutureTask<Result>}, with some added error handling
+ * 
+ * @author bratseth
  */
 public class FutureResult extends FutureTask<Result> {
 
@@ -26,51 +29,56 @@ public class FutureResult extends FutureTask<Result> {
 
     private final static Logger log = Logger.getLogger(FutureResult.class.getName());
 
-    FutureResult(Callable<Result> callable, Execution execution, final Query query) {
+    protected FutureResult(Callable<Result> callable, Execution execution, Query query) {
         super(callable);
         this.query = query;
         this.execution = execution;
     }
 
+    /** 
+     * Returns a Result containing the hits returned from this source, or an error otherwise.
+     * This will block for however long it takes to get the result: Using this is a bad idea.
+     */
     @Override
     public Result get() {
-        Result result;
         try {
-            result = super.get();
+            return super.get();
         }
         catch (InterruptedException e) {
-            result = new Result(getQuery(), ErrorMessage.createUnspecifiedError(
-                    "'" + execution + "' was interrupted while executing: " + Exceptions.toMessageString(e)));
+            return new Result(getQuery(), createInterruptedError(e));
         }
         catch (ExecutionException e) {
-            log.log(Level.WARNING,"Exception on executing " + execution + " for " + query,e);
-            result = new Result(getQuery(), ErrorMessage.createErrorInPluginSearcher(
-                    "Error in '" + execution + "': " + Exceptions.toMessageString(e),
-                    e.getCause()));
+            return new Result(getQuery(), createExecutionError(e));
         }
-        return result;
     }
 
+    /** 
+     * Returns a Result containing the hits returned from this source, or an error otherwise.
+     * This blocks for at most the given timeout and returns a Result containing a timeout error
+     * if the result is not available within this time.
+     */
     @Override
     public Result get(long timeout, TimeUnit timeunit) {
-        Result result;
+        return getIfAvailable(timeout, timeunit).orElse(new Result(getQuery(), createTimeoutError()));
+    }
+
+    /**
+     * Same as get(timeout, timeunit) but returns Optiona.empty instead of a result with error if the result is 
+     * not available in time
+     */
+    public Optional<Result> getIfAvailable(long timeout, TimeUnit timeunit) {
         try {
-            result = super.get(timeout, timeunit);
+            return Optional.of(super.get(timeout, timeunit));
         }
         catch (InterruptedException e) {
-            result = new Result(getQuery(), ErrorMessage.createUnspecifiedError(
-                    "'" + execution + "' was interrupted while executing: " + Exceptions.toMessageString(e)));
+            return Optional.of(new Result(getQuery(), createInterruptedError(e)));
         }
         catch (ExecutionException e) {
-            log.log(Level.WARNING,"Exception on executing " + execution + " for " + query, e);
-            result = new Result(getQuery(), ErrorMessage.createErrorInPluginSearcher(
-                    "Error in '" + execution + "': " + Exceptions.toMessageString(e),
-                    e.getCause()));
+            return Optional.of(new Result(getQuery(), createExecutionError(e)));
         }
         catch (TimeoutException e) {
-            result = new Result(getQuery(), createTimeoutError());
+            return Optional.empty();
         }
-        return result;
     }
 
     /** Returns the query used in this execution, never null */
@@ -78,9 +86,19 @@ public class FutureResult extends FutureTask<Result> {
         return query;
     }
 
-    ErrorMessage createTimeoutError() {
-        return ErrorMessage.createTimeout(
-                "Error executing '" + execution + "': " + " Chain timed out.");
-
+    private ErrorMessage createInterruptedError(Exception e) {
+        return ErrorMessage.createUnspecifiedError("'" + execution + "' was interrupted while executing: " + 
+                                                   Exceptions.toMessageString(e));
     }
+    
+    private ErrorMessage createExecutionError(Exception e) {
+        log.log(Level.WARNING,"Exception on executing " + execution + " for " + query,e);
+        return ErrorMessage.createErrorInPluginSearcher("Error in '" + execution + "': " + Exceptions.toMessageString(e),
+                                                        e.getCause());
+    }
+
+    ErrorMessage createTimeoutError() {
+        return ErrorMessage.createTimeout("Error executing '" + execution + "': " + " Chain timed out.");
+    }
+
 }
