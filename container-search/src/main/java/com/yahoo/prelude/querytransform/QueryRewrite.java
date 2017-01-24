@@ -19,9 +19,10 @@ import com.yahoo.search.result.Hit;
 /**
  * @author baldersheim
  */
+// TODO: This overlaps with QueryCanonicalizer
 public class QueryRewrite {
 
-    private static enum Recall {
+    private enum Recall {
         RECALLS_EVERYTHING,
         RECALLS_NOTHING,
         UNKNOWN_RECALL

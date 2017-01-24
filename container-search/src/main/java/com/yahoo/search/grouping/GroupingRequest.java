@@ -18,7 +18,7 @@ import java.util.*;
  * {@link GroupingOperation} using {@link #setRootOperation(GroupingOperation)}. Once the search returns, access the
  * result {@link Group} using the {@link #getResultGroup(Result)} method.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class GroupingRequest {
 

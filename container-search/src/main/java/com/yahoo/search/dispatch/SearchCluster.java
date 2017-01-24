@@ -147,6 +147,12 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     /** Returns the groups of this cluster as an immutable map indexed by group id */
     public ImmutableMap<Integer, Group> groups() { return groups; }
 
+    /** Returns the number of nodes per group - size()/groups.size() */
+    public int groupSize() { 
+        if (groups.size() == 0) return size();
+        return size() / groups.size(); 
+    }
+    
     /**
      * Returns the nodes of this cluster as an immutable map indexed by host.
      * One host may contain multiple nodes (on different ports), so this is a multi-map.

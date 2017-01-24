@@ -7,9 +7,14 @@ import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.util.Collections;
 import java.util.List;
 
 class MockDispatcher extends Dispatcher {
+
+    public MockDispatcher(SearchCluster.Node node) {
+        this(Collections.singletonList(node));
+    }
 
     public MockDispatcher(List<SearchCluster.Node> nodes) {
         super(toDispatchConfig(nodes), new FS4ResourcePool(1), 1, new VipStatus());

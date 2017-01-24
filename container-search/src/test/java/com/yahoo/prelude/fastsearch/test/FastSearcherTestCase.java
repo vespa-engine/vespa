@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.search.Fs4Config;
@@ -20,6 +21,11 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.prelude.fastsearch.*;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.search.dispatch.SearchCluster;
+import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.request.AllOperation;
+import com.yahoo.search.grouping.request.EachOperation;
+import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -235,7 +241,7 @@ public class FastSearcherTestCase {
     }
 
     @Test
-    public void requireThatPropertiesAreReencoded() throws Exception {
+    public void testThatPropertiesAreReencoded() throws Exception {
         FastSearcher fastSearcher = createFastSearcher();
 
         assertEquals(100, fastSearcher.getCacheControl().capacity()); // Default cache =100MB
@@ -372,6 +378,70 @@ public class FastSearcherTestCase {
             }
         }
 
+    }
+    
+    @Test
+    public void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
+                                                     new FS4ResourcePool(1),
+                                                     new MockDispatcher(new SearchCluster.Node("host0", 123, 0)),
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     new CacheParams(100, 1e64),
+                                                     documentdbInfoConfig);
+        Query q = new Query("?query=foo");
+        GroupingRequest request1 = GroupingRequest.newInstance(q);
+        request1.setRootOperation(new AllOperation());
+
+        GroupingRequest request2 = GroupingRequest.newInstance(q);
+        AllOperation all = new AllOperation();
+        all.addChild(new EachOperation());
+        all.addChild(new EachOperation());
+        request2.setRootOperation(all);
+        
+        assertForceSinglePassIs(false, q);
+        fastSearcher.search(q, new Execution(Execution.Context.createContextStub()));
+        assertForceSinglePassIs(true, q);        
+    }
+
+    @Test
+    public void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
+        MockDispatcher dispatcher = 
+                new MockDispatcher(ImmutableList.of(new SearchCluster.Node("host0", 123, 0),
+                                                    new SearchCluster.Node("host1", 123, 0)));
+
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
+                                                     new FS4ResourcePool(1),
+                                                     dispatcher,
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     new CacheParams(100, 1e64),
+                                                     documentdbInfoConfig);
+        Query q = new Query("?query=foo");
+        GroupingRequest request1 = GroupingRequest.newInstance(q);
+        request1.setRootOperation(new AllOperation());
+
+        GroupingRequest request2 = GroupingRequest.newInstance(q);
+        AllOperation all = new AllOperation();
+        all.addChild(new EachOperation());
+        all.addChild(new EachOperation());
+        request2.setRootOperation(all);
+
+        assertForceSinglePassIs(false, q);
+        fastSearcher.search(q, new Execution(Execution.Context.createContextStub()));
+        assertForceSinglePassIs(false, q);
+    }
+
+    private void assertForceSinglePassIs(boolean expected, Query query) {
+        for (GroupingRequest request : GroupingRequest.getRequests(query))
+            assertForceSinglePassIs(expected, request.getRootOperation());
+    }
+
+    private void assertForceSinglePassIs(boolean expected, GroupingOperation operation) {
+        assertEquals("Force single pass is " + expected + " in " + operation, 
+                     expected, operation.getForceSinglePass());
+        for (GroupingOperation child : operation.getChildren())
+            assertForceSinglePassIs(expected, child);
     }
 
     @Test
