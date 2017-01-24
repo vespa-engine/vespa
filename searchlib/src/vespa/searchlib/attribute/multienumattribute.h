@@ -43,11 +43,11 @@ protected:
     typedef attribute::LoadedEnumAttribute        LoadedEnumAttribute;
 
     // from MultiValueAttribute
-    virtual bool extractChangeData(const Change & c, EnumIndex & idx); // EnumIndex is ValueType. Use EnumStore
+    bool extractChangeData(const Change & c, EnumIndex & idx) override; // EnumIndex is ValueType. Use EnumStore
 
     // from EnumAttribute
-    virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques); // same for both string and numeric
-    virtual void reEnumerate(); // same for both string and numeric
+    void considerAttributeChange(const Change & c, UniqueSet & newUniques) override; // same for both string and numeric
+    void reEnumerate() override; // same for both string and numeric
 
     virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
 
@@ -59,23 +59,23 @@ protected:
     }
 
     virtual void fillValues(LoadedVector & loaded);
-    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded);
-    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
+    void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded) override;
+    void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist) override;
     virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
 
 public:
     MultiValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
-    virtual void onCommit();
-    virtual void onUpdateStat();
+    void onCommit() override;
+    void onUpdateStat() override;
 
-    virtual void removeOldGenerations(generation_t firstUsed);
-    virtual void onGenerationChange(generation_t generation);
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
 
     //-----------------------------------------------------------------------------------------------------------------
     // Attribute read API
     //-----------------------------------------------------------------------------------------------------------------
-    virtual EnumHandle getEnum(DocId doc) const {
+    EnumHandle getEnum(DocId doc) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         if (indices.size() == 0) {
             return std::numeric_limits<uint32_t>::max();
@@ -83,7 +83,7 @@ public:
             return indices[0].value().ref();
         }
     }
-    virtual uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const {
+    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
@@ -91,7 +91,7 @@ public:
         }
         return valueCount;
     }
-    virtual uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const {
+     uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
@@ -100,7 +100,7 @@ public:
         return valueCount;
     }
 
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    std::unique_ptr<AttributeSaver> onInitSave() override;
 };
 
 } // namespace search

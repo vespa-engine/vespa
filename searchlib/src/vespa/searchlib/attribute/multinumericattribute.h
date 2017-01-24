@@ -184,29 +184,29 @@ public:
     //-------------------------------------------------------------------------
     // new read api
     //-------------------------------------------------------------------------
-    T get(DocId doc) const {
+    T get(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
         return ((values.size() > 0) ? values[0].value() : T());
     }
-    largeint_t getInt(DocId doc) const {
+    largeint_t getInt(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
         return static_cast<largeint_t>((values.size() > 0) ? values[0].value() : T());
     }
-    double getFloat(DocId doc) const {
+    double getFloat(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
         return static_cast<double>((values.size() > 0) ? values[0].value() : T());
     }
-    EnumHandle getEnum(DocId doc) const {
+    EnumHandle getEnum(DocId doc) const override {
         (void) doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const {
+    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
-    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const {
+    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
-    uint32_t get(DocId doc, double * v, uint32_t sz) const {
+    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
     template <typename BufferType>
