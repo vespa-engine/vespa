@@ -79,7 +79,7 @@ public class AclMaintainer implements Runnable {
             final String hostname = entry.getKey();
             final Optional<Container> container = dockerOperations.getContainer(hostname);
             if (!container.isPresent()) {
-                log.warning("Got ACL for hostname " + hostname + ", but no container with that hostname exist");
+                // Container belongs to this Docker host, but is currently unallocated
                 continue;
             }
             if (!container.get().isRunning) {
