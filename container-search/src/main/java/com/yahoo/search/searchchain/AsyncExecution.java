@@ -40,7 +40,7 @@ import java.util.concurrent.*;
  * </p>
  *
  * @see com.yahoo.search.searchchain.Execution
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class AsyncExecution {
 
@@ -174,9 +174,8 @@ public class AsyncExecution {
      * collection
      */
     public static List<Result> waitForAll(Collection<FutureResult> tasks, long timeoutMs) {
-
         // Copy the list in case it is modified while we are waiting
-        final List<FutureResult> workingTasks = new ArrayList<>(tasks);
+        List<FutureResult> workingTasks = new ArrayList<>(tasks);
         try {
             runTask(() -> {
                 for (FutureResult task : workingTasks)
@@ -186,15 +185,13 @@ public class AsyncExecution {
             // Handle timeouts below
         }
 
-        final List<Result> results = new ArrayList<>(tasks.size());
+        List<Result> results = new ArrayList<>(tasks.size());
         for (FutureResult atask : workingTasks) {
             Result result;
             if (atask.isDone() && !atask.isCancelled()) {
-                result = atask.get(); // Since isDone() = true, this won't
-                                      // block.
+                result = atask.get(); // Since isDone() = true, this won't block.
             } else { // Not done and no errors thrown
-                result = new Result(atask.getQuery(),
-                        atask.createTimeoutError());
+                result = new Result(atask.getQuery(), atask.createTimeoutError());
             }
             results.add(result);
         }

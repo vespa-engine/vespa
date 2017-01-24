@@ -45,6 +45,7 @@ import static com.yahoo.collections.CollectionUtil.first;
 import static com.yahoo.container.util.Util.quote;
 import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceProperties;
 
+import java.time.Clock;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +56,7 @@ import java.util.logging.Logger;
  *
  * @author Arne Bergene Fossaa
  * @author tonytv
+ * @author bratseth
  */
 @Provides(FederationSearcher.FEDERATION)
 @After("*")
@@ -68,7 +70,6 @@ public class FederationSearcher extends ForkingSearcher {
     public final static CompoundName SOURCENAME = new CompoundName("sourceName");
     public final static CompoundName PROVIDERNAME = new CompoundName("providerName");
 
-
     /** Logging field name constants */
     public static final String LOG_COUNT_PREFIX = "count_";
 
@@ -80,6 +81,7 @@ public class FederationSearcher extends ForkingSearcher {
     private final boolean strictSearchchain;
     private final TargetSelector<?> targetSelector;
 
+    private final Clock clock = Clock.systemUTC();
 
     @Inject
     public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
@@ -197,7 +199,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     private void search(Query query, Execution execution, Collection<Target> targets, Result mergedResults) {
         FederationResult results = search(query, execution, targets);
-        results.waitForAll(query.getTimeLeft());
+        results.waitForAll((int)query.getTimeLeft(), clock);
 
         HitOrderer s = null;
         for (FederationResult.TargetResult targetResult : results.all()) {
@@ -205,10 +207,9 @@ public class FederationSearcher extends ForkingSearcher {
                 addSearchChainTimedOutError(query, targetResult.target.getId());
             } else {
                 if (s == null) {
-                    s = dirtyCopyIfModifiedOrderer(mergedResults.hits(), targetResult.futureResult.get().hits().getOrderer());
+                    s = dirtyCopyIfModifiedOrderer(mergedResults.hits(), targetResult.getOrTimeoutError().hits().getOrderer());
                 }
-                mergeResult(query, targetResult.target, mergedResults, targetResult.futureResult.get());
-
+                mergeResult(query, targetResult.target, mergedResults, targetResult.getOrTimeoutError());
             }
         }
     }

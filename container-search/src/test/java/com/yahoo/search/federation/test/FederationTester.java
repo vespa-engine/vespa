@@ -18,6 +18,7 @@ import java.util.Collections;
 * @author tonytv
 */
 class FederationTester {
+
     SearchChainResolver.Builder builder = new SearchChainResolver.Builder();
     SearchChainRegistry registry = new SearchChainRegistry();
 
