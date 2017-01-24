@@ -11,6 +11,10 @@ search test {
 
       }
 
+      field reference type string {
+
+      }
+
   }
 
 }
