@@ -56,13 +56,7 @@ public class AclMaintainer implements Runnable {
             dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.flushChain());
             aclSpecs.stream()
                     .map(ContainerAclSpec::ipAddress)
-                    .filter(ipAddress -> {
-                        final boolean isIpv6 = isIpv6(ipAddress);
-                        if (!isIpv6) {
-                            log.warning("Skipping unexpected IPv4 address in ACL configuration: " + ipAddress);
-                        }
-                        return isIpv6;
-                    })
+                    .filter(AclMaintainer::isIpv6)
                     .forEach(ipAddress -> dockerOperations.executeCommandInNetworkNamespace(containerName,
                             IpTables.allowFromAddress(ipAddress)));
             dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.chainPolicy(Policy.DROP));
@@ -85,7 +79,7 @@ public class AclMaintainer implements Runnable {
             final String hostname = entry.getKey();
             final Optional<Container> container = dockerOperations.getContainer(hostname);
             if (!container.isPresent()) {
-                log.warning("Got ACL for hostname " + hostname + ", but no container with that hostname exist");
+                // Container belongs to this Docker host, but is currently unallocated
                 continue;
             }
             if (!container.get().isRunning) {
