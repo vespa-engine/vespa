@@ -53,7 +53,7 @@ public class RestApi extends LoggingRequestHandler {
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
     private ObjectMapper mapper = new ObjectMapper();
-    private AtomicInteger threadsAvailableForApi = new AtomicInteger(20 /*max concurrent requests */);
+    private AtomicInteger threadsAvailableForApi = new AtomicInteger(200 /*max concurrent requests */);
 
     @Inject
     public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig, 
