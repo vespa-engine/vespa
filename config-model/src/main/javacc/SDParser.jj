@@ -2527,6 +2527,7 @@ String identifier() : { }
       | <RANKSCOREDROPLIMIT>
       | <RANKTYPE>
       | <RAW>
+      | <REFERENCE>
       | <REMOVEIFZERO>
       | <RERANKCOUNT>
       | <RISE>
