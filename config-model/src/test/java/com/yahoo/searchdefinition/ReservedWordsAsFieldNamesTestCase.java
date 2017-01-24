@@ -18,6 +18,7 @@ public class ReservedWordsAsFieldNamesTestCase extends SearchDefinitionTestCase 
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/reserved_words_as_field_names.sd");
         assertNotNull(search.getDocument().getField("inline"));
         assertNotNull(search.getDocument().getField("constants"));
+        assertNotNull(search.getDocument().getField("reference"));
     }
 
 }
