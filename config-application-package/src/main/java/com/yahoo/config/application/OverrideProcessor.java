@@ -16,6 +16,13 @@ import java.util.logging.Logger;
 /**
  * Handles overrides in a XML document according to the rules defined for multi environment application packages.
  *
+ * Rules:
+ *
+ * 1. A directive specifying both environment and region will override a more generic directive specifying only one of them
+ * 2. Directives are inherited in child elements
+ * 3. When multiple XML elements with the same name is specified (i.e. when specifying search or docproc chains),
+ *    the id attribute of the element is used together with the element name when applying directives
+ *
  * @author lulf
  * @since 5.22
  */
@@ -243,15 +250,20 @@ class OverrideProcessor implements PreProcessor {
 
     private Map<String, List<Element>> elementsByEqualAttributeSet(List<Element> children) {
         Map<String, List<Element>> elementsByEqualAttributeSet = new LinkedHashMap<>();
-        // Index by a concatenation of attribute names (except override attribute names)
+        // Index by a concatenation of tag name + attribute names (except override attribute names)
         for (Element child : children) {
             NamedNodeMap attributes = child.getAttributes();
-            StringBuilder sb = new StringBuilder();
+            Set<String> attributeNames = new HashSet<>();
             for (int i = 0; i < attributes.getLength(); i++) {
                 String nodeName = attributes.item(i).getNodeName();
-                if ( ! (nodeName.equals(ATTR_ENV_FULL_NAME) || nodeName.equals(ATTR_REG_FULL_NAME)))
-                    sb.append(nodeName);
+                if (nodeName.equals(ATTR_ENV_FULL_NAME) || nodeName.equals(ATTR_REG_FULL_NAME))
+                    continue;
+                attributeNames.add(nodeName);
             }
+            List<String> names = new ArrayList<>(attributeNames);
+            Collections.sort(names);
+            StringBuilder sb = new StringBuilder(child.getTagName());
+            names.forEach(sb::append);
             String key = sb.toString();
             if ( ! elementsByEqualAttributeSet.containsKey(key)) {
                 elementsByEqualAttributeSet.put(key, new ArrayList<>());
@@ -267,6 +279,26 @@ class OverrideProcessor implements PreProcessor {
         final NamedNodeMap attributes = element.getAttributes();
         for (int i = 0; i < attributes.getLength(); i++) {
             sb.append(" ").append(attributes.item(i).getNodeName());
+        }
+        return sb.toString();
+    }
+
+    // For debugging
+    private static String getPrintableElementRecursive(Element element) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(element.getTagName());
+        final NamedNodeMap attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            sb.append(" ")
+              .append(attributes.item(i).getNodeName())
+              .append("=")
+              .append(attributes.item(i).getNodeValue());
+        }
+        final List<Element> children = XML.getChildren(element);
+        if (children.size() > 0) {
+            sb.append("\n");
+            for (Element e : children)
+                sb.append("\t").append(getPrintableElementRecursive(e));
         }
         return sb.toString();
     }
