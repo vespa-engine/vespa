@@ -3,6 +3,6 @@ vespa_add_executable(eval_sparse_tensor_builder_test_app TEST
     SOURCES
     sparse_tensor_builder_test.cpp
     DEPENDS
-    eval
+    vespaeval
 )
 vespa_add_test(NAME eval_sparse_tensor_builder_test_app COMMAND eval_sparse_tensor_builder_test_app)

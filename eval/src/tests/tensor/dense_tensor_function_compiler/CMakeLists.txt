@@ -3,6 +3,6 @@ vespa_add_executable(eval_dense_tensor_function_compiler_test_app TEST
     SOURCES
     dense_tensor_function_compiler_test.cpp
     DEPENDS
-    eval
+    vespaeval
 )
 vespa_add_test(NAME eval_dense_tensor_function_compiler_test_app COMMAND eval_dense_tensor_function_compiler_test_app)
