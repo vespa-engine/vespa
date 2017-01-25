@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
 import java.util.List;
@@ -25,7 +26,9 @@ public interface DockerOperations {
 
     void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer);
 
-    void executeCommandInContainer(ContainerName containerName, String[] command);
+    ProcessResult executeCommandInContainer(ContainerName containerName, String[] command);
+
+    ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String[] command);
 
     void executeCommandInNetworkNamespace(ContainerName containerName, String[] command);
 

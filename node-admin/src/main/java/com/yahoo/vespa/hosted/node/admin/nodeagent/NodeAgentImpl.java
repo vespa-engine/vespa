@@ -579,7 +579,7 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
             final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
-            dockerOperations.executeCommandInContainer(nodeSpec.containerName, restartYamasAgent);
+            dockerOperations.executeCommandInContainerAsRoot(nodeSpec.containerName, restartYamasAgent);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
         }

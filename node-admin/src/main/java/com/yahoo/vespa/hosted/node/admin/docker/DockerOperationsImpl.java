@@ -141,20 +141,6 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.getContainer(hostname);
     }
 
-    /**
-     * Executes a program and returns its result, or if it doesn't exist, return a result
-     * as-if the program executed with exit status 0 and no output.
-     */
-    Optional<ProcessResult> executeOptionalProgramInContainer(ContainerName containerName, String... args) {
-        assert args.length > 0;
-        String[] nodeProgramExistsCommand = programExistsCommand(args[0]);
-        if (!docker.executeInContainer(containerName, nodeProgramExistsCommand).isSuccess()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(docker.executeInContainer(containerName, args));
-    }
-
     String[] programExistsCommand(String programPath) {
         return new String[]{ "/usr/bin/env", "test", "-x", programPath };
     }
@@ -168,23 +154,15 @@ public class DockerOperationsImpl implements DockerOperations {
      */
     @Override
     public void trySuspendNode(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        Optional<ProcessResult> result;
-
         try {
             // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
-            result = executeOptionalProgramInContainer(containerName, SUSPEND_NODE_COMMAND);
+            executeCommandInContainer(containerName, SUSPEND_NODE_COMMAND);
         } catch (RuntimeException e) {
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
             logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
                    + Arrays.toString(SUSPEND_NODE_COMMAND), e);
-            return;
-        }
-
-        if (result.isPresent() && !result.get().isSuccess()) {
-            logger.warning("The suspend program " + Arrays.toString(SUSPEND_NODE_COMMAND)
-                    + " failed: " + result.get().getOutput() + " for container " + containerName.asString());
         }
     }
 
@@ -242,7 +220,7 @@ public class DockerOperationsImpl implements DockerOperations {
             }
 
             DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
-                    docker.executeInContainer(nodeSpec.containerName, "sudo", "chmod", "-R", "a+w", entry.getKey()));
+                    docker.executeInContainerAsRoot(nodeSpec.containerName, "chmod", "-R", "a+w", entry.getKey()));
         } catch (IOException e) {
             throw new RuntimeException("Failed to create container " + nodeSpec.containerName.asString(), e);
         }
@@ -289,13 +267,19 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void executeCommandInContainer(ContainerName containerName, String[] command) {
-        Optional<ProcessResult> result = executeOptionalProgramInContainer(containerName, command);
+    public ProcessResult executeCommandInContainer(ContainerName containerName, String[] command) {
+        ProcessResult result = docker.executeInContainer(containerName, command);
 
-        if (result.isPresent() && !result.get().isSuccess()) {
-            throw new RuntimeException("Container " + containerName.asString()
-                                               + ": command " + Arrays.toString(command) + " failed: " + result.get());
+        if (result.isSuccess()) {
+            throw new RuntimeException("Container " + containerName.asString() +
+                    ": command " + Arrays.toString(command) + " failed: " + result);
         }
+        return result;
+    }
+
+    @Override
+    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String[] command) {
+        return docker.executeInContainerAsRoot(containerName, command);
     }
 
     @Override

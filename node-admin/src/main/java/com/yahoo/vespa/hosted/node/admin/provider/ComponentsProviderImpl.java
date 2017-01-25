@@ -98,12 +98,12 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
     private void setCorePattern(Docker docker) {
         final String[] sysctlCorePattern = {"sysctl", "-w", "kernel.core_pattern=/home/y/var/crash/%e.core.%p"};
-        docker.executeInContainer(NODE_ADMIN_CONTAINER_NAME, sysctlCorePattern);
+        docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, sysctlCorePattern);
     }
 
     private void initializeNodeAgentSecretAgent(Docker docker) {
         final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
-        docker.executeInContainer(NODE_ADMIN_CONTAINER_NAME, "sudo", "chmod", "a+w", yamasAgentFolder.toString());
+        docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "chmod", "a+w", yamasAgentFolder.toString());
 
         Path nodeAdminCheckPath = Paths.get("/usr/bin/curl");
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("node-admin", 60, nodeAdminCheckPath,
@@ -111,7 +111,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
-            docker.executeInContainer(NODE_ADMIN_CONTAINER_NAME, "service", "yamas-agent", "restart");
+            docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "service", "yamas-agent", "restart");
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for node-admin", e);
         }
