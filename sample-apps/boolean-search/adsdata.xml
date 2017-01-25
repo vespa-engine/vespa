@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vespafeed>
+
+  <document type="ad" documentid="id:sampleapp:ad::http://example.com/sled">
+    <title>ACME Rocket Sled</title>
+    <target>name in ['Wile E. Coyote'] or age in [14..25]</target>
+  </document>
+
+  <document type="ad" documentid="id:sampleapp:ad::http://example.com/boulder">
+    <title>ACME Dehydrated Boulders</title>
+    <target>name in ['Wile E. Coyote'] or age in [10..20]</target>
+  </document>
+
+  <document type="ad" documentid="id:sampleapp:ad::http://example.com/tornado">
+    <title>ACME Do-It Yourself Tornado Kit</title>
+    <target>name in ['Wile E. Coyote'] or age in [20..40]</target>
+  </document>
+
+  <document type="ad" documentid="id:sampleapp:ad::http://example.com/seed">
+    <title>Bird seeds</title>
+    <target>name in ['Road Runner']</target>
+  </document>
+
+</vespafeed>
