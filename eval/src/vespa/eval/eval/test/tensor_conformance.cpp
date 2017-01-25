@@ -1098,6 +1098,23 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_tensor_lambda(const vespalib::string &expr, const TensorSpec &expect) {
+        EXPECT_EQUAL(Expr_V(expr).eval(engine).tensor(), expect);
+    }
+
+    void test_tensor_lambda() {
+        TEST_DO(test_tensor_lambda("tensor(x[10])(x+1)", spec(x(10), N())));
+        TEST_DO(test_tensor_lambda("tensor(x[5],y[4])(x*4+(y+1))", spec({x(5),y(4)}, N())));
+        TEST_DO(test_tensor_lambda("tensor(x[5],y[4])(x==y)", spec({x(5),y(4)},
+                                Seq({           1.0, 0.0, 0.0, 0.0,
+                                                0.0, 1.0, 0.0, 0.0,
+                                                0.0, 0.0, 1.0, 0.0,
+                                                0.0, 0.0, 0.0, 1.0,
+                                                0.0, 0.0, 0.0, 0.0}))));
+    }
+
+    //-------------------------------------------------------------------------
+
     void run_tests() {
         TEST_DO(test_tensor_create_type());
         TEST_DO(test_tensor_equality());
@@ -1108,6 +1125,7 @@ struct TestContext {
         TEST_DO(test_dot_product());
         TEST_DO(test_concat());
         TEST_DO(test_rename());
+        TEST_DO(test_tensor_lambda());
     }
 };
 
