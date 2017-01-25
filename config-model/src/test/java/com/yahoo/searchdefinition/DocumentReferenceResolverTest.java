@@ -33,7 +33,8 @@ public class DocumentReferenceResolverTest {
         barSearch.addDocument(barDocument);
 
         // Create foo document with document reference to bar and add another field
-        SDField fooRefToBarField = new SDField("bar_ref", new ReferenceDataType(barDocument.getDocumentType(), 0));
+        SDField fooRefToBarField = new SDField
+                ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
         SDField irrelevantField = new SDField("irrelevant_stuff", DataType.INT);
         Search fooSearch = new Search();
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
@@ -54,7 +55,8 @@ public class DocumentReferenceResolverTest {
     @Test
     public void throws_user_friendly_exception_if_referenced_document_does_not_exist() {
         // Create foo document with document reference to non-existing document bar
-        SDField fooRefToBarField = new SDField("bar_ref", new ReferenceDataType(TemporaryStructuredDataType.create("bar"), 0));
+        SDField fooRefToBarField = new SDField(
+                "bar_ref", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("bar")));
         Search fooSearch = new Search();
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
         fooDocument.addField(fooRefToBarField);

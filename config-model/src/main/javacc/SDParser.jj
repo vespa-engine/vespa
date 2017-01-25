@@ -820,7 +820,7 @@ DataType dataType() :
       | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
       | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
       | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return DataType.getTensor(tensorType); } )
-      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return new TemporaryReferenceField(referenceType); } )
+      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ReferenceDataType.createWithInferredId(referenceType); } )
       | ( typeName = identifier() ["[]" { isArrayOldStyle = true; }] )
     )
     {
