@@ -123,7 +123,7 @@ public abstract class AbstractParser implements CustomParser {
         if (query != null) {
             root = parse(query.getQuery(),
                          query.getFilter(),
-                         query.getLanguage(),
+                         query.getExplicitLanguage().orElse(query.getLanguage()),
                          environment.getIndexFacts().newSession(query.getSources(), query.getRestrict()),
                          query.getDefaultIndexName(),
                          query);
