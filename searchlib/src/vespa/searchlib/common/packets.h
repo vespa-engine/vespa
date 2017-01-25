@@ -383,14 +383,14 @@ public:
     uint32_t _numDocs;
     uint64_t _totNumDocs;
     search::HitRank _maxRank;
-    uint32_t *_sortIndex;    // if QRF_SORTDATA
-    char     *_sortData;     // if QRF_SORTDATA
-    uint32_t _groupDataLen;  // if QRF_GROUPDATA
-    char    *_groupData;     // if QRF_GROUPDATA
-    uint64_t _coverageDocs;
-    uint64_t _activeDocs;
-    uint64_t _soonActiveDocs;
-    uint32_t _coverageDegradeReason;
+    uint32_t *_sortIndex;             // if QRF_SORTDATA
+    char     *_sortData;              // if QRF_SORTDATA
+    uint32_t _groupDataLen;           // if QRF_GROUPDATA
+    char    *_groupData;              // if QRF_GROUPDATA
+    uint64_t _coverageDocs;           // if QRF_COVERAGE
+    uint64_t _activeDocs;             // if QRF_COVERAGE
+    uint64_t _soonActiveDocs;         // if QRF_EXTENDED_COVERAGE
+    uint32_t _coverageDegradeReason;  // if QRF_EXTENDED_COVERAGE
     class FS4_hit {
     public:
         FS4_hit() : _gid(), _metric(0), _partid(0), _distributionKey(0) { }
