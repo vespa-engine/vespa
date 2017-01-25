@@ -1,17 +1,31 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
-import com.yahoo.document.*;
+import com.yahoo.document.CompressionConfig;
+import com.yahoo.document.DataType;
+import com.yahoo.document.DataTypeName;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
+import com.yahoo.document.PositionDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypeRegistry;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
+import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.FieldSets;
 import com.yahoo.searchdefinition.Search;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
    <p>A document definition is a list of fields. Documents may inherit other documents,
@@ -30,6 +44,8 @@ public class SDDocumentType implements Cloneable, Serializable {
     private DataType structType;
     // The field sets here are set from the processing step in SD, to ensure that the full Search and this SDDocumentType is built first.
     private FieldSets fieldSets;
+    // Document references
+    private Optional<DocumentReferences> documentReferences = Optional.empty();
 
     static {
         VESPA_DOCUMENT = new SDDocumentType(VespaDocumentType.INSTANCE.getFullName().getName());
@@ -313,4 +329,13 @@ public class SDDocumentType implements Cloneable, Serializable {
     public void setFieldSets(FieldSets fieldSets) {
         this.fieldSets = fieldSets;
     }
+
+    public Optional<DocumentReferences> getDocumentReferences() {
+        return documentReferences;
+    }
+
+    public void setDocumentReferences(DocumentReferences documentReferences) {
+        this.documentReferences = Optional.of(documentReferences);
+    }
+
 }

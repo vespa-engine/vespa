@@ -74,9 +74,6 @@ public class Search implements Serializable {
 
     private ApplicationPackage sourceApplication;
 
-    // Document references
-    private Optional<DocumentReferences> documentReferences = Optional.empty();
-
     /**
      * Creates a search definition which just holds a set of documents which should not (here, directly) be searchable
      */
@@ -561,14 +558,6 @@ public class Search implements Serializable {
      */
     public FieldSets fieldSets() {
         return fieldSets;
-    }
-
-    public Optional<DocumentReferences> getDocumentReferences() {
-        return documentReferences;
-    }
-
-    public void setDocumentReferences(DocumentReferences documentReferences) {
-        this.documentReferences = Optional.of(documentReferences);
     }
 
     /**
