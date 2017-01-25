@@ -6,10 +6,10 @@ import java.util.List;
 
 
 /**
- * An iterator-like view of a list, but typed, random-accessible
+ * An iterator-like view of a list of tokens, but typed, random-accessible
  * and with more convenience methods
  *
- * @author  bratseth
+ * @author bratseth
  */
 final class TokenPosition {
 
@@ -213,6 +213,11 @@ final class TokenPosition {
 
         skip();
         return true;
+    }
+    
+    @Override
+    public String toString() {
+        return "token " + current();
     }
 
 }

@@ -11,7 +11,7 @@ import java.util.Iterator;
  * A term which contains a fixed length phrase, a collection of word terms,
  * resulting from a single segmentation operation.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class PhraseSegmentItem extends IndexedSegmentItem {
 

@@ -115,6 +115,8 @@ public abstract class AbstractParser implements CustomParser {
         }
     }
 
+    // TODO: Deprecate the unwanted method signatures below
+    
     @Override
     public final QueryTree parse(Parsable query) {
         Item root = null;
@@ -123,7 +125,8 @@ public abstract class AbstractParser implements CustomParser {
                          query.getFilter(),
                          query.getLanguage(),
                          environment.getIndexFacts().newSession(query.getSources(), query.getRestrict()),
-                         query.getDefaultIndexName());
+                         query.getDefaultIndexName(),
+                         query);
         }
         if (root == null) {
             root = new NullItem();
@@ -134,14 +137,23 @@ public abstract class AbstractParser implements CustomParser {
     @Override
     public final Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
                             IndexFacts.Session indexFacts, String defaultIndexName) {
-        if (queryToParse == null) {
-            return null;
-        }
-        if (parsingLanguage == null) {
-            parsingLanguage = environment.getLinguistics().getDetector().detect(queryToParse, null).getLanguage();
+        return parse(queryToParse, filterToParse, parsingLanguage, indexFacts, defaultIndexName, null);
+    }
+
+    private Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
+                       IndexFacts.Session indexFacts, String defaultIndexName, Parsable parsable) {
+        if (queryToParse == null) return null;
+
+        tokenize(queryToParse, defaultIndexName, indexFacts, parsingLanguage);
+
+        if (parsingLanguage == null && parsable != null) {
+            String detectionText = generateLanguageDetectionTextFrom(tokens, indexFacts, defaultIndexName);
+            if (detectionText.isEmpty()) // heuristic detection text extraction is fallible
+                detectionText = queryToParse;
+            parsingLanguage = parsable.getOrDetectLanguage(detectionText);
         }
         setState(parsingLanguage, indexFacts);
-        tokenize(queryToParse, defaultIndexName, indexFacts);
+
         Item root = parseItems();
         if (filterToParse != null) {
             AnyParser filterParser = new AnyParser(environment);
@@ -158,6 +170,70 @@ public abstract class AbstractParser implements CustomParser {
         return root;
     }
 
+    /**
+     * Do a best-effort attempt at creating a single string for language detection from only the relevant
+     * subset of tokens. 
+     * The relevant tokens are text tokens which follows names of indexes which are tokenized.
+     * 
+     * This method does not modify the position of the given token stream.
+     */
+    private String generateLanguageDetectionTextFrom(TokenPosition tokens, IndexFacts.Session indexFacts, String defaultIndex) {
+        StringBuilder detectionText = new StringBuilder();
+        int initialPosition = tokens.getPosition();
+        while (tokens.hasNext()) { // look for occurrences of text and text:text
+            while (!tokens.currentIs(Token.Kind.WORD) && tokens.hasNext()) // skip nonwords
+                tokens.next();
+            if (!tokens.hasNext()) break;
+
+            String queryText;
+            Index index;
+
+            Token word1 = tokens.next();
+            if (is(Token.Kind.COLON, tokens.currentNoIgnore())) {
+                tokens.next(); // colon
+                Token word2 = tokens.next();
+                if ( is(Token.Kind.WORD, word2))
+                    queryText = word2.image;
+                else
+                    queryText = "";
+                index = indexFacts.getIndex(word1.image);
+                if (index.isNull()) { // interpret both as words
+                    index = indexFacts.getIndex(defaultIndex);
+                    queryText = word1.image + " " + queryText;
+                }
+            } else if (is(Token.Kind.COLON, tokens.currentNoIgnore()) && is(Token.Kind.QUOTE, tokens.currentNoIgnore(1))) {
+                tokens.next(); // colon
+                tokens.next(); // quote
+                StringBuilder quotedContent = new StringBuilder();
+                while (!tokens.currentIs(Token.Kind.QUOTE) && tokens.hasNext()) {
+                    Token token = tokens.next();
+                    if (is(Token.Kind.WORD, token))
+                        quotedContent.append(token.image).append(" ");
+                }
+                tokens.next();
+                queryText = quotedContent.toString();
+                index = indexFacts.getIndex(word1.image);
+                if (index.isNull()) { // interpret both as words
+                    index = indexFacts.getIndex(defaultIndex);
+                    queryText = word1.image + " " + queryText;
+                }
+            } else {
+                index = indexFacts.getIndex(defaultIndex);
+                queryText = word1.image;
+            }
+
+            if (queryText != null && index.hasPlainTokens())
+                detectionText.append(queryText).append(" ");
+        }
+        tokens.setPosition(initialPosition);
+        return detectionText.toString();
+    }
+
+    private boolean is(Token.Kind kind, Token tokenOrNull) {
+        if (tokenOrNull == null) return false;
+        return kind.equals(tokenOrNull.kind);
+    }
+    
     protected abstract Item parseItems();
 
     /**
@@ -167,25 +243,19 @@ public abstract class AbstractParser implements CustomParser {
      * @param defaultIndex The default index to assign.
      * @param item         The item to check.
      */
-    private static void assignDefaultIndex(final String defaultIndex,
-            final Item item) {
-        if (defaultIndex == null || item == null) {
-            return;
-        }
+    private static void assignDefaultIndex(final String defaultIndex, Item item) {
+        if (defaultIndex == null || item == null) return;
 
         if (item instanceof IndexedItem) {
-            final IndexedItem indexName = (IndexedItem) item;
+            IndexedItem indexName = (IndexedItem) item;
 
-            if ("".equals(indexName.getIndexName())) {
+            if ("".equals(indexName.getIndexName()))
                 indexName.setIndexName(defaultIndex);
-            }
-        } else if (item instanceof CompositeItem) {
-            final Iterator<Item> items = ((CompositeItem) item)
-                    .getItemIterator();
-            while (items.hasNext()) {
-                final Item i = items.next();
-                assignDefaultIndex(defaultIndex, i);
-            }
+        } 
+        else if (item instanceof CompositeItem) {
+            Iterator<Item> items = ((CompositeItem)item).getItemIterator();
+            while (items.hasNext())
+                assignDefaultIndex(defaultIndex, items.next());
         }
     }
 
@@ -196,14 +266,14 @@ public abstract class AbstractParser implements CustomParser {
      * @param input The string to normalize.
      * @return The normalized string.
      */
-    protected String normalize(final String input) {
+    protected String normalize(String input) {
         if (input == null || input.length() == 0) {
             return input;
         }
         return environment.getLinguistics().getNormalizer().normalize(input);
     }
 
-    protected void setState(final Language queryLanguage, IndexFacts.Session indexFacts) {
+    protected void setState(Language queryLanguage, IndexFacts.Session indexFacts) {
         this.indexFacts = indexFacts;
         language = queryLanguage;
         submodes.reset();
@@ -215,10 +285,11 @@ public abstract class AbstractParser implements CustomParser {
      * @param query            the string to tokenize.
      * @param defaultIndexName the name of the index to use as default.
      * @param indexFacts       resolved information about the index we are searching
+     * @param language         the language set for this query, or null if none
      */
-    protected void tokenize(String query, String defaultIndexName, IndexFacts.Session indexFacts) {
+    protected void tokenize(String query, String defaultIndexName, IndexFacts.Session indexFacts, Language language) {
         Tokenizer tokenizer = new Tokenizer(environment.getLinguistics());
-        tokenizer.setSubstringSpecialTokens(language.isCjk());
+        tokenizer.setSubstringSpecialTokens(language != null && language.isCjk());
         tokenizer.setSpecialTokens(environment.getSpecialTokens());
         tokens.initialize(tokenizer.tokenize(query, defaultIndexName, indexFacts));
     }
@@ -229,18 +300,18 @@ public abstract class AbstractParser implements CustomParser {
      * @param unwashed The item whose phrases to simplify.
      * @return The simplified item.
      */
-    public static Item simplifyPhrases(final Item unwashed) {
+    public static Item simplifyPhrases(Item unwashed) {
         if (unwashed == null) {
             return unwashed;
         } else if (unwashed instanceof PhraseItem) {
             return collapsePhrase((PhraseItem) unwashed);
         } else if (unwashed instanceof CompositeItem) {
-            final CompositeItem composite = (CompositeItem) unwashed;
-            final ListIterator<Item> i = composite.getItemIterator();
+            CompositeItem composite = (CompositeItem) unwashed;
+            ListIterator<Item> i = composite.getItemIterator();
 
             while (i.hasNext()) {
-                final Item original = i.next();
-                final Item transformed = simplifyPhrases(original);
+                Item original = i.next();
+                Item transformed = simplifyPhrases(original);
 
                 if (original != transformed) {
                     i.set(transformed);
@@ -252,11 +323,10 @@ public abstract class AbstractParser implements CustomParser {
         }
     }
 
-    private static Item collapsePhrase(final PhraseItem phrase) {
+    private static Item collapsePhrase(PhraseItem phrase) {
         if (phrase.getItemCount() == 1 && phrase.getItem(0) instanceof WordItem) {
             // TODO: Other stuff which needs propagation?
-            final WordItem word = (WordItem) phrase.getItem(0);
-
+            WordItem word = (WordItem) phrase.getItem(0);
             word.setWeight(phrase.getWeight());
             return word;
         } else {
@@ -266,15 +336,22 @@ public abstract class AbstractParser implements CustomParser {
 
     // TODO: The segmenting stuff is a mess now, this will fix it:
     // - Make Segmenter a class which is instantiated per parsing
-    // - Make the instance know the language, etc and do all dispatching
-    // internally
-    // -JSB
+    // - Make the instance know the language, etc and do all dispatching internally
+    // -bratseth
     // TODO: Use segmenting for forced phrase searches?
-    protected Item segment(final Token token) {
-        final String normalizedToken = normalize(token.toString());
+    //
+    // Language detection currently depends on tokenization (see generateLanguageDetectionTextFrom), but 
+    // - the API's was originally not constructed for that, so a careful nd somewhat unsatisfactory dance
+    //   most be carried out to make it work
+    // - it should really depend on parsing
+    // This can be solved by making the segment method language independent by
+    // always producing a query item containing the token text and resolve it to a WordItem or
+    // SegmentItem after parsing and language detection.
+    protected Item segment(Token token) {
+        String normalizedToken = normalize(token.toString());
 
         if (token.isSpecial()) {
-            final WordItem w = new WordItem(token.toString(), true, token.substring);
+            WordItem w = new WordItem(token.toString(), true, token.substring);
             w.setWords(false);
             w.setFromSpecialToken(true);
             return w;
@@ -294,11 +371,10 @@ public abstract class AbstractParser implements CustomParser {
             return new WordItem(segments.get(0), "", true, token.substring);
         }
 
-        final CompositeItem composite = new PhraseSegmentItem(token.toString(),
-                normalizedToken, true, false, token.substring);
+        CompositeItem composite = new PhraseSegmentItem(token.toString(), normalizedToken, true, false, token.substring);
         int n = 0;
-        for (final String segment : segments) {
-            final WordItem w = new WordItem(segment, "", true, token.substring);
+        for (String segment : segments) {
+            WordItem w = new WordItem(segment, "", true, token.substring);
             w.setFromSegmented(true);
             w.setSegmentIndex(n++);
             w.setStemmed(false);

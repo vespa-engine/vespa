@@ -16,7 +16,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
 /**
  * Query tokenizer. Singlethreaded.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public final class Tokenizer {
 
@@ -28,7 +28,7 @@ public final class Tokenizer {
     private SpecialTokens specialTokens = null;
 
     /** Whether to recognize tokens also as substrings of other tokens, needed for cjk */
-    private boolean substringSpecialTokens=false;
+    private boolean substringSpecialTokens = false;
 
     private final CharacterClasses characterClasses;
 
@@ -53,7 +53,7 @@ public final class Tokenizer {
 
     /** Sets whether to recognize tokens also as substrings of other tokens, needed for cjk. Default false. */
     public void setSubstringSpecialTokens(boolean substringSpecialTokens) {
-        this.substringSpecialTokens=substringSpecialTokens;
+        this.substringSpecialTokens = substringSpecialTokens;
     }
 
     /**

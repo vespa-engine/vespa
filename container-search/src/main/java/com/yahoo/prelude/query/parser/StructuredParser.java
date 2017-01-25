@@ -15,7 +15,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
  * Base class for parsers of the query languages which can be used
  * for structured queries (types ANY, ALL and ADVANCED).
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 abstract class StructuredParser extends AbstractParser {
 
@@ -430,9 +430,7 @@ abstract class StructuredParser extends AbstractParser {
         Item item = null;
 
         try {
-            if (item == null) {
-                item = word();
-            }
+            item = word();
 
             if (item == null && tokens.currentIs(NUMBER)) {
                 Token t = tokens.next();
@@ -542,7 +540,7 @@ abstract class StructuredParser extends AbstractParser {
         PhraseItem phrase = null;
         Item firstWord = null;
         boolean starAfterFirst = false;
-        boolean starBeforeFirst = false;
+        boolean starBeforeFirst;
 
         if (tokens.skipMultiple(QUOTE)) {
             quoted = !quoted;
@@ -700,8 +698,7 @@ abstract class StructuredParser extends AbstractParser {
                 if (tokens.currentIsNoIgnore(LBRACE)) {
                     braceLevelURL++;
                 }
-                if (tokens.hasNext() && !tokens.currentIsNoIgnore(SPACE)
-                        && braceLevelURL >= 0) {
+                if (tokens.hasNext() && !tokens.currentIsNoIgnore(SPACE) && braceLevelURL >= 0) {
                     tokens.skip();
                     skipped = true;
                 }

@@ -67,6 +67,7 @@ public abstract class RuleBaseAbstractTestCase extends junit.framework.TestCase 
     }
 
     protected Query assertSemantics(String result, Query query) {
+        System.out.println(query.getModel().getQueryTree());
         createExecution(searcher).search(query);
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
         return query;

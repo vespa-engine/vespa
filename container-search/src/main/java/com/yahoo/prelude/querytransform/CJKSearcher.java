@@ -26,21 +26,21 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
 /**
- * Search to do necessary transforms if the query is in segmented in
- * a "CJK language".
+ * Search to do necessary transforms if the query is in segmented in a CJK language.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @After(PhaseNames.UNBLENDED_RESULT)
 @Before(STEMMING)
 @Provides(CJKSearcher.TERM_ORDER_RELAXATION)
 public class CJKSearcher extends Searcher {
+
     public static final String TERM_ORDER_RELAXATION = "TermOrderRelaxation";
 
     @Override
     public Result search(Query query, Execution execution) {
-        Language l = query.getModel().getParsingLanguage();
-        if (!l.isCjk()) return execution.search(query);
+        Language language = query.getModel().getParsingLanguage();
+        if ( ! language.isCjk()) return execution.search(query);
 
         QueryTree tree = query.getModel().getQueryTree();
         tree.setRoot(transform(tree.getRoot()));
@@ -82,7 +82,6 @@ public class CJKSearcher extends Searcher {
         return root;
     }
 
-
     private boolean hasOverlappingTokens(PhraseItem phrase) {
         boolean has = false;
         for (Iterator<Item> i = phrase.getItemIterator(); i.hasNext(); ) {
@@ -108,4 +107,5 @@ public class CJKSearcher extends Searcher {
         }
         return segmentsLength > segments.getRawWord().length();
     }
+
 }

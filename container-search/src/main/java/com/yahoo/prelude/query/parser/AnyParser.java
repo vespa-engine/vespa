@@ -15,7 +15,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
 /**
  * Parser for queries of type any.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class AnyParser extends SimpleParser {
 
@@ -35,7 +35,7 @@ public class AnyParser extends SimpleParser {
         Item filterRoot;
 
         setState(queryLanguage, indexFacts);
-        tokenize(filter, null, indexFacts);
+        tokenize(filter, null, indexFacts, queryLanguage);
 
         filterRoot = anyItems(true);
 
@@ -134,7 +134,7 @@ public class AnyParser extends SimpleParser {
 
     Item applyFilter(Item root, String filter, Language queryLanguage, IndexFacts.Session indexFacts) {
         setState(queryLanguage, indexFacts);
-        tokenize(filter, null, indexFacts);
+        tokenize(filter, null, indexFacts, queryLanguage);
         return filterItems(root);
     }
 

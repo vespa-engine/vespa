@@ -13,7 +13,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
  * Base class for parsers of the "simple" query languages (query types
  * ANY and ALL).
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 abstract class SimpleParser extends StructuredParser {
 

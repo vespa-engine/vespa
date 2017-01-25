@@ -10,7 +10,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
  * extend AndItem to avoid code using instanceof handling it as an
  * AndItem.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public abstract class SegmentItem extends CompositeItem implements BlockItem {
 

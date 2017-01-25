@@ -6,7 +6,7 @@ import com.yahoo.text.Utf8;
 import java.nio.ByteBuffer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class AbstractDetector implements Detector {
 
@@ -22,4 +22,5 @@ public abstract class AbstractDetector implements Detector {
         input.get(buf, 0, buf.length);
         return detect(buf, 0, buf.length, hint);
     }
+
 }

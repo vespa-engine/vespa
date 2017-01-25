@@ -17,8 +17,8 @@ import java.util.Set;
  * </ul>
  * addCommand sets both types.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author  bratseth
+ * @author Steinar Knutsen
+ * @author bratseth
  */
 public class Index {
 
@@ -282,9 +282,7 @@ public class Index {
         this.isAttribute = isAttribute;
     }
 
-    public boolean hasPlainTokens() {
-        return plainTokens;
-    }
+    public boolean hasPlainTokens() { return plainTokens; }
 
     public void setPlainTokens(boolean plainTokens) {
         this.plainTokens = plainTokens;
