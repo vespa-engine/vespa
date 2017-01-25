@@ -18,6 +18,9 @@ public class IpTables {
                 Action.ACCEPT.target};
     }
 
+    public static String[] allowIcmp() {
+        return new String[]{COMMAND, "-A", Chain.INPUT.name, "-p", "icmpv6", "-j", Action.ACCEPT.target};
+    }
     public static String[] chainPolicy(Action action) {
         return new String[]{COMMAND, "-P", Chain.INPUT.name, action.target};
     }

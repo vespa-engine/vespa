@@ -55,6 +55,8 @@ public class AclMaintainer implements Runnable {
         try {
             dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.flushChain());
             dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.allowAssociatedConnections());
+            // ICMPv6 packets are always accepted as they are required for PMTU discovery to work properly.
+            dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.allowIcmp());
             aclSpecs.stream()
                     .map(ContainerAclSpec::ipAddress)
                     .filter(AclMaintainer::isIpv6)
