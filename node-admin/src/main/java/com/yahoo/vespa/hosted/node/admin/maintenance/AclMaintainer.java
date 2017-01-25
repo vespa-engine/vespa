@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.util.IpTables;
-import com.yahoo.vespa.hosted.node.admin.util.IpTables.Policy;
+import com.yahoo.vespa.hosted.node.admin.util.IpTables.Action;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.net.Inet6Address;
@@ -54,16 +54,19 @@ public class AclMaintainer implements Runnable {
     private void applyAcl(ContainerName containerName, List<ContainerAclSpec> aclSpecs) {
         try {
             dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.flushChain());
+            dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.allowAssociatedConnections());
+            // ICMPv6 packets are always accepted as they are required for PMTU discovery to work properly.
+            dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.allowIcmp());
             aclSpecs.stream()
                     .map(ContainerAclSpec::ipAddress)
                     .filter(AclMaintainer::isIpv6)
                     .forEach(ipAddress -> dockerOperations.executeCommandInNetworkNamespace(containerName,
                             IpTables.allowFromAddress(ipAddress)));
-            dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.chainPolicy(Policy.DROP));
+            dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.chainPolicy(Action.DROP));
         } catch (Exception e) {
             log.error("Exception occurred while configuring ACLs, attempting rollback", e);
             try {
-                dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.chainPolicy(Policy.ACCEPT));
+                dockerOperations.executeCommandInNetworkNamespace(containerName, IpTables.chainPolicy(Action.ACCEPT));
             } catch (Exception ne) {
                 log.error("Rollback failed, giving up", ne);
             }
