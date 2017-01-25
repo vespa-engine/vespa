@@ -8,14 +8,16 @@ import java.util.Map;
 /**
  * A set of fields that are imported from referenced document types.
  *
+ * This is temporary AST structure that only refers to the imported fields by name.
+ *
  * @author geirst
  */
-public class ImportedFields {
+public class TemporaryImportedFields {
 
     private final Map<String, TemporaryImportedField> fields = new LinkedHashMap<>();
 
     public void add(TemporaryImportedField importedField) {
-        fields.put(importedField.fieldName(), importedField);
+        fields.put(importedField.aliasFieldName(), importedField);
     }
 
     public Map<String, TemporaryImportedField> fields() {

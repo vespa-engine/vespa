@@ -51,10 +51,10 @@ public class ImportedFieldsTestCase {
         return builder.getSearch();
     }
 
-    private static void assertSearchContainsTemporaryImportedField(String fieldName, String refFieldName, String fieldNameInRefType, Search search) {
-        TemporaryImportedField importedField = search.importedFields().fields().get(fieldName);
-        assertEquals(fieldName, importedField.fieldName());
-        assertEquals(refFieldName, importedField.reference().refFieldName());
-        assertEquals(fieldNameInRefType, importedField.reference().fieldNameInRefType());
+    private static void assertSearchContainsTemporaryImportedField(String aliasFieldName, String documentReferenceFieldName, String foreignFieldName, Search search) {
+        TemporaryImportedField importedField = search.importedFields().fields().get(aliasFieldName);
+        assertEquals(aliasFieldName, importedField.aliasFieldName());
+        assertEquals(documentReferenceFieldName, importedField.documentReferenceFieldName());
+        assertEquals(foreignFieldName, importedField.foreignFieldName());
     }
 }
