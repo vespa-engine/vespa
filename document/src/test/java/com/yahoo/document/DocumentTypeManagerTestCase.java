@@ -532,6 +532,13 @@ search annotationsimplicitstruct {
     }
 
     @Test
+    public void can_have_reference_type_pointing_to_own_document_type() {
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.selfreference.cfg");
+
+        assertReferenceTypePresentInManager(manager, 12345678, "type_with_ref");
+    }
+
+    @Test
     public void reference_field_has_correct_reference_type() {
         final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.singlereference.cfg");
 

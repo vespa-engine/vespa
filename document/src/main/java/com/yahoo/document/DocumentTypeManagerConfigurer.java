@@ -145,9 +145,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                         manager.register(type);
                     }
                     for (Object o : thisDataType.referencetype()) {
-                        DocumentmanagerConfig.Datatype.Referencetype refType = (DocumentmanagerConfig.Datatype.Referencetype) o;
-                        DocumentType targetType = (DocumentType)manager.getDataType(refType.target_type_id());
-                        manager.register(new ReferenceDataType(targetType, id));
+                        registerReferenceType(manager, id, (DocumentmanagerConfig.Datatype.Referencetype) o);
                     }
                 } catch (IllegalArgumentException e) {
                     failed.add(thisDataType);
@@ -162,6 +160,20 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         addAnnotationTypeInheritance(config, manager);
 
         manager.replaceTemporaryTypes();
+    }
+
+    private static void registerReferenceType(DocumentTypeManager manager, int id,
+                                              DocumentmanagerConfig.Datatype.Referencetype refType) {
+        ReferenceDataType referenceType;
+        if (manager.hasDataType(refType.target_type_id())) {
+            DocumentType targetType = (DocumentType)manager.getDataType(refType.target_type_id());
+            referenceType = new ReferenceDataType(targetType, id);
+        } else {
+            TemporaryStructuredDataType targetType = TemporaryStructuredDataType.createById(refType.target_type_id());
+            referenceType = new ReferenceDataType(targetType, id);
+        }
+        // Note: can't combine the above new-statements, as they call different constructors.
+        manager.register(referenceType);
     }
 
     public static DocumentTypeManager configureNewManager(DocumentmanagerConfig config) {

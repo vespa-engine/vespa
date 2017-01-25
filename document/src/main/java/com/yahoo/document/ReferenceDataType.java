@@ -63,19 +63,12 @@ public class ReferenceDataType extends DataType {
      *
      * @throws IllegalStateException if the previously stored target type is already a concrete
      *     instance of DocumentType.
-     * @throws IllegalArgumentException if the new target type has a different name than the
-     *     previously stored target type.
      */
     public void setTargetType(DocumentType targetType) {
         if (this.targetType instanceof DocumentType) {
             throw new IllegalStateException(String.format(
                     "Unexpected attempt to replace already concrete target " +
                     "type in ReferenceDataType instance (type is '%s')", this.targetType.getName()));
-        }
-        if (!targetType.getName().equals(this.targetType.getName())) {
-            throw new IllegalArgumentException(String.format(
-                    "Cannot replace temporary reference type of name '%s' with concrete " +
-                    "type having different name '%s'", targetType.getName(), this.targetType.getName()));
         }
         this.targetType = targetType;
     }
