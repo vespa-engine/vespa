@@ -79,6 +79,11 @@ public class AclMaintainerTest {
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-F", "INPUT"})
         );
+        verify(dockerOperations).executeCommandInNetworkNamespace(
+                eq(containerName),
+                aryEq(new String[]{"ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j",
+                        "ACCEPT"})
+        );
         containerAclSpecs.forEach(aclSpec -> verify(dockerOperations).executeCommandInNetworkNamespace(
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-A", "INPUT", "-s", aclSpec.ipAddress(), "-j", "ACCEPT"})
