@@ -80,10 +80,13 @@ public interface Docker {
     void deleteUnusedDockerImages();
 
     /**
-     * TODO: Make this function interruptible, see https://github.com/spotify/docker-client/issues/421
+     * Execute a command in docker container as "yahoo" user
+     * TODO: Make this function interruptible
      *
      * @param args          Program arguments. args[0] must be the program filename.
      * @throws RuntimeException  (or some subclass thereof) on failure, including docker failure, command failure
      */
     ProcessResult executeInContainer(ContainerName containerName, String... args);
+
+    ProcessResult executeInContainerAsRoot(ContainerName containerName, String... args);
 }
