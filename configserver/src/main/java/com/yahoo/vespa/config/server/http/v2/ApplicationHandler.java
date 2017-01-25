@@ -16,7 +16,6 @@ import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
@@ -26,7 +25,6 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.Executor;
 
@@ -88,14 +86,6 @@ public class ApplicationHandler extends HttpHandler {
             return new ContentHandler().get(contentRequest);
         }
 
-        // TODO: Remove this once the config convergence logic is moved to client and is live for all clusters.
-        if (isConvergeRequest(request)) {
-            try {
-                applicationRepository.waitForConfigConverged(tenant, applicationId, new TimeoutBudget(Clock.systemUTC(), durationFromRequestTimeout(request)));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
         if (isServiceConvergeListRequest(request)) {
             return applicationRepository.listConfigConvergence(tenant, applicationId, request.getUri());
         }
@@ -168,16 +158,10 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/log",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/converge",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
                 "http://*/application/v2/tenant/*/application/*");
-    }
-
-    private static boolean isConvergeRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("/converge");
     }
 
     private static boolean isServiceConvergeListRequest(HttpRequest request) {

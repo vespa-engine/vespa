@@ -19,7 +19,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,8 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
@@ -76,12 +73,6 @@ public class ApplicationConvergenceCheckerTest {
     @Test
     public void converge() throws IOException, SAXException {
         ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
-        checker.waitForConfigConverged(application, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(1)));
-    }
-
-    @Test
-    public void convergeV2() throws IOException, SAXException {
-        ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
         final HttpResponse httpResponse = checker.listConfigConvergence(application, URI.create("http://foo:234/serviceconvergence"));
         assertThat(httpResponse.getStatus(), is(200));
         assertJsonResponseEquals(httpResponse, "{\"services\":[" +
@@ -107,46 +98,11 @@ public class ApplicationConvergenceCheckerTest {
                 "\"url\":\"http://foo:234/serviceconvergence\"}");
     }
 
-    // When config server constantly redeploys applications we might end up with a higher version than expected, which is OK
-    @Test
-    public void convergeGenerationIsLargerThanExpected() throws IOException, SAXException {
-        ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":4}}"));
-        checker.waitForConfigConverged(application, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(1)));
-    }
-
     private JsonNode string2json(String data) {
         try {
             return mapper.readTree(data);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Test
-    public void convergeFailure() throws IOException {
-        ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":2}}"));
-        try {
-            checker.waitForConfigConverged(application, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(1)));
-            fail("Converge should fail due to config generation not being updated");
-        } catch (ConfigNotConvergedException e) {
-            assertThat(e.getMessage(), is("Timed out waiting for service to use config generation 3 (checking http://localhost:1337/state/v1/config), generation was 2."));
-        }
-        final HttpResponse nodeHttpResponse = checker.nodeConvergenceCheck(application, "localhost:1337", URI.create("http://foo:234/serviceconvergence"));
-        assertThat(nodeHttpResponse.getStatus(), is(200));
-        assertJsonResponseEquals(nodeHttpResponse, "{" +
-                "\"converged\":false," +
-                "\"debug\":{\"wantedGeneration\":3,\"currentGeneration\":2,\"host\":\"localhost:1337\" }," +
-                "\"url\":\"http://foo:234/serviceconvergence\"}");
-    }
-
-    @Test
-    public void stateApiFailure() throws IOException {
-        ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{}}"));
-        try {
-            checker.waitForConfigConverged(application, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(1)));
-            fail("Converge should fail due to config generation not being updated");
-        } catch (ConfigNotConvergedException e) {
-            assertThat(e.getMessage(), is("Timed out waiting for service to use config generation 3 (checking http://localhost:1337/state/v1/config), could not connect."));
         }
     }
 

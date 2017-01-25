@@ -201,9 +201,7 @@ public class ApplicationHandlerTest {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
         addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
-        assertFalse(stateApiFactory.createdApi);
         converge(application, Zone.defaultZone());
-        assertTrue(stateApiFactory.createdApi);
     }
 
     @Test
@@ -351,8 +349,8 @@ public class ApplicationHandlerTest {
     }
 
     private void converge(ApplicationId application, Zone zone) throws IOException {
-        String restartUrl = toUrlPath(application, zone, true) + "/converge";
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        String convergeUrl = toUrlPath(application, zone, true) + "/serviceconverge";
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(convergeUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
         HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "");
     }
 

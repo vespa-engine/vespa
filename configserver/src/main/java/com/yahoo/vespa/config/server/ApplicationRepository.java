@@ -34,7 +34,6 @@ import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
@@ -153,11 +152,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public HttpResponse nodeConvergenceCheck(Tenant tenant, ApplicationId applicationId, String hostname, URI uri) {
         Application application = getApplication(tenant, applicationId);
         return convergeChecker.nodeConvergenceCheck(application, hostname, uri);
-    }
-
-    public void waitForConfigConverged(Tenant tenant, ApplicationId applicationId, TimeoutBudget timeoutBudget) throws IOException {
-        Application application = getApplication(tenant, applicationId);
-        convergeChecker.waitForConfigConverged(application, timeoutBudget);
     }
 
     public HttpResponse listConfigConvergence(Tenant tenant, ApplicationId applicationId, URI uri) {
