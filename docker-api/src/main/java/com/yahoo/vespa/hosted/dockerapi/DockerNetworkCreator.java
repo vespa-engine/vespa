@@ -13,14 +13,19 @@ import java.util.Collections;
 /**
  * @author freva
  */
-class DockerNetworkCreator {
-    static InetAddress getDefaultGatewayLinux(boolean ipv6) throws IOException {
-        String command = ipv6 ? "route -A inet6 -n | grep 'UG[ \t]' | awk '{print $2}'" :
-                "route -n | grep 'UG[ \t]' | awk '{print $2}'";
+public class DockerNetworkCreator {
+    private static InetAddress hostDefaultGateway;
 
-        Process result = Runtime.getRuntime().exec(new String[]{"sh", "-c", command});
-        BufferedReader output = new BufferedReader(new InputStreamReader(result.getInputStream()));
-        return InetAddress.getByName(output.readLine());
+    public static InetAddress getDefaultGatewayLinux(boolean ipv6) throws IOException {
+        if (hostDefaultGateway == null) {
+            String command = ipv6 ? "route -A inet6 -n | grep 'UG[ \t]' | awk '{print $2}'" :
+                    "route -n | grep 'UG[ \t]' | awk '{print $2}'";
+            Process result = Runtime.getRuntime().exec(new String[]{"sh", "-c", command});
+            BufferedReader output = new BufferedReader(new InputStreamReader(result.getInputStream()));
+            hostDefaultGateway = InetAddress.getByName(output.readLine());
+        }
+
+        return hostDefaultGateway;
     }
 
     static NetworkAddressInterface getInterfaceForAddress(InetAddress address) throws SocketException, UnknownHostException {
