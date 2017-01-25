@@ -68,8 +68,7 @@ public final class Parsable {
     }
 
     /** 
-     * Returns the language to use when parsing, 
-     * if not decided by the item under parsing. This is never null or UNKNOWN 
+     * Returns the language to use when parsing, or null to decide during parsing.
      */
     public Language getLanguage() {
         return language;
