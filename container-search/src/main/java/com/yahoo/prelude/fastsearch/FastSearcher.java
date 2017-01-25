@@ -24,6 +24,8 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.SearchCluster;
+import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -32,9 +34,7 @@ import com.yahoo.search.searchchain.Execution;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Iterator;
-import java.util.TimeZone;
 import java.util.logging.Level;
 
 import static com.yahoo.container.util.Util.quote;
@@ -97,24 +97,13 @@ public class FastSearcher extends VespaBackEndSearcher {
         this.selfHostname = HostName.getLocalhost();
     }
 
-    private static SimpleDateFormat isoDateFormat;
-
-    static {
-        isoDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-        isoDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-    }
-
-    private int countNumberOfFastHits(Result result) {
-        int numFastHits = 0;
-
-        for (Iterator<com.yahoo.search.result.Hit> i = hitIterator(result); i.hasNext();) {
-            com.yahoo.search.result.Hit hit = i.next();
-
-            if (hit instanceof FastHit) {
-                numFastHits++;
-            }
+    private int countFastHits(Result result) {
+        int count = 0;
+        for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
+            if (i.next() instanceof FastHit)
+                count++;
         }
-        return numFastHits;
+        return count;
     }
 
     /**
@@ -184,6 +173,8 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
         FS4Channel channel = null;
         try {
+            if (dispatcher.searchCluster().groupSize() == 1)
+                forceSinglePassGrouping(query);
             channel = chooseBackend(query).openChannel();
             channel.setQuery(query);
 
@@ -211,6 +202,18 @@ public class FastSearcher extends VespaBackEndSearcher {
             if (channel != null)
                 channel.close();
         }
+    }
+    
+    /** When we only search a single node, doing all grouping in one pass is more efficient */
+    private void forceSinglePassGrouping(Query query) {
+        for (GroupingRequest groupingRequest : GroupingRequest.getRequests(query))
+            forceSinglePassGrouping(groupingRequest.getRootOperation());
+    }
+    
+    private void forceSinglePassGrouping(GroupingOperation operation) {
+        operation.setForceSinglePass(true);
+        for (GroupingOperation childOperation : operation.getChildren())
+            forceSinglePassGrouping(childOperation);
     }
 
     /**
@@ -287,7 +290,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         try {
             DocsumPacketKey[] packetKeys;
 
-            if (countNumberOfFastHits(result) > 0) {
+            if (countFastHits(result) > 0) {
                 packetKeys = getPacketKeys(result, summaryClass, false);
                 if (packetKeys.length == 0) {
                     receivedPackets = new Packet[0];

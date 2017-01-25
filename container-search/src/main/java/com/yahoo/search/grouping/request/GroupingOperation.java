@@ -16,7 +16,7 @@ import java.util.*;
  * com.yahoo.search.grouping.GroupingRequest} using the {@link com.yahoo.search.grouping.GroupingRequest#setRootOperation(GroupingOperation)}
  * method.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class GroupingOperation extends GroupingNode {
 
@@ -579,4 +579,5 @@ public abstract class GroupingOperation extends GroupingNode {
             throw new IllegalArgumentException(input.formatException(e.getMessage()), e);
         }
     }
+
 }
