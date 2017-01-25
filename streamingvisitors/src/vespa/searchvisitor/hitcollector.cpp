@@ -12,6 +12,22 @@ using vdslib::SearchResult;
 
 namespace storage {
 
+HitCollector::Hit::Hit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & matchData,
+                       double score, const void * sortData, size_t sortDataLen) :
+    _docid(docId),
+    _score(score),
+    _document(doc),
+    _matchData(),
+    _sortBlob(sortData, sortDataLen)
+{
+    _matchData.reserve(matchData.getNumTermFields());
+    for (search::fef::TermFieldHandle handle = 0; handle < matchData.getNumTermFields(); ++handle) {
+        _matchData.emplace_back(*matchData.resolveTermField(handle));
+    }
+}
+
+HitCollector::Hit::~Hit() { }
+
 HitCollector::HitCollector(size_t wantedHits) :
     _hits(),
     _sortedByDocId(true)
@@ -33,16 +49,14 @@ HitCollector::getDocSum(const search::DocumentIdT & docId) const
 bool
 HitCollector::addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data, double score)
 {
-    Hit h(doc, docId, data, score);
-    return addHit(h);
+    return addHit(Hit(doc, docId, data, score));
 }
 
 bool
 HitCollector::addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data,
                      double score, const void * sortData, size_t sortDataLen)
 {
-    Hit h(doc, docId, data, score, sortData, sortDataLen);
-    return addHit(h);
+    return addHit(Hit(doc, docId, data, score, sortData, sortDataLen));
 }
 
 void
@@ -64,14 +78,14 @@ HitCollector::addHitToHeap(const Hit & hit) const
 }
 
 bool
-HitCollector::addHit(const Hit & hit)
+HitCollector::addHit(Hit && hit)
 {
     bool amongTheBest(false);
     ssize_t avail = (_hits.capacity() - _hits.size());
     bool useSortBlob( ! hit.getSortBlob().empty() );
     if (avail > 1) {
         // No heap yet.
-        _hits.push_back(hit);
+        _hits.emplace_back(std::move(hit));
         amongTheBest = true;
     } else if (_hits.capacity() == 0) {
         // this happens when wantedHitCount = 0
@@ -83,7 +97,7 @@ HitCollector::addHit(const Hit & hit)
             std::pop_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
         }
 
-        _hits.back() = hit;
+        _hits.back() = std::move(hit);
         amongTheBest = true;
 
         if (useSortBlob) {
@@ -92,7 +106,7 @@ HitCollector::addHit(const Hit & hit)
             std::push_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
         }
     } else if (avail == 1) { // make a heap of the hit vector
-        _hits.push_back(hit);
+        _hits.emplace_back(std::move(hit));
         amongTheBest = true;
         if (useSortBlob) {
             std::make_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
