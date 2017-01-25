@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "hitcollector.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sort.h>
-#include <limits>
 
 namespace search {
 namespace queryeval {
@@ -143,6 +141,12 @@ HitCollector::DocIdCollector<CollectRankedHit>::collect(uint32_t docId, feature_
     }
     HitCollector & hc = this->_hc;
     if (hc._docIdVector.size() < hc._maxDocIdVectorSize) {
+        if (__builtin_expect(((hc._docIdVector.size() > 0) &&
+                              (docId < hc._docIdVector.back()) &&
+                              (hc._unordered == false)), false))
+        {
+            hc._unordered = true;
+        }
         hc._docIdVector.push_back(docId);
     } else {
         collectAndChangeCollector(docId);
