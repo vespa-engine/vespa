@@ -125,9 +125,7 @@ public class DocumentTypeManagerTestCase {
 
     @Test
     public void testReverseMapOrder() {
-        DocumentTypeManager manager = new DocumentTypeManager();
-
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.map.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.map.cfg");
 
         assertNotNull(manager.getDataType(1000));
         assertNotNull(manager.getDataType(1001));
@@ -136,9 +134,7 @@ public class DocumentTypeManagerTestCase {
     @SuppressWarnings("deprecation")
     @Test
     public void testConfigure() {
-        DocumentTypeManager manager = new DocumentTypeManager();
-
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.cfg");
 
         Iterator typeIt = manager.documentTypeIterator();
         DocumentType type = null;
@@ -219,9 +215,7 @@ public class DocumentTypeManagerTestCase {
 
     @Test
     public void testConfigureUpdate() {
-        DocumentTypeManager manager = new DocumentTypeManager();
-
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.cfg");
 
         DocumentType banana = manager.getDocumentType(new DataTypeName("banana"));
         DocumentType customtypes = manager.getDocumentType(new DataTypeName("customtypes"));
@@ -240,9 +234,7 @@ public class DocumentTypeManagerTestCase {
 
     @Test
     public void testConfigureWithAnnotations() {
-        DocumentTypeManager manager = new DocumentTypeManager();
-
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.annotationtypes1.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.annotationtypes1.cfg");
 
         /*
   annotation banana {
@@ -302,10 +294,7 @@ public class DocumentTypeManagerTestCase {
 
     @Test
     public void testConfigureWithAnnotationsWithInheritance() {
-        DocumentTypeManager manager = new DocumentTypeManager();
-
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.annotationtypes2.cfg");
-
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.annotationtypes2.cfg");
 
         /*
   annotation fruit {
@@ -430,9 +419,7 @@ search annotationsimplicitstruct {
 }
          */
 
-        DocumentTypeManager manager = new DocumentTypeManager();
-
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.structsanyorder.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.structsanyorder.cfg");
 
         StructDataType foo = (StructDataType) manager.getDataType("foo");
         assertNotNull(foo);
@@ -455,8 +442,7 @@ search annotationsimplicitstruct {
 
     @Test
     public void testSombrero1() {
-        DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.sombrero1.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.sombrero1.cfg");
 
         {
             StringFieldValue sfv = new StringFieldValue("ballooooo");
@@ -496,9 +482,7 @@ search annotationsimplicitstruct {
          */
 
 
-        DocumentTypeManager manager = new DocumentTypeManager();
-
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.annotationspolymorphy.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.annotationspolymorphy.cfg");
 
         AnnotationType suuper = manager.getAnnotationTypeRegistry().getType("super");
         AnnotationType sub = manager.getAnnotationTypeRegistry().getType("sub");
@@ -518,23 +502,38 @@ search annotationsimplicitstruct {
 
     @Test
     public void single_reference_type_is_mapped_to_correct_document_target_type() {
-        final DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.singlereference.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.singlereference.cfg");
 
-        final int refTypeIdInConfig = 12345678;
-        final DataType type = manager.getDataType(refTypeIdInConfig);
+        assertReferenceTypePresentInManager(manager, 12345678, "referenced_type");
+    }
+
+    private static void assertReferenceTypePresentInManager(DocumentTypeManager manager, int refTypeId,
+                                                            String refTargetTypeName) {
+        final DataType type = manager.getDataType(refTypeId);
         assertThat(type, instanceOf(ReferenceDataType.class));
         final ReferenceDataType refType = (ReferenceDataType) type;
-        assertThat(refType.getTargetType().getName(), equalTo("referenced_type"));
 
-        final DocumentType targetDocType = manager.getDocumentType("referenced_type");
+        final DocumentType targetDocType = manager.getDocumentType(refTargetTypeName);
         assertThat(refType.getTargetType(), sameInstance(targetDocType));
+    }
+
+    private static DocumentTypeManager createConfiguredManager(String configFilePath) {
+        final DocumentTypeManager manager = new DocumentTypeManager();
+        DocumentTypeManagerConfigurer.configure(manager, configFilePath);
+        return manager;
+    }
+
+    @Test
+    public void multiple_reference_types_are_mapped_to_correct_document_target_types() {
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.multiplereferences.cfg");
+
+        assertReferenceTypePresentInManager(manager, 12345678, "referenced_type");
+        assertReferenceTypePresentInManager(manager, 87654321, "referenced_type2");
     }
 
     @Test
     public void reference_field_has_correct_reference_type() {
-        final DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.singlereference.cfg");
+        final DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.singlereference.cfg");
 
         final DocumentType docType = manager.getDocumentType("type_with_ref");
         final Field field = docType.getField("my_ref_field");
@@ -545,5 +544,7 @@ search annotationsimplicitstruct {
         final DocumentType targetDocType = manager.getDocumentType("referenced_type");
         assertThat(fieldRefType.getTargetType(), sameInstance(targetDocType));
     }
+
+    // TODO test reference to own doc type
 
 }
