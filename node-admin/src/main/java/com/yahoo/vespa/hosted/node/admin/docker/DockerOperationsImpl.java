@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
+import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -243,7 +243,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
             DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
                     docker.executeInContainer(nodeSpec.containerName, "sudo", "chmod", "-R", "a+w", entry.getKey()));
-        } catch (UnknownHostException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Failed to create container " + nodeSpec.containerName.asString(), e);
         }
     }
@@ -252,37 +252,10 @@ public class DockerOperationsImpl implements DockerOperations {
      * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
      * IPv6 gateway in containers connected to more than one docker network
      */
-    private void setupContainerNetworkingWithScript(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-
-        Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName)
-                .orElseThrow(() -> new RuntimeException("Container " + containerName + " does not exist"));
-
-        Integer containerPid = containerInfo.getPid()
-                .orElseThrow(() -> new RuntimeException("Container " + containerName + " isn't running (pid not found)"));
-
-        final List<String> command = new LinkedList<>();
-        command.add("sudo");
-        command.add(getDefaults().underVespaHome("libexec/vespa/node-admin/configure-container-networking.py"));
-        command.add("--fix-docker-gateway");
-        command.add(containerPid.toString());
-
-        for (int retry = 0; retry < 30; ++retry) {
-            try {
-                commandExecutor.accept(command);
-                logger.info("Done setting up network");
-                return;
-            } catch (Exception e) {
-                final int sleepSecs = 3;
-                logger.warning("Failed to configure network with command " + command
-                        + ", will retry in " + sleepSecs + " seconds", e);
-                try {
-                    Thread.sleep(sleepSecs * 1000);
-                } catch (InterruptedException e1) {
-                    logger.warning("Sleep interrupted", e1);
-                }
-            }
-        }
+    private void setupContainerNetworkingWithScript(ContainerName containerName) throws IOException {
+        InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
+        executeCommandInNetworkNamespace(containerName, new String[]{
+                "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1"});
     }
 
     @Override
