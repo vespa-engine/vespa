@@ -2,17 +2,17 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/clock.h>
-#include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/searchlib/common/featureset.h>
 #include "result_processor.h"
-#include "match_params.h"
 #include "matching_stats.h"
+
+namespace vespalib { class ThreadBundle; }
+namespace search { class FeatureSet; }
 
 namespace proton {
 namespace matching {
 
 class MatchToolsFactory;
+class MatchParams;
 
 /**
  * Handles overall matching and keeps track of match threads.
@@ -23,7 +23,7 @@ private:
     MatchingStats _stats;
 
 public:
-    const MatchingStats &getStats() const { return _stats; }
+    const MatchingStats & getStats() const { return _stats; }
     ResultProcessor::Result::UP match(const MatchParams &params,
                                       vespalib::ThreadBundle &threadBundle,
                                       const MatchToolsFactory &matchToolsFactory,
@@ -31,9 +31,10 @@ public:
                                       uint32_t distributionKey,
                                       uint32_t numSearchPartitions);
 
-    static search::FeatureSet::SP
+    static std::shared_ptr<search::FeatureSet>
     getFeatureSet(const MatchToolsFactory &matchToolsFactory,
                   const std::vector<uint32_t> &docs, bool summaryFeatures);
+    static MatchingStats getStats(MatchMaster && rhs) { return std::move(rhs._stats); }
 };
 
 } // namespace proton::matching

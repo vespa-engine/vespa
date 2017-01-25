@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "matching_stats.h"
 
 namespace proton {
@@ -16,6 +15,24 @@ MatchingStats::Partition &get_writable_partition(std::vector<MatchingStats::Part
 }
 
 } // namespace proton::matching::<unnamed>
+
+MatchingStats::MatchingStats()
+    : _queries(0),
+      _limited_queries(0),
+      _docsMatched(0),
+      _docsRanked(0),
+      _docsReRanked(0),
+      _softDoomed(0),
+      _softDoomFactor(0.5),
+      _queryCollateralTime(),
+      _queryLatency(),
+      _matchTime(),
+      _groupingTime(),
+      _rerankTime(),
+      _partitions()
+{ }
+
+MatchingStats::~MatchingStats() { }
 
 MatchingStats &
 MatchingStats::merge_partition(const Partition &partition, size_t id)

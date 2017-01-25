@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <vector>
+#include <cstddef>
+
 namespace proton {
 namespace matching {
 
@@ -94,20 +97,12 @@ private:
     std::vector<Partition> _partitions;
 
 public:
-    MatchingStats()
-        : _queries(0),
-          _limited_queries(0),
-          _docsMatched(0),
-          _docsRanked(0),
-          _docsReRanked(0),
-          _softDoomed(0),
-          _softDoomFactor(0.5),
-          _queryCollateralTime(),
-          _queryLatency(),
-          _matchTime(),
-          _groupingTime(),
-          _rerankTime(),
-          _partitions() {}
+    MatchingStats(const MatchingStats &) = delete;
+    MatchingStats & operator = (const MatchingStats &) = delete;
+    MatchingStats(MatchingStats &&) = default;
+    MatchingStats & operator =  (MatchingStats &&) = default;
+    MatchingStats();
+    ~MatchingStats();
 
     MatchingStats &queries(size_t value) { _queries = value; return *this; }
     size_t queries() const { return _queries; }

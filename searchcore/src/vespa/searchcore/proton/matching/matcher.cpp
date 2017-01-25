@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "isearchcontext.h"
 #include "match_master.h"
 #include "match_context.h"
@@ -157,8 +156,8 @@ MatchingStats
 Matcher::getStats()
 {
     vespalib::LockGuard guard(_statsLock);
-    MatchingStats stats = _stats;
-    _stats = MatchingStats();
+    MatchingStats stats = std::move(_stats);
+    _stats = std::move(MatchingStats());
     _stats.softDoomFactor(stats.softDoomFactor());
     return stats;
 }
@@ -263,7 +262,7 @@ Matcher::match(const SearchRequest &request,
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
         ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp, _distributionKey, _rankSetup->getNumSearchPartitions());
-        my_stats = master.getStats();
+        my_stats = MatchMaster::getStats(std::move(master));
         size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()), mtf->match_limiter().getDocIdSpaceEstimate());
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
             SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(), std::move(mtf), std::move(owned_objects));
