@@ -13,9 +13,22 @@ import com.yahoo.document.datatypes.ReferenceFieldValue;
  */
 public class ReferenceDataType extends DataType {
 
-    private final DocumentType targetType;
+    private StructuredDataType targetType;
 
     public ReferenceDataType(DocumentType targetType, int id) {
+        this((StructuredDataType)targetType, id);
+    }
+
+    /**
+     * Constructor used when building a multi document type model where the concrete instance
+     * of the target document type might not yet be known. The temporary data type should be
+     * replaced later using setTargetType().
+     */
+    public ReferenceDataType(TemporaryStructuredDataType temporaryTargetType, int id) {
+        this((StructuredDataType) temporaryTargetType, id);
+    }
+
+    private ReferenceDataType(StructuredDataType targetType, int id) {
         super(buildTypeName(targetType), id);
         this.targetType = targetType;
     }
@@ -24,7 +37,7 @@ public class ReferenceDataType extends DataType {
         this(targetType, buildTypeName(targetType).hashCode());
     }
 
-    private static String buildTypeName(DocumentType targetType) {
+    private static String buildTypeName(StructuredDataType targetType) {
         return "Reference<" + targetType.getName() + ">";
     }
 
@@ -33,7 +46,30 @@ public class ReferenceDataType extends DataType {
         return new ReferenceDataType(targetType);
     }
 
-    public DocumentType getTargetType() { return targetType; }
+    public StructuredDataType getTargetType() { return targetType; }
+
+    /**
+     * Overrides the stored temporary data type with a concrete DocumentType instance. Should only
+     * be invoked from configuration or model code when resolving temporary types.
+     *
+     * @throws IllegalStateException if the previously stored target type is already a concrete
+     *     instance of DocumentType.
+     * @throws IllegalArgumentException if the new target type has a different name than the
+     *     previously stored target type.
+     */
+    public void setTargetType(DocumentType targetType) {
+        if (this.targetType instanceof DocumentType) {
+            throw new IllegalStateException(String.format(
+                    "Unexpected attempt to replace already concrete target " +
+                    "type in ReferenceDataType instance (type is '%s')", this.targetType.getName()));
+        }
+        if (!targetType.getName().equals(this.targetType.getName())) {
+            throw new IllegalArgumentException(String.format(
+                    "Cannot replace temporary reference type of name '%s' with concrete " +
+                    "type having different name '%s'", targetType.getName(), this.targetType.getName()));
+        }
+        this.targetType = targetType;
+    }
 
     @Override
     public ReferenceFieldValue createFieldValue() {
