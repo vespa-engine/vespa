@@ -190,6 +190,16 @@ public class LocalZoneUtils {
 
     public static void deployApp(Docker docker, Path pathToApp, String tenantName, String applicationName) {
         Path pathToAppOnConfigServer = Paths.get("/tmp");
+
+        // Make sure nothing is left after last deployment
+        final String appOnConfigServer = pathToAppOnConfigServer.resolve(pathToApp.getFileName()).toString();
+        ProcessResult removeOldApp = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, "/bin/rm", "-rf",
+                                                               appOnConfigServer);
+        if (!removeOldApp.isSuccess()) {
+            throw new RuntimeException("Could not remove old app in " + appOnConfigServer + " on " + CONFIG_SERVER_CONTAINER_NAME.asString() +
+                                               "\n" + removeOldApp.getOutput() + "\n" + removeOldApp.getErrors());
+        }
+
         docker.copyArchiveToContainer(pathToApp.toAbsolutePath().toString(),
                 CONFIG_SERVER_CONTAINER_NAME, pathToAppOnConfigServer.toString());
 
@@ -203,7 +213,7 @@ public class LocalZoneUtils {
         System.out.println("prepare " + applicationName);
         final String deployPath = Defaults.getDefaults().underVespaHome("bin/deploy");
         ProcessResult copyProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
-                tenantName, "-a", applicationName, "prepare", pathToAppOnConfigServer.resolve(pathToApp.getFileName()).toString());
+                                                              tenantName, "-a", applicationName, "prepare", appOnConfigServer);
         if (! copyProcess.isSuccess()) {
             throw new RuntimeException("Could not prepare " + pathToApp + " on " + CONFIG_SERVER_CONTAINER_NAME.asString() +
                     "\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
