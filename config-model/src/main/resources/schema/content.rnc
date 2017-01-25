@@ -112,7 +112,8 @@ Content = element content {
     # Here you can add document definitions that you also want to handle.
     # Search might want to know of them in advance.
     Documents? &
-    (ContentNodes | TopGroup) &
+    ContentNodes? &
+    TopGroup? &
     Controllers?
 }
 

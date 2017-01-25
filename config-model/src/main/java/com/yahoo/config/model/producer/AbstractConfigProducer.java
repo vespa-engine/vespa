@@ -69,6 +69,8 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
 
     protected final void setParent(AbstractConfigProducer parent) { this.parent = parent; }
     public final String getSubId() { return subId; }
+    
+    /** Whether this is hosted Vespa: NOTE: This cannot be trusted to be correct  :-/  */
     public final boolean isHostedVespa() { return hostedVespa; }
 
     /**

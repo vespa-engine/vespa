@@ -104,7 +104,7 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
 
 /**
  * @author gjoranv
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @author tonytv
  */
 public final class ContainerCluster
@@ -133,6 +133,7 @@ public final class ContainerCluster
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer {
+
     /**
      * URI prefix used for internal, usually programmatic, APIs. URIs using this
      * prefix should never considered available for direct use by customers, and

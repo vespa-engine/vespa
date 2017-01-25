@@ -9,17 +9,16 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class IdentifierTestCase {
 
     @Test
     public void requireThatThereAreNoReservedWords() throws ParseException {
         List<String> tokens = Arrays.asList("attribute",
-                                            "base64_decode",
-                                            "base64_encode",
+                                            "base64decode",
+                                            "base64encode",
                                             "clear_state",
-                                            "compact_phrase",
                                             "create_if_non_existent",
                                             "echo",
                                             "exact",
@@ -35,7 +34,7 @@ public class IdentifierTestCase {
                                             "index",
                                             "join",
                                             "linguistics",
-                                            "lower_case",
+                                            "lowercase",
                                             "ngram",
                                             "normalize",
                                             "now",
@@ -47,7 +46,7 @@ public class IdentifierTestCase {
                                             "remove_ctrl_chars",
                                             "remove_if_zero",
                                             "remove_so_si",
-                                            "select_field",
+                                            "select_input",
                                             "set_language",
                                             "set_var",
                                             "split",
@@ -71,4 +70,5 @@ public class IdentifierTestCase {
             assertEquals(str, parser.identifier());
         }
     }
+
 }
