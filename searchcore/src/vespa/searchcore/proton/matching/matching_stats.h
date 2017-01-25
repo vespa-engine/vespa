@@ -123,7 +123,7 @@ public:
     size_t softDoomed() const { return _softDoomed; }
     MatchingStats &softDoomFactor(double value) { _softDoomFactor = value; return *this; }
     double softDoomFactor() const { return _softDoomFactor; }
-    MatchingStats &updatesoftDoomFactor(double softLimit, double duration);
+    MatchingStats &updatesoftDoomFactor(double hardLimit, double softLimit, double duration);
 
     MatchingStats &queryCollateralTime(double time_s) { _queryCollateralTime.set(time_s); return *this; }
     double queryCollateralTimeAvg() const { return _queryCollateralTime.avg(); }

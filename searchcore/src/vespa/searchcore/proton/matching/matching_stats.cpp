@@ -73,11 +73,11 @@ MatchingStats::add(const MatchingStats &rhs)
 }
 
 MatchingStats &
-MatchingStats::updatesoftDoomFactor(double softLimit, double duration) {
+MatchingStats::updatesoftDoomFactor(double hardLimit, double softLimit, double duration) {
     if (duration < softLimit) {
-        _softDoomFactor += 0.01*(softLimit - duration)/softLimit;
+        _softDoomFactor += 0.01*(softLimit - duration)/hardLimit;
     } else {
-        _softDoomFactor += 0.02*(softLimit - duration)/softLimit;
+        _softDoomFactor += 0.02*(softLimit - duration)/hardLimit;
     }
     return *this;
 }

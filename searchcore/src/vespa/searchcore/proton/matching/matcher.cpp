@@ -286,13 +286,13 @@ Matcher::match(const SearchRequest &request,
     total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
     {
-        fastos::TimeStamp limit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
+        fastos::TimeStamp softLimit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
         fastos::TimeStamp duration = request.getTimeUsed();
         vespalib::LockGuard guard(_statsLock);
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
-            LOG(info, "Triggered softtimeout limit=%1.3f and duration=%1.3f", limit.sec(), duration.sec());
-            _stats.updatesoftDoomFactor(limit, duration);
+            LOG(info, "Triggered softtimeout limit=%1.3f and duration=%1.3f", softLimit.sec(), duration.sec());
+            _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, duration);
         }
     }
     return reply;
