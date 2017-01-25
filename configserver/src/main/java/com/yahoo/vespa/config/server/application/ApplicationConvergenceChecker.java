@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 import org.json.JSONArray;
@@ -33,7 +32,6 @@ import java.util.*;
 public class ApplicationConvergenceChecker extends AbstractComponent {
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
-    private static final String configPath = statePath + configSubPath;
     private final StateApiFactory stateApiFactory;
     private final Client client = ClientBuilder.newClient();
 
@@ -56,66 +54,13 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         this.stateApiFactory = stateApiFactory;
     }
 
-    // TODO: Remove this function once the other has taken over (list)
-    private void waitForConfigConverged(ModelConfig config, long wantedGeneration, TimeoutBudget timeoutBudget) {
-
-        config.hosts().stream()
-            .forEach(host -> host.services().stream()
-                    .filter(service -> serviceTypes.contains(service.type()))
-                    .forEach(service -> {
-                        Optional<Integer> statePort = getStatePort(service);
-                        if (statePort.isPresent()) {
-                            URI serviceUri = getServiceUri(host.name(), statePort.get());
-                            try {
-                                waitForServiceGenerationConverged(serviceUri, wantedGeneration, timeoutBudget);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    }));
-    }
-
-    public void waitForConfigConverged(Application application, TimeoutBudget timeoutBudget) throws IOException {
-        ModelConfig config = application.getConfig(ModelConfig.class, "");
-        waitForConfigConverged(config, application.getApplicationGeneration(), timeoutBudget);
-    }
-
     private Optional<Integer> getStatePort(ModelConfig.Hosts.Services service) { return service.ports().stream()
                 .filter(port -> port.tags().contains("state"))
                 .map(ModelConfig.Hosts.Services.Ports::number)
                 .findFirst();
     }
 
-    private URI getServiceUri(String host, int port) {
-        return URI.create("http://" + host + ":" + port);
-    }
-
-    private void waitForServiceGenerationConverged(URI serviceUri, long wantedGeneration, TimeoutBudget timeoutBudget) throws InterruptedException {
-        long generation = -1;
-        do {
-            try {
-                generation = getServiceGeneration(serviceUri);
-                if (generation >= wantedGeneration)
-                    return;
-            } catch (Exception e) {
-                // Try again
-            }
-            Thread.sleep(100);
-        } while (timeoutBudget.hasTimeLeft());
-        StringBuilder message = new StringBuilder("Timed out waiting for service to use config generation ").
-                append(wantedGeneration).
-                append(" (checking ").
-                append(serviceUri).append(configPath).
-                append("), ");
-        if (generation == -1) {
-            message.append("could not connect.");
-        } else {
-            message.append("generation was ").append(generation).append(".");
-        }
-        throw new ConfigNotConvergedException(message.toString());
-    }
-
-    public long generationFromContainerState(JsonNode state) {
+    private long generationFromContainerState(JsonNode state) {
         return state.get("config").get("generation").asLong();
     }
 
