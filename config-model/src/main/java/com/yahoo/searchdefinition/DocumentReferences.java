@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -18,7 +19,10 @@ public class DocumentReferences implements Iterable<Map.Entry<String, DocumentRe
 
     @Override
     public Iterator<Map.Entry<String, DocumentReference>> iterator() {
-        return references.entrySet().iterator();
+        return Collections.unmodifiableSet(references.entrySet()).iterator();
     }
 
+    public Map<String, DocumentReference> referenceMap() {
+        return Collections.unmodifiableMap(references);
+    }
 }
