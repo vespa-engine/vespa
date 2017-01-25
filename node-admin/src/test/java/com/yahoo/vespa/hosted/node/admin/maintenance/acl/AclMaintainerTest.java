@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.admin.maintenance;
+package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.NodeRepoMock;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import org.junit.Before;
 import org.junit.Test;
 

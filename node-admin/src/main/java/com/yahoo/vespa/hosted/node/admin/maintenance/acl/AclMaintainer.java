@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.admin.maintenance;
+package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
 import com.yahoo.net.HostName;
