@@ -141,6 +141,12 @@ HitCollector::DocIdCollector<CollectRankedHit>::collect(uint32_t docId, feature_
     }
     HitCollector & hc = this->_hc;
     if (hc._docIdVector.size() < hc._maxDocIdVectorSize) {
+        if (__builtin_expect(((hc._docIdVector.size() > 0) &&
+                              (docId < hc._docIdVector.back()) &&
+                              (hc._unordered == false)), false))
+        {
+            hc._unordered = true;
+        }
         hc._docIdVector.push_back(docId);
     } else {
         collectAndChangeCollector(docId);
