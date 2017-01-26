@@ -1,6 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 1998-2003 Fast Search & Transfer ASA
+// Copyright (C) 2003 Overture Services Norway AS
+
 
 #pragma once
+
+
 
 namespace search {
 
@@ -11,7 +16,6 @@ namespace fs4transport {
  * now use this 32-bit number to send 32 flags. The currently defined flags
  * are as follows:
  * <ul>
- *  <li><b>QFLAG_EXTENDED_COVERAGE</b>: Indicates that the it is able to receive extended coverage information.</li>
  *  <li><b>QFLAG_ESTIMATE</b>: Indicates that the  query is performed to get
  *                             an estimate of the total number of hits</li>
  *  <li><b>QFLAG_DUMP_FEATURES</b>: Dump detailed ranking information. Note that
@@ -24,7 +28,6 @@ namespace fs4transport {
  * </ul>
  **/
 enum queryflags {
-    QFLAG_EXTENDED_COVERAGE    = 0x00000001,
     QFLAG_ESTIMATE             = 0x00000080,
     QFLAG_DROP_SORTDATA        = 0x00004000,
     QFLAG_NO_RESULTCACHE       = 0x00010000,
@@ -47,7 +50,6 @@ enum queryflags {
 enum queryresult_features {
     QRF_MLD                   = 0x00000001,
     QRF_SORTDATA              = 0x00000010,
-    QRF_EXTENDED_COVERAGE     = 0x00000020,
     QRF_COVERAGE              = 0x00000040,
     QRF_GROUPDATA             = 0x00000200,
     QRF_PROPERTIES            = 0x00000400

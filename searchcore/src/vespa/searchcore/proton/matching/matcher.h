@@ -72,6 +72,7 @@ private:
             std::unique_ptr<search::grouping::GroupingSession> gs);
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits) const;
+    double computeFirstPhase2RestRatio() const;
 public:
     /**
      * Convenience typedefs.

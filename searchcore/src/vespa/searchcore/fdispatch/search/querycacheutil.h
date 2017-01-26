@@ -81,35 +81,36 @@ public:
             ret = 0.0;
         return ret;
     }
-    void SetCoverage(uint64_t coverageDocs, uint64_t activeDocs, uint64_t soonActiveDocs, uint32_t degradeReason)
+    void SetCoverage(uint64_t coverageDocs,
+                     uint64_t activeDocs)
     {
         _searchInfo._coverageDocs  = coverageDocs;
         _searchInfo._activeDocs  = activeDocs;
-        _searchInfo._soonActiveDocs = soonActiveDocs;
-        _searchInfo._degradeReason = degradeReason;
     }
     void SetAlignedHitCount(uint32_t alignedHitCount) {
-        if (alignedHitCount > _alignedMaxHits) {
+        if (alignedHitCount > _alignedMaxHits)
             alignedHitCount = _alignedMaxHits;
-        }
         _alignedHitCount = alignedHitCount;
     }
     void CalcHitCount(void) {
-        if (_alignedHitCount + _alignedSearchOffset > _searchInfo._searchOffset) {
-            _queryResult._hitCount = _alignedHitCount + _alignedSearchOffset - _searchInfo._searchOffset;
-        } else {
+        if (_alignedHitCount + _alignedSearchOffset >
+            _searchInfo._searchOffset)
+            _queryResult._hitCount = _alignedHitCount + _alignedSearchOffset -
+                                     _searchInfo._searchOffset;
+        else
             _queryResult._hitCount = 0;
-        }
-        if (_queryResult._hitCount > _searchInfo._maxHits) {
+        if (_queryResult._hitCount > _searchInfo._maxHits)
             _queryResult._hitCount = _searchInfo._maxHits;
-        }
     }
     void AllocAlignedHitBuf(void) {
         FastS_assert(_alignedHitBuf == NULL);
         if (_alignedHitCount != 0) {
-            _alignedHitBuf = (FastS_hitresult*)malloc(sizeof(FastS_hitresult) * _alignedHitCount);
+            _alignedHitBuf =
+                (FastS_hitresult*)malloc(sizeof(FastS_hitresult) *
+                                         _alignedHitCount);
             _hitbuf_needfree = true;
-            _queryResult._hitbuf = _alignedHitBuf + _searchInfo._searchOffset - _alignedSearchOffset;
+            _queryResult._hitbuf =
+                _alignedHitBuf + _searchInfo._searchOffset - _alignedSearchOffset;
         }
     }
     void AllocSortData(uint32_t sortDataLen)

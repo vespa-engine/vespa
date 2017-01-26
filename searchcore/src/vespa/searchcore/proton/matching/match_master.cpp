@@ -1,14 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.match_master");
 #include "match_master.h"
+
 #include "docid_range_scheduler.h"
 #include "match_loop_communicator.h"
 #include "match_thread.h"
+#include "matching_stats.h"
+#include <memory>
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/vespalib/util/thread_bundle.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.match_master");
+#include <vespa/searchlib/common/resultset.h>
 
 namespace proton {
 namespace matching {

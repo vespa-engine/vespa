@@ -35,10 +35,11 @@ LegacyDocumentDBMetrics::MatchingMetrics::update(const MatchingStats &stats)
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
     docsReRanked.inc(stats.docsReRanked());
-    softDoomFactor.set(stats.softDoomFactor());
     queries.inc(stats.queries());
-    queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount());
-    queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount());
+    queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(),
+                                      stats.queryCollateralTimeCount());
+    queryLatency.addValueBatch(stats.queryLatencyAvg(),
+                               stats.queryLatencyCount());
 }
 
 LegacyDocumentDBMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
@@ -47,7 +48,6 @@ LegacyDocumentDBMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       docsRanked("docsranked", "", "Number of documents ranked (first phase)", this),
       docsReRanked("docsreranked", "", "Number of documents re-ranked (second phase)", this),
       queries("queries", "", "Number of queries executed", this),
-      softDoomFactor("softdoomfactor", "", "Factor used to compute soft-timeout", this),
       queryCollateralTime("querycollateraltime", "", "Average time spent setting up and tearing down queries", this),
       queryLatency("querylatency", "", "Average latency when matching a query", this)
 { }

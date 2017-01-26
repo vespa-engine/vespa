@@ -974,11 +974,10 @@ FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
       _groupData(NULL),
       _coverageDocs(0),
       _activeDocs(0),
-      _soonActiveDocs(0),
-      _coverageDegradeReason(0),
       _hits(NULL),
       _propsVector()
-{ }
+{
+}
 
 
 FS4Packet_QUERYRESULTX::~FS4Packet_QUERYRESULTX()
@@ -1010,10 +1009,7 @@ FS4Packet_QUERYRESULTX::GetLength()
         plen += sizeof(uint32_t) + _groupDataLen;
 
     if ((_features & QRF_COVERAGE) != 0)
-        plen += 2 * sizeof(uint64_t);
-
-    if ((_features & QRF_EXTENDED_COVERAGE) != 0)
-        plen += sizeof(uint64_t) + sizeof(uint32_t);
+        plen += sizeof(uint64_t) + 2 * sizeof(uint32_t);
 
     if ((_features & QRF_PROPERTIES) != 0) {
         plen += sizeof(uint32_t);
@@ -1059,10 +1055,6 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
         dst->WriteInt64Fast(_coverageDocs);
         dst->WriteInt64Fast(_activeDocs);
     }
-    if ((_features & QRF_EXTENDED_COVERAGE) != 0) {
-        dst->WriteInt64Fast(_soonActiveDocs);
-        dst->WriteInt32Fast(_coverageDegradeReason);
-    }
 
     for (uint32_t i = 0; i < _numDocs; i++) {
         dst->WriteBytesFast(_hits[i]._gid.get(), document::GlobalId::LENGTH);
@@ -1081,6 +1073,7 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
             _propsVector[i].encode(*dst);
         }
     }
+
 }
 
 
@@ -1142,17 +1135,9 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
         _activeDocs = src->ReadInt64();
         len -= 2 * sizeof(uint64_t);
     }
-    if ((_features & QRF_EXTENDED_COVERAGE) != 0) {
-        if (len < sizeof(uint64_t) + sizeof(uint32_t)) goto error;
-        _soonActiveDocs  = src->ReadInt64();
-        _coverageDegradeReason = src->ReadInt32();
 
-        len -= sizeof(uint64_t) + sizeof(uint32_t);
-    }
-
-    if ((_features & QRF_MLD) != 0) {
+    if ((_features & QRF_MLD) != 0)
         hitSize += 2 * sizeof(uint32_t);
-    }
 
     if (len < _numDocs * hitSize) goto error;
     AllocateHits(_numDocs);

@@ -856,16 +856,12 @@ FastS_FNET_Search::CheckCoverage()
 {
     uint64_t covDocs  = 0;
     uint64_t activeDocs  = 0;
-    uint64_t soonActiveDocs = 0;
-    uint32_t degradedReason = 0;
     size_t cntNone(0);
 
     for (const FastS_FNET_SearchNode & node : _nodes) {
         if (node._qresult != NULL) {
             covDocs  += node._qresult->_coverageDocs;
             activeDocs  += node._qresult->_activeDocs;
-            soonActiveDocs += node._qresult->_soonActiveDocs;
-            degradedReason |= node._qresult->_coverageDegradeReason;
         } else {
             cntNone++;
         }
@@ -873,7 +869,7 @@ FastS_FNET_Search::CheckCoverage()
     if ((cntNone > 0) && (cntNone != _nodes.size())) {
         activeDocs += cntNone * activeDocs/(_nodes.size() - cntNone);
     }
-    _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason);
+    _util.SetCoverage(covDocs, activeDocs);
 }
 
 
