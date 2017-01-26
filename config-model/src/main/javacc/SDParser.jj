@@ -2405,7 +2405,7 @@ void importField(Search search) :
         int indexOfDot = fieldRefSpec.indexOf('.');
         String documentReferenceFieldName = fieldRefSpec.substring(0, indexOfDot);
         String foreignFieldName = fieldRefSpec.substring(indexOfDot + 1);
-        search.importedFields().add(new TemporaryImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName));
+        search.temporaryImportedFields().get().add(new TemporaryImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName));
     }
 }
 
