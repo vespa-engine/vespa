@@ -8,16 +8,17 @@ import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Action;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Chain;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Command;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.CommandList;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.FilterCommand;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.FlushCommand;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.ListCommand;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.PolicyCommand;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Command;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.CommandList;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.net.Inet6Address;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,7 +63,7 @@ public class AclMaintainer implements Runnable {
     private boolean shouldApplyAcl(ContainerName containerName, CommandList commandList) {
         final String currentRules = dockerOperations.executeCommandInNetworkNamespace(containerName,
                 new ListCommand().asArray(IPTABLES_COMMAND));
-        return !commandList.asString().equals(currentRules.trim());
+        return !commandList.asString().equals(trimEachLine(currentRules));
     }
 
     private void applyAcl(ContainerName containerName, List<ContainerAclSpec> aclSpecs) {
@@ -113,6 +114,10 @@ public class AclMaintainer implements Runnable {
         } catch (Throwable t) {
             log.error("Failed to configure ACLs", t);
         }
+    }
+
+    private static String trimEachLine(String s) {
+        return Arrays.stream(s.split("\n")).map(String::trim).collect(Collectors.joining("\n"));
     }
 
     private static CommandList commandListFrom(List<ContainerAclSpec> aclSpecs) {

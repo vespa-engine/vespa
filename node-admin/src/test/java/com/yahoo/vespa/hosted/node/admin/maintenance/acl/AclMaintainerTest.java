@@ -121,12 +121,14 @@ public class AclMaintainerTest {
         if (containerAclSpecs.isEmpty()) {
             result = "";
         } else {
+            // Mock output from ip6tables -S. Note that the trailing space after "-j ACCEPT" is not a typo. For some
+            // reason ip6tables -S appends a space to the line in certain cases.
             result = "-P INPUT DROP\n" +
                     "-P FORWARD ACCEPT\n" +
                     "-P OUTPUT ACCEPT\n" +
-                    "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                    "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                    containerAclSpecs.stream().map(aclSpec -> String.format("-A INPUT -s %s/128 -j ACCEPT",
+                    "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT \n" +
+                    "-A INPUT -p ipv6-icmp -j ACCEPT \n" +
+                    containerAclSpecs.stream().map(aclSpec -> String.format("-A INPUT -s %s/128 -j ACCEPT ",
                             aclSpec.ipAddress())).collect(Collectors.joining("\n")) +
                     "\n";
         }
