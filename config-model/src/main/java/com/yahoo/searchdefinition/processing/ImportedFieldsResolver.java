@@ -14,6 +14,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Iterates all imported fields from SD-parsing and validates and resolves them into concrete fields from referenced document types.
@@ -23,11 +24,11 @@ import java.util.Map;
 public class ImportedFieldsResolver extends Processor {
 
     private final Map<String, ImportedField> importedFields = new LinkedHashMap<>();
-    private final DocumentReferences references;
+    private final Optional<DocumentReferences> references;
 
     public ImportedFieldsResolver(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
-        references = search.getDocument().getDocumentReferences().get();
+        references = search.getDocument().getDocumentReferences();
     }
 
     @Override
@@ -44,7 +45,7 @@ public class ImportedFieldsResolver extends Processor {
 
     private DocumentReference validateDocumentReference(TemporaryImportedField importedField) {
         String documentReferenceFieldName = importedField.documentReferenceFieldName();
-        DocumentReference reference = references.referenceMap().get(documentReferenceFieldName);
+        DocumentReference reference = references.get().referenceMap().get(documentReferenceFieldName);
         if (reference == null) {
             fail(importedField.aliasFieldName(), "Document reference field '" + documentReferenceFieldName + "' not found");
         }
