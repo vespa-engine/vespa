@@ -34,6 +34,19 @@ public class ImportedFieldsTestCase {
         assertSearchContainsImportedField("my_name", "person_ref", "person", "name", search);
     }
 
+    @Test
+    public void field_can_be_imported_from_self_reference() throws ParseException {
+        Search search = buildAdSearch(joinLines("search ad {",
+                "  document ad {",
+                "    field title type string {}",
+                "    field self_ref type reference<ad> {}",
+                "  }",
+                "  import field self_ref.title as my_title {}",
+                "}"));
+        assertEquals(1, search.importedFields().get().fields().size());
+        assertSearchContainsImportedField("my_title", "self_ref", "ad", "title", search);
+    }
+
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
