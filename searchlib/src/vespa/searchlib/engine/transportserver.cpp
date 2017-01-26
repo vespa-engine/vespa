@@ -60,7 +60,7 @@ TransportServer::SearchHandler::searchDone(SearchReply::UP reply)
                 }
                 channel->Send(p);
             }
-            if (r.request.get() != NULL) {
+            if (r.request) {
                 parent.updateQueryMetrics(r.request->getTimeUsed().sec()); // possible thread issue
             }
         } else {
