@@ -32,16 +32,25 @@ public:
 
     class Coverage {
     public:
-        Coverage() : _covered(0), _active(0) {}
-        Coverage(uint64_t active) : _covered(active), _active(active) {}
-        Coverage(uint64_t active, uint64_t covered) : _covered(covered), _active(active) {}
+        Coverage() : _covered(0), _active(0) { }
+        Coverage(uint64_t active) : _covered(active), _active(active), _soonActive(active), _degradeReason(0) { }
+        Coverage(uint64_t active, uint64_t covered) : _covered(covered), _active(active), _degradeReason(0) { }
         uint64_t getCovered() const { return _covered; }
         uint64_t getActive() const { return _active; }
+        uint64_t getSoonActive() const { return _soonActive; }
+        uint64_t getDegradeReason() const { return _degradeReason; }
         Coverage & setCovered(uint64_t v) { _covered = v; return *this; }
         Coverage & setActive(uint64_t v) { _active = v; return *this; }
+        Coverage & setSoonActive(uint64_t v) { _soonActive = v; return *this; }
+        Coverage & degradeMatchPhase() { _degradeReason |= MATCH_PHASE; return *this; }
+        Coverage & degradeTimeout() { _degradeReason |= TIMEOUT; return *this; }
+        Coverage & degradeAdaptiveTimeout() { _degradeReason |= ADAPTIVE_TIMEOUT; return *this; }
     private:
+        enum DegradeReason {MATCH_PHASE=0x01, TIMEOUT=0x02, ADAPTIVE_TIMEOUT=0x04};
         uint64_t _covered;
         uint64_t _active;
+        uint64_t _soonActive;
+        uint32_t _degradeReason;
     };
 
     // set to false to indicate 'talk to the hand' behavior
