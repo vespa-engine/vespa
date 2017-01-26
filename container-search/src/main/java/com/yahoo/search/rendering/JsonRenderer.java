@@ -102,6 +102,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String COVERAGE_DEGRADE_MATCHPHASE = "match-phase";
     private static final String COVERAGE_DEGRADE_TIMEOUT = "timeout";
     private static final String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = "adaptive-timeout";
+    private static final String COVERAGE_NON_IDEAL_STATE = "non-ideal-state";
     private static final String COVERAGE_FULL = "full";
     private static final String COVERAGE_NODES = "nodes";
     private static final String COVERAGE_RESULTS = "results";
@@ -445,13 +446,16 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeObjectFieldStart(COVERAGE);
         generator.writeNumberField(COVERAGE_COVERAGE, c.getResultPercentage());
         generator.writeNumberField(COVERAGE_DOCUMENTS, c.getDocs());
-        generator.writeNumberField(COVERAGE_ACTIVE, c.getActive());
-        generator.writeNumberField(COVERAGE_SOON_ACTIVE, c.getSoonActive());
         if (c.isDegraded()) {
             generator.writeObjectFieldStart(COVERAGE_DEGRADE);
             generator.writeBooleanField(COVERAGE_DEGRADE_MATCHPHASE, c.isDegradedByMatchPhase());
             generator.writeBooleanField(COVERAGE_DEGRADE_TIMEOUT, c.isDegradedByTimeout());
             generator.writeBooleanField(COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT, c.isDegradedByAdapativeTimeout());
+            generator.writeEndObject();
+        } else if (c.getResultPercentage() != 100) {
+            generator.writeObjectFieldStart(COVERAGE_NON_IDEAL_STATE);
+            generator.writeNumberField(COVERAGE_ACTIVE, c.getActive());
+            generator.writeNumberField(COVERAGE_SOON_ACTIVE, c.getSoonActive());
             generator.writeEndObject();
         }
         generator.writeNumberField(COVERAGE_DOCUMENTS, c.getDocs());

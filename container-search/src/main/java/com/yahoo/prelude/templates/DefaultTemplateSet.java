@@ -45,11 +45,6 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
     private static final Utf8String NAME = new Utf8String("name");
     private static final Utf8String CODE = new Utf8String("code");
     private static final Utf8String COVERAGE_DOCS = new Utf8String("coverage-docs");
-    private static final Utf8String COVERAGE_ACTIVE = new Utf8String("coverage-active");
-    private static final Utf8String COVERAGE_SOON_ACTIVE = new Utf8String("coverage-soon-active");
-    private static final Utf8String COVERAGE_DEGRADE_MATCHPHASE = new Utf8String("coverage-degrade-match-phase");
-    private static final Utf8String COVERAGE_DEGRADE_TIMEOUT = new Utf8String("coverage-degrade-timeout");
-    private static final Utf8String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = new Utf8String("coverage-degrade-adaptive-timeout");
     private static final Utf8String COVERAGE_NODES = new Utf8String("coverage-nodes");
     private static final Utf8String COVERAGE_FULL = new Utf8String("coverage-full");
     private static final Utf8String COVERAGE = new Utf8String("coverage");
@@ -166,13 +161,6 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
     protected static void renderCoverageAttributes(Coverage coverage, XMLWriter writer) throws IOException {
         if (coverage == null) return;
         writer.attribute(COVERAGE_DOCS,coverage.getDocs());
-        writer.attribute(COVERAGE_ACTIVE,coverage.getActive());
-        writer.attribute(COVERAGE_SOON_ACTIVE,coverage.getSoonActive());
-        if (coverage.isDegraded()) {
-            writer.attribute(COVERAGE_DEGRADE_MATCHPHASE, coverage.isDegradedByMatchPhase());
-            writer.attribute(COVERAGE_DEGRADE_TIMEOUT, coverage.isDegradedByTimeout());
-            writer.attribute(COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT, coverage.isDegradedByAdapativeTimeout());
-        }
         writer.attribute(COVERAGE_NODES,coverage.getNodes());
         writer.attribute(COVERAGE_FULL,coverage.getFull());
         writer.attribute(COVERAGE,coverage.getResultPercentage());
