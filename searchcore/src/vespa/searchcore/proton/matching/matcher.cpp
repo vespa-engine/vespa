@@ -177,7 +177,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request,
     double factor = 0.95;
     if (softTimeoutEnabled) {
         factor = Factor::lookup(rankProperties, _stats.softDoomFactor());
-        LOG(info, "Enabling soft-timeout computed factor=%1.3f, used factor=%1.3f", _stats.softDoomFactor(), factor);
+        LOG(debug, "Enabling soft-timeout computed factor=%1.3f, used factor=%1.3f", _stats.softDoomFactor(), factor);
     }
     uint64_t safeLeft = request.getTimeLeft() * factor;
     fastos::TimeStamp safeDoom(fastos::ClockSystem::now() + safeLeft);
@@ -264,13 +264,14 @@ Matcher::match(const SearchRequest &request,
         ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp, _distributionKey, _rankSetup->getNumSearchPartitions());
         my_stats = MatchMaster::getStats(std::move(master));
         size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()), mtf->match_limiter().getDocIdSpaceEstimate());
+        bool wasLimited = mtf->match_limiter().was_limited();
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
             SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(), std::move(mtf), std::move(owned_objects));
             session->releaseEnumGuards();
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
-        if (mtf->match_limiter().was_limited()) {
+        if (wasLimited) {
             reply->coverage.degradeMatchPhase();
         }
         if (my_stats.softDoomed()) {
