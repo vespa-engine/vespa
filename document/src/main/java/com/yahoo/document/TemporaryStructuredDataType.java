@@ -7,12 +7,21 @@ package com.yahoo.document;
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class TemporaryStructuredDataType extends StructDataType {
+
     TemporaryStructuredDataType(String name) {
         super(name);
     }
 
+    private TemporaryStructuredDataType(int id) {
+        super(id, "temporary_struct_" + id);
+    }
+
     public static TemporaryStructuredDataType create(String name) {
         return new TemporaryStructuredDataType(name);
+    }
+
+    public static TemporaryStructuredDataType createById(int id) {
+        return new TemporaryStructuredDataType(id);
     }
 
     @Override

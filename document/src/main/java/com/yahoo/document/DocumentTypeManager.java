@@ -10,7 +10,6 @@ import com.yahoo.document.annotation.AnnotationTypes;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
-import com.yahoo.document.serialization.VespaDocumentDeserializer42;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.TensorType;
 
@@ -338,6 +337,8 @@ public class DocumentTypeManager {
             //OK because this type is always present
         } else if (type instanceof TensorDataType) {
             //OK because this type is always present
+        } else if (type instanceof ReferenceDataType) {
+            replaceTemporaryTypeInReference((ReferenceDataType) type);
         } else if (type instanceof TemporaryDataType) {
             throw new IllegalStateException("TemporaryDataType registered in DocumentTypeManager, BUG!!");
         } else {
@@ -358,6 +359,13 @@ public class DocumentTypeManager {
                 }
             }
         }
+    }
+
+    private void replaceTemporaryTypeInReference(ReferenceDataType referenceDataType) {
+        if (referenceDataType.getTargetType() instanceof TemporaryStructuredDataType) {
+            referenceDataType.setTargetType((DocumentType) getDataType(referenceDataType.getTargetType().getId()));
+        }
+        // TODO should we recursively invoke replaceTemporaryTypes for the target type? It should only ever be a doc type
     }
 
     private void replaceTemporaryTypesInCollection(CollectionDataType collectionDataType, List<DataType> seenStructs) {

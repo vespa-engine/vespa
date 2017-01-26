@@ -94,6 +94,9 @@ datatype[].documenttype[].bodystruct int
 ## Field sets
 datatype[].documenttype[].fieldsets{}.fields[] string
 
+## Cross-document reference with ID of target document type
+datatype[].referencetype[].target_type_id int
+
 ## The Id of the annotation type. Must be unique.
 annotationtype[].id int
 annotationtype[].name string

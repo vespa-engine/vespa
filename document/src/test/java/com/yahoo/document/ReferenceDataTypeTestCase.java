@@ -99,11 +99,4 @@ public class ReferenceDataTypeTestCase {
         refType.setTargetType(new DocumentType("foo"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void replacing_temporary_type_with_concrete_type_of_different_name_throws_illegal_argument_exception() {
-        TemporaryStructuredDataType tempType = new TemporaryStructuredDataType("cooldoc");
-        ReferenceDataType refType = new ReferenceDataType(tempType, 321);
-        refType.setTargetType(new DocumentType("uncooldoc"));
-    }
-
 }
