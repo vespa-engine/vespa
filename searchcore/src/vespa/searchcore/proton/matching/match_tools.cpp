@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.match_context");
 #include "match_tools.h"
 #include "querynodes.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcore.matching.match_tools");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using search::attribute::IAttributeContext;
@@ -123,7 +123,6 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides)
 {
-    LOG(info, "softtimeout=%1.3f harddomm=%1.3f", softDoom.left().sec(), hardDoom.left().sec());
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv);
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
