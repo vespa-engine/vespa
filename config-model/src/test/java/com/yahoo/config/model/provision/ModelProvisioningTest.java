@@ -1060,8 +1060,7 @@ public class ModelProvisioningTest {
     public void testUsingHostaliasWithProvisioner() {
         String services =
                         "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<services>\n" +
-                        "\n" +
+                        "<services>" +
                         "<admin version='2.0'>" +
                         "  <adminserver hostalias='node1'/>\n"+
                         "</admin>\n" +
@@ -1074,9 +1073,8 @@ public class ModelProvisioningTest {
                         "  </nodes>" +
                         "</jdisc>" +
                         "</services>";
-        int numberOfHosts = 1;
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
+        tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
         assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
@@ -1096,6 +1094,100 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getHosts().size(), is(1));
         assertThat(model.getContainerClusters().size(), is(1));
+    }
+
+    @Test
+    public void testNoNodeTagMeans1Node() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <jdisc id='foo' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "  </jdisc>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "  </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
+    }
+
+    @Test
+    public void testNoNodeTagMeans1NodeNoContent() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <jdisc id='foo' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "  </jdisc>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+    }
+
+    @Test
+    public void testNoNodeTagMeans1NodeNonHosted() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <jdisc id='foo' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "  </jdisc>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "  </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(false);
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().recursiveGetNodes().size());
+    }
+
+    @Test
+    public void testSingleNodeNonHosted() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <jdisc id='foo' version='1.0'>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "    <nodes><node hostalias='foo'/></nodes>"+
+                "  </jdisc>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "    <nodes><node hostalias='foo' distribution-key='0'/></nodes>"+
+                "  </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(false);
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+        assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
     }
 
     /** Recreate the combination used in some factory tests */

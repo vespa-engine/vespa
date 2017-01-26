@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/rankedhit.h>
+#include "rankedhit.h"
 #include <vespa/vespalib/util/alloc.h>
 
 namespace search {

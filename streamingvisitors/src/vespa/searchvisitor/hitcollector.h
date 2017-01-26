@@ -23,20 +23,15 @@ private:
     {
     public:
         Hit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & matchData,
-            double score, const void * sortData, size_t sortDataLen) :
-            _docid(docId),
-            _score(score),
-            _document(doc),
-            _matchData(),
-            _sortBlob(sortData, sortDataLen)
-        {
-            _matchData.reserve(matchData.getNumTermFields());
-            for (search::fef::TermFieldHandle handle = 0; handle < matchData.getNumTermFields(); ++handle) {
-                _matchData.emplace_back(*matchData.resolveTermField(handle));
-            }
-        }
+            double score, const void * sortData, size_t sortDataLen);
         Hit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & matchData, double score)
-            : Hit(doc, docId, matchData, score, nullptr, 0) {}
+            : Hit(doc, docId, matchData, score, nullptr, 0)
+        { }
+        ~Hit();
+        Hit(const Hit &) = delete;
+        Hit & operator = (const Hit &) = delete;
+        Hit(Hit && rhs) = default;
+        Hit & operator = (Hit && rhs) = default;
         search::DocumentIdT getDocId() const { return _docid; }
         const vsm::StorageDocument::LP & getDocument() const { return _document; }
         const std::vector<search::fef::TermFieldMatchData> &getMatchData() const { return _matchData; }
@@ -80,7 +75,7 @@ private:
 
     void sortByDocId();
     bool addHitToHeap(const Hit & hit) const;
-    bool addHit(const Hit & hit);
+    bool addHit(Hit && hit);
 
 public:
     typedef std::unique_ptr<HitCollector> UP;

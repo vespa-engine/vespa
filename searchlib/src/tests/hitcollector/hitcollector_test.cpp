@@ -509,4 +509,27 @@ TEST("require that hits can be added out of order when passing array limit") {
     TEST_DO(checkResult(*rs.get(), nullptr));
 }
 
+TEST("require that hits can be added out of order only after passing array limit") {
+    HitCollector hc(10000, 100, 10);
+    std::vector<RankedHit> expRh;
+    // produce expected result in normal order
+    const size_t numHits = 150;
+    for (uint32_t i = 0; i < numHits; ++i) {
+        expRh.push_back(RankedHit());
+        expRh.back()._docId = i;
+        expRh.back()._rankValue = (i < 50) ? 0 : (i + 100);
+    }
+    // add results in reverse order
+    const uint32_t numInOrder = numHits - 30;
+    for (uint32_t i = 0; i < numInOrder; i++) {
+        hc.addHit(i, i + 100);
+    }
+    for (uint32_t i = numHits; i-- > numInOrder; ) {
+        hc.addHit(i, i + 100);
+    }
+    std::unique_ptr<ResultSet> rs = hc.getResultSet();
+    TEST_DO(checkResult(*rs.get(), expRh));
+    TEST_DO(checkResult(*rs.get(), nullptr));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

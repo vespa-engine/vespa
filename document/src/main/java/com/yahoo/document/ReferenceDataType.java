@@ -33,7 +33,7 @@ public class ReferenceDataType extends DataType {
         this.targetType = targetType;
     }
 
-    private ReferenceDataType(DocumentType targetType) {
+    private ReferenceDataType(StructuredDataType targetType) {
         this(targetType, buildTypeName(targetType).hashCode());
     }
 
@@ -41,8 +41,17 @@ public class ReferenceDataType extends DataType {
         return "Reference<" + targetType.getName() + ">";
     }
 
-    // Creates a new type where the numeric ID is based on the hash of targetType
+    /**
+     * Creates a new type where the numeric ID is based on the hash of targetType
+     */
     public static ReferenceDataType createWithInferredId(DocumentType targetType) {
+        return new ReferenceDataType(targetType);
+    }
+
+    /**
+     * Creates a new type where the numeric ID is based on the hash of targetType
+     */
+    public static ReferenceDataType createWithInferredId(TemporaryStructuredDataType targetType) {
         return new ReferenceDataType(targetType);
     }
 

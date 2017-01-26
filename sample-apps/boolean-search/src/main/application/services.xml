@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services version='1.0'>
+
+  <admin version='3.0'>
+    <nodes count="1" />
+  </admin>
+
+  <jdisc version='1.0' id='default'>
+    <search>
+      <config name='container.search.legacy-emulation'>
+       <string-backed-feature-data>false</string-backed-feature-data>
+       <string-backed-structured-data>false</string-backed-structured-data>
+      </config>
+      <chain id="default" inherits="vespa">
+        <searcher id="com.yahoo.example.SubqueriesSearcher" bundle="boolean-application"/>
+      </chain>
+    </search>
+    <document-api />
+    <nodes count="1" />
+  </jdisc>
+
+  <content version="1.0" id="adserver">
+    <redundancy>1</redundancy>
+    <documents>
+      <document type="ad" mode="index" />
+    </documents>
+    <nodes count="1" />
+    <engine>
+      <proton>
+        <searchable-copies>1</searchable-copies>
+      </proton>
+    </engine>
+  </content>
+</services>

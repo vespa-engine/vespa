@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <vector>
 #include <vespa/vespalib/util/sort.h>
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace search {
 

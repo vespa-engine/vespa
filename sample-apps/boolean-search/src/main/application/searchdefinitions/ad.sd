@@ -1,0 +1,22 @@
+search ad {
+  
+  document ad {
+
+    field title type string {
+      indexing: index | summary
+    }
+
+    field target type predicate {
+      indexing: attribute | summary
+      index {
+        arity: 8
+      }
+    }
+  }
+
+  rank-profile default {
+    summary-features: subqueries(target).lsb subqueries(target).msb
+  }
+
+}
+
