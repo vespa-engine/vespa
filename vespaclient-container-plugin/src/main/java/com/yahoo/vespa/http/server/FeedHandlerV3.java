@@ -61,12 +61,12 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
         cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
         this.metric = metric;
-        // Half of the threads can be blocking on feeding before we deny requests.
+        // 40% of the threads can be blocking on feeding before we deny requests.
         if (threadpoolConfig != null) {
-            threadsAvailableForFeeding = new AtomicInteger(threadpoolConfig.maxthreads() / 2);
+            threadsAvailableForFeeding = new AtomicInteger(Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1));
         } else {
-            log.warning("No config for threadpool, using 250 for max blocking threads for feeding.");
-            threadsAvailableForFeeding = new AtomicInteger(250);
+            log.warning("No config for threadpool, using 200 for max blocking threads for feeding.");
+            threadsAvailableForFeeding = new AtomicInteger(200);
         }
     }
 

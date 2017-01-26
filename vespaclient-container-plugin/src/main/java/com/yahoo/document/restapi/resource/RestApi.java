@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -53,16 +54,23 @@ public class RestApi extends LoggingRequestHandler {
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
     private ObjectMapper mapper = new ObjectMapper();
-    private AtomicInteger threadsAvailableForApi = new AtomicInteger(200 /*max concurrent requests */);
+    private AtomicInteger threadsAvailableForApi;
 
     @Inject
     public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig, 
-                   LoadTypeConfig loadTypeConfig) {
+                   LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig) {
         super(executor, accessLog);
         MessageBusParams params = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
         params.setDocumentmanagerConfig(documentManagerConfig);
         this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params));
         this.singleDocumentParser = new SingleDocumentParser(new DocumentTypeManager(documentManagerConfig));
+        // 40% of the threads can be blocked before we deny requests.
+        if (threadpoolConfig != null) {
+            threadsAvailableForApi = new AtomicInteger(Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1));
+        } else {
+            log.warning("No config for threadpool, using 200 for max blocking threads for document rest API.");
+            threadsAvailableForApi = new AtomicInteger(200);
+        }
     }
 
     // For testing and development
@@ -74,6 +82,7 @@ public class RestApi extends LoggingRequestHandler {
         super(executor, accessLog);
         this.operationHandler = operationHandler;
         this.threadsAvailableForApi.set(threadsAvailable);
+        threadsAvailableForApi = new AtomicInteger(200 /*max concurrent requests */);
     }
     
     @Override
