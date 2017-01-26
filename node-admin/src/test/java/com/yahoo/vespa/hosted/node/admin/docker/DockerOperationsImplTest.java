@@ -40,13 +40,13 @@ public class DockerOperationsImplTest {
         final String programPath = "/bin/command";
         final String[] command = new String[] {programPath, "arg"};
 
-        when(docker.executeInContainer(any(), anyVararg()))
+        when(docker.executeInContainerAsRoot(any(), anyVararg()))
                 .thenReturn(actualResult); // output from node program
 
         ProcessResult result = dockerOperations.executeCommandInContainer(containerName, command);
 
         final InOrder inOrder = inOrder(docker);
-        inOrder.verify(docker, times(1)).executeInContainer(
+        inOrder.verify(docker, times(1)).executeInContainerAsRoot(
                 eq(containerName),
                 eq(command[0]),
                 eq(command[1]));
@@ -61,7 +61,7 @@ public class DockerOperationsImplTest {
         final String programPath = "/bin/command";
         final String[] command = new String[] {programPath, "arg"};
 
-        when(docker.executeInContainer(any(), anyVararg()))
+        when(docker.executeInContainerAsRoot(any(), anyVararg()))
                 .thenReturn(actualResult); // output from node program
 
         dockerOperations.executeCommandInContainer(containerName, command);

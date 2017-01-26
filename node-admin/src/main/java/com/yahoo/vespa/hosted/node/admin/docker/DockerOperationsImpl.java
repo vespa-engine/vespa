@@ -263,7 +263,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     ProcessResult executeCommandInContainer(ContainerName containerName, String[] command) {
-        ProcessResult result = docker.executeInContainer(containerName, command);
+        ProcessResult result = docker.executeInContainerAsRoot(containerName, command);
 
         if (! result.isSuccess()) {
             throw new RuntimeException("Container " + containerName.asString() +
