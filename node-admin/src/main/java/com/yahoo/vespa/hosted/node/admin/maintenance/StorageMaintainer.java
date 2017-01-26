@@ -11,6 +11,9 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -41,15 +44,22 @@ public class StorageMaintainer {
     private static final long intervalSec = 1000;
 
     private final Object monitor = new Object();
-    private final Environment environment;
+    private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
+    private final Environment environment;
 
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
 
 
-    public StorageMaintainer(Docker docker, Environment environment) {
+    public StorageMaintainer(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment) {
         this.docker = docker;
         this.environment = environment;
+
+        Dimensions dimensions = new Dimensions.Builder()
+                .add("host", HostName.getLocalhost())
+                .add("role", "docker").build();
+
+        numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(dimensions, "nodes.maintenance.fails");
     }
 
     public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
@@ -278,6 +288,7 @@ public class StorageMaintainer {
             if (! result.isSuccess()) {
                 PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, executeIn);
                 logger.warning("Failed to run maintenance jobs: " + args + result);
+                numberOfNodeAdminMaintenanceFails.add();
             }
             return result;
         }

@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,7 +27,8 @@ public class StorageMaintainerTest {
         writeNBytesToFile(folder.newFile(), writeSize);
 
         Environment environment = new Environment.Builder().build();
-        StorageMaintainer storageMaintainer = new StorageMaintainer(null, environment);
+        StorageMaintainer storageMaintainer = new StorageMaintainer(null,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment);
         long usedBytes = storageMaintainer.getDiscUsedInBytes(folder.getRoot());
         if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
             fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
