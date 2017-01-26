@@ -78,7 +78,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     public Metrics getUserMetrics() { return metrics; }
 
-    /** Returns the configured userMetricConsumers. Null if not configured */
+    /** Returns the configured userMetricConsumers. Empty if not configured */
     public Map<String, MetricsConsumer> getLegacyUserMetricsConsumers(){
         return legacyMetricsConsumers;
     }
