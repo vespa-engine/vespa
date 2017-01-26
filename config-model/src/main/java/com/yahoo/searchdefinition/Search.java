@@ -70,7 +70,8 @@ public class Search implements Serializable {
     // Ranking constants defined inside this s.d.
     private Map<String, RankingConstant> rankingConstants = new HashMap<>();
 
-    private ImportedFields importedFields = new ImportedFields();
+    private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
+    private Optional<ImportedFields> importedFields = Optional.empty();
 
     private ApplicationPackage sourceApplication;
 
@@ -156,8 +157,17 @@ public class Search implements Serializable {
         return rankingConstants.values();
     }
 
-    public ImportedFields importedFields() {
+    public Optional<TemporaryImportedFields> temporaryImportedFields() {
+        return temporaryImportedFields;
+    }
+
+    public Optional<ImportedFields> importedFields() {
         return importedFields;
+    }
+
+    public void setImportedFields(ImportedFields importedFields) {
+        temporaryImportedFields = Optional.empty();
+        this.importedFields = Optional.of(importedFields);
     }
 
     /**

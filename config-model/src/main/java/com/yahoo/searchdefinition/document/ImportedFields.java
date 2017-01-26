@@ -2,23 +2,22 @@
 package com.yahoo.searchdefinition.document;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A set of fields that are imported from referenced document types.
+ * A set of fields that are imported from concrete fields in referenced document types.
  *
  * @author geirst
  */
 public class ImportedFields {
 
-    private final Map<String, TemporaryImportedField> fields = new LinkedHashMap<>();
+    private final Map<String, ImportedField> fields;
 
-    public void add(TemporaryImportedField importedField) {
-        fields.put(importedField.fieldName(), importedField);
+    public ImportedFields(Map<String, ImportedField> fields) {
+        this.fields = fields;
     }
 
-    public Map<String, TemporaryImportedField> fields() {
+    public Map<String, ImportedField> fields() {
         return Collections.unmodifiableMap(fields);
     }
 }

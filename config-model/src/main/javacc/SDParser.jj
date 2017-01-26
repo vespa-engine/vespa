@@ -2392,31 +2392,23 @@ TensorType tensorType(String errorMessage) :
 
 void importField(Search search) :
 {
-    TemporaryFieldReference reference;
-    String fieldName;
-}
-{
-    <IMPORT> <FIELD> reference = fieldReference() <AS> fieldName = identifier() lbrace()
-    <RBRACE>
-    {
-        search.importedFields().add(new TemporaryImportedField(fieldName, reference));
-    }
-}
-
-TemporaryFieldReference fieldReference() :
-{
     String fieldRefSpec;
+    String aliasFieldName;
 }
 {
-    fieldRefSpec = identifier()
+    <IMPORT> <FIELD> fieldRefSpec = identifier() <AS> aliasFieldName = identifier() lbrace()
+    <RBRACE>
     {
         if (StringUtils.countMatches(fieldRefSpec, ".") != 1) {
             throw new IllegalArgumentException("Illegal field reference spec '" + fieldRefSpec + "': Does not include a single '.'");
         }
         int indexOfDot = fieldRefSpec.indexOf('.');
-        return new TemporaryFieldReference(fieldRefSpec.substring(0, indexOfDot), fieldRefSpec.substring(indexOfDot + 1));
+        String documentReferenceFieldName = fieldRefSpec.substring(0, indexOfDot);
+        String foreignFieldName = fieldRefSpec.substring(indexOfDot + 1);
+        search.temporaryImportedFields().get().add(new TemporaryImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName));
     }
 }
+
 
 /**
  * This rule consumes an expression token and returns its image.

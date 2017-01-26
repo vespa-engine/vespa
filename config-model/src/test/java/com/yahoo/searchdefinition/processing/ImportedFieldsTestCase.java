@@ -25,7 +25,7 @@ public class ImportedFieldsTestCase {
                 "  import field campaign.budget as budget {}",
                 "  import field person.name as sales_person {}",
                 "}"));
-        assertEquals(2, search.importedFields().fields().size());
+        assertEquals(2, search.temporaryImportedFields().get().fields().size());
         assertSearchContainsTemporaryImportedField("budget", "campaign", "budget", search);
         assertSearchContainsTemporaryImportedField("sales_person", "person", "name", search);
     }
@@ -51,10 +51,10 @@ public class ImportedFieldsTestCase {
         return builder.getSearch();
     }
 
-    private static void assertSearchContainsTemporaryImportedField(String fieldName, String refFieldName, String fieldNameInRefType, Search search) {
-        TemporaryImportedField importedField = search.importedFields().fields().get(fieldName);
-        assertEquals(fieldName, importedField.fieldName());
-        assertEquals(refFieldName, importedField.reference().refFieldName());
-        assertEquals(fieldNameInRefType, importedField.reference().fieldNameInRefType());
+    private static void assertSearchContainsTemporaryImportedField(String aliasFieldName, String documentReferenceFieldName, String foreignFieldName, Search search) {
+        TemporaryImportedField importedField = search.temporaryImportedFields().get().fields().get(aliasFieldName);
+        assertEquals(aliasFieldName, importedField.aliasFieldName());
+        assertEquals(documentReferenceFieldName, importedField.documentReferenceFieldName());
+        assertEquals(foreignFieldName, importedField.foreignFieldName());
     }
 }
