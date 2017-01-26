@@ -236,10 +236,10 @@ public class VespaMetricSet extends MetricSet {
         metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.onhold_bytes.average"));
 
         // index
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.allocated_bytes"));
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.used_bytes"));
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.dead_bytes"));
-        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.onhold_bytes"));
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.allocated_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.used_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.dead_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.onhold_bytes.average"));
 
         return metrics;
     }
