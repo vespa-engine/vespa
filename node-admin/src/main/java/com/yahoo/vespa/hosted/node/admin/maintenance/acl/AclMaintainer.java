@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
-import com.google.common.net.InetAddresses;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -9,16 +8,12 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Action;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Chain;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Command;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.CommandList;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.FilterCommand;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.FlushCommand;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.ListCommand;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.PolicyCommand;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
-import java.net.Inet6Address;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +43,7 @@ public class AclMaintainer implements Runnable {
     private final DockerOperations dockerOperations;
     private final NodeRepository nodeRepository;
     private final Supplier<String> nodeAdminHostnameSupplier;
+    private final Map<ContainerName, Acl> containerAcls;
 
     public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository) {
         this(dockerOperations, nodeRepository, HostName::getLocalhost);
@@ -58,25 +54,26 @@ public class AclMaintainer implements Runnable {
         this.dockerOperations = dockerOperations;
         this.nodeRepository = nodeRepository;
         this.nodeAdminHostnameSupplier = nodeAdminHostnameSupplier;
+        this.containerAcls = new HashMap<>();
     }
 
-    private boolean shouldApplyAcl(ContainerName containerName, CommandList commandList) {
-        final String currentRules = dockerOperations.executeCommandInNetworkNamespace(containerName,
-                new ListCommand().asArray(IPTABLES_COMMAND));
-        return !commandList.asString().equals(trimEachLine(currentRules));
+    private boolean isAclActive(ContainerName containerName, Acl acl) {
+        return Optional.ofNullable(containerAcls.get(containerName))
+                .map(acl::equals)
+                .orElse(false);
     }
 
-    private void applyAcl(ContainerName containerName, List<ContainerAclSpec> aclSpecs) {
-        final CommandList commandList = commandListFrom(aclSpecs);
-        final Command flush = new FlushCommand(Chain.INPUT);
-        final Command rollback = new PolicyCommand(Chain.INPUT, Action.ACCEPT);
-        if (!shouldApplyAcl(containerName, commandList)) {
+    private void applyAcl(ContainerName containerName, Acl acl) {
+        if (isAclActive(containerName, acl)) {
             return;
         }
+        final Command flush = new FlushCommand(Chain.INPUT);
+        final Command rollback = new PolicyCommand(Chain.INPUT, Action.ACCEPT);
         try {
             dockerOperations.executeCommandInNetworkNamespace(containerName, flush.asArray(IPTABLES_COMMAND));
-            commandList.commands().forEach(command -> dockerOperations.executeCommandInNetworkNamespace(containerName,
+            acl.toCommands().forEach(command -> dockerOperations.executeCommandInNetworkNamespace(containerName,
                     command.asArray(IPTABLES_COMMAND)));
+            containerAcls.put(containerName, acl);
         } catch (Exception e) {
             log.error("Exception occurred while configuring ACLs, attempting rollback", e);
             try {
@@ -103,7 +100,7 @@ public class AclMaintainer implements Runnable {
                 log.info("Skipping ACL configuration for stopped container " + container.get().hostname);
                 continue;
             }
-            applyAcl(container.get().name, entry.getValue());
+            applyAcl(container.get().name, new Acl(entry.getValue()));
         }
     }
 
@@ -114,32 +111,5 @@ public class AclMaintainer implements Runnable {
         } catch (Throwable t) {
             log.error("Failed to configure ACLs", t);
         }
-    }
-
-    private static String trimEachLine(String s) {
-        return Arrays.stream(s.split("\n")).map(String::trim).collect(Collectors.joining("\n"));
-    }
-
-    private static CommandList commandListFrom(List<ContainerAclSpec> aclSpecs) {
-        final List<Command> allowedIps = aclSpecs.stream()
-                .map(ContainerAclSpec::ipAddress)
-                .filter(AclMaintainer::isIpv6)
-                .map(ipAddress -> new FilterCommand(Chain.INPUT, Action.ACCEPT)
-                        .withOption("-s", String.format("%s/128", ipAddress)))
-                .collect(Collectors.toList());
-        return new CommandList()
-                .add(new PolicyCommand(Chain.INPUT, Action.DROP))
-                .add(new PolicyCommand(Chain.FORWARD, Action.ACCEPT))
-                .add(new PolicyCommand(Chain.OUTPUT, Action.ACCEPT))
-                .add(new FilterCommand(Chain.INPUT, Action.ACCEPT)
-                        .withOption("-m", "state")
-                        .withOption("--state", "RELATED,ESTABLISHED"))
-                .add(new FilterCommand(Chain.INPUT, Action.ACCEPT)
-                        .withOption("-p", "ipv6-icmp"))
-                .addAll(allowedIps);
-    }
-
-    private static boolean isIpv6(String ipAddress) {
-        return InetAddresses.forString(ipAddress) instanceof Inet6Address;
     }
 }

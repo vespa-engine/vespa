@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.node.admin.integrationTests.NodeRepoMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,8 +18,10 @@ import java.util.stream.IntStream;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,7 +45,6 @@ public class AclMaintainerTest {
         Container container = makeContainer("container-1");
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(3, container.name);
         nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
-        mockExistingAcls(container.name);
         aclMaintainer.run();
         assertAclsApplied(container.name, aclSpecs);
     }
@@ -54,12 +54,13 @@ public class AclMaintainerTest {
         Container container = makeContainer("container-1");
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(3, container.name);
         nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
-        mockExistingAcls(container.name, aclSpecs);
+        // Run twice
         aclMaintainer.run();
-        verify(dockerOperations).executeCommandInNetworkNamespace(eq(container.name),
-                aryEq(new String[]{"ip6tables", "-S"}));
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name),
-                aryEq(new String[]{"ip6tables", "-F", "INPUT"}));
+        aclMaintainer.run();
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(
+                eq(container.name),
+                aryEq(new String[]{"ip6tables", "-F", "INPUT"})
+        );
     }
 
     @Test
@@ -74,11 +75,11 @@ public class AclMaintainerTest {
     public void rollback_is_attempted_when_applying_acl_fail() {
         Container container = makeContainer("container-1");
         nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, makeAclSpecs(1, container.name));
-        mockExistingAcls(container.name);
 
-        when(dockerOperations.executeCommandInNetworkNamespace(any(), any()))
-                .thenReturn("success")
-                .thenThrow(new RuntimeException("iptables command failed"));
+        doThrow(new RuntimeException("iptables command failed"))
+                .doNothing()
+                .when(dockerOperations)
+                .executeCommandInNetworkNamespace(any(), any());
 
         aclMaintainer.run();
 
@@ -110,32 +111,6 @@ public class AclMaintainerTest {
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-P", "INPUT", "DROP"})
         );
-    }
-
-    private void mockExistingAcls(ContainerName containerName) {
-        mockExistingAcls(containerName, Collections.emptyList());
-    }
-
-    private void mockExistingAcls(ContainerName containerName, List<ContainerAclSpec> containerAclSpecs) {
-        final String result;
-        if (containerAclSpecs.isEmpty()) {
-            result = "";
-        } else {
-            // Mock output from ip6tables -S. Note that the trailing space after "-j ACCEPT" is not a typo. For some
-            // reason ip6tables -S appends a space to the line in certain cases.
-            result = "-P INPUT DROP\n" +
-                    "-P FORWARD ACCEPT\n" +
-                    "-P OUTPUT ACCEPT\n" +
-                    "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT \n" +
-                    "-A INPUT -p ipv6-icmp -j ACCEPT \n" +
-                    containerAclSpecs.stream().map(aclSpec -> String.format("-A INPUT -s %s/128 -j ACCEPT ",
-                            aclSpec.ipAddress())).collect(Collectors.joining("\n")) +
-                    "\n";
-        }
-        when(dockerOperations.executeCommandInNetworkNamespace(
-                eq(containerName),
-                aryEq(new String[]{"ip6tables", "-S"})
-        )).thenReturn(result);
     }
 
     private Container makeContainer(String hostname) {
