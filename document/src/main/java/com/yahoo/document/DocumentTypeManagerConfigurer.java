@@ -79,74 +79,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 DocumentmanagerConfig.Datatype thisDataType = tmp.get(i);
                 int id = thisDataType.id();
                 try {
-                    for (Object o : thisDataType.arraytype()) {
-                        DocumentmanagerConfig.Datatype.Arraytype array = (DocumentmanagerConfig.Datatype.Arraytype) o;
-                        DataType nestedType = manager.getDataType(array.datatype(), "");
-                        ArrayDataType type = new ArrayDataType(nestedType, id);
-                        manager.register(type);
-                    }
-                    for (Object o : thisDataType.maptype()) {
-                        DocumentmanagerConfig.Datatype.Maptype map = (DocumentmanagerConfig.Datatype.Maptype) o;
-                        DataType keyType = manager.getDataType(map.keytype(), "");
-                        DataType valType = manager.getDataType(map.valtype(), "");
-                        MapDataType type = new MapDataType(keyType, valType, id);
-                        manager.register(type);
-                    }
-                    for (Object o : thisDataType.weightedsettype()) {
-                        DocumentmanagerConfig.Datatype.Weightedsettype wset =
-                                    (DocumentmanagerConfig.Datatype.Weightedsettype) o;
-                        DataType nestedType = manager.getDataType(wset.datatype(), "");
-                        WeightedSetDataType type = new WeightedSetDataType(
-                                nestedType, wset.createifnonexistant(), wset.removeifzero(), id);
-                        manager.register(type);
-                    }
-                    for (Object o : thisDataType.structtype()) {
-                        DocumentmanagerConfig.Datatype.Structtype struct = (DocumentmanagerConfig.Datatype.Structtype) o;
-                        StructDataType type = new StructDataType(id, struct.name());
-
-                        if (config.enablecompression()) {
-                            CompressionConfig comp = makeCompressionConfig(struct);
-                            type.setCompressionConfig(comp);
-                        }
-
-                        for (Object j : struct.field()) {
-                            DocumentmanagerConfig.Datatype.Structtype.Field field =
-                                    (DocumentmanagerConfig.Datatype.Structtype.Field) j;
-                            DataType fieldType = (field.datatype() == id)
-                                               ? manager.getDataTypeAndReturnTemporary(field.datatype(), field.detailedtype())
-                                               : manager.getDataType(field.datatype(), field.detailedtype());
-
-                            if (field.id().size() == 1) {
-                                type.addField(new Field(field.name(), field.id().get(0).id(), fieldType, true));
-                            } else {
-                                type.addField(new Field(field.name(), fieldType, true));
-                            }
-                        }
-                        manager.register(type);
-                    }
-                    for (Object o : thisDataType.documenttype()) {
-                        DocumentmanagerConfig.Datatype.Documenttype doc = (DocumentmanagerConfig.Datatype.Documenttype) o;
-                        StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
-                        StructDataType body = (StructDataType) manager.getDataType(doc.bodystruct(), "");
-                        for (Field field : body.getFields()) {
-                            field.setHeader(false);
-                        }
-                        DocumentType type = new DocumentType(doc.name(), header, body);
-                        for (Object j : doc.inherits()) {
-                            DocumentmanagerConfig.Datatype.Documenttype.Inherits parent =
-                                    (DocumentmanagerConfig.Datatype.Documenttype.Inherits) j;
-                            DataTypeName name = new DataTypeName(parent.name());
-                            DocumentType parentType = manager.getDocumentType(name);
-                            if (parentType == null) {
-                                throw new IllegalArgumentException("Could not find document type '" + name.toString() + "'.");
-                            }
-                            type.inherit(parentType);
-                        }
-                        manager.register(type);
-                    }
-                    for (Object o : thisDataType.referencetype()) {
-                        registerReferenceType(manager, id, (DocumentmanagerConfig.Datatype.Referencetype) o);
-                    }
+                    registerTypeIdMapping(config, manager, thisDataType, id);
                 } catch (IllegalArgumentException e) {
                     failed.add(thisDataType);
                     if (failCounter < 0) {
@@ -162,15 +95,104 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         manager.replaceTemporaryTypes();
     }
 
+    private static void registerTypeIdMapping(DocumentmanagerConfig config, DocumentTypeManager manager, DocumentmanagerConfig.Datatype thisDataType, int id) {
+        for (Object o : thisDataType.arraytype()) {
+            registerArrayType(manager, id, (DocumentmanagerConfig.Datatype.Arraytype) o);
+        }
+        for (Object o : thisDataType.maptype()) {
+            registerMapType(manager, id, (DocumentmanagerConfig.Datatype.Maptype) o);
+        }
+        for (Object o : thisDataType.weightedsettype()) {
+            registerWeightedSetType(manager, id, (DocumentmanagerConfig.Datatype.Weightedsettype) o);
+        }
+        for (Object o : thisDataType.structtype()) {
+            registerStructType(config, manager, id, (DocumentmanagerConfig.Datatype.Structtype) o);
+        }
+        for (Object o : thisDataType.documenttype()) {
+            registerDocumentType(manager, (DocumentmanagerConfig.Datatype.Documenttype) o);
+        }
+        for (Object o : thisDataType.referencetype()) {
+            registerReferenceType(manager, id, (DocumentmanagerConfig.Datatype.Referencetype) o);
+        }
+    }
+
+    private static void registerArrayType(DocumentTypeManager manager, int id,
+                                          DocumentmanagerConfig.Datatype.Arraytype array) {
+        DataType nestedType = manager.getDataType(array.datatype(), "");
+        ArrayDataType type = new ArrayDataType(nestedType, id);
+        manager.register(type);
+    }
+
+    private static void registerMapType(DocumentTypeManager manager, int id,
+                                        DocumentmanagerConfig.Datatype.Maptype map) {
+        DataType keyType = manager.getDataType(map.keytype(), "");
+        DataType valType = manager.getDataType(map.valtype(), "");
+        MapDataType type = new MapDataType(keyType, valType, id);
+        manager.register(type);
+    }
+
+    private static void registerWeightedSetType(DocumentTypeManager manager, int id,
+                                                DocumentmanagerConfig.Datatype.Weightedsettype wset) {
+        DataType nestedType = manager.getDataType(wset.datatype(), "");
+        WeightedSetDataType type = new WeightedSetDataType(
+                nestedType, wset.createifnonexistant(), wset.removeifzero(), id);
+        manager.register(type);
+    }
+
+    private static void registerDocumentType(DocumentTypeManager manager, DocumentmanagerConfig.Datatype.Documenttype doc) {
+        StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
+        StructDataType body = (StructDataType) manager.getDataType(doc.bodystruct(), "");
+        for (Field field : body.getFields()) {
+            field.setHeader(false);
+        }
+        DocumentType type = new DocumentType(doc.name(), header, body);
+        for (Object j : doc.inherits()) {
+            DocumentmanagerConfig.Datatype.Documenttype.Inherits parent =
+                    (DocumentmanagerConfig.Datatype.Documenttype.Inherits) j;
+            DataTypeName name = new DataTypeName(parent.name());
+            DocumentType parentType = manager.getDocumentType(name);
+            if (parentType == null) {
+                throw new IllegalArgumentException("Could not find document type '" + name.toString() + "'.");
+            }
+            type.inherit(parentType);
+        }
+        manager.register(type);
+    }
+
+    private static void registerStructType(DocumentmanagerConfig config, DocumentTypeManager manager, int id,
+                                           DocumentmanagerConfig.Datatype.Structtype struct) {
+        StructDataType type = new StructDataType(id, struct.name());
+
+        if (config.enablecompression()) {
+            CompressionConfig comp = makeCompressionConfig(struct);
+            type.setCompressionConfig(comp);
+        }
+
+        for (Object j : struct.field()) {
+            DocumentmanagerConfig.Datatype.Structtype.Field field =
+                    (DocumentmanagerConfig.Datatype.Structtype.Field) j;
+            DataType fieldType = (field.datatype() == id)
+                               ? manager.getDataTypeAndReturnTemporary(field.datatype(), field.detailedtype())
+                               : manager.getDataType(field.datatype(), field.detailedtype());
+
+            if (field.id().size() == 1) {
+                type.addField(new Field(field.name(), field.id().get(0).id(), fieldType, true));
+            } else {
+                type.addField(new Field(field.name(), fieldType, true));
+            }
+        }
+        manager.register(type);
+    }
+
     private static void registerReferenceType(DocumentTypeManager manager, int id,
                                               DocumentmanagerConfig.Datatype.Referencetype refType) {
         ReferenceDataType referenceType;
         if (manager.hasDataType(refType.target_type_id())) {
-            DocumentType targetType = (DocumentType)manager.getDataType(refType.target_type_id());
-            referenceType = new ReferenceDataType(targetType, id);
+            DocumentType targetDocType = (DocumentType)manager.getDataType(refType.target_type_id());
+            referenceType = new ReferenceDataType(targetDocType, id);
         } else {
-            TemporaryStructuredDataType targetType = TemporaryStructuredDataType.createById(refType.target_type_id());
-            referenceType = new ReferenceDataType(targetType, id);
+            TemporaryStructuredDataType temporaryTargetType = TemporaryStructuredDataType.createById(refType.target_type_id());
+            referenceType = new ReferenceDataType(temporaryTargetType, id);
         }
         // Note: can't combine the above new-statements, as they call different constructors.
         manager.register(referenceType);

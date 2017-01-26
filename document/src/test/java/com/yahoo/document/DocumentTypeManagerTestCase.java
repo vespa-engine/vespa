@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author homas Gundersen
+ * @author Thomas Gundersen
  */
 public class DocumentTypeManagerTestCase {
 
