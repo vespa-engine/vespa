@@ -283,16 +283,16 @@ public class RestApiTest {
         assertThat(rest, containsString(visit_test_bad_response));
     }
 
-    String visit_test_bad_uri_selection_rewrite = "/document/v1/namespace/document-type/group/abc?continuation=abc";
-    String visit_test_bad_response_selection_rewrite = "doc selection: 'id.group='abc''";
+    String visit_test_uri_selection_rewrite = "/document/v1/namespace/document-type/group/abc?continuation=abc";
+    String visit_test_response_selection_rewrite = "doc selection: 'id.group='abc''";
 
 
     @Test
     public void testUseExpressionOnVisit() throws Exception {
-        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_bad_uri_selection_rewrite);
+        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_uri_selection_rewrite);
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);
-        assertThat(rest, containsString(visit_test_bad_response_selection_rewrite));
+        assertThat(rest, containsString(visit_test_response_selection_rewrite));
     }
 
     private String doRest(HttpRequestBase request) throws IOException {
