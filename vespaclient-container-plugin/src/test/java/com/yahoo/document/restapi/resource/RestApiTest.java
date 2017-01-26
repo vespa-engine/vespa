@@ -271,8 +271,8 @@ public class RestApiTest {
         assertThat(rest, containsString(visit_response_part3));
     }
 
-    String visit_test_bad_uri = "/document/v1/namespace/document-type/group/abc?continuation=abc";
-    String visit_test_bad_response = "Visiting does not support setting value for group/value,";
+    String visit_test_bad_uri = "/document/v1/namespace/document-type/group/abc?continuation=abc&selection=foo";
+    String visit_test_bad_response = "Visiting does not support setting value for group/value in combination with expression";
 
 
     @Test
@@ -283,10 +283,22 @@ public class RestApiTest {
         assertThat(rest, containsString(visit_test_bad_response));
     }
 
+    String visit_test_uri_selection_rewrite = "/document/v1/namespace/document-type/group/abc?continuation=abc";
+    String visit_test_response_selection_rewrite = "doc selection: 'id.group='abc''";
+
+
+    @Test
+    public void testUseExpressionOnVisit() throws Exception {
+        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_uri_selection_rewrite);
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString(visit_test_response_selection_rewrite));
+    }
+
     private String doRest(HttpRequestBase request) throws IOException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpResponse response = client.execute(request);
-        assertThat(response.getEntity().getContentType().getValue().toString(), is("application/json;charset=utf-8"));
+        assertThat(response.getEntity().getContentType().getValue().toString(), startsWith("application/json;"));
         HttpEntity entity = response.getEntity();
         return EntityUtils.toString(entity);
     }
