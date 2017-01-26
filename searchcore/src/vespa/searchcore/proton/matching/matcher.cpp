@@ -159,8 +159,12 @@ Matcher::getStats()
     vespalib::LockGuard guard(_statsLock);
     MatchingStats stats = _stats;
     _stats = MatchingStats();
+    _stats.softDoomFactor(stats.softDoomFactor());
     return stats;
 }
+
+using search::fef::indexproperties::softtimeout::Enabled;
+using search::fef::indexproperties::softtimeout::Factor;
 
 std::unique_ptr<MatchToolsFactory>
 Matcher::create_match_tools_factory(const search::engine::Request &request,
@@ -169,7 +173,14 @@ Matcher::create_match_tools_factory(const search::engine::Request &request,
                                     const IDocumentMetaStore &metaStore,
                                     const Properties &feature_overrides) const
 {
-    uint64_t safeLeft = request.getTimeLeft() * computeFirstPhase2RestRatio()*0.95;
+    const Properties & rankProperties = request.propertiesMap.rankProperties();
+    bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
+    double factor = 0.95;
+    if (softTimeoutEnabled) {
+        factor = Factor::lookup(rankProperties, _stats.softDoomFactor());
+        LOG(info, "Enabling soft-timeout computed factor=%1.3f, used factor=%1.3f", _stats.softDoomFactor(), factor);
+    }
+    uint64_t safeLeft = request.getTimeLeft() * factor;
     fastos::TimeStamp safeDoom(fastos::ClockSystem::now() + safeLeft);
     return std::make_unique<MatchToolsFactory>(_queryLimiter, vespalib::Doom(_clock, safeDoom),
                                                vespalib::Doom(_clock, request.getTimeOfDoom()), searchContext,
@@ -198,11 +209,6 @@ size_t Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits) const {
         threads = (hits.empty) ? 1 : std::min(threads, numThreads(hits.estHits, _rankSetup->getMinHitsPerThread()));
     }
     return threads;
-}
-
-double
-Matcher::computeFirstPhase2RestRatio() const {
-    return 1.0;
 }
 
 SearchReply::UP
@@ -265,7 +271,14 @@ Matcher::match(const SearchRequest &request,
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
+        if (mtf->match_limiter().was_limited()) {
+            reply->coverage.degradeMatchPhase();
+        }
+        if (my_stats.softDoomed()) {
+            reply->coverage.degradeTimeout();
+        }
         reply->coverage.setActive(metaStore.getNumActiveLids());
+        reply->coverage.setSoonActive(metaStore.getNumActiveLids()); //TODO this should be calculated with ClusterState calculator.
         reply->coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
                                             (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
         LOG(debug, "numThreadsPerSearch = %d. Configured = %d, estimated hits=%d, totalHits=%ld",
@@ -274,8 +287,14 @@ Matcher::match(const SearchRequest &request,
     total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
     {
+        fastos::TimeStamp limit = uint64_t((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
+        fastos::TimeStamp duration = request.getTimeUsed();
         vespalib::LockGuard guard(_statsLock);
         _stats.add(my_stats);
+        if (my_stats.softDoomed()) {
+            LOG(info, "Triggered softtimeout limit=%1.3f and duration=%1.3f", limit.sec(), duration.sec());
+            _stats.updatesoftDoomFactor(limit, duration);
+        }
     }
     return reply;
 }

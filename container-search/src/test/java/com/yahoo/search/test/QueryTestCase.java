@@ -100,6 +100,7 @@ public class QueryTestCase {
         assertNotSame(q.getRanking().getProperties(), p.getRanking().getProperties());
         assertNotSame(q.getRanking().getMatchPhase(), p.getRanking().getMatchPhase());
         assertNotSame(q.getRanking().getMatchPhase().getDiversity(), p.getRanking().getMatchPhase().getDiversity());
+        assertNotSame(q.getRanking().getSoftTimeout(), p.getRanking().getSoftTimeout());
 
         assertNotSame(q.getPresentation(), p.getPresentation());
         assertNotSame(q.getPresentation().getHighlight(), p.getPresentation().getHighlight());

@@ -31,8 +31,11 @@ public class QueryResultPacket extends Packet {
 
     /** Whether coverage information is included in this result */
     private boolean coverageFeature = false;
+    private boolean coverageExtendedFeature = false;
     private long coverageDocs = 0;
     private long activeDocs = 0;
+    private long soonActiveDocs = 0;
+    private int  degradedReason = 0;
 
     /** Whether the result contains grouping results **/
     private boolean groupDataFeature = false;
@@ -81,6 +84,10 @@ public class QueryResultPacket extends Packet {
 
     public long getActiveDocs() { return activeDocs; }
 
+    public long getSoonActiveDocs() { return soonActiveDocs; }
+
+    public int getDegradedReason() { return degradedReason; }
+
     public boolean getCoverageFull() {
         return coverageDocs == activeDocs;
     }
@@ -117,6 +124,13 @@ public class QueryResultPacket extends Packet {
             coverageDocs = buffer.getLong();
             activeDocs = buffer.getLong();
         }
+        if (coverageExtendedFeature) {
+            soonActiveDocs = buffer.getLong();
+            degradedReason = buffer.getInt();
+        } else {
+            soonActiveDocs = activeDocs;
+            degradedReason = 0;
+        }
         decodeDocuments(buffer,documentCount);
         if (propsFeature) {
             int numMaps = buffer.getInt();
@@ -135,11 +149,12 @@ public class QueryResultPacket extends Packet {
     /**
      * feature bits
      */
-    public static final int QRF_MLD        = 0x00000001;
-    public static final int QRF_SORTDATA   = 0x00000010;
-    public static final int QRF_COVERAGE   = 0x00000040;
-    public static final int QRF_GROUPDATA  = 0x00000200;
-    public static final int QRF_PROPERTIES = 0x00000400;
+    public static final int QRF_MLD               = 0x00000001;
+    public static final int QRF_SORTDATA          = 0x00000010;
+    public static final int QRF_EXTENDED_COVERAGE = 0x00000020;
+    public static final int QRF_COVERAGE          = 0x00000040;
+    public static final int QRF_GROUPDATA         = 0x00000200;
+    public static final int QRF_PROPERTIES        = 0x00000400;
 
     /**
      * Sets the features of this package.
@@ -154,6 +169,7 @@ public class QueryResultPacket extends Packet {
                 datasetFeature   = (0x002 & features) != 0;
                 // Data given by sortFeature not currently used by QRS:
                 // sortFeature   = (QRF_SORTDATA & features) != 0;
+                coverageExtendedFeature  = (QRF_EXTENDED_COVERAGE & features) != 0;
                 coverageFeature  = (QRF_COVERAGE & features) != 0;
                 groupDataFeature = (QRF_GROUPDATA & features) != 0;
                 propsFeature     = (QRF_PROPERTIES & features) != 0;
