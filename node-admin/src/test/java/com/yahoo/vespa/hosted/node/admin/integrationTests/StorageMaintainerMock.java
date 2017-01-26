@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -15,8 +16,8 @@ import java.util.Map;
 public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
 
-    public StorageMaintainerMock(Environment environment, CallOrderVerifier callOrderVerifier) {
-        super(environment);
+    public StorageMaintainerMock(Docker docker, Environment environment, CallOrderVerifier callOrderVerifier) {
+        super(docker, environment);
         this.callOrderVerifier = callOrderVerifier;
     }
 

@@ -77,7 +77,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 docker,
                 metricReceiver,
                 new Environment(),
-                config.isRunningLocally() ? Optional.empty() : Optional.of(new StorageMaintainer(new Environment())));
+                config.isRunningLocally() ? Optional.empty() : Optional.of(new StorageMaintainer(docker, new Environment())));
 
         if (! config.isRunningLocally()) {
             setCorePattern(docker);

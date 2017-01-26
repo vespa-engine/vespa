@@ -1,38 +1,54 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
+import com.yahoo.net.HostName;
+import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * @author freva
  */
 public class StorageMaintainer {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(StorageMaintainer.class);
+    private static final ContainerName NODE_ADMIN = new ContainerName("node-admin");
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static Optional<String> kernelVersion = Optional.empty();
+
     private static final long intervalSec = 1000;
 
     private final Object monitor = new Object();
     private final Environment environment;
+    private final Docker docker;
 
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
 
 
-    public StorageMaintainer(Environment environment) {
+    public StorageMaintainer(Docker docker, Environment environment) {
+        this.docker = docker;
         this.environment = environment;
     }
 
@@ -83,51 +99,205 @@ public class StorageMaintainer {
         if (results.length != 2) {
             throw new RuntimeException("Result from disk usage command not as expected: " + output);
         }
-        long diskUsageKB = Long.valueOf(results[0]);
 
+        long diskUsageKB = Long.valueOf(results[0]);
         return diskUsageKB * 1024;
     }
 
+
+    /**
+     * Deletes old log files for vespa, nginx, logstash, etc.
+     */
     public void removeOldFilesFromNode(ContainerName containerName) {
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
+
         for (String pathToClean : pathsToClean) {
             File path = environment.pathInNodeAdminFromPathInNode(containerName, pathToClean).toFile();
             if (path.exists()) {
-                DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*\\.log\\..+", false);
-                DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*QueryAccessLog.*", false);
+                maintainerExecutor.addJob("delete-files")
+                        .withArgument("basePath", path.getAbsolutePath())
+                        .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
+                        .withArgument("fileNameRegex", ".*\\.log\\..+")
+                        .withArgument("recursive", false);
+
+                maintainerExecutor.addJob("delete-files")
+                        .withArgument("basePath", path.getAbsolutePath())
+                        .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
+                        .withArgument("fileNameRegex", ".*QueryAccessLog.*")
+                        .withArgument("recursive", false);
             }
         }
 
         File logArchiveDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/logs/vespa/logarchive").toFile();
-        if (logArchiveDir.exists()) {
-            DeleteOldAppData.deleteFiles(logArchiveDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
-        }
+        maintainerExecutor.addJob("delete-files")
+                .withArgument("basePath", logArchiveDir.getAbsolutePath())
+                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
+                .withArgument("recursive", false);
 
         File fileDistrDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/db/vespa/filedistribution").toFile();
-        if (fileDistrDir.exists()) {
-            DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
+        maintainerExecutor.addJob("delete-files")
+                .withArgument("basePath", fileDistrDir.getAbsolutePath())
+                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
+                .withArgument("recursive", false);
+
+        maintainerExecutor.execute();
+    }
+
+    /**
+     * Checks if container has any new coredumps, reports and archives them if so
+     */
+    public void handleCoreDumpsForContainer(ContainerNodeSpec nodeSpec, Environment environment) {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("hostname", nodeSpec.hostname);
+        attributes.put("parent_hostname", HostName.getLocalhost());
+        attributes.put("region", environment.getRegion());
+        attributes.put("environment", environment.getEnvironment());
+        attributes.put("flavor", nodeSpec.nodeFlavor);
+        try {
+            attributes.put("kernel_version", getKernelVersion());
+        } catch (Throwable ignored) {
+            attributes.put("kernel_version", "unknown");
+        }
+
+        nodeSpec.wantedDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
+        nodeSpec.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
+        nodeSpec.owner.ifPresent(owner -> {
+            attributes.put("tenant", owner.tenant);
+            attributes.put("application", owner.application);
+            attributes.put("instance", owner.instance);
+        });
+
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
+        maintainerExecutor.addJob("handle-core-dumps")
+                .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps().toString())
+                .withArgument("containerCoredumpsPath", environment.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/home/y/var/crash").toString())
+                .withArgument("attributes", attributes);
+        maintainerExecutor.execute();
+    }
+
+    /**
+     * Deletes old
+     *  * archived app data
+     *  * archived and reported coredumps
+     *  * JDisc logs
+     */
+    public void cleanNodeAdmin() {
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
+        maintainerExecutor.addJob("delete-directories")
+                .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin().toString())
+                .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
+                .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
+
+        maintainerExecutor.addJob("delete-directories")
+                .withArgument("basePath", environment.pathInNodeAdminToDoneCoredumps().toString())
+                .withArgument("maxAgeSeconds", Duration.ofDays(10).getSeconds());
+
+        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/logs/jdisc_core/");
+        maintainerExecutor.addJob("delete-files")
+                .withArgument("basePath", nodeAdminJDiskLogsPath.toString())
+                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
+                .withArgument("recursive", false);
+        maintainerExecutor.execute();
+    }
+
+    /**
+     * Archives container data, runs when container enters state "dirty"
+     */
+    public void archiveNodeData(ContainerName containerName) {
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
+        maintainerExecutor.addJob("recursive-delete")
+                .withArgument("path", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var"));
+
+        maintainerExecutor.addJob("move-files")
+                .withArgument("from", environment.pathInNodeAdminFromPathInNode(containerName, "/"))
+                .withArgument("to", environment.pathInNodeAdminToNodeCleanup(containerName));
+
+        maintainerExecutor.execute();
+    }
+
+
+
+    private String getKernelVersion() throws IOException, InterruptedException {
+        if (! kernelVersion.isPresent()) {
+            Pair<Integer, String> result = new ProcessExecuter().exec(new String[]{"uname", "-r"});
+            if (result.getFirst() == 0) {
+                kernelVersion = Optional.of(result.getSecond().trim());
+            } else {
+                throw new RuntimeException("Failed to get kernel version\n" + result);
+            }
+        }
+
+        return kernelVersion.orElse("unknown");
+    }
+
+    /**
+     * Wrapper for node-admin-maintenance, queues up maintenances jobs and sends a single request to maintenance JVM
+     */
+    private class MaintainerExecutor {
+        private final List<MaintainerExecutorJob> jobs = new ArrayList<>();
+        private final ContainerName executeIn;
+        private final boolean runAsRoot;
+
+        MaintainerExecutor(ContainerName executeIn, boolean runAsRoot) {
+            this.executeIn = executeIn;
+            this.runAsRoot = runAsRoot;
+        }
+
+        MaintainerExecutor(boolean runAsRoot) {
+            this(NODE_ADMIN, runAsRoot);
+        }
+
+        MaintainerExecutor() {
+            this(false);
+        }
+
+        MaintainerExecutorJob addJob(String jobName) {
+            MaintainerExecutorJob job = new MaintainerExecutorJob(jobName);
+            jobs.add(job);
+            return job;
+        }
+
+        ProcessResult execute() {
+            String classPath = String.join(":",
+                    "/home/y/lib/jars/node-admin-maintenance-jar-with-dependencies.jar",
+                    "/home/y/lib/jars/vespajlib.jar");
+
+            String args;
+            try {
+                args = objectMapper.writeValueAsString(jobs);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed trasform list of maintenance jobs to JSON");
+            }
+
+            String[] command = {"java", "-cp", classPath, "com.yahoo.vespa.hosted.node.maintenance.Maintainer", args};
+            ProcessResult result = runAsRoot ?  docker.executeInContainerAsRoot(executeIn, command) :
+                                                docker.executeInContainer(executeIn, command);
+
+            if (! result.isSuccess()) {
+                PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, executeIn);
+                logger.warning("Failed to run maintenance jobs: " + args + result);
+            }
+            return result;
         }
     }
 
-    public void handleCoreDumpsForContainer(ContainerNodeSpec nodeSpec, Environment environment) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, nodeSpec.containerName);
+    private class MaintainerExecutorJob {
+        @JsonProperty(value="jobName")
+        private final String jobName;
 
-        Maintainer.handleCoreDumpsForContainer(logger, nodeSpec, environment);
-    }
+        @JsonProperty(value="arguments")
+        private final Map<String, Object> arguments = new HashMap<>();
 
-    public void cleanNodeAdmin() {
-        Maintainer.deleteOldAppData(NODE_ADMIN_LOGGER);
-        Maintainer.cleanCoreDumps(NODE_ADMIN_LOGGER);
+        MaintainerExecutorJob(String jobName) {
+            this.jobName = jobName;
+        }
 
-        File nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),
-                "/home/y/logs/jdisc_core/").toFile();
-        DeleteOldAppData.deleteFiles(nodeAdminJDiskLogsPath.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
-    }
-
-    public void archiveNodeData(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-        Maintainer.archiveAppData(logger, containerName);
+        MaintainerExecutorJob withArgument(String argument, Object value) {
+            arguments.put(argument, value);
+            return this;
+        }
     }
 
     private static class MetricsCache {
