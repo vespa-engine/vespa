@@ -7,8 +7,6 @@
 #include <condition_variable>
 #include <atomic>
 #include <algorithm>
-#include <vector>
-#include <vespa/fastos/dynamiclibrary.h>
 
 namespace proton {
 namespace matching {

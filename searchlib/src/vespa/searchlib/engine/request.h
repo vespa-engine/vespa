@@ -17,7 +17,6 @@ public:
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp  getStartTime() const { return _startTime; }
     fastos::TimeStamp getTimeOfDoom() const { return _timeOfDoom; }
-    fastos::TimeStamp getTimeout() const { return _timeOfDoom -_startTime; }
     fastos::TimeStamp getTimeUsed() const;
     fastos::TimeStamp getTimeLeft() const;
     bool expired() const { return getTimeLeft() > 0l; }

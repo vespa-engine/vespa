@@ -1,6 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
 #include "matching_stats.h"
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
+
+using vespalib::make_string;
+using vespalib::IllegalStateException;
 
 namespace proton {
 namespace matching {
@@ -16,24 +22,6 @@ MatchingStats::Partition &get_writable_partition(std::vector<MatchingStats::Part
 
 } // namespace proton::matching::<unnamed>
 
-MatchingStats::MatchingStats()
-    : _queries(0),
-      _limited_queries(0),
-      _docsMatched(0),
-      _docsRanked(0),
-      _docsReRanked(0),
-      _softDoomed(0),
-      _softDoomFactor(0.5),
-      _queryCollateralTime(),
-      _queryLatency(),
-      _matchTime(),
-      _groupingTime(),
-      _rerankTime(),
-      _partitions()
-{ }
-
-MatchingStats::~MatchingStats() { }
-
 MatchingStats &
 MatchingStats::merge_partition(const Partition &partition, size_t id)
 {
@@ -42,9 +30,6 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
-    if (partition.softDoomed()) {
-        _softDoomed = 1;
-    }
 
     return *this;
 }
@@ -59,7 +44,6 @@ MatchingStats::add(const MatchingStats &rhs)
     _docsMatched += rhs._docsMatched;
     _docsRanked += rhs._docsRanked;
     _docsReRanked += rhs._docsReRanked;
-    _softDoomed += rhs.softDoomed();
 
     _queryCollateralTime.add(rhs._queryCollateralTime);
     _queryLatency.add(rhs._queryLatency);
@@ -68,16 +52,6 @@ MatchingStats::add(const MatchingStats &rhs)
     _rerankTime.add(rhs._rerankTime);
     for (size_t id = 0; id < rhs.getNumPartitions(); ++id) {
         get_writable_partition(_partitions, id).add(rhs.getPartition(id));
-    }
-    return *this;
-}
-
-MatchingStats &
-MatchingStats::updatesoftDoomFactor(double hardLimit, double softLimit, double duration) {
-    if (duration < softLimit) {
-        _softDoomFactor += 0.01*(softLimit - duration)/hardLimit;
-    } else {
-        _softDoomFactor += 0.02*(softLimit - duration)/hardLimit;
     }
     return *this;
 }

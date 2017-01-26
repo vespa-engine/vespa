@@ -78,7 +78,7 @@ private:
     bool try_share(DocidRange &docid_range, uint32_t next_docid) __attribute__((noinline));
 
     template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    bool inner_match_loop(Context & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
+    void inner_match_loop(Context & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
 
     template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
     void match_loop(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits) __attribute__((noinline));

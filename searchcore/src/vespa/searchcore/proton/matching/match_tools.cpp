@@ -123,7 +123,6 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides)
 {
-    LOG(info, "softtimeout=%1.3f harddomm=%1.3f", softDoom.left().sec(), hardDoom.left().sec());
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv);
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
