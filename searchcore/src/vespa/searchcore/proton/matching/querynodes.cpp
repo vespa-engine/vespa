@@ -1,23 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.querynodes");
-
 #include "querynodes.h"
 #include "termdatafromnode.h"
 #include "viewresolver.h"
 #include "handlerecorder.h"
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/iindexenvironment.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <map>
-#include <vector>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.querynodes");
 
 using search::fef::FieldInfo;
 using search::fef::FieldType;

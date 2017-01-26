@@ -1,27 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "match_thread.h"
-#include "match_tools.h"
-#include "handlerecorder.h"
-#include "i_match_loop_communicator.h"
-#include "matching_stats.h"
 #include "document_scorer.h"
-#include <memory>
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/common/resultset.h>
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/base.h>
-#include <vespa/searchlib/queryeval/hitcollector.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
-#include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/log/log.h>
-#include <cmath>
+
 
 LOG_SETUP(".proton.matching.match_thread");
 

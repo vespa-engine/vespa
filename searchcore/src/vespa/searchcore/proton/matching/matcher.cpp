@@ -6,20 +6,13 @@
 #include "match_tools.h"
 #include "match_params.h"
 #include "matcher.h"
-#include "query.h"
-#include "queryenvironment.h"
-#include "result_processor.h"
 #include "sessionmanager.h"
-#include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/engine/errorcodes.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".proton.matching.matcher");

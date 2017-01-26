@@ -5,6 +5,8 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/queryeval/scores.h>
 #include <utility>
+#include <cstddef>
+#include <vector>
 
 namespace proton {
 namespace matching {
