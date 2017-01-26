@@ -138,40 +138,40 @@ class OverrideProcessor implements PreProcessor {
         // Put elements with same attributes in a map with a key that is the concatenation of attribute names
         // (except the override attribute names) and process values for each key
         Map<String, List<Element>> elementsByEqualAttributeSet = elementsByEqualAttributeSet(children);
+
+        // Keep track of elements with highest number of matches (might be more than one element with same tag, need a list)
+        List<Element> bestMatches = new ArrayList<>();
+        int bestMatch = 0;
         for (Map.Entry<String, List<Element>> entry : elementsByEqualAttributeSet.entrySet()) {
-            List<Element> elements = entry.getValue();
-
-            // Keep track of elements with highest number of matches (might be more than one element with same tag, need a list)
-            List<Element> bestMatchElements = new ArrayList<>();
-            int bestMatch = 0;
-            for (Element child : elements) {
-                int overrideCount = getNumberOfOverrides(child, context);
-                if (overrideCount >= bestMatch) {
-                    updateBestMatchElements(bestMatchElements, child, overrideCount, bestMatch);
-                    bestMatch = overrideCount;
-                }
+            for (Element child : entry.getValue()) {
+                bestMatch = findBestMatches(bestMatches, child, bestMatch, context);
             }
-
-            if (bestMatch > 1) { // there was a region/environment specific override
-                doElementSpecificProcessingOnOverride(bestMatchElements);
-                for (Element child : elements) {
-                    // Remove elements not specific
-                    if (!bestMatchElements.contains(child))
-                        parent.removeChild(child);
+        }
+        if (bestMatch > 0) { // there was a region/environment specific override
+            doElementSpecificProcessingOnOverride(bestMatches);
+            for (Element child : children) {
+                if ( ! bestMatches.contains(child)) {
+                    parent.removeChild(child);
                 }
             }
         }
     }
 
-    private void updateBestMatchElements(List<Element> bestMatchElements, Element child, int currentMatch, int bestMatch) {
-        if (bestMatch != currentMatch)
-            bestMatchElements.clear();
+    private int findBestMatches(List<Element> bestMatchElements, Element child, int bestMatch, Context context) {
+        int overrideCount = getNumberOfOverrides(child, context);
+        if (overrideCount >= bestMatch) {
+            if (bestMatch != overrideCount)
+                bestMatchElements.clear();
 
-        bestMatchElements.add(child);
+            bestMatchElements.add(child);
+            return overrideCount;
+        } else {
+            return bestMatch;
+        }
     }
 
     private int getNumberOfOverrides(Element child, Context context) {
-        int currentMatch = 1;
+        int currentMatch = 0;
         Optional<Environment> elementEnvironment = hasEnvironment(child) ? getEnvironment(child) : context.environment;
         RegionName elementRegion = hasRegion(child) ? getRegion(child) : context.region;
         if (elementEnvironment.isPresent() && elementEnvironment.get().equals(environment))
