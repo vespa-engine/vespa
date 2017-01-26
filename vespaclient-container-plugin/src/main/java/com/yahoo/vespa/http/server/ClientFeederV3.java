@@ -133,13 +133,7 @@ class ClientFeederV3 {
              * We try 10 for now. This should only kick in with very massive feeding to few gateway nodes.
              */
             if (feederSettings.denyIfBusy && threadsAvailableForFeeding.get() < -10) {
-                final int returnCode;
-                if (request.getHeader(Headers.SILENTUPGRADE) != null ) {
-                    returnCode = 299;
-                } else {
-                    returnCode = 429;
-                }
-                return new ErrorHttpResponse(returnCode, "Gateway overloaded");
+                return new ErrorHttpResponse(getOverloadReturnCode(request), "Gateway overloaded");
             }
 
             InputStream inputStream = StreamReaderV3.unzipStreamIfNeeded(request);
@@ -170,6 +164,13 @@ class ClientFeederV3 {
             ongoingRequests.decrementAndGet();
             threadsAvailableForFeeding.incrementAndGet();
         }
+    }
+
+    private int getOverloadReturnCode(HttpRequest request) {
+        if (request.getHeader(Headers.SILENTUPGRADE) != null ) {
+            return 299;
+        }
+        return 429;
     }
 
     private Optional<DocumentOperationMessageV3> pullMessageFromRequest(
