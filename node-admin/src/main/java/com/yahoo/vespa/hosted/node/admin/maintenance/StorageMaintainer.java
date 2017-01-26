@@ -18,9 +18,9 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -74,7 +74,7 @@ public class StorageMaintainer {
             // Throttle to one disk usage calculation at a time.
             synchronized (monitor) {
                 PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-                File containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
+                Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/");
                 try {
                     long used = getDiscUsedInBytes(containerDir);
                     metricsCache.metrics.put("node.disk.used", used);
@@ -90,7 +90,7 @@ public class StorageMaintainer {
     }
 
     // Public for testing
-    long getDiscUsedInBytes(File path) throws IOException, InterruptedException {
+    long getDiscUsedInBytes(Path path) throws IOException, InterruptedException {
         final String[] command = {"du", "-xsk", path.toString()};
 
         Process duCommand = new ProcessBuilder().command(command).start();
@@ -124,31 +124,31 @@ public class StorageMaintainer {
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
 
         for (String pathToClean : pathsToClean) {
-            File path = environment.pathInNodeAdminFromPathInNode(containerName, pathToClean).toFile();
-            if (path.exists()) {
+            Path path = environment.pathInNodeAdminFromPathInNode(containerName, pathToClean);
+            if (Files.exists(path)) {
                 maintainerExecutor.addJob("delete-files")
-                        .withArgument("basePath", path.getAbsolutePath())
+                        .withArgument("basePath", path)
                         .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
                         .withArgument("fileNameRegex", ".*\\.log\\..+")
                         .withArgument("recursive", false);
 
                 maintainerExecutor.addJob("delete-files")
-                        .withArgument("basePath", path.getAbsolutePath())
+                        .withArgument("basePath", path)
                         .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
                         .withArgument("fileNameRegex", ".*QueryAccessLog.*")
                         .withArgument("recursive", false);
             }
         }
 
-        File logArchiveDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/logs/vespa/logarchive").toFile();
+        Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/logs/vespa/logarchive");
         maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", logArchiveDir.getAbsolutePath())
+                .withArgument("basePath", logArchiveDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
 
-        File fileDistrDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/db/vespa/filedistribution").toFile();
+        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/db/vespa/filedistribution");
         maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", fileDistrDir.getAbsolutePath())
+                .withArgument("basePath", fileDistrDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
 
@@ -181,8 +181,8 @@ public class StorageMaintainer {
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
         maintainerExecutor.addJob("handle-core-dumps")
-                .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps().toString())
-                .withArgument("containerCoredumpsPath", environment.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/home/y/var/crash").toString())
+                .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
+                .withArgument("containerCoredumpsPath", environment.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/home/y/var/crash"))
                 .withArgument("attributes", attributes);
         maintainerExecutor.execute();
     }
@@ -196,17 +196,17 @@ public class StorageMaintainer {
     public void cleanNodeAdmin() {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
         maintainerExecutor.addJob("delete-directories")
-                .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin().toString())
+                .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin())
                 .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
                 .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
 
         maintainerExecutor.addJob("delete-directories")
-                .withArgument("basePath", environment.pathInNodeAdminToDoneCoredumps().toString())
+                .withArgument("basePath", environment.pathInNodeAdminToDoneCoredumps())
                 .withArgument("maxAgeSeconds", Duration.ofDays(10).getSeconds());
 
         Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/logs/jdisc_core/");
         maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", nodeAdminJDiskLogsPath.toString())
+                .withArgument("basePath", nodeAdminJDiskLogsPath)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
         maintainerExecutor.execute();
@@ -306,7 +306,8 @@ public class StorageMaintainer {
         }
 
         MaintainerExecutorJob withArgument(String argument, Object value) {
-            arguments.put(argument, value);
+            // Transform Path to String, otherwise ObjectMapper wont encode/decode it properly on the other end
+            arguments.put(argument, (value instanceof Path) ? value.toString() : value);
             return this;
         }
     }

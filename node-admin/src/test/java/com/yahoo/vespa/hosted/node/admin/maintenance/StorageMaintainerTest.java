@@ -29,7 +29,7 @@ public class StorageMaintainerTest {
         Environment environment = new Environment.Builder().build();
         StorageMaintainer storageMaintainer = new StorageMaintainer(null,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment);
-        long usedBytes = storageMaintainer.getDiscUsedInBytes(folder.getRoot());
+        long usedBytes = storageMaintainer.getDiscUsedInBytes(folder.getRoot().toPath());
         if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
             fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
     }
