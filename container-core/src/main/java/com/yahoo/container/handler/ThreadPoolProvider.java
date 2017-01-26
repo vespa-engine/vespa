@@ -143,8 +143,8 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     private final static class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
         volatile long lastThreadReturnTimeMillis = System.currentTimeMillis();
-        AtomicLong startedCount = new AtomicLong(0);
-        AtomicLong completedCount = new AtomicLong(0);
+        private final AtomicLong startedCount = new AtomicLong(0);
+        private final AtomicLong completedCount = new AtomicLong(0);
 
         public WorkerCompletionTimingThreadPoolExecutor(int corePoolSize,
                                                         int maximumPoolSize,
@@ -165,7 +165,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         protected void afterExecute(Runnable r, Throwable t) {
             super.afterExecute(r, t);
             lastThreadReturnTimeMillis = System.currentTimeMillis();
-            completedCount.decrementAndGet();
+            completedCount.incrementAndGet();
         }
 
         @Override
