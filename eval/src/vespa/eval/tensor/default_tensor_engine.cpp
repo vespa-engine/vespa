@@ -221,6 +221,34 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
     }
 }
 
+//-----------------------------------------------------------------------------
+
+const Value &
+DefaultTensorEngine::map(const Value &a, const std::function<double(double)> &function, Stash &stash) const
+{
+    (void) a;
+    (void) function;
+    return stash.create<ErrorValue>();
+}
+
+const Value &
+DefaultTensorEngine::join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const
+{
+    (void) a;
+    (void) b;
+    (void) function;
+    return stash.create<ErrorValue>();
+}
+
+const Value &
+DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
+{
+    (void) a;
+    (void) aggr;
+    (void) dimensions;
+    return stash.create<ErrorValue>();
+}
+
 const Value &
 DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
 {
@@ -238,6 +266,8 @@ DefaultTensorEngine::rename(const Value &a, const std::vector<vespalib::string> 
     (void) to;
     return stash.create<ErrorValue>();
 }
+
+//-----------------------------------------------------------------------------
 
 } // namespace vespalib::tensor
 } // namespace vespalib

@@ -268,11 +268,11 @@ struct Eval {
         bool is_number() const { return (_type == Type::NUMBER); }
         bool is_tensor() const { return (_type == Type::TENSOR); }
         double number() const {
-            EXPECT_TRUE(is_number());
+            // EXPECT_TRUE(is_number());
             return _number;
         }
         const TensorSpec &tensor() const {
-            EXPECT_TRUE(is_tensor());
+            // EXPECT_TRUE(is_tensor());
             return _tensor;            
         }
     };
