@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintenance;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -32,7 +32,7 @@ public class CoredumpHandler {
     public static final String METADATA_FILE_NAME = "metadata.json";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
-    private final Gson gson = new Gson();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final HttpClient httpClient;
     private final CoreCollector coreCollector;
@@ -42,12 +42,12 @@ public class CoredumpHandler {
         this.coreCollector = coreCollector;
     }
 
-    public void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath, Map<String, Object> nodeAttributes) throws IOException {
+    void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath, Map<String, Object> nodeAttributes) throws IOException {
         Path processingCoredumps = processCoredumps(coredumpsPath, nodeAttributes);
         reportCoredumps(processingCoredumps, doneCoredumpPath);
     }
 
-    public void removeJavaCoredumps(Path javaCoredumpsPath) {
+    void removeJavaCoredumps(Path javaCoredumpsPath) {
         if (! javaCoredumpsPath.toFile().isDirectory()) return;
         DeleteOldAppData.deleteFiles(javaCoredumpsPath.toString(), 0, "^java_pid.*\\.hprof$", false);
     }
@@ -89,10 +89,6 @@ public class CoredumpHandler {
                 });
     }
 
-    public void removeOldCoredumps(Path doneCoredumpsPath) {
-        DeleteOldAppData.deleteDirectories(doneCoredumpsPath.toString(), Duration.ofDays(10).getSeconds(), null);
-    }
-
     Path startProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
         Path folder = processingCoredumpsPath.resolve(UUID.randomUUID().toString());
         folder.toFile().mkdirs();
@@ -109,7 +105,7 @@ public class CoredumpHandler {
     }
 
     private void writeMetadata(Path metadataPath, Map<String, Object> metadata) throws IOException {
-        Files.write(metadataPath, gson.toJson(metadata).getBytes());
+        Files.write(metadataPath, objectMapper.writeValueAsString(metadata).getBytes());
     }
 
     void report(Path coredumpDirectory) throws IOException {

@@ -199,7 +199,7 @@ public class DeleteOldAppDataTest {
     @Test
     public void testRecursivelyDeleteDirectory() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.recursiveDelete(folder.getRoot());
+        DeleteOldAppData.recursiveDelete(folder.getRoot().toString());
         assertTrue(!folder.getRoot().exists());
     }
 
@@ -208,7 +208,7 @@ public class DeleteOldAppDataTest {
         File file = folder.newFile();
         assertTrue(file.exists());
         assertTrue(file.isFile());
-        DeleteOldAppData.recursiveDelete(file);
+        DeleteOldAppData.recursiveDelete(file.toString());
         assertTrue(!file.exists());
     }
 
@@ -216,7 +216,7 @@ public class DeleteOldAppDataTest {
     public void testRecursivelyDeleteNonExistingFile() throws IOException {
         File file = folder.getRoot().toPath().resolve("non-existing-file.json").toFile();
         assertTrue(!file.exists());
-        DeleteOldAppData.recursiveDelete(file);
+        DeleteOldAppData.recursiveDelete(file.toString());
         assertTrue(!file.exists());
     }
 
@@ -281,7 +281,7 @@ public class DeleteOldAppDataTest {
         return total;
     }
 
-    public static void writeNBytesToFile(File file, int nBytes) throws IOException {
+    private static void writeNBytesToFile(File file, int nBytes) throws IOException {
         Files.write(file.toPath(), new byte[nBytes]);
     }
 }
