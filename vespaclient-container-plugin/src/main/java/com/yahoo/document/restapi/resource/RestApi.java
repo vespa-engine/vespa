@@ -53,8 +53,8 @@ public class RestApi extends LoggingRequestHandler {
     private static final String APPLICATION_JSON = "application/json";
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
-    private ObjectMapper mapper = new ObjectMapper();
-    private AtomicInteger threadsAvailableForApi;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final AtomicInteger threadsAvailableForApi;
 
     @Inject
     public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig, 
