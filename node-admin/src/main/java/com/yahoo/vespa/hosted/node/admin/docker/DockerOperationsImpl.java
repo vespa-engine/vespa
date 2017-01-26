@@ -141,10 +141,6 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.getContainer(hostname);
     }
 
-    String[] programExistsCommand(String programPath) {
-        return new String[]{ "/usr/bin/env", "test", "-x", programPath };
-    }
-
     /**
      * Try to suspend node. Suspending a node means the node should be taken offline,
      * such that maintenance can be done of the node (upgrading, rebooting, etc),
@@ -266,11 +262,10 @@ public class DockerOperationsImpl implements DockerOperations {
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
-    @Override
-    public ProcessResult executeCommandInContainer(ContainerName containerName, String[] command) {
+    ProcessResult executeCommandInContainer(ContainerName containerName, String[] command) {
         ProcessResult result = docker.executeInContainer(containerName, command);
 
-        if (result.isSuccess()) {
+        if (! result.isSuccess()) {
             throw new RuntimeException("Container " + containerName.asString() +
                     ": command " + Arrays.toString(command) + " failed: " + result);
         }

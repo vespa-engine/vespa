@@ -38,18 +38,15 @@ public class MultiDockerTest {
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrder(
                     "createContainerCommand with DockerImage { imageId=image1 }, HostName: host1, ContainerName { name=container1 }",
-                    "executeInContainer with ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
                     "executeInContainer with ContainerName { name=container1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
                     "createContainerCommand with DockerImage { imageId=image2 }, HostName: host2, ContainerName { name=container2 }",
-                    "executeInContainer with ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
                     "executeInContainer with ContainerName { name=container2 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
                     "stopContainer with ContainerName { name=container2 }",
                     "deleteContainer with ContainerName { name=container2 }",
 
                     "createContainerCommand with DockerImage { imageId=image1 }, HostName: host3, ContainerName { name=container3 }",
-                    "executeInContainer with ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
                     "executeInContainer with ContainerName { name=container3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
             callOrderVerifier.assertInOrderWithAssertMessage("Maintainer did not receive call to delete application storage",
@@ -85,7 +82,6 @@ public class MultiDockerTest {
 
         tester.getCallOrderVerifier().assertInOrder(
                 "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
-                "executeInContainer with " + containerName + ", args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
                 "executeInContainer with " + containerName + ", args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
         return containerNodeSpec;

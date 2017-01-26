@@ -26,8 +26,6 @@ public interface DockerOperations {
 
     void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer);
 
-    ProcessResult executeCommandInContainer(ContainerName containerName, String[] command);
-
     ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String[] command);
 
     void executeCommandInNetworkNamespace(ContainerName containerName, String[] command);

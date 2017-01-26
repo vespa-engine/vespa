@@ -37,7 +37,6 @@ public class NodeStateTest {
 
         tester.getCallOrderVerifier().assertInOrder(
                 "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1, ContainerName { name=container }",
-                "executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
                 "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
     }
 
@@ -58,8 +57,7 @@ public class NodeStateTest {
             }
 
             dockerTester.getCallOrderVerifier()
-                        .assertInOrder("executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                                       "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]",
+                        .assertInOrder("executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]",
                                        "stopContainer with ContainerName { name=container }",
                                        "deleteContainer with ContainerName { name=container }");
         }
@@ -95,7 +93,6 @@ public class NodeStateTest {
             callOrderVerifier.assertInOrderWithAssertMessage("Node not started again after being put to active state",
                                                              "deleteContainer with ContainerName { name=container }",
                                                              "createContainerCommand with DockerImage { imageId=newDockerImage }, HostName: host1, ContainerName { name=container }",
-                                                             "executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
                                                              "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
         }
     }

@@ -25,7 +25,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
@@ -35,64 +34,37 @@ public class DockerOperationsImplTest {
             new MetricReceiverWrapper(MetricReceiver.nullImplementation));
 
     @Test
-    public void absenceOfNodeProgramIsSuccess() throws Exception {
+    public void processResultFromNodeProgramWhenSuccess() throws Exception {
         final ContainerName containerName = new ContainerName("container-name");
+        final ProcessResult actualResult = new ProcessResult(0, "output", "errors");
         final String programPath = "/bin/command";
+        final String[] command = new String[] {programPath, "arg"};
 
-        when(docker.executeInContainer(any(), anyVararg())).thenReturn(new ProcessResult(3, "output", "errors"));
+        when(docker.executeInContainer(any(), anyVararg()))
+                .thenReturn(actualResult); // output from node program
 
-        Optional<ProcessResult> result = dockerOperations.executeOptionalProgramInContainer(
-                containerName,
-                programPath,
-                "arg1",
-                "arg2");
+        ProcessResult result = dockerOperations.executeCommandInContainer(containerName, command);
 
-        String[] nodeProgramExistsCommand = dockerOperations.programExistsCommand(programPath);
-        assertThat(nodeProgramExistsCommand.length, is(4));
-
-        verify(docker, times(1)).executeInContainer(
+        final InOrder inOrder = inOrder(docker);
+        inOrder.verify(docker, times(1)).executeInContainer(
                 eq(containerName),
-                // Mockito fails if we put the array here instead...
-                eq(nodeProgramExistsCommand[0]),
-                eq(nodeProgramExistsCommand[1]),
-                eq(nodeProgramExistsCommand[2]),
-                eq(nodeProgramExistsCommand[3]));
-        assertThat(result.isPresent(), is(false));
+                eq(command[0]),
+                eq(command[1]));
+
+        assertThat(result, is(actualResult));
     }
 
-    @Test
-    public void processResultFromNodeProgramWhenPresent() throws Exception {
+    @Test(expected=RuntimeException.class)
+    public void processResultFromNodeProgramWhenNonZeroExitCode() throws Exception {
         final ContainerName containerName = new ContainerName("container-name");
         final ProcessResult actualResult = new ProcessResult(3, "output", "errors");
         final String programPath = "/bin/command";
         final String[] command = new String[] {programPath, "arg"};
 
         when(docker.executeInContainer(any(), anyVararg()))
-                .thenReturn(new ProcessResult(0, "", "")) // node program exists
                 .thenReturn(actualResult); // output from node program
 
-        Optional<ProcessResult> result = dockerOperations.executeOptionalProgramInContainer(
-                containerName,
-                command);
-
-        String[] nodeProgramExistsCommand = dockerOperations.programExistsCommand(programPath);
-        assertThat(nodeProgramExistsCommand.length, is(4));
-
-        final InOrder inOrder = inOrder(docker);
-        inOrder.verify(docker, times(1)).executeInContainer(
-                eq(containerName),
-                // Mockito fails if we put the array here instead...
-                eq(nodeProgramExistsCommand[0]),
-                eq(nodeProgramExistsCommand[1]),
-                eq(nodeProgramExistsCommand[2]),
-                eq(nodeProgramExistsCommand[3]));
-        inOrder.verify(docker, times(1)).executeInContainer(
-                eq(containerName),
-                eq(command[0]),
-                eq(command[1]));
-
-        assertThat(result.isPresent(), is(true));
-        assertThat(result.get(), is(actualResult));
+        dockerOperations.executeCommandInContainer(containerName, command);
     }
 
     @Test
