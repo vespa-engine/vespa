@@ -204,14 +204,16 @@ public class RestApi extends LoggingRequestHandler {
     }
     
     private HttpResponse handleVisit(RestUri restUri, HttpRequest request) throws RestApiException {
-        if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
-            return Response.createErrorResponse(
-                    400,
-                    "Visiting does not support setting value for group/value, try using expression parameter instead.",
-                    restUri);
-
-        }
         String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
+        if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
+            if (! documentSelection.isEmpty()) {
+                return Response.createErrorResponse(
+                        400,
+                        "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.",
+                        restUri);
+            }
+            documentSelection = "id.group='" + restUri.getGroup().get().value + "'";
+        }
         Optional<String> cluster = Optional.ofNullable(request.getProperty(CLUSTER));
         Optional<String> continuation = Optional.ofNullable(request.getProperty(CONTINUATION));
         final OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, cluster, continuation);
