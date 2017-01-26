@@ -99,12 +99,16 @@ public:
     uint32_t  _maxHits;
     uint64_t  _coverageDocs;
     uint64_t  _activeDocs;
+    uint64_t  _soonActiveDocs;
+    uint32_t  _degradeReason;
 
     FastS_SearchInfo()
         : _searchOffset(0),
           _maxHits(0),
           _coverageDocs(0),
-          _activeDocs(0)
+          _activeDocs(0),
+          _soonActiveDocs(0),
+          _degradeReason(0)
     {
     }
 };

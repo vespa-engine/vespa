@@ -12,6 +12,8 @@ public class Coverage {
 
     protected long docs;
     protected long active;
+    protected long soonActive;
+    protected int degradedReason;
     protected int nodes;
     protected int resultSets;
     protected int fullResultSets;
@@ -22,6 +24,10 @@ public class Coverage {
     protected enum FullCoverageDefinition {
         EXPLICITLY_FULL, EXPLICITLY_INCOMPLETE, DOCUMENT_COUNT;
     }
+
+    private final static int DEGRADED_BY_MATCH_PHASE = 1;
+    private final static int DEGRADED_BY_TIMEOUT = 2;
+    private final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
 
     /**
      * Build an invalid instance to initiate manually.
@@ -46,6 +52,8 @@ public class Coverage {
         this.docs = docs;
         this.nodes = nodes;
         this.active = active;
+        this.soonActive = active;
+        this.degradedReason = 0;
         this.resultSets = resultSets;
         this.fullReason = fullReason;
         this.fullResultSets = getFull() ? resultSets : 0;
@@ -58,6 +66,8 @@ public class Coverage {
         docs += other.getDocs();
         nodes += other.getNodes();
         active += other.getActive();
+        soonActive += other.getSoonActive();
+        degradedReason |= other.degradedReason;
         resultSets += other.getResultSets();
         fullResultSets += other.getFullResultSets();
 
@@ -92,6 +102,18 @@ public class Coverage {
      * @return Total number of active documents
      */
     public long getActive() { return active; }
+
+    /**
+     * Total number of documents that will be searchable once redistribution has settled.
+     *
+     * @return Total number of documents that will soon be available.
+     */
+    public long getSoonActive() { return soonActive; }
+
+    public boolean isDegraded() { return degradedReason != 0; }
+    public boolean isDegradedByMatchPhase() { return (degradedReason & DEGRADED_BY_MATCH_PHASE) != 0; }
+    public boolean isDegradedByTimeout() { return (degradedReason & DEGRADED_BY_TIMEOUT) != 0; }
+    public boolean isDegradedByAdapativeTimeout() { return (degradedReason & DEGRADED_BY_ADAPTIVE_TIMEOUT) != 0; }
 
     /**
      * @return whether the search had full coverage or not
@@ -151,7 +173,7 @@ public class Coverage {
             return 0;
         }
         if (docs < active) {
-            return (int) (docs * 100 / active);
+            return (int) Math.round(docs * 100.0d / active);
         }
         return getFullResultSets() * 100 / getResultSets();
     }
