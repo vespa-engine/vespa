@@ -112,11 +112,13 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         }
 
         private final void reportMetrics() {
-            while (! closed.get() ) {
-                metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
-                metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
-                try {Thread.sleep(100);} catch (InterruptedException e) { }
-            }
+            try {
+                while (!closed.get()) {
+                    metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
+                    metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException e) { }
         }
 
         @Override
