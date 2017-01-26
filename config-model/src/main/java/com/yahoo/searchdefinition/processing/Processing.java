@@ -70,6 +70,7 @@ public class Processing {
                 DiversitySettingsValidator::new,
                 TensorFieldProcessor::new,
                 RankProfileTypeSettingsProcessor::new,
+                ImportedFieldsResolver::new,
 
                 // These two should be last.
                 IndexingValidation::new,

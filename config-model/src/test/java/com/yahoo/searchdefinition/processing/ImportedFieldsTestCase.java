@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.document.TemporaryImportedField;
+import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,6 +11,7 @@ import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static com.yahoo.searchdefinition.TestUtils.joinLines;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author geirst
@@ -18,43 +19,75 @@ import static com.yahoo.searchdefinition.TestUtils.joinLines;
 public class ImportedFieldsTestCase {
 
     @Test
-    public void require_that_imported_fields_can_be_parsed_from_sd_file() throws ParseException {
-        Search search = build(joinLines(
-                "search ad {",
-                "  document ad {}",
-                "  import field campaign.budget as budget {}",
-                "  import field person.name as sales_person {}",
+    public void fields_can_be_imported_from_referenced_document_types() throws ParseException {
+       Search search = buildAdSearch(joinLines(
+               "search ad {",
+               "  document ad {",
+               "    field campaign_ref type reference<campaign> {}",
+               "    field person_ref type reference<person> {}",
+               "  }",
+               "  import field campaign_ref.budget as my_budget {}",
+               "  import field person_ref.name as my_name {}",
                 "}"));
-        assertEquals(2, search.temporaryImportedFields().get().fields().size());
-        assertSearchContainsTemporaryImportedField("budget", "campaign", "budget", search);
-        assertSearchContainsTemporaryImportedField("sales_person", "person", "name", search);
+        assertEquals(2, search.importedFields().get().fields().size());
+        assertSearchContainsImportedField("my_budget", "campaign_ref", "campaign", "budget", search);
+        assertSearchContainsImportedField("my_name", "person_ref", "person", "name", search);
+    }
+
+    @Test
+    public void field_can_be_imported_from_self_reference() throws ParseException {
+        Search search = buildAdSearch(joinLines("search ad {",
+                "  document ad {",
+                "    field title type string {}",
+                "    field self_ref type reference<ad> {}",
+                "  }",
+                "  import field self_ref.title as my_title {}",
+                "}"));
+        assertEquals(1, search.importedFields().get().fields().size());
+        assertSearchContainsImportedField("my_title", "self_ref", "ad", "title", search);
     }
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void require_that_field_reference_spec_must_include_dot() throws ParseException {
+    public void field_reference_spec_must_include_dot() throws ParseException {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Illegal field reference spec 'campaignbudget': Does not include a single '.'");
-        build(joinLines(
+        exception.expectMessage("Illegal field reference spec 'campaignrefbudget': Does not include a single '.'");
+        buildAdSearch(joinLines(
                 "search ad {",
                 "  document ad {}",
-                "  import field campaignbudget as budget {}",
+                "  import field campaignrefbudget as budget {}",
                 "}"));
     }
 
-    private static Search build(String sdContent) throws ParseException {
+    private static Search buildAdSearch(String sdContent) throws ParseException {
         SearchBuilder builder = new SearchBuilder();
+        builder.importString(joinLines("search campaign {",
+                "  document campaign {",
+                "    field budget type int {}",
+                "  }",
+                "}"));
+        builder.importString(joinLines("search person {",
+                "  document person {",
+                "    field name type string {}",
+                "  }",
+                "}"));
         builder.importString(sdContent);
         builder.build();
-        return builder.getSearch();
+        return builder.getSearch("ad");
     }
 
-    private static void assertSearchContainsTemporaryImportedField(String aliasFieldName, String documentReferenceFieldName, String foreignFieldName, Search search) {
-        TemporaryImportedField importedField = search.temporaryImportedFields().get().fields().get(aliasFieldName);
+    private static void assertSearchContainsImportedField(String aliasFieldName,
+                                                          String documentReferenceFieldName,
+                                                          String documentReferenceType,
+                                                          String foreignFieldName,
+                                                          Search search) {
+        ImportedField importedField = search.importedFields().get().fields().get(aliasFieldName);
+        assertNotNull(importedField);
         assertEquals(aliasFieldName, importedField.aliasFieldName());
-        assertEquals(documentReferenceFieldName, importedField.documentReferenceFieldName());
-        assertEquals(foreignFieldName, importedField.foreignFieldName());
+        assertEquals(documentReferenceFieldName, importedField.documentReference().documentReferenceField().getName());
+        assertEquals(documentReferenceType, importedField.documentReference().search().getName());
+        assertEquals(foreignFieldName, importedField.referencedField().getName());
     }
 }
