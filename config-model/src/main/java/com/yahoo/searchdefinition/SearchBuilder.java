@@ -8,7 +8,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.SearchOrderer;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -23,7 +22,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Helper class for importing {@link Search} objects in an unambiguous way. The pattern for using this is to 1) Import
@@ -230,6 +232,8 @@ public class SearchBuilder {
             new FieldOperationApplier().process(sdoc);
         }
 
+        resolveDocumentReferences();
+
         DocumentModelBuilder builder = new DocumentModelBuilder(model);
         for (Search search : new SearchOrderer().order(searchList)) {
             new FieldOperationApplierForSearch().process(search);
@@ -244,7 +248,15 @@ public class SearchBuilder {
         searchList = built;
         isBuilt = true;
     }
-    
+
+    private void resolveDocumentReferences() {
+        DocumentReferenceResolver resolver = new DocumentReferenceResolver(searchList);
+        searchList.stream()
+                .filter(Search::hasDocument)
+                .map(Search::getDocument)
+                .forEach(resolver::resolveReferences);
+    }
+
     /**
      * Processes and returns the given {@link Search} object. This method has been factored out of the {@link
      * #build()} method so that subclasses can choose not to build anything.
