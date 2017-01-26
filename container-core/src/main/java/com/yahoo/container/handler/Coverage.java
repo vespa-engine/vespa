@@ -173,7 +173,7 @@ public class Coverage {
             return 0;
         }
         if (docs < active) {
-            return (int) (docs * 100 / active);
+            return (int) Math.round(docs * 100.0d / active);
         }
         return getFullResultSets() * 100 / getResultSets();
     }
