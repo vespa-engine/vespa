@@ -2,10 +2,8 @@
 
 #include "handlerecorder.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/backtrace.h>
-#include <vespa/log/log.h>
+#include <cassert>
 
-LOG_SETUP(".proton.matching.handlerecorder");
 
 using search::fef::TermFieldHandle;
 
@@ -75,7 +73,6 @@ void HandleRecorder::registerHandle(TermFieldHandle handle)
     // There should be no registration of handles that is not recorded.
     // That will lead to issues later on.
     if (_T_recorder != NULL) {
-        LOG(spam, "Handle %d - StackTrace : %s", handle, vespalib::getStackTrace(0).c_str());
         _T_recorder->add(handle);
     } else if (_T_assert_all_handles_are_registered) {
         assert(_T_recorder != NULL);

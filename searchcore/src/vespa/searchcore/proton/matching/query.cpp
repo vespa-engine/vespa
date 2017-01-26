@@ -1,28 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.query");
-
 #include "query.h"
-
 #include "blueprintbuilder.h"
 #include "matchdatareservevisitor.h"
-#include "querynodes.h"
 #include "resolveviewvisitor.h"
 #include "termdataextractor.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchlib/common/location.h>
-#include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
-#include <vespa/searchlib/query/tree/querytreecreator.h>
 #include <vespa/searchlib/query/tree/rectangle.h>
-#include <vespa/searchlib/query/weight.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.query");
+#include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using document::PositionDataType;
 using search::SimpleQueryStackDumpIterator;
@@ -92,8 +84,7 @@ Query::buildTree(const vespalib::stringref &stack, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
 {
     SimpleQueryStackDumpIterator stack_dump_iterator(stack);
-    _query_tree =
-        QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
+    _query_tree = QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
     if (_query_tree.get()) {
         AddLocationNode(location, _query_tree, _location);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
