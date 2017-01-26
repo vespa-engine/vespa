@@ -81,7 +81,7 @@ public:
 
     const ITermFieldData& get() const  { return _ref.field(_idx); }
 
-    void next() { assert(valid()); ++_idx; }
+    void next() { ++_idx; }
 };
 
 } // namespace fef
