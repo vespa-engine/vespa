@@ -32,9 +32,7 @@ public class ImportedFieldsResolver extends Processor {
 
     @Override
     public void process() {
-        for (TemporaryImportedField importedField : search.temporaryImportedFields().get().fields().values()) {
-            resolveImportedField(importedField);
-        }
+        search.temporaryImportedFields().get().fields().forEach((name, field) -> resolveImportedField(field));
         search.setImportedFields(new ImportedFields(importedFields));
     }
 
