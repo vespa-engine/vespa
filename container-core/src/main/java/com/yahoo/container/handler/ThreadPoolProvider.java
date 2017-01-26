@@ -9,7 +9,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.inject.Inject;
@@ -92,6 +92,8 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         private final Metric metric;
         private final ProcessTerminator processTerminator;
         private final long maxThreadExecutionTimeMillis;
+        private final Thread metricReporter;
+        private final AtomicBoolean closed = new AtomicBoolean(false);
 
         private ExecutorServiceWrapper(WorkerCompletionTimingThreadPoolExecutor wrapped,
                                        Metric metric, ProcessTerminator processTerminator,
@@ -104,6 +106,23 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
             metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
             metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
             metric.add(MetricNames.REJECTED_REQUEST, 0, null);
+            metricReporter = new Thread(this::reportMetrics);
+            metricReporter.setDaemon(true);
+            metricReporter.start();
+        }
+
+        private final void reportMetrics() {
+            while (! closed.get() ) {
+                metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
+                metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
+                try {Thread.sleep(100);} catch (InterruptedException e) { }
+            }
+        }
+
+        @Override
+        public void shutdown() {
+            super.shutdown();
+            closed.set(true);
         }
 
         /**
@@ -115,8 +134,6 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
         @Override
         public void execute(Runnable command) {
             try {
-                metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
-                metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
                 super.execute(command);
             } catch (RejectedExecutionException e) {
                 metric.add(MetricNames.REJECTED_REQUEST, 1, null);
