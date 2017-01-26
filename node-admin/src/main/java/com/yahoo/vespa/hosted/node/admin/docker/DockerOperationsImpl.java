@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -78,14 +78,14 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final Environment environment;
-    private final Consumer<List<String>> commandExecutor;
+    private final Function<List<String>, String> commandExecutor;
     private GaugeWrapper numberOfRunningContainersGauge;
 
     public DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver) {
         this(docker, environment, metricReceiver, DockerOperationsImpl::runCommand);
     }
 
-    DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver, Consumer<List<String>> commandExecutor) {
+    DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver, Function<List<String>, String> commandExecutor) {
         this.docker = docker;
         this.environment = environment;
         setMetrics(metricReceiver);
@@ -299,7 +299,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
+    public String executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName)
                 .orElseThrow(() -> new RuntimeException("Container " + containerName + " does not exist"));
@@ -315,7 +315,7 @@ public class DockerOperationsImpl implements DockerOperations {
         wrappedCommand.addAll(Arrays.asList(command));
 
         try {
-            commandExecutor.accept(wrappedCommand);
+            return commandExecutor.apply(wrappedCommand);
         } catch (Exception e) {
             logger.error(String.format("Failed to execute %s in network namespace for %s (PID = %d)",
                     Arrays.toString(command), containerName.asString(), containerPid));
@@ -364,16 +364,17 @@ public class DockerOperationsImpl implements DockerOperations {
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
-    private static void runCommand(final List<String> command) {
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
+    private static String runCommand(List<String> command) {
         try {
-            Process process = builder.start();
-            String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
-            int resultCode = process.waitFor();
+            final Process process = new ProcessBuilder(command)
+                    .redirectErrorStream(true)
+                    .start();
+            final String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
+            final int resultCode = process.waitFor();
             if (resultCode != 0) {
                 throw new RuntimeException("Command " + Joiner.on(' ').join(command) + " failed: " + output);
             }
+            return output;
         } catch (IOException|InterruptedException e) {
             throw new RuntimeException(e);
         }

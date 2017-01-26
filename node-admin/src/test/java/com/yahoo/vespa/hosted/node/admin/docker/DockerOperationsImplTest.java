@@ -135,7 +135,10 @@ public class DockerOperationsImplTest {
         ContainerName container = makeContainer("container-42", 42);
         List<String> capturedArgs = new ArrayList<>();
         DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation), capturedArgs::addAll);
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation), (args) -> {
+            capturedArgs.addAll(args);
+            return "";
+        });
 
         dockerOperations.executeCommandInNetworkNamespace(container, new String[]{"iptables", "-nvL"});
 
