@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 
 struct PossCount {
     bool valid;
