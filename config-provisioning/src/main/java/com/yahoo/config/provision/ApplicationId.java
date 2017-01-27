@@ -20,36 +20,6 @@ public final class ApplicationId implements Comparable<ApplicationId> {
     private final String stringValue;
     private final String serializedForm;
 
-    public static class Builder {
-
-        private TenantName tenant;
-        private ApplicationName application;
-        private InstanceName instance;
-
-        public Builder() {
-            this.tenant = TenantName.defaultName();
-            this.application = null;
-            this.instance = InstanceName.defaultName();
-        }
-
-        public Builder tenant(TenantName ten) { this.tenant = ten; return this; }
-        public Builder tenant(String ten) { return tenant(TenantName.from(ten)); }
-
-        public Builder applicationName(ApplicationName nam) { this.application = nam; return this; }
-        public Builder applicationName(String nam) { return applicationName(ApplicationName.from(nam)); }
-
-        public Builder instanceName(InstanceName ins) { this.instance = ins; return this; }
-        public Builder instanceName(String ins) { return instanceName(InstanceName.from(ins)); }
-
-        public ApplicationId build() {
-            if (application == null) {
-                throw new IllegalArgumentException("must set application name in builder");
-            }
-            return ApplicationId.from(tenant, application, instance);
-        }
-
-    }
-
     public ApplicationId(ApplicationIdConfig config) {
         this(TenantName.from(config.tenant()), ApplicationName.from(config.application()), InstanceName.from(config.instance()));
     }
@@ -62,8 +32,12 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         this.serializedForm = toSerializedForm();
     }
 
-    public static ApplicationId from(TenantName tenant, ApplicationName application, InstanceName instanceName) {
-        return new ApplicationId(tenant, application, instanceName);
+    public static ApplicationId from(TenantName tenant, ApplicationName application, InstanceName instance) {
+        return new ApplicationId(tenant, application, instance);
+    }
+
+    public static ApplicationId from(String tenant, String application, String instance) {
+        return new ApplicationId(TenantName.from(tenant), ApplicationName.from(application), InstanceName.from(instance));
     }
 
     /** Creates an application id from a string on the form application:environment:region:instance */
@@ -144,11 +118,41 @@ public final class ApplicationId implements Comparable<ApplicationId> {
     }
 
     /** Returns an application id where all fields are "*" */
-    public static ApplicationId global() { // TODO: Sukk ... get rid of this
+    public static ApplicationId global() {
         return new Builder().tenant("*")
                             .applicationName("*")
                             .instanceName("*")
                             .build();
+    }
+
+    public static class Builder {
+
+        private TenantName tenant;
+        private ApplicationName application;
+        private InstanceName instance;
+
+        public Builder() {
+            this.tenant = TenantName.defaultName();
+            this.application = null;
+            this.instance = InstanceName.defaultName();
+        }
+
+        public Builder tenant(TenantName ten) { this.tenant = ten; return this; }
+        public Builder tenant(String ten) { return tenant(TenantName.from(ten)); }
+
+        public Builder applicationName(ApplicationName nam) { this.application = nam; return this; }
+        public Builder applicationName(String nam) { return applicationName(ApplicationName.from(nam)); }
+
+        public Builder instanceName(InstanceName ins) { this.instance = ins; return this; }
+        public Builder instanceName(String ins) { return instanceName(InstanceName.from(ins)); }
+
+        public ApplicationId build() {
+            if (application == null) {
+                throw new IllegalArgumentException("must set application name in builder");
+            }
+            return ApplicationId.from(tenant, application, instance);
+        }
+
     }
 
 }
