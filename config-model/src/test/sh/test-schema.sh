@@ -24,6 +24,6 @@ cmd="java -jar $jar src/main/resources/schema/services.rng src/test/schema-test-
 echo $cmd
 $cmd
 
-cmd="java -jar $jar src/main/resources/schema/services.rng src/test/schema-test-files/services-hosted-explicit-admin.xml"
+cmd="java -jar $jar src/main/resources/schema/services.rng src/test/schema-test-files/services-hosted-infrastructure.xml"
 echo $cmd
 $cmd
