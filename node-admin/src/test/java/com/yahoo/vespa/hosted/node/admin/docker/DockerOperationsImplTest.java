@@ -2,8 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -104,12 +106,12 @@ public class DockerOperationsImplTest {
 
     @Test
     public void runsCommandInNetworkNamespace() {
-        ContainerName container = makeContainer("container-42", 42);
+        Container container = makeContainer("container-42", 42);
         List<String> capturedArgs = new ArrayList<>();
         DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation), capturedArgs::addAll);
 
-        dockerOperations.executeCommandInNetworkNamespace(container, new String[]{"iptables", "-nvL"});
+        dockerOperations.executeCommandInNetworkNamespace(container.name, new String[]{"iptables", "-nvL"});
 
         assertEquals(Arrays.asList(
                 "sudo",
@@ -121,11 +123,10 @@ public class DockerOperationsImplTest {
                 "-nvL"), capturedArgs);
     }
 
-    private ContainerName makeContainer(String hostname, int pid) {
-        ContainerName containerName = new ContainerName(hostname);
-        Docker.ContainerInfo containerInfo = mock(Docker.ContainerInfo.class);
-        when(containerInfo.getPid()).thenReturn(Optional.of(pid));
-        when(docker.inspectContainer(eq(containerName))).thenReturn(Optional.of(containerInfo));
-        return containerName;
+    private Container makeContainer(String hostname, int pid) {
+        final Container container = new Container(hostname, new DockerImage("mock"),
+                new ContainerName(hostname), true, Optional.of(pid));
+        when(dockerOperations.getContainer(eq(hostname))).thenReturn(Optional.of(container));
+        return container;
     }
 }
