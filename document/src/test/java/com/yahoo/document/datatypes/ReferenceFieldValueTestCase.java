@@ -144,4 +144,17 @@ public class ReferenceFieldValueTestCase {
         new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:bar::mismatch"));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void reference_doc_id_setter_requires_that_id_has_same_document_type_as_data_type() {
+        ReferenceFieldValue value = new ReferenceFieldValue(referenceTypeFoo());
+        value.setDocumentId(docId("id:ns:bar::mismatch"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void assigning_new_id_for_existing_reference_requires_that_id_has_same_document_type_as_data_type() {
+        ReferenceFieldValue value = new ReferenceFieldValue(referenceTypeFoo());
+        DocumentId newId = docId("id:ns:bar::mama-mia");
+        value.assign(newId);
+    }
+
 }

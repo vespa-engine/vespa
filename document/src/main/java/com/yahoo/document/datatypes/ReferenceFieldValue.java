@@ -79,6 +79,7 @@ public class ReferenceFieldValue extends FieldValue {
     }
 
     public void setDocumentId(DocumentId documentId) {
+        requireIdOfMatchingType(referenceType, documentId);
         this.documentId = Optional.of(documentId);
     }
 
@@ -97,7 +98,7 @@ public class ReferenceFieldValue extends FieldValue {
         if (o == null) {
             clear();
         } else if (o instanceof DocumentId) {
-            this.documentId = Optional.of((DocumentId)o);
+            setDocumentId((DocumentId) o);
         } else {
             throw new IllegalArgumentException(String.format(
                     "Can't assign value of type '%s' to field of type '%s'. Expected value of type '%s'",
