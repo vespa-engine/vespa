@@ -66,6 +66,8 @@ public interface Docker {
 
     Optional<Container> getContainer(String hostname);
 
+    Optional<Container> getContainer(ContainerName containerName);
+
     CompletableFuture<DockerImage> pullImageAsync(DockerImage image);
 
     boolean imageIsDownloaded(DockerImage image);
