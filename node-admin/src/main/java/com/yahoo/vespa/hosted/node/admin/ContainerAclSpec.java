@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin;
 
+import java.util.Objects;
+
 /**
  * An ACL specification for a container.
  *
@@ -27,5 +29,20 @@ public class ContainerAclSpec {
 
     public String trustedBy() {
         return trustedBy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ContainerAclSpec that = (ContainerAclSpec) o;
+        return Objects.equals(hostname, that.hostname) &&
+                Objects.equals(ipAddress, that.ipAddress) &&
+                Objects.equals(trustedBy, that.trustedBy);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(hostname, ipAddress, trustedBy);
     }
 }
