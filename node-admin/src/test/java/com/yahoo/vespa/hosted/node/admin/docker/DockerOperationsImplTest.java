@@ -123,10 +123,10 @@ public class DockerOperationsImplTest {
                 "-nvL"), capturedArgs);
     }
 
-    private Container makeContainer(String hostname, int pid) {
-        final Container container = new Container(hostname, new DockerImage("mock"),
-                new ContainerName(hostname), true, Optional.of(pid));
-        when(dockerOperations.getContainer(eq(hostname))).thenReturn(Optional.of(container));
+    private Container makeContainer(String name, int pid) {
+        final Container container = new Container(name + ".fqdn", new DockerImage("mock"),
+                new ContainerName(name), true, Optional.of(pid));
+        when(docker.getContainer(eq(container.name))).thenReturn(Optional.of(container));
         return container;
     }
 }
