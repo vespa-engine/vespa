@@ -64,7 +64,9 @@ public class Maintainer {
             case "move-files":
                 Path from = Paths.get((String) job.getRequiredArgument("from"));
                 Path to = Paths.get((String) job.getRequiredArgument("to"));
-                Files.move(from, to);
+                if (Files.exists(from)) {
+                    Files.move(from, to);
+                }
                 break;
 
             case "handle-core-dumps":
