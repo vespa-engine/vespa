@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.NodeRepoMock;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.verification.VerificationMode;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,18 +58,32 @@ public class AclMaintainerTest {
         // Run twice
         aclMaintainer.run();
         aclMaintainer.run();
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(
-                eq(container.name),
-                aryEq(new String[]{"ip6tables", "-F", "INPUT"})
-        );
+        assertAclsApplied(container.name, aclSpecs, times(1));
+    }
+
+    @Test
+    public void reconfigures_acl_when_container_pid_changes() {
+        Container container = makeContainer("container-1", true, Optional.of(42));
+        List<ContainerAclSpec> aclSpecs = makeAclSpecs(3, container.name);
+        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
+
+        aclMaintainer.run();
+        assertAclsApplied(container.name, aclSpecs);
+
+        // Container is restarted and PID changes
+        makeContainer(container.name.asString(), true, Optional.of(43));
+        aclMaintainer.run();
+
+        assertAclsApplied(container.name, aclSpecs, times(2));
     }
 
     @Test
     public void does_not_configure_acl_for_stopped_container() {
-        Container stoppedContainer = makeContainer("container-1", false);
-        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, makeAclSpecs(1, stoppedContainer.name));
+        Container stoppedContainer = makeContainer("container-1", false, Optional.empty());
+        List<ContainerAclSpec> aclSpecs = makeAclSpecs(1, stoppedContainer.name);
+        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
         aclMaintainer.run();
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), any());
+        assertAclsApplied(stoppedContainer.name, aclSpecs, never());
     }
 
     @Test
@@ -90,36 +105,49 @@ public class AclMaintainerTest {
     }
 
     private void assertAclsApplied(ContainerName containerName, List<ContainerAclSpec> containerAclSpecs) {
-        verify(dockerOperations).executeCommandInNetworkNamespace(
+        assertAclsApplied(containerName, containerAclSpecs, times(1));
+    }
+
+    private void assertAclsApplied(ContainerName containerName, List<ContainerAclSpec> containerAclSpecs,
+                                   VerificationMode verificationMode) {
+        verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-F", "INPUT"})
         );
-        verify(dockerOperations).executeCommandInNetworkNamespace(
+        verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
+                eq(containerName),
+                aryEq(new String[]{"ip6tables", "-P", "INPUT", "DROP"})
+        );
+        verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
+                eq(containerName),
+                aryEq(new String[]{"ip6tables", "-P", "FORWARD", "DROP"})
+        );
+        verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
+                eq(containerName),
+                aryEq(new String[]{"ip6tables", "-P", "OUTPUT", "ACCEPT"})
+        );
+        verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j",
                         "ACCEPT"})
         );
-        verify(dockerOperations).executeCommandInNetworkNamespace(
+        verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-j", "ACCEPT"})
         );
-        containerAclSpecs.forEach(aclSpec -> verify(dockerOperations).executeCommandInNetworkNamespace(
+        containerAclSpecs.forEach(aclSpec -> verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-A", "INPUT", "-s", aclSpec.ipAddress() + "/128", "-j", "ACCEPT"})
         ));
-        verify(dockerOperations).executeCommandInNetworkNamespace(
-                eq(containerName),
-                aryEq(new String[]{"ip6tables", "-P", "INPUT", "DROP"})
-        );
     }
 
     private Container makeContainer(String hostname) {
-        return makeContainer(hostname, true);
+        return makeContainer(hostname, true, Optional.of(42));
     }
 
-    private Container makeContainer(String hostname, boolean running) {
+    private Container makeContainer(String hostname, boolean running, Optional<Integer> pid) {
         final Container container = new Container(hostname, new DockerImage("mock"),
-                new ContainerName(hostname), running);
+                new ContainerName(hostname), running, pid);
         when(dockerOperations.getContainer(eq(hostname))).thenReturn(Optional.of(container));
         return container;
     }

@@ -14,15 +14,17 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * This class represents an ACL that can be applied to a single container
+ * This class represents an ACL for a specific container instance
  *
  * @author mpolden
  */
 public class Acl {
 
+    private final int containerPid;
     private final List<ContainerAclSpec> containerAclSpecs;
 
-    public Acl(List<ContainerAclSpec> containerAclSpecs) {
+    public Acl(int containerPid, List<ContainerAclSpec> containerAclSpecs) {
+        this.containerPid = containerPid;
         this.containerAclSpecs = ImmutableList.copyOf(containerAclSpecs);
     }
 
@@ -30,7 +32,7 @@ public class Acl {
         final ImmutableList.Builder<Command> commands = ImmutableList.builder();
         commands.add(
                 new PolicyCommand(Chain.INPUT, Action.DROP),
-                new PolicyCommand(Chain.FORWARD, Action.ACCEPT),
+                new PolicyCommand(Chain.FORWARD, Action.DROP),
                 new PolicyCommand(Chain.OUTPUT, Action.ACCEPT),
                 new FilterCommand(Chain.INPUT, Action.ACCEPT)
                         .withOption("-m", "state")
@@ -50,13 +52,14 @@ public class Acl {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Acl acl = (Acl) o;
-        return Objects.equals(containerAclSpecs, acl.containerAclSpecs);
+        Acl that = (Acl) o;
+        return containerPid == that.containerPid &&
+                Objects.equals(containerAclSpecs, that.containerAclSpecs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(containerAclSpecs);
+        return Objects.hash(containerPid, containerAclSpecs);
     }
 
     private static boolean isIpv6(String ipAddress) {
