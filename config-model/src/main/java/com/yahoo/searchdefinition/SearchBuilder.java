@@ -232,7 +232,8 @@ public class SearchBuilder {
             new FieldOperationApplier().process(sdoc);
         }
 
-        resolveDocumentReferences();
+        DocumentReferenceResolver resolver = new DocumentReferenceResolver(searchList);
+        sdocs.forEach(resolver::resolveReferences);
 
         DocumentModelBuilder builder = new DocumentModelBuilder(model);
         for (Search search : new SearchOrderer().order(searchList)) {
@@ -247,14 +248,6 @@ public class SearchBuilder {
         }
         searchList = built;
         isBuilt = true;
-    }
-
-    private void resolveDocumentReferences() {
-        DocumentReferenceResolver resolver = new DocumentReferenceResolver(searchList);
-        searchList.stream()
-                .filter(Search::hasDocument)
-                .map(Search::getDocument)
-                .forEach(resolver::resolveReferences);
     }
 
     /**
