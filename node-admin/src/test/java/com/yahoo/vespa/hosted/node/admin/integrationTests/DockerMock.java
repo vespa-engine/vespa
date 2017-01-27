@@ -156,6 +156,14 @@ public class DockerMock implements Docker {
         return new ProcessResult(0, null, "");
     }
 
+    @Override
+    public ProcessResult executeInContainerAsRoot(ContainerName containerName, String... args) {
+        synchronized (monitor) {
+            callOrderVerifier.add("executeInContainerAsRoot with " + containerName + ", args: " + Arrays.toString(args));
+        }
+        return new ProcessResult(0, null, "");
+    }
+
 
     public static class StartContainerCommandMock implements CreateContainerCommand {
         @Override

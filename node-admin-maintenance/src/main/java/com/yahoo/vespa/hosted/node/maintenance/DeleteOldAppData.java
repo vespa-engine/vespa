@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintenance;
 
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -18,7 +16,7 @@ import java.util.stream.Collectors;
  */
 
 public class DeleteOldAppData {
-    private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(DeleteOldAppData.class);
+    private static final Logger logger = Logger.getLogger(DeleteOldAppData.class.getSimpleName());
 
     /**
      * (Recursively) deletes files if they match all the criteria, also deletes empty directories.
@@ -28,7 +26,7 @@ public class DeleteOldAppData {
      * @param fileNameRegex Delete files where filename matches fileNameRegex
      * @param recursive     Delete files in sub-directories (with the same criteria)
      */
-    public static void deleteFiles(String basePath, long maxAgeSeconds, String fileNameRegex, boolean recursive) {
+    static void deleteFiles(String basePath, long maxAgeSeconds, String fileNameRegex, boolean recursive) {
         Pattern fileNamePattern = fileNameRegex != null ? Pattern.compile(fileNameRegex) : null;
         File[] filesInDeleteDirectory = getContentsOfDirectory(basePath);
 
@@ -55,17 +53,18 @@ public class DeleteOldAppData {
      * @param basePath          Base path to delete from
      * @param nMostRecentToKeep Number of most recent files to keep
      */
-    public static void deleteFilesExceptNMostRecent(String basePath, int nMostRecentToKeep) {
+    static void deleteFilesExceptNMostRecent(String basePath, int nMostRecentToKeep) {
         File[] deleteDirContents = getContentsOfDirectory(basePath);
 
         if (nMostRecentToKeep < 1) {
             throw new IllegalArgumentException("Number of files to keep must be a positive number");
         }
 
-        List<File> filesInDeleteDir = Arrays.stream(deleteDirContents).filter(File::isFile).collect(Collectors.toList());
+        List<File> filesInDeleteDir = Arrays.stream(deleteDirContents)
+                .filter(File::isFile)
+                .sorted((f1, f2) -> Long.signum(f1.lastModified() - f2.lastModified()))
+                .collect(Collectors.toList());
         if (filesInDeleteDir.size() <= nMostRecentToKeep) return;
-
-        Collections.sort(filesInDeleteDir, (f1, f2) -> Long.signum(f1.lastModified() - f2.lastModified()));
 
         for (int i = nMostRecentToKeep; i < filesInDeleteDir.size(); i++) {
             if (!filesInDeleteDir.get(i).delete()) {
@@ -74,7 +73,7 @@ public class DeleteOldAppData {
         }
     }
 
-    public static void deleteFilesLargerThan(File baseDirectory, long sizeInBytes) {
+    static void deleteFilesLargerThan(File baseDirectory, long sizeInBytes) {
         File[] filesInBaseDirectory = getContentsOfDirectory(baseDirectory.getAbsolutePath());
 
         for (File file : filesInBaseDirectory) {
@@ -95,7 +94,7 @@ public class DeleteOldAppData {
      * @param maxAgeSeconds Delete directories older (last modified date) than maxAgeSeconds
      * @param dirNameRegex  Delete directories where directory name matches dirNameRegex
      */
-    public static void deleteDirectories(String basePath, long maxAgeSeconds, String dirNameRegex) {
+    static void deleteDirectories(String basePath, long maxAgeSeconds, String dirNameRegex) {
         Pattern dirNamePattern = dirNameRegex != null ? Pattern.compile(dirNameRegex) : null;
         File[] filesInDeleteDirectory = getContentsOfDirectory(basePath);
 
@@ -117,14 +116,17 @@ public class DeleteOldAppData {
      *   - If file is a directory, it and all content is removed
      *   - For symlinks: Only the symlink is removed, not what the symlink points to
      */
-    public static void recursiveDelete(File file) throws IOException {
+    static void recursiveDelete(String path) {
+        File file = new File(path);
         if (file.isDirectory()) {
             for (File childFile : file.listFiles()) {
-                recursiveDelete(childFile);
+                recursiveDelete(childFile.getAbsolutePath());
             }
         }
 
-        Files.deleteIfExists(file.toPath());
+        try {
+            Files.deleteIfExists(file.toPath());
+        } catch (IOException ignored) { }
     }
 
     static File[] getContentsOfDirectory(String directoryPath) {

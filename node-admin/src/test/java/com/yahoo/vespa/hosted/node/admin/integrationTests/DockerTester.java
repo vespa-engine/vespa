@@ -49,10 +49,10 @@ public class DockerTester implements AutoCloseable {
         Environment environment = new Environment.Builder().inetAddressResolver(inetAddressResolver).build();
 
         callOrderVerifier = new CallOrderVerifier();
-        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(environment, callOrderVerifier);
         orchestratorMock = new OrchestratorMock(callOrderVerifier);
         nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
         dockerMock = new DockerMock(callOrderVerifier);
+        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerMock, environment, callOrderVerifier);
 
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);

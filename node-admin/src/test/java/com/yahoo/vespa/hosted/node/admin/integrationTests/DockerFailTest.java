@@ -36,16 +36,14 @@ public class DockerFailTest {
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrder(
                     "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName { name=container }",
-                    "executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                    "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
             dockerTester.deleteContainer(containerNodeSpec.containerName);
 
             callOrderVerifier.assertInOrder(
                     "deleteContainer with ContainerName { name=container }",
                     "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName { name=container }",
-                    "executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                    "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
         }
     }
 }

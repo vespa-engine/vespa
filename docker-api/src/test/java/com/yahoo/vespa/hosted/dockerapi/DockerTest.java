@@ -70,8 +70,8 @@ public class DockerTest {
                 .withMemoryInMb(100).create();
         docker.startContainer(containerName2);
 
-        // 137 = 128 + 9 = kill -9 (SIGKILL)
-        assertThat(docker.executeInContainer(containerName2, "python", "/pysrc/fillmem.py", "90").getExitStatus(), is(137));
+        // 137 = 128 + 9 = kill -9 (SIGKILL), doesn't need to be run as "root", but "yahoo" does not exist in this basic image
+        assertThat(docker.executeInContainerAsRoot(containerName2, "python", "/pysrc/fillmem.py", "90").getExitStatus(), is(137));
 
         // Verify that both HTTP servers are still up
         testReachabilityFromHost("http://" + inetAddress1.getHostAddress() + "/ping");
@@ -129,7 +129,7 @@ public class DockerTest {
         testReachabilityFromHost("http://" + inetAddress2.getHostAddress() + "/ping");
 
         String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://" + inetAddress2.getHostAddress() + "/ping"};
-        ProcessResult result = docker.executeInContainer(containerName1, curlFromNodeToNode);
+        ProcessResult result = docker.executeInContainerAsRoot(containerName1, curlFromNodeToNode);
         assertThat("Could not reach " + containerName2.asString() + " from " + containerName1.asString(),
                 result.getOutput(), is("pong\n"));
 

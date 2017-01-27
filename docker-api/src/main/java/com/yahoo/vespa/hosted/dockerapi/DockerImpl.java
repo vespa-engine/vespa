@@ -225,12 +225,25 @@ public class DockerImpl implements Docker {
 
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
+        return executeInContainerAsUser(containerName, "yahoo", args);
+    }
+
+    @Override
+    public ProcessResult executeInContainerAsRoot(ContainerName containerName, String... args) {
+        return executeInContainerAsUser(containerName, "root", args);
+    }
+
+    /**
+     * Execute command in container as user, "user" can be "username", "username:group", "uid" or "uid:gid"
+     */
+    private ProcessResult executeInContainerAsUser(ContainerName containerName, String user, String... args) {
         assert args.length >= 1;
         try {
             final ExecCreateCmdResponse response = dockerClient.execCreateCmd(containerName.asString())
                     .withCmd(args)
                     .withAttachStdout(true)
                     .withAttachStderr(true)
+                    .withUser(user)
                     .exec();
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();

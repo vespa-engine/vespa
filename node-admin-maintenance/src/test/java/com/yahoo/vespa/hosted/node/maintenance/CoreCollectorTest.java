@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintenance;
 
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.collections.Pair;
+import com.yahoo.system.ProcessExecuter;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -28,8 +29,8 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class CoreCollectorTest {
-    private final Maintainer maintainer = mock(Maintainer.class);
-    private final CoreCollector coreCollector = new CoreCollector(maintainer);
+    private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
+    private final CoreCollector coreCollector = new CoreCollector(processExecuter);
 
     private final Path TEST_CORE_PATH = Paths.get("/tmp/core.1234");
     private final Path TEST_BIN_PATH = Paths.get("/usr/bin/program");
@@ -46,7 +47,7 @@ public class CoreCollectorTest {
     }
 
     private void mockExec(String[] cmd, String output, String error) throws IOException, InterruptedException {
-        when(maintainer.exec(cmd)).thenReturn(new ProcessResult(error.isEmpty() ? 0 : 1, output, error));
+        when(processExecuter.exec(cmd)).thenReturn(new Pair<Integer, String>(error.isEmpty() ? 0 : 1, output + error));
     }
 
     @Test
@@ -99,7 +100,7 @@ public class CoreCollectorTest {
             coreCollector.readBinPathFallback(TEST_CORE_PATH);
             fail("Expected not to be able to get bin path");
         } catch (RuntimeException e) {
-            assertEquals(e.getMessage(), "Failed to extract binary path from ProcessResult { exitStatus=1 output= errors=Error 123 }");
+            assertEquals(e.getMessage(), "Failed to extract binary path from (1,Error 123)");
         }
     }
 
@@ -115,7 +116,7 @@ public class CoreCollectorTest {
             coreCollector.readBacktrace(TEST_CORE_PATH, TEST_BIN_PATH, false);
             fail("Expected not to be able to read backtrace");
         } catch (RuntimeException e) {
-            assertEquals("Failed to read backtrace ProcessResult { exitStatus=1 output= errors=Failure }", e.getMessage());
+            assertEquals("Failed to read backtrace (1,Failure)", e.getMessage());
         }
     }
 
