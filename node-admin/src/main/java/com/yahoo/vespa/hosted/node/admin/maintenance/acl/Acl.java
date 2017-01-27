@@ -30,7 +30,7 @@ public class Acl {
         final ImmutableList.Builder<Command> commands = ImmutableList.builder();
         commands.add(
                 new PolicyCommand(Chain.INPUT, Action.DROP),
-                new PolicyCommand(Chain.FORWARD, Action.ACCEPT),
+                new PolicyCommand(Chain.FORWARD, Action.DROP),
                 new PolicyCommand(Chain.OUTPUT, Action.ACCEPT),
                 new FilterCommand(Chain.INPUT, Action.ACCEPT)
                         .withOption("-m", "state")

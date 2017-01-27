@@ -96,6 +96,18 @@ public class AclMaintainerTest {
         );
         verify(dockerOperations).executeCommandInNetworkNamespace(
                 eq(containerName),
+                aryEq(new String[]{"ip6tables", "-P", "INPUT", "DROP"})
+        );
+        verify(dockerOperations).executeCommandInNetworkNamespace(
+                eq(containerName),
+                aryEq(new String[]{"ip6tables", "-P", "FORWARD", "DROP"})
+        );
+        verify(dockerOperations).executeCommandInNetworkNamespace(
+                eq(containerName),
+                aryEq(new String[]{"ip6tables", "-P", "OUTPUT", "ACCEPT"})
+        );
+        verify(dockerOperations).executeCommandInNetworkNamespace(
+                eq(containerName),
                 aryEq(new String[]{"ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j",
                         "ACCEPT"})
         );
@@ -107,10 +119,6 @@ public class AclMaintainerTest {
                 eq(containerName),
                 aryEq(new String[]{"ip6tables", "-A", "INPUT", "-s", aclSpec.ipAddress() + "/128", "-j", "ACCEPT"})
         ));
-        verify(dockerOperations).executeCommandInNetworkNamespace(
-                eq(containerName),
-                aryEq(new String[]{"ip6tables", "-P", "INPUT", "DROP"})
-        );
     }
 
     private Container makeContainer(String hostname) {
