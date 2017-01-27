@@ -1,4 +1,2 @@
-/dependencies
-/Dockerfile
-include/services.xml
-/**/*.pyc
+vespa-local/Dockerfile
+vespa-local/services.xml

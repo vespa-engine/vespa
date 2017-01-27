@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+  <jdisc version="1.0" jetty="true">
+    <!-- Please update container test when changing this file -->
+    <handler id="com.yahoo.vespa.hosted.node.admin.restapi.RestApiHandler" bundle="node-admin">
+      <binding>http://*/rest/*</binding>
+    </handler>
+    <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
+    <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
+    <component id="metrics-wrapper" class="com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper" bundle="docker-api"/>
+
+    <config name='vespa.hosted.dockerapi.docker'>
+      <uri>tcp://localhost:2376</uri>
+      <isRunningLocally>true</isRunningLocally>
+    </config>
+
+    <config name='vespa.hosted.node.admin.node-admin'>
+      <isRunningLocally>true</isRunningLocally>
+    </config>
+  </jdisc>
+</services>
