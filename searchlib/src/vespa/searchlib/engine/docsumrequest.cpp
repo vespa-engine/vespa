@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "docsumrequest.h"
 #include "packetconverter.h"
 
@@ -9,8 +8,7 @@ namespace engine {
 
 DocsumRequest::DocsumRequest()
     : DocsumRequest(false)
-{
-}
+{ }
 
 DocsumRequest::DocsumRequest(bool useRootSlime_)
     : _flags(0u),
@@ -18,8 +16,7 @@ DocsumRequest::DocsumRequest(bool useRootSlime_)
       useWideHits(false),
       _useRootSlime(useRootSlime_),
       hits()
-{
-}
+{ }
 
 
 void DocsumRequest::Source::lazyDecode() const

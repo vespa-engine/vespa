@@ -32,9 +32,9 @@ public:
 
     class Coverage {
     public:
-        Coverage() : _covered(0), _active(0) { }
-        Coverage(uint64_t active) : _covered(active), _active(active), _soonActive(active), _degradeReason(0) { }
-        Coverage(uint64_t active, uint64_t covered) : _covered(covered), _active(active), _degradeReason(0) { }
+        Coverage() : Coverage(0) { }
+        Coverage(uint64_t active) : Coverage(active, active) { }
+        Coverage(uint64_t active, uint64_t covered) : _covered(covered), _active(active), _soonActive(active), _degradeReason(0) { }
         uint64_t getCovered() const { return _covered; }
         uint64_t getActive() const { return _active; }
         uint64_t getSoonActive() const { return _soonActive; }
