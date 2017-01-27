@@ -361,7 +361,9 @@ public class DockerImpl implements Docker {
                                 response.getConfig().getHostName(),
                                 new DockerImage(response.getConfig().getImage()),
                                 new ContainerName(decode(response.getName())),
-                                response.getState().getRunning()))
+                                response.getState().getRunning(),
+                                Optional.ofNullable(response.getState().getPid())
+                        ))
                 .map(Stream::of)
                 .orElse(Stream.empty());
     }

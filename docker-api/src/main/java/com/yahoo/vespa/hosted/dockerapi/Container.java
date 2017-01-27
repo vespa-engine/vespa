@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author stiankri
@@ -11,16 +12,23 @@ public class Container {
     public final DockerImage image;
     public final ContainerName name;
     public final boolean isRunning;
+    public final Optional<Integer> pid;
 
     public Container(
             final String hostname,
             final DockerImage image,
             final ContainerName containerName,
-            final boolean isRunning) {
+            final boolean isRunning,
+            final Optional<Integer> pid) {
         this.hostname = hostname;
         this.image = image;
         this.name = containerName;
         this.isRunning = isRunning;
+        this.pid = pid;
+    }
+
+    public Container(String hostname, DockerImage image, ContainerName name, boolean isRunning) {
+        this(hostname, image, name, isRunning, Optional.empty());
     }
 
     @Override
@@ -32,12 +40,13 @@ public class Container {
         return Objects.equals(hostname, other.hostname)
                 && Objects.equals(image, other.image)
                 && Objects.equals(name, other.name)
-                && Objects.equals(isRunning, other.isRunning);
+                && Objects.equals(isRunning, other.isRunning)
+                && Objects.equals(pid, other.pid);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, image, name, isRunning);
+        return Objects.hash(hostname, image, name, isRunning, pid);
     }
 
     @Override
@@ -47,6 +56,7 @@ public class Container {
                 + " image=" + image
                 + " name=" + name
                 + " isRunning=" + isRunning
+                + " pid=" + pid
                 + "}";
     }
 }
