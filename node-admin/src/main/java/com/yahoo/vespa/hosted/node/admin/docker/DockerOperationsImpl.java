@@ -282,7 +282,8 @@ public class DockerOperationsImpl implements DockerOperations {
     public void executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = getContainer(containerName.asString())
-                .flatMap(container -> container.pid)
+                .filter(container -> container.isRunning)
+                .map(container -> container.pid)
                 .orElseThrow(() -> new RuntimeException("PID not found for container: " + containerName.asString()));
 
         final List<String> wrappedCommand = new LinkedList<>();

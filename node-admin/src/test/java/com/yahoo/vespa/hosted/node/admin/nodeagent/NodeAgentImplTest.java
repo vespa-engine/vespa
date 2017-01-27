@@ -92,7 +92,7 @@ public class NodeAgentImplTest {
                 .build();
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
-        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, 1)));
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(false);
@@ -190,7 +190,7 @@ public class NodeAgentImplTest {
 
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, oldDockerImage, containerName, true)));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, oldDockerImage, containerName, 1)));
 
         nodeAgent.tick();
 
@@ -255,7 +255,7 @@ public class NodeAgentImplTest {
                 .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, 1)));
 
         nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
@@ -292,7 +292,7 @@ public class NodeAgentImplTest {
                 .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, 1)));
 
         nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
@@ -330,7 +330,7 @@ public class NodeAgentImplTest {
                 .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, 1)));
 
         nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
@@ -370,12 +370,13 @@ public class NodeAgentImplTest {
 
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder.build();
 
+        boolean shouldBeRunning = nodeState != Node.State.dirty && nodeState != Node.State.provisioned;
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(
                 Optional.of(new Container(hostName,
                                           dockerImage,
                                           containerName,
-                                          nodeState != Node.State.dirty && nodeState != Node.State.provisioned)));
+                                          shouldBeRunning ? 1 : 0)));
 
         nodeAgent.tick();
 
@@ -433,7 +434,7 @@ public class NodeAgentImplTest {
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
-        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, wantedDockerImage, containerName, true)));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, wantedDockerImage, containerName, 1)));
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
 
@@ -481,7 +482,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(Optional.of(stats));
 
         when(dockerOperations.getContainer(eq(hostName)))
-                .thenReturn(Optional.of(new Container(hostName, new DockerImage("wantedDockerImage"), containerName, true)));
+                .thenReturn(Optional.of(new Container(hostName, new DockerImage("wantedDockerImage"), containerName, 1)));
 
         nodeAgent.vespaVersion = Optional.of("1.2.3");
         ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner("tester", "testapp", "testinstance");

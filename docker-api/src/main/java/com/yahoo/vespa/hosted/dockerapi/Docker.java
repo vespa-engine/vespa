@@ -34,15 +34,6 @@ public interface Docker {
             ContainerName containerName,
             String hostName);
 
-
-    interface ContainerInfo {
-        /** returns Optional.empty() if not running. */
-        Optional<Integer> getPid();
-    }
-
-    Optional<ContainerInfo> inspectContainer(ContainerName containerName);
-
-
     interface ContainerStats {
         Map<String, Object> getNetworks();
         Map<String, Object> getCpuStats();

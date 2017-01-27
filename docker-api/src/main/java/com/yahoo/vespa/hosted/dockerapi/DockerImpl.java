@@ -276,12 +276,6 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public Optional<ContainerInfo> inspectContainer(ContainerName containerName) {
-        return inspectContainerCmd(containerName.asString())
-                .map(response -> new ContainerInfoImpl(containerName, response));
-    }
-
-    @Override
     public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         try {
             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
@@ -361,8 +355,7 @@ public class DockerImpl implements Docker {
                                 response.getConfig().getHostName(),
                                 new DockerImage(response.getConfig().getImage()),
                                 new ContainerName(decode(response.getName())),
-                                response.getState().getRunning(),
-                                Optional.ofNullable(response.getState().getPid())
+                                response.getState().getPid()
                         ))
                 .map(Stream::of)
                 .orElse(Stream.empty());
@@ -371,7 +364,6 @@ public class DockerImpl implements Docker {
     private boolean isManagedBy(final com.github.dockerjava.api.model.Container container, String manager) {
         final Map<String, String> labels = container.getLabels();
         return labels != null && manager.equals(labels.get(LABEL_NAME_MANAGEDBY));
-
     }
 
     private String decode(String encodedContainerName) {

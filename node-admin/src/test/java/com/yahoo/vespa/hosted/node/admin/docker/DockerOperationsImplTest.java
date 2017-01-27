@@ -125,7 +125,7 @@ public class DockerOperationsImplTest {
 
     private Container makeContainer(String hostname, int pid) {
         final Container container = new Container(hostname, new DockerImage("mock"),
-                new ContainerName(hostname), true, Optional.of(pid));
+                new ContainerName(hostname), pid);
         when(dockerOperations.getContainer(eq(hostname))).thenReturn(Optional.of(container));
         return container;
     }
