@@ -38,10 +38,11 @@ public:
         uint64_t getCovered() const { return _covered; }
         uint64_t getActive() const { return _active; }
         uint64_t getSoonActive() const { return _soonActive; }
-        uint64_t getDegradeReason() const { return _degradeReason; }
+        uint32_t getDegradeReason() const { return _degradeReason; }
         Coverage & setCovered(uint64_t v) { _covered = v; return *this; }
         Coverage & setActive(uint64_t v) { _active = v; return *this; }
         Coverage & setSoonActive(uint64_t v) { _soonActive = v; return *this; }
+        Coverage & setDegradeReason(uint32_t v) { _degradeReason = v; return *this; }
         Coverage & degradeMatchPhase() { _degradeReason |= MATCH_PHASE; return *this; }
         Coverage & degradeTimeout() { _degradeReason |= TIMEOUT; return *this; }
         Coverage & degradeAdaptiveTimeout() { _degradeReason |= ADAPTIVE_TIMEOUT; return *this; }
