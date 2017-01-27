@@ -123,9 +123,9 @@ public class LocalZoneUtils {
     }
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/vespa-local/Dockerfile");
+        Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/Dockerfile");
 
-        Path dockerfileTemplatePath = Paths.get("node-admin/vespa-local/Dockerfile.template");
+        Path dockerfileTemplatePath = Paths.get("node-admin/Dockerfile.template");
         String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
                 .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
                 .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());
