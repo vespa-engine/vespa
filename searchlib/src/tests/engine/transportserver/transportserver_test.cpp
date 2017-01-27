@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("transportserver_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/engine/transportserver.h>
-#include <vespa/searchlib/engine/searchapi.h>
-#include <vespa/searchlib/engine/docsumapi.h>
-#include <vespa/searchlib/engine/monitorapi.h>
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/fnet/fnet.h>
 #include <vespa/searchlib/engine/errorcodes.h>
+#include <vespa/log/log.h>
+LOG_SETUP("transportserver_test");
 
 using namespace document;
 using namespace vespalib;
@@ -182,6 +179,41 @@ TEST("print errors") {
     printError(ECODE_NOT_IMPLEMENTED);
     printError(ECODE_QUERY_NOT_ALLOWED);
     printError(ECODE_TIMEOUT);
+}
+
+TEST("test SearchReply::Coverage") {
+    SearchReply::Coverage c;
+    EXPECT_EQUAL(0u, c.getActive());
+    EXPECT_EQUAL(0u, c.getSoonActive());
+    EXPECT_EQUAL(0u, c.getCovered());
+    EXPECT_EQUAL(0u, c.getDegradeReason());
+}
+
+TEST("test SearchReply::Coverage(7)") {
+    SearchReply::Coverage c(7);
+    EXPECT_EQUAL(7u, c.getActive());
+    EXPECT_EQUAL(7u, c.getSoonActive());
+    EXPECT_EQUAL(7u, c.getCovered());
+    EXPECT_EQUAL(0u, c.getDegradeReason());
+}
+
+TEST("test SearchReply::Coverage(7, 19)") {
+    SearchReply::Coverage c(19, 7);
+    EXPECT_EQUAL(19u, c.getActive());
+    EXPECT_EQUAL(19u, c.getSoonActive());
+    EXPECT_EQUAL(7u, c.getCovered());
+    EXPECT_EQUAL(0u, c.getDegradeReason());
+}
+
+TEST("test SearchReply::Coverage set and get") {
+    SearchReply::Coverage c;
+    EXPECT_EQUAL(7u, c.setActive(7).getActive());
+    EXPECT_EQUAL(9u, c.setSoonActive(9).getSoonActive());
+    EXPECT_EQUAL(19u, c.setCovered(19).getCovered());
+    EXPECT_EQUAL(1u, SearchReply::Coverage().degradeMatchPhase().getDegradeReason());
+    EXPECT_EQUAL(2u, SearchReply::Coverage().degradeTimeout().getDegradeReason());
+    EXPECT_EQUAL(4u, SearchReply::Coverage().degradeAdaptiveTimeout().getDegradeReason());
+    EXPECT_EQUAL(7u, SearchReply::Coverage().degradeAdaptiveTimeout().degradeTimeout().degradeMatchPhase().getDegradeReason());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
