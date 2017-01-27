@@ -1,9 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2002-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 
 #include <vespa/document/util/compressionconfig.h>
 #include <vespa/document/util/compressor.h>
@@ -11,12 +6,10 @@
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/common/sortdata.h>
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.fs4packets");
 
 using document::CompressionConfig;
@@ -58,9 +51,8 @@ FS4PersistentPacketStreamer(FS4PacketFactory::CreatePacket_t cp)
       _compressionLevel(9),
       _compressionType(CompressionConfig::LZ4),
       _conservative(false),
-      _createPacket(cp) {
-}
-
+      _createPacket(cp)
+{ }
 
 bool
 FS4PersistentPacketStreamer::GetPacketInfo(FNET_DataBuffer *src,
@@ -130,8 +122,8 @@ FS4PersistentPacketStreamer::GetPacketInfo(FNET_DataBuffer *src,
 }
 
 namespace {
-void decodePacket(FNET_Packet *&packet, FNET_DataBuffer &buf, uint32_t size,
-                  uint32_t pcode) {
+
+void decodePacket(FNET_Packet *&packet, FNET_DataBuffer &buf, uint32_t size, uint32_t pcode) {
     try {
         if (!packet->Decode(&buf, size)) {
             LOG(error, "could not decode packet (pcode=%u); "
@@ -146,14 +138,13 @@ void decodePacket(FNET_Packet *&packet, FNET_DataBuffer &buf, uint32_t size,
         LOG(error, "%s", e.toString().c_str());
     }
 }
+
 }  // namespace
 
 FNET_Packet*
 FS4PersistentPacketStreamer::Decode(FNET_DataBuffer *src, uint32_t plen, uint32_t pcode, FNET_Context)
 {
-    FNET_Packet *packet;
-
-    packet = _createPacket(pcode & PCODE_MASK);
+    FNET_Packet *packet(_createPacket(pcode & PCODE_MASK));
     if (packet != NULL) {
         uint32_t compressionByte = (pcode & ~PCODE_MASK) >> 24;
         CompressionConfig::Type compressionType(CompressionConfig::toType(compressionByte));
@@ -224,15 +215,13 @@ FS4Properties::FS4Properties()
     : _entries(),
       _name(0),
       _backing()
-{
-}
+{ }
 
 FS4Properties::FS4Properties(FS4Properties && rhs)
     : _entries(std::move(rhs._entries)),
       _name(std::move(rhs._name)),
       _backing(std::move(rhs._backing))
-{
-}
+{ }
 
 FS4Properties &
 FS4Properties::operator=(FS4Properties && rhs)
@@ -243,9 +232,7 @@ FS4Properties::operator=(FS4Properties && rhs)
     return *this;
 }
 
-FS4Properties::~FS4Properties()
-{
-}
+FS4Properties::~FS4Properties() { }
 
 void
 FS4Properties::allocEntries(uint32_t cnt)
@@ -350,7 +337,6 @@ FS4Properties::toString(uint32_t indent) const
 
 //============================================================
 
-
 /**
  * Write a string in usual format to a buffer.  Usual format is first
  * a 32-bit integer holding the string length, then the bytes that the
@@ -367,29 +353,21 @@ writeLenString(FNET_DataBuffer *buf, const STR &str)
     buf->WriteBytesFast(str.c_str(), str.size());
 }
 
-
 //============================================================
 
 FS4Packet::FS4Packet()
     : FNET_Packet()
-{
-}
+{ }
 
-
-FS4Packet::~FS4Packet()
-{
-}
-
+FS4Packet::~FS4Packet() { }
 
 void
-FS4Packet::Free()
-{
+FS4Packet::Free() {
     delete this;
 }
 
 vespalib::string
-FS4Packet::Print(uint32_t indent)
-{
+FS4Packet::Print(uint32_t indent) {
     return toString(indent);
 }
 
@@ -397,28 +375,19 @@ FS4Packet::Print(uint32_t indent)
 
 FS4Packet_EOL::FS4Packet_EOL()
     : FS4Packet()
-{
-}
+{ }
 
-
-FS4Packet_EOL::~FS4Packet_EOL()
-{
-}
-
+FS4Packet_EOL::~FS4Packet_EOL() { }
 
 uint32_t
-FS4Packet_EOL::GetLength()
-{
+FS4Packet_EOL::GetLength() {
     return 0;
 }
 
-
 void
-FS4Packet_EOL::Encode(FNET_DataBuffer *dst)
-{
+FS4Packet_EOL::Encode(FNET_DataBuffer *dst) {
     (void) dst;
 }
-
 
 bool
 FS4Packet_EOL::Decode(FNET_DataBuffer *src, uint32_t len)
@@ -426,7 +395,6 @@ FS4Packet_EOL::Decode(FNET_DataBuffer *src, uint32_t len)
     src->DataToDead(len);
     return (len == 0);
 }
-
 
 vespalib::string
 FS4Packet_EOL::toString(uint32_t indent) const
@@ -439,34 +407,27 @@ FS4Packet_EOL::toString(uint32_t indent) const
 FS4Packet_Shared::FS4Packet_Shared(FNET_Packet::SP packet)
     : FS4Packet(),
       _packet(std::move(packet))
-{
-}
+{ }
 
-FS4Packet_Shared::~FS4Packet_Shared()
-{
-}
+FS4Packet_Shared::~FS4Packet_Shared() { }
 
 uint32_t
-FS4Packet_Shared::GetPCODE()
-{
+FS4Packet_Shared::GetPCODE() {
     return _packet->GetPCODE();
 }
 
 uint32_t
-FS4Packet_Shared::GetLength()
-{
+FS4Packet_Shared::GetLength() {
     return _packet->GetLength();
 }
 
 void
-FS4Packet_Shared::Encode(FNET_DataBuffer *dst)
-{
+FS4Packet_Shared::Encode(FNET_DataBuffer *dst) {
     _packet->Encode(dst);
 }
 
 bool
-FS4Packet_Shared::Decode(FNET_DataBuffer *, uint32_t )
-{
+FS4Packet_Shared::Decode(FNET_DataBuffer *, uint32_t ) {
     abort();
 }
 
@@ -508,9 +469,7 @@ FS4Packet_PreSerialized::FS4Packet_PreSerialized(FNET_Packet & packet)
     }
 }
 
-FS4Packet_PreSerialized::~FS4Packet_PreSerialized()
-{
-}
+FS4Packet_PreSerialized::~FS4Packet_PreSerialized() { }
 
 uint32_t
 FS4Packet_PreSerialized::GetPCODE()
@@ -554,14 +513,9 @@ FS4Packet_ERROR::FS4Packet_ERROR()
     : FS4Packet(),
       _errorCode(0),
       _message()
-{
-}
+{ }
 
-
-FS4Packet_ERROR::~FS4Packet_ERROR()
-{
-}
-
+FS4Packet_ERROR::~FS4Packet_ERROR() { }
 
 uint32_t
 FS4Packet_ERROR::GetLength()
@@ -569,14 +523,12 @@ FS4Packet_ERROR::GetLength()
     return 2 * sizeof(uint32_t) + _message.size();
 }
 
-
 void
 FS4Packet_ERROR::Encode(FNET_DataBuffer *dst)
 {
     dst->WriteInt32Fast(_errorCode);
     writeLenString(dst, _message);
 }
-
 
 bool
 FS4Packet_ERROR::Decode(FNET_DataBuffer *src, uint32_t len)
@@ -618,18 +570,13 @@ FS4Packet_DOCSUM::SetBuf(const char *buf, uint32_t len)
     memcpy(_buf.str(), buf, len);
 }
 
-
 FS4Packet_DOCSUM::FS4Packet_DOCSUM()
     : FS4Packet(),
       _gid(),
       _buf()
-{
-}
+{ }
 
-
-FS4Packet_DOCSUM::~FS4Packet_DOCSUM()
-{
-}
+FS4Packet_DOCSUM::~FS4Packet_DOCSUM() { }
 
 void
 FS4Packet_DOCSUM::Encode(FNET_DataBuffer *dst)
@@ -637,7 +584,6 @@ FS4Packet_DOCSUM::Encode(FNET_DataBuffer *dst)
     dst->WriteBytesFast(_gid.get(), document::GlobalId::LENGTH);
     dst->WriteBytesFast(_buf.c_str(), _buf.size());
 }
-
 
 bool
 FS4Packet_DOCSUM::Decode(FNET_DataBuffer *src, uint32_t len)
@@ -654,7 +600,6 @@ FS4Packet_DOCSUM::Decode(FNET_DataBuffer *src, uint32_t len)
     src->DataToDead(len);
     return true;
 }
-
 
 vespalib::string
 FS4Packet_DOCSUM::toString(uint32_t indent) const
@@ -1247,13 +1192,9 @@ FS4Packet_QUERYX::FS4Packet_QUERYX()
       _location(),
       _numStackItems(0),
       _stackDump()
-{
-}
+{ }
 
-
-FS4Packet_QUERYX::~FS4Packet_QUERYX()
-{
-}
+FS4Packet_QUERYX::~FS4Packet_QUERYX() { }
 
 uint32_t
 FS4Packet_QUERYX::GetLength()
@@ -1543,13 +1484,10 @@ FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX()
       _location(),
       _flags(0u),
       _docid()
-{
-}
+{ }
 
 
-FS4Packet_GETDOCSUMSX::~FS4Packet_GETDOCSUMSX()
-{
-}
+FS4Packet_GETDOCSUMSX::~FS4Packet_GETDOCSUMSX() { }
 
 uint32_t
 FS4Packet_GETDOCSUMSX::GetLength()
