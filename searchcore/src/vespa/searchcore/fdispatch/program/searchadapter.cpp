@@ -1,12 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fdispatch.searchadapter");
 #include "searchadapter.h"
-#include <vespa/searchlib/common/packets.h>
-#include <vespa/searchlib/fef/queryproperties.h>
-#include <vespa/searchlib/parsequery/simplequerystack.h>
 #include <vespa/searchcore/fdispatch/search/datasetcollection.h>
 #include <vespa/searchcore/fdispatch/search/dataset_base.h>
 #include <vespa/searchcore/fdispatch/search/nodemanager.h>
@@ -60,6 +54,8 @@ SearchAdapter::createReply()
     }
 
     r.coverage = SearchReply::Coverage(_searchInfo->_activeDocs, _searchInfo->_coverageDocs);
+    r.coverage.setSoonActive(_searchInfo->_soonActiveDocs);
+    r.coverage.setDegradeReason(_searchInfo->_degradeReason);
 
     FastS_hitresult *hitbuf = _queryResult->_hitbuf;
     r.hits.resize(hitcnt);

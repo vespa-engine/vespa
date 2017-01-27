@@ -210,6 +210,7 @@ TEST("test SearchReply::Coverage set and get") {
     EXPECT_EQUAL(7u, c.setActive(7).getActive());
     EXPECT_EQUAL(9u, c.setSoonActive(9).getSoonActive());
     EXPECT_EQUAL(19u, c.setCovered(19).getCovered());
+    EXPECT_EQUAL(5u, c.setDegradeReason(5).getDegradeReason());
     EXPECT_EQUAL(1u, SearchReply::Coverage().degradeMatchPhase().getDegradeReason());
     EXPECT_EQUAL(2u, SearchReply::Coverage().degradeTimeout().getDegradeReason());
     EXPECT_EQUAL(4u, SearchReply::Coverage().degradeAdaptiveTimeout().getDegradeReason());
