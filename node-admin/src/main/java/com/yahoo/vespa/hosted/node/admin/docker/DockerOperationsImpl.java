@@ -281,9 +281,10 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        final Integer containerPid = getContainer(containerName.asString())
+        final Integer containerPid = docker.getContainer(containerName)
                 .flatMap(container -> container.pid)
-                .orElseThrow(() -> new RuntimeException("PID not found for container: " + containerName.asString()));
+                .orElseThrow(() -> new RuntimeException("PID not found for container with name: " +
+                        containerName.asString()));
 
         final List<String> wrappedCommand = new LinkedList<>();
         wrappedCommand.add("sudo");
