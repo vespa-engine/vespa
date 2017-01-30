@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/fastos/file.h>
 
 
 using document::GlobalId;
@@ -36,7 +37,6 @@ using proton::bucketdb::BucketState;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 using vespalib::GenerationHeldBase;
-
 
 namespace proton {
 
@@ -66,11 +66,11 @@ public:
               _header(),
               _headerLen(0u),
               _docIdLimit(0),
-              _datFileSize(0u) {
+              _datFileSize(0u)
+    {
         _headerLen = _header.readFile(*_datFile);
         _datFile->SetPosition(_headerLen);
-        if (!search::ReaderBase::extractFileSize(_header, *_datFile,
-                                                          _datFileSize)) {
+        if (!search::ReaderBase::extractFileSize(_header, *_datFile, _datFileSize)) {
             abort();
         }
         _docIdLimit = _header.getTag(DOCID_LIMIT).asInteger();
@@ -117,12 +117,9 @@ public:
     ShrinkBlockHeld(DocumentMetaStore &dms)
         : GenerationHeldBase(0),
           _dms(dms)
-    {
-    }
+    { }
 
-    virtual
-    ~ShrinkBlockHeld()
-    {
+    ~ShrinkBlockHeld() {
         _dms.unblockShrinkLidSpace();
     }
 };
@@ -1020,7 +1017,6 @@ DocumentMetaStore::getEstimatedSaveByteSize() const
     uint32_t numDocs = getNumUsedLids();
     return minHeaderLen + numDocs * entrySize;
 }
-
 
 }  // namespace proton
 

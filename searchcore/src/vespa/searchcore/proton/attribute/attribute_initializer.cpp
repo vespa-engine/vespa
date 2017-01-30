@@ -6,6 +6,8 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/fastos/file.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_initializer");
 
