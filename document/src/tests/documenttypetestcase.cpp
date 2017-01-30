@@ -7,8 +7,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <sstream>
-
 using document::config_builder::Struct;
 using document::config_builder::Wset;
 using document::config_builder::Array;

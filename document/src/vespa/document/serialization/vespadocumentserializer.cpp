@@ -4,7 +4,6 @@
 #include "annotationserializer.h"
 #include "slime_output_to_vector.h"
 #include "util.h"
-#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
@@ -18,12 +17,10 @@
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/shortfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
-#include <vespa/document/util/compressionconfig.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
