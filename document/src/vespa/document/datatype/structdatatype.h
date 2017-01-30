@@ -58,7 +58,7 @@ public:
     bool hasField(const vespalib::stringref &name) const override;
     bool hasField(int32_t fieldId, int version) const override;
     bool hasField(const Field& f) const {
-        return hasField(f.getId(7), 7) || hasField(f.getId(6), 6);
+        return hasField(f.getId(7), 7);
     }
 
     Field::Set getFieldSet() const override;
