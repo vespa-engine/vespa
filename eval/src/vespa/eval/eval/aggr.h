@@ -13,7 +13,16 @@ namespace eval {
 
 struct BinaryOperation;
 
+/**
+ * Enumeration of all different aggregators that are allowed to be
+ * used in tensor reduce expressions.
+ **/
 enum class Aggr { AVG, COUNT, PROD, SUM, MAX, MIN };
+
+/**
+ * Utiliy class used to map between aggregator enum value and symbolic
+ * name. For example Aggr::AVG <-> "avg".
+ **/
 class AggrNames {
 private:
     static const AggrNames _instance;
@@ -26,6 +35,15 @@ public:
     static const Aggr *from_name(const vespalib::string &name);
 };
 
+/**
+ * Interface defining a general purpose aggregator that can be re-used
+ * to aggregate multiple groups of values. Each number group is
+ * aggregated by calling 'first' once, followed by any number of calls
+ * to 'next', before finally calling 'result' to obtain the
+ * aggregation result. The 'create' function acts as a factory able to
+ * create Aggregator instances for all known aggregator enum values
+ * defined above.
+ **/
 struct Aggregator {
     virtual void first(double value) = 0;
     virtual void next(double value) = 0;
