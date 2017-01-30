@@ -1,18 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
+import java.util.Set;
 
 /**
  * Escapes strings into and out of a format where they only contain printable characters.
  *
  * Need to duplicate escape / unescape of strings as we have in C++ for java version of system states.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+ * @author Haakon Humberset
  */
 public class StringUtilities {
+
     private static Charset UTF8 = Charset.forName("utf8");
 
     private static byte toHex(int val) { return (byte) (val < 10 ? '0' + val : 'a' + (val - 10)); }
@@ -201,4 +206,15 @@ public class StringUtilities {
     public static String quote(Object object) {
         return "'" + object.toString() + "'";
     }
+
+    /** Splits a string on both space and comma */
+    public static Set<String> split(String s) {
+        if (s == null || s.isEmpty()) return Collections.emptySet();
+        ImmutableSet.Builder<String> b = new ImmutableSet.Builder<>();
+        for (String item : s.split("[\\s\\,]"))
+            if ( ! item.isEmpty())
+                b.add(item);
+        return b.build();
+    }
+
 }

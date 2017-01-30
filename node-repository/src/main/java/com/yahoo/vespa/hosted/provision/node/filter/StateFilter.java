@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Collections;
@@ -45,7 +46,7 @@ public class StateFilter extends NodeFilter {
 
     /** Returns a node filter which matches a comma or space-separated list of states */
     public static StateFilter from(String states, NodeFilter next) {
-        return new StateFilter(HostFilter.split(states).stream().map(Node.State::valueOf).collect(Collectors.toSet()), next);
+        return new StateFilter(StringUtilities.split(states).stream().map(Node.State::valueOf).collect(Collectors.toSet()), next);
     }
 
 }

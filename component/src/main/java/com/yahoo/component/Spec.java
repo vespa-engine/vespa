@@ -9,6 +9,7 @@ import static com.yahoo.container.util.Util.firstNonNull;
  * @author tonytv
  */
 final class Spec<VERSION> {
+
     private final VersionHandler<VERSION> versionHandler;
 
     interface VersionHandler<VERSION> {
@@ -21,8 +22,7 @@ final class Spec<VERSION> {
     final ComponentId namespace;
 
     @SuppressWarnings("unchecked")
-    Spec(VersionHandler<VERSION> versionHandler,
-         String name, VERSION version, ComponentId namespace) {
+    Spec(VersionHandler<VERSION> versionHandler, String name, VERSION version, ComponentId namespace) {
         assert (name != null);
         validateName(name);
 
