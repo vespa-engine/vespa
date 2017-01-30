@@ -64,7 +64,6 @@ insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
         field.name = (*itr)->getName();
         field.datatype = (*itr)->getDataType().getId();
         field.id = (*itr)->getId(Document::getNewestSerializationVersion());
-        field.idV6 = (*itr)->getId(6);
         cfgStruct.field.push_back(field);
     }
     cfg.datatype.push_back(DTC::Documenttype::Datatype());

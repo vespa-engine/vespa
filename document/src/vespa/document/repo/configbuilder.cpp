@@ -4,7 +4,7 @@
 
 namespace document {
 namespace config_builder {
-int32_t createFieldId(const vespalib::string &name, int32_t type, int ver) {
+int32_t createFieldId(const vespalib::string &name, int32_t type) {
     StructDataType dummy("dummy", type);
     Field f(name, dummy, true);
     return f.getId(ver);
