@@ -15,19 +15,21 @@ FROM $NODE_ADMIN_FROM_IMAGE
 # Be aware that this Dockerfile is not being used in any pipelines and has no relation to production environments etc.
 # It is here for developers' convenience - it allows building and experimenting with node-admin locally.
 
+CMD $VESPA_HOME/bin/start-services.sh
+
 # Things for convenience.
 RUN yum install -y tcpdump
-ADD root-bashrc /root/.bashrc
+ADD include/root-bashrc /root/.bashrc
 
 # Make config-server aware of node flavor 'docker'.
-ADD node-flavors.xml $VESPA_HOME/conf/configserver-app/node-flavors.xml
+ADD include/node-flavors.xml $VESPA_HOME/conf/configserver-app/node-flavors.xml
 
 # Make config-server also listen to 4080
-ADD http-server.xml $VESPA_HOME/conf/configserver-app/hosted-vespa/http-server.xml
+ADD include/http-server.xml $VESPA_HOME/conf/configserver-app/hosted-vespa/http-server.xml
 
 # Entrypoint for running config server in a container.
-ADD start-config-server.sh $VESPA_HOME/bin/start-config-server.sh
+ADD include/start-config-server.sh $VESPA_HOME/bin/start-config-server.sh
 
 # Included in base image, but here overridden with local modifications.
 # TODO: Update the source instead.
-ADD start-services.sh $VESPA_HOME/bin/start-services.sh
+ADD include/start-services.sh $VESPA_HOME/bin/start-services.sh

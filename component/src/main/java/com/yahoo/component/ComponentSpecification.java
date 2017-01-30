@@ -43,8 +43,7 @@ public final class ComponentSpecification {
     }
 
     public ComponentSpecification(String name, VersionSpecification versionSpecification, ComponentId namespace) {
-        spec = new Spec<>(new VersionHandler(),
-                name, versionSpecification, namespace);
+        spec = new Spec<>(new VersionHandler(), name, versionSpecification, namespace);
         stringValue = spec.createStringValue();
     }
 

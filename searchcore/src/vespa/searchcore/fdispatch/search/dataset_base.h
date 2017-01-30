@@ -8,6 +8,8 @@
 #include <vespa/searchcore/fdispatch/common/timestat.h>
 #include <vespa/searchcore/util/log.h>
 #include <atomic>
+#include <vespa/fastos/time.h>
+#include <vespa/fastos/cond.h>
 
 class FastS_TimeKeeper;
 

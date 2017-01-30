@@ -2,6 +2,7 @@ package com.yahoo.vespa.zookeeper;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.net.HostName;
+import com.yahoo.text.StringUtilities;
 import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 
@@ -58,7 +59,9 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
 
     /** Returns the allowed client host names. If the list is empty any host is allowed. */
     private ImmutableSet<String> findAllowedZooKeeperClients() {
-        // Environment has precedence. Note that this allows setting restrict to "" to turn off client restriction
+        // Environment has precedence. Note that 
+        // - if this is set to "", client restriction is disabled
+        // - this environment variable is a public API - do not change
         String environmentAllowedZooKeeperClients = System.getenv("vespa_zkfacade__restrict");
         if (environmentAllowedZooKeeperClients != null) 
             return ImmutableSet.copyOf(toHostnameSet(environmentAllowedZooKeeperClients));
@@ -67,9 +70,9 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         return ZooKeeperServer.getAllowedClientHostnames();
     }
 
-    private Set<String> toHostnameSet(String commaSeparatedString) {
+    private Set<String> toHostnameSet(String hosatnamesString) {
         Set<String> hostnames = new HashSet<>();
-        for (String hostname : commaSeparatedString.split(",")) {
+        for (String hostname : StringUtilities.split(hosatnamesString)) {
             if ( ! hostname.trim().isEmpty())
                 hostnames.add(hostname.trim());
         }

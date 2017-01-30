@@ -348,6 +348,14 @@ public class DockerImpl implements Docker {
                 .findFirst();
     }
 
+    @Override
+    public Optional<Container> getContainer(ContainerName containerName) {
+        return listAllContainers().stream()
+                .flatMap(this::asContainer)
+                .filter(c -> Objects.equals(containerName, c.name))
+                .findFirst();
+    }
+
     private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
         return inspectContainerCmd(dockerClientContainer.getId())
                 .map(response ->
