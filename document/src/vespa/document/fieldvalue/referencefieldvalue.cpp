@@ -1,0 +1,109 @@
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "referencefieldvalue.h"
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
+
+using vespalib::IllegalArgumentException;
+using vespalib::make_string;
+
+namespace document {
+
+IMPLEMENT_IDENTIFIABLE(ReferenceFieldValue, FieldValue);
+
+ReferenceFieldValue::ReferenceFieldValue()
+    : _dataType(nullptr),
+      _documentId()
+{
+}
+
+ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType)
+    : _dataType(&dataType),
+      _documentId()
+{
+}
+
+ReferenceFieldValue::ReferenceFieldValue(
+        const ReferenceDataType& dataType,
+        const DocumentId& documentId)
+    : _dataType(&dataType),
+      _documentId(documentId)
+{
+    requireIdOfMatchingType(_documentId, _dataType->getTargetType());
+}
+
+ReferenceFieldValue::~ReferenceFieldValue() {
+}
+
+void ReferenceFieldValue::requireIdOfMatchingType(
+        const DocumentId& id, const DocumentType& type)
+{
+    if (id.getDocType() != type.getName()) {
+        throw IllegalArgumentException(
+                make_string("Can't assign document ID '%s' (of type '%s') to "
+                            "reference of document type '%s'",
+                            id.toString().c_str(),
+                            id.getDocType().c_str(),
+                            type.getName().c_str()),
+                VESPA_STRLOC);
+    }
+}
+
+FieldValue& ReferenceFieldValue::assign(const FieldValue& rhs) {
+    const auto* refValueRhs(dynamic_cast<const ReferenceFieldValue*>(&rhs));
+    if (refValueRhs != nullptr) {
+        if (refValueRhs == this) {
+            return *this;
+        }
+        _documentId = refValueRhs->_documentId;
+        _dataType = refValueRhs->_dataType;
+    } else {
+        throw IllegalArgumentException(
+                make_string("Can't assign field value of type %s to "
+                            "a ReferenceFieldValue",
+                            rhs.getDataType()->getName().c_str()),
+                VESPA_STRLOC);
+    }
+    return *this;
+}
+
+ReferenceFieldValue* ReferenceFieldValue::clone() const {
+    assert(_dataType != nullptr);
+    return new ReferenceFieldValue(*_dataType, _documentId);
+}
+
+int ReferenceFieldValue::compare(const FieldValue& rhs) const {
+    const int parentCompare = FieldValue::compare(rhs);
+    if (parentCompare != 0) {
+        return parentCompare;
+    }
+    // Type equality is checked by the parent.
+    const auto& refValueRhs(dynamic_cast<const ReferenceFieldValue&>(rhs));
+    // TODO PERF: DocumentId does currently _not_ expose any methods that
+    // cheaply allow an ordering to be established. Only (in)equality operators.
+    // IdString::operator== is already implemented in the same way as this, so
+    // don't put this code in your inner loops, kids!
+    return _documentId.toString().compare(refValueRhs._documentId.toString());
+}
+
+void ReferenceFieldValue::print(std::ostream& os, bool verbose, const std::string& indent) const {
+    (void) verbose;
+    (void) indent;
+    assert(_dataType != nullptr);
+    os << "ReferenceFieldValue(" << *_dataType << ", DocumentId(";
+    _documentId.print(os, false, "");
+    os << "))";
+}
+
+bool ReferenceFieldValue::hasChanged() const {
+    return true; // TODO
+}
+
+void ReferenceFieldValue::accept(FieldValueVisitor&) {
+}
+
+void ReferenceFieldValue::accept(ConstFieldValueVisitor&) const {
+}
+
+} // document

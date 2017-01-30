@@ -1,0 +1,134 @@
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/document/base/field.h>
+#include <vespa/document/datatype/referencedatatype.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <ostream>
+#include <sstream>
+
+using namespace document;
+
+namespace {
+
+struct Fixture {
+    DocumentType docType{"foo"};
+    ReferenceDataType refType{docType, 12345};
+
+    DocumentType otherDocType{"bar"};
+    ReferenceDataType otherRefType{otherDocType, 54321};
+};
+
+}
+
+using vespalib::IllegalArgumentException;
+
+TEST_F("Default-constructed reference is empty and bound to type", Fixture) {
+    ReferenceFieldValue fv(f.refType);
+    ASSERT_TRUE(fv.getDataType() != nullptr);
+    EXPECT_EQUAL(f.refType, *fv.getDataType());
+    ASSERT_FALSE(fv.hasValidDocumentId());
+}
+
+TEST_F("Reference can be constructed with document ID", Fixture) {
+    ReferenceFieldValue fv(f.refType, DocumentId("id:ns:foo::itsa-me"));
+    ASSERT_TRUE(fv.getDataType() != nullptr);
+    EXPECT_EQUAL(f.refType, *fv.getDataType());
+    ASSERT_TRUE(fv.hasValidDocumentId());
+    EXPECT_EQUAL(DocumentId("id:ns:foo::itsa-me"), fv.getDocumentId());
+}
+
+TEST_F("Newly constructed reference is marked as changed", Fixture) {
+    ReferenceFieldValue fv(f.refType);
+    EXPECT_TRUE(fv.hasChanged());
+
+    ReferenceFieldValue fv2(f.refType, DocumentId("id:ns:foo::itsa-me"));
+    EXPECT_TRUE(fv2.hasChanged());
+}
+
+TEST_F("Exception is thrown if doc ID type does not match referenced document type", Fixture) {
+    EXPECT_EXCEPTION(
+            ReferenceFieldValue(f.refType, DocumentId("id:ns:bar::wario-time")),
+            IllegalArgumentException,
+            "Can't assign document ID 'id:ns:bar::wario-time' (of type 'bar') "
+            "to reference of document type 'foo'");
+}
+
+TEST_F("Exception is thrown if doc ID does not have a type", Fixture) {
+    // Could have had a special cased message for this, but type-less IDs are
+    // not expected to be allowed through the feed pipeline at all. We just
+    // want to ensure it fails in a controlled fashion if encountered.
+    EXPECT_EXCEPTION(
+            ReferenceFieldValue(f.refType, DocumentId("doc:foo:bario")),
+            IllegalArgumentException,
+            "Can't assign document ID 'doc:foo:bario' (of type '') "
+            "to reference of document type 'foo'");
+}
+
+TEST_F("assign()ing another reference field value assigns doc ID and type", Fixture) {
+    ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
+    ReferenceFieldValue dest(f.otherRefType);
+
+    dest.assign(src);
+    ASSERT_TRUE(dest.hasValidDocumentId());
+    EXPECT_EQUAL(src.getDocumentId(), dest.getDocumentId());
+    EXPECT_EQUAL(src.getDataType(), dest.getDataType());
+}
+
+TEST_F("assign()ing a non-reference field value throws exception", Fixture) {
+    ReferenceFieldValue fv(f.refType);
+    EXPECT_EXCEPTION(fv.assign(StringFieldValue("waluigi time!!")),
+                     IllegalArgumentException,
+                     "Can't assign field value of type String to a "
+                     "ReferenceFieldValue");
+}
+
+TEST_F("clone()ing creates new instance with same ID and type", Fixture) {
+    ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
+
+    std::unique_ptr<ReferenceFieldValue> cloned(src.clone());
+    ASSERT_TRUE(cloned.get() != nullptr);
+    EXPECT_EQUAL(src.getDocumentId(), cloned->getDocumentId());
+    EXPECT_EQUAL(src.getDataType(), cloned->getDataType());
+    EXPECT_TRUE(cloned->hasChanged());
+}
+
+TEST_F("compare() orders first on type ID, then on document ID", Fixture) {
+    // foo type has id 12345
+    ReferenceFieldValue fvType1Id1(f.refType, DocumentId("id:ns:foo::AA"));
+    ReferenceFieldValue fvType1Id2(f.refType, DocumentId("id:ns:foo::AB"));
+    // bar type has id 54321
+    ReferenceFieldValue fvType2Id1(f.otherRefType, DocumentId("id:ns:bar::AA"));
+    ReferenceFieldValue fvType2Id2(f.otherRefType, DocumentId("id:ns:bar::AB"));
+
+    // Different types
+    EXPECT_TRUE(fvType1Id1.compare(fvType2Id1) < 0);
+    EXPECT_TRUE(fvType2Id1.compare(fvType1Id1) > 0);
+
+    // Same types, different IDs
+    EXPECT_TRUE(fvType1Id1.compare(fvType1Id2) < 0);
+    EXPECT_TRUE(fvType1Id2.compare(fvType1Id1) > 0);
+
+    // Equal types and ID 
+    EXPECT_EQUAL(0, fvType1Id1.compare(fvType1Id1));
+    EXPECT_EQUAL(0, fvType1Id2.compare(fvType1Id2));
+    EXPECT_EQUAL(0, fvType2Id1.compare(fvType2Id1));
+}
+
+TEST_F("print() includes reference type and document ID", Fixture) {
+    ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
+    std::ostringstream ss;
+    src.print(ss, false, "");
+    EXPECT_EQUAL("ReferenceFieldValue(ReferenceDataType(foo, id 12345), "
+                 "DocumentId(id:ns:foo::yoshi))", ss.str());
+}
+
+// TODO test
+// - modified flag
+//  - false after (de)serialization(?)
+// - (de)serialization
+
+TEST_MAIN() { TEST_RUN_ALL(); }
+

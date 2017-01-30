@@ -15,6 +15,7 @@ vespa_add_library(document_datatypes OBJECT
     structureddatatype.cpp
     urldatatype.cpp
     weightedsetdatatype.cpp
+    referencedatatype.cpp
     DEPENDS
     AFTER
     document_documentconfig

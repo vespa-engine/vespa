@@ -199,7 +199,7 @@ struct DataTypeRepo {
     Repo repo;
     AnnotationTypeRepo annotations;
 
-    DataTypeRepo() : doc_type(0) {}
+    DataTypeRepo() : doc_type(nullptr) {}
     ~DataTypeRepo() { delete doc_type; }
 };
 
@@ -534,7 +534,7 @@ DocumentTypeRepo::~DocumentTypeRepo() {
 
 const DocumentType *DocumentTypeRepo::getDocumentType(int32_t type_id) const {
     const DataTypeRepo *repo = FindPtr(_doc_types, type_id);
-    return repo ? repo->doc_type : 0;
+    return repo ? repo->doc_type : nullptr;
 }
 
 const DocumentType *DocumentTypeRepo::getDocumentType(const stringref &name) const {
@@ -549,26 +549,26 @@ const DocumentType *DocumentTypeRepo::getDocumentType(const stringref &name) con
             return it->second->doc_type;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 const DataType *
 DocumentTypeRepo::getDataType(const DocumentType &doc_type, int32_t id) const {
     const DataTypeRepo *dt_repo = FindPtr(_doc_types, doc_type.getId());
-    return dt_repo ? dt_repo->repo.lookup(id) : 0;
+    return dt_repo ? dt_repo->repo.lookup(id) : nullptr;
 }
 
 const DataType *
 DocumentTypeRepo::getDataType(
         const DocumentType &doc_type, const stringref &name) const {
     const DataTypeRepo *dt_repo = FindPtr(_doc_types, doc_type.getId());
-    return dt_repo ? dt_repo->repo.lookup(name) : 0;
+    return dt_repo ? dt_repo->repo.lookup(name) : nullptr;
 }
 
 const AnnotationType *DocumentTypeRepo::getAnnotationType(
         const DocumentType &doc_type, int32_t id) const {
     const DataTypeRepo *dt_repo = FindPtr(_doc_types, doc_type.getId());
-    return dt_repo ? dt_repo->annotations.lookup(id) : 0;
+    return dt_repo ? dt_repo->annotations.lookup(id) : nullptr;
 }
 
 void DocumentTypeRepo::forEachDocumentType(
