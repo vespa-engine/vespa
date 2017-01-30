@@ -24,7 +24,7 @@ struct DatatypeConfig : DocumenttypesConfig::Documenttype::Datatype {
     void addNestedType(const TypeOrId &t);
 };
 
-int32_t createFieldId(const vespalib::string &name, int32_t type, int ver);
+int32_t createFieldId(const vespalib::string &name, int32_t type);
 
 struct TypeOrId {
     int32_t id;
@@ -61,8 +61,7 @@ struct Struct : DatatypeConfig {
         addNestedType(data_type);
         sstruct.field.resize(sstruct.field.size() + 1);
         sstruct.field.back().name = name;
-        sstruct.field.back().id = createFieldId(name, data_type.id, 7);
-        sstruct.field.back().idV6 = createFieldId(name, data_type.id, 6);
+        sstruct.field.back().id = createFieldId(name, data_type.id);
         sstruct.field.back().datatype = data_type.id;
         return *this;
     }
