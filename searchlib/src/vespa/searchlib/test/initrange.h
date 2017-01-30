@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vector>
 
 namespace search {
 namespace test {

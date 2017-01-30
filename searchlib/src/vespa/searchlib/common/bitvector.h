@@ -19,6 +19,8 @@ class FastOS_FileInterface;
 
 namespace search {
 
+class PartialBitVector;
+
 class BitWord {
 public:
     typedef uint64_t Word;
@@ -243,7 +245,7 @@ public:
     /*
      * Calculate the size of a bitmap when performing file io.
      */
-    size_t getFileBytes(void) const {
+    size_t getFileBytes() const {
         return getFileBytes(size());
     }
 
@@ -260,11 +262,9 @@ public:
      * @param offset            Where bitvector image is located in the file.
      * @param doccount          Number of bits set in bitvector
      */
-    static UP create(Index numberOfElements,
-                     FastOS_FileInterface &file,
-                     int64_t offset,
-                     Index doccount);
+    static UP create(Index numberOfElements, FastOS_FileInterface &file, int64_t offset, Index doccount);
     static UP create(Index start, Index end);
+    static UP create(const BitVector & org, Index start, Index end);
     static UP create(Index numberOfElements);
     static UP create(const BitVector & rhs);
     static UP create(Index newSize, Index newCapacity, GenerationHolder &generationHolder);
@@ -284,6 +284,7 @@ protected:
     static size_t numActiveBytes(Index start, Index end) { return numActiveWords(start, end) * sizeof(Word); }
 
 private:
+    friend PartialBitVector;
     const Word * getWordIndex(Index index) const { return static_cast<const Word *>(getStart()) + wordNum(index); }
     Word * getWordIndex(Index index) { return static_cast<Word *>(getStart()) + wordNum(index); }
     const Word * getActiveStart() const { return getWordIndex(getStartIndex()); }
@@ -297,7 +298,7 @@ private:
     void setGuardBit() { setBit(size()); }
     VESPA_DLL_LOCAL void repairEnds();
     VESPA_DLL_LOCAL static Index internalCount(const Word *tarr, size_t sz);
-    Index count(void) const;
+    Index count() const;
     bool hasTrueBitsInternal() const;
     template <typename FunctionType, typename WordConverter>
     void

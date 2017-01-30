@@ -161,6 +161,12 @@ SourceBlenderSearch::~SourceBlenderSearch()
     }
 }
 
+void
+SourceBlenderSearch::setChild(size_t index, SearchIterator::UP child) {
+    assert(_sources[_children[index]] == NULL);
+    _sources[_children[index]] = child.release();
+}
+
 SourceBlenderSearch *
 SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSelector,
                             const Children &children, bool strict)

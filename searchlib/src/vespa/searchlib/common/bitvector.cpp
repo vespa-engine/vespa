@@ -78,7 +78,7 @@ BitVector::init(void * buf,  Index start, Index end)
 }
 
 void
-BitVector::clear(void)
+BitVector::clear()
 {
     memset(getActiveStart(), '\0', getActiveBytes());
     setBit(size()); // Guard bit
@@ -132,7 +132,7 @@ BitVector::setInterval(Index start, Index end)
 }
 
 BitVector::Index
-BitVector::count(void) const
+BitVector::count() const
 {
     // Subtract by one to compensate for guard bit
     return internalCount(getActiveStart(), numActiveWords()) - 1;
@@ -251,7 +251,7 @@ BitVector::operator==(const BitVector &rhs) const
 }
 
 bool
-BitVector::hasTrueBitsInternal(void) const
+BitVector::hasTrueBitsInternal() const
 {
     Index bitVectorSizeL1(numActiveWords() - 1);
     const Word *words(getActiveStart());
@@ -336,6 +336,14 @@ BitVector::create(Index start, Index end)
     return (start == 0)
            ? create(end)
            : UP(new PartialBitVector(start, end));
+}
+
+BitVector::UP
+BitVector::create(const BitVector & org, Index start, Index end)
+{
+    return (start == 0)
+           ? create(end)
+           : UP(new PartialBitVector(org, start, end));
 }
 
 BitVector::UP

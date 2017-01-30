@@ -107,17 +107,19 @@ queryeval::SearchIterator::UP BitVectorIterator::create(const BitVector *const b
     }
 }
 
-    BitVector::UP BitVectorIterator::get_hits(uint32_t begin_id) {
-        return SearchIterator::get_hits(begin_id);
-    }
+BitVector::UP BitVectorIterator::get_hits(uint32_t begin_id) {
+    return BitVector::create(_bv, begin_id, getEndId());
+}
 
-    void BitVectorIterator::or_hits_into(BitVector &result, uint32_t begin_id) {
-        SearchIterator::or_hits_into(result, begin_id);
-    }
+void BitVectorIterator::or_hits_into(BitVector &result, uint32_t begin_id) {
+    (void) begin_id;
+    result.orWith(_bv);
+}
 
-    void BitVectorIterator::and_hits_into(BitVector &result, uint32_t begin_id) {
-        SearchIterator::and_hits_into(result, begin_id);
-    }
+void BitVectorIterator::and_hits_into(BitVector &result, uint32_t begin_id) {
+    (void) begin_id;
+    result.andWith(_bv);
+}
 
 
 } // namespace search

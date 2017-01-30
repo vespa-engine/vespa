@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "searchiterator.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/classname.h>
-
-LOG_SETUP(".searchbase");
+#include <vespa/searchlib/common/bitvector.h>
 
 namespace search {
 namespace queryeval {
@@ -17,18 +13,13 @@ namespace queryeval {
 SearchIterator::SearchIterator() :
     _docid(0),
     _endid(0)
-{
-}
+{ }
 
 void
 SearchIterator::resetRange()
 {
     _docid = 0;
     _endid = 0;
-}
-
-SearchIterator::~SearchIterator()
-{
 }
 
 void
@@ -41,7 +32,7 @@ SearchIterator::initRange(uint32_t beginid, uint32_t endid)
 BitVector::UP
 SearchIterator::get_hits(uint32_t begin_id)
 {
-    BitVector::UP result(BitVector::create(getEndId()));
+    BitVector::UP result(BitVector::create(begin_id, getEndId()));
     uint32_t docid = std::max(begin_id, getDocId());
     while (!isAtEnd(docid)) {
         if (seek(docid)) {

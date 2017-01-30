@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/multisearch.h>
-#include <vespa/searchlib/queryeval/unpackinfo.h>
+#include "multisearch.h"
+#include "unpackinfo.h"
+#include <vespa/searchlib/common/bitvector.h>
 
 namespace search {
 namespace queryeval {

@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vector>
 
 namespace search {
 namespace test {
@@ -37,7 +38,7 @@ private:
     DocIds _docIds;
     DocIds _expectedAnd;
     DocIds _expectedOr;
-    BitVector::UP _everyOddBitSet;
+    std::unique_ptr<BitVector> _everyOddBitSet;
 };
 
 }
