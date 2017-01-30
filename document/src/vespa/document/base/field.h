@@ -20,9 +20,9 @@ namespace document {
 
 class FieldValue;
 
-class Field : public vespalib::FieldBase,
-              public vespalib::Identifiable,
-              public FieldSet
+class Field final : public vespalib::FieldBase,
+                    public vespalib::Identifiable,
+                    public FieldSet
 {
     const DataType *_dataType;
 
@@ -61,8 +61,7 @@ public:
         _fieldIdV6(0),
         _fieldId(0),
         _isHeaderField(false)
-    {
-    }
+    { }
 
     /**
      * Creates a completely specified field instance. Field ids are generated
@@ -89,8 +88,8 @@ public:
     bool isHeaderField() const { return _isHeaderField; }
 
     vespalib::string toString(bool verbose=false) const;
-    bool contains(const FieldSet& fields) const;
-    Type getType() const { return FIELD; }
+    bool contains(const FieldSet& fields) const override;
+    Type getType() const override { return FIELD; }
 private:
     int calculateIdV6();
     int calculateIdV7();
