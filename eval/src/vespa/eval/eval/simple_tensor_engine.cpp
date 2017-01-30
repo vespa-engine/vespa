@@ -9,6 +9,41 @@
 namespace vespalib {
 namespace eval {
 
+namespace {
+
+struct Op2Aggr : Aggregator {
+    double res = 0.0;
+    const BinaryOperation &op;
+    Op2Aggr(const BinaryOperation &op_in) : op(op_in) {}
+    void first(double value) override { res = value; }
+    void next(double value) override { res = op.eval(res, value); }
+    double result() const override { return res; }    
+};
+
+const SimpleTensor &to_simple(const Tensor &tensor) {
+    assert(&tensor.engine() == &SimpleTensorEngine::ref());
+    return static_cast<const SimpleTensor&>(tensor);
+}
+
+const SimpleTensor &to_simple(const Value &value, Stash &stash) {
+    auto tensor = value.as_tensor();
+    if (tensor) {
+        assert(&tensor->engine() == &SimpleTensorEngine::ref());
+        return static_cast<const SimpleTensor &>(*tensor);
+    }
+    return stash.create<SimpleTensor>(value.as_double());
+}
+
+const Value &to_value(std::unique_ptr<SimpleTensor> tensor, Stash &stash) {
+    if (tensor->type().is_double()) {
+        assert(tensor->cells().size() == 1u);
+        return stash.create<DoubleValue>(tensor->cells()[0].value);
+    }
+    return stash.create<TensorValue>(std::move(tensor));
+}
+
+} // namespace vespalib::eval::<unnamed>
+
 const SimpleTensorEngine SimpleTensorEngine::_engine;
 
 ValueType
@@ -78,70 +113,66 @@ SimpleTensorEngine::to_spec(const Tensor &tensor) const
     return spec;
 }
 
-const SimpleTensor &to_simple(const Value &value, Stash &stash) {
-    auto tensor = value.as_tensor();
-    if (tensor) {
-        assert(&tensor->engine() == &SimpleTensorEngine::ref());
-        return static_cast<const SimpleTensor &>(*tensor);
-    }
-    return stash.create<SimpleTensor>(value.as_double());
-}
-
 std::unique_ptr<eval::Tensor>
 SimpleTensorEngine::create(const TensorSpec &spec) const
 {
     return SimpleTensor::create(spec);
 }
 
+//-----------------------------------------------------------------------------
+
 const Value &
 SimpleTensorEngine::reduce(const eval::Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
-    assert(&tensor.engine() == this);
-    const SimpleTensor &simple_tensor = static_cast<const SimpleTensor&>(tensor);
-    auto result = simple_tensor.reduce(op, dimensions.empty() ? simple_tensor.type().dimension_names() : dimensions);
-    if (result->type().is_double()) {
-        assert(result->cells().size() == 1u);
-        return stash.create<DoubleValue>(result->cells()[0].value);
-    }
-    return stash.create<TensorValue>(std::move(result));
+    Op2Aggr aggr(op);
+    return to_value(to_simple(tensor).reduce(aggr, dimensions), stash);
 }
 
 const Value &
 SimpleTensorEngine::map(const UnaryOperation &op, const eval::Tensor &a, Stash &stash) const
 {
-    assert(&a.engine() == this);
-    const SimpleTensor &simple_a = static_cast<const SimpleTensor&>(a);    
-    auto result = SimpleTensor::map(op, simple_a);
-    return stash.create<TensorValue>(std::move(result));
+    return to_value(to_simple(a).map([&op](double x){ return op.eval(x); }), stash);
 }
 
 const Value &
 SimpleTensorEngine::apply(const BinaryOperation &op, const eval::Tensor &a, const eval::Tensor &b, Stash &stash) const
 {
-    assert(&a.engine() == this);
-    assert(&b.engine() == this);
-    const SimpleTensor &simple_a = static_cast<const SimpleTensor&>(a);
-    const SimpleTensor &simple_b = static_cast<const SimpleTensor&>(b);
-    auto result = SimpleTensor::join(op, simple_a, simple_b);
-    return stash.create<TensorValue>(std::move(result));
+    return to_value(SimpleTensor::join(to_simple(a), to_simple(b), [&op](double x, double y){ return op.eval(x, y); }), stash);
+}
+
+//-----------------------------------------------------------------------------
+
+const Value &
+SimpleTensorEngine::map(const Value &a, const std::function<double(double)> &function, Stash &stash) const
+{
+    return to_value(to_simple(a, stash).map(function), stash);
+}
+
+const Value &
+SimpleTensorEngine::join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const
+{
+    return to_value(SimpleTensor::join(to_simple(a, stash), to_simple(b, stash), function), stash);
+}
+
+const Value &
+SimpleTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
+{
+    return to_value(to_simple(a, stash).reduce(Aggregator::create(aggr, stash), dimensions), stash);
 }
 
 const Value &
 SimpleTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
 {
-    const SimpleTensor &simple_a = to_simple(a, stash);
-    const SimpleTensor &simple_b = to_simple(b, stash);
-    auto result = SimpleTensor::concat(simple_a, simple_b, dimension);
-    return stash.create<TensorValue>(std::move(result));
+    return to_value(SimpleTensor::concat(to_simple(a, stash), to_simple(b, stash), dimension), stash);
 }
 
 const Value &
 SimpleTensorEngine::rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const
 {
-    const SimpleTensor &simple_a = to_simple(a, stash);
-    auto result = simple_a.rename(from, to);
-    return stash.create<TensorValue>(std::move(result));
+    return to_value(to_simple(a, stash).rename(from, to), stash);
 }
+
+//-----------------------------------------------------------------------------
 
 } // namespace vespalib::eval
 } // namespace vespalib

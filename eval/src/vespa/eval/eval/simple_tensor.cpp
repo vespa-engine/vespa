@@ -428,7 +428,17 @@ SimpleTensor::SimpleTensor(const ValueType &type_in, Cells &&cells_in)
 }
 
 std::unique_ptr<SimpleTensor>
-SimpleTensor::reduce(const BinaryOperation &op, const std::vector<vespalib::string> &dimensions) const
+SimpleTensor::map(const std::function<double(double)> &function) const
+{
+    Cells cells(_cells);
+    for (auto &cell: cells) {
+        cell.value = function(cell.value);
+    }
+    return std::make_unique<SimpleTensor>(_type, std::move(cells));
+}
+
+std::unique_ptr<SimpleTensor>
+SimpleTensor::reduce(Aggregator &aggr, const std::vector<vespalib::string> &dimensions) const
 {
     ValueType result_type = _type.reduce(dimensions);
     Builder builder(result_type);
@@ -436,11 +446,11 @@ SimpleTensor::reduce(const BinaryOperation &op, const std::vector<vespalib::stri
     View view(*this, selector);
     for (View::EqualRange range = view.first_range(); !range.empty(); range = view.next_range(range)) {
         auto pos = range.begin();
-        double value = (pos++)->get().value;
+        aggr.first((pos++)->get().value);
         for (; pos != range.end(); ++pos) {
-            value = op.eval(value, pos->get().value);
+            aggr.next(pos->get().value);
         }
-        builder.set(select(range.begin()->get().address, selector), value);
+        builder.set(select(range.begin()->get().address, selector), aggr.result());
     }
     return builder.build();
 }
@@ -498,17 +508,7 @@ SimpleTensor::equal(const SimpleTensor &a, const SimpleTensor &b)
 }
 
 std::unique_ptr<SimpleTensor>
-SimpleTensor::map(const UnaryOperation &op, const SimpleTensor &a)
-{
-    Cells cells(a.cells());
-    for (auto &cell: cells) {
-        cell.value = op.eval(cell.value);
-    }
-    return std::make_unique<SimpleTensor>(a.type(), std::move(cells));
-}
-
-std::unique_ptr<SimpleTensor>
-SimpleTensor::join(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b)
+SimpleTensor::join(const SimpleTensor &a, const SimpleTensor &b, const std::function<double(double,double)> &function)
 {
     ValueType result_type = ValueType::join(a.type(), b.type());
     Builder builder(result_type);
@@ -519,7 +519,7 @@ SimpleTensor::join(const BinaryOperation &op, const SimpleTensor &a, const Simpl
         for (const auto &ref_a: matcher.get_a()) {
             for (const auto &ref_b: matcher.get_b()) {
                 builder.set(select(ref_a.get().address, ref_b.get().address, type_info.combine),
-                            op.eval(ref_a.get().value, ref_b.get().value));
+                            function(ref_a.get().value, ref_b.get().value));
             }
         }
     }

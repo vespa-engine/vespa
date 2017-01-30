@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "value_type.h"
 #include "tensor_function.h"
+#include "aggr.h"
 
 namespace vespalib {
 
@@ -37,6 +38,7 @@ struct TensorEngine
     using Value = eval::Value;
     using BinaryOperation = eval::BinaryOperation;
     using UnaryOperation = eval::UnaryOperation;
+    using Aggr = eval::Aggr;
 
     virtual ValueType type_of(const Tensor &tensor) const = 0;
     virtual bool equal(const Tensor &a, const Tensor &b) const = 0;
@@ -51,6 +53,9 @@ struct TensorEngine
     virtual const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const = 0;
 
     // havardpe: new API, WIP
+    virtual const Value &map(const Value &a, const std::function<double(double)> &function, Stash &stash) const = 0;
+    virtual const Value &join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const = 0;
+    virtual const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;
     virtual const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const = 0;
     virtual const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
 

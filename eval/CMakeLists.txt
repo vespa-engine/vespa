@@ -7,6 +7,7 @@ vespa_define_module(
     src/apps/eval_expr
 
     TESTS
+    src/tests/eval/aggr
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
     src/tests/eval/function

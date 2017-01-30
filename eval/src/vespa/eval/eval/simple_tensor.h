@@ -9,6 +9,7 @@
 #include "value_type.h"
 #include "tensor.h"
 #include "tensor_spec.h"
+#include "aggr.h"
 
 namespace vespalib {
 namespace eval {
@@ -74,12 +75,12 @@ public:
     SimpleTensor(const ValueType &type_in, Cells &&cells_in);
     const ValueType &type() const { return _type; }
     const Cells &cells() const { return _cells; }
-    std::unique_ptr<SimpleTensor> reduce(const BinaryOperation &op, const std::vector<vespalib::string> &dimensions) const;
+    std::unique_ptr<SimpleTensor> map(const std::function<double(double)> &function) const;
+    std::unique_ptr<SimpleTensor> reduce(Aggregator &aggr, const std::vector<vespalib::string> &dimensions) const;
     std::unique_ptr<SimpleTensor> rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const;
     static std::unique_ptr<SimpleTensor> create(const TensorSpec &spec);
     static bool equal(const SimpleTensor &a, const SimpleTensor &b);
-    static std::unique_ptr<SimpleTensor> map(const UnaryOperation &op, const SimpleTensor &a);
-    static std::unique_ptr<SimpleTensor> join(const BinaryOperation &op, const SimpleTensor &a, const SimpleTensor &b);
+    static std::unique_ptr<SimpleTensor> join(const SimpleTensor &a, const SimpleTensor &b, const std::function<double(double,double)> &function);
     static std::unique_ptr<SimpleTensor> concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension);
 };
 
