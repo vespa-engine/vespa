@@ -20,6 +20,7 @@ vespa_define_module(
     src/tests/closure
     src/tests/component
     src/tests/compress
+    src/tests/data/simple_buffer
     src/tests/delegatelist
     src/tests/dotproduct
     src/tests/dual_merge_director
