@@ -5,22 +5,13 @@
 #include "iattributesavetarget.h"
 #include "iattributefilewriter.h"
 
-namespace vespalib
-{
+class FastOS_FileInterface;
 
-class GenericHeader;
+namespace vespalib { class GenericHeader; }
 
-}
+namespace search {
 
-namespace search
-{
-
-namespace common
-{
-
-class FileHeaderContext;
-
-}
+namespace common { class FileHeaderContext; }
 
 class TuneFileAttributes;
 
@@ -30,7 +21,7 @@ class TuneFileAttributes;
  */
 class AttributeFileWriter : public IAttributeFileWriter
 {
-    FastOS_File _file;
+    std::unique_ptr<FastOS_FileInterface> _file;
     const TuneFileAttributes &_tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
     const IAttributeSaveTarget::Config &_cfg;
@@ -42,8 +33,7 @@ class AttributeFileWriter : public IAttributeFileWriter
     void writeHeader();
 public:
     AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
-                        const search::common::FileHeaderContext &
-                        fileHeaderContext,
+                        const search::common::FileHeaderContext & fileHeaderContext,
                         const IAttributeSaveTarget::Config &cfg,
                         const vespalib::string &desc);
     ~AttributeFileWriter();

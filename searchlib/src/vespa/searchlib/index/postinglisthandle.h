@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/index/postinglistcounts.h>
+#include <memory>
 
 namespace search { class BitVector; }
 namespace search { namespace queryeval { class SearchIterator; } }
@@ -34,7 +35,7 @@ public:
     void *_allocMem;		// What to free after posting list
     size_t _allocSize;		// Size of allocated memory
 
-    PostingListHandle(void)
+    PostingListHandle()
     : _file(NULL),
       _bitOffset(0),
       _bitLength(0),
@@ -44,10 +45,9 @@ public:
       _mem(NULL),
       _allocMem(NULL),
       _allocSize(0)
-    {
-    }
+    { }
 
-    ~PostingListHandle(void)
+    ~PostingListHandle()
     {
         if (_allocMem != NULL)
             free(_allocMem);
@@ -69,9 +69,7 @@ public:
     /**
      * Drop value portion of handle.
      */
-    void
-    drop(void)
-    {
+    void drop() {
         _firstSegment = 0;
         _numSegments = 0;
         _bitOffsetMem = 0;

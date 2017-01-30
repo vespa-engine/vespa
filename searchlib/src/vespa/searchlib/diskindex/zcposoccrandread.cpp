@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.zcposoccrandread");
-#include <vespa/searchlib/common/bitvector.h>
 #include "zcposoccrandread.h"
 #include "zcposocciterators.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/fastos/file.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.zcposoccrandread");
 
 using search::bitcompression::EG2PosOccEncodeContext;
 using search::bitcompression::EGPosOccEncodeContext;
@@ -21,24 +21,21 @@ using search::index::PostingListCounts;
 using search::index::PostingListHandle;
 using search::ComprFileReadContext;
 
-namespace
-{
+namespace {
 
 vespalib::string myId4("Zc.4");
 vespalib::string myId5("Zc.5");
 
 }
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 using vespalib::getLastErrorString;
 
-ZcPosOccRandRead::ZcPosOccRandRead(void)
-    : _file(),
+ZcPosOccRandRead::ZcPosOccRandRead()
+    : _file(new FastOS_File()),
       _fileSize(0),
       _minChunkDocs(1 << 30),
       _minSkipDocs(64),
@@ -48,13 +45,12 @@ ZcPosOccRandRead::ZcPosOccRandRead(void)
       _headerBitSize(0),
       _fieldsParams(),
       _dynamicK(true)
-{
-}
+{ }
 
 
-ZcPosOccRandRead::~ZcPosOccRandRead(void)
+ZcPosOccRandRead::~ZcPosOccRandRead()
 {
-    if (_file.IsOpened())
+    if (_file->IsOpened())
         close();
 }
 
@@ -128,7 +124,7 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
     // Align start at 64-bit boundary
     startOffset -= (startOffset & 7);
 
-    void *mapPtr = _file.MemoryMapPtr(startOffset);
+    void *mapPtr = _file->MemoryMapPtr(startOffset);
     if (mapPtr != NULL) {
         handle._mem = mapPtr;
         handle._allocMem = NULL;
@@ -143,8 +139,7 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
         size_t padBefore;
         size_t padAfter;
         size_t padExtraAfter;		// Decode prefetch space
-        _file.DirectIOPadding(startOffset, vectorLen,
-                              padBefore, padAfter);
+        _file->DirectIOPadding(startOffset, vectorLen, padBefore, padAfter);
         padExtraAfter = 0;
         if (padAfter < 16)
             padExtraAfter = 16 - padAfter;
@@ -153,18 +148,16 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
         void *mallocStart = NULL;
         void *alignedBuffer = NULL;
         if (mallocLen > 0) {
-            alignedBuffer = _file.AllocateDirectIOBuffer(mallocLen,
-                    mallocStart);
+            alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen, mallocStart);
             assert(mallocStart != NULL);
             assert(endOffset + padAfter + padExtraAfter <= _fileSize);
-            _file.ReadBuf(alignedBuffer,
-                          padBefore + vectorLen + padAfter,
-                          startOffset - padBefore);
+            _file->ReadBuf(alignedBuffer,
+                           padBefore + vectorLen + padAfter,
+                           startOffset - padBefore);
         }
         // Zero decode prefetch memory to avoid uninitialized reads
         if (padExtraAfter > 0) {
-            memset(reinterpret_cast<char *>(alignedBuffer) +
-                   padBefore + vectorLen + padAfter,
+            memset(reinterpret_cast<char *>(alignedBuffer) + padBefore + vectorLen + padAfter,
                    '\0',
                    padExtraAfter);
         }
@@ -181,16 +174,16 @@ ZcPosOccRandRead::
 open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead)
 {
     if (tuneFileRead.getWantMemoryMap()) {
-        _file.enableMemoryMap(tuneFileRead.getMemoryMapFlags());
+        _file->enableMemoryMap(tuneFileRead.getMemoryMapFlags());
     } else  if (tuneFileRead.getWantDirectIO())
-        _file.EnableDirectIO();
-    bool res = _file.OpenReadOnly(name.c_str());
+        _file->EnableDirectIO();
+    bool res = _file->OpenReadOnly(name.c_str());
     if (!res) {
         LOG(error, "could not open %s: %s",
-            _file.GetFileName(), getLastErrorString().c_str());
+            _file->GetFileName(), getLastErrorString().c_str());
         return false;
     }
-    _fileSize = _file.GetSize();
+    _fileSize = _file->GetSize();
 
     readHeader();
     return true;
@@ -198,28 +191,28 @@ open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead)
 
 
 bool
-ZcPosOccRandRead::close(void)
+ZcPosOccRandRead::close()
 {
-    _file.Close();
+    _file->Close();
     return true;
 }
 
 
 void
-ZcPosOccRandRead::readHeader(void)
+ZcPosOccRandRead::readHeader()
 {
     EGPosOccDecodeContext<true> d(&_fieldsParams);
     ComprFileReadContext drc(d);
 
-    drc.setFile(&_file);
-    drc.setFileSize(_file.GetSize());
+    drc.setFile(_file.get());
+    drc.setFileSize(_file->GetSize());
     drc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     drc.readComprBuffer();
     d.setReadContext(&drc);
 
     vespalib::FileHeader header;
-    d.readHeader(header, _file.getSize());
+    d.readHeader(header, _file->getSize());
     uint32_t headerLen = header.getSize();
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
@@ -249,14 +242,14 @@ ZcPosOccRandRead::readHeader(void)
 
 
 const vespalib::string &
-ZcPosOccRandRead::getIdentifier(void)
+ZcPosOccRandRead::getIdentifier()
 {
     return myId5;
 }
 
 
 const vespalib::string &
-ZcPosOccRandRead::getSubIdentifier(void)
+ZcPosOccRandRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;
     EGPosOccDecodeContext<true> d(&fieldsParams);
@@ -265,7 +258,7 @@ ZcPosOccRandRead::getSubIdentifier(void)
 
 
 Zc4PosOccRandRead::
-Zc4PosOccRandRead(void)
+Zc4PosOccRandRead()
     : ZcPosOccRandRead()
 {
     _dynamicK = false;
@@ -316,22 +309,21 @@ createIterator(const PostingListCounts &counts,
     }
 }
 
-
 void
-Zc4PosOccRandRead::readHeader(void)
+Zc4PosOccRandRead::readHeader()
 {
     EG2PosOccDecodeContext<true> d(&_fieldsParams);
     ComprFileReadContext drc(d);
 
-    drc.setFile(&_file);
-    drc.setFileSize(_file.GetSize());
+    drc.setFile(_file.get());
+    drc.setFileSize(_file->GetSize());
     drc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     drc.readComprBuffer();
     d.setReadContext(&drc);
 
     vespalib::FileHeader header;
-    d.readHeader(header, _file.getSize());
+    d.readHeader(header, _file->getSize());
     uint32_t headerLen = header.getSize();
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
@@ -359,22 +351,19 @@ Zc4PosOccRandRead::readHeader(void)
     _headerBitSize = d.getReadOffset();
 }
 
-
 const vespalib::string &
-Zc4PosOccRandRead::getIdentifier(void)
+Zc4PosOccRandRead::getIdentifier()
 {
     return myId4;
 }
 
-
 const vespalib::string &
-Zc4PosOccRandRead::getSubIdentifier(void)
+Zc4PosOccRandRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;
     EG2PosOccDecodeContext<true> d(&fieldsParams);
     return d.getIdentifier();
 }
-
 
 } // namespace diskindex
 

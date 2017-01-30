@@ -14,6 +14,7 @@
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/fastos/file.h>
 #include <iostream>
 #include <vespa/log/log.h>
 LOG_SETUP("postinglistattribute_test");
@@ -21,7 +22,7 @@ LOG_SETUP("postinglistattribute_test");
 using std::shared_ptr;
 
 bool
-FastOS_UNIX_File::Sync(void)
+FastOS_UNIX_File::Sync()
 {
     return true;
 }

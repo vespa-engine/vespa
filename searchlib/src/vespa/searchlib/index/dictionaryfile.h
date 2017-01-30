@@ -5,9 +5,6 @@
 #include "postinglisthandle.h"
 #include "postinglistcountfile.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <map>
-#include <vector>
-#include <string>
 
 class FastOS_FileInterface;
 
@@ -24,7 +21,6 @@ class DictionaryFileSeqRead : public PostingListCountFileSeqRead
 {
 public:
     DictionaryFileSeqRead() { }
-
     virtual ~DictionaryFileSeqRead();
 
     /**
@@ -53,8 +49,7 @@ class DictionaryFileSeqWrite : public PostingListCountFileSeqWrite
 protected:
 public:
     DictionaryFileSeqWrite() { }
-
-    virtual~DictionaryFileSeqWrite();
+    virtual ~DictionaryFileSeqWrite();
 
     /**
      * Write word and counts.  Only nonzero counts should be supplied.
@@ -73,7 +68,6 @@ protected:
     bool _memoryMapped;
 public:
     DictionaryFileRandRead();
-
     virtual ~DictionaryFileRandRead();
 
     virtual bool lookup(const vespalib::stringref &word, uint64_t &wordNum,
@@ -91,7 +85,7 @@ public:
 
     bool getMemoryMapped() const { return _memoryMapped; }
 
-    virtual uint64_t getNumWordIds(void) const = 0;
+    virtual uint64_t getNumWordIds() const = 0;
 protected:
     void afterOpen(FastOS_FileInterface &file);
 };
