@@ -6,37 +6,14 @@ LOG_SETUP("unique_store_test");
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vespa/searchlib/datastore/unique_store.hpp>
+#include <vespa/searchlib/test/datastore/memstats.h>
 #include <vector>
 
 using namespace search::datastore;
 using search::MemoryUsage;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
-
-struct MemStats
-{
-    size_t _used;
-    size_t _hold;
-    size_t _dead;
-    MemStats() : _used(0), _hold(0), _dead(0) {}
-    MemStats(const MemoryUsage &usage)
-        : _used(usage.usedBytes()),
-          _hold(usage.allocatedBytesOnHold()),
-          _dead(usage.deadBytes()) {}
-    MemStats &used(size_t val) { _used += val; return *this; }
-    MemStats &hold(size_t val) { _hold += val; return *this; }
-    MemStats &dead(size_t val) { _dead += val; return *this; }
-    MemStats &holdToDead(size_t val) {
-        decHold(val);
-        _dead += val;
-        return *this;
-    }
-    MemStats &decHold(size_t val) {
-        ASSERT_TRUE(_hold >= val);
-        _hold -= val;
-        return *this;
-    }
-};
+using MemStats = search::datastore::test::MemStats;
 
 template <typename EntryT, typename RefT = EntryRefT<22> >
 struct Fixture
@@ -110,6 +87,7 @@ struct Fixture
         return EntryRef();
     }
     void trimHoldLists() {
+        store.freeze();
         store.transferHoldLists(generation++);
         store.trimHoldLists(generation);
     }

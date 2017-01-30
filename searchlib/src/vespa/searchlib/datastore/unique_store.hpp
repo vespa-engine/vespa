@@ -14,10 +14,12 @@
 namespace search {
 namespace datastore {
 
+constexpr size_t NUMCLUSTERS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
+
 template <typename EntryT, typename RefT>
 UniqueStore<EntryT, RefT>::UniqueStore()
     : _store(),
-      _typeHandler(1, 2u, RefT::offsetSize(), 1024u),
+      _typeHandler(1, 2u, RefT::offsetSize(), NUMCLUSTERS_FOR_NEW_UNIQUESTORE_BUFFER),
       _typeId(0),
       _dict()
 {
@@ -38,14 +40,14 @@ EntryRef
 UniqueStore<EntryT, RefT>::add(const EntryType &value)
 {
     Compare comp(_store, value);
-    auto itr = _dict.lowerBound(RefType(), WrappedCompare(comp));
+    auto itr = _dict.lowerBound(RefType(), comp);
     if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
         uint32_t refCount = itr.getData();
         assert(refCount != std::numeric_limits<uint32_t>::max());
         itr.writeData(refCount + 1);
         return itr.getKey();
     } else {
-        EntryRef newRef = _store.template allocator<WrappedEntry>(_typeId).alloc(value).ref;
+        EntryRef newRef = _store.template allocator<EntryType>(_typeId).alloc(value).ref;
         _dict.insert(itr, newRef, 1u);
         return newRef;
     }
@@ -55,7 +57,7 @@ template <typename EntryT, typename RefT>
 EntryRef
 UniqueStore<EntryT, RefT>::move(EntryRef ref)
 {
-    return _store.template allocator<WrappedEntry>(_typeId).alloc(getWrapped(ref)).ref;
+    return _store.template allocator<EntryType>(_typeId).alloc(get(ref)).ref;
 }
 
 template <typename EntryT, typename RefT>
@@ -63,8 +65,9 @@ void
 UniqueStore<EntryT, RefT>::remove(EntryRef ref)
 {
     assert(ref.valid());
-    Compare comp(_store);
-    auto itr = _dict.lowerBound(ref, WrappedCompare(comp));
+    EntryType unused;
+    Compare comp(_store, unused);
+    auto itr = _dict.lowerBound(ref, comp);
     if (itr.valid() && itr.getKey() == ref) {
         uint32_t refCount = itr.getData();
         if (refCount > 1) {
