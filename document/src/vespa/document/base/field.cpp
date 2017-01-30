@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "field.h"
-
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -14,31 +12,17 @@ Field::Field(const vespalib::stringref & name, int fieldId,
              const DataType& dataType, bool headerField)
     : FieldBase(name),
       _dataType(&dataType),
-      _fieldIdV6(fieldId),
       _fieldId(fieldId),
       _isHeaderField(headerField)
-{
-}
-
-Field::Field(const vespalib::stringref & name, int fieldId, int fieldIdV6,
-             const DataType& dataType, bool headerField)
-    : FieldBase(name),
-      _dataType(&dataType),
-      _fieldIdV6(fieldIdV6),
-      _fieldId(fieldId),
-      _isHeaderField(headerField)
-{
-}
+{ }
 
 Field::Field(const vespalib::stringref & name,
              const DataType& dataType, bool headerField)
     : FieldBase(name),
       _dataType(&dataType),
-      _fieldIdV6(calculateIdV6()),
       _fieldId(calculateIdV7()),
       _isHeaderField(headerField)
-{
-}
+{ }
 
 FieldValue::UP
 Field::createValue() const {
@@ -85,26 +69,14 @@ Field::contains(const FieldSet& fields) const
 }
 
 int
-Field::calculateIdV6()
-{
-    int newId =
-        vespalib::BobHash::hash(getName().c_str(), getName().size(), 0);
-        // Highest bit is reserved to tell 7-bit id's from 31-bit ones
-    if (newId < 0) newId = -newId;
-    validateId(newId);
-    return newId;
-}
-
-int
 Field::calculateIdV7()
 {
     vespalib::asciistream ost;
     ost << getName();
     ost << _dataType->getId();
 
-    int newId = vespalib::BobHash::hash(
-            ost.str().c_str(), ost.str().length(), 0);
-        // Highest bit is reserved to tell 7-bit id's from 31-bit ones
+    int newId = vespalib::BobHash::hash(ost.str().c_str(), ost.str().length(), 0);
+    // Highest bit is reserved to tell 7-bit id's from 31-bit ones
     if (newId < 0) newId = -newId;
     validateId(newId);
     return newId;

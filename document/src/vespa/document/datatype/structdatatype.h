@@ -16,7 +16,7 @@
 
 namespace document {
 
-class StructDataType : public StructuredDataType {
+class StructDataType final : public StructuredDataType {
 public:
     typedef std::unique_ptr<StructDataType> UP;
     typedef std::shared_ptr<StructDataType> SP;
@@ -42,27 +42,27 @@ public:
      */
     void addInheritedField(const Field& field);
 
-        // Implementation of StructuredDataType
-    virtual std::unique_ptr<FieldValue> createFieldValue() const;
-    virtual void print(std::ostream&, bool verbose, const std::string& indent) const;
-    virtual uint32_t getFieldCount() const { return _idFieldMap.size(); }
+    // Implementation of StructuredDataType
+    std::unique_ptr<FieldValue> createFieldValue() const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    uint32_t getFieldCount() const override { return _idFieldMap.size(); }
 
-    virtual const Field& getField(const vespalib::stringref & name) const;
+    const Field& getField(const vespalib::stringref & name) const override;
 
     /**
      * Retrieves a field based on its ID. To determine which ID to use, we also
      * need the document serialization version.
      */
-    virtual const Field& getField(int32_t fieldId, int version) const;
+    const Field& getField(int32_t fieldId, int version) const override;
 
-    virtual bool hasField(const vespalib::stringref &name) const;
-    virtual bool hasField(int32_t fieldId, int version) const;
+    bool hasField(const vespalib::stringref &name) const override;
+    bool hasField(int32_t fieldId, int version) const override;
     bool hasField(const Field& f) const {
         return hasField(f.getId(7), 7) || hasField(f.getId(6), 6);
     }
 
-    virtual Field::Set getFieldSet() const;
-    virtual StructDataType* clone() const;
+    Field::Set getFieldSet() const override;
+    StructDataType* clone() const override;
 
     void setCompressionConfig(const CompressionConfig& cfg) { _compressionConfig = cfg; };
     const CompressionConfig& getCompressionConfig() const { return _compressionConfig; }
@@ -73,14 +73,11 @@ private:
     typedef vespalib::hash_map<vespalib::string, Field::SP> StringFieldMap;
     typedef vespalib::hash_map<int32_t, Field::SP> IntFieldMap;
     StringFieldMap _nameFieldMap;
-    IntFieldMap _idFieldMap;
-    IntFieldMap _idFieldMapV6;
-
+    IntFieldMap    _idFieldMap;
     CompressionConfig _compressionConfig;
 
     /** @return "" if not conflicting. Error message otherwise. */
     vespalib::string containsConflictingField(const Field& field) const;
-    const Field& getFieldV6(int32_t fieldId) const __attribute__((noinline));
 };
 
 }

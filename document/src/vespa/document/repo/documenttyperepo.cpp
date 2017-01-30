@@ -239,8 +239,7 @@ void addField(const Datatype::Sstruct::Field &field, const Repo &repo,
         field.name.c_str(), struct_type.getName().c_str(),
         isHeaderField ? "yes" : "no");
     const DataType &field_type = repo.findOrThrow(field.datatype);
-    struct_type.addField(Field(field.name, field.id, field.idV6,
-                               field_type, isHeaderField));
+    struct_type.addField(Field(field.name, field.id, field_type, isHeaderField));
 }
 
 bool hasSuffix(const string &s, const string &suffix) {
