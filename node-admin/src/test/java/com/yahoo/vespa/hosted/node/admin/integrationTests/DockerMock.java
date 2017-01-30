@@ -38,7 +38,7 @@ public class DockerMock implements Docker {
         synchronized (monitor) {
             callOrderVerifier.add("createContainerCommand with " + dockerImage +
                     ", HostName: " + hostName + ", " + containerName);
-            containers.add(new Container(hostName, dockerImage, containerName, 2));
+            containers.add(new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 2));
         }
 
         return new StartContainerCommandMock();
@@ -81,7 +81,7 @@ public class DockerMock implements Docker {
             callOrderVerifier.add("stopContainer with " + containerName);
             containers = containers.stream()
                     .map(container -> container.name.equals(containerName) ?
-                            new Container(container.hostname, container.image, container.name, 0) : container)
+                            new Container(container.hostname, container.image, container.name, Container.State.EXITED, 0) : container)
                     .collect(Collectors.toList());
         }
     }

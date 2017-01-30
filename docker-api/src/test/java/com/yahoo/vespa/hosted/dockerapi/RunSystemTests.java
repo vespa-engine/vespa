@@ -137,7 +137,7 @@ public class RunSystemTests {
 
         Optional<Container> container = docker.getContainer(containerName.asString());
         if (container.isPresent()) {
-            if (container.get().isRunning) return;
+            if (container.get().state.isRunning()) return;
             else docker.deleteContainer(containerName);
         }
 

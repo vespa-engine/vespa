@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -92,17 +93,23 @@ public class DockerTest {
         docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
         Optional<Container> container = docker.getContainer(containerHostname);
         assertTrue(container.isPresent());
-        assertFalse(container.get().isRunning);
+        assertEquals(container.get().state, Container.State.CREATED);
 
         docker.startContainer(containerName);
         container = docker.getContainer(containerHostname);
         assertTrue(container.isPresent());
-        assertTrue(container.get().isRunning);
+        assertEquals(container.get().state, Container.State.RUNNING);
 
+        docker.dockerClient.pauseContainerCmd(containerName.asString()).exec();
+        container = docker.getContainer(containerHostname);
+        assertTrue(container.isPresent());
+        assertEquals(container.get().state, Container.State.PAUSED);
+
+        docker.dockerClient.unpauseContainerCmd(containerName.asString()).exec();
         docker.stopContainer(containerName);
         container = docker.getContainer(containerHostname);
         assertTrue(container.isPresent());
-        assertFalse(container.get().isRunning);
+        assertEquals(container.get().state, Container.State.EXITED);
 
         docker.deleteContainer(containerName);
         assertThat(docker.getAllContainersManagedBy(MANAGER_NAME).isEmpty(), is(true));
@@ -151,7 +158,7 @@ public class DockerTest {
 
         // Clean up any non deleted containers from previous tests
         docker.getAllContainersManagedBy(MANAGER_NAME).forEach(container -> {
-            if (container.isRunning) docker.stopContainer(container.name);
+            if (container.state.isRunning()) docker.stopContainer(container.name);
             docker.deleteContainer(container.name);
         });
     }

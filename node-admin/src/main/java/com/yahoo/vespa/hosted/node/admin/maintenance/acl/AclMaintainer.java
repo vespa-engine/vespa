@@ -96,7 +96,7 @@ public class AclMaintainer implements Runnable {
                 // Container belongs to this Docker host, but is currently unallocated
                 continue;
             }
-            if (!container.get().isRunning) {
+            if (!container.get().state.isRunning()) {
                 log.info(String.format("PID for container %s not found (not running?)", container.get().name.asString()));
                 continue;
             }

@@ -10,19 +10,20 @@ public class Container {
     public final String hostname;
     public final DockerImage image;
     public final ContainerName name;
+    public final State state;
     public final int pid;
-    public final boolean isRunning;
 
     public Container(
             final String hostname,
             final DockerImage image,
             final ContainerName containerName,
+            final State state,
             final int pid) {
         this.hostname = hostname;
         this.image = image;
         this.name = containerName;
+        this.state = state;
         this.pid = pid;
-        this.isRunning = pid != 0;
     }
 
     @Override
@@ -48,8 +49,16 @@ public class Container {
                 + " hostname=" + hostname
                 + " image=" + image
                 + " name=" + name
-                + " isRunning=" + isRunning
+                + " state=" + state
                 + " pid=" + pid
                 + "}";
+    }
+
+    public enum State {
+        CREATED, RESTARTING, RUNNING, PAUSED, EXITED, DEAD;
+
+        public boolean isRunning() {
+            return this == RUNNING;
+        }
     }
 }

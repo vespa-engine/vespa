@@ -253,7 +253,7 @@ public class DockerOperationsImpl implements DockerOperations {
     public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
-        if (existingContainer.isRunning) {
+        if (existingContainer.state.isRunning()) {
             logger.info("Stopping container " + containerName);
             docker.stopContainer(containerName);
         }
@@ -282,7 +282,7 @@ public class DockerOperationsImpl implements DockerOperations {
     public void executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = getContainer(containerName.asString())
-                .filter(container -> container.isRunning)
+                .filter(container -> container.state.isRunning())
                 .map(container -> container.pid)
                 .orElseThrow(() -> new RuntimeException("PID not found for container: " + containerName.asString()));
 

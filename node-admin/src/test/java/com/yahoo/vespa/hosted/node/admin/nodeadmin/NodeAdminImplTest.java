@@ -60,7 +60,7 @@ public class NodeAdminImplTest {
         final String hostName = "host";
         final DockerImage dockerImage = new DockerImage("image");
         final ContainerName containerName = new ContainerName("container");
-        final Container existingContainer = new Container(hostName, dockerImage, containerName, 5);
+        final Container existingContainer = new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 5);
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)

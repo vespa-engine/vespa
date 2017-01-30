@@ -63,7 +63,7 @@ public class AclMaintainerTest {
 
     @Test
     public void reconfigures_acl_when_container_pid_changes() {
-        Container container = makeContainer("container-1", 42);
+        Container container = makeContainer("container-1");
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(3, container.name);
         nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
 
@@ -71,7 +71,7 @@ public class AclMaintainerTest {
         assertAclsApplied(container.name, aclSpecs);
 
         // Container is restarted and PID changes
-        makeContainer(container.name.asString(), 43);
+        makeContainer(container.name.asString(), Container.State.RUNNING, 43);
         aclMaintainer.run();
 
         assertAclsApplied(container.name, aclSpecs, times(2));
@@ -79,7 +79,7 @@ public class AclMaintainerTest {
 
     @Test
     public void does_not_configure_acl_for_stopped_container() {
-        Container stoppedContainer = makeContainer("container-1", 0);
+        Container stoppedContainer = makeContainer("container-1", Container.State.EXITED, 0);
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(1, stoppedContainer.name);
         nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
         aclMaintainer.run();
@@ -142,12 +142,12 @@ public class AclMaintainerTest {
     }
 
     private Container makeContainer(String hostname) {
-        return makeContainer(hostname, 42);
+        return makeContainer(hostname, Container.State.RUNNING, 42);
     }
 
-    private Container makeContainer(String hostname, int pid) {
+    private Container makeContainer(String hostname, Container.State state, int pid) {
         final Container container = new Container(hostname, new DockerImage("mock"),
-                new ContainerName(hostname), pid);
+                new ContainerName(hostname), state, pid);
         when(dockerOperations.getContainer(eq(hostname))).thenReturn(Optional.of(container));
         return container;
     }
