@@ -7,7 +7,7 @@ namespace config_builder {
 int32_t createFieldId(const vespalib::string &name, int32_t type) {
     StructDataType dummy("dummy", type);
     Field f(name, dummy, true);
-    return f.getId(ver);
+    return f.getId();
 }
 
 int32_t DatatypeConfig::id_counter = 100;
