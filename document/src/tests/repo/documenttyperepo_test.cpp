@@ -373,19 +373,6 @@ TEST("requireThatAnnotationTypesCanBeConfigured") {
     EXPECT_EQUAL(DataType::T_STRING, a_type->getDataType()->getId());
 }
 
-TEST("requireThatFieldIdV6IsDifferentFromV7") {
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(doc_type_id, type_name,
-                     Struct(header_name),
-                     Struct(body_name).addField(field_name, DataType::T_INT));
-    DocumentTypeRepo repo(builder.config());
-
-    const StructDataType &s = repo.getDocumentType(type_name)->getFieldsType();
-    ASSERT_EQUAL(1u, s.getFieldCount());
-    const Field &field = s.getField(field_name);
-    ASSERT_TRUE(field.getId(7) != field.getId(6));
-}
-
 TEST("requireThatDocumentsCanUseOtherDocumentTypes") {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id + 1, type_name_2,

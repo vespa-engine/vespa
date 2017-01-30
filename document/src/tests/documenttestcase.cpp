@@ -766,7 +766,6 @@ void DocumentTest::testReadSerializedAllVersions()
     std::vector<TestDoc> tests;
     tests.push_back(TestDoc(TEST_PATH("data/document-cpp-v8-uncompressed.dat"), 8));
     tests.push_back(TestDoc(TEST_PATH("data/document-cpp-v7-uncompressed.dat"), 7));
-    tests.push_back(TestDoc(TEST_PATH("data/serializev6.dat"), 6));
     tests.push_back(TestDoc(jpath + "document-java-v8-uncompressed.dat", 8));
     for (uint32_t i=0; i<tests.size(); ++i) {
         int version = tests[i]._createdVersion;
