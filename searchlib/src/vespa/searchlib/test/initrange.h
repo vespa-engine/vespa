@@ -19,6 +19,7 @@ public:
     SearchIterator::UP createEmptyIterator() const;
     SearchIterator::UP createFullIterator() const;
     InitRangeVerifier();
+    ~InitRangeVerifier();
     const DocIds & getExpectedDocIds() const { return _docIds; }
     uint32_t getDocIdLimit() const { return 207; }
     void verify(SearchIterator & iterator) const;

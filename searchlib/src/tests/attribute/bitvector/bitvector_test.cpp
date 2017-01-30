@@ -13,6 +13,7 @@
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/termwise.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/parsequery/parse.h>
 
@@ -629,6 +630,27 @@ TEST("Test bitvector iterators adheres to initRange") {
     TermFieldMatchData tfmd;
     initRangeTest.verify(*BitVectorIterator::create(bv.get(), initRangeTest.getDocIdLimit(), tfmd, false));
     initRangeTest.verify(*BitVectorIterator::create(bv.get(), initRangeTest.getDocIdLimit(), tfmd, true));
+}
+
+class Verifier : public search::test::TermwiseVerifier {
+public:
+    Verifier() : _bv(BitVector::create(getDocIdLimit())) {
+        for (uint32_t docId: getExpectedDocIds()) {
+            _bv->setBit(docId);
+        }
+    }
+
+    SearchIterator::UP create(bool strict) const override {
+        return BitVectorIterator::create(_bv.get(), getDocIdLimit(), _tfmd, strict);
+    }
+
+private:
+    mutable TermFieldMatchData _tfmd;
+    BitVector::UP _bv;
+};
+TEST("Test bitvector iterators adheres to termwise search too") {
+    Verifier termwiseTest;
+    termwiseTest.verify();
 }
 
 

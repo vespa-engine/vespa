@@ -66,6 +66,8 @@ InitRangeVerifier::InitRangeVerifier() :
     }
 }
 
+InitRangeVerifier::~InitRangeVerifier() { }
+
 InitRangeVerifier::DocIds
 InitRangeVerifier::invert(const DocIds & docIds, uint32_t docIdlimit)
 {

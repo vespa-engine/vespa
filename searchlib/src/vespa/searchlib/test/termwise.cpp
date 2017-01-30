@@ -3,6 +3,12 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
+#include <vespa/searchlib/queryeval/termwise_search.h>
+#include <vespa/searchlib/queryeval/andsearch.h>
+#include <vespa/searchlib/queryeval/orsearch.h>
+#include <vespa/searchlib/common/bitvectoriterator.h>
+#include <set>
+
 
 namespace search {
 namespace test {
@@ -54,8 +60,12 @@ private:
 
 TermwiseVerifier::TermwiseVerifier() :
     _trueTfmd(),
-    _docIds()
+    _docIds(),
+    _everyOddBitSet(BitVector::create(getDocIdLimit()))
 {
+    for (size_t i(1); i < getDocIdLimit(); i += 2) {
+        _everyOddBitSet->setBit(i);
+    }
     // (0),1 and 10,11 and 20,21 .... 200,201 etc are hits
     // 0 is of course invalid.
     for (size_t i(0); (i*10+1) < getDocIdLimit(); i++) {
@@ -64,25 +74,22 @@ TermwiseVerifier::TermwiseVerifier() :
         }
         _docIds.push_back(i*10 + 1);
     }
+    std::set<uint32_t> orSet;
+    for (uint32_t docId : _docIds) {
+        orSet.insert(docId);
+    }
+    _everyOddBitSet->foreach_truebit([&orSet](uint32_t docId){orSet.insert(docId);});
+    for (uint32_t docId : orSet) {
+        _expectedOr.push_back(docId);
+    }
+    for (uint32_t docId : _docIds) {
+        if (_everyOddBitSet->testBit(docId)) {
+            _expectedAnd.push_back(docId);
+        }
+    }
 }
 
-TermwiseVerifier::DocIds
-TermwiseVerifier::invert(const DocIds & docIds, uint32_t docIdlimit)
-{
-    DocIds inverted;
-    inverted.reserve(docIdlimit);
-    for (size_t i(1), next(0); i < docIdlimit; i++) {
-        if (next < docIds.size()) {
-            if (i >= docIds[next]) {
-                if (i == docIds[next++]) {
-                    continue;
-                }
-            }
-        }
-        inverted.push_back(i);
-    }
-    return inverted;
-}
+TermwiseVerifier::~TermwiseVerifier() { }
 
 SearchIterator::UP
 TermwiseVerifier::createIterator(const DocIds &docIds, bool strict) const
@@ -90,58 +97,74 @@ TermwiseVerifier::createIterator(const DocIds &docIds, bool strict) const
     return make_unique<DocIdIterator>(docIds, strict);
 }
 
-SearchIterator::UP
-TermwiseVerifier::createEmptyIterator() const
-{
-    return make_unique<EmptySearch>();
-}
-
-SearchIterator::UP
-TermwiseVerifier::createFullIterator() const
-{
-    return make_unique<TrueSearch>(_trueTfmd);
+void
+TermwiseVerifier::verify() const {
+    verify(false);
+    verify(true);
 }
 
 void
-TermwiseVerifier::verify(SearchIterator * iterator) const
-{
-    SearchIterator::UP up(iterator);
-    verify(*up);
+TermwiseVerifier::verify(bool strict) const {
+    SearchIterator::UP iterator = create(strict);
+    verify(*iterator, strict, _docIds);
+    verifyTermwise(std::move(iterator), strict, _docIds);
+    verifyAnd(strict);
+    verifyOr(strict);
 }
 
 void
-TermwiseVerifier::verify(SearchIterator & iterator) const
-{
-    ASSERT_TRUE(iterator.is_strict() != vespalib::Trinary::Undefined);
-    if (iterator.is_strict() == vespalib::Trinary::True) {
-        verify(iterator, true);
-    }
-    verify(iterator, false);
+TermwiseVerifier::verifyAnd(bool strict) const {
+    fef::TermFieldMatchData tfmd;
+    MultiSearch::Children children;
+    children.emplace_back(create(strict).release());
+    children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false).release());
+    SearchIterator::UP search(AndSearch::create(children, strict, UnpackInfo()));
+    verify(*search, strict, _expectedAnd);
+    verifyTermwise(std::move(search), strict, _expectedAnd);
 }
 
 void
-TermwiseVerifier::verify(SearchIterator & iterator, bool strict) const
+TermwiseVerifier::verifyOr(bool strict) const {
+    fef::TermFieldMatchData tfmd;
+    SearchIterator::UP bvi(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false));
+    MultiSearch::Children children;
+    children.emplace_back(create(strict).release());
+    children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false).release());
+    SearchIterator::UP search(OrSearch::create(children, strict, UnpackInfo()));
+    verify(*search, strict, _expectedOr);
+    verifyTermwise(std::move(search), strict, _expectedOr);
+}
+
+
+void
+TermwiseVerifier::verifyTermwise(SearchIterator::UP iterator, bool strict, const DocIds & docIds) {
+    SearchIterator::UP termwise = make_termwise(std::move(iterator), strict);
+    verify(*termwise, strict, docIds);
+}
+
+void
+TermwiseVerifier::verify(SearchIterator & iterator, bool strict, const DocIds & docIds)
 {
-    verify(iterator, Ranges({{1, 202}}), strict);
-    verify(iterator, Ranges({{1, 202}}), strict);
+    verify(iterator, Ranges({{1, 202}}), strict, docIds);
+    verify(iterator, Ranges({{1, 202}}), strict, docIds);
     for (uint32_t rangeWidth : { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 100, 202 }) {
         Ranges ranges;
         for (uint32_t sum(1); sum < getDocIdLimit(); sum += rangeWidth) {
             ranges.emplace_back(sum, std::min(sum+rangeWidth, getDocIdLimit()));
         }
-        verify(iterator, ranges, strict);
+        verify(iterator, ranges, strict, docIds);
         std::reverse(ranges.begin(), ranges.end());
-        verify(iterator, ranges, strict);
+        verify(iterator, ranges, strict, docIds);
     }
 }
 
 void
-TermwiseVerifier::verify(SearchIterator & iterator, const Ranges & ranges, bool strict) const
+TermwiseVerifier::verify(SearchIterator & iterator, const Ranges & ranges, bool strict, const DocIds & docIds)
 {
     DocIds result = search(iterator, ranges, strict);
-    ASSERT_EQUAL(_docIds.size(), result.size());
-    for (size_t i(0); i < _docIds.size(); i++) {
-        EXPECT_EQUAL(_docIds[i], result[i]);
+    EXPECT_EQUAL(docIds.size(), result.size());
+    for (size_t i(0); i < docIds.size(); i++) {
+        EXPECT_EQUAL(docIds[i], result[i]);
     }
 }
 
@@ -149,7 +172,7 @@ TermwiseVerifier::DocIds
 TermwiseVerifier::search(SearchIterator & it, const Ranges & ranges, bool strict)
 {
     DocIds result;
-    for (Range range: ranges) {
+    for (Range range : ranges) {
         DocIds part = strict ? searchStrict(it, range) : searchRelaxed(it, range);
         result.insert(result.end(), part.begin(), part.end());
     }

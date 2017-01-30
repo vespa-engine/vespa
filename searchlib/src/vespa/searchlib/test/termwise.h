@@ -14,25 +14,30 @@ public:
     typedef std::pair<uint32_t, uint32_t> Range;
     typedef std::vector<Range> Ranges;
 
-    static DocIds invert(const DocIds & docIds, uint32_t docIdlimit);
-    SearchIterator::UP createIterator(const DocIds &docIds, bool strict) const;
-    SearchIterator::UP createEmptyIterator() const;
-    SearchIterator::UP createFullIterator() const;
     TermwiseVerifier();
-    ~TermwiseVerifier();
+    virtual ~TermwiseVerifier();
+    void verify() const;
+    virtual SearchIterator::UP create(bool strict) const = 0;
+protected:
     const DocIds & getExpectedDocIds() const { return _docIds; }
-    uint32_t getDocIdLimit() const { return 207; }
-    void verify(SearchIterator & iterator) const;
-    /// Convenience that takes ownership of the pointer.
-    void verify(SearchIterator * iterator) const;
+    static uint32_t getDocIdLimit() { return 207; }
 private:
-    void verify(SearchIterator & iterator, bool strict) const;
-    void verify(SearchIterator & iterator, const Ranges & ranges, bool strict) const;
+    SearchIterator::UP createIterator(const DocIds &docIds, bool strict) const;
+    void verify(bool strict) const;
+    void verifyAnd(bool strict) const;
+    void verifyOr(bool strict) const;
+    static void verifyTermwise(SearchIterator::UP iterator, bool strict, const DocIds & docIds);
+    static void verify(SearchIterator & iterator, const DocIds & docIds);
+    static void verify(SearchIterator & iterator, bool strict, const DocIds & docIds);
+    static void verify(SearchIterator & iterator, const Ranges & ranges, bool strict, const DocIds & docIds);
     static DocIds search(SearchIterator & iterator, const Ranges & ranges, bool strict);
     static DocIds searchRelaxed(SearchIterator & search, Range range);
     static DocIds searchStrict(SearchIterator & search, Range range);
     mutable search::fef::TermFieldMatchData _trueTfmd;
     DocIds _docIds;
+    DocIds _expectedAnd;
+    DocIds _expectedOr;
+    BitVector::UP _everyOddBitSet;
 };
 
 }
