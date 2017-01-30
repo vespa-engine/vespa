@@ -3,6 +3,7 @@ package com.yahoo.config.model;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -90,7 +91,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     private List<Element> getServiceElements(Element servicesRoot) {
         if (servicesRoot.getTagName().equals("services"))
             return XML.getChildren(servicesRoot);
-
         List<Element> singleServiceList = new ArrayList<>(1);
         singleServiceList.add(servicesRoot);
         return singleServiceList;
@@ -139,9 +139,15 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
         }
 
         for (ModelNode node : graphBuilder.build().topologicalSort())
-            buildModels(node, deployState, root, model2Element.get(node.builder));
+            buildModels(node, getApplicationType(servicesRoot), deployState, root, model2Element.get(node.builder));
         for (ConfigModel model : configModels)
             model.initialize(ConfigModelRepo.this);
+    }
+
+    private ApplicationType getApplicationType(Element servicesRoot) {
+        return XmlHelper.getOptionalAttribute(servicesRoot, "application-type")
+                .map(ApplicationType::fromString)
+                .orElse(ApplicationType.DEFAULT);
     }
 
     private Collection<Element> getPermanentServices(DeployState deployState) throws IOException, SAXException {
@@ -164,17 +170,25 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
         return doc.getDocumentElement();
     }
 
-    private void buildModels(ModelNode node, DeployState deployState, AbstractConfigProducer parent, List<Element> elements) {
+    private void buildModels(ModelNode node,
+                             ApplicationType applicationType,
+                             DeployState deployState,
+                             AbstractConfigProducer parent,
+                             List<Element> elements) {
         for (Element servicesElement : elements) {
-            ConfigModel model = buildModel(node, deployState, parent, servicesElement);
+            ConfigModel model = buildModel(node, applicationType, deployState, parent, servicesElement);
             if (model.isServing())
                 add(model);
         }
     }
 
-    private ConfigModel buildModel(ModelNode node, DeployState deployState, AbstractConfigProducer parent, Element servicesElement) {
+    private ConfigModel buildModel(ModelNode node,
+                                   ApplicationType applicationType,
+                                   DeployState deployState,
+                                   AbstractConfigProducer parent,
+                                   Element servicesElement) {
         ConfigModelBuilder builder = node.builder;
-        ConfigModelContext context = ConfigModelContext.create(deployState, this, parent, getIdString(servicesElement));
+        ConfigModelContext context = ConfigModelContext.create(applicationType, deployState, this, parent, getIdString(servicesElement));
         return builder.build(node, servicesElement, context);
     }
 
