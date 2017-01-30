@@ -248,4 +248,9 @@ DocumentType::getFieldSet() const
     return _fields->getFieldSet();
 }
 
+DocumentType *
+DocumentType::clone() const {
+    return new DocumentType(*this);
+}
+
 } // document

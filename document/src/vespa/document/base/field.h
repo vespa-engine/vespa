@@ -20,15 +20,12 @@ namespace document {
 
 class FieldValue;
 
-class Field : public vespalib::FieldBase,
-              public vespalib::Identifiable,
-              public FieldSet
+class Field final : public vespalib::FieldBase,
+                    public vespalib::Identifiable,
+                    public FieldSet
 {
     const DataType *_dataType;
-
-    int _fieldIdV6; // Field ID for document protocol versions 1-6.
     int _fieldId;
-
     bool _isHeaderField;
 public:
     typedef std::shared_ptr<const Field> CSP;
@@ -53,16 +50,7 @@ public:
     Field(const vespalib::stringref & name, int fieldId,
           const DataType &type, bool headerField);
 
-    Field(const vespalib::stringref & name, int fieldId, int fieldIdV6,
-          const DataType &type, bool headerField);
-    Field() :
-        FieldBase(""),
-        _dataType(DataType::INT),
-        _fieldIdV6(0),
-        _fieldId(0),
-        _isHeaderField(false)
-    {
-    }
+    Field() : Field("", 0, *DataType::INT, false) { }
 
     /**
      * Creates a completely specified field instance. Field ids are generated
@@ -85,14 +73,13 @@ public:
     const DataType &getDataType() const { return *_dataType; }
 
     int getId() const { return getId(7); }
-    int getId(int version) const { return (version > 6) ? _fieldId : _fieldIdV6; }
+    int getId(int version) const { (void) version; return _fieldId; }
     bool isHeaderField() const { return _isHeaderField; }
 
     vespalib::string toString(bool verbose=false) const;
-    bool contains(const FieldSet& fields) const;
-    Type getType() const { return FIELD; }
+    bool contains(const FieldSet& fields) const override;
+    Type getType() const override { return FIELD; }
 private:
-    int calculateIdV6();
     int calculateIdV7();
 
     void validateId(int newId);

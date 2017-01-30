@@ -16,7 +16,7 @@ class FieldBase : public IFieldBase
 {
 public:
     FieldBase(stringref name) : _name(name) { }
-    virtual stringref getName() const { return _name; }
+    stringref getName() const final override { return _name; }
 private:
     string _name;
 };
