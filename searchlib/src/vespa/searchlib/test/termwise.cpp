@@ -99,17 +99,17 @@ TermwiseVerifier::createIterator(const DocIds &docIds, bool strict) const
 
 void
 TermwiseVerifier::verify() const {
-    verify(false);
-    verify(true);
+    TEST_DO(verify(false));
+    TEST_DO(verify(true));
 }
 
 void
 TermwiseVerifier::verify(bool strict) const {
     SearchIterator::UP iterator = create(strict);
-    verify(*iterator, strict, _docIds);
-    verifyTermwise(std::move(iterator), strict, _docIds);
-    verifyAnd(strict);
-    verifyOr(strict);
+    TEST_DO(verify(*iterator, strict, _docIds));
+    TEST_DO(verifyTermwise(std::move(iterator), strict, _docIds));
+    TEST_DO(verifyAnd(strict));
+    TEST_DO(verifyOr(strict));
 }
 
 void
@@ -119,42 +119,41 @@ TermwiseVerifier::verifyAnd(bool strict) const {
     children.emplace_back(create(strict).release());
     children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false).release());
     SearchIterator::UP search(AndSearch::create(children, strict, UnpackInfo()));
-    verify(*search, strict, _expectedAnd);
-    verifyTermwise(std::move(search), strict, _expectedAnd);
+    TEST_DO(verify(*search, strict, _expectedAnd));
+    TEST_DO(verifyTermwise(std::move(search), strict, _expectedAnd));
 }
 
 void
 TermwiseVerifier::verifyOr(bool strict) const {
     fef::TermFieldMatchData tfmd;
-    SearchIterator::UP bvi(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false));
     MultiSearch::Children children;
     children.emplace_back(create(strict).release());
-    children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, false).release());
+    children.emplace_back(BitVectorIterator::create(_everyOddBitSet.get(), getDocIdLimit(), tfmd, strict).release());
     SearchIterator::UP search(OrSearch::create(children, strict, UnpackInfo()));
-    verify(*search, strict, _expectedOr);
-    verifyTermwise(std::move(search), strict, _expectedOr);
+    TEST_DO(verify(*search, strict, _expectedOr));
+    TEST_DO(verifyTermwise(std::move(search), strict, _expectedOr));
 }
 
 
 void
 TermwiseVerifier::verifyTermwise(SearchIterator::UP iterator, bool strict, const DocIds & docIds) {
     SearchIterator::UP termwise = make_termwise(std::move(iterator), strict);
-    verify(*termwise, strict, docIds);
+    TEST_DO(verify(*termwise, strict, docIds));
 }
 
 void
 TermwiseVerifier::verify(SearchIterator & iterator, bool strict, const DocIds & docIds)
 {
-    verify(iterator, Ranges({{1, 202}}), strict, docIds);
-    verify(iterator, Ranges({{1, 202}}), strict, docIds);
+    TEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
+    TEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
     for (uint32_t rangeWidth : { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 100, 202 }) {
         Ranges ranges;
         for (uint32_t sum(1); sum < getDocIdLimit(); sum += rangeWidth) {
             ranges.emplace_back(sum, std::min(sum+rangeWidth, getDocIdLimit()));
         }
-        verify(iterator, ranges, strict, docIds);
+        TEST_DO(verify(iterator, ranges, strict, docIds));
         std::reverse(ranges.begin(), ranges.end());
-        verify(iterator, ranges, strict, docIds);
+        TEST_DO(verify(iterator, ranges, strict, docIds));
     }
 }
 
@@ -162,7 +161,7 @@ void
 TermwiseVerifier::verify(SearchIterator & iterator, const Ranges & ranges, bool strict, const DocIds & docIds)
 {
     DocIds result = search(iterator, ranges, strict);
-    EXPECT_EQUAL(docIds.size(), result.size());
+    ASSERT_EQUAL(docIds.size(), result.size());
     for (size_t i(0); i < docIds.size(); i++) {
         EXPECT_EQUAL(docIds[i], result[i]);
     }
@@ -198,7 +197,7 @@ TermwiseVerifier::searchStrict(SearchIterator & it, Range range)
 {
     DocIds result;
     it.initRange(range.first, range.second);
-    for (uint32_t docId = it.seekFirst(range.first); docId < range.second; docId = it.seekNext(docId + 1)) {
+    for (uint32_t docId = it.seekFirst(range.first); (docId < range.second) && !it.isAtEnd(); docId = it.seekNext(docId + 1)) {
         result.push_back(docId);
     }
     return result;
