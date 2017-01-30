@@ -62,11 +62,11 @@ void DocumentTypeTest::testSetGet() {
   CPPUNIT_ASSERT(fetch1==fetch2);
   CPPUNIT_ASSERT(fetch1.getName() == "stringattr");
 
-  const Field& fetch3 = docType.getField(3, Document::getNewestSerializationVersion());
+  const Field& fetch3 = docType.getField(3);
 
   CPPUNIT_ASSERT(fetch1==fetch3);
 
-  const Field& fetch4=docType.getField(0, Document::getNewestSerializationVersion());
+  const Field& fetch4=docType.getField(0);
 
   CPPUNIT_ASSERT(fetch4!=fetch1);
 }

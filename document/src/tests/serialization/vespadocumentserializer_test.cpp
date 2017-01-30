@@ -37,9 +37,6 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/tensor_factory.h>
-#include <stdlib.h>
-#include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -476,9 +473,9 @@ void checkStructSerialization(const StructFieldValue &value,
            >> element2_id >> element2_size;
     EXPECT_EQUAL(comp_type, compression_type);
     EXPECT_EQUAL(2u, field_count);
-    EXPECT_EQUAL(field1.getId(8), element1_id & 0x7fffffff);
+    EXPECT_EQUAL(field1.getId(), element1_id & 0x7fffffff);
     EXPECT_EQUAL(4u, element1_size);
-    EXPECT_EQUAL(field2.getId(8), element2_id & 0x7fffffff);
+    EXPECT_EQUAL(field2.getId(), element2_id & 0x7fffffff);
     EXPECT_EQUAL(60u, element2_size);
 }
 

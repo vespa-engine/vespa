@@ -85,8 +85,6 @@ public:
 
     // returns false if the field could not be serialized.
     bool serializeField(int raw_field_id, uint16_t version, FieldValueWriter &writer) const;
-    int fieldIdFromRawId(int raw_field_id, uint16_t version) const;
-
     uint16_t getVersion() const { return _version; }
 
     const Chunks & getChunks() const {  return _chunks; }

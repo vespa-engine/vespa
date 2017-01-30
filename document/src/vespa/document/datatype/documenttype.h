@@ -83,9 +83,9 @@ public:
         return _fields->getFieldCount();
     }
     const Field & getField(const vespalib::stringref & name) const override;
-    const Field & getField(int fieldId, int version) const override;
+    const Field & getField(int fieldId) const override;
     bool hasField(const vespalib::stringref &name) const override;
-    bool hasField(int fieldId, int version) const override;
+    bool hasField(int fieldId) const override;
     Field::Set getFieldSet() const override;
     DocumentType* clone() const override;
 

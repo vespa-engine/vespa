@@ -5,7 +5,6 @@
 #include "document.h"
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/datatype/positiondatatype.h>
@@ -19,6 +18,7 @@ LOG_SETUP(".document.structfieldvalue");
 using std::vector;
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
+using vespalib::make_string;
 
 namespace document {
 
@@ -84,20 +84,13 @@ bool StructFieldValue::serializeField(int field_id, uint16_t version,
         return true;
     }
     try {
-        const Field &f = getStructType().getField(field_id, _version);
+        const Field &f = getStructType().getField(field_id);
         writer.writeFieldValue(*getFieldValue(f));
         return true;
     } catch (FieldNotFoundException &) {
         LOG(info, "Dropping field %d when serializing to a newer version", field_id);
         return false;
     }
-}
-
-int StructFieldValue::fieldIdFromRawId(int raw_id, uint16_t version) const {
-    if (version != _version) {
-        return getStructType().getField(raw_id, _version).getId(version);
-    }
-    return raw_id;
 }
 
 void StructFieldValue::getRawFieldIds(vector<int> &raw_ids) const {
@@ -126,7 +119,7 @@ StructFieldValue::getRawFieldIds(vector<int> &raw_ids,
     for (uint32_t i = 0; i < _chunks.size(); ++i) {
         const SerializableArray::EntryMap & entries = _chunks[i].getEntries();
         for (const SerializableArray::Entry & entry : entries) {
-            if (fieldSet.contains(getStructType().getField(entry.id(), _version))) {
+            if (fieldSet.contains(getStructType().getField(entry.id()))) {
                 raw_ids.push_back(entry.id());
             }
         }
@@ -162,7 +155,7 @@ createFV(FieldValue & value, const DocumentTypeRepo & repo, nbostream & stream, 
 FieldValue::UP
 StructFieldValue::getFieldValue(const Field& field) const
 {
-    int fieldId = field.getId(_version);
+    int fieldId = field.getId();
 
     for (int i = _chunks.size() - 1; i >= 0; --i) {
         vespalib::ConstBufferRef buf = _chunks[i].get(fieldId);
@@ -197,7 +190,7 @@ StructFieldValue::getRawField(uint32_t id) const
 bool
 StructFieldValue::getFieldValue(const Field& field, FieldValue& value) const
 {
-    int fieldId = field.getId(_version);
+    int fieldId = field.getId();
 
     vespalib::ConstBufferRef buf = getRawField(fieldId);
     if (buf.size() > 0) {
@@ -217,7 +210,7 @@ bool
 StructFieldValue::hasFieldValue(const Field& field) const
 {
     for (int i = _chunks.size() - 1; i >= 0; --i) {
-        if (_chunks[i].has(field.getId(_version))) {
+        if (_chunks[i].has(field.getId())) {
             return true;
         }
     }
@@ -228,12 +221,10 @@ StructFieldValue::hasFieldValue(const Field& field) const
 void
 StructFieldValue::setFieldValue(const Field& field, FieldValue::UP value)
 {
-    int fieldId = field.getId(_version);
+    int fieldId = field.getId();
     std::unique_ptr<ByteBuffer> serialized(value->serialize());
     if (serialized->getLength() >= 0x4000000) { // Max 64 MB fields.
-        throw SerializeException(vespalib::make_string(
-                        "Field value for field %i larger than 64 MB",
-                        fieldId), VESPA_STRLOC);
+        throw SerializeException(make_string("Field value for field %i larger than 64 MB", fieldId), VESPA_STRLOC);
     }
     serialized->flip();
     if (_chunks.empty()) {
@@ -249,7 +240,7 @@ void
 StructFieldValue::removeFieldValue(const Field& field)
 {
     for (uint32_t i = 0; i < _chunks.size(); ++i) {
-        _chunks[i].clear(field.getId(_version));
+        _chunks[i].clear(field.getId());
     }
     _hasChanged = true;
 }
@@ -321,7 +312,7 @@ StructFieldValue::printXml(XmlOutputStream& xos) const
     {
         double ns = getFieldValue(getField(PositionDataType::FIELD_Y))->getAsInt() / 1.0e6;
         double ew = getFieldValue(getField(PositionDataType::FIELD_X))->getAsInt() / 1.0e6;
-        vespalib::string buf = vespalib::make_vespa_string("%s%.6f;%s%.6f",
+        vespalib::string buf = make_string("%s%.6f;%s%.6f",
                 (ns < 0 ? "S" : "N"),
                 (ns < 0 ? (-ns) : ns),
                 (ew < 0 ? "W" : "E"),
@@ -376,13 +367,11 @@ struct StructFieldValue::FieldIterator : public StructuredIterator {
     const StructFieldValue& _struct;
     std::vector<int> _ids;
     std::vector<int>::iterator _cur;
-    int _version;
 
-    FieldIterator(const StructFieldValue& s, int version)
+    FieldIterator(const StructFieldValue& s)
         : _struct(s),
           _ids(),
-          _cur(_ids.begin()),
-          _version(version)
+          _cur(_ids.begin())
     {
         s.getRawFieldIds(_ids);
         _cur = _ids.begin();
@@ -398,10 +387,10 @@ struct StructFieldValue::FieldIterator : public StructuredIterator {
         while (_cur != _ids.end()) {
             int id = *_cur++;
             try {
-                return &_struct.getStructType().getField(id, _version);
+                return &_struct.getStructType().getField(id);
             } catch (FieldNotFoundException& e) {
                 // Should not get this exception until after we've moved the iterator.
-                LOG(debug, "exception for id %d version %d", id, _version);
+                LOG(debug, "exception for id %d", id);
                 LOG(debug, "struct data type: %s", _struct.getType().toString(true).c_str());
             }
         }
@@ -414,11 +403,11 @@ StructFieldValue::getIterator(const Field* toFind) const
 {
     StructuredIterator::UP ret;
 
-    FieldIterator *fi = new FieldIterator(*this, _version);
+    FieldIterator *fi = new FieldIterator(*this);
     ret.reset(fi);
 
     if (toFind != NULL) {
-        fi->skipTo(toFind->getId(_version));
+        fi->skipTo(toFind->getId());
     }
     return ret;
 }

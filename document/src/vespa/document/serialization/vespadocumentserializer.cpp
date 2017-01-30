@@ -236,20 +236,17 @@ void serializeFields(const StructFieldValue &value, nbostream &stream,
                      vector<pair<uint32_t, uint32_t> > &field_info,
                      const FieldSet& fieldSet) {
     VespaDocumentSerializer serializer(stream);
-    for (StructuredFieldValue::const_iterator
-             it(value.begin()), e(value.end());
-         it != e; ++it)
-    {
+    for (StructuredFieldValue::const_iterator it(value.begin()), e(value.end()); it != e; ++it) {
         if (!fieldSet.contains(it.field())) {
             continue;
         }
         size_t original_size = stream.size();
-        int id = it.field().getId(value.getVersion());
+        int id = it.field().getId();
         if (!value.serializeField(id, VespaDocumentSerializer::getCurrentVersion(), serializer)) {
             continue;
         }
         size_t field_size = stream.size() - original_size;
-        field_info.push_back(make_pair(it.field().getId(VespaDocumentSerializer::getCurrentVersion()), field_size));
+        field_info.push_back(make_pair(it.field().getId(), field_size));
     }
 }
 
@@ -444,7 +441,7 @@ void VespaDocumentSerializer::writeHEAD(const DocumentUpdate &value)
 
 void VespaDocumentSerializer::write(const FieldUpdate &value)
 {
-    _stream << static_cast<int32_t>(value.getField().getId(Document::getNewestSerializationVersion()));
+    _stream << static_cast<int32_t>(value.getField().getId());
     _stream << static_cast<int32_t>(value.size());
     for (size_t i(0), m(value.size()); i < m; i++) {
         write(value[i]);

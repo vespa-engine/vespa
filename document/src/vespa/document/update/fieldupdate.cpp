@@ -93,7 +93,7 @@ FieldUpdate::deserialize(const DocumentTypeRepo& repo,
 {
     int fieldId;
     buffer.getIntNetwork(fieldId);
-    _field = docType.getField(fieldId, Document::getNewestSerializationVersion());
+    _field = docType.getField(fieldId);
     const DataType& dataType = _field.getDataType();
 
     int numUpdates = 0;

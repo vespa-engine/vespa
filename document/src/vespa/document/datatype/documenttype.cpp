@@ -97,17 +97,13 @@ void
 DocumentType::addField(const Field& field)
 {
     if (_fields->hasField(field.getName())) {
-        throw IllegalArgumentException( "A field already exists with name " + field.getName(),
-                VESPA_STRLOC);
+        throw IllegalArgumentException( "A field already exists with name " + field.getName(), VESPA_STRLOC);
     } else if (_fields->hasField(field)) {
-        throw IllegalArgumentException(make_string(
-                "A field already exists with id %i (or deprecated id %i).",
-                field.getId(7), field.getId(6)), VESPA_STRLOC);
+        throw IllegalArgumentException(make_string("A field already exists with id %i.", field.getId()), VESPA_STRLOC);
     } else if (!_ownedFields.get()) {
         throw vespalib::IllegalStateException(make_string(
                         "Cannot add field %s to a DocumentType that does not "
-                        "own its fields.", field.getName().c_str()),
-                                              VESPA_STRLOC);
+                        "own its fields.", field.getName().c_str()), VESPA_STRLOC);
     }
     _ownedFields->addField(field);
 }
@@ -210,10 +206,8 @@ DocumentType::operator==(const DataType& other) const
     if (o == 0) return false;
     if (*_fields != *o->_fields) return false;
     if (_inheritedTypes.size() != o->_inheritedTypes.size()) return false;
-    std::vector<const DocumentType *>::const_iterator it1(
-            _inheritedTypes.begin());
-    std::vector<const DocumentType *>::const_iterator it2(
-            o->_inheritedTypes.begin());
+    std::vector<const DocumentType *>::const_iterator it1(_inheritedTypes.begin());
+    std::vector<const DocumentType *>::const_iterator it2(o->_inheritedTypes.begin());
     while (it1 != _inheritedTypes.end()) {
         if (**it1 != **it2) return false;
         ++it1;
@@ -229,17 +223,17 @@ DocumentType::getField(const stringref& name) const
 }
 
 const Field&
-DocumentType::getField(int fieldId, int version) const
+DocumentType::getField(int fieldId) const
 {
-    return _fields->getField(fieldId, version);
+    return _fields->getField(fieldId);
 }
 
 bool DocumentType::hasField(const stringref &name) const {
     return _fields->hasField(name);
 }
 
-bool DocumentType::hasField(int fieldId, int version) const {
-    return _fields->hasField(fieldId, version);
+bool DocumentType::hasField(int fieldId) const {
+    return _fields->hasField(fieldId);
 }
 
 Field::Set

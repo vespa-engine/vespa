@@ -53,12 +53,12 @@ public:
      * Retrieves a field based on its ID. To determine which ID to use, we also
      * need the document serialization version.
      */
-    const Field& getField(int32_t fieldId, int version) const override;
+    const Field& getField(int32_t fieldId) const override;
 
     bool hasField(const vespalib::stringref &name) const override;
-    bool hasField(int32_t fieldId, int version) const override;
+    bool hasField(int32_t fieldId) const override;
     bool hasField(const Field& f) const {
-        return hasField(f.getId(7), 7);
+        return hasField(f.getId());
     }
 
     Field::Set getFieldSet() const override;

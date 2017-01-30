@@ -50,7 +50,7 @@ Field::contains(const FieldSet& fields) const
 {
     switch (fields.getType()) {
     case FIELD:
-        return static_cast<const Field&>(fields).getId(7) == getId(7);
+        return static_cast<const Field&>(fields).getId() == getId();
     case SET:
     {
         // Go through each.

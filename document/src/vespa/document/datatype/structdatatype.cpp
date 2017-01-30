@@ -89,7 +89,7 @@ StructDataType::addField(const Field& field)
     }
     std::shared_ptr<Field> newF(new Field(field));
     _nameFieldMap[field.getName()] = newF;
-    _idFieldMap[field.getId(Document::getNewestSerializationVersion())] = newF;
+    _idFieldMap[field.getId()] = newF;
 }
 
 void
@@ -110,7 +110,7 @@ StructDataType::addInheritedField(const Field& field)
     }
     std::shared_ptr<Field> newF(new Field(field));
     _nameFieldMap[field.getName()] = newF;
-    _idFieldMap[field.getId(Document::getNewestSerializationVersion())] = newF;
+    _idFieldMap[field.getId()] = newF;
 }
 
 FieldValue::UP
@@ -142,14 +142,11 @@ void throwFieldNotFound(int32_t fieldId, int version)
 }
 
 const Field&
-StructDataType::getField(int32_t fieldId, int version) const
+StructDataType::getField(int32_t fieldId) const
 {
-    if (version <= 6) {
-        throwFieldNotFound(fieldId, version);
-    }
     IntFieldMap::const_iterator it(_idFieldMap.find(fieldId));
     if (__builtin_expect(it == _idFieldMap.end(), false)) {
-        throwFieldNotFound(fieldId, version);
+        throwFieldNotFound(fieldId, 7);
     }
     return *it->second;
 }
@@ -158,10 +155,7 @@ bool StructDataType::hasField(const vespalib::stringref &name) const {
     return _nameFieldMap.find(name) != _nameFieldMap.end();
 }
 
-bool StructDataType::hasField(int32_t fieldId, int version) const {
-    if (version <= 6) {
-        throwFieldNotFound(fieldId, version);
-    }
+bool StructDataType::hasField(int32_t fieldId) const {
     return _idFieldMap.find(fieldId) != _idFieldMap.end();
 }
 
@@ -179,7 +173,6 @@ namespace {
 // We cannot use Field::operator==(), since that only compares id.
 bool differs(const Field &field1, const Field &field2) {
     return field1.getId() != field2.getId()
-        || field1.getId(6) != field2.getId(6)
         || field1.getName() != field2.getName();
 }
 }  // namespace
@@ -188,7 +181,7 @@ vespalib::string
 StructDataType::containsConflictingField(const Field& field) const
 {
     StringFieldMap::const_iterator it1( _nameFieldMap.find(field.getName()));
-    IntFieldMap::const_iterator it2(_idFieldMap.find(field.getId(Document::getNewestSerializationVersion())));
+    IntFieldMap::const_iterator it2(_idFieldMap.find(field.getId()));
 
     if (it1 != _nameFieldMap.end() && differs(field, *it1->second)) {
         return make_string("Name in use by field with different id %s.", it1->second->toString().c_str());
