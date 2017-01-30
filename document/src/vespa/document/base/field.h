@@ -72,8 +72,7 @@ public:
 
     const DataType &getDataType() const { return *_dataType; }
 
-    int getId() const { return getId(7); }
-    int getId(int version) const { (void) version; return _fieldId; }
+    int getId() const { return _fieldId; }
     bool isHeaderField() const { return _isHeaderField; }
 
     vespalib::string toString(bool verbose=false) const;

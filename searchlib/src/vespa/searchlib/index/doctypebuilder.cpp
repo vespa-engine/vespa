@@ -1,14 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "doctypebuilder.h"
-#include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/datatype/urldatatype.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/log/log.h>
-
-LOG_SETUP(".index.doctypebuilder");
 
 using namespace document;
 using namespace search::index;
@@ -63,7 +57,7 @@ insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
         DTC::Documenttype::Datatype::Sstruct::Field field;
         field.name = (*itr)->getName();
         field.datatype = (*itr)->getDataType().getId();
-        field.id = (*itr)->getId(Document::getNewestSerializationVersion());
+        field.id = (*itr)->getId();
         cfgStruct.field.push_back(field);
     }
     cfg.datatype.push_back(DTC::Documenttype::Datatype());
