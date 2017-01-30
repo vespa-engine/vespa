@@ -97,7 +97,7 @@ public class AclMaintainer implements Runnable {
                 continue;
             }
             if (!container.get().state.isRunning()) {
-                log.info(String.format("PID for container %s not found (not running?)", container.get().name.asString()));
+                log.info(String.format("Container with name %s is not running, skipping", container.get().name.asString()));
                 continue;
             }
             applyAcl(container.get().name, new Acl(container.get().pid, entry.getValue()));
