@@ -95,6 +95,12 @@ container_drain() {
     sleep 60
 }
 
+Resume() {
+    # Always start vip for now
+    $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
+}
+
+# TODO: Remove vespa-routing when callers have been updated to use resume
 Start() {
     # Always start vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
@@ -137,6 +143,8 @@ main() {
         Stop
     elif [ "$action" = "suspend" ]; then
         Suspend
+    elif [ "$action" = "resume" ]; then
+        Resume
     else
         echo "Unknown action: $action" >&2
         exit 1
