@@ -10,6 +10,7 @@
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/closure.h>
@@ -444,6 +445,16 @@ void addFieldSet(const DocumenttypesConfig::Documenttype::FieldsetsMap & fsv, Do
     }
 }
 
+void addReferenceTypes(
+        const vector<DocumenttypesConfig::Documenttype::Referencetype> &ref_types,
+        Repo& data_type_repo,
+        const DocumentTypeMap& doc_type_map) {
+    for (const auto& ref_type : ref_types) {
+        const auto* target_doc_type = lookupRepo(ref_type.targetTypeId, doc_type_map).doc_type;
+        data_type_repo.addDataType(std::make_unique<ReferenceDataType>(*target_doc_type, ref_type.id));
+    }
+}
+
 void configureDataTypeRepo(
         const DocumenttypesConfig::Documenttype &doc_type,
         DocumentTypeMap &type_map) {
@@ -452,6 +463,7 @@ void configureDataTypeRepo(
             doc_type.inherits, type_map, data_types->annotations);
     addAnnotationTypes(doc_type.annotationtype, data_types->annotations);
     inheritDataTypes(doc_type.inherits, type_map, data_types->repo);
+    addReferenceTypes(doc_type.referencetype, data_types->repo, type_map);
     addDataTypes(doc_type.datatype, data_types->repo, data_types->annotations);
     setAnnotationDataTypes(doc_type.annotationtype, data_types->annotations,
                            data_types->repo);

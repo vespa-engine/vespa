@@ -500,4 +500,34 @@ TEST("Require that Array can have nested DocumentType") {
     ASSERT_TRUE(type);
 }
 
+TEST("Reference fields are resolved to correct reference type") {
+    const int doc_with_refs_id = 5678;
+    const int type_2_id = doc_type_id + 1;
+    const int ref1_id = 777;
+    const int ref2_id = 888;
+    DocumenttypesConfigBuilderHelper builder;
+    builder.document(doc_type_id, type_name,
+                     Struct(header_name), Struct(body_name));
+    builder.document(type_2_id, type_name_2,
+                     Struct(header_name_2), Struct(body_name_2));
+    builder.document(doc_with_refs_id, "doc_with_refs",
+                     Struct("doc_with_refs.header")
+                        .addField("ref1", ref1_id),
+                     Struct("doc_with_refs.body")
+                        .addField("ref2", ref2_id)
+                        .addField("ref3", ref1_id))
+        .referenceType(ref1_id, doc_type_id)
+        .referenceType(ref2_id, type_2_id);
+
+    DocumentTypeRepo repo(builder.config());
+    const DocumentType *type = repo.getDocumentType(doc_with_refs_id);
+    ASSERT_TRUE(type != nullptr);
+    const auto* ref1_type(repo.getDataType(*type, ref1_id));
+    const auto* ref2_type(repo.getDataType(*type, ref2_id));
+
+    EXPECT_EQUAL(*ref1_type, type->getFieldsType().getField("ref1").getDataType());
+    EXPECT_EQUAL(*ref2_type, type->getFieldsType().getField("ref2").getDataType());
+    EXPECT_EQUAL(*ref1_type, type->getFieldsType().getField("ref3").getDataType());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

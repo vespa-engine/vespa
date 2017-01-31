@@ -100,3 +100,7 @@ documenttype[].annotationtype[].inherits[].id int
 
 ## Field sets
 documenttype[].fieldsets{}.fields[] string
+
+documenttype[].referencetype[].id int
+
+documenttype[].referencetype[].target_type_id int

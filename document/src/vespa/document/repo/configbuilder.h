@@ -137,6 +137,12 @@ struct DocTypeRep {
         addType(type, doc_type);
         return annotationType(id, name, type.id);
     }
+    DocTypeRep& referenceType(int32_t id, int32_t target_type_id) {
+        doc_type.referencetype.resize(doc_type.referencetype.size() + 1);
+        doc_type.referencetype.back().id = id;
+        doc_type.referencetype.back().targetTypeId = target_type_id;
+        return *this;
+    }
 };
 
 class DocumenttypesConfigBuilderHelper {
