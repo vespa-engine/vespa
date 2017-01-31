@@ -10,7 +10,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cmath>
 
-
 namespace search {
 namespace aggregation {
 
