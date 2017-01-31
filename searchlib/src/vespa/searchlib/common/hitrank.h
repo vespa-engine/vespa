@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace search
-{
+namespace search {
 
 typedef double HitRank;
 typedef double SignedHitRank;

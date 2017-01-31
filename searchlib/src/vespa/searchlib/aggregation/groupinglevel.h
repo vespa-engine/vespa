@@ -18,6 +18,9 @@ class Grouping;
 class GroupingLevel : public vespalib::Identifiable
 {
 private:
+    using ResultNode = expression::ResultNode;
+    using ExpressionNode = expression::ExpressionNode;
+    using ExpressionTree = expression::ExpressionTree;
     class Grouper {
     public:
         virtual ~Grouper() { }
@@ -65,12 +68,12 @@ private:
         }
         virtual MultiValueGrouper * clone() const { return new MultiValueGrouper(*this); }
     };
-    int64_t                            _maxGroups;
-    int64_t                            _precision;
-    bool                               _isOrdered;
-    bool                               _frozen;
-    search::expression::ExpressionTree _classify;
-    Group                              _collect;
+    int64_t        _maxGroups;
+    int64_t        _precision;
+    bool           _isOrdered;
+    bool           _frozen;
+    ExpressionTree _classify;
+    Group          _collect;
 
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:

@@ -2,12 +2,14 @@
 #pragma once
 
 #include "groupinglevel.h"
-#include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/vespalib/util/clock.h>
 
 namespace search {
+
+class BitVector;
+class IDocumentMetaStore;
+
 namespace aggregation {
 
 /**
@@ -81,11 +83,11 @@ public:
     void aggregate(const RankedHit * rankedHit, unsigned int len, const BitVector * bVec);
     void aggregate(DocId docId, HitRank rank = 0);
     void aggregate(const document::Document & doc, HitRank rank = 0);
-    void convertToGlobalId(const search::IDocumentMetaStore &metaStore);
+    void convertToGlobalId(const IDocumentMetaStore &metaStore);
     void postAggregate();
     void sortById();
     void cleanTemporary();
-    void configureStaticStuff(const ConfigureStaticParams & params);
+    void configureStaticStuff(const expression::ConfigureStaticParams & params);
     void cleanupAttributeReferences();
 };
 

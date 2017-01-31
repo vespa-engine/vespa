@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+#include "aggregation.h"
 #include "expressioncountaggregationresult.h"
-#include <vespa/searchlib/aggregation/aggregation.h>
-#include <stdexcept>
+#include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/xxhash/xxhash.h>
 
@@ -35,8 +35,33 @@ IMPLEMENT_AGGREGATIONRESULT(MaxAggregationResult,     AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(MinAggregationResult,     AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(AverageAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(XorAggregationResult,     AggregationResult);
-IMPLEMENT_AGGREGATIONRESULT(ExpressionCountAggregationResult,
-                            AggregationResult);
+IMPLEMENT_AGGREGATIONRESULT(ExpressionCountAggregationResult, AggregationResult);
+
+AggregationResult::AggregationResult() :
+    _expressionTree(new ExpressionTree()),
+    _tag(-1)
+{ }
+
+AggregationResult::~AggregationResult() { }
+
+void
+AggregationResult::aggregate(const document::Document & doc, HitRank rank) {
+    bool ok(_expressionTree->execute(doc, rank));
+    if (ok) {
+        onAggregate(_expressionTree->getResult(), doc, rank);
+    } else {
+        throw std::runtime_error(vespalib::make_string("aggregate(%s, %f) failed ", doc.getId().toString().c_str(), rank));
+    }
+}
+void
+AggregationResult::aggregate(DocId docId, HitRank rank) {
+    bool ok(_expressionTree->execute(docId, rank));
+    if (ok) {
+        onAggregate(_expressionTree->getResult(), docId, rank);
+    } else {
+        throw std::runtime_error(vespalib::make_string("aggregate(%u, %f) failed ", docId, rank));
+    }
+}
 
 bool AggregationResult::Configure::check(const vespalib::Identifiable &obj) const
 {

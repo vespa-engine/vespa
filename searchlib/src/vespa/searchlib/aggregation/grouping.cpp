@@ -1,14 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/aggregation/grouping.h>
-#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
-#include <stdexcept>
-#include <vespa/vespalib/objects/visit.h>
-#include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/vespalib/objects/objectoperation.h>
+
+#include "grouping.h"
+#include "hitsaggregationresult.h"
+#include <vespa/searchlib/expression/stringresultnode.h>
+#include <vespa/searchlib/expression/enumresultnode.h>
+#include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/documentaccessornode.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
+#include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/searchlib/common/bitvector.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.grouping");
 

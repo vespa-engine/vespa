@@ -4,6 +4,7 @@
 
 #include "aggregationresult.h"
 #include <vespa/searchlib/grouping/hyperloglog.h>
+#include <vespa/searchlib/expression/integerresultnode.h>
 
 namespace search {
 namespace aggregation {
@@ -18,10 +19,10 @@ class ExpressionCountAggregationResult : public AggregationResult {
     static const int PRECISION = 10;
 
     HyperLogLog<PRECISION> _hll;
-    Int64ResultNode _rank;
+    expression::Int64ResultNode _rank;
 
     virtual const ResultNode & onGetRank() const { return _rank; }
-    virtual void onPrepare(const ResultNode &, bool) {}
+    virtual void onPrepare(const ResultNode &, bool) { }
 public:
     DECLARE_AGGREGATIONRESULT(ExpressionCountAggregationResult);
     ExpressionCountAggregationResult() : AggregationResult(), _hll() { }

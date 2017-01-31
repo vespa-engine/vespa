@@ -1,18 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "group.h"
 #include "maxaggregationresult.h"
 #include "groupinglevel.h"
 #include "grouping.h"
+
 #include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <cmath>
 
 
 namespace search {
 namespace aggregation {
 
-using search::expression::FloatResultNode;
 using search::expression::AggregationRefNode;
+using search::expression::ExpressionTree;
 using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
@@ -31,8 +34,7 @@ struct SortByGroupRank {
     }
 };
 
-} // namespace search::aggregation::<unnamed>
-
+}
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, Group, vespalib::Identifiable);
 
@@ -526,28 +528,28 @@ Group::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.openStruct("orderBy", "[]");
     visit(visitor, "size", getOrderBySize());
     for (size_t i(0), m(getOrderBySize()); i < m; i++) {
-        visit(visitor, vespalib::make_vespa_string("[%lu]", i), getOrderBy(i));
+        visit(visitor, vespalib::make_string("[%lu]", i), getOrderBy(i));
     }
     visitor.closeStruct();
 //    visit(visitor, "aggregationResults",    _aggregationResults);
     visitor.openStruct("aggregationresults", "[]");
     visit(visitor, "size", getAggrSize());
     for (size_t i(0), m(getAggrSize()); i < m; i++) {
-        visit(visitor, vespalib::make_vespa_string("[%lu]", i), getAggrCP(i));
+        visit(visitor, vespalib::make_string("[%lu]", i), getAggrCP(i));
     }
     visitor.closeStruct();
 //    visit(visitor, "expressionResults",     _expressionResults);
     visitor.openStruct("expressionResults", "[]");
     visit(visitor, "size", getExprSize());
     for (size_t i(0), m(getExprSize()); i < m; i++) {
-        visit(visitor, vespalib::make_vespa_string("[%lu]", i), getExprCP(i));
+        visit(visitor, vespalib::make_string("[%lu]", i), getExprCP(i));
     }
     visitor.closeStruct();
     //visit(visitor, "children",              _children);
     visitor.openStruct("children", "[]");
     visit(visitor, "size", getChildrenSize());
     for (size_t i(0), m(getChildrenSize()); i < m; i++) {
-        visit(visitor, vespalib::make_vespa_string("[%lu]", i), getChild(i));
+        visit(visitor, vespalib::make_string("[%lu]", i), getChild(i));
     }
     visitor.closeStruct();
     visit(visitor, "tag",                   _tag);

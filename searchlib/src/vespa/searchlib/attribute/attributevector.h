@@ -12,7 +12,6 @@
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/address_space.h>
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/common/identifiable.h>
 #include <vespa/searchlib/common/range.h>
@@ -27,6 +26,7 @@
 #include <shared_mutex>
 
 class Fast_BufferedFile;
+class FastOS_FileInterface;
 
 namespace document {
     class ArithmeticValueUpdate;

@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/expressionnode.h>
-#include <vespa/searchlib/expression/resultnode.h>
+#include "floatresultnode.h"
 
 namespace search {
 namespace expression {

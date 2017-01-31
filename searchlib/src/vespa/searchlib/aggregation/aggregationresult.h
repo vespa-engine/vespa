@@ -2,22 +2,12 @@
 #pragma once
 
 #include <vespa/searchlib/expression/expressiontree.h>
-#include <vespa/searchlib/expression/numericresultnode.h>
-#include <vespa/searchlib/expression/integerresultnode.h>
-#include <stdexcept>
+#include <vespa/searchlib/expression/resultnode.h>
 
 namespace search {
 namespace aggregation {
 
-using search::expression::ExpressionTree;
-using search::expression::ExpressionNode;
-using search::expression::ResultNode;
 using search::expression::DocId;
-using search::expression::NumericResultNode;
-using search::expression::SingleResultNode;
-using search::expression::IntegerResultNode;
-using search::expression::Int64ResultNode;
-using search::expression::ConfigureStaticParams;
 
 #define DECLARE_ABSTRACT_AGGREGATIONRESULT(cclass)                  \
     DECLARE_IDENTIFIABLE_ABSTRACT_NS2(search, aggregation, cclass); \
@@ -40,8 +30,10 @@ using search::expression::ConfigureStaticParams;
 class AggregationResult : public expression::ExpressionNode
 {
 public:
+    using ResultNode = expression::ResultNode;
     DECLARE_NBO_SERIALIZE;
     DECLARE_ABSTRACT_AGGREGATIONRESULT(AggregationResult);
+    ~AggregationResult();
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
@@ -55,22 +47,8 @@ public:
     void reset() { onReset(); }
     void merge(const AggregationResult & b) { onMerge(b); }
     virtual void postMerge() {}
-    void aggregate(const document::Document & doc, HitRank rank) {
-        bool ok(_expressionTree->execute(doc, rank));
-        if (ok) {
-            onAggregate(_expressionTree->getResult(), doc, rank);
-        } else {
-            throw std::runtime_error(vespalib::make_string("aggregate(%s, %f) failed ", doc.getId().toString().c_str(), rank));
-        }
-    }
-    void aggregate(DocId docId, HitRank rank) {
-        bool ok(_expressionTree->execute(docId, rank));
-        if (ok) {
-            onAggregate(_expressionTree->getResult(), docId, rank);
-        } else {
-            throw std::runtime_error(vespalib::make_string("aggregate(%u, %f) failed ", docId, rank));
-        }
-    }
+    void aggregate(const document::Document & doc, HitRank rank);
+    void aggregate(DocId docId, HitRank rank);
     AggregationResult &setExpression(const ExpressionNode::CP &expr);
     AggregationResult &setResult(const ResultNode::CP &result) {
         prepare(result.get(), true);
@@ -84,7 +62,7 @@ public:
     const ExpressionNode * getExpression() const { return _expressionTree->getRoot().get(); }
     ExpressionNode * getExpression() { return _expressionTree->getRoot().get(); }
 protected:
-    AggregationResult() : _expressionTree(new ExpressionTree()), _tag(-1) { }
+    AggregationResult();
 private:
     /// from expressionnode
     virtual void onPrepare(bool preserveAccurateTypes) { (void) preserveAccurateTypes; }
@@ -108,7 +86,7 @@ private:
         (void) rank;
         onAggregate(result);
     }
-    search::expression::ExpressionTree::LP _expressionTree;
+    vespalib::LinkedPtr<expression::ExpressionTree> _expressionTree;
     uint32_t _tag;
 };
 

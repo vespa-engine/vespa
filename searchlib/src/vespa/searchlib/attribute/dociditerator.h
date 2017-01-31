@@ -4,8 +4,7 @@
 
 #include "postinglisttraits.h"
 
-namespace search
-{
+namespace search {
 
 /**
  * Inner attribute iterator used for temporary posting lists (range

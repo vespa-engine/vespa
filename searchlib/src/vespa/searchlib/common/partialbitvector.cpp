@@ -15,8 +15,8 @@ PartialBitVector::PartialBitVector(Index start, Index end) :
 }
 
 PartialBitVector::PartialBitVector(const BitVector & org, Index start, Index end) :
-        BitVector(),
-        _alloc(allocatePaddedAndAligned(start, end))
+    BitVector(),
+    _alloc(allocatePaddedAndAligned(start, end))
 {
     init(_alloc.get(), start, end);
     memcpy(_alloc.get(), org.getWordIndex(start), numActiveBytes(start, end));
