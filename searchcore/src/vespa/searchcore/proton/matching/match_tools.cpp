@@ -12,6 +12,7 @@ using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
+using namespace search::fef::indexproperties::matching;
 using search::IDocumentMetaStore;
 
 namespace proton {
@@ -75,7 +76,8 @@ search::fef::RankProgram::UP
 MatchTools::first_phase_program() const {
     auto program = setup_program(_rankSetup.create_first_phase_program(),
                                  _mdl, _queryEnv, _featureOverrides);
-    program->match_data().set_termwise_limit(_rankSetup.get_termwise_limit());
+    program->match_data().set_termwise_limit(TermwiseLimit::lookup(_queryEnv.getProperties(),
+                                                                   _rankSetup.get_termwise_limit()));
     return program;
 }
 
