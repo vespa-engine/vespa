@@ -114,7 +114,6 @@ public class LocalZoneUtils {
                     "/home/y/var/vespa",
                     "/home/y/var/yca",
                     "/home/y/var/ycore++",
-                    "/home/y/var/ymon",
                     "/home/y/var/zookeeper")
                 .forEach(path -> createCmd.withVolume(pathToContainerStorage.resolve("node-admin" + path).toString(), path));
 
