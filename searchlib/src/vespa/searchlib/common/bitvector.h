@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
+#include "bitword.h"
 #include <memory>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/generationholder.h>
@@ -20,28 +19,6 @@ class FastOS_FileInterface;
 namespace search {
 
 class PartialBitVector;
-
-class BitWord {
-public:
-    typedef uint64_t Word;
-    typedef uint32_t Index;
-    static Word checkTab(Index index) { return _checkTab[bitNum(index)]; }
-    static Word startBits(Index index) { return (std::numeric_limits<Word>::max() >> 1) >> (WordLen - 1 - bitNum(index)); }
-    static constexpr size_t WordLen = sizeof(Word)*8;
-    static uint8_t bitNum(Index idx) { return (idx % WordLen); }
-    static Word endBits(Index index) { return (std::numeric_limits<Word>::max() - 1) << bitNum(index); }
-    static Index wordNum(Index idx) { return idx >> numWordBits(); }
-    static Word mask(Index idx) { return Word(1) << bitNum(idx); }
-    static constexpr uint8_t size_bits(uint8_t n) { return (n > 1) ? (1 + size_bits(n >> 1)) : 0; }
-    static uint8_t numWordBits() { return size_bits(WordLen); }
-private:
-
-    static Word _checkTab[WordLen];
-    struct Init {
-        Init();
-    };
-    static Init _initializer;
-};
 
 class BitVector : protected BitWord
 {
@@ -269,6 +246,7 @@ public:
     static UP create(const BitVector & rhs);
     static UP create(Index newSize, Index newCapacity, GenerationHolder &generationHolder);
 protected:
+    using Alloc = vespalib::alloc::Alloc;
     VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end);
     BitVector(void * buf, Index sz) : BitVector(buf, 0, sz) { }
     BitVector() : BitVector(nullptr, 0) { }
@@ -282,6 +260,13 @@ protected:
     size_t numWords() const { return numWords(size()); }
     static size_t getAlignment() { return 0x40u; }
     static size_t numActiveBytes(Index start, Index end) { return numActiveWords(start, end) * sizeof(Word); }
+    static Alloc allocatePaddedAndAligned(Index sz) {
+        return allocatePaddedAndAligned(0, sz);
+    }
+    static Alloc allocatePaddedAndAligned(Index start, Index end) {
+        return allocatePaddedAndAligned(start, end, end);
+    }
+    static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity);
 
 private:
     friend PartialBitVector;

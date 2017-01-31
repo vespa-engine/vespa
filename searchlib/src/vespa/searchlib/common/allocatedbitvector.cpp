@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include "allocatedbitvector.h"
 
 namespace search {
@@ -12,26 +9,14 @@ using vespalib::GenerationHeldBase;
 using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;
 
-void AllocatedBitVector::alloc()
-{
-    uint32_t words = capacityWords();
-    words += (-words & 15);	// Pad to 64 byte alignment
-    const size_t sz(words * sizeof(Word));
-    Alloc::alloc(sz).swap(_alloc);
-    assert(_alloc.size()/sizeof(Word) >= words);
-    // Clear padding
-    memset(static_cast<char *>(_alloc.get()) + sizeBytes(), 0, sz - sizeBytes());
-}
-
 //////////////////////////////////////////////////////////////////////
 // Parameterized Constructor
 //////////////////////////////////////////////////////////////////////
 AllocatedBitVector::AllocatedBitVector(Index numberOfElements) :
     BitVector(),
     _capacityBits(numberOfElements),
-    _alloc()
+    _alloc(allocatePaddedAndAligned(numberOfElements))
 {
-    alloc();
     init(_alloc.get(), 0, numberOfElements);
     clear();
 }
@@ -46,9 +31,8 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
 AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const void * rhsBuf, size_t rhsSize) :
     BitVector(),
     _capacityBits(capacityBits),
-    _alloc()
+    _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits))
 {
-    alloc();
     init(_alloc.get(), 0, numberOfElements);
     clear();
     if (rhsSize > 0) {
@@ -63,20 +47,17 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
 
 AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs) :
     AllocatedBitVector(rhs, rhs.capacity())
-{
-}
+{ }
 
 AllocatedBitVector::AllocatedBitVector(const BitVector & rhs) :
     AllocatedBitVector(rhs, rhs.size())
-{
-}
+{ }
 
 AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, Index capacity_) :
     BitVector(),
     _capacityBits(capacity_),
-    _alloc()
+    _alloc(allocatePaddedAndAligned(0, rhs.size(), capacity_))
 {
-    alloc();
     memcpy(_alloc.get(),  rhs.getStart(), rhs.sizeBytes());
     init(_alloc.get(), 0, rhs.size());
 }
@@ -84,12 +65,10 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, Index capacity_) :
 //////////////////////////////////////////////////////////////////////
 // Destructor
 //////////////////////////////////////////////////////////////////////
-AllocatedBitVector::~AllocatedBitVector(void)
-{
-}
+AllocatedBitVector::~AllocatedBitVector() { }
 
 void
-AllocatedBitVector::cleanup(void)
+AllocatedBitVector::cleanup()
 {
     init(nullptr, 0, 0);
     Alloc().swap(_alloc);
@@ -100,7 +79,7 @@ void
 AllocatedBitVector::resize(Index newLength)
 {
     _capacityBits = newLength;
-    alloc();
+    _alloc = allocatePaddedAndAligned(_capacityBits);
     init(_alloc.get(), 0, newLength);
     clear();
 }

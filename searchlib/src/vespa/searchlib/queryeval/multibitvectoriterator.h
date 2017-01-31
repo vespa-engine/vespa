@@ -4,7 +4,7 @@
 
 #include "multisearch.h"
 #include "unpackinfo.h"
-#include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/common/bitword.h>
 
 namespace search {
 namespace queryeval {

@@ -38,26 +38,20 @@ using vespalib::GenerationHeldBase;
 using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;
 
-namespace {
-
-template <typename T>
-void fillUp(T * v, T startVal) {
-    for (size_t i(0); i < (sizeof(T)*8); i++) {
-        v[i] = startVal << i;
-    }
-}
-
-}
-
-BitWord::Init BitWord::_initializer;
-
-BitWord::Init::Init()
+Alloc
+BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity)
 {
-    fillUp(BitWord::_checkTab, std::numeric_limits<BitWord::Word>::max());
+    assert(capacity >= end);
+    uint32_t words = numActiveWords(start, capacity);
+    words += (-words & 15);	// Pad to 64 byte alignment
+    const size_t sz(words * sizeof(Word));
+    Alloc alloc = Alloc::alloc(sz);
+    assert(alloc.size()/sizeof(Word) >= words);
+    // Clear padding
+    size_t usedBytes = numBytes(end - start);
+    memset(static_cast<char *>(alloc.get()) + usedBytes, 0, sz - usedBytes);
+    return alloc;
 }
-
-BitWord::Word BitWord::_checkTab[BitWord::WordLen];
-
 
 BitVector::BitVector(void * buf, Index start, Index end) :
     _words(static_cast<Word *>(buf) - wordNum(start)),
