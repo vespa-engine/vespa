@@ -96,7 +96,7 @@ public class RunVespaLocal {
                 docker,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation),
                 environmentBuilder.build(),
-                Optional.empty()).getNodeAdminStateUpdater();
+                true);
     }
 
     /**

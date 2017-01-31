@@ -1,4 +1,1 @@
-/dependencies
-/Dockerfile
-include/services.xml
-/**/*.pyc
+include/Dockerfile
