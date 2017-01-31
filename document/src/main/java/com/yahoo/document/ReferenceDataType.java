@@ -62,7 +62,7 @@ public class ReferenceDataType extends DataType {
      * be invoked from configuration or model code when resolving temporary types.
      *
      * @throws IllegalStateException if the previously stored target type is already a concrete
-     *     instance of DocumentType.
+     *     instance (not TemporaryStructuredDataType).
      */
     public void setTargetType(StructuredDataType targetType) {
         if (! (this.targetType instanceof TemporaryStructuredDataType)) {
