@@ -31,7 +31,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     private final DeployLogger deployLogger;
 
     public DomAdminV4Builder(ConfigModelContext modelContext, boolean multitenant, List<ConfigServerSpec> configServerSpecs, Collection<ContainerModel> containerModels) {
-        super(modelContext.getDeployState().getFileRegistry(), multitenant, configServerSpecs);
+        super(modelContext.getApplicationType(), modelContext.getDeployState().getFileRegistry(), multitenant, configServerSpecs);
         this.containerModels = containerModels;
         this.deployLogger = modelContext.getDeployLogger();
     }
