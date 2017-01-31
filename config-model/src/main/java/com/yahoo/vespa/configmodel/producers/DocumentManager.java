@@ -145,6 +145,9 @@ public class DocumentManager {
             // Nothing to do; the type of the tensor is instead stored in each field as detailed type information
             // to provide better compatibility. A tensor field can have its tensorType changed (in compatible ways)
             // without changing the field type and thus requiring data refeed
+        } else if (type instanceof ReferenceDataType) {
+            ReferenceDataType refType = (ReferenceDataType) type;
+            builder.referencetype(new Datatype.Referencetype.Builder().target_type_id(refType.getTargetType().getId()));
         } else {
             throw new IllegalArgumentException("Can not create config for data type '" + type.getName());
         }
