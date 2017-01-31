@@ -5,13 +5,15 @@
 #     vespa-cookbooks/hosted/files/default/prepost-instance.sh
 # TODO: Remove the above cookbook file (with the down-side that a new script
 # requires a new vespa release, instead of just a hosted release).
-
-# Usage: nodectl-instance.sh [start|stop|suspend]
+#
+# Usage: nodectl-instance.sh [resume|start|stop|suspend]
+#
+# resume: Set the node "in service" by e.g. undraining container traffic
 #
 # start: Set the node "in service" by e.g. undraining container traffic.
 # start can be assumed to have completed successfully.
 #
-# stop: Stop services on the node (Note: Only does suspend now, will be changed soon, Oct 24 2016)
+# stop: Stop services on the node
 #
 # suspend: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
 # node "out of service" by draining container traffic, and flush index for a
