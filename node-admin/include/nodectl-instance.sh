@@ -95,13 +95,32 @@ container_drain() {
     sleep 60
 }
 
+# Start all services that should run, must be idempotent
 Start() {
+    yinst start services
+    echo "Services started, exited with $?"
+
+    echo "Configuring rsyslog service to work"
+    # Disable kernel log module
+    sed -i.bak 's/^\$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
+    echo "Starting rsyslog service"
+    service rsyslog start
+
+    echo "Starting crond service"
+    service crond start
+
     # Always start vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
 }
 
+# Stop all services, must be idempotent
 Stop() {
+    echo "Stopping services and other yinst packages running"
     yinst stop
+    echo "Stopping crond service"
+    service crond stop
+    echo "Stopping rsyslog service"
+    service rsyslog stop
 }
 
 Suspend() {
