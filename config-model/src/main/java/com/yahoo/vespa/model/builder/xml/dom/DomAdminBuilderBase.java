@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
@@ -33,11 +35,13 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     private static final int DEFAULT_INTERVAL = 1; // in minutes
     private static final String DEFAULT_CLUSTER_NAME = "vespa";
 
+    private final ApplicationType applicationType;
     private final List<ConfigServerSpec> configServerSpecs;
     private final FileRegistry fileRegistry;
     protected final boolean multitenant;
 
-    public DomAdminBuilderBase(FileRegistry fileRegistry, boolean multitenant, List<ConfigServerSpec> configServerSpecs) {
+    public DomAdminBuilderBase(ApplicationType applicationType, FileRegistry fileRegistry, boolean multitenant, List<ConfigServerSpec> configServerSpecs) {
+        this.applicationType = applicationType;
         this.fileRegistry = fileRegistry;
         this.multitenant = multitenant;
         this.configServerSpecs = configServerSpecs;
@@ -62,8 +66,10 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     protected Admin doBuild(AbstractConfigProducer parent, Element adminE) {
         Yamas yamas = getYamas(XML.getChild(adminE, "yamas"));
 
-        Metrics metrics = new MetricsBuilder(predefinedMetricSets).buildMetrics(XML.getChild(adminE, "metrics"));
-        Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper.buildMetricsConsumers(XML.getChild(adminE, "metric-consumers"));
+        Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
+                .buildMetrics(XML.getChild(adminE, "metrics"));
+        Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
+                .buildMetricsConsumers(XML.getChild(adminE, "metric-consumers"));
 
         Admin admin = new Admin(parent, yamas, metrics, legacyMetricsConsumers, multitenant);
 
