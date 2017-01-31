@@ -7,11 +7,9 @@
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 class PageDict4RandRead : public index::DictionaryFileRandRead
 {
@@ -26,13 +24,13 @@ class PageDict4RandRead : public index::DictionaryFileRandRead
     typedef index::PostingListCounts PostingListCounts;
     typedef index::PostingListOffsetAndCounts PostingListOffsetAndCounts;
 
-    SSReader *_ssReader;
+    std::unique_ptr<SSReader> _ssReader;
 
     DC _ssd;
     ComprFileReadContext _ssReadContext;
-    FastOS_File _ssfile;
-    FastOS_File _spfile;
-    FastOS_File _pfile;
+    std::unique_ptr<FastOS_FileInterface> _ssfile;
+    std::unique_ptr<FastOS_FileInterface> _spfile;
+    std::unique_ptr<FastOS_FileInterface> _pfile;
 
     uint64_t _ssFileBitSize;
     uint64_t _spFileBitSize;
@@ -41,45 +39,22 @@ class PageDict4RandRead : public index::DictionaryFileRandRead
     uint32_t _spHeaderLen;
     uint32_t _pHeaderLen;
 
-    void
-    readSSHeader();
-
-    void
-    readSPHeader(void);
-
-    void
-    readPHeader(void);
-
+    void readSSHeader();
+    void readSPHeader();
+    void readPHeader();
 public:
-    PageDict4RandRead(void);
+    PageDict4RandRead();
+    ~PageDict4RandRead();
 
-    virtual
-    ~PageDict4RandRead(void);
+    bool lookup(const vespalib::stringref &word, uint64_t &wordNum,
+                PostingListOffsetAndCounts &offsetAndCounts) override;
 
-    virtual bool
-    lookup(const vespalib::stringref &word,
-           uint64_t &wordNum,
-           PostingListOffsetAndCounts &offsetAndCounts);
+    bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
 
-    /**
-     * Open dictionary file for random read.
-     */
-    virtual bool open(const vespalib::string &name,
-                      const TuneFileRandRead &tuneFileRead);
-
-    /**
-     * Close dictionary file.
-     */
-    virtual bool close(void);
-
-    virtual uint64_t
-    getNumWordIds(void) const;
+    bool close() override;
+    uint64_t getNumWordIds() const override;
 };
-
 
 } // namespace diskindex
 
 } // namespace search
-
-
-

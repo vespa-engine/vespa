@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/bitvector.h>
+#include "dociditerator.h"
+#include "attributevector.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include "attributevector.h"
 #include <vespa/searchlib/btree/btreenode.h>
 #include <vespa/searchlib/btree/btreeiterator.h>
 #include <vespa/vespalib/objects/visit.h>
-#include "dociditerator.h"
 
 namespace search {
 
@@ -475,52 +474,6 @@ public:
         : FlagAttributeIteratorT<SC>(sc, matchData)
     { }
 };
-
-template <typename SC>
-void
-FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
-{
-    const SC & sc(_sc);
-    const typename SC::Attribute &attr =
-        static_cast<const typename SC::Attribute &>(sc.attribute());
-    for (int i = sc._low; (i <= sc._high); ++i) {
-        const BitVector * bv = attr.getBitVector(i);
-        if ((bv != NULL) && docId < _docIdLimit && bv->testBit(docId)) {
-            setDocId(docId);
-            return;
-        }
-    }
-
-    uint32_t minNextBit(search::endDocId);
-    for (int i = sc._low; (i <= sc._high); ++i) {
-        const BitVector * bv = attr.getBitVector(i);
-        if (bv != NULL && docId < _docIdLimit) {
-            uint32_t nextBit = bv->getNextTrueBit(docId);
-            minNextBit = std::min(nextBit, minNextBit);
-        }
-    }
-    if (minNextBit < _docIdLimit) {
-        setDocId(minNextBit);
-    } else {
-        setAtEnd();
-    }
-}
-
-template <typename SC>
-void
-FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
-{
-    const SC & sc(_sc);
-    const typename SC::Attribute &attr =
-        static_cast<const typename SC::Attribute &>(sc.attribute());
-    for (int i = sc._low; (i <= sc._high); ++i) {
-        const BitVector * bv = attr.getBitVector(i);
-        if ((bv != NULL) && docId < _docIdLimit && bv->testBit(docId)) {
-            setDocId(docId);
-            return;
-        }
-    }
-}
 
 } // namespace search
 

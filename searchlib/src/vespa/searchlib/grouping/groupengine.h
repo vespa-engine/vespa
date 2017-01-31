@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/aggregation/groupinglevel.h>
 #include <vespa/searchlib/grouping/collect.h>
+#include <vespa/vespalib/util/sort.h>
 
 namespace search {
 namespace grouping {
@@ -119,7 +120,7 @@ private:
     }
     size_t getIdBase(GroupRef g) const { return _idByteSize*g; }
 
-    typedef expression::ResultNodeVector::UP IdList;
+    using IdList = std::unique_ptr<expression::ResultNodeVector>;
     typedef vespalib::Array<Children *> GroupBacking;
     typedef std::vector<double> RankV;
     typedef vespalib::Array<uint8_t> IdBacking;

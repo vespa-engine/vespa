@@ -6,7 +6,6 @@
 #include "postinglisttraits.h"
 #include "postingstore.h"
 #include "ipostinglistsearchcontext.h"
-#include <vespa/searchlib/common/bitvector.h>
 #include "attributevector.h"
 #include <vespa/vespalib/util/regexp.h>
 #include <cstdlib>
@@ -110,7 +109,7 @@ protected:
      * Synthetic posting lists for range search, in array or bitvector form
      */
     PostingVector  _array;
-    BitVector::UP  _bitVector;
+    std::unique_ptr<BitVector>  _bitVector;
     bool           _fetchPostingsDone;
     bool           _arrayValid;
     

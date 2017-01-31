@@ -1,25 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.attributefilewriter");
-
 #include "attributefilewriter.h"
-#include <vespa/vespalib/data/databuffer.h>
+#include "attributefilebufferwriter.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include "attributefilebufferwriter.h"
+#include <vespa/fastos/file.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.attributefilewriter");
 
 using search::common::FileHeaderContext;
 using vespalib::getLastErrorString;
 
 
-namespace search
-{
+namespace search {
 
-namespace
-{
+namespace {
 
 const uint32_t headerAlign = 4096;
 const uint32_t MIN_ALIGNMENT = 4096;
@@ -101,31 +98,29 @@ AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
                     const FileHeaderContext &fileHeaderContext,
                     const IAttributeSaveTarget::Config &cfg,
                     const vespalib::string &desc)
-    : _tuneFileAttributes(tuneFileAttributes),
+    : _file(new FastOS_File()),
+      _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
       _cfg(cfg),
       _desc(desc),
       _fileBitSize(0)
-{
-}
+{ }
 
 
-AttributeFileWriter::~AttributeFileWriter()
-{
-}
+AttributeFileWriter::~AttributeFileWriter() { }
 
 
 bool
 AttributeFileWriter::open(const vespalib::string &fileName)
 {
     if (_tuneFileAttributes._write.getWantSyncWrites()) {
-        _file.EnableSyncWrites();
+        _file->EnableSyncWrites();
     }
     if (_tuneFileAttributes._write.getWantDirectIO()) {
-        _file.EnableDirectIO();
+        _file->EnableDirectIO();
     }
-    _file.OpenWriteOnlyTruncate(fileName.c_str());
-    if (!_file.IsOpened()) {
+    _file->OpenWriteOnlyTruncate(fileName.c_str());
+    if (!_file->IsOpened()) {
         LOG(error, "Could not open attribute vector '%s' for writing: %s",
             fileName.c_str(), getLastErrorString().c_str());
         return false;
@@ -139,9 +134,9 @@ void
 AttributeFileWriter::writeHeader()
 {
     vespalib::FileHeader header(headerAlign);
-    _fileHeaderContext.addTags(header, _file.GetFileName());
+    _fileHeaderContext.addTags(header, _file->GetFileName());
     addTags(header);
-    size_t headerLen = header.writeFile(_file);
+    size_t headerLen = header.writeFile(*_file);
     assert((headerLen % MIN_ALIGNMENT) == 0);
     _fileBitSize = headerLen * 8;
 }
@@ -186,7 +181,7 @@ AttributeFileWriter::writeBuf(Buffer buf)
 {
     size_t bufLen = buf->getDataLen();
     // TODO: pad to DirectIO boundary when burning bridges
-    writeDirectIOAligned(_file, buf->getData(), bufLen);
+    writeDirectIOAligned(*_file, buf->getData(), bufLen);
     _fileBitSize += bufLen * 8;
 }
 
@@ -194,10 +189,10 @@ AttributeFileWriter::writeBuf(Buffer buf)
 void
 AttributeFileWriter::close()
 {
-    if (_file.IsOpened()) {
-        _file.Sync();
-        _file.Close();
-        updateHeader(_file.GetFileName(), _fileBitSize);
+    if (_file->IsOpened()) {
+        _file->Sync();
+        _file->Close();
+        updateHeader(_file->GetFileName(), _fileBitSize);
     }
 }
 

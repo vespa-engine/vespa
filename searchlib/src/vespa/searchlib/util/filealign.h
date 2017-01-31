@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+
 class FastOS_FileInterface;
 
 namespace vespalib { class nbostream; }
@@ -22,9 +25,8 @@ private:
 
 
 public:
-    FileAlign(void);
-
-    ~FileAlign(void);
+    FileAlign();
+    ~FileAlign();
 
     /**
      * Adjust number of bytes for IO (read or write), reducing
@@ -36,8 +38,7 @@ public:
      *
      * @return adjusted number of bytes for IO
      */
-    size_t
-    adjustSize(int64_t offset, size_t size);
+    size_t adjustSize(int64_t offset, size_t size);
 
     /**
      * Adjust number of elements for IO (read or write), reducing
@@ -49,8 +50,7 @@ public:
      *
      * @return adjusted number of elements for IO
      */
-    size_t
-    adjustElements(int64_t eoffset, size_t esize);
+    size_t adjustElements(int64_t eoffset, size_t esize);
 
     /**
      * Setup alignment
@@ -62,73 +62,26 @@ public:
      *
      * @return adjusted number of elements in buffer
      */
-    size_t
-    setupAlign(size_t elements,
-               size_t elemSize,
-               FastOS_FileInterface *file,
-               size_t preferredFileAlignment);
-
-    bool
-    getDirectIO(void) const
-    {
-        return _directio;
-    }
-
-    bool
-    getCheckPointResumed(void) const
-    {
-        return _checkPointResumed;
-    }
-
-    size_t
-    getDirectIOFileAlign(void) const
-    {
-        return _directIOFileAlign;
-    }
-
-    size_t
-    getDirectIOMemAlign(void) const
-    {
-        return _directIOMemAlign;
-    }
-
-    size_t
-    getMinDirectIOSize(void) const
-    {
-        return _minDirectIOSize;
-    }
-
-    size_t
-    getMinAlignedSize(void) const
-    {
-        return _minAlignedSize;
-    }
-
-    size_t
-    getPreferredFileAlign(void) const
-    {
-        return _preferredFileAlign;
-    }
-
-    size_t
-    getElemSize(void) const
-    {
-        return _elemSize;
-    }
+    size_t setupAlign(size_t elements, size_t elemSize, FastOS_FileInterface *file, size_t preferredFileAlignment);
+    bool getDirectIO() const { return _directio; }
+    bool getCheckPointResumed() const { return _checkPointResumed; }
+    size_t getDirectIOFileAlign() const { return _directIOFileAlign; }
+    size_t getDirectIOMemAlign() const { return _directIOMemAlign; }
+    size_t getMinDirectIOSize() const { return _minDirectIOSize; }
+    size_t getMinAlignedSize() const { return _minAlignedSize; }
+    size_t getPreferredFileAlign() const { return _preferredFileAlign; }
+    size_t getElemSize() const { return _elemSize; }
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing
      * to allow for continued indexing after an interrupt.
      */
-    void
-    checkPointWrite(vespalib::nbostream &out);
+    void checkPointWrite(vespalib::nbostream &out);
 
     /**
      * Checkpoint read.  Used when resuming indexing after an interrupt.
      */
-    void
-    checkPointRead(vespalib::nbostream &in);
+    void checkPointRead(vespalib::nbostream &in);
 };
 
 }
-

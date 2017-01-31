@@ -3,6 +3,7 @@
 #pragma once
 
 #include "andsearchnostrict.h"
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace search {
 namespace queryeval {

@@ -1,16 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2002-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchlib/util/comprbuffer.h>
+#include "comprbuffer.h"
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/fastos/file.h>
 
-LOG_SETUP(".comprbuffer");
-
-namespace search
-{
+namespace search {
 
 using vespalib::nbostream;
 
@@ -19,18 +13,17 @@ ComprBuffer::ComprBuffer(uint32_t unitSize)
       _comprBufSize(0),
       _unitSize(unitSize),
       _comprBufMalloc(NULL)
-{
-}
+{ }
 
 
-ComprBuffer::~ComprBuffer(void)
+ComprBuffer::~ComprBuffer()
 {
     dropComprBuf();
 }
 
 
 void
-ComprBuffer::dropComprBuf(void)
+ComprBuffer::dropComprBuf()
 {
     free(_comprBufMalloc);
     _comprBuf = NULL;
@@ -44,17 +37,14 @@ ComprBuffer::allocComprBuf(size_t comprBufSize,
                            FastOS_FileInterface *file,
                            bool padBefore)
 {
-    comprBufSize = _aligner.setupAlign(comprBufSize,
-                                       _unitSize,
-                                       file,
-                                       preferredFileAlignment);
+    comprBufSize = _aligner.setupAlign(comprBufSize, _unitSize, file, preferredFileAlignment);
     _comprBufSize = comprBufSize;
     _padBefore = padBefore;
     allocComprBuf();
 }
 
 void
-ComprBuffer::allocComprBuf(void)
+ComprBuffer::allocComprBuf()
 {
     dropComprBuf();
     /*

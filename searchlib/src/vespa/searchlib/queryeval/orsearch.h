@@ -20,7 +20,7 @@ public:
     static SearchIterator *create(const Children &children, bool strict);
     static SearchIterator *create(const Children &children, bool strict, const UnpackInfo & unpackInfo);
 
-    BitVector::UP get_hits(uint32_t begin_id) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
     OrSearch(const  Children & children) : MultiSearch(children) { }

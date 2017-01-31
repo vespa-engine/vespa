@@ -2,17 +2,17 @@
 
 #pragma once
 
-#include <memory>
-#include <stdint.h>
 #include "posting_info.h"
 #include "begin_and_end_id.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/trinary.h>
-#include <vespa/searchlib/common/bitvector.h>
+#include <memory>
 
 namespace vespalib { class ObjectVisitor; };
 
 namespace search {
+
+class BitVector;
 
 namespace queryeval {
 
@@ -29,9 +29,6 @@ namespace queryeval {
 class SearchIterator
 {
 private:
-    SearchIterator(const SearchIterator &);
-    SearchIterator &operator=(const SearchIterator &);
-
     /**
      * The current document id for this search object. This variable
      * will have a value that is either @ref beginId, @ref endId or a
@@ -129,7 +126,7 @@ public:
      * @param begin_id the lowest document id that may be a hit
      *                 (we do not remember beginId from initRange)
      **/
-    virtual BitVector::UP get_hits(uint32_t begin_id);
+    virtual std::unique_ptr<BitVector> get_hits(uint32_t begin_id);
 
     /**
      * Find all hits in the currently searched range (specified by
@@ -170,6 +167,8 @@ public:
      * The constructor sets the current document id to @ref beginId.
      **/
     SearchIterator();
+    SearchIterator(const SearchIterator &) = delete;
+    SearchIterator &operator=(const SearchIterator &) = delete;
 
 
     /**
@@ -189,7 +188,6 @@ public:
     bool isAtEnd() const { return isAtEnd(_docid); }
     bool isAtEnd(uint32_t docid) const { 
         if (__builtin_expect(docid >= _endid, false)) {
-            assert (_endid != 0);
             return true;
         }
         return false;
@@ -305,7 +303,7 @@ public:
     /**
      * Empty, just defined to make it virtual.
      **/
-    virtual ~SearchIterator();
+    virtual ~SearchIterator() { }
 
     /**
      * @return true if it is a bitvector

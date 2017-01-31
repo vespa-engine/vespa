@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/fieldvalue/document.h>
+
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
@@ -8,8 +8,6 @@
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
@@ -23,11 +21,10 @@
 #include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/encoding/base64.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");

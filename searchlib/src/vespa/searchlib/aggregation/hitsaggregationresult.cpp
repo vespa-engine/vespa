@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+
 #include "hitsaggregationresult.h"
-#include <vespa/vespalib/objects/visit.h>
-#include "fs4hit.h"
-#include "vdshit.h"
-#include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/vespalib/objects/objectoperation.h>
+#include <vespa/document/fieldvalue/document.h>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.hitsaggregationresult");
 
 namespace search {
@@ -104,7 +101,8 @@ HitsAggregationResult::selectMembers(const vespalib::ObjectPredicate & predicate
     _hits.selectMembers(predicate, operation);
 }
 
-const ResultNode & HitsAggregationResult::onGetRank() const
+const expression::ResultNode &
+HitsAggregationResult::onGetRank() const
 {
     if ( ! _hits.empty() ) {
         _bestHitRank = _hits.front().getRank();

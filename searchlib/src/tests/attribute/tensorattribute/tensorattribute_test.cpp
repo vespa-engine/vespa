@@ -9,6 +9,7 @@
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/fastos/file.h>
 #include <vespa/log/log.h>
 LOG_SETUP("tensorattribute_test");
 

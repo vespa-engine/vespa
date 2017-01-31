@@ -1,17 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".bitvectoriterators");
-
 #include "bitvectoriterator.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.h>
 
-namespace search
-{
+namespace search {
 
 using fef::TermFieldMatchDataArray;
 using fef::TermFieldMatchData;
@@ -110,6 +105,20 @@ queryeval::SearchIterator::UP BitVectorIterator::create(const BitVector *const b
     } else {
         return UP(new BitVectorIterator(*bv, docIdLimit, matchData));
     }
+}
+
+BitVector::UP BitVectorIterator::get_hits(uint32_t begin_id) {
+    return BitVector::create(_bv, begin_id, getEndId());
+}
+
+void BitVectorIterator::or_hits_into(BitVector &result, uint32_t begin_id) {
+    (void) begin_id;
+    result.orWith(_bv);
+}
+
+void BitVectorIterator::and_hits_into(BitVector &result, uint32_t begin_id) {
+    (void) begin_id;
+    result.andWith(_bv);
 }
 
 

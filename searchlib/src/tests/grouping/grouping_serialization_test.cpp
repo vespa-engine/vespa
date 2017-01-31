@@ -1,26 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for grouping_serialization.
 
-#include <vespa/fastos/fastos.h>
-
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
-#include <vespa/searchlib/aggregation/fs4hit.h>
-#include <vespa/searchlib/aggregation/groupinglevel.h>
-#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
-#include <vespa/searchlib/aggregation/vdshit.h>
-#include <vespa/searchlib/common/hitrank.h>
-#include <vespa/searchlib/common/identifiable.h>
-#include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
-#include <vespa/searchlib/expression/floatbucketresultnode.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
-#include <vespa/searchlib/expression/integerbucketresultnode.h>
-#include <vespa/vespalib/objects/nboserializer.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_serialization_test");

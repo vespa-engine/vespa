@@ -17,7 +17,6 @@ class BitVectorTest;
 class AllocatedBitVector : public BitVector
 {
 public:
-    using Alloc = vespalib::alloc::Alloc;
     /**
      * Class constructor specifying size but not content.  New bitvector
      * is cleared.
@@ -42,7 +41,7 @@ public:
 
     AllocatedBitVector(const BitVector &other);
     AllocatedBitVector(const AllocatedBitVector &other);
-    virtual ~AllocatedBitVector(void);
+    virtual ~AllocatedBitVector();
     AllocatedBitVector &operator=(const AllocatedBitVector &other);
     AllocatedBitVector &operator=(const BitVector &other);
 
@@ -53,7 +52,7 @@ public:
      */
     Index capacity() const { return _capacityBits; }
 
-    Index extraByteSize(void) const { return _alloc.size(); } 
+    Index extraByteSize() const { return _alloc.size(); }
 
     /**
      * Set new length of bit vector, possibly destroying content.
@@ -70,7 +69,6 @@ protected:
 
 private:
     friend class BitVectorTest;
-    void alloc();
     void swap(AllocatedBitVector & rhs) {
         std::swap(_capacityBits, rhs._capacityBits);
         _alloc.swap(rhs._alloc);
@@ -83,8 +81,7 @@ private:
      * Prepare for potential reuse where new value might be filled in by
      * Read method.
      */
-    void cleanup(void);
-    Index capacityWords() const { return numWords(capacity()); }
+    void cleanup();
 };
 
 } // namespace search

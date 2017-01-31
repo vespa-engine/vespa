@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/array.h>
 #include "searchiterator.h"
 #include "emptysearch.h"
+#include <vector>
 
 namespace search {
 namespace queryeval {
@@ -37,8 +37,8 @@ public:
 private:
     SourceBlenderSearch(const SourceBlenderSearch &);
     SourceBlenderSearch &operator=(const SourceBlenderSearch &);
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual bool isSourceBlender() const { return true; }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    bool isSourceBlender() const override { return true; }
     static EmptySearch _emptySearch;
 protected:
     using Iterator = sourceselector::Iterator;
@@ -70,7 +70,7 @@ public:
      * (a strict search will locate its next hit when seeking fails)
      **/
     static SourceBlenderSearch * create(std::unique_ptr<Iterator> sourceSelector,
-                        const Children &children, bool strict);
+                                        const Children &children, bool strict);
     virtual ~SourceBlenderSearch();
     size_t getNumChildren() const { return _children.size(); }
     SearchIterator::UP steal(size_t index) {
@@ -78,10 +78,7 @@ public:
         _sources[_children[index]] = NULL;
         return retval;
     }
-    void setChild(size_t index, SearchIterator::UP child) {
-        assert(_sources[_children[index]] == NULL);
-        _sources[_children[index]] = child.release();
-    }
+    void setChild(size_t index, SearchIterator::UP child);
     void initRange(uint32_t beginId, uint32_t endId) override;
     void resetRange() override;
 };

@@ -5,12 +5,11 @@
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/queryeval/iterators.h>
+#include <vespa/fastos/dynamiclibrary.h>
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 using bitcompression::Position;
 

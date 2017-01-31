@@ -6,8 +6,7 @@
 #include "bitvector.h"
 
 
-namespace search
-{
+namespace search {
 
 namespace fef { class TermFieldMatchDataArray; }
 namespace fef { class TermFieldMatchData; }
@@ -24,6 +23,9 @@ private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doSeek(uint32_t docId) override;
     void doUnpack(uint32_t docId) override;
+    BitVector::UP get_hits(uint32_t begin_id) override;
+    void or_hits_into(BitVector &result, uint32_t begin_id) override;
+    void and_hits_into(BitVector &result, uint32_t begin_id) override;
     bool isBitVector() const override { return true; }
     fef::TermFieldMatchData  &_tfmd;
 public:

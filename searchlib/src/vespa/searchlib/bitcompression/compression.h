@@ -1,42 +1,26 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
 #include <vespa/searchlib/util/comprfile.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <map>
+#include <cassert>
 
-namespace vespalib
-{
+namespace vespalib {
 
 class nbostream;
 class GenericHeader;
 
 }
 
-namespace search
-{
+namespace search {
 
-namespace index
-{
+  namespace index { class DocIdAndFeatures; }
 
-class DocIdAndFeatures;
+namespace fef { class TermFieldMatchDataArray; }
 
-} // namespace index
-
-namespace fef
-{
-
-class TermFieldMatchDataArray;
-
-} // namespace fef
-
-
-namespace bitcompression
-{
+namespace bitcompression {
 
 class Position {
 public:
@@ -102,7 +86,7 @@ public:
     static uint64_t _intMask64[65];
     static uint64_t _intMask64le[65];
 
-    CodingTables(void);
+    CodingTables();
 };
 
 #define UC64_DECODECONTEXT(prefix)					\
@@ -744,15 +728,14 @@ public:
     // plus sizeof uint64_t.  Then shifted left by 3 to represent bits.
     uint64_t _fileWriteBias;
 
-    EncodeContext64Base(void)
+    EncodeContext64Base()
         : search::ComprFileEncodeContext(),
           _valI(NULL),
           _valE(NULL),
           _cacheInt(0),
           _cacheFree(64),
           _fileWriteBias(64)
-    {
-    }
+    { }
 
     EncodeContext64Base(const EncodeContext64Base &other)
         : search::ComprFileEncodeContext(other),
@@ -761,13 +744,9 @@ public:
           _cacheInt(other._cacheInt),
           _cacheFree(other._cacheFree),
           _fileWriteBias(other._fileWriteBias)
-    {
-    }
+    { }
 
-    virtual
-    ~EncodeContext64Base(void)
-    {
-    }
+    ~EncodeContext64Base() { }
 
     EncodeContext64Base &
     operator=(const EncodeContext64Base &rhs)
@@ -784,29 +763,22 @@ public:
     /**
      * Get number of used units (e.g. _valI - start)
      */
-    virtual int
-    getUsedUnits(void *start)
-    {
+    int getUsedUnits(void *start) override {
         return _valI - static_cast<uint64_t *>(start);
     }
 
     /**
      * Get normal full buffer size (e.g. _valE - start)
      */
-    virtual int
-    getNormalMaxUnits(void *start)
-    {
+    int getNormalMaxUnits(void *start) override {
         return _valE - static_cast<uint64_t *>(start);
     }
 
     /**
      * Adjust buffer after write (e.g. _valI, _fileWriteBias)
      */
-    virtual void
-    afterWrite(search::ComprBuffer &cbuf,
-               uint32_t remainingUnits,
-               uint64_t bufferStartFilePos)
-    {
+    void
+    afterWrite(search::ComprBuffer &cbuf, uint32_t remainingUnits, uint64_t bufferStartFilePos) override {
         _valI = static_cast<uint64_t *>(cbuf._comprBuf) + remainingUnits;
         _fileWriteBias = (bufferStartFilePos -
                           reinterpret_cast<unsigned long>(cbuf._comprBuf) +
@@ -817,9 +789,7 @@ public:
     /**
      * Adjust buffer size to align end of buffer.
      */
-    virtual void
-    adjustBufSize(search::ComprBuffer &cbuf)
-    {
+    void adjustBufSize(search::ComprBuffer &cbuf) override {
         uint64_t fileWriteOffset =
             (_fileWriteBias +
              ((reinterpret_cast<unsigned long>(cbuf._comprBuf) -
@@ -830,15 +800,11 @@ public:
                         cbuf._comprBufSize);
     }
 
-    virtual uint32_t
-    getUnitByteSize(void) const
-    {
+    uint32_t getUnitByteSize() const override {
         return sizeof(uint64_t);
     }
 
-    void
-    setupWrite(search::ComprBuffer &cbuf)
-    {
+    void setupWrite(search::ComprBuffer &cbuf) {
         _valI = static_cast<uint64_t *>(cbuf._comprBuf);
 
         _fileWriteBias =
@@ -850,9 +816,7 @@ public:
         _cacheFree = 64;
     }
 
-    void
-    reload(const EncodeContext64Base &other)
-    {
+    void reload(const EncodeContext64Base &other) {
         _valI = other._valI;
         _valE = other._valE;
         _cacheInt = other._cacheInt;
@@ -860,38 +824,26 @@ public:
         _fileWriteBias = other._fileWriteBias;
     }
 
-    void
-    pushBack(EncodeContext64Base &other) const
-    {
+    void pushBack(EncodeContext64Base &other) const {
         other._valI = _valI;
         other._cacheInt = _cacheInt;
         other._cacheFree = _cacheFree;
     }
 
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
+    void checkPointWrite(vespalib::nbostream &out) override;
+    void checkPointRead(vespalib::nbostream &in) override;
 
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
-
-    uint64_t
-    getWriteOffset(void) const
-    {
-        return _fileWriteBias +
-            (reinterpret_cast<unsigned long>(_valI) << 3) - _cacheFree;
+    uint64_t getWriteOffset() const {
+        return _fileWriteBias + (reinterpret_cast<unsigned long>(_valI) << 3) - _cacheFree;
     }
 
-    void
-    defineWriteOffset(uint64_t writeOffset)
-    {
+    void defineWriteOffset(uint64_t writeOffset) {
         _fileWriteBias = writeOffset -
                          (reinterpret_cast<unsigned long>(_valI) << 3) +
                          _cacheFree;
     }
 
-    virtual uint64_t
-    getBitPosV(void) const
-    {
+    uint64_t getBitPosV() const override {
         return getWriteOffset();
     }
 
@@ -901,11 +853,8 @@ public:
      * to both decode macros (making them slower) and encoding method (making
      * it slower).
      */
-    static uint64_t
-    maxExpGolombVal(uint32_t kValue)
-    {
-        return static_cast<uint64_t>
-            (- (UINT64_C(1) << kValue) - 1);
+    static uint64_t maxExpGolombVal(uint32_t kValue) {
+        return static_cast<uint64_t>(- (UINT64_C(1) << kValue) - 1);
     }
 
     /*
@@ -914,9 +863,7 @@ public:
      *
      * maxBits must be larger than kValue
      */
-    static uint64_t
-    maxExpGolombVal(uint32_t kValue, uint32_t maxBits)
-    {
+    static uint64_t maxExpGolombVal(uint32_t kValue, uint32_t maxBits) {
         if ((maxBits + kValue + 1) / 2 > 64) {
             return static_cast<uint64_t>(-1);
         }
@@ -953,7 +900,7 @@ public:
      * the _cacheInt. Padding of trailing 0-bits is automatically added.
      */
     void
-    flush(void)
+    flush()
     {
         if (_cacheFree < 64) {
             *_valI++ = bswap(_cacheInt);
@@ -1865,14 +1812,14 @@ public:
     writeHeader(const vespalib::GenericHeader &header);
 
     void
-    writeComprBufferIfNeeded(void)
+    writeComprBufferIfNeeded()
     {
         if (_valI >= _valE)
             _writeContext->writeComprBuffer(false);
     }
 
     void
-    writeComprBuffer(void)
+    writeComprBuffer()
     {
         _writeContext->writeComprBuffer(true);
     }
@@ -1897,23 +1844,19 @@ public:
     writeHeader(vespalib::GenericHeader &header,
                 const vespalib::string &prefix) const;
 
-    virtual const vespalib::string &
-    getIdentifier(void) const;
+    virtual const vespalib::string &getIdentifier() const;
 
-    virtual void
-    writeFeatures(const DocIdAndFeatures &features);
+    virtual void writeFeatures(const DocIdAndFeatures &features);
 
     /*
      * Set parameters.
      */
-    virtual void
-    setParams(const PostingListParams &params);
+    virtual void setParams(const PostingListParams &params);
 
     /*
      * Get current parameters.
      */
-    virtual void
-    getParams(PostingListParams &params) const;
+    virtual void getParams(PostingListParams &params) const;
 };
 
 typedef FeatureEncodeContext<true> FeatureEncodeContextBE;

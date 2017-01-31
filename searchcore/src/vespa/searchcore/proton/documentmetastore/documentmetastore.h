@@ -2,13 +2,6 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/searchcore/proton/common/subdbtype.h>
-#include <vespa/searchlib/attribute/iattributesavetarget.h>
-#include <vespa/searchlib/common/rcuvector.h>
-#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/docstore/ibucketizer.h>
 #include "gid_compare.h"
 #include "document_meta_store_adapter.h"
 #include "documentmetastoreattribute.h"
@@ -17,20 +10,24 @@
 #include "lid_hold_list.h"
 #include "lidstatevector.h"
 #include "raw_document_meta_data.h"
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/common/subdbtype.h>
+#include <vespa/searchlib/attribute/iattributesavetarget.h>
+#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/docstore/ibucketizer.h>
 
 namespace proton {
 
-namespace bucketdb
-{
+namespace bucketdb {
 
 class SplitBucketSession;
 class JoinBucketsSession;
 
 }
 
-namespace documentmetastore {
-    class Reader;
-};
+namespace documentmetastore { class Reader; }
 
 /**
  * This class provides a storage of <lid, meta data> pairs (local

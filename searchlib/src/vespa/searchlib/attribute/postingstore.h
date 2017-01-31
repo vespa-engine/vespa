@@ -3,16 +3,14 @@
 #pragma once
 
 #include "postinglisttraits.h"
+#include "enumstorebase.h"
 #include <set>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/growablebitvector.h>
-#include "enumstorebase.h"
 
-namespace search
-{
+namespace search {
 
-namespace attribute
-{
+namespace attribute {
 
 class Status;
 class Config;
@@ -27,8 +25,7 @@ public:
     BitVectorEntry()
         : _tree(),
           _bv()
-    {
-    }
+    { }
 };
 
 

@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "bitvectorkeyscope.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
-#include "bitvectorkeyscope.h"
 
 namespace search {
 
@@ -19,22 +19,18 @@ namespace diskindex {
 class BitVectorDictionary
 {
 private:
-    BitVectorDictionary(const BitVectorDictionary &rhs);
-
-    BitVectorDictionary &
-    operator=(const BitVectorDictionary &rhs);
-
     typedef search::index::BitVectorWordSingleKey WordSingleKey;
 
-    uint32_t                   _docIdLimit;
-    std::vector<WordSingleKey> _entries;
-    size_t                     _vectorSize;
-    std::unique_ptr<FastOS_File> _datFile;
-    uint32_t                   _datHeaderLen;
+    uint32_t                              _docIdLimit;
+    std::vector<WordSingleKey>            _entries;
+    size_t                                _vectorSize;
+    std::unique_ptr<FastOS_FileInterface> _datFile;
+    uint32_t                              _datHeaderLen;
 
 public:
     typedef std::shared_ptr<BitVectorDictionary> SP;
-
+    BitVectorDictionary(const BitVectorDictionary &rhs) = delete;
+    BitVectorDictionary &operator=(const BitVectorDictionary &rhs) = delete;
     BitVectorDictionary();
     ~BitVectorDictionary();
 
@@ -59,20 +55,11 @@ public:
      * @param wordNum the word number to lookup a bit vector for.
      * @return the loaded bit vector or NULL if not found.
      **/
-    BitVector::UP
-    lookup(uint64_t wordNum);
+    BitVector::UP lookup(uint64_t wordNum);
 
-    uint32_t
-    getDocIdLimit() const
-    {
-        return _docIdLimit;
-    }
+    uint32_t getDocIdLimit() const { return _docIdLimit; }
 
-    const std::vector<WordSingleKey> &
-    getEntries() const
-    {
-        return _entries;
-    }
+    const std::vector<WordSingleKey> & getEntries() const { return _entries; }
 };
 
 } // namespace diskindex

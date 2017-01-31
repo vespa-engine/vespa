@@ -12,6 +12,7 @@
 #include <vespa/vespalib/objects/serializer.h>
 #include <algorithm>
 #include <unordered_set>
+#include <ostream>
 
 namespace search {
 

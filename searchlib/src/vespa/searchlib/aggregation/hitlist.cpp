@@ -1,15 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include "hitsaggregationresult.h"
-#include <vespa/vespalib/objects/visit.h>
-#include "fs4hit.h"
-#include "vdshit.h"
-#include <algorithm>
-#include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/vespalib/objects/objectoperation.h>
-#include <vespa/vespalib/objects/identifiable.hpp>
 
-
+#include "hitlist.h"
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search {
 namespace aggregation {

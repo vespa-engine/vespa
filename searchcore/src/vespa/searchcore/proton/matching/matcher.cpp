@@ -13,8 +13,9 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#include <vespa/log/log.h>
+#include <cmath>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.matcher");
 
 using search::fef::Properties;
