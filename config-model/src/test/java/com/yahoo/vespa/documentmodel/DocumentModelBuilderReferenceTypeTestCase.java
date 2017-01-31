@@ -1,6 +1,8 @@
 package com.yahoo.vespa.documentmodel;
 
+import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -10,6 +12,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static com.yahoo.searchdefinition.TestUtils.joinLines;
+import static junit.framework.TestCase.assertSame;
 
 /**
  * @author geirst
@@ -49,6 +52,20 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
                 "  }",
                 "}")),
                 "documentmanager_ref_to_self_type.cfg");
+    }
+
+    @Test
+    public void reference_data_type_has_a_concrete_target_type() throws ParseException {
+        DocumentModel model = new TestDocumentModelBuilder().addCampaign().build(joinLines(
+                "search ad {",
+                "  document ad {",
+                "    field campaign_ref type reference<campaign> {}",
+                "  }",
+                "}"));
+        NewDocumentType campaignType = model.getDocumentManager().getDocumentType("campaign");
+        NewDocumentType adType = model.getDocumentManager().getDocumentType("ad");
+        ReferenceDataType campaignRefType = (ReferenceDataType) adType.getField("campaign_ref").getDataType();
+        assertSame(campaignRefType.getTargetType(), campaignType);
     }
 
     private static String TEST_FOLDER = "src/test/configmodel/types/references/";

@@ -58,14 +58,14 @@ public class ReferenceDataType extends DataType {
     public StructuredDataType getTargetType() { return targetType; }
 
     /**
-     * Overrides the stored temporary data type with a concrete DocumentType instance. Should only
+     * Overrides the stored temporary data type with a concrete StructuredDataType instance. Should only
      * be invoked from configuration or model code when resolving temporary types.
      *
      * @throws IllegalStateException if the previously stored target type is already a concrete
      *     instance of DocumentType.
      */
-    public void setTargetType(DocumentType targetType) {
-        if (this.targetType instanceof DocumentType) {
+    public void setTargetType(StructuredDataType targetType) {
+        if (! (this.targetType instanceof TemporaryStructuredDataType)) {
             throw new IllegalStateException(String.format(
                     "Unexpected attempt to replace already concrete target " +
                     "type in ReferenceDataType instance (type is '%s')", this.targetType.getName()));
