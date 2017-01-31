@@ -54,54 +54,54 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         this.stateApiFactory = stateApiFactory;
     }
 
-    private Optional<Integer> getStatePort(ModelConfig.Hosts.Services service) { return service.ports().stream()
-                .filter(port -> port.tags().contains("state"))
-                .map(ModelConfig.Hosts.Services.Ports::number)
-                .findFirst();
-    }
-
-    private long generationFromContainerState(JsonNode state) {
-        return state.get("config").get("generation").asLong();
-    }
-
-    private static StateApi createStateApi(Client client, URI uri) {
-        WebTarget target = client.target(uri);
-        return WebResourceFactory.newResource(StateApi.class, target);
-    }
-
-    private long getServiceGeneration(URI serviceUri) {
-        StateApi state = stateApiFactory.createStateApi(client, serviceUri);
-        return generationFromContainerState(state.config());
-    }
-
-    @Override
-    public void deconstruct() {
-        client.close();
-    }
-
-    private boolean hostInApplication(Application application, String hostPort) {
+    public HttpResponse listConfigConvergence(Application application, URI uri) {
+        final JSONObject answer = new JSONObject();
+        final JSONArray nodes = new JSONArray();
         final ModelConfig config;
         try {
             config = application.getConfig(ModelConfig.class, "");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("failed on get config model", e);
         }
-        final List<ModelConfig.Hosts> hosts = config.hosts();
-        for (ModelConfig.Hosts host : hosts) {
-            if (hostPort.startsWith(host.name())) {
-                for (ModelConfig.Hosts.Services service : host.services()) {
-                    for (ModelConfig.Hosts.Services.Ports port : service.ports()) {
-                        if (hostPort.equals(host.name() + ":" + port.number())) {
-                            return true;
-                        }
-                    }
-                }
+        config.hosts()
+              .forEach(host -> {
+                  host.services().stream()
+                      .filter(service -> serviceTypes.contains(service.type()))
+                      .forEach(service -> {
+                          Optional<Integer> statePort = getStatePort(service);
+                          if (statePort.isPresent()) {
+                              JSONObject hostNode = new JSONObject();
+                              try {
+                                  hostNode.put("host", host.name());
+                                  hostNode.put("port", statePort.get());
+                                  hostNode.put("url", uri.toString() + "/" + host.name() + ":" + statePort.get());
+                                  hostNode.put("type", service.type());
+
+                              } catch (JSONException e) {
+                                  throw new RuntimeException(e);
+                              }
+                              nodes.put(hostNode);
+                          }
+                      });
+              });
+        try {
+            answer.put("services", nodes);
+            JSONObject debug = new JSONObject();
+            debug.put("wantedVersion", application.getApplicationGeneration());
+            answer.put("debug", debug);
+            answer.put("url", uri.toString());
+            return new JsonHttpResponse(200, answer);
+        } catch (JSONException e) {
+            try {
+                answer.put("error", e.getMessage());
+            } catch (JSONException e1) {
+                throw new RuntimeException("Failed while creating error message ", e1);
             }
+            return new JsonHttpResponse(500, answer);
         }
-        return false;
     }
 
-    public HttpResponse nodeConvergenceCheck(Application application, String hostFromRequest, URI uri)  {
+    public HttpResponse nodeConvergenceCheck(Application application, String hostFromRequest, URI uri) {
         JSONObject answer = new JSONObject();
         JSONObject debug = new JSONObject();
         try {
@@ -129,6 +129,64 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         }
     }
 
+    @Override
+    public void deconstruct() {
+        client.close();
+    }
+
+    @Path(statePath)
+    public interface StateApi {
+        @Path(configSubPath)
+        @GET
+        JsonNode config();
+    }
+
+    public interface StateApiFactory {
+        StateApi createStateApi(Client client, URI serviceUri);
+    }
+
+    private Optional<Integer> getStatePort(ModelConfig.Hosts.Services service) { return service.ports().stream()
+                .filter(port -> port.tags().contains("state"))
+                .map(ModelConfig.Hosts.Services.Ports::number)
+                .findFirst();
+    }
+
+    private long generationFromContainerState(JsonNode state) {
+        return state.get("config").get("generation").asLong();
+    }
+
+    private static StateApi createStateApi(Client client, URI uri) {
+        WebTarget target = client.target(uri);
+        return WebResourceFactory.newResource(StateApi.class, target);
+    }
+
+    private long getServiceGeneration(URI serviceUri) {
+        StateApi state = stateApiFactory.createStateApi(client, serviceUri);
+        return generationFromContainerState(state.config());
+    }
+
+    private boolean hostInApplication(Application application, String hostPort) {
+        final ModelConfig config;
+        try {
+            config = application.getConfig(ModelConfig.class, "");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        final List<ModelConfig.Hosts> hosts = config.hosts();
+        for (ModelConfig.Hosts host : hosts) {
+            if (hostPort.startsWith(host.name())) {
+                for (ModelConfig.Hosts.Services service : host.services()) {
+                    for (ModelConfig.Hosts.Services.Ports port : service.ports()) {
+                        if (hostPort.equals(host.name() + ":" + port.number())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private static class JsonHttpResponse extends HttpResponse {
 
         private final JSONObject answer;
@@ -149,61 +207,4 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         }
     }
 
-    public HttpResponse listConfigConvergence(Application application, URI uri)  {
-        final JSONObject answer = new JSONObject();
-        final JSONArray nodes = new JSONArray();
-        final ModelConfig config;
-        try {
-            config = application.getConfig(ModelConfig.class, "");
-        } catch (IOException e) {
-            throw new RuntimeException("failed on get config model", e);
-        }
-        config.hosts().stream()
-                .forEach(host -> {
-                    host.services().stream()
-                            .filter(service -> serviceTypes.contains(service.type()))
-                            .forEach(service -> {
-                                Optional<Integer> statePort = getStatePort(service);
-                                if (statePort.isPresent()) {
-                                    JSONObject hostNode = new JSONObject();
-                                    try {
-                                        hostNode.put("host", host.name());
-                                        hostNode.put("port", statePort.get());
-                                        hostNode.put("url", uri.toString() + "/" + host.name() + ":" + statePort.get());
-                                        hostNode.put("type", service.type());
-
-                                    } catch (JSONException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                    nodes.put(hostNode);
-                                }
-                            });
-                });
-        try {
-        answer.put("services", nodes);
-        JSONObject debug = new JSONObject();
-        debug.put("wantedVersion", application.getApplicationGeneration());
-        answer.put("debug", debug);
-        answer.put("url", uri.toString());
-        return new JsonHttpResponse(200, answer);
-        } catch (JSONException e) {
-            try {
-                answer.put("error", e.getMessage());
-            } catch (JSONException e1) {
-                throw new RuntimeException("Failed while creating error message ", e1);
-            }
-            return new JsonHttpResponse(500, answer);
-        }
-    }
-
-    @Path(statePath)
-    public interface StateApi {
-        @Path(configSubPath)
-        @GET
-        JsonNode config();
-    }
-
-    public interface StateApiFactory {
-        StateApi createStateApi(Client client, URI serviceUri);
-    }
 }

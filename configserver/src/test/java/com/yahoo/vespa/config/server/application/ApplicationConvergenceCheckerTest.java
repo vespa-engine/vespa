@@ -57,19 +57,6 @@ public class ApplicationConvergenceCheckerTest {
         application = new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
     }
 
-    private void assertJsonResponseEquals(HttpResponse httpResponse, String expected) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        httpResponse.render(out);
-        String response = out.toString(StandardCharsets.UTF_8.name());
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonResponse = mapper.readTree(response);
-        JsonNode jsonExpected = mapper.readTree(expected);
-        if (jsonExpected.equals(jsonResponse)) {
-            return;
-        }
-        fail("Not equal, response is '" + response + "' expected '"+ expected + "'");
-    }
-
     @Test
     public void converge() throws IOException, SAXException {
         ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
@@ -98,6 +85,19 @@ public class ApplicationConvergenceCheckerTest {
                 "\"url\":\"http://foo:234/serviceconvergence\"}");
     }
 
+    private void assertJsonResponseEquals(HttpResponse httpResponse, String expected) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        httpResponse.render(out);
+        String response = out.toString(StandardCharsets.UTF_8.name());
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonResponse = mapper.readTree(response);
+        JsonNode jsonExpected = mapper.readTree(expected);
+        if (jsonExpected.equals(jsonResponse)) {
+            return;
+        }
+        fail("Not equal, response is '" + response + "' expected '"+ expected + "'");
+    }
+
     private JsonNode string2json(String data) {
         try {
             return mapper.readTree(data);
@@ -108,7 +108,7 @@ public class ApplicationConvergenceCheckerTest {
 
     private static class MockModel implements Model {
         private final int statePort;
-        public MockModel(int statePort) {
+        MockModel(int statePort) {
             this.statePort = statePort;
         }
 
