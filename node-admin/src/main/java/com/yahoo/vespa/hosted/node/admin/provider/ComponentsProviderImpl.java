@@ -50,21 +50,24 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
 
     public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment,
-                                  Optional<StorageMaintainer> storageMaintainer) {
+                                  boolean isRunningLocally) {
         String baseHostName = HostName.getLocalhost();
         Set<String> configServerHosts = environment.getConfigServerHosts();
 
         Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, metricReceiver);
 
-        final DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, metricReceiver);
-        final Function<String, NodeAgent> nodeAgentFactory =
+        Optional<StorageMaintainer> storageMaintainer = isRunningLocally ?
+                Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment));
+        Optional<AclMaintainer> aclMaintainer = isRunningLocally ?
+                Optional.empty() : Optional.of(new AclMaintainer(dockerOperations, nodeRepository));
+
+        Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
                         storageMaintainer, metricReceiver, environment);
-        final AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository);
-
-        final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
-                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, Optional.of(aclMaintainer));
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
+                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS,
                 NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
 
@@ -77,8 +80,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 docker,
                 metricReceiver,
                 new Environment(),
-                config.isRunningLocally() ? Optional.empty() :
-                                            Optional.of(new StorageMaintainer(docker, metricReceiver, new Environment())));
+                config.isRunningLocally());
 
         if (! config.isRunningLocally()) {
             setCorePattern(docker);
