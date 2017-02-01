@@ -118,7 +118,7 @@ public class ApplicationConvergenceCheckerTest {
         }
 
         @Override
-        public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) throws IOException {
+        public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
             if (configKey.equals(new ConfigKey<>(ModelConfig.class, ""))) {
                 return createModelConfig();
             }
@@ -126,7 +126,7 @@ public class ApplicationConvergenceCheckerTest {
         }
 
         @Override
-        public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) throws IOException {
+        public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) {
             return getConfig(configKey, (ConfigDefinition)null, override);
         }
 
