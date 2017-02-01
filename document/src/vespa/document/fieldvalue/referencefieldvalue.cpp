@@ -14,13 +14,15 @@ IMPLEMENT_IDENTIFIABLE(ReferenceFieldValue, FieldValue);
 
 ReferenceFieldValue::ReferenceFieldValue()
     : _dataType(nullptr),
-      _documentId()
+      _documentId(),
+      _altered(true)
 {
 }
 
 ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType)
     : _dataType(&dataType),
-      _documentId()
+      _documentId(),
+      _altered(true)
 {
 }
 
@@ -28,7 +30,8 @@ ReferenceFieldValue::ReferenceFieldValue(
         const ReferenceDataType& dataType,
         const DocumentId& documentId)
     : _dataType(&dataType),
-      _documentId(documentId)
+      _documentId(documentId),
+      _altered(true)
 {
     requireIdOfMatchingType(_documentId, _dataType->getTargetType());
 }
@@ -58,6 +61,7 @@ FieldValue& ReferenceFieldValue::assign(const FieldValue& rhs) {
         }
         _documentId = refValueRhs->_documentId;
         _dataType = refValueRhs->_dataType;
+        _altered = true;
     } else {
         throw IllegalArgumentException(
                 make_string("Can't assign field value of type %s to "
@@ -66,6 +70,13 @@ FieldValue& ReferenceFieldValue::assign(const FieldValue& rhs) {
                 VESPA_STRLOC);
     }
     return *this;
+}
+
+void ReferenceFieldValue::setDeserializedDocumentId(const DocumentId& id) {
+    assert(_dataType != nullptr);
+    requireIdOfMatchingType(id, _dataType->getTargetType());
+    _documentId = id;
+    _altered = false;
 }
 
 ReferenceFieldValue* ReferenceFieldValue::clone() const {
@@ -97,13 +108,15 @@ void ReferenceFieldValue::print(std::ostream& os, bool verbose, const std::strin
 }
 
 bool ReferenceFieldValue::hasChanged() const {
-    return true; // TODO
+    return _altered;
 }
 
-void ReferenceFieldValue::accept(FieldValueVisitor&) {
+void ReferenceFieldValue::accept(FieldValueVisitor& visitor) {
+    visitor.visit(*this);
 }
 
-void ReferenceFieldValue::accept(ConstFieldValueVisitor&) const {
+void ReferenceFieldValue::accept(ConstFieldValueVisitor& visitor) const {
+    visitor.visit(*this);
 }
 
 } // document

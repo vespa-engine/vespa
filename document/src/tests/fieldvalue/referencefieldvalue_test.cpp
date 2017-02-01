@@ -48,7 +48,7 @@ TEST_F("Newly constructed reference is marked as changed", Fixture) {
     EXPECT_TRUE(fv2.hasChanged());
 }
 
-TEST_F("Exception is thrown if doc ID type does not match referenced document type", Fixture) {
+TEST_F("Exception is thrown if constructor doc ID type does not match referenced document type", Fixture) {
     EXPECT_EXCEPTION(
             ReferenceFieldValue(f.refType, DocumentId("id:ns:bar::wario-time")),
             IllegalArgumentException,
@@ -67,6 +67,40 @@ TEST_F("Exception is thrown if doc ID does not have a type", Fixture) {
             "to reference of document type 'foo'");
 }
 
+TEST_F("assign()ing a non-reference field value throws exception", Fixture) {
+    ReferenceFieldValue fv(f.refType);
+    EXPECT_EXCEPTION(fv.assign(StringFieldValue("waluigi time!!")),
+                     IllegalArgumentException,
+                     "Can't assign field value of type String to a "
+                     "ReferenceFieldValue");
+}
+
+TEST_F("Can explicitly assign new document ID to reference", Fixture) {
+    ReferenceFieldValue fv(f.refType);
+    fv.setDeserializedDocumentId(DocumentId("id:ns:foo::yoshi-eggs"));
+
+    ASSERT_TRUE(fv.hasValidDocumentId());
+    EXPECT_EQUAL(DocumentId("id:ns:foo::yoshi-eggs"), fv.getDocumentId());
+    // Type remains unchanged
+    EXPECT_EQUAL(f.refType, *fv.getDataType());
+}
+
+TEST_F("Assigning explicit document ID clears changed-flag", Fixture) {
+    ReferenceFieldValue fv(f.refType);
+    fv.setDeserializedDocumentId(DocumentId("id:ns:foo::yoshi-eggs"));
+    EXPECT_FALSE(fv.hasChanged());
+}
+
+TEST_F("Exception is thrown if explicitly assigned doc ID does not have same type as reference target type", Fixture) {
+    ReferenceFieldValue fv(f.refType);
+
+    EXPECT_EXCEPTION(
+            fv.setDeserializedDocumentId(DocumentId("id:ns:bar::another-castle")),
+            IllegalArgumentException,
+            "Can't assign document ID 'id:ns:bar::another-castle' (of type "
+            "'bar') to reference of document type 'foo'");
+}
+
 TEST_F("assign()ing another reference field value assigns doc ID and type", Fixture) {
     ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
     ReferenceFieldValue dest(f.otherRefType);
@@ -77,12 +111,18 @@ TEST_F("assign()ing another reference field value assigns doc ID and type", Fixt
     EXPECT_EQUAL(src.getDataType(), dest.getDataType());
 }
 
-TEST_F("assign()ing a non-reference field value throws exception", Fixture) {
-    ReferenceFieldValue fv(f.refType);
-    EXPECT_EXCEPTION(fv.assign(StringFieldValue("waluigi time!!")),
-                     IllegalArgumentException,
-                     "Can't assign field value of type String to a "
-                     "ReferenceFieldValue");
+// Different FieldValue subclasses actually disagree on whether this should be
+// the case, e.g. LiteralFieldValue and TensorFieldValue. We go with the
+// latter's approach, as that should be the most conservative one.
+TEST_F("assign() marks assignee as changed", Fixture) {
+    ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
+    ReferenceFieldValue dest(f.refType);
+
+    dest.setDeserializedDocumentId(DocumentId("id:ns:foo::yoshi-eggs"));
+    EXPECT_FALSE(dest.hasChanged());
+
+    dest.assign(src);
+    EXPECT_TRUE(dest.hasChanged());
 }
 
 TEST_F("clone()ing creates new instance with same ID and type", Fixture) {
@@ -124,11 +164,6 @@ TEST_F("print() includes reference type and document ID", Fixture) {
     EXPECT_EQUAL("ReferenceFieldValue(ReferenceDataType(foo, id 12345), "
                  "DocumentId(id:ns:foo::yoshi))", ss.str());
 }
-
-// TODO test
-// - modified flag
-//  - false after (de)serialization(?)
-// - (de)serialization
 
 TEST_MAIN() { TEST_RUN_ALL(); }
 

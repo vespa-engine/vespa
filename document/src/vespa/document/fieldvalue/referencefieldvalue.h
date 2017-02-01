@@ -11,6 +11,7 @@ namespace document {
 class ReferenceFieldValue : public FieldValue {
     const ReferenceDataType* _dataType;
     DocumentId _documentId;
+    bool _altered;
 public:
     // Empty constructor required for Identifiable.
     ReferenceFieldValue();
@@ -32,6 +33,13 @@ public:
     // Returned value is only well-defined if hasValidDocumentId() == true.
     const DocumentId& getDocumentId() const noexcept {
         return _documentId;
+    }
+
+    // Should only be called by deserializer code, as it will clear hasChanged.
+    // `id` must be a valid document ID and cannot be empty.
+    void setDeserializedDocumentId(const DocumentId& id);
+    void clearChanged() {
+        _altered = false;
     }
 
     const DataType* getDataType() const override { return _dataType; }

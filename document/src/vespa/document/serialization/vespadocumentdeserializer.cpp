@@ -17,6 +17,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -387,6 +388,17 @@ VespaDocumentDeserializer::read(TensorFieldValue &value)
     }
     value.assignDeserialized(std::move(tensor));
     _stream.adjustReadPos(length);
+}
+
+void VespaDocumentDeserializer::read(ReferenceFieldValue& value) {
+    const bool hasId(readValue<uint8_t>(_stream) == 1);
+    if (hasId) {
+        DocumentId id;
+        read(id);
+        value.setDeserializedDocumentId(id);
+    } else {
+        value.clearChanged();
+    }
 }
 
 }  // document

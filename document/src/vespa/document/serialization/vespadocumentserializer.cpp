@@ -19,6 +19,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
@@ -396,6 +397,13 @@ VespaDocumentSerializer::write(const TensorFieldValue &value) {
         _stream.write(tmpStream.peek(), tmpStream.size());
     } else {
         _stream.putInt1_4Bytes(0);
+    }
+}
+
+void VespaDocumentSerializer::write(const ReferenceFieldValue& value) {
+    _stream << static_cast<uint8_t>(value.hasValidDocumentId() ? 1 : 0);
+    if (value.hasValidDocumentId()) {
+       write(value.getDocumentId());
     }
 }
 
