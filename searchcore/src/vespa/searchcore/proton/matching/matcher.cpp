@@ -19,6 +19,7 @@
 LOG_SETUP(".proton.matching.matcher");
 
 using search::fef::Properties;
+using namespace search::fef::indexproperties::matching;
 using namespace search;
 using namespace search::engine;
 using namespace search::grouping;
@@ -178,8 +179,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request,
     return std::make_unique<MatchToolsFactory>(_queryLimiter, vespalib::Doom(_clock, safeDoom),
                                                vespalib::Doom(_clock, request.getTimeOfDoom()), searchContext,
                                                attrContext, request.getStackRef(), request.location, _viewResolver,
-                                               metaStore, _indexEnv, *_rankSetup,
-                                               request.propertiesMap.rankProperties(), feature_overrides);
+                                               metaStore, _indexEnv, *_rankSetup, rankProperties, feature_overrides);
 }
 
 SearchReply::UP
@@ -196,10 +196,12 @@ Matcher::handleGroupingSession(SessionManager &sessionMgr,
     return reply;
 }
 
-size_t Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits) const {
-    size_t threads = _rankSetup->getNumThreadsPerSearch();
-    if ((threads > 1) && (_rankSetup->getMinHitsPerThread() > 0)) {
-        threads = (hits.empty) ? 1 : std::min(threads, numThreads(hits.estHits, _rankSetup->getMinHitsPerThread()));
+size_t
+Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits, const Properties & rankProperties) const {
+    size_t threads = NumThreadsPerSearch::lookup(rankProperties, _rankSetup->getNumThreadsPerSearch());
+    uint32_t minHitsPerThread = MinHitsPerThread::lookup(rankProperties, _rankSetup->getMinHitsPerThread());
+    if ((threads > 1) && (minHitsPerThread > 0)) {
+        threads = (hits.empty) ? 1 : std::min(threads, numThreads(hits.estHits, minHitsPerThread));
     }
     return threads;
 }
@@ -219,7 +221,8 @@ Matcher::match(const SearchRequest &request,
     SearchReply::UP reply = std::make_unique<SearchReply>();
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
-        GroupingContext groupingContext(_clock, request.getTimeOfDoom(), &request.groupSpec[0], request.groupSpec.size());
+        GroupingContext groupingContext(_clock, request.getTimeOfDoom(),
+                                        &request.groupSpec[0], request.groupSpec.size());
         SessionId sessionId(&request.sessionId[0], request.sessionId.size());
         bool shouldCacheSearchSession = false;
         bool shouldCacheGroupingSession = false;
@@ -239,7 +242,8 @@ Matcher::match(const SearchRequest &request,
             owned_objects.feature_overrides.reset(new Properties(*feature_overrides));
             feature_overrides = owned_objects.feature_overrides.get();
         }
-        MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext, metaStore, *feature_overrides);
+        MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
+                                                               metaStore, *feature_overrides);
         if (!mtf->valid()) {
             reply->errorCode = ECODE_QUERY_PARSE_ERROR;
             reply->errorMessage = "query execution failed (invalid query)";
@@ -250,33 +254,42 @@ Matcher::match(const SearchRequest &request,
                            _rankSetup->getRankScoreDropLimit(), request.offset, request.maxhits,
                            !_rankSetup->getSecondPhaseRank().empty(), !willNotNeedRanking(request, groupingContext));
 
-        ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, request.sortSpec, params.offset, params.hits);
+        ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId,
+                           request.sortSpec, params.offset, params.hits);
 
-        size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate());
+        const Properties & rankProperties = request.propertiesMap.rankProperties();
+        size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
-        ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp, _distributionKey, _rankSetup->getNumSearchPartitions());
+        uint32_t numSearchPartitions = NumSearchPartitions::lookup(rankProperties,
+                                                                   _rankSetup->getNumSearchPartitions());
+        ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp,
+                                                          _distributionKey, numSearchPartitions);
         my_stats = MatchMaster::getStats(std::move(master));
-        size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()), mtf->match_limiter().getDocIdSpaceEstimate());
+        size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()),
+                                   mtf->match_limiter().getDocIdSpaceEstimate());
         bool wasLimited = mtf->match_limiter().was_limited();
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
-            SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(), std::move(mtf), std::move(owned_objects));
+            SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
+                                                                        std::move(mtf), std::move(owned_objects));
             session->releaseEnumGuards();
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
+        SearchReply::Coverage & coverage = reply->coverage;
         if (wasLimited) {
-            reply->coverage.degradeMatchPhase();
+            coverage.degradeMatchPhase();
         }
         if (my_stats.softDoomed()) {
-            reply->coverage.degradeTimeout();
+            coverage.degradeTimeout();
         }
-        reply->coverage.setActive(metaStore.getNumActiveLids());
-        reply->coverage.setSoonActive(metaStore.getNumActiveLids()); //TODO this should be calculated with ClusterState calculator.
-        reply->coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
-                                            (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
+        coverage.setActive(metaStore.getNumActiveLids());
+        //TODO this should be calculated with ClusterState calculator.
+        coverage.setSoonActive(metaStore.getNumActiveLids());
+        coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
+                                     (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
         LOG(debug, "numThreadsPerSearch = %d. Configured = %d, estimated hits=%d, totalHits=%ld",
-                   numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount);
+            numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount);
     }
     total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());

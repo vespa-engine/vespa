@@ -58,24 +58,24 @@ public:
     }
 
     // inherited from search::fef::IQueryEnvironment
-    virtual const search::fef::Properties &getProperties() const;
+    const search::fef::Properties &getProperties() const override;
 
     // inherited from search::fef::IQueryEnvironment
-    virtual uint32_t getNumTerms() const;
+    uint32_t getNumTerms() const override;
 
     // inherited from search::fef::IQueryEnvironment
-    virtual const search::fef::ITermData *getTerm(uint32_t idx) const;
+    const search::fef::ITermData *getTerm(uint32_t idx) const override;
 
     // inherited from search::fef::IQueryEnvironment
-    virtual const search::fef::Location & getLocation() const;
+    const search::fef::Location & getLocation() const override;
 
     // inherited from search::fef::IQueryEnvironment
-    virtual const search::attribute::IAttributeContext & getAttributeContext() const;
+    const search::attribute::IAttributeContext & getAttributeContext() const override;
 
     // inherited from search::fef::IQueryEnvironment
-    virtual const search::fef::IIndexEnvironment & getIndexEnvironment() const;
+    const search::fef::IIndexEnvironment & getIndexEnvironment() const override;
 
-    virtual ~QueryEnvironment();
+    ~QueryEnvironment();
 };
 
 } // namespace matching

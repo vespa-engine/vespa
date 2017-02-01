@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "matchview.h"
 #include "searchcontext.h"
-#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcore/proton/common/indexsearchabletosearchableadapter.h>
-#include <vespa/searchcore/proton/matching/search_session.h>
-#include <vespa/searchlib/queryeval/field_spec.h>
-#include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.matchview");
 

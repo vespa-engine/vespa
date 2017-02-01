@@ -92,6 +92,7 @@ namespace matching {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
     };
 
     /**
@@ -101,6 +102,7 @@ namespace matching {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
     /**
      * Property for the minimum number of hits per thread.
@@ -109,6 +111,7 @@ namespace matching {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
     /**
      * Property for the number of partitions inside the docid space.
@@ -118,6 +121,7 @@ namespace matching {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
 }
 

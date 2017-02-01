@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.*;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.MatchPhase;
+import com.yahoo.search.query.ranking.Matching;
+import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.tensor.Tensor;
 
 import java.util.Map;
@@ -118,6 +118,14 @@ public class QueryProperties extends Properties {
                 if (key.last().equals(SoftTimeout.ENABLE)) return soft.getEnable();
                 if (key.last().equals(SoftTimeout.FACTOR)) return soft.getFactor();
                 if (key.last().equals(SoftTimeout.TAILCOST)) return soft.getTailcost();
+            }
+            else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
+                Matching matching = ranking.getMatching();
+                if (key.last().equals(Matching.TERMWISELIMIT)) return matching.getTermwiseLimit();
+                if (key.last().equals(Matching.NUMTHREADSPERSEARCH)) return matching.getNumThreadsPerSearch();
+                if (key.last().equals(Matching.NUMSEARCHPARTITIIONS)) return matching.getNumSearchPartitions();
+                if (key.last().equals(Matching.MINHITSPERTHREAD)) return matching.getMinHitsPerThread();
+
             }
             else if (key.size()>2) {
                 // pass the portion after "ranking.features/properties" down
@@ -227,6 +235,13 @@ public class QueryProperties extends Properties {
                     if (key.last().equals(SoftTimeout.ENABLE)) soft.setEnable(asBoolean(value, false));
                     if (key.last().equals(SoftTimeout.FACTOR)) soft.setFactor(asDouble(value, 0.50));
                     if (key.last().equals(SoftTimeout.TAILCOST)) soft.setTailcost(asDouble(value, 0.10));
+                }
+                else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
+                    Matching matching = ranking.getMatching();
+                    if (key.last().equals(Matching.TERMWISELIMIT)) matching.setTermwiselimit(asDouble(value, 1.0));
+                    if (key.last().equals(Matching.NUMTHREADSPERSEARCH)) matching.setNumThreadsPerSearch(asInteger(value, 1));
+                    if (key.last().equals(Matching.NUMSEARCHPARTITIIONS)) matching.setNumSearchPartitions(asInteger(value, 1));
+                    if (key.last().equals(Matching.MINHITSPERTHREAD)) matching.setMinHitsPerThread(asInteger(value, 0));
                 }
                 else if (key.size()>2) {
                     String restKey = key.rest().rest().toString();

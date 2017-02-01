@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "indexproperties.h"
 #include "properties.h"
-#include <limits>
 
 namespace search {
 namespace fef {
@@ -141,7 +139,13 @@ const double TermwiseLimit::DEFAULT_VALUE(1.0);
 double
 TermwiseLimit::lookup(const Properties &props)
 {
-    return lookupDouble(props, NAME, DEFAULT_VALUE);
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+TermwiseLimit::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 const vespalib::string NumThreadsPerSearch::NAME("vespa.matching.numthreadspersearch");
@@ -150,7 +154,13 @@ const uint32_t NumThreadsPerSearch::DEFAULT_VALUE(std::numeric_limits<uint32_t>:
 uint32_t
 NumThreadsPerSearch::lookup(const Properties &props)
 {
-    return lookupUint32(props, NAME, DEFAULT_VALUE);
+    return lookup(props, DEFAULT_VALUE);
+}
+
+uint32_t
+NumThreadsPerSearch::lookup(const Properties &props, uint32_t defaultValue)
+{
+    return lookupUint32(props, NAME, defaultValue);
 }
 
 const vespalib::string NumSearchPartitions::NAME("vespa.matching.numsearchpartitions");
@@ -159,7 +169,13 @@ const uint32_t NumSearchPartitions::DEFAULT_VALUE(1);
 uint32_t
 NumSearchPartitions::lookup(const Properties &props)
 {
-    return lookupUint32(props, NAME, DEFAULT_VALUE);
+    return lookup(props, DEFAULT_VALUE);
+}
+
+uint32_t
+NumSearchPartitions::lookup(const Properties &props, uint32_t defaultValue)
+{
+    return lookupUint32(props, NAME, defaultValue);
 }
 
 const vespalib::string MinHitsPerThread::NAME("vespa.matching.minhitsperthread");
@@ -168,7 +184,13 @@ const uint32_t MinHitsPerThread::DEFAULT_VALUE(0);
 uint32_t
 MinHitsPerThread::lookup(const Properties &props)
 {
-    return lookupUint32(props, NAME, DEFAULT_VALUE);
+    return lookup(props, DEFAULT_VALUE);
+}
+
+uint32_t
+MinHitsPerThread::lookup(const Properties &props, uint32_t defaultValue)
+{
+    return lookupUint32(props, NAME, defaultValue);
 }
 
 } // namespace matching

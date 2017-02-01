@@ -154,22 +154,21 @@ public:
     /*
      * Return brief stats for data store.
      */
-    virtual DataStoreStorageStats getStorageStats() const override;
+    DataStoreStorageStats getStorageStats() const override;
 
-    virtual MemoryUsage getMemoryUsage() const override;
+    MemoryUsage getMemoryUsage() const override;
 
     /*
      * Return detailed stats about underlying files for data store.
      */
-    virtual std::vector<DataStoreFileChunkStats>
-    getFileChunkStats() const override;
+    std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
 
     /**
      * Implements common::ICompactableLidSpace
      */
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
-    virtual bool canShrinkLidSpace() const override;
-    virtual void shrinkLidSpace() override;
+    void compactLidSpace(uint32_t wantedDocLidLimit) override;
+    bool canShrinkLidSpace() const override;
+    void shrinkLidSpace() override;
 
 private:
     bool useCache() const;

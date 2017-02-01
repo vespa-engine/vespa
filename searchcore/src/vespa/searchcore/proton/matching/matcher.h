@@ -71,7 +71,8 @@ private:
             search::grouping::GroupingContext & groupingContext,
             std::unique_ptr<search::grouping::GroupingSession> gs);
 
-    size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits) const;
+    size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
+                                      const search::fef::Properties & rankProperties) const;
 public:
     /**
      * Convenience typedefs.

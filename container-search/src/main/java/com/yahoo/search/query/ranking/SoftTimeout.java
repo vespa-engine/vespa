@@ -1,8 +1,8 @@
-package com.yahoo.search.query;
+package com.yahoo.search.query.ranking;
 
+import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.query.ranking.RankProperties;
 
 import java.util.Objects;
 
