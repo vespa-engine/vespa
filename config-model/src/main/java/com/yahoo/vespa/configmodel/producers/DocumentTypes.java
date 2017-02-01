@@ -155,6 +155,14 @@ public class DocumentTypes {
                 // to provide better compatibility. A tensor field can have its tensorType changed (in compatible ways)
                 // without changing the field type and thus requiring data refeed
                 return;
+            } else if (type instanceof ReferenceDataType) {
+                ReferenceDataType refType = (ReferenceDataType) type;
+                DocumenttypesConfig.Documenttype.Referencetype.Builder refBuilder =
+                        new DocumenttypesConfig.Documenttype.Referencetype.Builder();
+                refBuilder.id(refType.getId());
+                refBuilder.target_type_id(((ReferenceDataType) type).getTargetType().getId());
+                documentBuilder.referencetype(refBuilder);
+                return;
             } else {
                 return;
             }
