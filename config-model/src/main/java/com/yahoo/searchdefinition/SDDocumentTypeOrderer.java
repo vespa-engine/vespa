@@ -122,6 +122,8 @@ public class SDDocumentTypeOrderer {
             //do nothing
         } else if (type instanceof TensorDataType) {
             //do nothing
+        } else if (type instanceof ReferenceDataType) {
+            //do nothing
         } else {
             deployLogger.log(Level.WARNING, "Unknown type : " + type);
         }

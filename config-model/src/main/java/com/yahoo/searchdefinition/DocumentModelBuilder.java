@@ -209,6 +209,12 @@ public class DocumentModelBuilder {
         } else if (type instanceof CollectionDataType) {
             CollectionDataType t = (CollectionDataType) type;
             t.setNestedType(resolveTemporariesRecurse(t.getNestedType(), repo, docs));
+        } else if (type instanceof ReferenceDataType) {
+            ReferenceDataType t = (ReferenceDataType) type;
+            if (t.getTargetType() instanceof TemporaryStructuredDataType) {
+                DataType targetType = resolveTemporariesRecurse(t.getTargetType(), repo, docs);
+                t.setTargetType((StructuredDataType) targetType);
+            }
         }
         return type;
     }
