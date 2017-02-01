@@ -60,29 +60,29 @@ public class ApplicationConvergenceCheckerTest {
     @Test
     public void converge() throws IOException, SAXException {
         ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
-        final HttpResponse httpResponse = checker.listConfigConvergence(application, URI.create("http://foo:234/serviceconvergence"));
+        final HttpResponse httpResponse = checker.listConfigConvergence(application, URI.create("http://foo:234/serviceconverge"));
         assertThat(httpResponse.getStatus(), is(200));
         assertJsonResponseEquals(httpResponse, "{\"services\":[" +
                 "{\"port\":1337,\"host\":\"localhost\"," +
-                "\"url\":\"http://foo:234/serviceconvergence/localhost:1337\"," +
+                "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"," +
                 "\"type\":\"container\"}]," +
                 "\"debug\":{\"wantedVersion\":3}," +
-                "\"url\":\"http://foo:234/serviceconvergence\"}");
-        final HttpResponse nodeHttpResponse = checker.nodeConvergenceCheck(application, "localhost:1337", URI.create("http://foo:234/serviceconvergence"));
+                "\"url\":\"http://foo:234/serviceconverge\"}");
+        final HttpResponse nodeHttpResponse = checker.nodeConvergenceCheck(application, "localhost:1337", URI.create("http://foo:234/serviceconverge"));
         assertThat(nodeHttpResponse.getStatus(), is(200));
         assertJsonResponseEquals(nodeHttpResponse, "{" +
                 "\"converged\":true," +
                 "\"debug\":{\"wantedGeneration\":3," +
                 "\"currentGeneration\":3," +
                 "\"host\":\"localhost:1337\"}," +
-                "\"url\":\"http://foo:234/serviceconvergence\"}");
-        final HttpResponse hostMissingHttpResponse = checker.nodeConvergenceCheck(application, "notPresent:1337", URI.create("http://foo:234/serviceconvergence"));
+                "\"url\":\"http://foo:234/serviceconverge\"}");
+        final HttpResponse hostMissingHttpResponse = checker.nodeConvergenceCheck(application, "notPresent:1337", URI.create("http://foo:234/serviceconverge"));
         assertThat(hostMissingHttpResponse.getStatus(), is(410));
         assertJsonResponseEquals(hostMissingHttpResponse, "{\"debug\":{" +
                 "\"problem\":\"Host:port (service) no longer part of application, refetch list of services.\"," +
                 "\"wantedGeneration\":3," +
                 "\"host\":\"notPresent:1337\"}," +
-                "\"url\":\"http://foo:234/serviceconvergence\"}");
+                "\"url\":\"http://foo:234/serviceconverge\"}");
     }
 
     private void assertJsonResponseEquals(HttpResponse httpResponse, String expected) throws IOException {
