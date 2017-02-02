@@ -37,7 +37,7 @@ public:
         }
         return create(children);
     }
-private:
+protected:
     virtual SearchIterator::UP create(const std::vector<SearchIterator*> &children) const = 0;
     std::vector<DocIds> _split_lists;
 };

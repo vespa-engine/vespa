@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
@@ -7,17 +6,12 @@
 #include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
-#include <vespa/searchlib/queryeval/test/searchhistory.h>
-#include <vespa/searchlib/queryeval/test/trackedsearch.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifiers.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
 using namespace search::queryeval::test;
-using search::test::InitRangeVerifier;
 
 typedef SearchHistory History;
 
@@ -105,24 +99,25 @@ TEST("require that initial docid for subsearches are taken into account") {
                  history);
 }
 
-TEST("verify initRange with search iterator children") {
-    const size_t num_children = 7;
-    InitRangeVerifier ir;
-    using DocIds = InitRangeVerifier::DocIds;
-    std::vector<DocIds> split_lists(num_children);
-    auto full_list = ir.getExpectedDocIds();
-    for (size_t i = 0; i < full_list.size(); ++i) {
-        split_lists[i % num_children].push_back(full_list[i]);
-    }
-    for (bool strict: {false, true}) {
+class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
+private:
+    SearchIterator::UP create(bool strict) const override {
         wand::Terms terms;
-        for (size_t i = 0; i < num_children; ++i) {
-            terms.emplace_back(ir.createIterator(split_lists[i], strict).release(),
-                               100, split_lists[i].size());
+        for (size_t i = 0; i < _num_children; ++i) {
+            terms.emplace_back(createIterator(_split_lists[i], strict).release(),
+                               100, _split_lists[i].size());
         }
-        SearchIterator::UP itr(WeakAndSearch::create(terms, -1, strict));
-        ir.verify(*itr);
+        return SearchIterator::UP(WeakAndSearch::create(terms, -1, strict));
     }
+
+    SearchIterator::UP create(const std::vector<SearchIterator*> &) const override {
+        return SearchIterator::UP();
+    }
+};
+
+TEST("verify initRange with search iterator children") {
+    IteratorChildrenVerifier verifier;
+    verifier.verify();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
