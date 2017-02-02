@@ -24,24 +24,19 @@ public:
     public:
         Config()
             : _compression(document::CompressionConfig::LZ4, 9, 60),
-              _maxChunkBytes(0x10000),
-              _maxChunkEntries(256)
+              _maxChunkBytes(0x10000)
         { }
 
-        Config(const document::CompressionConfig &compression,
-               size_t maxChunkBytes, size_t maxChunkEntries)
+        Config(const document::CompressionConfig &compression, size_t maxChunkBytes)
             : _compression(compression),
-              _maxChunkBytes(maxChunkBytes),
-              _maxChunkEntries(maxChunkEntries)
+              _maxChunkBytes(maxChunkBytes)
         { }
 
         const document::CompressionConfig & getCompression() const { return _compression; }
         size_t getMaxChunkBytes() const { return _maxChunkBytes; }
-        size_t getMaxChunkEntries() const { return _maxChunkEntries; }
     private:
         document::CompressionConfig _compression;
         size_t _maxChunkBytes;
-        size_t _maxChunkEntries;
     };
 
 public:

@@ -214,7 +214,6 @@ public:
     FileId getFileId() const { return _fileId; }
     NameId       getNameId() const { return _nameId; }
     size_t   getBloatCount() const { return _erasedCount; }
-    size_t   getEntriesCount() const { return _entriesCount; }
     uint64_t getLastPersistedSerialNum() const;
     virtual fastos::TimeStamp getModificationTime() const;
     virtual bool frozen() const { return true; }
@@ -260,7 +259,6 @@ private:
     const NameId           _nameId;
     const vespalib::string _name;
     const bool             _skipCrcOnRead;
-    size_t                 _entriesCount;
     size_t                 _erasedCount;
     size_t                 _erasedBytes;
     size_t                 _diskFootprint;
@@ -270,7 +268,6 @@ private:
     File                   _file;
 protected:
     void setDiskFootprint(size_t sz) { _diskFootprint = sz; }
-    void incEntries() { _entriesCount++;  }
     static size_t adjustSize(size_t sz);
 
     class ChunkInfo

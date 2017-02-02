@@ -63,12 +63,10 @@ public:
     typedef std::unique_ptr<Chunk> UP;
     class Config {
     public:
-        Config(size_t maxBytes, size_t maxCount) : _maxBytes(maxBytes), _maxCount(maxCount) { }
+        Config(size_t maxBytes) : _maxBytes(maxBytes) { }
         size_t getMaxBytes() const { return _maxBytes; }
-        size_t getMaxCount() const { return _maxCount; }
     private:
       size_t _maxBytes;
-      size_t _maxCount;
     };
     class Entry {
     public:

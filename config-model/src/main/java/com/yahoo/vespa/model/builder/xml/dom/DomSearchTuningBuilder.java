@@ -71,7 +71,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("attribute", e)) {
                 handleAttribute(e, t.searchNode);
             } else if (equals("summary", e)) {
-                handleSummary(e, t.searchNode);
+                handleSummary(parent, e, t.searchNode);
             } else if (equals("initialize", e)) {
                 handleInitialize(e, t.searchNode);
             }
@@ -184,7 +184,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummary(Element spec, Tuning.SearchNode sn) {
+    private void handleSummary(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         sn.summary = new Tuning.SearchNode.Summary();
         for (Element e : XML.getChildren(spec)) {
             if (equals("io", e)) {
@@ -197,29 +197,29 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                     }
                 }
             } else if (equals("store", e)) {
-                handleSummaryStore(e, sn.summary);
+                handleSummaryStore(parent, e, sn.summary);
             }
         }
     }
 
-    private void handleSummaryStore(Element spec, Tuning.SearchNode.Summary s) {
+    private void handleSummaryStore(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary s) {
         s.store = new Tuning.SearchNode.Summary.Store();
         for (Element e : XML.getChildren(spec)) {
             if (equals("cache", e)) {
                 s.store.cache = new Tuning.SearchNode.Summary.Store.Component();
-                handleSummaryStoreComponent(e, s.store.cache);
+                handleSummaryStoreComponent(parent, e, s.store.cache);
             } else if (equals("logstore", e)) {
-                handleSummaryLogStore(e, s.store);
+                handleSummaryLogStore(parent, e, s.store);
             }
         }
     }
 
-    private void handleSummaryStoreComponent(Element spec, Tuning.SearchNode.Summary.Store.Component c) {
+    private void handleSummaryStoreComponent(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store.Component c) {
          for (Element e : XML.getChildren(spec)) {
             if (equals("maxsize", e)) {
                 c.maxSize = asLong(e);
             } else if (equals("maxentries", e)) {
-                c.maxEntries = asLong(e);
+                parent.deployLogger().log(Level.WARNING, "Element 'maxentries is deprecated and ignored. Will only limit by size.");
             } else if (equals("initialentries", e)) {
                 c.initialEntries = asLong(e);
             } else if (equals("compression", e)) {
@@ -239,7 +239,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummaryLogStore(Element spec, Tuning.SearchNode.Summary.Store s) {
+    private void handleSummaryLogStore(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store s) {
         s.logStore = new Tuning.SearchNode.Summary.Store.LogStore();
         for (Element e : XML.getChildren(spec)) {
             if (equals("maxfilesize", e)) {
@@ -252,7 +252,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 s.logStore.numThreads = asInt(e);
             } else if (equals("chunk", e)) {
                 s.logStore.chunk = new Tuning.SearchNode.Summary.Store.Component(true);
-                handleSummaryStoreComponent(e, s.logStore.chunk);
+                handleSummaryStoreComponent(parent, e, s.logStore.chunk);
             }
         }
     }

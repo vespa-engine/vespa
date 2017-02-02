@@ -251,7 +251,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 public static class Component {
                     public Long maxSize = null;
-                    public Long maxEntries = null;
                     public Long initialEntries = null;
                     public Compression compression = null;
                     private final boolean outputInt;
@@ -267,11 +266,9 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     public void getConfig(ProtonConfig.Summary.Cache.Builder cache) {
                         if (outputInt) {
                             if (maxSize!=null) cache.maxbytes(maxSize.intValue());
-                            if (maxEntries!=null) cache.initialentries(maxEntries.intValue());
                             if (initialEntries!=null) cache.initialentries(initialEntries.intValue());
                         } else {
                             if (maxSize!=null) cache.maxbytes(maxSize);
-                            if (maxEntries!=null) cache.initialentries(maxEntries);
                             if (initialEntries!=null) cache.initialentries(initialEntries);
                         }
                         if (compression != null) {
@@ -284,7 +281,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     public void getConfig(ProtonConfig.Summary.Log.Chunk.Builder chunk) {
                         if (outputInt) {
                             if (maxSize!=null) chunk.maxbytes(maxSize.intValue());
-                            if (maxEntries!=null) chunk.maxentries(maxEntries.intValue());
                         } else {
                             throw new IllegalStateException("Fix this, chunk does not have long types");
                         }

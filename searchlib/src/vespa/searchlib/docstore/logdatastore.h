@@ -36,7 +36,6 @@ public:
     public:
         Config()
             : _maxFileSize(1000000000ul),
-              _maxEntriesPerFile(20000000),
               _maxDiskBloatFactor(0.2),
               _maxBucketSpread(2.5),
               _minFileSizeFactor(0.2),
@@ -55,7 +54,6 @@ public:
                const CompressionConfig & compactCompression,
                const WriteableFileChunk::Config & fileConfig)
             : _maxFileSize(maxFileSize),
-              _maxEntriesPerFile(20000000),
               _maxDiskBloatFactor(maxDiskBloatFactor),
               _maxBucketSpread(maxBucketSpread),
               _minFileSizeFactor(minFileSizeFactor),
@@ -70,8 +68,6 @@ public:
         double getMaxDiskBloatFactor() const { return _maxDiskBloatFactor; }
         double getMaxBucketSpread() const { return _maxBucketSpread; }
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
-        size_t getMaxEntriesPerFile() const { return _maxEntriesPerFile; }
-        Config & setMaxEntriesPerFile(size_t v) { _maxEntriesPerFile = v; return *this; }
 
         size_t getNumThreads() const { return _numThreads; }
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }

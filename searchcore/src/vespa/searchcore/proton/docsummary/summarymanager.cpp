@@ -23,6 +23,8 @@ using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using search::DocumentStore;
 using search::LogDocumentStore;
+using search::LogDataStore;
+using search::WriteableFileChunk;
 
 using search::TuneFileSummary;
 using search::common::FileHeaderContext;
@@ -143,14 +145,13 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
 
-    search::WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes, chunk.maxentries);
-    search::LogDataStore::Config logConfig(log.maxfilesize, log.maxdiskbloatfactor, log.maxbucketspread,
-                                           log.minfilesizefactor, log.numthreads, log.compact2activefile,
-                                           deriveCompression(log.compact.compression), fileConfig);
+    WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
+    LogDataStore::Config logConfig(log.maxfilesize, log.maxdiskbloatfactor, log.maxbucketspread,
+                                   log.minfilesizefactor, log.numthreads, log.compact2activefile,
+                                   deriveCompression(log.compact.compression), fileConfig);
     logConfig.disableCrcOnRead(chunk.skipcrconread);
-    logConfig.setMaxEntriesPerFile(log.maxentriesperfile);
     _docStore.reset(new LogDocumentStore(executor, baseDir,
-                                         search::LogDocumentStore::Config(config, logConfig),
+                                         LogDocumentStore::Config(config, logConfig),
                                          growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,
                                          summary.compact2buckets ? bucketizer : search::IBucketizer::SP()));
 }
@@ -173,7 +174,7 @@ IFlushTarget::List SummaryManager::getFlushTargets()
 {
     IFlushTarget::List ret;
     ret.push_back(IFlushTarget::SP(new SummaryFlushTarget(getBackingStore())));
-    if (dynamic_cast<search::LogDocumentStore *>(_docStore.get()) != NULL) {
+    if (dynamic_cast<LogDocumentStore *>(_docStore.get()) != NULL) {
         ret.push_back(IFlushTarget::SP(new SummaryCompactTarget(getBackingStore())));
     }
     return ret;

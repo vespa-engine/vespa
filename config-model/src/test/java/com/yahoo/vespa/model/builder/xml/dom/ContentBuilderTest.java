@@ -786,7 +786,6 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "              <store>" +
                 "                <cache>" +
                 "                  <maxsize>8192</maxsize>" +
-                "                  <maxentries>32</maxentries>" +
                 "                  <compression>" +
                 "                    <type>lz4</type>" +
                 "                    <level>8</level>" +
@@ -816,7 +815,6 @@ public class ContentBuilderTest extends DomBuilderTest {
         List<String> serialize = ConfigInstance.serialize(new ProtonConfig(pb));
         String cfg = StringUtilities.implode(serialize.toArray(new String[serialize.size()]), "\n");
         assertThat(cfg, containsString("summary.cache.maxbytes 8192"));
-        assertThat(cfg, containsString("summary.cache.initialentries 32"));
         assertThat(cfg, containsString("summary.cache.compression.level 8"));
         assertThat(cfg, containsString("summary.cache.compression.type LZ4"));
         assertThat(cfg, containsString("summary.read.io DIRECTIO"));
