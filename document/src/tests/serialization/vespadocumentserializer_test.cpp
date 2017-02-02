@@ -76,6 +76,8 @@ const string doc_with_ref_name = "doc_with_ref";
 const string ref_field_name = "ref_field";
 const int ref_type_id = 789;
 
+constexpr uint16_t serialization_version = Document::getNewestSerializationVersion();
+
 DocumenttypesConfig getDocTypesConfig() {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, doc_name,
@@ -139,7 +141,7 @@ void testDeserializeAndClone(const T& value, const nbostream &stream, bool check
     vespalib::MallocPtr buf(stream.size());
     memcpy(buf.str(), stream.peek(), stream.size());
     nbostream_longlivedbuf is(buf.c_str(), buf.size());
-    VespaDocumentDeserializer deserializer(repo, is, 8);
+    VespaDocumentDeserializer deserializer(repo, is, serialization_version);
     deserializer.read(read_value);
 
     EXPECT_EQUAL(0u, is.size());
@@ -165,7 +167,7 @@ void serializeAndDeserialize(const T& value, nbostream &stream,
     testDeserializeAndClone(value, stream, checkEqual);
     T read_value = newFieldValue(value);
 
-    VespaDocumentDeserializer deserializer(fixed_repo, stream, 8);
+    VespaDocumentDeserializer deserializer(fixed_repo, stream, serialization_version);
     deserializer.read(read_value);
 
     EXPECT_EQUAL(0u, stream.size());
@@ -276,13 +278,15 @@ TEST("require that strings can be re-deserialized") {
 
     StringFieldValue deserialized;
     {
-        VespaDocumentDeserializer deserializer(repo, streamAnnotated, 8);
+        VespaDocumentDeserializer deserializer(
+                repo, streamAnnotated, serialization_version);
         deserializer.read(deserialized);
     }
     EXPECT_EQUAL("foo", deserialized.getValueRef());
     EXPECT_TRUE(deserialized.hasSpanTrees());
     {
-        VespaDocumentDeserializer deserializer(repo, streamNotAnnotated, 8);
+        VespaDocumentDeserializer deserializer(
+                repo, streamNotAnnotated, serialization_version);
         deserializer.read(deserialized);
     }
     EXPECT_EQUAL("foo", deserialized.getValueRef());
@@ -533,7 +537,7 @@ TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
 
     StructDataType struct_type(getStructDataType());
     StructFieldValue value2(struct_type);
-    VespaDocumentDeserializer deserializer(repo, os, 8);
+    VespaDocumentDeserializer deserializer(repo, os, serialization_version);
     deserializer.read(value2);
     checkStructSerialization(value, CompressionConfig::LZ4);
     // No lazy serialization of structs anymore, only documents
@@ -544,7 +548,6 @@ TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
 template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
 TEST("requireThatDocumentCanBeSerialized") {
-    const uint32_t serialization_version = 8;
     const DocumentType &type = repo.getDocumentType();
 
     DocumentId doc_id("doc::testdoc");
@@ -611,8 +614,6 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
     DocumentTypeRepo repo1Field(builder1.config());
     DocumentTypeRepo repo2Fields(builder2.config());
 
-    uint32_t serial_version = 8;
-
     DocumentId doc_id("doc::testdoc");
     Document value(*repo2Fields.getDocumentType(doc_type_id), doc_id);
 
@@ -625,7 +626,7 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
 
     Document read_value;
     // Deserialize+serialize with type where field1 is not known.
-    VespaDocumentDeserializer deserializer1(repo1Field, stream, serial_version);
+    VespaDocumentDeserializer deserializer1(repo1Field, stream, serialization_version);
     deserializer1.read(read_value);
     EXPECT_EQUAL(0u, stream.size());
 
@@ -636,7 +637,7 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
 
     Document read_value_2;
     // Field should not have vanished.
-    VespaDocumentDeserializer deserializer2(repo2Fields, stream, serial_version);
+    VespaDocumentDeserializer deserializer2(repo2Fields, stream, serialization_version);
     deserializer2.read(read_value_2);
     EXPECT_EQUAL(value, read_value_2);
 }
@@ -687,7 +688,7 @@ TEST("requireThatReadDocumentTypeThrowsIfUnknownType") {
     stream << static_cast<uint16_t>(0);  // version (unused)
 
     DocumentType value;
-    VespaDocumentDeserializer deserializer(repo, stream, 8);
+    VespaDocumentDeserializer deserializer(repo, stream, serialization_version);
     EXPECT_EXCEPTION(deserializer.read(value), DocumentTypeNotFoundException,
                 "Document type " + my_type + " not found");
 }
@@ -725,7 +726,7 @@ void deserializeAndCheck(const string &file_name, FieldValueT &value,
 
     nbostream_longlivedbuf stream(&content[0], content.size());
     Document doc;
-    VespaDocumentDeserializer deserializer(myrepo, stream, 8);
+    VespaDocumentDeserializer deserializer(myrepo, stream, serialization_version);
     deserializer.read(doc);
 
     ASSERT_EQUAL(0, value.compare(*doc.getValue(field_name)));
@@ -891,7 +892,7 @@ struct RefFixture {
         VespaDocumentSerializer serializer(stream);
         serializer.write(src);
 
-        VespaDocumentDeserializer deserializer(fixed_repo, stream, 8);
+        VespaDocumentDeserializer deserializer(fixed_repo, stream, serialization_version);
         deserializer.read(dest);
     }
 };

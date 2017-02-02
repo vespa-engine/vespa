@@ -36,7 +36,7 @@ public:
     typedef std::unique_ptr<Document> UP;
     typedef std::shared_ptr<Document> SP;
 
-    static uint16_t getNewestSerializationVersion() { return 8; };
+    static constexpr uint16_t getNewestSerializationVersion() { return 8; }
 
     Document();
     Document(const Document&);
