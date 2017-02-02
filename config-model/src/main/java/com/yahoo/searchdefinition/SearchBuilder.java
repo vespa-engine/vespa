@@ -235,6 +235,9 @@ public class SearchBuilder {
         DocumentReferenceResolver resolver = new DocumentReferenceResolver(searchList);
         sdocs.forEach(resolver::resolveReferences);
 
+        DocumentGraphValidator validator = new DocumentGraphValidator();
+        validator.validateDocumentGraph(sdocs);
+
         DocumentModelBuilder builder = new DocumentModelBuilder(model);
         for (Search search : new SearchOrderer().order(searchList)) {
             new FieldOperationApplierForSearch().process(search);
