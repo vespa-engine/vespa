@@ -632,7 +632,7 @@ TEST("require that termwise blueprint helper calculates unpack info correctly") 
 
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    SearchIterator::UP create(bool strict) const {
+    SearchIterator::UP create(bool strict) const override {
         return make_termwise(createIterator(getExpectedDocIds(), strict), strict);
     }
 };

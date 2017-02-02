@@ -22,8 +22,7 @@
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/query/weight.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 
 using namespace search;
@@ -168,22 +167,33 @@ TEST_F("require that string iterators are created correctly", StringFixture) {
     verify_posting(*f1.api, "foo");
 }
 
-TEST("verify init range for document weight search iterator") {
-    search::test::InitRangeVerifier ir;
-    AttributeVector::SP attr(make_attribute(BasicType::INT64, CollectionType::WSET, true));
-    add_docs(attr, ir.getDocIdLimit());
-    auto docids = ir.getExpectedDocIds();
-    IntegerAttribute *int_attr = static_cast<IntegerAttribute *>(attr.get());
-    for (auto docid: docids) {
-        set_doc(int_attr, docid, int64_t(123), 1);
+class Verifier : public search::test::SearchIteratorVerifier {
+public:
+    Verifier() :
+        _attr(make_attribute(BasicType::INT64, CollectionType::WSET, true))
+    {
+        add_docs(_attr, getDocIdLimit());
+        auto docids = getExpectedDocIds();
+        IntegerAttribute *int_attr = static_cast<IntegerAttribute *>(_attr.get());
+        for (auto docid: docids) {
+            set_doc(int_attr, docid, int64_t(123), 1);
+        }
     }
-    const IDocumentWeightAttribute *api(attr->asDocumentWeightAttribute());
-    ASSERT_TRUE(api != nullptr);
-    auto dict_entry = api->lookup("123");
-    ASSERT_TRUE(dict_entry.posting_idx.valid());
-    fef::TermFieldMatchData tfmd;
-    queryeval::DocumentWeightSearchIterator itr(tfmd, *api, dict_entry);
-    ir.verify(itr);
+    SearchIterator::UP create(bool strict) const override {
+        (void) strict;
+        const IDocumentWeightAttribute *api(_attr->asDocumentWeightAttribute());
+        ASSERT_TRUE(api != nullptr);
+        auto dict_entry = api->lookup("123");
+        ASSERT_TRUE(dict_entry.posting_idx.valid());
+        return std::make_unique<queryeval::DocumentWeightSearchIterator>(_tfmd, *api, dict_entry);
+    }
+private:
+    mutable fef::TermFieldMatchData _tfmd;
+    AttributeVector::SP _attr;
+};
+TEST("verify init range for document weight search iterator") {
+    Verifier verifier;
+    verifier.verify();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
