@@ -97,7 +97,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             public Long componentMaxMemoryGain = null;
             public Double componentDiskBloatFactor = null;
             public Double componentMaxage = null;
-            public Long transactionLogMaxEntries = null;
             public Long transactionLogMaxSize = null;
             public Double conservativeMemoryLimitFactor = null;
             public Double conservativeDiskLimitFactor = null;
@@ -118,7 +117,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 ProtonConfig.Flush.Memory.Maxage.Builder maxageBuilder = new ProtonConfig.Flush.Memory.Maxage.Builder();
                 if (componentMaxage != null) maxageBuilder.time(componentMaxage);
-                if (transactionLogMaxEntries != null) maxageBuilder.serial(transactionLogMaxEntries);
                 memoryBuilder.maxage(maxageBuilder);
 
                 ProtonConfig.Flush.Memory.Conservative.Builder conservativeBuilder = new ProtonConfig.Flush.Memory.Conservative.Builder();
