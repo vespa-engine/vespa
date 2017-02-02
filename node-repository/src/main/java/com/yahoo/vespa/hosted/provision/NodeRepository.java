@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 // Node state transitions:
-// 1) (new) - > provisioned -> ready -> reserved -> active -> inactive -> dirty -> ready
+// 1) (new) - > provisioned -> dirty -> ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved
 // 3) reserved -> dirty
 // 3) * -> failed | parked -> dirty | active | (removed)
@@ -305,16 +305,18 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** 
-     * Set a node dirty, which is in the failed or parked state.
+     * Set a node dirty, which is in the provisioned, failed or parked state.
+     * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
      *
      * @throws IllegalArgumentException if the node has hardware failure
      */
     public Node setDirty(String hostname) {
-        if ( ! nodeToDeallocate.isPresent())
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the failed or parked state");
-        if (nodeToDeallocate.get().status().hardwareFailure().isPresent())
+        Optional<Node> nodeToDirty = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked);
+        if ( ! nodeToDirty.isPresent())
+            throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the provisioned, failed or parked state");
+        if (nodeToDirty.get().status().hardwareFailure().isPresent())
             throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure");
-        return setDirty(Collections.singletonList(nodeToDeallocate.get())).get(0);
+        return setDirty(Collections.singletonList(nodeToDirty.get())).get(0);
     }
 
     /**
