@@ -104,7 +104,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<maxage>300</maxage>",
                 "</component>",
                 "<transactionlog>",
-                "<maxentries>200</maxentries>",
                 "<maxsize>1024</maxsize>",
                 "</transactionlog>",
                 "<conservative>",
@@ -117,7 +116,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(600, t.searchNode.strategy.componentMaxMemoryGain.longValue());
         assertEquals(5.4, t.searchNode.strategy.componentDiskBloatFactor.doubleValue(), DELTA);
         assertEquals(300, t.searchNode.strategy.componentMaxage.doubleValue(), DELTA);
-        assertEquals(200, t.searchNode.strategy.transactionLogMaxEntries.longValue());
         assertEquals(1024, t.searchNode.strategy.transactionLogMaxSize.longValue());
         assertEquals(0.6, t.searchNode.strategy.conservativeMemoryLimitFactor.doubleValue(), DELTA);
         assertEquals(0.7, t.searchNode.strategy.conservativeDiskLimitFactor.doubleValue(), DELTA);
@@ -127,7 +125,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("flush.memory.each.maxmemory 600"));
         assertThat(cfg, containsString("flush.memory.each.diskbloatfactor 5.4"));
         assertThat(cfg, containsString("flush.memory.maxage.time 300"));
-        assertThat(cfg, containsString("flush.memory.maxage.serial 200"));
         assertThat(cfg, containsString("flush.memory.maxtlssize 1024"));
         assertThat(cfg, containsString("flush.memory.conservative.memorylimitfactor 0.6"));
         assertThat(cfg, containsString("flush.memory.conservative.disklimitfactor 0.7"));

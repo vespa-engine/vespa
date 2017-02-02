@@ -6,6 +6,8 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
+import java.util.logging.Level;
+
 /**
  * Builder for the tuning config for a search cluster.
  *
@@ -20,7 +22,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             if (equals("dispatch", e)) {
                 handleDispatch(e, tuning);
             } else if (equals("searchnode", e)) {
-                handleSearchNode(e, tuning);
+                handleSearchNode(parent, e, tuning);
             }
         }
         return tuning;
@@ -55,13 +57,13 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSearchNode(Element spec, Tuning t) {
+    private void handleSearchNode(AbstractConfigProducer parent, Element spec, Tuning t) {
         t.searchNode = new Tuning.SearchNode();
         for (Element e : XML.getChildren(spec)) {
             if (equals("requestthreads", e)) {
                handleRequestThreads(e, t.searchNode);
             } else if (equals("flushstrategy", e)) {
-                handleFlushStrategy(e, t.searchNode);
+                handleFlushStrategy(parent,e, t.searchNode);
             } else if (equals("resizing", e)) {
                 handleResizing(e, t.searchNode);
             } else if (equals("index", e)) {
@@ -90,15 +92,15 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleFlushStrategy(Element spec, Tuning.SearchNode sn) {
+    private void handleFlushStrategy(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         for (Element e : XML.getChildren(spec)) {
             if (equals("native", e)) {
-                handleNativeStrategy(e, sn);
+                handleNativeStrategy(parent, e, sn);
             }
         }
     }
 
-    private void handleNativeStrategy(Element spec, Tuning.SearchNode sn) {
+    private void handleNativeStrategy(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         sn.strategy = new Tuning.SearchNode.FlushStrategy();
         Tuning.SearchNode.FlushStrategy fs = sn.strategy;
         for (Element e : XML.getChildren(spec)) {
@@ -123,7 +125,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("transactionlog", e)) {
                 for (Element subElem : XML.getChildren(e)) {
                     if (equals("maxentries", subElem)) {
-                        fs.transactionLogMaxEntries = asLong(subElem);
+                        parent.deployLogger().log(Level.WARNING, "Element 'transactionlog.maxentries is deprecated and ignored in 'native' flush strategy. Use 'transactionlog.maxsize' to limit by size.");
                     } else if (equals("maxsize", subElem)) {
                         fs.transactionLogMaxSize = asLong(subElem);
                     }
