@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("booleanmatchiteratorwrapper_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
@@ -121,13 +119,18 @@ TEST("mostly everything") {
     EXPECT_EQUAL(DummyItr::dtorCnt, 3u);
 }
 
-TEST("Test boolean wrapper iterators adheres to initRange") {
-    search::test::InitRangeVerifier ir;
-    TermFieldMatchDataArray tfmda;
-    BooleanMatchIteratorWrapper relaxed(ir.createIterator(ir.getExpectedDocIds(), false), tfmda);
-    ir.verify(relaxed);
-    BooleanMatchIteratorWrapper strict(ir.createIterator(ir.getExpectedDocIds(), true), tfmda);
-    ir.verify(strict);
+class Verifier : public search::test::SearchIteratorVerifier {
+public:
+    SearchIterator::UP create(bool strict) const override {
+        return std::make_unique<BooleanMatchIteratorWrapper>(createIterator(getExpectedDocIds(), strict), _tfmda);;
+    }
+private:
+    mutable TermFieldMatchDataArray _tfmda;
+};
+
+TEST("Test that boolean wrapper iterators adheres to SearchIterator requirements") {
+    Verifier searchIteratorVerifier;
+    searchIteratorVerifier.verify();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

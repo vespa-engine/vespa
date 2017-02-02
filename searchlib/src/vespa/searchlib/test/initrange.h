@@ -16,8 +16,8 @@ public:
     typedef std::vector<Range> Ranges;
 
     static DocIds invert(const DocIds & docIds, uint32_t docIdlimit);
-    SearchIterator::UP createIterator(const DocIds &docIds, bool strict) const;
-    SearchIterator::UP createEmptyIterator() const;
+    static SearchIterator::UP createIterator(const DocIds &docIds, bool strict);
+    static SearchIterator::UP createEmptyIterator();
     SearchIterator::UP createFullIterator() const;
     InitRangeVerifier();
     ~InitRangeVerifier();

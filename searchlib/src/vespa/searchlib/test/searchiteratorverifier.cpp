@@ -90,19 +90,30 @@ SearchIteratorVerifier::SearchIteratorVerifier() :
     }
 }
 
-SearchIteratorVerifier::~SearchIteratorVerifier() { }
-
 SearchIterator::UP
-SearchIteratorVerifier::createIterator(const DocIds &docIds, bool strict) const
+SearchIteratorVerifier::createIterator(const DocIds &docIds, bool strict)
 {
     return make_unique<DocIdIterator>(docIds, strict);
 }
 
-    void
-    SearchIteratorVerifier::verify() const {
-        TEST_DO(verifyTermwise());
-        TEST_DO(verifyInitRange());
-    }
+SearchIterator::UP
+SearchIteratorVerifier::createEmptyIterator()
+{
+    return make_unique<EmptySearch>();
+}
+
+SearchIterator::UP
+SearchIteratorVerifier::createFullIterator() const
+{
+    return make_unique<TrueSearch>(_trueTfmd);
+}
+SearchIteratorVerifier::~SearchIteratorVerifier() { }
+
+void
+SearchIteratorVerifier::verify() const {
+    TEST_DO(verifyTermwise());
+    TEST_DO(verifyInitRange());
+}
 
 void
 SearchIteratorVerifier::verifyTermwise() const {

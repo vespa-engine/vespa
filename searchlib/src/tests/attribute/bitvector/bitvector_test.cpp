@@ -12,7 +12,6 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
-#include <vespa/searchlib/test/initrange.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/parsequery/parse.h>
@@ -627,7 +626,7 @@ private:
     BitVector::UP _bv;
 };
 
-TEST("Test bitvector iterators does not break SearchIterator requirements") {
+TEST("Test that bitvector iterators adheres SearchIterator requirements") {
     Verifier searchIteratorVerifier;
     searchIteratorVerifier.verify();
 }

@@ -15,6 +15,10 @@ public:
     typedef std::pair<uint32_t, uint32_t> Range;
     typedef std::vector<Range> Ranges;
 
+    static SearchIterator::UP createIterator(const DocIds &docIds, bool strict);
+    static SearchIterator::UP createEmptyIterator();
+    SearchIterator::UP createFullIterator() const;
+
     SearchIteratorVerifier();
     virtual ~SearchIteratorVerifier();
     void verify() const;
@@ -25,7 +29,6 @@ protected:
 private:
     void verifyTermwise() const;
     void verifyInitRange() const;
-    SearchIterator::UP createIterator(const DocIds &docIds, bool strict) const;
     void verify(bool strict) const;
     void verifyAnd(bool strict) const;
     void verifyOr(bool strict) const;
