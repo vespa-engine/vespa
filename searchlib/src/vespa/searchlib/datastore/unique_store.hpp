@@ -5,10 +5,14 @@
 #include "unique_store.h"
 #include "datastore.hpp"
 #include <vespa/searchlib/btree/btree.hpp>
+#include <vespa/searchlib/btree/btreebuilder.hpp>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
+#include <vespa/searchlib/util/bufferwriter.h>
+#include "unique_store_builder.hpp"
+#include "unique_store_saver.hpp"
 #include <atomic>
 
 namespace search {
@@ -185,6 +189,51 @@ UniqueStore<EntryT, RefT>::bufferState(EntryRef ref) const
 {
     RefT internalRef(ref);
     return _store.getBufferState(internalRef.bufferId());
+}
+
+
+template <typename EntryT, typename RefT>
+void
+UniqueStore<EntryT, RefT>::transferHoldLists(generation_t generation)
+{
+    _dict.getAllocator().transferHoldLists(generation);
+    _store.transferHoldLists(generation);
+}
+
+template <typename EntryT, typename RefT>
+void
+UniqueStore<EntryT, RefT>::trimHoldLists(generation_t firstUsed)
+{
+    _dict.getAllocator().trimHoldLists(firstUsed);
+    _store.trimHoldLists(firstUsed);
+}
+
+template <typename EntryT, typename RefT>
+void
+UniqueStore<EntryT, RefT>::freeze()
+{
+    _dict.getAllocator().freeze();
+}
+
+template <typename EntryT, typename RefT>
+UniqueStoreBuilder<EntryT, RefT>
+UniqueStore<EntryT, RefT>::getBuilder(uint32_t uniqueValuesHint)
+{
+    return UniqueStoreBuilder<EntryType, RefType>(_store, _typeId, _dict, uniqueValuesHint);
+}
+
+template <typename EntryT, typename RefT>
+UniqueStoreSaver<EntryT, RefT>
+UniqueStore<EntryT, RefT>::getSaver() const
+{
+    return UniqueStoreSaver<EntryType, RefType>(_dict, _store);
+}
+
+template <typename EntryT, typename RefT>
+uint32_t
+UniqueStore<EntryT, RefT>::getNumUniques() const
+{
+    return _dict.getFrozenView().size();
 }
 
 }
