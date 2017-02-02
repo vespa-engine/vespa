@@ -18,8 +18,6 @@ struct Memory
     Memory() : data(nullptr), size(0) {}
     Memory(const char *d, size_t s) : data(d), size(s) {}
     Memory(const char *str) : data(str), size(strlen(str)) {}
-    Memory(const std::string &str)
-        : data(str.data()), size(str.size()) {}
     Memory(const vespalib::string &str)
         : data(str.data()), size(str.size()) {}
     Memory(const vespalib::stringref &str_ref)

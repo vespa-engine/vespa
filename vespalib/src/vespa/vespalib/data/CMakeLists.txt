@@ -2,9 +2,12 @@
 vespa_add_library(vespalib_vespalib_data OBJECT
     SOURCES
     input.cpp
+    input_reader.cpp
     memory.cpp
+    memory_input.cpp
     memorydatastore.cpp
     output.cpp
+    output_writer.cpp
     simple_buffer.cpp
     writable_memory.cpp
     DEPENDS

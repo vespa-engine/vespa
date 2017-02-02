@@ -15,4 +15,4 @@ struct WritableMemory {
     WritableMemory(char *d, size_t s) : data(d), size(s) {}
 };
 
-} // namespace vbench
+} // namespace vespalib
