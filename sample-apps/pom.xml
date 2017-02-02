@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>sampleapps-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>6-SNAPSHOT</version>
+    <name>sampleapps-parent</name>
+    <description>Parent artifact for all Vespa sample apps.</description>
+
+    <modules>
+        <module>basic-search-java</module>
+        <!-- module>blog-recommendation</module -->
+        <module>boolean-search</module>
+    </modules>
+</project>

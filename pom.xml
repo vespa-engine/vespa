@@ -1157,6 +1157,7 @@
         <module>predicate-search-core</module>
         <module>processing</module>
         <module>provided-dependencies</module>
+        <module>sample-apps</module>
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>
