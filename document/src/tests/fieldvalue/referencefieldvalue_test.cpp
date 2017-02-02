@@ -161,6 +161,11 @@ TEST_F("compare() orders first on type ID, then on document ID", Fixture) {
     // Same types, different IDs
     EXPECT_TRUE(fvType1Id1.compare(fvType1Id2) < 0);
     EXPECT_TRUE(fvType1Id2.compare(fvType1Id1) > 0);
+    EXPECT_TRUE(fvType2Id1.compare(fvType2Id2) < 0);
+
+    // Different types and IDs
+    EXPECT_TRUE(fvType1Id1.compare(fvType2Id2) < 0);
+    EXPECT_TRUE(fvType2Id2.compare(fvType1Id1) > 0);
 
     // Equal types and ID 
     EXPECT_EQUAL(0, fvType1Id1.compare(fvType1Id1));
