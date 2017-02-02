@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "memoryflush.h"
+#include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memoryflush");
-
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
-#include "memoryflush.h"
-#include <algorithm>
 
 using search::SerialNum;
 using proton::flushengine::TlsStats;
@@ -36,8 +36,7 @@ estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats,
     if (flushedSerialNum < tlsStats.getFirstSerial()) {
         return tlsStats.getNumBytes();
     }
-    int64_t numEntries = tlsStats.getLastSerial() -
-                         tlsStats.getFirstSerial() + 1;
+    int64_t numEntries = tlsStats.getLastSerial() - tlsStats.getFirstSerial() + 1;
     if (numEntries <= 0) {
         return 0u;
     }
@@ -57,10 +56,8 @@ MemoryFlush::Config::Config()
       globalDiskBloatFactor(0.2),
       maxMemoryGain(1000*1024*1024ul),
       diskBloatFactor(0.2),
-      maxSerialGain(1*1000*1000ul),
       maxTimeGain(fastos::TimeStamp::MINUTE*60*24)
-{
-}
+{ }
 
 
 MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
@@ -68,32 +65,27 @@ MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
                             double globalDiskBloatFactor_in,
                             uint64_t maxMemoryGain_in,
                             double diskBloatFactor_in,
-                            uint64_t maxSerialGain_in,
                             fastos::TimeStamp maxTimeGain_in)
     : maxGlobalMemory(maxGlobalMemory_in),
       maxGlobalTlsSize(maxGlobalTlsSize_in),
       globalDiskBloatFactor(globalDiskBloatFactor_in),
       maxMemoryGain(maxMemoryGain_in),
       diskBloatFactor(diskBloatFactor_in),
-      maxSerialGain(maxSerialGain_in),
       maxTimeGain(maxTimeGain_in)
-{
-}
+{ }
 
-MemoryFlush::MemoryFlush(const Config &config,
-                         fastos::TimeStamp startTime)
+MemoryFlush::MemoryFlush(const Config &config, fastos::TimeStamp startTime)
     : _lock(),
       _config(config),
       _startTime(startTime)
-{
-}
+{ }
 
 
 MemoryFlush::MemoryFlush()
     : MemoryFlush(Config(), fastos::ClockSystem::now())
-{
-    // empty
-}
+{ }
+
+MemoryFlush::~MemoryFlush() { }
 
 MemoryFlush::Config MemoryFlush::getConfig() const
 {
@@ -116,11 +108,21 @@ getOrderName(MemoryFlush::OrderType &orderType)
         case MemoryFlush::OrderType::MEMORY: return "MEMORY";
         case MemoryFlush::OrderType::TLSSIZE: return "TLSSIZE";
         case MemoryFlush::OrderType::DISKBLOAT: return "DISKBLOAT";
-        case MemoryFlush::OrderType::MAXSERIAL: return "MAXSERIAL";
         case MemoryFlush::OrderType::MAXAGE: return "MAXAGE";
         case MemoryFlush::OrderType::DEFAULT: return "DEFAULT";
     }
     return "DEFAULT";
+}
+
+size_t computeGain(const IFlushTarget::DiskGain & gain) {
+    return std::max(100000000l, std::max(gain.getBefore(), gain.getAfter()));
+}
+bool isDiskBloatToHigh(const IFlushTarget::DiskGain & totalDisk,
+                       const MemoryFlush::Config & config,
+                       const IFlushTarget::DiskGain & dgain)
+{
+    return (totalDisk.gain() > config.globalDiskBloatFactor * computeGain(totalDisk))
+           || (dgain.gain() > config.diskBloatFactor * computeGain(dgain));
 }
 
 }
@@ -139,10 +141,10 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
     fastos::TimeStamp now(fastos::ClockSystem::now());
     LOG(debug,
         "getFlushTargets(): globalMaxMemory(%" PRIu64 "), maxGlobalTlsSize(%" PRIu64 "), globalDiskBloatFactor(%f), "
-        "maxMemoryGain(%" PRIu64 "), diskBloatFactor(%f), maxSerialGain(%" PRIu64 "), maxTimeGain(%f), startTime(%f)",
+        "maxMemoryGain(%" PRIu64 "), diskBloatFactor(%f), maxTimeGain(%f), startTime(%f)",
         config.maxGlobalMemory, config.maxGlobalTlsSize, config.globalDiskBloatFactor,
         config.maxMemoryGain, config.diskBloatFactor,
-        config.maxSerialGain, config.maxTimeGain.sec(),
+        config.maxTimeGain.sec(),
         _startTime.sec());
     for (size_t i(0), m(targetList.size()); i < m; i++) {
         const IFlushTarget & target(*targetList[i]->getTarget());
@@ -156,29 +158,17 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
         fastos::TimeStamp lastFlushTime = target.getLastFlushTime();
         fastos::TimeStamp timeDiff(now - (lastFlushTime.val() > 0 ? lastFlushTime : _startTime));
         totalMemory += mgain;
-        const flushengine::TlsStats &tlsStats =
-            tlsStatsMap.getTlsStats(handler.getName());
+        const flushengine::TlsStats &tlsStats = tlsStatsMap.getTlsStats(handler.getName());
         if (visitedHandlers.insert(&handler).second) {
             totalTlsSize += tlsStats.getNumBytes();
             if ((totalTlsSize > config.maxGlobalTlsSize) && (order < TLSSIZE)) {
                 order = TLSSIZE;
             }
         }
-        if (((totalMemory >= config.maxGlobalMemory) ||
-             (mgain >= config.maxMemoryGain)) && (order < MEMORY)) {
+        if (((totalMemory >= config.maxGlobalMemory) || (mgain >= config.maxMemoryGain)) && (order < MEMORY)) {
             order = MEMORY;
-        } else if (((totalDisk.gain() >
-                     config.globalDiskBloatFactor * std::max(100000000l,
-                             std::max(totalDisk.getBefore(),
-                                      totalDisk.getAfter())))
-                      || dgain.gain() > config.diskBloatFactor *
-                    std::max(10000000l,
-                             std::max(dgain.getBefore(), dgain.getAfter())))
-                   && (order < DISKBLOAT)
-                  ) {
+        } else if (isDiskBloatToHigh(totalDisk, config, dgain) && (order < DISKBLOAT)) {
             order = DISKBLOAT;
-        } else if ((serialDiff >= config.maxSerialGain) && (order < MAXSERIAL)) {
-            order = MAXSERIAL;
         } else if ((timeDiff >= config.maxTimeGain) && (order < MAXAGE)) {
             order = MAXAGE;
         }
@@ -194,8 +184,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
             totalDisk.gain(),
             dgain.gain(),
             tlsStats.getNumBytes(),
-            estimateNeededTlsSizeForFlushTarget(tlsStats,
-                                                target.getFlushedSerialNum()),
+            estimateNeededTlsSizeForFlushTarget(tlsStats, target.getFlushedSerialNum()),
             target.getFlushedSerialNum(),
             localLastSerial,
             serialDiff,
@@ -214,12 +203,12 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
         return FlushContext::List();
     }
     if (LOG_WOULD_LOG(debug)) {
-        std::ostringstream oss;
+        vespalib::asciistream oss;
         for (size_t i = 0; i < fv.size(); ++i) {
             if (i > 0) {
                 oss << ",";
             }
-            oss << fv[i]->getName().c_str();
+            oss << fv[i]->getName();
         }
         LOG(debug, "getFlushTargets(): %zu sorted targets: [%s]", fv.size(), oss.str().c_str());
     }
@@ -239,34 +228,25 @@ MemoryFlush::CompareTarget::operator()(const FlushContext::SP &lfc,
 
     switch (_order) {
     case MEMORY:
-        return (lhs.getApproxMemoryGain().gain() >
-                rhs.getApproxMemoryGain().gain());
+        return (lhs.getApproxMemoryGain().gain() > rhs.getApproxMemoryGain().gain());
     case TLSSIZE: {
-        const flushengine::TlsStats &lhsTlsStats =
-            _tlsStatsMap.getTlsStats(lfc->getHandler()->getName());
-        const flushengine::TlsStats &rhsTlsStats =
-            _tlsStatsMap.getTlsStats(rfc->getHandler()->getName());
+        const flushengine::TlsStats &lhsTlsStats = _tlsStatsMap.getTlsStats(lfc->getHandler()->getName());
+        const flushengine::TlsStats &rhsTlsStats = _tlsStatsMap.getTlsStats(rfc->getHandler()->getName());
         SerialNum lhsFlushedSerialNum(lhs.getFlushedSerialNum());
         SerialNum rhsFlushedSerialNum(rhs.getFlushedSerialNum());
-        uint64_t lhsNeededTlsSize =
-            estimateNeededTlsSizeForFlushTarget(lhsTlsStats,
-                                                lhsFlushedSerialNum);
-        uint64_t rhsNeededTlsSize =
-            estimateNeededTlsSizeForFlushTarget(rhsTlsStats,
-                                                rhsFlushedSerialNum);
+        uint64_t lhsNeededTlsSize = estimateNeededTlsSizeForFlushTarget(lhsTlsStats, lhsFlushedSerialNum);
+        uint64_t rhsNeededTlsSize = estimateNeededTlsSizeForFlushTarget(rhsTlsStats, rhsFlushedSerialNum);
         if (lhsNeededTlsSize != rhsNeededTlsSize) {
             return (lhsNeededTlsSize > rhsNeededTlsSize);
         }
         return (lhs.getLastFlushTime() < rhs.getLastFlushTime());
     }
     case DISKBLOAT:
-        return (lhs.getApproxDiskGain().gain() >
-                rhs.getApproxDiskGain().gain());
+        return (lhs.getApproxDiskGain().gain() > rhs.getApproxDiskGain().gain());
     case MAXAGE:
         return (lhs.getLastFlushTime() < rhs.getLastFlushTime());
     default:
-        return (getSerialDiff(lfc->getLastSerial(), lhs) >
-                getSerialDiff(rfc->getLastSerial(), rhs));
+        return (getSerialDiff(lfc->getLastSerial(), lhs) > getSerialDiff(rfc->getLastSerial(), rhs));
     }
 }
 

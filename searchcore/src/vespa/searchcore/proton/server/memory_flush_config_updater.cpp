@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "memory_flush_config_updater.h"
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memory_flush_config_updater");
-#include "memory_flush_config_updater.h"
 
 namespace proton {
 
@@ -115,7 +114,6 @@ MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &confi
                                config.diskbloatfactor,
                                eachMaxMemory,
                                config.each.diskbloatfactor,
-                               config.maxage.serial,
                                static_cast<long>
                                (config.maxage.time) *
                                fastos::TimeStamp::NANO);

@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
-#include <string>
 #include <vector>
 
 namespace proton {
