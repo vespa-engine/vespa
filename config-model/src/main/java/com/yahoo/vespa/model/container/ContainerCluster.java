@@ -62,6 +62,7 @@ import com.yahoo.vespa.model.container.component.ComponentGroup;
 import com.yahoo.vespa.model.container.component.ComponentsConfigGenerator;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.DiscBindingsConfigGenerator;
+import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.Servlet;
@@ -142,6 +143,11 @@ public final class ContainerCluster
      */
     public static final String RESERVED_URI_PREFIX = "reserved-for-internal-use";
 
+    public static final String APPLICATION_STATUS_HANDLER_CLASS = "com.yahoo.container.handler.observability.ApplicationStatusHandler";
+    public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
+    public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
+    public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
+
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
     private String name;
@@ -212,7 +218,7 @@ public final class ContainerCluster
 
     public void addMetricStateHandler() {
         Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
-                new ComponentModel("com.yahoo.container.jdisc.state.StateHandler", null, null, null));
+                new ComponentModel(STATE_HANDLER_CLASS, null, null, null));
         stateHandler.addServerBindings("http://*" + StateHandler.STATE_API_ROOT,
                 "https://*" + StateHandler.STATE_API_ROOT,
                 "http://*" + StateHandler.STATE_API_ROOT + "/*",
@@ -226,7 +232,7 @@ public final class ContainerCluster
 
         Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getFromStrings(
-                        BindingsOverviewHandler.class.getName(), null, null), null));  // null bundle, as the handler is in container-disc
+                        BINDINGS_OVERVIEW_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
         handler.addServerBindings(ROOT_HANDLER_BINDING);
         addComponent(handler);
     }
@@ -243,19 +249,19 @@ public final class ContainerCluster
     public void addApplicationStatusHandler() {
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
-                        "com.yahoo.container.handler.observability.ApplicationStatusHandler", null), null));
+                        APPLICATION_STATUS_HANDLER_CLASS, null), null));
         statusHandler.addServerBindings("http://*/ApplicationStatus", "https://*/ApplicationStatus");
         addComponent(statusHandler);
     }
 
     public void addVipHandler() {
-        Handler<?> vipHandler = Handler.fromClassName("com.yahoo.container.handler.VipStatusHandler");
+        Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
         vipHandler.addServerBindings("http://*/status.html", "https://*/status.html");
         addComponent(vipHandler);
     }
 
     public void addStatisticsHandler() {
-        Handler<?> statsHandler = Handler.fromClassName("com.yahoo.container.config.StatisticsRequestHandler");
+        Handler<?> statsHandler = Handler.fromClassName(STATISTICS_HANDLER_CLASS);
         statsHandler.addServerBindings("http://*/statistics/*", "https://*/statistics/*");
         addComponent(statsHandler);
     }

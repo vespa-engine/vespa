@@ -1,20 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
+import com.google.common.collect.Lists;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.jdisc.config.HttpServerConfig;
 import com.yahoo.jdisc.http.ServerConfig;
+import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-// This can be collapsed into JettyHttpServer now
 /**
+ * Represents the http servers and filters of a Jdisc cluster.
+ *
  * @author tonytv
  */
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
