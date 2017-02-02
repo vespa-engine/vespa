@@ -55,20 +55,19 @@ void ReferenceFieldValue::requireIdOfMatchingType(
 
 FieldValue& ReferenceFieldValue::assign(const FieldValue& rhs) {
     const auto* refValueRhs(dynamic_cast<const ReferenceFieldValue*>(&rhs));
-    if (refValueRhs != nullptr) {
-        if (refValueRhs == this) {
-            return *this;
-        }
-        _documentId = refValueRhs->_documentId;
-        _dataType = refValueRhs->_dataType;
-        _altered = true;
-    } else {
+    if (refValueRhs == nullptr) {
         throw IllegalArgumentException(
                 make_string("Can't assign field value of type %s to "
                             "a ReferenceFieldValue",
                             rhs.getDataType()->getName().c_str()),
                 VESPA_STRLOC);
     }
+    if (refValueRhs == this) {
+        return *this;
+    }
+    _documentId = refValueRhs->_documentId;
+    _dataType = refValueRhs->_dataType;
+    _altered = true;
     return *this;
 }
 
