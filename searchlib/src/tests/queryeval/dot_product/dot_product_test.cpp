@@ -1,10 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("dot_product_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
-
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
@@ -14,17 +11,14 @@ LOG_SETUP("dot_product_test");
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/test/document_weight_attribute_helper.h>
-#include <memory>
-#include <string>
-#include <map>
 
 using namespace search;
 using namespace search::query;
 using namespace search::fef;
 using namespace search::queryeval;
-using search::test::InitRangeVerifier;
+using search::test::SearchIteratorVerifier;
 using search::test::DocumentWeightAttributeHelper;
 
 namespace {
@@ -174,46 +168,76 @@ TEST_F("test Eager Matching Child", MockFixture(5)) {
     EXPECT_EQUAL(1, mock->seekCnt);
 }
 
+class Verifier : public SearchIteratorVerifier {
+public:
+    Verifier() :
+        _weights(_num_children, 1)
+    { }
+
+protected:
+    static constexpr size_t _num_children = 7;
+    mutable TermFieldMatchData _tfmd;
+    std::vector<int32_t> _weights;
+};
+
+class IteratorChildrenVerifier : public Verifier {
+public:
+    IteratorChildrenVerifier() :
+        Verifier(),
+        _split_lists(_num_children)
+    {
+        auto full_list = getExpectedDocIds();
+        for (size_t i = 0; i < full_list.size(); ++i) {
+            _split_lists[i % _num_children].push_back(full_list[i]);
+        }
+    }
+    SearchIterator::UP create(bool strict) const override {
+        (void) strict;
+        std::vector<SearchIterator*> children;
+        for (size_t i = 0; i < _num_children; ++i) {
+            children.push_back(createIterator(_split_lists[i], true).release());
+        }
+        std::vector<fef::TermFieldMatchData*> no_child_match;
+        MatchData::UP no_match_data;
+        return DotProductSearch::create(children, _tfmd, no_child_match, _weights, std::move(no_match_data));
+    }
+private:
+    std::vector<DocIds> _split_lists;
+};
+
+class WeightIteratorChildrenVerifier : public Verifier {
+public:
+    WeightIteratorChildrenVerifier() :
+        Verifier(),
+        _helper()
+    {
+        _helper.add_docs(getDocIdLimit());
+        auto full_list = getExpectedDocIds();
+        for (size_t i = 0; i < full_list.size(); ++i) {
+            _helper.set_doc(full_list[i], i % _num_children, 1);
+        }
+    }
+    SearchIterator::UP create(bool strict) const override {
+        (void) strict;
+        std::vector<DocumentWeightIterator> children;
+        for (size_t i = 0; i < _num_children; ++i) {
+            auto dict_entry = _helper.dwa().lookup(vespalib::make_string("%zu", i).c_str());
+            _helper.dwa().create(dict_entry.posting_idx, children);
+        }
+        return SearchIterator::UP(DotProductSearch::create(_tfmd, _weights, std::move(children)));
+    }
+private:
+    DocumentWeightAttributeHelper _helper;
+};
+
 TEST("verify initRange with search iterator children") {
-    const size_t num_children = 7;
-    InitRangeVerifier ir;
-    using DocIds = InitRangeVerifier::DocIds;
-    std::vector<DocIds> split_lists(num_children);
-    auto full_list = ir.getExpectedDocIds();
-    for (size_t i = 0; i < full_list.size(); ++i) {
-        split_lists[i % num_children].push_back(full_list[i]);
-    }
-    bool strict = true;
-    std::vector<SearchIterator*> children;
-    for (size_t i = 0; i < num_children; ++i) {
-        children.push_back(ir.createIterator(split_lists[i], strict).release());
-    }
-    TermFieldMatchData tfmd;
-    std::vector<int32_t> weights(num_children, 1);
-    std::vector<fef::TermFieldMatchData*> no_child_match; // unpack not called
-    MatchData::UP no_match_data; // unpack not called
-    SearchIterator::UP itr = DotProductSearch::create(children, tfmd, no_child_match, weights, std::move(no_match_data));
-    ir.verify(*itr);
+    IteratorChildrenVerifier verifier;
+    verifier.verify();
 }
 
 TEST("verify initRange with document weight iterator children") {
-    const size_t num_children = 7;
-    InitRangeVerifier ir;
-    DocumentWeightAttributeHelper helper;
-    helper.add_docs(ir.getDocIdLimit());
-    auto full_list = ir.getExpectedDocIds();
-    for (size_t i = 0; i < full_list.size(); ++i) {
-        helper.set_doc(full_list[i], i % num_children, 1);
-    }
-    TermFieldMatchData tfmd;
-    std::vector<int32_t> weights(num_children, 1);
-    std::vector<DocumentWeightIterator> children;
-    for (size_t i = 0; i < num_children; ++i) {
-        auto dict_entry = helper.dwa().lookup(vespalib::make_string("%zu", i).c_str());
-        helper.dwa().create(dict_entry.posting_idx, children);
-    }
-    SearchIterator::UP itr(DotProductSearch::create(tfmd, weights, std::move(children)));
-    ir.verify(*itr);
+    WeightIteratorChildrenVerifier verifier;
+    verifier.verify();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
