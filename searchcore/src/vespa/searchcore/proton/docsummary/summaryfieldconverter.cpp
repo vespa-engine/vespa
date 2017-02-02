@@ -488,7 +488,7 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     void visit(const ReferenceFieldValue& value) override {
         if (value.hasValidDocumentId()) {
             _str << value.getDocumentId().toString();
-        } // else:: implicit empty string
+        } // else: implicit empty string
     }
 
 public:
