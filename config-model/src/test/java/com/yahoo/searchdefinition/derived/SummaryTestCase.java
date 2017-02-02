@@ -11,7 +11,10 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
+import static com.yahoo.searchdefinition.TestUtils.joinLines;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 /**
  * Tests summary extraction
  *
@@ -83,5 +86,35 @@ public class SummaryTestCase extends SearchDefinitionTestCase {
         assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
     }
 
+    @Test
+    public void reference_fields_can_be_part_of_summary_classes() throws ParseException {
+        Search adSearch = buildCampaignAdModel();
+
+        SummaryClass defaultClass = new SummaryClass(adSearch, adSearch.getSummary("default"), new BaseDeployLogger());
+        assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.getField("campaign_ref").getType());
+        assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.getField("other_campaign_ref").getType());
+
+        SummaryClass myClass = new SummaryClass(adSearch, adSearch.getSummary("my_summary"), new BaseDeployLogger());
+        assertNull(myClass.getField("campaign_ref"));
+        assertEquals(SummaryClassField.Type.LONGSTRING, myClass.getField("other_campaign_ref").getType());
+    }
+
+    private static Search buildCampaignAdModel() throws ParseException {
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString("search campaign { document campaign {} }");
+        builder.importString(joinLines("search ad {",
+                "  document ad {",
+                "    field campaign_ref type reference<campaign> {",
+                "      indexing: summary",
+                "    }",
+                "    field other_campaign_ref type reference<campaign> {}",
+                "  }",
+                "  document-summary my_summary {",
+                "    summary other_campaign_ref type reference<campaign> {}",
+                "  }",
+                "}"));
+        builder.build();
+        return builder.getSearch("ad");
+    }
 
 }

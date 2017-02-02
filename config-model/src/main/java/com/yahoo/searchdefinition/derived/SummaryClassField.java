@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
+import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.datatypes.*;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
@@ -98,6 +99,8 @@ public class SummaryClassField {
             }
         } else if (fieldType instanceof MapDataType) {
             return Type.JSONSTRING;
+        } else if (fieldType instanceof ReferenceDataType) {
+            return Type.LONGSTRING;
         } else {
             throw new IllegalArgumentException("Don't know which summary type to " +
                     "convert " + fieldType + " to");
