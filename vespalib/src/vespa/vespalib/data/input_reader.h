@@ -43,6 +43,13 @@ public:
 
     void fail(const vespalib::string &msg);
 
+    /**
+     * Make sure we have more input data available.
+     *
+     * @return number of bytes available without requesting more from
+     *         the underlying Input. Returns 0 if and only is there is
+     *         no more input data available.
+     **/
     size_t obtain() {
         if (__builtin_expect(_pos < _data.size, true)) {                    
             return size();
@@ -50,6 +57,13 @@ public:
         return obtain_slow();
     }
 
+    /**
+     * Read a single byte. Reading past the end of the input will
+     * result in the reader failing with input underflow.
+     *
+     * @return the next input byte. Returns 0 if the reader has
+     *         failed.
+     **/
     char read() {
         if (__builtin_expect(obtain() > 0, true)) {
             return _data.data[_pos++];
@@ -57,6 +71,17 @@ public:
         return 0;
     }
 
+    /**
+     * Read a continous sequence of bytes. Bytes within an input chunk
+     * will be referenced directly. Reads crossing chunk boundries
+     * will result in a gathering copy into a temporary buffer owned
+     * by the reader itself. Reading past the end of the input will
+     * result in the reader failing with input underflow.
+     *
+     * @param bytes the number of bytes we want to read
+     * @return Memory referencing the read bytes. Returns an empty
+     *         Memory if the reader has failed.
+     **/
     Memory read(size_t bytes) {
         if (__builtin_expect(obtain() >= bytes, true)) {
             Memory ret(data(), bytes);

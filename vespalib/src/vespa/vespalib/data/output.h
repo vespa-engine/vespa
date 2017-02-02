@@ -14,7 +14,8 @@ namespace vespalib {
 struct Output
 {
     /**
-     * Reserve space for more output data.
+     * Reserve space for more output data. The returned WritableMemory
+     * must contain at least the requested number of bytes.
      *
      * @return the reserved output data
      * @param bytes number of bytes to reserve

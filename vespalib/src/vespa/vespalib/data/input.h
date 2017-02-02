@@ -14,7 +14,8 @@ namespace vespalib {
 struct Input
 {
     /**
-     * Obtain more input data.
+     * Obtain more input data. An empty Memory should be returned if
+     * and only if all input data has been exhausted.
      *
      * @return the obtained input data
      **/

@@ -27,6 +27,16 @@ public:
         : _output(output), _data(), _pos(0), _chunk_size(chunk_size) {}
     ~OutputWriter();
 
+    /**
+     * Reserve the requested number of bytes in the output and return
+     * a pointer to the first one. You must call the commit function
+     * after writing the bytes to make them part of the output. All
+     * other writer operations will invalidate the pointer returned
+     * from this function.
+     *
+     * @param the number of bytes to reserve
+     * @return pointer to reserved bytes
+     **/
     char *reserve(size_t bytes) {
         if (__builtin_expect((_pos + bytes) <= _data.size, true)) {
             return (_data.data + _pos);
@@ -34,6 +44,14 @@ public:
         return reserve_slow(bytes);
     }
 
+    /**
+     * Commit bytes written to a memory region previously returned by
+     * the reserve function. You must never commit more bytes than you
+     * reserved. You should never commit bytes that are not written
+     * (their values will be undefined).
+     *
+     * @param bytes the number of bytes to commit
+     **/
     void commit(size_t bytes) {
         _pos += bytes;
     }
