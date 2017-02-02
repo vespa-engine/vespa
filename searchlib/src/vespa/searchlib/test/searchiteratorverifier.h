@@ -23,7 +23,6 @@ public:
     virtual ~SearchIteratorVerifier();
     void verify() const;
     virtual SearchIterator::UP create(bool strict) const = 0;
-protected:
     const DocIds & getExpectedDocIds() const { return _docIds; }
     static uint32_t getDocIdLimit() { return 207; }
 private:

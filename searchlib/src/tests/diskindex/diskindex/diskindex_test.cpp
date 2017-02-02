@@ -1,18 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/diskindex/disktermblueprint.h>
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -21,15 +18,13 @@
 #include <set>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 
-LOG_SETUP("diskindex_test");
-
 using search::BitVectorIterator;
 using namespace search::fef;
 using namespace search::index;
 using namespace search::query;
 using namespace search::queryeval;
 using namespace search::queryeval::blueprint;
-using search::test::InitRangeVerifier;
+using search::test::SearchIteratorVerifier;
 using namespace search::fakedata;
 
 namespace search {
@@ -71,15 +66,30 @@ public:
     int Main();
 };
 
+class Verifier : public SearchIteratorVerifier {
+public:
+    Verifier(FakePosting::SP fp) :
+        _fp(std::move(fp))
+    { }
+    SearchIterator::UP create(bool strict) const override {
+        (void) strict;
+        return SearchIterator::UP(_fp->createIterator(_tfmda));
+    }
+private:
+    mutable TermFieldMatchDataArray _tfmda;
+    FakePosting::SP _fp;
+};
+
 void
 Test::requireThatInitRangeConforms()
 {
-    InitRangeVerifier ir;
+    FakePosting::SP tmp;
+    Verifier verTmp(tmp);
     Schema schema;
     schema.addIndexField(Schema::IndexField("a", Schema::DataType::STRING));
     bitcompression::PosOccFieldsParams params;
     params.setSchemaParams(schema, 0);
-    search::fakedata::FakeWord fw(ir.getDocIdLimit(), ir.getExpectedDocIds(), "a", params, 0);
+    search::fakedata::FakeWord fw(verTmp.getDocIdLimit(), verTmp.getExpectedDocIds(), "a", params, 0);
     TermFieldMatchData md;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&md);
@@ -97,7 +107,8 @@ Test::requireThatInitRangeConforms()
             std::unique_ptr<FPFactory> ff(getFPFactory(postingType, schema));
             ff->setup(v);
             FakePosting::SP f(ff->make(fw));
-            TEST_DO(ir.verify(f->createIterator(tfmda)));
+            Verifier verifier(f);
+            TEST_DO(verifier.verify());
         }
     }
 }
