@@ -1,5 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "termwise.h"
+#include "searchiteratorverifier.h"
+#include "initrange.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
@@ -19,7 +20,7 @@ using std::make_unique;
 class DocIdIterator : public SearchIterator
 {
 public:
-    DocIdIterator(const TermwiseVerifier::DocIds & docIds, bool strict) :
+    DocIdIterator(const SearchIteratorVerifier::DocIds & docIds, bool strict) :
         _strict(strict),
         _currIndex(0),
         _docIds(docIds)
@@ -55,10 +56,10 @@ public:
 private:
     const bool _strict;
     uint32_t   _currIndex;
-    const TermwiseVerifier::DocIds _docIds;
+    const SearchIteratorVerifier::DocIds _docIds;
 };
 
-TermwiseVerifier::TermwiseVerifier() :
+SearchIteratorVerifier::SearchIteratorVerifier() :
     _trueTfmd(),
     _docIds(),
     _everyOddBitSet(BitVector::create(getDocIdLimit()))
@@ -89,22 +90,36 @@ TermwiseVerifier::TermwiseVerifier() :
     }
 }
 
-TermwiseVerifier::~TermwiseVerifier() { }
+SearchIteratorVerifier::~SearchIteratorVerifier() { }
 
 SearchIterator::UP
-TermwiseVerifier::createIterator(const DocIds &docIds, bool strict) const
+SearchIteratorVerifier::createIterator(const DocIds &docIds, bool strict) const
 {
     return make_unique<DocIdIterator>(docIds, strict);
 }
 
+    void
+    SearchIteratorVerifier::verify() const {
+        TEST_DO(verifyTermwise());
+        TEST_DO(verifyInitRange());
+    }
+
 void
-TermwiseVerifier::verify() const {
+SearchIteratorVerifier::verifyTermwise() const {
     TEST_DO(verify(false));
     TEST_DO(verify(true));
 }
 
+    void
+    SearchIteratorVerifier::verifyInitRange() const {
+        InitRangeVerifier initRangeTest;
+        TEST_DO(initRangeTest.verify(*create(false)));
+        TEST_DO(initRangeTest.verify(*create(true)));
+    }
+
+
 void
-TermwiseVerifier::verify(bool strict) const {
+SearchIteratorVerifier::verify(bool strict) const {
     SearchIterator::UP iterator = create(strict);
     TEST_DO(verify(*iterator, strict, _docIds));
     TEST_DO(verifyTermwise(std::move(iterator), strict, _docIds));
@@ -113,7 +128,7 @@ TermwiseVerifier::verify(bool strict) const {
 }
 
 void
-TermwiseVerifier::verifyAnd(bool strict) const {
+SearchIteratorVerifier::verifyAnd(bool strict) const {
     fef::TermFieldMatchData tfmd;
     MultiSearch::Children children;
     children.emplace_back(create(strict).release());
@@ -124,7 +139,7 @@ TermwiseVerifier::verifyAnd(bool strict) const {
 }
 
 void
-TermwiseVerifier::verifyOr(bool strict) const {
+SearchIteratorVerifier::verifyOr(bool strict) const {
     fef::TermFieldMatchData tfmd;
     MultiSearch::Children children;
     children.emplace_back(create(strict).release());
@@ -136,13 +151,13 @@ TermwiseVerifier::verifyOr(bool strict) const {
 
 
 void
-TermwiseVerifier::verifyTermwise(SearchIterator::UP iterator, bool strict, const DocIds & docIds) {
+SearchIteratorVerifier::verifyTermwise(SearchIterator::UP iterator, bool strict, const DocIds & docIds) {
     SearchIterator::UP termwise = make_termwise(std::move(iterator), strict);
     TEST_DO(verify(*termwise, strict, docIds));
 }
 
 void
-TermwiseVerifier::verify(SearchIterator & iterator, bool strict, const DocIds & docIds)
+SearchIteratorVerifier::verify(SearchIterator & iterator, bool strict, const DocIds & docIds)
 {
     TEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
     TEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
@@ -158,7 +173,7 @@ TermwiseVerifier::verify(SearchIterator & iterator, bool strict, const DocIds & 
 }
 
 void
-TermwiseVerifier::verify(SearchIterator & iterator, const Ranges & ranges, bool strict, const DocIds & docIds)
+SearchIteratorVerifier::verify(SearchIterator & iterator, const Ranges & ranges, bool strict, const DocIds & docIds)
 {
     DocIds result = search(iterator, ranges, strict);
     ASSERT_EQUAL(docIds.size(), result.size());
@@ -167,8 +182,8 @@ TermwiseVerifier::verify(SearchIterator & iterator, const Ranges & ranges, bool 
     }
 }
 
-TermwiseVerifier::DocIds
-TermwiseVerifier::search(SearchIterator & it, const Ranges & ranges, bool strict)
+SearchIteratorVerifier::DocIds
+SearchIteratorVerifier::search(SearchIterator & it, const Ranges & ranges, bool strict)
 {
     DocIds result;
     for (Range range : ranges) {
@@ -179,8 +194,8 @@ TermwiseVerifier::search(SearchIterator & it, const Ranges & ranges, bool strict
     return result;
 }
 
-TermwiseVerifier::DocIds
-TermwiseVerifier::searchRelaxed(SearchIterator & it, Range range)
+SearchIteratorVerifier::DocIds
+SearchIteratorVerifier::searchRelaxed(SearchIterator & it, Range range)
 {
     DocIds result;
     it.initRange(range.first, range.second);
@@ -192,8 +207,8 @@ TermwiseVerifier::searchRelaxed(SearchIterator & it, Range range)
     return result;
 }
 
-TermwiseVerifier::DocIds
-TermwiseVerifier::searchStrict(SearchIterator & it, Range range)
+SearchIteratorVerifier::DocIds
+SearchIteratorVerifier::searchStrict(SearchIterator & it, Range range)
 {
     DocIds result;
     it.initRange(range.first, range.second);
