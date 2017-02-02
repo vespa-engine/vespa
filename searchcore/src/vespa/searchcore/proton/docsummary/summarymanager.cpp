@@ -148,7 +148,6 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
                                            log.minfilesizefactor, log.numthreads, log.compact2activefile,
                                            deriveCompression(log.compact.compression), fileConfig);
     logConfig.disableCrcOnRead(chunk.skipcrconread);
-    logConfig.setMaxEntriesPerFile(log.maxentriesperfile);
     _docStore.reset(new LogDocumentStore(executor, baseDir,
                                          search::LogDocumentStore::Config(config, logConfig),
                                          growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,

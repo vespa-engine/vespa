@@ -77,7 +77,6 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
       _nameId(nameId),
       _name(nameId.createName(baseName)),
       _skipCrcOnRead(skipCrcOnRead),
-      _entriesCount(0),
       _erasedCount(0),
       _erasedBytes(0),
       _diskFootprint(0),
@@ -238,7 +237,6 @@ FileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNu
                             globalBucketMap.recordLid(bucketId);
                         }
                         ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
-                        incEntries();
                         _addedBytes += adjustSize(lidMeta.size());
                     }
                     serialNum = chunkMeta.getLastSerial();

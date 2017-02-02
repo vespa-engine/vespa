@@ -79,6 +79,7 @@ flush.memory.each.diskbloatfactor double default=0.2
 flush.memory.maxage.time double default=86400.0
 
 ## Max diff in serial number allowed before that takes precedence.
+## TODO Deprecated and ignored. Remove soon.
 flush.memory.maxage.serial long default=1000000
 
 ## When resource limit for memory is reached we choose a conservative mode for the flush strategy.
@@ -232,6 +233,7 @@ summary.log.chunk.compression.level int default=9 restart
 summary.log.chunk.maxbytes int default=65536 restart
 
 ## Max number of documents in each chunk.
+## TODO Deprecated and ignored. Remove soon.
 summary.log.chunk.maxentries int default=256 restart
 
 ## Skip crc32 check on read.
@@ -244,6 +246,7 @@ summary.log.compact2activefile bool default=false restart
 summary.log.maxfilesize long default=1000000000 restart
 
 ## Max number of removes per summary file.
+## TODO Deprecated and ignored. Remove soon.
 summary.log.maxentriesperfile long default=20000000 restart
 
 ## Max disk bloat factor. This will trigger compacting.

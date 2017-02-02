@@ -179,7 +179,7 @@ LogDataStore::requireSpace(LockGuard guard, WriteableFileChunk & active)
     size_t oldSz(active.getDiskFootprint());
     LOG(spam, "Checking file %s size %ld < %ld",
               active.getName().c_str(), oldSz, _config.getMaxFileSize());
-    if ((oldSz > _config.getMaxFileSize()) || (active.getEntriesCount() >= _config.getMaxEntriesPerFile())) {
+    if (oldSz > _config.getMaxFileSize()) {
         FileId fileId = allocateFileId(guard);
         setNewFileChunk(guard, createWritableFile(fileId, active.getSerialNum()));
         setActive(guard, fileId);
