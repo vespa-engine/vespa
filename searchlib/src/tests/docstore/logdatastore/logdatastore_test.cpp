@@ -212,10 +212,7 @@ TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
     EXPECT_TRUE(FastOS_File::MakeDirectory("growing"));
     LogDataStore::Config config(100000, 0.1, 3.0, 0.2, 8, true, CompressionConfig::LZ4,
-                                WriteableFileChunk::Config(
-                                        CompressionConfig(CompressionConfig::LZ4, 9, 60),
-                                        1000,
-                                        20));
+                                WriteableFileChunk::Config(CompressionConfig(CompressionConfig::LZ4, 9, 60), 1000));
     vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
@@ -445,7 +442,7 @@ public:
         _repo(makeDocTypeRepoConfig()),
         _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
                 LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,CompressionConfig::LZ4,
-                    WriteableFileChunk::Config(CompressionConfig(), 16384, 64))),
+                    WriteableFileChunk::Config(CompressionConfig(), 16384))),
         _fileHeaderContext(),
         _executor(_config.getLogConfig().getNumThreads(), 128*1024),
         _tlSyncer(),
@@ -698,18 +695,18 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
 }
 
 TEST("requireThatChunksObeyLimits") {
-    Chunk c(0, Chunk::Config(256, 2));
+    Chunk c(0, Chunk::Config(256));
     EXPECT_TRUE(c.hasRoom(1000)); // At least 1 is allowed no matter what the size is.
     c.append(1, "abc", 3);
     EXPECT_TRUE(c.hasRoom(229));
     EXPECT_FALSE(c.hasRoom(230));
     c.append(2, "abc", 3);
-    EXPECT_FALSE(c.hasRoom(20));
+    EXPECT_TRUE(c.hasRoom(20));
 }
 
 TEST("requireThatChunkCanProduceUniqueList") {
     const char *d = "ABCDEF";
-    Chunk c(0, Chunk::Config(100, 20));
+    Chunk c(0, Chunk::Config(100));
     c.append(1, d, 1);
     c.append(2, d, 2);
     c.append(3, d, 3);

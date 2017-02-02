@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "chunk.h"
 #include "chunkformats.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -61,7 +60,7 @@ Chunk::Chunk(uint32_t id, const Config & config) :
     _lastSerial(static_cast<uint64_t>(-1l)),
     _format(new ChunkFormatV2(config.getMaxBytes()))
 {
-    _lids.reserve(config.getMaxCount());
+    _lids.reserve(4096/sizeof(Entry));
 }
 
 Chunk::Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc) :

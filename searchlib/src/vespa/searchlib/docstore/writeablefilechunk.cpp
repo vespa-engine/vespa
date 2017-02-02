@@ -100,7 +100,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
       _pendingDat(0),
       _currentDiskFootprint(0),
       _nextChunkId(1),
-      _active(new Chunk(0, Chunk::Config(config.getMaxChunkBytes(), config.getMaxChunkEntries()))),
+      _active(new Chunk(0, Chunk::Config(config.getMaxChunkBytes()))),
       _alignment(1),
       _granularity(1),
       _maxChunkSize(0x100000),
@@ -172,7 +172,7 @@ WriteableFileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t
 {
     size_t sz = FileChunk::updateLidMap(guard, ds, serialNum);
     _nextChunkId = _chunkInfo.size();
-    _active.reset( new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes(), _config.getMaxChunkEntries())));
+    _active.reset( new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes())));
     _serialNum = getLastPersistedSerialNum();
     _firstChunkIdToBeWritten = _active->getId();
     setDiskFootprint(0);
@@ -631,9 +631,7 @@ int32_t WriteableFileChunk::flushLastIfNonEmpty(bool force)
         chunkId = _active->getId();
         _chunkMap[chunkId] = std::move(_active);
         assert(_nextChunkId < LidInfo::getMaxChunkNum());
-        _active.reset(new Chunk(_nextChunkId++,
-                                Chunk::Config(_config.getMaxChunkBytes(),
-                                              _config.getMaxChunkEntries())));
+        _active.reset(new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes())));
     }
     return chunkId;
 }
