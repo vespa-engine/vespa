@@ -10,9 +10,8 @@ size_t
 InputReader::obtain_slow()
 {
     if (!failed()) {
-        _input.evict(_pos);
+        _data = _input.evict(_pos).obtain();
         _chunk_offset += _pos;
-        _data = _input.obtain();
         _pos = 0;
         if (_data.size == 0) {
             fail("input underflow");
@@ -46,8 +45,8 @@ InputReader::fail(const vespalib::string &msg) {
     if (!failed()) {
         _error = msg;
         _input.evict(_pos);
-        _chunk_offset += _pos;
         _data = Memory();
+        _chunk_offset += _pos;
         _pos = 0;
     }
 }

@@ -20,6 +20,8 @@ vespa_define_module(
     src/tests/closure
     src/tests/component
     src/tests/compress
+    src/tests/data/input_reader
+    src/tests/data/memory_input
     src/tests/data/output_writer
     src/tests/data/simple_buffer
     src/tests/delegatelist
