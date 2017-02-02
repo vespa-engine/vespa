@@ -10,6 +10,7 @@ namespace document {
 
 class ReferenceFieldValue : public FieldValue {
     const ReferenceDataType* _dataType;
+    // TODO wrap in std::optional once available.
     DocumentId _documentId;
     bool _altered;
 public:

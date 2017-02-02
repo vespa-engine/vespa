@@ -80,7 +80,11 @@ void ReferenceFieldValue::setDeserializedDocumentId(const DocumentId& id) {
 
 ReferenceFieldValue* ReferenceFieldValue::clone() const {
     assert(_dataType != nullptr);
-    return new ReferenceFieldValue(*_dataType, _documentId);
+    if (hasValidDocumentId()) {
+        return new ReferenceFieldValue(*_dataType, _documentId);
+    } else {
+        return new ReferenceFieldValue(*_dataType);
+    }
 }
 
 int ReferenceFieldValue::compare(const FieldValue& rhs) const {

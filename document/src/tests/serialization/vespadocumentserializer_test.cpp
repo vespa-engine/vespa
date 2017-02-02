@@ -886,7 +886,7 @@ struct RefFixture {
         return dynamic_cast<const ReferenceDataType&>(*raw_type);
     }
 
-    void roundtripSerialize(const ReferenceFieldValue& src, ReferenceFieldValue& dest) {
+    void roundtrip_serialize(const ReferenceFieldValue& src, ReferenceFieldValue& dest) {
         nbostream stream;
         VespaDocumentSerializer serializer(stream);
         serializer.write(src);
@@ -912,7 +912,7 @@ TEST_F("ReferenceFieldValue with ID can be roundtrip serialized", RefFixture) {
 TEST_F("Empty ReferenceFieldValue has changed-flag cleared after deserialization", RefFixture) {
     ReferenceFieldValue src(f.ref_type());
     ReferenceFieldValue dest(f.ref_type());
-    f.roundtripSerialize(src, dest);
+    f.roundtrip_serialize(src, dest);
 
     EXPECT_FALSE(dest.hasChanged());
 }
@@ -921,7 +921,7 @@ TEST_F("ReferenceFieldValue with ID has changed-flag cleared after deserializati
     ReferenceFieldValue src(
             f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
     ReferenceFieldValue dest(f.ref_type());
-    f.roundtripSerialize(src, dest);
+    f.roundtrip_serialize(src, dest);
 
     EXPECT_FALSE(dest.hasChanged());
 }

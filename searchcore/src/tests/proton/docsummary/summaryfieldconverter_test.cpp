@@ -15,6 +15,7 @@
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -29,6 +30,7 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -84,6 +86,8 @@ using document::UrlDataType;
 using document::WeightedSetDataType;
 using document::WeightedSetFieldValue;
 using document::TensorFieldValue;
+using document::ReferenceDataType;
+using document::ReferenceFieldValue;
 using search::index::Schema;
 using vespalib::Slime;
 using vespalib::slime::Cursor;
@@ -132,6 +136,7 @@ class Test : public vespalib::TestApp {
     void tearDown();
 
     const DataType &getDataType(const string &name) const;
+    const ReferenceDataType& getAsRefType(const string& name) const;
 
     template <typename T>
     T getValueAs(const string &field_name, const Document &doc);
@@ -149,6 +154,7 @@ class Test : public vespalib::TestApp {
     cvtSummaryAs(bool markup, const FieldValue::UP &fv);
 
     void checkString(const string &str, const FieldValue *value);
+    void checkStringForAllConversions(const string& expected, const FieldValue* fv);
     void checkData(const search::RawBuf &data, const FieldValue *value);
     void checkTensor(const Tensor::UP &tensor, const FieldValue *value);
     template <unsigned int N>
@@ -172,6 +178,9 @@ class Test : public vespalib::TestApp {
     void requireThatLinguisticsAnnotationUsesDefaultDataTypes();
     void requireThatPredicateIsPrinted();
     void requireThatTensorIsNotConverted();
+    void requireThatNonEmptyReferenceIsConvertedToStringWithId();
+    void requireThatEmptyReferenceIsConvertedToEmptyString();
+    void requireThatReferenceInCompositeTypeEmitsSlimeData();
     const DocumentType &getDocType() const { return *_documentType; }
     Document makeDocument();
     StringFieldValue annotateTerm(const string &term);
@@ -186,6 +195,11 @@ public:
 DocumenttypesConfig getDocumenttypesConfig() {
     using namespace document::config_builder;
     DocumenttypesConfigBuilderHelper builder;
+    const int ref_target_doctype_id = 1234;
+    const int ref_type_id = 5678;
+    builder.document(ref_target_doctype_id, "target_dummy_document",
+                     Struct("target_dummy_document.header"),
+                     Struct("target_dummy_document.body"));
     builder.document(42, "indexingdocument",
                      Struct("indexingdocument.header")
                      .addField("empty", DataType::T_STRING)
@@ -208,8 +222,12 @@ DocumenttypesConfig getDocumenttypesConfig() {
                      .addField("float", DataType::T_FLOAT)
                      .addField("chinese", DataType::T_STRING)
                      .addField("predicate", DataType::T_PREDICATE)
-                     .addField("tensor", DataType::T_TENSOR),
-                     Struct("indexingdocument.body"));
+                     .addField("tensor", DataType::T_TENSOR)
+                     .addField("ref", ref_type_id)
+                     .addField("nested", Struct("indexingdocument.header.nested")
+                               .addField("inner_ref", ref_type_id)),
+                     Struct("indexingdocument.body"))
+           .referenceType(ref_type_id, ref_target_doctype_id);
     return builder.config();
 }
 
@@ -247,6 +265,9 @@ Test::Main()
     TEST_CALL(requireThatLinguisticsAnnotationUsesDefaultDataTypes());
     TEST_CALL(requireThatPredicateIsPrinted());
     TEST_CALL(requireThatTensorIsNotConverted());
+    TEST_CALL(requireThatNonEmptyReferenceIsConvertedToStringWithId());
+    TEST_CALL(requireThatEmptyReferenceIsConvertedToEmptyString());
+    TEST_CALL(requireThatReferenceInCompositeTypeEmitsSlimeData());
 
     TEST_DONE();
 }
@@ -427,7 +448,7 @@ void Test::checkData(const search::RawBuf &buf, const FieldValue *value) {
     const RawFieldValue *s = dynamic_cast<const RawFieldValue *>(value);
     ASSERT_TRUE(s);
     auto got = s->getAsRaw();
-    EXPECT_EQUAL(buf.GetUsedLen(), got.second);
+    ASSERT_EQUAL(buf.GetUsedLen(), got.second);
     EXPECT_TRUE(memcmp(buf.GetDrainPos(), got.first, got.second) == 0);
 }
 
@@ -681,6 +702,55 @@ Test::requireThatTensorIsNotConverted()
                           SFC::convertSummaryField(false,
                                                    *doc.getValue("tensor"),
                                                    true).get()));
+}
+
+void Test::checkStringForAllConversions(const string& expected, const FieldValue* fv) {
+    ASSERT_TRUE(fv != nullptr);
+    for (bool use_slime : {true, false}) {
+        checkString(expected, SFC::convertSummaryField(false, *fv, use_slime).get());
+    }
+}
+
+const ReferenceDataType& Test::getAsRefType(const string& name) const {
+    return dynamic_cast<const ReferenceDataType&>(getDataType(name));
+}
+
+void Test::requireThatNonEmptyReferenceIsConvertedToStringWithId() {
+    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    doc.setRepo(*_documentRepo);
+    doc.setValue("ref", ReferenceFieldValue(
+            getAsRefType("Reference<target_dummy_document>"),
+            DocumentId("id:ns:target_dummy_document::foo")));
+
+    checkStringForAllConversions("id:ns:target_dummy_document::foo",
+                                 doc.getValue("ref").get());
+}
+
+void Test::requireThatEmptyReferenceIsConvertedToEmptyString() {
+    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    doc.setRepo(*_documentRepo);
+    doc.setValue("ref", ReferenceFieldValue(
+            getAsRefType("Reference<target_dummy_document>")));
+
+    checkStringForAllConversions("", doc.getValue("ref").get());
+
+}
+
+// Own test for this to ensure that SlimeFiller code path is executed,
+// as this only triggers for composite field types.
+void Test::requireThatReferenceInCompositeTypeEmitsSlimeData() {
+    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    doc.setRepo(*_documentRepo);
+
+    StructFieldValue sfv(getDataType("indexingdocument.header.nested"));
+    sfv.setValue("inner_ref", ReferenceFieldValue(
+            getAsRefType("Reference<target_dummy_document>"),
+            DocumentId("id:ns:target_dummy_document::foo")));
+    doc.setValue("nested", sfv);
+
+    FieldBlock expect(R"({"inner_ref":"id:ns:target_dummy_document::foo"})");
+    checkData(expect.binary,
+              SFC::convertSummaryField(false, *doc.getValue("nested"), true).get());
 }
 
 }  // namespace
