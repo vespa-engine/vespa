@@ -3,7 +3,8 @@
 #pragma once
 
 #include "memory.h"
-#include <assert.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace vespalib {
 
@@ -21,7 +22,7 @@ private:
     Input            &_input;
     Memory            _data;
     size_t            _pos;
-    size_t            _chunk_offset;
+    size_t            _bytes_evicted;
     vespalib::string  _error;
     std::vector<char> _space;
 
@@ -33,12 +34,12 @@ private:
 
 public:
     explicit InputReader(Input &input)
-        : _input(input), _data(), _pos(0), _chunk_offset(0), _error(), _space() {}
+        : _input(input), _data(), _pos(0), _bytes_evicted(0), _error(), _space() {}
     ~InputReader();
 
     bool failed() const { return !_error.empty(); }
     const vespalib::string &get_error_message() const { return _error; }
-    size_t get_offset() const { return (_chunk_offset + _pos); }
+    size_t get_offset() const { return (_bytes_evicted + _pos); }
 
     void fail(const vespalib::string &msg);
 

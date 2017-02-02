@@ -16,6 +16,7 @@ struct ChunkedInput : Input {
         return memory;
     }
     Input &evict(size_t bytes) override {
+        EXPECT_LESS_EQUAL(bytes, 3u);
         input.evict(bytes);
         return *this;
     }

@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "output_writer.h"
+#include "output.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <assert.h>
@@ -14,6 +15,11 @@ OutputWriter::reserve_slow(size_t bytes)
     _data = _output.commit(_pos).reserve(std::max(_chunk_size, bytes));
     _pos = 0;
     return _data.data;
+}
+
+OutputWriter::~OutputWriter()
+{
+    _output.commit(_pos);
 }
 
 void

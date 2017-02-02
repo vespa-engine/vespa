@@ -33,4 +33,4 @@ struct Output
     virtual ~Output();
 };
 
-} // namespace vbench
+} // namespace vespalib

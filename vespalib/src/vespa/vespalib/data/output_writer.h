@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "output.h"
-#include <string.h>
-#include <algorithm>
+#include "writable_memory.h"
 
 namespace vespalib {
+
+class Output;
 
 /**
  * Thin layer on top of the Output interface that supplies us with an
@@ -25,7 +25,7 @@ private:
 public:
     OutputWriter(Output &output, size_t chunk_size)
         : _output(output), _data(), _pos(0), _chunk_size(chunk_size) {}
-    ~OutputWriter() { _output.commit(_pos); }
+    ~OutputWriter();
 
     char *reserve(size_t bytes) {
         if (__builtin_expect((_pos + bytes) <= _data.size, true)) {
