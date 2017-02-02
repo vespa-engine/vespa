@@ -1,8 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <iostream>
-#include <string>
-#include <cstdlib>
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root
 
 #include <boost/program_options.hpp>
 
@@ -23,6 +19,7 @@
 #include <vespa/filedistribution/rpc/filedistributorrpc.h>
 #include <vespa/filedistribution/common/exception.h>
 #include <vespa/filedistribution/common/componentsdeleter.h>
+#include <iostream>
 
 namespace {
 const char* programName = "filedistributor";
@@ -286,31 +283,34 @@ FileDistributorApplication::Main() {
 
         EV_STOPPING(programName, "Clean exit");
         return 0;
-    } catch(const FileDoesNotExistException & e) {
+    } catch (const FileDoesNotExistException & e) {
         EV_STOPPING(programName, e.what());
         return 1;
-    } catch(const ZKNodeDoesNotExistsException & e) {
+    } catch (const ZKNodeDoesNotExistsException & e) {
         EV_STOPPING(programName, e.what());
         return 2;
-    } catch(const ZKSessionExpired & e) {
+    } catch (const ZKSessionExpired & e) {
         EV_STOPPING(programName, e.what());
         return 3;
-    } catch(const config::ConfigTimeoutException & e) {
+    } catch (const config::ConfigTimeoutException & e) {
         EV_STOPPING(programName, e.what());
         return 4;
-    } catch(const vespalib::PortListenException & e) {
+    } catch (const vespalib::PortListenException & e) {
         EV_STOPPING(programName, e.what());
         return 5;
-    } catch(const ZKConnectionLossException & e) {
+    } catch (const ZKConnectionLossException & e) {
         EV_STOPPING(programName, e.what());
         return 6;
-    } catch(const ZKFailedConnecting & e) {
+    } catch (const ZKFailedConnecting & e) {
         EV_STOPPING(programName, e.what());
         return 7;
-    } catch(const config::InvalidConfigException & e) {
+    } catch (const config::InvalidConfigException & e) {
         EV_STOPPING(programName, e.what());
         return 8;
-    } catch(const ZKGenericException & e) {
+    } catch (const ZKOperationTimeoutException & e) {
+        EV_STOPPING(programName, e.what());
+        return 9;
+    } catch (const ZKGenericException & e) {
         EV_STOPPING(programName, e.what());
         return 99;
     }
@@ -330,9 +330,7 @@ executeApplication(int argc, char** argv) {
 
     try {
         po::variables_map values;
-        po::store(
-                po::parse_command_line(argc, argv, description),
-                values);
+        po::store(po::parse_command_line(argc, argv, description), values);
 
         if (exists(help, values)) {
             std::cout <<description;
@@ -340,8 +338,7 @@ executeApplication(int argc, char** argv) {
         }
         ensureExists(configId, values);
 
-        FileDistributorApplication application(
-                values[configId].as<std::string > ());
+        FileDistributorApplication application(values[configId].as<std::string > ());
         return application.Entry(argc, argv);
 
     } catch(ProgramOptionException& e) {
