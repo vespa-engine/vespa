@@ -176,7 +176,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<store>",
                 "<cache>",
                 "<maxsize>128</maxsize>",
-                "<maxentries>64</maxentries>",
+                "<initialentries>64</initialentries>",
                 "<compression>",
                 "<type>none</type>",
                 "<level>3</level>",
@@ -189,7 +189,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<numthreads>7</numthreads>",
                 "<chunk>",
                 "<maxsize>256</maxsize>",
-                "<maxentries>32</maxentries>",
                 "<compression>",
                 "<type>lz4</type>",
                 "<level>5</level>",
@@ -201,7 +200,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.write);
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.read);
         assertEquals(128, t.searchNode.summary.store.cache.maxSize.longValue());
-        assertEquals(64, t.searchNode.summary.store.cache.maxEntries.longValue());
         assertEquals(Tuning.SearchNode.Summary.Store.Compression.Type.NONE,
                 t.searchNode.summary.store.cache.compression.type);
         assertEquals(3, t.searchNode.summary.store.cache.compression.level.intValue());
@@ -210,7 +208,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(0.3, t.searchNode.summary.store.logStore.minFileSizeFactor, DELTA);
         assertEquals(7, t.searchNode.summary.store.logStore.numThreads.intValue());
         assertEquals(256, t.searchNode.summary.store.logStore.chunk.maxSize.intValue());
-        assertEquals(32, t.searchNode.summary.store.logStore.chunk.maxEntries.intValue());
         assertEquals(Tuning.SearchNode.Summary.Store.Compression.Type.LZ4,
                 t.searchNode.summary.store.logStore.chunk.compression.type);
         assertEquals(5, t.searchNode.summary.store.logStore.chunk.compression.level.intValue());
@@ -225,7 +222,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("summary.log.maxdiskbloatfactor 1.4"));
         assertThat(cfg, containsString("summary.log.minfilesizefactor 0.3"));
         assertThat(cfg, containsString("summary.log.chunk.maxbytes 256"));
-        assertThat(cfg, containsString("summary.log.chunk.maxentries 32"));
         assertThat(cfg, containsString("summary.log.chunk.compression.type LZ4"));
         assertThat(cfg, containsString("summary.log.chunk.compression.level 5"));
     }
