@@ -99,9 +99,8 @@ int ReferenceFieldValue::compare(const FieldValue& rhs) const {
 
 void ReferenceFieldValue::print(std::ostream& os, bool verbose, const std::string& indent) const {
     (void) verbose;
-    (void) indent;
     assert(_dataType != nullptr);
-    os << "ReferenceFieldValue(" << *_dataType << ", DocumentId(";
+    os << indent << "ReferenceFieldValue(" << *_dataType << ", DocumentId(";
     _documentId.print(os, false, "");
     os << "))";
 }

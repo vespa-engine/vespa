@@ -165,5 +165,13 @@ TEST_F("print() includes reference type and document ID", Fixture) {
                  "DocumentId(id:ns:foo::yoshi))", ss.str());
 }
 
+TEST_F("print() only indents start of output line", Fixture) {
+    ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
+    std::ostringstream ss;
+    src.print(ss, false, "    ");
+    EXPECT_EQUAL("    ReferenceFieldValue(ReferenceDataType(foo, id 12345), "
+                 "DocumentId(id:ns:foo::yoshi))", ss.str());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
 
