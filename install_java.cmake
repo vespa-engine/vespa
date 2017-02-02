@@ -72,6 +72,7 @@ install(FILES
 
 install(FILES
     chain/src/main/resources/configdefinitions/chains.def
+    config-provisioning/src/main/resources/configdefinitions/flavors.def
     configdefinitions/src/vespa/application-id.def
     configdefinitions/src/vespa/attributes.def
     configdefinitions/src/vespa/cluster-info.def
@@ -176,7 +177,6 @@ install(FILES
     logd/src/main/resources/configdefinitions/logd.def
     messagebus/src/main/config/messagebus.def
     metrics/src/vespa/metrics/metricsmanager.def
-    node-repository/src/main/resources/configdefinitions/node-repository.def
     orchestrator/src/main/resources/configdefinitions/orchestrator.def
     persistence/src/main/resources/configdefinitions/persistence-rpc.def
     searchcore/src/vespa/searchcore/config/fdispatchrc.def
