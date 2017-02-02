@@ -6,6 +6,10 @@
 
 namespace document {
 
+/**
+ * A ReferenceDataType specifies a particular concrete document type that a
+ * ReferenceFieldValue instance binds to.
+ */
 class ReferenceDataType : public DataType {
     const DocumentType& _targetDocType;
 public:

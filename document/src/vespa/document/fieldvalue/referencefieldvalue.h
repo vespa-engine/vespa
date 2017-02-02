@@ -8,6 +8,20 @@
 
 namespace document {
 
+/**
+ * A reference field value allows search queries to access fields in other
+ * document instances as if they were fields natively stored within the
+ * searched document. This allows modelling one-to-many relations such as a
+ * parent document with many children containing references back to the parent.
+ *
+ * Each ReferenceFieldValue may contain a single document ID which specifies the
+ * instance the field should refer to. This document ID must have a type
+ * matching that of the reference data type of the field itself.
+ *
+ * Note that references are not polymorphic. This means that if you have a
+ * document type "foo" inheriting "bar", you cannot have a reference<bar> field
+ * containing a document ID for a "foo" document.
+ */
 class ReferenceFieldValue : public FieldValue {
     const ReferenceDataType* _dataType;
     // TODO wrap in std::optional once available.
