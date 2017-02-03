@@ -227,5 +227,7 @@ ReferenceAttribute::getIndicesCopy(uint32_t size) const
     return IndicesCopyVector(&_indices[0], &_indices[0] + size);
 }
 
+IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
+
 }
 }

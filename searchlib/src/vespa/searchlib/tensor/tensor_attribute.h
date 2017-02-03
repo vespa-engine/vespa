@@ -31,6 +31,7 @@ protected:
     void doCompactWorst();
     void setTensorRef(DocId docId, RefType ref);
 public:
+    DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<RefType>;
     using Tensor = vespalib::tensor::Tensor;
     TensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg,
