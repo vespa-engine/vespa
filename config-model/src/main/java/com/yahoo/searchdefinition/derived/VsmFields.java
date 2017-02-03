@@ -185,6 +185,8 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
                 return Type.UNSEARCHABLESTRING;
             } else if (fieldType instanceof CollectionDataType) {
                 return convertType(((CollectionDataType) fieldType).getNestedType());
+            } else if (fieldType instanceof ReferenceDataType) {
+                return Type.UNSEARCHABLESTRING;
             } else {
                 throw new IllegalArgumentException("Don't know which streaming" +
                         " field type to " + "convert " + fieldType + " to");
