@@ -30,12 +30,9 @@ public class SearchOrderer {
      * @return a new list containing the same search instances in the right order
      */
     public List<Search> order(List<Search> unordered) {
-        Collections.sort(unordered, new Comparator<Search>() {
-            @Override
-            public int compare(Search lhs, Search rhs) {
-                return lhs.getName().compareTo(rhs.getName());
-            }
-        });
+        // Description above state that the original order should be preserved, except for the dependency constraint.
+        // Yet we botch that guarantee by sorting the list...
+        unordered.sort(Comparator.comparing(Search::getName));
 
         // No, this is not a fast algorithm...
         indexOnDocumentName(unordered);
