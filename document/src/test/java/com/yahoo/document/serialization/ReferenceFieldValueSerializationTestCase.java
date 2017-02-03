@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.serialization;
 
+import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
@@ -8,6 +9,8 @@ import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * @author vekterli
@@ -17,9 +20,12 @@ public class ReferenceFieldValueSerializationTestCase {
 
     static class Fixture {
         final TestDocumentFactory documentFactory;
-        final static String REF_TARGET_DOC_TYPE_NAME = "ref_target_type";
-        final static String REF_SOURCE_DOC_TYPE_NAME = "ref_src_type";
+        // Note: these must match their C++ serialization test counterparts.
+        final static String REF_TARGET_DOC_TYPE_NAME = "my document";
+        final static String REF_SOURCE_DOC_TYPE_NAME = "doc_with_ref";
+        final static int REF_TYPE_ID = 789;
         final static String SOURCE_REF_FIELD_NAME = "ref_field";
+        final static String CROSS_LANGUAGE_PATH = "src/test/resources/reference/";
 
         Fixture() {
             final DocumentTypeManager typeManager = new DocumentTypeManager();
@@ -30,14 +36,14 @@ public class ReferenceFieldValueSerializationTestCase {
             final DocumentType sourceType = createReferenceSourceDocumentType(typeManager, REF_SOURCE_DOC_TYPE_NAME, targetType.getName());
             typeManager.register(sourceType);
 
-            this.documentFactory = new TestDocumentFactory(typeManager, sourceType, "id:ns:" + REF_SOURCE_DOC_TYPE_NAME + "::foo");
+            this.documentFactory = new TestDocumentFactory(typeManager, sourceType, "id:test:" + REF_SOURCE_DOC_TYPE_NAME + "::foo");
         }
 
         DocumentType createReferenceSourceDocumentType(DocumentTypeManager typeManager, String docTypeName, String targetName) {
             final DocumentType type = new DocumentType(docTypeName);
             type.addField(new Field(SOURCE_REF_FIELD_NAME, new ReferenceDataType(
                     typeManager.getDocumentType(targetName),
-                    targetName.hashCode())));
+                    REF_TYPE_ID)));
             return type;
         }
 
@@ -50,6 +56,12 @@ public class ReferenceFieldValueSerializationTestCase {
             final ReferenceFieldValue value = createEmptyReferenceFieldValue();
             value.setDocumentId(id);
             return value;
+        }
+
+        Document createDocumentWithReference(ReferenceFieldValue refValue) {
+            final Document document = documentFactory.createDocument();
+            document.setFieldValue(Fixture.SOURCE_REF_FIELD_NAME, refValue);
+            return document;
         }
     }
 
@@ -68,5 +80,23 @@ public class ReferenceFieldValueSerializationTestCase {
                 fixture.createReferenceFieldValueWithId(new DocumentId("id:ns:" + Fixture.REF_TARGET_DOC_TYPE_NAME + "::bar")));
     }
 
-    // TODO test cross-language serialization once we've got the C++ version of the types
+    @Test
+    public void empty_reference_serialization_matches_cpp() throws IOException {
+        final Fixture fixture = new Fixture();
+        final Document document = fixture.createDocumentWithReference(fixture.createEmptyReferenceFieldValue());
+
+        SerializationTestUtils.assertSerializationMatchesCpp(
+                Fixture.CROSS_LANGUAGE_PATH, "empty_reference", document, fixture.documentFactory);
+    }
+
+    @Test
+    public void reference_with_id_serialization_matches_cpp() throws IOException {
+        final Fixture fixture = new Fixture();
+        final Document document = fixture.createDocumentWithReference(fixture.createReferenceFieldValueWithId(
+                new DocumentId("id:ns:" + Fixture.REF_TARGET_DOC_TYPE_NAME + "::bar")));
+
+        SerializationTestUtils.assertSerializationMatchesCpp(
+                Fixture.CROSS_LANGUAGE_PATH, "reference_with_id", document, fixture.documentFactory);
+    }
+
 }
