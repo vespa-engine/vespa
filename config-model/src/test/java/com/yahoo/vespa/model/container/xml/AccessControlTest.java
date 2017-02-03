@@ -29,13 +29,13 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     private static final Set<String> REQUIRED_BINDINGS = ImmutableSet.of(
             "/custom-handler/",
             "/search/",
-            "/feed",
-            "/remove",
-            "/removelocation",
-            "/get",
-            "/visit",
-            "/document",
-            "/feedstatus",
+            "/feed/",
+            "/remove/",
+            "/removelocation/",
+            "/get/",
+            "/visit/",
+            "/document/",
+            "/feedstatus/",
             ContainerCluster.RESERVED_URI_PREFIX);
 
     private static final Set<String> FORBIDDEN_BINDINGS = ImmutableSet.of(
@@ -95,14 +95,12 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 .collect(Collectors.toSet());
         Set<String> missingRequiredBindings = new HashSet<>(REQUIRED_BINDINGS);
         missingRequiredBindings.removeAll(foundRequiredBindings);
-        assertTrue("Access control chain was not bound to: " + CollectionUtil.mkString(REQUIRED_BINDINGS, ", "),
+        assertTrue("Access control chain was not bound to: " + CollectionUtil.mkString(missingRequiredBindings, ", "),
                    missingRequiredBindings.isEmpty());
 
-        for (String forbiddenBinding : FORBIDDEN_BINDINGS) {
-            for (Binding binding : http.getBindings())
-                assertFalse("Access control chain was bound to: ",
-                            binding.binding.contains(forbiddenBinding));
-        }
+        FORBIDDEN_BINDINGS.forEach(forbiddenBinding -> http.getBindings().forEach(
+                binding -> assertFalse("Access control chain was bound to: " + binding.binding,
+                                       binding.binding.contains(forbiddenBinding))));
     }
 
     private boolean containsBinding(Collection<Binding> bindings, String binding) {
