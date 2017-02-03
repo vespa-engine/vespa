@@ -20,6 +20,7 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 import static com.yahoo.vespa.model.container.http.AccessControl.accessControlBinding;
@@ -58,12 +59,13 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     }
 
     private static List<Binding> getAccessControlBindings(AbstractConfigProducer ancestor) {
-        ArrayList<Binding> bindings = new ArrayList<>();
-        getContainerCluster(ancestor).ifPresent(cluster -> cluster.getHandlers().stream()
-                .filter(AccessControl::shouldHandlerBeProtected)
-                .forEach(handler -> handler.getServerBindings()
-                        .forEach(binding -> bindings.add(accessControlBinding(binding)))));
-        return bindings;
+        return getContainerCluster(ancestor)
+                .map(cluster -> cluster.getHandlers().stream()
+                        .filter(AccessControl::shouldHandlerBeProtected)
+                        .flatMap(handler -> handler.getServerBindings().stream())
+                        .map(AccessControl::accessControlBinding)
+                        .collect(Collectors.toList()))
+                .orElse(new ArrayList<>());
     }
 
     private static Optional<ContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
