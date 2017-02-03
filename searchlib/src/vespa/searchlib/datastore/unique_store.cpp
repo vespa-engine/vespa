@@ -7,6 +7,8 @@ namespace search {
 namespace datastore {
 
 template class UniqueStore<document::GlobalId, EntryRefT<22>>;
+template class UniqueStoreBuilder<document::GlobalId, EntryRefT<22>>;
+template class UniqueStoreSaver<document::GlobalId, EntryRefT<22>>;
 
 } // namespace datastore
 } // namespace search

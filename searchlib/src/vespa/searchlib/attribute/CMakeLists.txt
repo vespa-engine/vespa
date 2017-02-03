@@ -72,6 +72,8 @@ vespa_add_library(searchlib_attribute OBJECT
     postingstore.cpp
     predicate_attribute.cpp
     readerbase.cpp
+    reference_attribute.cpp
+    reference_attribute_saver.cpp
     singleenumattribute.cpp
     singleenumattributesaver.cpp
     singlenumericattribute.cpp

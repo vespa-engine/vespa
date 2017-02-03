@@ -1,4 +1,4 @@
-// Copyright 2017 Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -13,6 +13,12 @@
 namespace search {
 namespace datastore {
 
+template <typename EntryT, typename RefT>
+class UniqueStoreBuilder;
+
+template <typename EntryT, typename RefT>
+class UniqueStoreSaver;
+
 /**
  * Datastore for unique values of type EntryT that is accessed via a
  * 32-bit EntryRef.
@@ -24,6 +30,8 @@ public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
     using RefType = RefT;
+    using Saver = UniqueStoreSaver<EntryT, RefT>;
+    using Builder = UniqueStoreBuilder<EntryT, RefT>;
     /*
      * Compare two values in data store based on reference.  Invalid
      * reference is mapped to local value reference to support
@@ -81,11 +89,15 @@ public:
     MemoryUsage getMemoryUsage() const;
 
     // Pass on hold list management to underlying store
-    void transferHoldLists(generation_t generation) { _dict.getAllocator().transferHoldLists(generation); _store.transferHoldLists(generation); }
-    void trimHoldLists(generation_t firstUsed) { _dict.getAllocator().trimHoldLists(firstUsed); _store.trimHoldLists(firstUsed); }
+    void transferHoldLists(generation_t generation);
+    void trimHoldLists(generation_t firstUsed);
     vespalib::GenerationHolder &getGenerationHolder(void) { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }
-    void freeze() { _dict.getAllocator().freeze(); }
+    void freeze();
+    uint32_t getNumUniques() const;
+
+    Builder getBuilder(uint32_t uniqueValuesHint);
+    Saver getSaver() const;
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;

@@ -111,6 +111,8 @@ struct Fixture
         refStore = compactedRefStore;
     }
     size_t entrySize() const { return sizeof(EntryT); }
+    auto getBuilder(uint32_t uniqueValuesHint) { return store.getBuilder(uniqueValuesHint); }
+    auto getSaver() { return store.getSaver(); }
 };
 
 using NumberFixture = Fixture<uint32_t>;
@@ -203,6 +205,48 @@ TEST_F("require that compaction works", NumberFixture)
     f.trimHoldLists();
     EXPECT_TRUE(f.store.bufferState(val1Ref).isFree());
     TEST_DO(f.assertStoreContent());
+}
+
+TEST_F("require that builder works", NumberFixture)
+{
+    auto builder = f.getBuilder(2);
+    builder.add(10);
+    builder.add(20);
+    builder.setupRefCounts();
+    EntryRef val10Ref = builder.mapEnumValueToEntryRef(1);
+    EntryRef val20Ref = builder.mapEnumValueToEntryRef(2);
+    TEST_DO(f.assertBufferState(val10Ref, MemStats().used(3).dead(1))); // Note: First element is reserved
+    EXPECT_TRUE(val10Ref.valid());
+    EXPECT_TRUE(val20Ref.valid());
+    EXPECT_NOT_EQUAL(val10Ref.ref(), val20Ref.ref());
+    f.assertGet(val10Ref, 10);
+    f.assertGet(val20Ref, 20);
+    builder.makeDictionary();
+    EXPECT_EQUAL(val10Ref.ref(), f.add(10).ref());
+    EXPECT_EQUAL(val20Ref.ref(), f.add(20).ref());
+}
+
+TEST_F("require that saver works", NumberFixture)
+{
+    EntryRef val10Ref = f.add(10);
+    EntryRef val20Ref = f.add(20);
+    f.remove(f.add(40));
+    f.trimHoldLists();
+
+    auto saver = f.getSaver();
+    std::vector<uint32_t> refs;
+    saver.foreach_key([&](EntryRef ref) { refs.push_back(ref.ref()); });
+    std::vector<uint32_t> expRefs;
+    expRefs.push_back(val10Ref.ref());
+    expRefs.push_back(val20Ref.ref());
+    EXPECT_EQUAL(expRefs, refs);
+    saver.enumerateValues();
+    uint32_t invalidEnum = saver.mapEntryRefToEnumValue(EntryRef());
+    uint32_t enumValue10 = saver.mapEntryRefToEnumValue(val10Ref);
+    uint32_t enumValue20 = saver.mapEntryRefToEnumValue(val20Ref);
+    EXPECT_EQUAL(0u, invalidEnum);
+    EXPECT_EQUAL(1u, enumValue10);
+    EXPECT_EQUAL(2u, enumValue20);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
