@@ -37,7 +37,6 @@ using test::SearchIteratorVerifier;
 namespace memoryindex {
 
 typedef Dictionary::PostingList PostingList;
-typedef PostingList::Iterator PostingItr;
 typedef PostingList::ConstIterator PostingConstItr;
 
 class MyBuilder : public IndexBuilder {
@@ -66,8 +65,7 @@ public:
           _firstDoc(true),
           _firstElem(true),
           _firstPos(true)
-    {
-    }
+    {}
 
     virtual void
     startWord(const vespalib::stringref &word)
