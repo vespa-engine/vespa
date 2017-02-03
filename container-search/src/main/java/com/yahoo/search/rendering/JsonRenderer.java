@@ -458,7 +458,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeNumberField(COVERAGE_SOON_ACTIVE, c.getSoonActive());
             generator.writeEndObject();
         }
-        generator.writeNumberField(COVERAGE_DOCUMENTS, c.getDocs());
         generator.writeBooleanField(COVERAGE_FULL, c.getFull());
         generator.writeNumberField(COVERAGE_NODES, c.getNodes());
         generator.writeNumberField(COVERAGE_RESULTS, c.getResultSets());
