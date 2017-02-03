@@ -1122,6 +1122,16 @@ public class JsonRendererTestCase {
         assertEquals(");", jsonCallbackEnd);
     }
 
+    @Test
+    public void testThatTheJsonValidatorCanCatchErrors() {
+        String json = "{"
+                + "    \"root\": {"
+                + "        \"duplicate\": 1,"
+                + "        \"duplicate\": 2"
+                + "    }"
+                + "}";
+        assertEquals("Duplicate key \"duplicate\"", validateJSON(json));
+    }
     private String render(Result r) throws InterruptedException, ExecutionException {
         Execution execution = new Execution(Execution.Context.createContextStub());
         return render(execution, r);
@@ -1141,16 +1151,15 @@ public class JsonRendererTestCase {
         Map<String, Object> exp = m.readValue(expected, Map.class);
         Map<String, Object> gen = m.readValue(generated, Map.class);
         assertEquals(exp, gen);
-        assertTrue(isValidJson(expected));
-        assertTrue(isValidJson(generated));
+        assertEquals("", validateJSON(expected));
+        assertEquals("", validateJSON(generated));
     }
-    private boolean isValidJson(String presumablyValidJson) {
+    private String validateJSON(String presumablyValidJson) {
         try {
             new JSONObject(presumablyValidJson);
-            return true;
+            return "";
         } catch (JSONException e) {
-            assertEquals("", e.getMessage());
-            return false;
+            return e.getMessage();
         }
     }
 
