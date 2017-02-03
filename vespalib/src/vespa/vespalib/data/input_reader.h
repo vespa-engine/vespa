@@ -23,6 +23,7 @@ private:
     Memory            _data;
     size_t            _pos;
     size_t            _bytes_evicted;
+    bool              _eof;
     vespalib::string  _error;
     std::vector<char> _space;
 
@@ -30,13 +31,15 @@ private:
     size_t size() const { return (_data.size - _pos); }
 
     size_t obtain_slow();
+    char read_slow();
     Memory read_slow(size_t bytes);
 
 public:
     explicit InputReader(Input &input)
-        : _input(input), _data(), _pos(0), _bytes_evicted(0), _error(), _space() {}
+        : _input(input), _data(), _pos(0), _bytes_evicted(0), _eof(false), _error(), _space() {}
     ~InputReader();
 
+    bool eof() const { return _eof; }
     bool failed() const { return !_error.empty(); }
     const vespalib::string &get_error_message() const { return _error; }
     size_t get_offset() const { return (_bytes_evicted + _pos); }
@@ -47,11 +50,11 @@ public:
      * Make sure we have more input data available.
      *
      * @return number of bytes available without requesting more from
-     *         the underlying Input. Returns 0 if and only is there is
+     *         the underlying Input. Returns 0 if and only if there is
      *         no more input data available.
      **/
     size_t obtain() {
-        if (__builtin_expect(_pos < _data.size, true)) {                    
+        if (__builtin_expect((_pos < _data.size) || _eof, true)) {
             return size();
         }
         return obtain_slow();
@@ -68,7 +71,7 @@ public:
         if (__builtin_expect(obtain() > 0, true)) {
             return _data.data[_pos++];
         }
-        return 0;
+        return read_slow();
     }
 
     /**

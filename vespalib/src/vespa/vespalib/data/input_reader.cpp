@@ -9,15 +9,22 @@ namespace vespalib {
 size_t
 InputReader::obtain_slow()
 {
-    if (!failed()) {
-        _data = _input.evict(_pos).obtain();
-        _bytes_evicted += _pos;
-        _pos = 0;
-        if (_data.size == 0) {
-            fail("input underflow");
-        }
+    _data = _input.evict(_pos).obtain();
+    _bytes_evicted += _pos;
+    _pos = 0;
+    if (_data.size == 0) {
+        _eof = true;
     }
     return size();
+}
+
+char
+InputReader::read_slow()
+{
+    if (!failed()) {
+        fail("input underflow");
+    }
+    return 0;
 }
 
 Memory
@@ -31,6 +38,9 @@ InputReader::read_slow(size_t bytes)
     }
     if (_space.size() == bytes) {
         return Memory(&_space[0], _space.size());
+    }
+    if (!failed()) {
+        fail("input underflow");
     }
     return Memory();
 }
@@ -48,6 +58,7 @@ InputReader::fail(const vespalib::string &msg) {
         _data = Memory();
         _bytes_evicted += _pos;
         _pos = 0;
+        _eof = true;
     }
 }
 
