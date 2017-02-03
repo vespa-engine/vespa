@@ -24,6 +24,7 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/repo/configbuilder.h>
@@ -70,6 +71,12 @@ const int a_id = 12345;
 const string a_name = "annotation";
 const int predicate_doc_type_id = 321;
 const string predicate_field_name = "my_predicate";
+const int doc_with_ref_type_id = 54321;
+const string doc_with_ref_name = "doc_with_ref";
+const string ref_field_name = "ref_field";
+const int ref_type_id = 789;
+
+constexpr uint16_t serialization_version = Document::getNewestSerializationVersion();
 
 DocumenttypesConfig getDocTypesConfig() {
     DocumenttypesConfigBuilderHelper builder;
@@ -92,25 +99,41 @@ DocumenttypesConfig getDocTypesConfig() {
                      Struct("my_type.header"),
                      Struct("my_type.body")
                      .addField(predicate_field_name, DataType::T_PREDICATE));
+    builder.document(doc_with_ref_type_id, doc_with_ref_name,
+                     Struct(doc_with_ref_name + ".header"),
+                     Struct(doc_with_ref_name + ".body")
+                     .addField(ref_field_name, ref_type_id))
+        .referenceType(ref_type_id, doc_type_id);
     return builder.config();
 }
 
 const DocumentTypeRepo doc_repo(getDocTypesConfig());
 const FixedTypeRepo repo(doc_repo, *doc_repo.getDocumentType(doc_type_id));
 
-template <typename T> T newFieldValue(const T&) { return T(); }
-template <> ArrayFieldValue newFieldValue(const ArrayFieldValue &value)
-{ return ArrayFieldValue(*value.getDataType()); }
-template <> MapFieldValue newFieldValue(const MapFieldValue &value)
-{ return MapFieldValue(*value.getDataType()); }
+template <typename T> T newFieldValue(const T&) {
+    return T();
+}
+template <> ArrayFieldValue newFieldValue(const ArrayFieldValue &value) {
+    return ArrayFieldValue(*value.getDataType());
+}
+template <> MapFieldValue newFieldValue(const MapFieldValue &value) {
+    return MapFieldValue(*value.getDataType());
+}
 template <> WeightedSetFieldValue newFieldValue(
-        const WeightedSetFieldValue &value)
-{ return WeightedSetFieldValue(*value.getDataType()); }
-template <> StructFieldValue newFieldValue(const StructFieldValue &value)
-{ return StructFieldValue(*value.getDataType()); }
+        const WeightedSetFieldValue &value) {
+    return WeightedSetFieldValue(*value.getDataType());
+}
+template <> StructFieldValue newFieldValue(const StructFieldValue &value) {
+    return StructFieldValue(*value.getDataType());
+}
 template <> AnnotationReferenceFieldValue newFieldValue(
-        const AnnotationReferenceFieldValue &value)
-{ return AnnotationReferenceFieldValue(*value.getDataType()); }
+        const AnnotationReferenceFieldValue &value) {
+    return AnnotationReferenceFieldValue(*value.getDataType());
+}
+template <> ReferenceFieldValue newFieldValue(const ReferenceFieldValue& value) {
+    return ReferenceFieldValue(dynamic_cast<const ReferenceDataType&>(
+            *value.getDataType()));
+}
 
 template<typename T>
 void testDeserializeAndClone(const T& value, const nbostream &stream, bool checkEqual=true) {
@@ -118,7 +141,7 @@ void testDeserializeAndClone(const T& value, const nbostream &stream, bool check
     vespalib::MallocPtr buf(stream.size());
     memcpy(buf.str(), stream.peek(), stream.size());
     nbostream_longlivedbuf is(buf.c_str(), buf.size());
-    VespaDocumentDeserializer deserializer(repo, is, 8);
+    VespaDocumentDeserializer deserializer(repo, is, serialization_version);
     deserializer.read(read_value);
 
     EXPECT_EQUAL(0u, is.size());
@@ -134,7 +157,8 @@ void testDeserializeAndClone(const T& value, const nbostream &stream, bool check
 
 // Leaves the stream's read position at the start of the serialized object.
 template<typename T>
-void serializeAndDeserialize(const T& value, nbostream &stream, bool checkEqual=true) {
+void serializeAndDeserialize(const T& value, nbostream &stream,
+                             const FixedTypeRepo& fixed_repo, bool checkEqual = true) {
     size_t start_size = stream.size();
     VespaDocumentSerializer serializer(stream);
     serializer.write(value);
@@ -143,7 +167,7 @@ void serializeAndDeserialize(const T& value, nbostream &stream, bool checkEqual=
     testDeserializeAndClone(value, stream, checkEqual);
     T read_value = newFieldValue(value);
 
-    VespaDocumentDeserializer deserializer(repo, stream, 8);
+    VespaDocumentDeserializer deserializer(fixed_repo, stream, serialization_version);
     deserializer.read(read_value);
 
     EXPECT_EQUAL(0u, stream.size());
@@ -151,6 +175,11 @@ void serializeAndDeserialize(const T& value, nbostream &stream, bool checkEqual=
         EXPECT_EQUAL(value, read_value);
     }
     stream.adjustReadPos(-serialized_size);
+}
+
+template<typename T>
+void serializeAndDeserialize(const T& value, nbostream &stream, bool checkEqual=true) {
+    serializeAndDeserialize(value, stream, repo, checkEqual);
 }
 
 template <typename T> struct ValueType { typedef typename T::Number Type; };
@@ -230,7 +259,7 @@ TEST("requireThatStringFieldValueCanBeSerialized") {
     TEST_DO(checkStringFieldValueWithAnnotation());
 }
 
-TEST("require that strings can be redesrialized") {
+TEST("require that strings can be re-deserialized") {
     StringFieldValue value("foo");
     nbostream streamNotAnnotated;
     VespaDocumentSerializer serializer(streamNotAnnotated);
@@ -249,13 +278,15 @@ TEST("require that strings can be redesrialized") {
 
     StringFieldValue deserialized;
     {
-        VespaDocumentDeserializer deserializer(repo, streamAnnotated, 8);
+        VespaDocumentDeserializer deserializer(
+                repo, streamAnnotated, serialization_version);
         deserializer.read(deserialized);
     }
     EXPECT_EQUAL("foo", deserialized.getValueRef());
     EXPECT_TRUE(deserialized.hasSpanTrees());
     {
-        VespaDocumentDeserializer deserializer(repo, streamNotAnnotated, 8);
+        VespaDocumentDeserializer deserializer(
+                repo, streamNotAnnotated, serialization_version);
         deserializer.read(deserialized);
     }
     EXPECT_EQUAL("foo", deserialized.getValueRef());
@@ -506,7 +537,7 @@ TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
 
     StructDataType struct_type(getStructDataType());
     StructFieldValue value2(struct_type);
-    VespaDocumentDeserializer deserializer(repo, os, 8);
+    VespaDocumentDeserializer deserializer(repo, os, serialization_version);
     deserializer.read(value2);
     checkStructSerialization(value, CompressionConfig::LZ4);
     // No lazy serialization of structs anymore, only documents
@@ -517,7 +548,6 @@ TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
 template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
 TEST("requireThatDocumentCanBeSerialized") {
-    const uint32_t serialization_version = 8;
     const DocumentType &type = repo.getDocumentType();
 
     DocumentId doc_id("doc::testdoc");
@@ -584,8 +614,6 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
     DocumentTypeRepo repo1Field(builder1.config());
     DocumentTypeRepo repo2Fields(builder2.config());
 
-    uint32_t serial_version = 8;
-
     DocumentId doc_id("doc::testdoc");
     Document value(*repo2Fields.getDocumentType(doc_type_id), doc_id);
 
@@ -598,7 +626,7 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
 
     Document read_value;
     // Deserialize+serialize with type where field1 is not known.
-    VespaDocumentDeserializer deserializer1(repo1Field, stream, serial_version);
+    VespaDocumentDeserializer deserializer1(repo1Field, stream, serialization_version);
     deserializer1.read(read_value);
     EXPECT_EQUAL(0u, stream.size());
 
@@ -609,7 +637,7 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
 
     Document read_value_2;
     // Field should not have vanished.
-    VespaDocumentDeserializer deserializer2(repo2Fields, stream, serial_version);
+    VespaDocumentDeserializer deserializer2(repo2Fields, stream, serialization_version);
     deserializer2.read(read_value_2);
     EXPECT_EQUAL(value, read_value_2);
 }
@@ -660,7 +688,7 @@ TEST("requireThatReadDocumentTypeThrowsIfUnknownType") {
     stream << static_cast<uint16_t>(0);  // version (unused)
 
     DocumentType value;
-    VespaDocumentDeserializer deserializer(repo, stream, 8);
+    VespaDocumentDeserializer deserializer(repo, stream, serialization_version);
     EXPECT_EXCEPTION(deserializer.read(value), DocumentTypeNotFoundException,
                 "Document type " + my_type + " not found");
 }
@@ -698,7 +726,7 @@ void deserializeAndCheck(const string &file_name, FieldValueT &value,
 
     nbostream_longlivedbuf stream(&content[0], content.size());
     Document doc;
-    VespaDocumentDeserializer deserializer(myrepo, stream, 8);
+    VespaDocumentDeserializer deserializer(myrepo, stream, serialization_version);
     deserializer.read(doc);
 
     ASSERT_EQUAL(0, value.compare(*doc.getValue(field_name)));
@@ -848,6 +876,55 @@ TEST("Require that tensor deserialization matches Java") {
                                                    {"dimY", "dddd"}}, 3.0},
                                            {{{"dimX", "e"},{"dimY","ff"}}, 5.0} },
                                       { "dimX", "dimY" }));
+}
+
+struct RefFixture {
+    FixedTypeRepo fixed_repo{doc_repo, *doc_repo.getDocumentType(doc_with_ref_type_id)};
+
+    const ReferenceDataType& ref_type() const {
+        auto* raw_type = fixed_repo.getDataType(ref_type_id);
+        assert(raw_type != nullptr);
+        return dynamic_cast<const ReferenceDataType&>(*raw_type);
+    }
+
+    void roundtrip_serialize(const ReferenceFieldValue& src, ReferenceFieldValue& dest) {
+        nbostream stream;
+        VespaDocumentSerializer serializer(stream);
+        serializer.write(src);
+
+        VespaDocumentDeserializer deserializer(fixed_repo, stream, serialization_version);
+        deserializer.read(dest);
+    }
+};
+
+TEST_F("Empty ReferenceFieldValue can be roundtrip serialized", RefFixture) {
+    ReferenceFieldValue empty_ref(f.ref_type());
+    nbostream stream;
+    serializeAndDeserialize(empty_ref, stream, f.fixed_repo);
+}
+
+TEST_F("ReferenceFieldValue with ID can be roundtrip serialized", RefFixture) {
+    ReferenceFieldValue ref_with_id(
+            f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
+    nbostream stream;
+    serializeAndDeserialize(ref_with_id, stream, f.fixed_repo);
+}
+
+TEST_F("Empty ReferenceFieldValue has changed-flag cleared after deserialization", RefFixture) {
+    ReferenceFieldValue src(f.ref_type());
+    ReferenceFieldValue dest(f.ref_type());
+    f.roundtrip_serialize(src, dest);
+
+    EXPECT_FALSE(dest.hasChanged());
+}
+
+TEST_F("ReferenceFieldValue with ID has changed-flag cleared after deserialization", RefFixture) {
+    ReferenceFieldValue src(
+            f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
+    ReferenceFieldValue dest(f.ref_type());
+    f.roundtrip_serialize(src, dest);
+
+    EXPECT_FALSE(dest.hasChanged());
 }
 
 }  // namespace

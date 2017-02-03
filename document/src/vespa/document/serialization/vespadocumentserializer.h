@@ -52,6 +52,7 @@ public:
     void write(const StructFieldValue &val, const FieldSet& fieldSet);
     void write(const WeightedSetFieldValue &value);
     void write(const TensorFieldValue &value);
+    void write(const ReferenceFieldValue& value);
 
     void write42(const DocumentUpdate &value);
     void writeHEAD(const DocumentUpdate &value);
@@ -102,7 +103,8 @@ private:
     void visit(const StringFieldValue &value)              override { write(value); }
     void visit(const StructFieldValue &value)              override { write(value, AllFields()); }
     void visit(const WeightedSetFieldValue &value)         override { write(value); }
-    void visit(const TensorFieldValue &value) override { write(value); }
+    void visit(const TensorFieldValue &value)              override { write(value); }
+    void visit(const ReferenceFieldValue& value)           override { write(value); }
 
     vespalib::nbostream &_stream;
 };

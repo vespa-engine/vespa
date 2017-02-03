@@ -29,6 +29,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/encoding/base64.h>
@@ -79,6 +80,7 @@ using document::StructFieldValue;
 using document::WeightedSetDataType;
 using document::WeightedSetFieldValue;
 using document::TensorFieldValue;
+using document::ReferenceFieldValue;
 using search::index::Schema;
 using search::util::URL;
 using std::make_pair;
@@ -377,6 +379,12 @@ class JsonFiller : public ConstFieldValueVisitor {
         }
     }
 
+    void visit(const ReferenceFieldValue& value) override {
+        _json.appendString(value.hasValidDocumentId()
+                ? value.getDocumentId().toString()
+                : string());
+    }
+
 public:
     JsonFiller(bool markup, JSONWriter &json)
         : _json(json), _tokenize(markup) {}
@@ -475,6 +483,12 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
 
     virtual void visit(const TensorFieldValue &value) override {
         visitPrimitive(value);
+    }
+
+    void visit(const ReferenceFieldValue& value) override {
+        if (value.hasValidDocumentId()) {
+            _str << value.getDocumentId().toString();
+        } // else: implicit empty string
     }
 
 public:
@@ -639,6 +653,12 @@ class SlimeFiller : public ConstFieldValueVisitor {
             vespalib::tensor::TypedBinaryFormat::serialize(s, *tensor);
         }
         _inserter.insertData(vespalib::slime::Memory(s.peek(), s.size()));
+    }
+
+    void visit(const ReferenceFieldValue& value) override {
+        _inserter.insertString(Memory(value.hasValidDocumentId()
+                ? value.getDocumentId().toString()
+                : string()));
     }
 
 public:

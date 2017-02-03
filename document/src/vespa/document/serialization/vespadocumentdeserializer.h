@@ -19,22 +19,23 @@ class VespaDocumentDeserializer : private FieldValueVisitor {
     FixedTypeRepo _repo;
     uint16_t _version;
 
-    virtual void visit(AnnotationReferenceFieldValue &value) { read(value); }
-    virtual void visit(ArrayFieldValue &value) { read(value); }
-    virtual void visit(ByteFieldValue &value) { read(value); }
-    virtual void visit(Document &value) { read(value); }
-    virtual void visit(DoubleFieldValue &value) { read(value); }
-    virtual void visit(FloatFieldValue &value) { read(value); }
-    virtual void visit(IntFieldValue &value) { read(value); }
-    virtual void visit(LongFieldValue &value) { read(value); }
-    virtual void visit(MapFieldValue &value) { read(value); }
-    virtual void visit(PredicateFieldValue &value) { read(value); }
-    virtual void visit(RawFieldValue &value) { read(value); }
-    virtual void visit(ShortFieldValue &value) { read(value); }
-    virtual void visit(StringFieldValue &value) { read(value); }
-    virtual void visit(StructFieldValue &value) { read(value); }
-    virtual void visit(WeightedSetFieldValue &value) { read(value); }
-    virtual void visit(TensorFieldValue &value) { read(value); }
+    void visit(AnnotationReferenceFieldValue &value) override { read(value); }
+    void visit(ArrayFieldValue &value) override { read(value); }
+    void visit(ByteFieldValue &value) override { read(value); }
+    void visit(Document &value) override { read(value); }
+    void visit(DoubleFieldValue &value) override { read(value); }
+    void visit(FloatFieldValue &value) override { read(value); }
+    void visit(IntFieldValue &value) override { read(value); }
+    void visit(LongFieldValue &value) override { read(value); }
+    void visit(MapFieldValue &value) override { read(value); }
+    void visit(PredicateFieldValue &value) override { read(value); }
+    void visit(RawFieldValue &value) override { read(value); }
+    void visit(ShortFieldValue &value) override { read(value); }
+    void visit(StringFieldValue &value) override { read(value); }
+    void visit(StructFieldValue &value) override { read(value); }
+    void visit(WeightedSetFieldValue &value) override { read(value); }
+    void visit(TensorFieldValue &value) override { read(value); }
+    void visit(ReferenceFieldValue &value) override { read(value); }
 
     void readDocument(Document &value);
 
@@ -75,6 +76,7 @@ public:
     void readStructNoReset(StructFieldValue &value);
     void read(WeightedSetFieldValue &value);
     void read(TensorFieldValue &value);
+    void read(ReferenceFieldValue& value);
 };
 }  // namespace document
 

@@ -19,6 +19,7 @@ class StringFieldValue;
 class StructFieldValue;
 class WeightedSetFieldValue;
 class TensorFieldValue;
+class ReferenceFieldValue;
 
 struct FieldValueVisitor {
     virtual ~FieldValueVisitor() {}
@@ -39,6 +40,7 @@ struct FieldValueVisitor {
     virtual void visit(StructFieldValue &value) = 0;
     virtual void visit(WeightedSetFieldValue &value) = 0;
     virtual void visit(TensorFieldValue &value) = 0;
+    virtual void visit(ReferenceFieldValue& value) = 0;
 };
 
 struct ConstFieldValueVisitor {
@@ -60,6 +62,7 @@ struct ConstFieldValueVisitor {
     virtual void visit(const StructFieldValue &value) = 0;
     virtual void visit(const WeightedSetFieldValue &value) = 0;
     virtual void visit(const TensorFieldValue &value) = 0;
+    virtual void visit(const ReferenceFieldValue& value) = 0;
 };
 
 }  // namespace document
