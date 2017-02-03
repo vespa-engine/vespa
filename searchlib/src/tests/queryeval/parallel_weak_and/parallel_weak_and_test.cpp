@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
@@ -9,9 +8,8 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
-#include <vespa/searchlib/queryeval/test/searchhistory.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifiers.h>
 #include <vespa/searchlib/test/document_weight_attribute_helper.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/fef/fef.h>
@@ -24,7 +22,6 @@ typedef search::feature_t feature_t;
 typedef wand::score_t score_t;
 typedef ParallelWeakAndSearch::MatchParams MatchParams;
 typedef ParallelWeakAndSearch::RankParams RankParams;
-using search::test::InitRangeVerifier;
 using search::test::DocumentWeightAttributeHelper;
 using search::IDocumentWeightAttribute;
 using search::fef::TermFieldMatchData;
@@ -652,29 +649,26 @@ SearchIterator::UP create_wand(bool use_dwa,
     return SearchIterator::UP(ParallelWeakAndSearch::create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict));
 }
 
-TEST("verify initRange") {
-    const size_t num_children = 7;
-    InitRangeVerifier ir;
-    DocumentWeightAttributeHelper helper;
-    helper.add_docs(ir.getDocIdLimit());
-    auto full_list = ir.getExpectedDocIds();
-    for (size_t i = 0; i < full_list.size(); ++i) {
-        helper.set_doc(full_list[i], i % num_children, 1);
-    }
-    std::vector<int32_t> weights(num_children, 1);
-    for (bool use_dwa: {false, true}) {
-        for (bool strict: {false, true}) {
-            DummyHeap dummy_heap;
-            TermFieldMatchData tfmd;
-            MatchParams match_params(dummy_heap, dummy_heap.getMinScore(), 1.0, 1);
-            match_params.setDocIdLimit(ir.getDocIdLimit());
-            std::vector<IDocumentWeightAttribute::LookupResult> dict_entries;
-            for (size_t i = 0; i < num_children; ++i) {
-                dict_entries.push_back(helper.dwa().lookup(vespalib::make_string("%zu", i).c_str()));
-            }
-            auto search = create_wand(use_dwa, tfmd, match_params, weights, dict_entries, helper.dwa(), strict);
-            ir.verify(*search);
+class Verifier : public search::test::WeightIteratorChildrenVerifier {
+public:
+    Verifier(bool use_dwa) : _use_dwa(use_dwa) { }
+private:
+    SearchIterator::UP create(bool strict) const override {
+        MatchParams match_params(_dummy_heap, _dummy_heap.getMinScore(), 1.0, 1);
+        std::vector<IDocumentWeightAttribute::LookupResult> dict_entries;
+        for (size_t i = 0; i < _num_children; ++i) {
+            dict_entries.push_back(_helper.dwa().lookup(vespalib::make_string("%zu", i).c_str()));
         }
+        return create_wand(_use_dwa, _tfmd, match_params, _weights, dict_entries, _helper.dwa(), strict);
+    }
+    bool _use_dwa;
+    mutable DummyHeap _dummy_heap;
+};
+
+TEST("verify initRange") {
+    for (bool use_dwa: {false, true}) {
+        Verifier verifier(use_dwa);
+        verifier.verify();
     }
 }
 

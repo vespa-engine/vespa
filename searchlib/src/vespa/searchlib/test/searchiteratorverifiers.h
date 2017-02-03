@@ -38,7 +38,10 @@ public:
         return create(children);
     }
 protected:
-    virtual SearchIterator::UP create(const std::vector<SearchIterator*> &children) const = 0;
+    virtual SearchIterator::UP create(const std::vector<SearchIterator*> &children) const {
+        (void) children;
+        return SearchIterator::UP();
+    }
     std::vector<DocIds> _split_lists;
 };
 
@@ -63,8 +66,11 @@ public:
         }
         return create(std::move(children));
     }
-private:
-    virtual SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const = 0;
+protected:
+    virtual SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const  {
+        (void) children;
+        return SearchIterator::UP();
+    }
     DocumentWeightAttributeHelper _helper;
 };
 

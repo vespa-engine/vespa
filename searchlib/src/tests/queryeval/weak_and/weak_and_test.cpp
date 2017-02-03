@@ -109,10 +109,6 @@ private:
         }
         return SearchIterator::UP(WeakAndSearch::create(terms, -1, strict));
     }
-
-    SearchIterator::UP create(const std::vector<SearchIterator*> &) const override {
-        return SearchIterator::UP();
-    }
 };
 
 TEST("verify initRange with search iterator children") {
