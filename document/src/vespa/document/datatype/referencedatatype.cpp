@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "referencedatatype.h"
-#include "../fieldvalue/referencefieldvalue.h"
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <ostream>

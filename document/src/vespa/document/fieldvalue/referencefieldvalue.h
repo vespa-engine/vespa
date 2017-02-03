@@ -3,8 +3,8 @@
 #pragma once
 
 #include "fieldvalue.h"
-#include "../datatype/referencedatatype.h"
-#include "../base/documentid.h"
+#include <vespa/document/datatype/referencedatatype.h>
+#include <vespa/document/base/documentid.h>
 
 namespace document {
 
