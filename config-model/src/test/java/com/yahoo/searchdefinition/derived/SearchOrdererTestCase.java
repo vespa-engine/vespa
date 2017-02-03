@@ -6,10 +6,15 @@ import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+
 /**
  * @author bratseth
  */
@@ -56,22 +61,18 @@ public class SearchOrdererTestCase extends SearchDefinitionTestCase {
         inheritee.getDocument().inherit(inherited.getDocument());
     }
 
-    private void assertOrder(List<String> rightOrder, List<String> input) {
+    private void assertOrder(List<String> expectedSearchOrder, List<String> inputNames) {
         Map<String, Search> searchDefinitions = createSearchDefinitions();
-        SearchOrderer orderer = new SearchOrderer();
-        List<Search> unordered = new ArrayList<>();
-        for (String anInput : input) {
-            Search search = searchDefinitions.get(anInput);
-            assertNotNull(anInput + " exists", search);
-            unordered.add(search);
-        }
-        List<Search> ordered = orderer.order(unordered);
-        List<String> names = new LinkedList<>();
-        for (int i = 0; i < rightOrder.size(); i++) {
-            Search search = ordered.get(i);
-            names.add(search.getName());
-        }
-        assertEquals(rightOrder.toString(), names.toString());
+        List<Search> inputSearchDefinitions = inputNames.stream()
+                .map(searchDefinitions::get)
+                .map(Objects::requireNonNull)
+                .collect(toList());
+        List<String> actualSearchOrder = new SearchOrderer()
+                .order(inputSearchDefinitions)
+                .stream()
+                .map(Search::getName)
+                .collect(toList());
+        assertEquals(expectedSearchOrder, actualSearchOrder);
     }
 
     @Test
