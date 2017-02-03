@@ -128,8 +128,8 @@ void StateReporterTest::tearDown() {
 vespalib::Slime slime; \
 { \
     using namespace vespalib::slime; \
-    size_t parsed = JsonFormat::decode(Memory(jsonData), slime); \
-    SimpleBuffer buffer; \
+    size_t parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime); \
+    vespalib::SimpleBuffer buffer;                                      \
     JsonFormat::encode(slime, buffer, false); \
     if (jsonData.size() != parsed) { \
         std::ostringstream error; \

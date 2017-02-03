@@ -15,7 +15,6 @@ LOG_SETUP(".vespalib.eval.value_cache.constant_tensor_loader");
 namespace vespalib {
 namespace eval {
 
-using Memory = slime::Memory;
 using Inspector = slime::Inspector;
 using ObjectTraverser = slime::ObjectTraverser;
 

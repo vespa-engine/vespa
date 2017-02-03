@@ -7,6 +7,7 @@
 using namespace vespalib::slime::convenience;
 using namespace vespalib::slime::binary_format;
 using namespace vespalib::slime;
+using namespace vespalib;
 
 //-----------------------------------------------------------------------------
 
@@ -63,15 +64,15 @@ void verify_cmpr_ulong(uint64_t value, SimpleBuffer expect) {
         }
     }
     { // use write API
-        BufferedOutput out(buf2);
+        OutputWriter out(buf2, 32);
         write_cmpr_ulong(out, value);
     }
     EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(buf1.get()));
     EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(buf2.get()));
     {
-        BufferedInput input(expect.get());
+        InputReader input(expect);
         EXPECT_EQUAL(value, read_cmpr_ulong(input));
-        EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(input.getConsumed()));
+        EXPECT_EQUAL(input.get_offset(), buf1.get().size);
         EXPECT_TRUE(!input.failed());
     }
 }
@@ -95,35 +96,35 @@ void verifyMultiEncode(const Slime & slime, const SimpleBuffer &expect) {
 
 namespace {
 template <typename T>
-void encodeBasic(BufferedOutput &out,
+void encodeBasic(OutputWriter &out,
                  const typename TypeTraits<T>::PassType &value);
 
 template <>
-void encodeBasic<BOOL>(BufferedOutput &out, const bool &value)
+void encodeBasic<BOOL>(OutputWriter &out, const bool &value)
 {
-    out.writeByte(encode_type_and_meta(BOOL::ID, value ? 1 : 0));
+    out.write(encode_type_and_meta(BOOL::ID, value ? 1 : 0));
 }
 
-template <> void encodeBasic<LONG>(BufferedOutput &out, const int64_t &value)
+template <> void encodeBasic<LONG>(OutputWriter &out, const int64_t &value)
 {
     write_type_and_bytes<false>(out, LONG::ID, encode_zigzag(value));
 }
 
-template <> void encodeBasic<DOUBLE>(BufferedOutput &out, const double &value)
+template <> void encodeBasic<DOUBLE>(OutputWriter &out, const double &value)
 {
     write_type_and_bytes<true>(out, DOUBLE::ID, encode_double(value));
 }
 
-template <> void encodeBasic<STRING>(BufferedOutput &out, const Memory &value)
+template <> void encodeBasic<STRING>(OutputWriter &out, const Memory &value)
 {
     write_type_and_size(out, STRING::ID, value.size);
-    out.writeBytes(value.data, value.size);
+    out.write(value.data, value.size);
 }
 
-template <> void encodeBasic<DATA>(BufferedOutput &out, const Memory &value)
+template <> void encodeBasic<DATA>(OutputWriter &out, const Memory &value)
 {
     write_type_and_size(out, DATA::ID, value.size);
-    out.writeBytes(value.data, value.size);
+    out.write(value.data, value.size);
 }
 } // namespace <unnamed>
 
@@ -167,7 +168,7 @@ void verifyBasic(const typename TypeTraits<T>::PassType &value) {
     SimpleBuffer expect;
     SimpleBuffer actual;
     {
-        BufferedOutput out(expect);
+        OutputWriter out(expect, 32);
         write_cmpr_ulong(out, 0); // num symbols
         encodeBasic<T>(out, value);
     }
@@ -288,121 +289,33 @@ TEST("testCmprUlong") {
     }
 }
 
-TEST("testWriteByte") {
-    SimpleBuffer buf;
-    {
-        BufferedOutput out(buf);
-        out.writeByte(0x55);
-    }
-    EXPECT_EQUAL(1u, buf.get().size);
-    EXPECT_EQUAL(0x55, buf.get().data[0]);
-    {
-        BufferedOutput out(buf);
-        out.writeByte(0x66);
-        out.writeByte(0x77);
-    }
-    EXPECT_EQUAL(3u, buf.get().size);
-    EXPECT_EQUAL(0x55, buf.get().data[0]);
-    EXPECT_EQUAL(0x66, buf.get().data[1]);
-    EXPECT_EQUAL(0x77, buf.get().data[2]);
-}
-
-TEST("testWriteBytes") {
-    SimpleBuffer buf;
-    {
-        BufferedOutput out(buf);
-        out.writeBytes(0, 0);
-    }
-    EXPECT_EQUAL(0u, buf.get().size);
-    {
-        BufferedOutput out(buf);
-        char tmp[] = { 0x55 };
-        out.writeBytes(tmp, 1);
-    }
-    EXPECT_EQUAL(1u, buf.get().size);
-    EXPECT_EQUAL(0x55, buf.get().data[0]);
-    {
-        BufferedOutput out(buf);
-        char tmp[] = { 0x66, 0x77 };
-        out.writeBytes(tmp, 2);
-    }
-    EXPECT_EQUAL(3u, buf.get().size);
-    EXPECT_EQUAL(0x55, buf.get().data[0]);
-    EXPECT_EQUAL(0x66, buf.get().data[1]);
-    EXPECT_EQUAL(0x77, buf.get().data[2]);
-}
-
-TEST("testReadByte") {
-    SimpleBuffer buf;
-    buf.add(0x11).add(0x22).add(0x33);
-    {
-        BufferedInput in(buf.get());
-        EXPECT_EQUAL(0u, in.getConsumed().size);
-        EXPECT_EQUAL(0x11, in.getByte());
-        EXPECT_EQUAL(1u, in.getConsumed().size);
-        EXPECT_EQUAL(0x22, in.getByte());
-        EXPECT_EQUAL(2u, in.getConsumed().size);
-        EXPECT_EQUAL(0x33, in.getByte());
-        EXPECT_EQUAL(3u, in.getConsumed().size);
-        EXPECT_TRUE(!in.failed());
-        EXPECT_EQUAL(0u, in.getOffending().size);
-        EXPECT_EQUAL(0x00, in.getByte());
-        EXPECT_TRUE(in.failed());
-        EXPECT_EQUAL(0u, in.getConsumed().size);
-        EXPECT_EQUAL(3u, in.getOffending().size);
-        EXPECT_EQUAL(0x00, in.getByte());
-        EXPECT_EQUAL(0x00, in.getByte());
-        EXPECT_EQUAL(0x00, in.getByte());
-    }
-}
-
-TEST("testReadBytes") {
-    SimpleBuffer buf;
-    buf.add('a').add('b').add('c');
-    {
-        BufferedInput in(buf.get());
-        EXPECT_EQUAL(0u, in.getConsumed().size);
-        EXPECT_EQUAL("ab", in.getBytes(2).make_string());
-        EXPECT_EQUAL(2u, in.getConsumed().size);
-        EXPECT_TRUE(!in.failed());
-        EXPECT_EQUAL(0u, in.getOffending().size);
-        EXPECT_EQUAL(0u, in.getBytes(2).size);
-        EXPECT_TRUE(in.failed());
-        EXPECT_EQUAL(0u, in.getConsumed().size);
-        EXPECT_EQUAL(3u, in.getOffending().size);
-        EXPECT_EQUAL(0u, in.getBytes(2).size);
-        EXPECT_EQUAL(0u, in.getBytes(2).size);
-        EXPECT_EQUAL(0u, in.getBytes(2).size);
-    }
-}
-
 TEST("testTypeAndSize") {
     for (uint32_t type = 0; type < TYPE_LIMIT; ++type) {
         for (uint32_t size = 0; size < 500; ++size) {
             SimpleBuffer expect;
             SimpleBuffer actual;
             {
-                BufferedOutput expect_out(expect);
+                OutputWriter expect_out(expect, 32);
                 if ((size + 1) < META_LIMIT) {
-                    expect_out.writeByte(encode_type_and_meta(type, size + 1));
+                    expect_out.write(encode_type_and_meta(type, size + 1));
                 } else {
-                    expect_out.writeByte(type);
+                    expect_out.write(type);
                     write_cmpr_ulong(expect_out, size);
                 }
             }
             {
-                BufferedOutput actual_out(actual);
+                OutputWriter actual_out(actual, 32);
                 write_type_and_size(actual_out, type, size);
             }
             EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
             {
-                BufferedInput input(expect.get());
-                char byte = input.getByte();
+                InputReader input(expect);
+                char byte = input.read();
                 uint32_t decodedType = decode_type(byte);
                 uint64_t decodedSize = read_size(input, decode_meta(byte));
                 EXPECT_EQUAL(type, decodedType);
                 EXPECT_EQUAL(size, decodedSize);
-                EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(input.getConsumed()));
+                EXPECT_EQUAL(input.get_offset(), actual.get().size);
                 EXPECT_TRUE(!input.failed());
             }
         }
@@ -445,7 +358,7 @@ TEST("testTypeAndBytes") {
                     uint64_t bits = build_bits(type, n, pre,
                                                (hi != 0), expect);
                     {
-                        BufferedOutput out(actual);
+                        OutputWriter out(actual, 32);
                         if (hi != 0) {
                             write_type_and_bytes<true>(out, type, bits);
                         } else {
@@ -454,8 +367,8 @@ TEST("testTypeAndBytes") {
                     }
                     EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
                     {
-                        BufferedInput input(expect.get());
-                        uint32_t size = decode_meta(input.getByte());
+                        InputReader input(expect);
+                        uint32_t size = decode_meta(input.read());
                         uint64_t decodedBits;
                         if (hi != 0) {
                             decodedBits = read_bytes<true>(input, size);
@@ -463,8 +376,7 @@ TEST("testTypeAndBytes") {
                             decodedBits = read_bytes<false>(input, size);
                         }
                         EXPECT_EQUAL(bits, decodedBits);
-                        EXPECT_EQUAL(MemCmp(expect.get()),
-                                   MemCmp(input.getConsumed()));
+                        EXPECT_EQUAL(input.get_offset(), actual.get().size);
                         EXPECT_TRUE(!input.failed());
                     }
                 }
@@ -478,9 +390,9 @@ TEST("testEmpty") {
     SimpleBuffer expect;
     SimpleBuffer actual;
     {
-        BufferedOutput out(expect);
+        OutputWriter out(expect, 32);
         write_cmpr_ulong(out, 0); // num symbols
-        out.writeByte(0);       // nix
+        out.write(0);       // nix
     }
     BinaryFormat::encode(slime, actual);
     EXPECT_EQUAL(MemCmp(expect.get()), MemCmp(actual.get()));
@@ -532,10 +444,10 @@ TEST("testArray") {
     c.addString(Memory("string"));
     c.addData(Memory("data"));
     {
-        BufferedOutput out(expect);
+        OutputWriter out(expect, 32);
         write_cmpr_ulong(out, 0); // num symbols
         write_type_and_size(out, ARRAY::ID, 6);
-        out.writeByte(0);
+        out.write(0);
         encodeBasic<BOOL>(out, true);
         encodeBasic<LONG>(out, 5);
         encodeBasic<DOUBLE>(out, 3.5);
@@ -559,23 +471,23 @@ TEST("testObject") {
     c.setString("e", Memory("string"));
     c.setData("f", Memory("data"));
     {
-        BufferedOutput out(expect);
+        OutputWriter out(expect, 32);
         write_cmpr_ulong(out, 6); // num symbols
         write_cmpr_ulong(out, 1);
-        out.writeBytes("a", 1); // 0
+        out.write("a", 1); // 0
         write_cmpr_ulong(out, 1);
-        out.writeBytes("b", 1); // 1
+        out.write("b", 1); // 1
         write_cmpr_ulong(out, 1);
-        out.writeBytes("c", 1); // 2
+        out.write("c", 1); // 2
         write_cmpr_ulong(out, 1);
-        out.writeBytes("d", 1); // 3
+        out.write("d", 1); // 3
         write_cmpr_ulong(out, 1);
-        out.writeBytes("e", 1); // 4
+        out.write("e", 1); // 4
         write_cmpr_ulong(out, 1);
-        out.writeBytes("f", 1); // 5
+        out.write("f", 1); // 5
         write_type_and_size(out, OBJECT::ID, 6);
         write_cmpr_ulong(out, 0);
-        out.writeByte(0);
+        out.write(0);
         write_cmpr_ulong(out, 1);
         encodeBasic<BOOL>(out, true);
         write_cmpr_ulong(out, 2);
@@ -611,14 +523,14 @@ TEST("testNesting") {
         }
     }
     {
-        BufferedOutput out(expect);
+        OutputWriter out(expect, 32);
         write_cmpr_ulong(out, 3);   // num symbols
         write_cmpr_ulong(out, 3);
-        out.writeBytes("bar", 3);    // 0
+        out.write("bar", 3);    // 0
         write_cmpr_ulong(out, 3);
-        out.writeBytes("foo", 3);    // 1
+        out.write("foo", 3);    // 1
         write_cmpr_ulong(out, 6);
-        out.writeBytes("answer", 6); // 2
+        out.write("answer", 6); // 2
         write_type_and_size(out, OBJECT::ID, 2);
         write_cmpr_ulong(out, 0);   // bar
         encodeBasic<LONG>(out, 10);
@@ -654,12 +566,12 @@ TEST("testSymbolReuse") {
         }
     }
     {
-        BufferedOutput out(expect);
+        OutputWriter out(expect, 32);
         write_cmpr_ulong(out, 2);   // num symbols
         write_cmpr_ulong(out, 3);
-        out.writeBytes("foo", 3); // 0
+        out.write("foo", 3); // 0
         write_cmpr_ulong(out, 3);
-        out.writeBytes("bar", 3); // 1
+        out.write("bar", 3); // 1
         write_type_and_size(out, ARRAY::ID, 2);
         write_type_and_size(out, OBJECT::ID, 2);
         write_cmpr_ulong(out, 0);   // foo
@@ -680,18 +592,18 @@ TEST("testSymbolReuse") {
 TEST("testOptionalDecodeOrder") {
     SimpleBuffer data;
     {
-        BufferedOutput out(data);
+        OutputWriter out(data, 32);
         write_cmpr_ulong(out, 5); // num symbols
         write_cmpr_ulong(out, 1);
-        out.writeBytes("d", 1); // 0
+        out.write("d", 1); // 0
         write_cmpr_ulong(out, 1);
-        out.writeBytes("e", 1); // 1
+        out.write("e", 1); // 1
         write_cmpr_ulong(out, 1);
-        out.writeBytes("f", 1); // 2
+        out.write("f", 1); // 2
         write_cmpr_ulong(out, 1);
-        out.writeBytes("b", 1); // 3
+        out.write("b", 1); // 3
         write_cmpr_ulong(out, 1);
-        out.writeBytes("c", 1); // 4
+        out.write("c", 1); // 4
         write_type_and_size(out, OBJECT::ID, 5);
         write_cmpr_ulong(out, 3); // b
         encodeBasic<BOOL>(out, true);
@@ -749,6 +661,13 @@ TEST("require that decode_into without symbol names work") {
     BinaryFormat::decode_into(buf.get(), slime, SlimeInserter(slime));
     EXPECT_EQUAL(slime.symbols(), 0u);
     EXPECT_EQUAL(slime.get()[my_sym].asLong(), 100);
+}
+
+TEST("require that decode failure results in 0 return value") {
+    SimpleBuffer buf;
+    buf.add(char(0)); // empty symbol table, but no value
+    Slime slime;
+    EXPECT_EQUAL(BinaryFormat::decode(buf.get(), slime), 0u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

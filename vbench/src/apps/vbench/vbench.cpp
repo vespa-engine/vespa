@@ -36,7 +36,7 @@ int run(const std::string &cfg_name) {
         return 1;
     }
     vespalib::Slime cfg;
-    vespalib::slime::Memory mapped_cfg(cfg_file.get().data,
+    vespalib::Memory mapped_cfg(cfg_file.get().data,
                                        cfg_file.get().size);
     if (!vespalib::slime::JsonFormat::decode(mapped_cfg, cfg)) {
         fprintf(stderr, "unable to parse config file: %s\n",

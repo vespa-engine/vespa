@@ -18,9 +18,9 @@ class SlimeTraceSerializer : public TraceVisitor
 public:
     SlimeTraceSerializer(slime::Cursor & cursor);
     void visit(const TraceNode & node);
-    static const slime::Memory TIMESTAMP;
-    static const slime::Memory PAYLOAD;
-    static const slime::Memory CHILDREN;
+    static const Memory TIMESTAMP;
+    static const Memory PAYLOAD;
+    static const Memory CHILDREN;
 private:
     void addTimestamp(slime::Cursor & current, const TraceNode & node);
     void addPayload(slime::Cursor & current, const TraceNode & node);

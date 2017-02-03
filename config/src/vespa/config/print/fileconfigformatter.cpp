@@ -11,9 +11,9 @@ using namespace vespalib::slime::convenience;
 
 using vespalib::slime::ArrayTraverser;
 using vespalib::slime::ObjectTraverser;
-using vespalib::slime::BufferedOutput;
-using vespalib::slime::SimpleBuffer;
-using vespalib::slime::Output;
+using vespalib::OutputWriter;
+using vespalib::SimpleBuffer;
+using vespalib::Output;
 
 namespace config {
     void doEncode(ConfigDataBuffer & buffer, Output & output);
@@ -24,12 +24,12 @@ namespace {
 struct ConfigEncoder : public ArrayTraverser,
                        public ObjectTraverser
 {
-    BufferedOutput &out;
+    OutputWriter &out;
     int level;
     bool head;
     std::vector<std::string> prefixList;
 
-    ConfigEncoder(BufferedOutput &out_in)
+    ConfigEncoder(OutputWriter &out_in)
         : out(out_in), level(0), head(true) {}
 
     void printPrefix() {
@@ -80,9 +80,9 @@ struct ConfigEncoder : public ArrayTraverser,
         out.commit(len);
     }
     void encodeSTRING(const Memory &memory) {
-        out.writeByte('\"');
+        out.write('\"');
         encodeSTRINGNOQUOTE(memory);
-        out.writeByte('\"');
+        out.write('\"');
     }
     void encodeARRAY(const Inspector &inspector) {
         ArrayTraverser &array_traverser = *this;
@@ -107,10 +107,10 @@ struct ConfigEncoder : public ArrayTraverser,
                 prefixList.pop_back();
             } else {
                 printPrefix();
-                out.writeByte(' ');
+                out.write(' ');
                 if (type.compare("enum") == 0) encodeSTRINGNOQUOTE(inspector["value"].asString());
                 else encodeValue(inspector["value"]);
-                out.writeByte('\n');
+                out.write('\n');
             }
         }
     }
@@ -133,7 +133,7 @@ struct ConfigEncoder : public ArrayTraverser,
     virtual void entry(size_t idx, const Inspector &inspector);
     virtual void field(const Memory &symbol_name, const Inspector &inspector);
 
-    static void encode(Inspector & root, BufferedOutput &out) {
+    static void encode(Inspector & root, OutputWriter &out) {
         ConfigEncoder encoder(out);
         encoder.encodeValue(root);
     }
@@ -158,14 +158,14 @@ ConfigEncoder::entry(size_t index, const Inspector &inspector)
             prefixList.pop_back();
         } else {
             printPrefix();
-            out.writeByte('[');
+            out.write('[');
             encodeLONG(index);
-            out.writeByte(']');
-            out.writeByte(' ');
+            out.write(']');
+            out.write(' ');
 
             if (type.compare("enum") == 0) encodeSTRINGNOQUOTE(inspector["value"].asString());
             else encodeValue(inspector["value"]);
-            out.writeByte('\n');
+            out.write('\n');
         }
     }
 }
@@ -196,11 +196,11 @@ ConfigEncoder::field(const Memory &symbol_name, const Inspector &inspector)
         } else {
             printPrefix();
             encodeSTRINGNOQUOTE(symbol_name);
-            out.writeByte(' ');
+            out.write(' ');
 
             if (type.compare("enum") == 0) encodeSTRINGNOQUOTE(inspector["value"].asString());
             else encodeValue(inspector["value"]);
-            out.writeByte('\n');
+            out.write('\n');
         }
     }
 }
@@ -212,7 +212,7 @@ namespace config {
 void
 doEncode(ConfigDataBuffer & buffer, Output & output)
 {
-    BufferedOutput out(output);
+    OutputWriter out(output, 8000);
     ConfigEncoder::encode(buffer.slimeObject().get()["configPayload"], out);
 }
 

@@ -232,7 +232,7 @@ SingleAttrDFW::insertField(uint32_t docid,
             if (tensor) {
                 vespalib::nbostream str;
                 vespalib::tensor::TypedBinaryFormat::serialize(str, *tensor);
-                target.insertData(vespalib::slime::Memory(str.peek(), str.size()));
+                target.insertData(vespalib::Memory(str.peek(), str.size()));
             }
         }
         default:
@@ -246,13 +246,13 @@ SingleAttrDFW::insertField(uint32_t docid,
     case RES_LONG_STRING:
     case RES_STRING: {
         s = v.getString(docid, NULL, 0); // no need to pass in a buffer, this attribute has a string storage.
-        target.insertString(vespalib::slime::Memory(s));
+        target.insertString(vespalib::Memory(s));
         break;
     }
     case RES_LONG_DATA:
     case RES_DATA: {
         s = v.getString(docid, NULL, 0); // no need to pass in a buffer, this attribute has a string storage.
-        target.insertData(vespalib::slime::Memory(s));
+        target.insertData(vespalib::Memory(s));
         break;
     }
     default:
@@ -355,7 +355,7 @@ MultiAttrDFW::insertField(uint32_t docid,
                           vespalib::slime::Inserter &target)
 {
     using vespalib::slime::Cursor;
-    using vespalib::slime::Memory;
+    using vespalib::Memory;
     const IAttributeVector & v = vec(*state);
     uint32_t entries = v.getValueCount(docid);
     bool isWeightedSet = v.hasWeightedSetType();

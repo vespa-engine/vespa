@@ -3,7 +3,7 @@
 #pragma once
 
 #include "symbol.h"
-#include "memory.h"
+#include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/data/memorydatastore.h>
 
@@ -18,7 +18,7 @@ class SymbolTable
 private:
     struct hasher {
         size_t operator () (const Memory & lcm) const {
-            return lcm.hash();
+            return hashValue(lcm.data, lcm.size);
         }
     };
     using SymbolMap = hash_map<Memory, Symbol, hasher>;

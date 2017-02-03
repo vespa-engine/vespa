@@ -16,7 +16,7 @@ using std::map;
 using std::min;
 using std::string;
 using vespalib::slime::Inspector;
-using vespalib::slime::Memory;
+using vespalib::Memory;
 
 namespace search {
 namespace predicate {

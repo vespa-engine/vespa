@@ -43,7 +43,7 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser
     }
 
     virtual void
-    field(const vespalib::slime::Memory &symbol_name, const vespalib::slime::Inspector &inspector) {
+    field(const vespalib::Memory &symbol_name, const vespalib::slime::Inspector &inspector) {
         switch (_state) {
         case ROOT:
             _component = symbol_name.make_string();
@@ -210,7 +210,7 @@ ConfigStatus::checkServiceGeneration(std::string configId, std::string host, int
         return false;
     }
 
-    vespalib::slime::SimpleBuffer buf;
+    vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, false);
 
     if (slime.get()["config"].valid()) {

@@ -2,26 +2,29 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/slime/output.h>
+#include <vespa/vespalib/data/output.h>
+#include <vespa/vespalib/data/writable_memory.h>
 #include <vector>
 
 namespace document {
 
-class SlimeOutputToVector : public vespalib::slime::Output {
+class SlimeOutputToVector : public vespalib::Output {
     std::vector<char> _buf;
     size_t _size;
 
 public:
     SlimeOutputToVector() : _buf(), _size(0) {}
 
-    virtual char *exchange(char *p, size_t commit, size_t reserve) {
-        assert(!commit || p == &_buf[_size]);
-        (void) p;
-        _size += commit;
+    vespalib::WritableMemory reserve(size_t reserve) {
         if (_size + reserve > _buf.size()) {
             _buf.resize(_size + reserve);
         }
-        return &_buf[_size];
+        return vespalib::WritableMemory(&_buf[_size], _buf.size() - _size);
+    }
+
+    Output &commit(size_t commit) override {
+        _size += commit;
+        return *this;
     }
 
     const char *data() const { return &_buf[0]; }

@@ -13,7 +13,7 @@ using search::common::Location;
 using vespalib::string;
 using vespalib::slime::SymbolTable;
 using vespalib::slime::NIX;
-using vespalib::slime::Memory;
+using vespalib::Memory;
 using vespalib::slime::Cursor;
 using vespalib::slime::Symbol;
 using vespalib::slime::Inserter;
