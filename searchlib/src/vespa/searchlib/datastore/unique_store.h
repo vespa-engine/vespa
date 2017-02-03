@@ -30,6 +30,8 @@ public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
     using RefType = RefT;
+    using Saver = UniqueStoreSaver<EntryT, RefT>;
+    using Builder = UniqueStoreBuilder<EntryT, RefT>;
     /*
      * Compare two values in data store based on reference.  Invalid
      * reference is mapped to local value reference to support
@@ -94,8 +96,8 @@ public:
     void freeze();
     uint32_t getNumUniques() const;
 
-    UniqueStoreBuilder<EntryType, RefType> getBuilder(uint32_t uniqueValuesHint);
-    UniqueStoreSaver<EntryType, RefType> getSaver() const;
+    Builder getBuilder(uint32_t uniqueValuesHint);
+    Saver getSaver() const;
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;

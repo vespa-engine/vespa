@@ -6,6 +6,7 @@ LOG_SETUP("reference_attribute_test");
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/document/base/documentid.h>
 
@@ -16,6 +17,7 @@ using search::attribute::ReferenceAttribute;
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::AttributeVector;
+using search::AttributeGuard;
 using document::GlobalId;
 using document::DocumentId;
 
@@ -33,7 +35,7 @@ vespalib::string doc2("id:test:music::2");
 
 struct Fixture
 {
-    std::unique_ptr<ReferenceAttribute> _attr;
+    std::shared_ptr<ReferenceAttribute> _attr;
 
     Fixture()
         : _attr()
@@ -47,12 +49,12 @@ struct Fixture
 
     void resetAttr() {
         _attr.reset();
-        _attr = std::make_unique<ReferenceAttribute>("test",
+        _attr = std::make_shared<ReferenceAttribute>("test",
                                                      Config(BasicType::REFERENCE));
     }
 
-    void ensureSpace(uint32_t docId) {
-        while (attr().getNumDocs() <= docId) {
+    void ensureDocIdLimit(uint32_t docIdLimit) {
+        while (attr().getNumDocs() < docIdLimit) {
             uint32_t newDocId = 0u;
             _attr->addDoc(newDocId);
             _attr->commit();
@@ -97,11 +99,30 @@ struct Fixture
         resetAttr();
         attr().load();
     }
+
+    void triggerCompaction(uint64_t iterLimit) {
+        search::attribute::Status oldStatus = getStatus();
+        search::attribute::Status newStatus = oldStatus;
+        uint64_t iter = 0;
+        for (; iter < iterLimit; ++iter) {
+            clear(2);
+            set(2, toGid(doc2));
+            newStatus = getStatus();
+            if (newStatus.getUsed() < oldStatus.getUsed()) {
+                break;
+            }
+            oldStatus = newStatus;
+        }
+        EXPECT_GREATER(iterLimit, iter);
+        LOG(info,
+            "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
+            iter, oldStatus.getUsed(), newStatus.getUsed());
+    }
 };
 
 TEST_F("require that we can instantiate reference attribute", Fixture)
 {
-    f.ensureSpace(4);
+    f.ensureDocIdLimit(5);
     f.set(1, toGid(doc1));
     f.set(2, toGid(doc2));
     f.commit();
@@ -111,30 +132,64 @@ TEST_F("require that we can instantiate reference attribute", Fixture)
     TEST_DO(f.assertRef(doc2, 2));
 }
 
+TEST_F("require that we can set new reference for a document", Fixture)
+{
+    f.ensureDocIdLimit(5);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    f.set(3, toGid(doc2));
+    f.commit();
+    TEST_DO(f.assertNoRef(4));
+    TEST_DO(f.assertRef(doc1, 1));
+    TEST_DO(f.assertRef(doc2, 2));
+    TEST_DO(f.assertRef(doc2, 3));
+    f.set(2, toGid(doc1));
+    f.commit();
+    TEST_DO(f.assertNoRef(4));
+    TEST_DO(f.assertRef(doc1, 1));
+    TEST_DO(f.assertRef(doc1, 2));
+    TEST_DO(f.assertRef(doc2, 3));
+}
+
+TEST_F("require that we can clear reference for a document", Fixture)
+{
+    f.ensureDocIdLimit(5);
+    f.set(2, toGid(doc2));
+    f.commit();
+    TEST_DO(f.assertRef(doc2, 2));
+    f.clear(2);
+    f.commit();
+    TEST_DO(f.assertNoRef(2));
+    f.clear(2);
+    f.commit();
+    TEST_DO(f.assertNoRef(2));
+}
+
+TEST_F("require that read guard protects reference", Fixture)
+{
+    f.ensureDocIdLimit(5);
+    f.set(2, toGid(doc2));
+    f.commit();
+    const GlobalId *gid = f.get(2);
+    EXPECT_TRUE(gid != nullptr);
+    EXPECT_EQUAL(toGid(doc2), *gid);
+    {
+        AttributeGuard guard(f._attr);
+        f.clear(2);
+        f.commit();
+        EXPECT_EQUAL(toGid(doc2), *gid);
+    }
+    f.commit();
+    EXPECT_NOT_EQUAL(toGid(doc2), *gid);
+}
 
 TEST_F("require that we can compact attribute", Fixture)
 {
-    f.ensureSpace(4);
+    f.ensureDocIdLimit(5);
     f.set(1, toGid(doc1));
     f.set(2, toGid(doc2));
     f.commit();
-    search::attribute::Status oldStatus = f.getStatus();
-    search::attribute::Status newStatus = oldStatus;
-    uint64_t iter = 0;
-    uint64_t iterLimit = 100000;
-    for (; iter < iterLimit; ++iter) {
-        f.clear(2);
-        f.set(2, toGid(doc2));
-        newStatus = f.getStatus();
-        if (newStatus.getUsed() < oldStatus.getUsed()) {
-            break;
-        }
-        oldStatus = newStatus;
-    }
-    EXPECT_GREATER(iterLimit, iter);
-    LOG(info,
-        "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
-        iter, oldStatus.getUsed(), newStatus.getUsed());
+    TEST_DO(f.triggerCompaction(100000));
     TEST_DO(f.assertNoRef(3));
     TEST_DO(f.assertRef(doc1, 1));
     TEST_DO(f.assertRef(doc2, 2));
@@ -142,15 +197,17 @@ TEST_F("require that we can compact attribute", Fixture)
 
 TEST_F("require that we can save and load attribute", Fixture)
 {
-    f.ensureSpace(4);
+    f.ensureDocIdLimit(5);
     f.set(1, toGid(doc1));
     f.set(2, toGid(doc2));
+    f.set(4, toGid(doc1));
     f.commit();
     f.save();
     f.load();
     TEST_DO(f.assertNoRef(3));
     TEST_DO(f.assertRef(doc1, 1));
     TEST_DO(f.assertRef(doc2, 2));
+    TEST_DO(f.assertRef(doc1, 4));
     EXPECT_TRUE(vespalib::unlink("test.dat"));
     EXPECT_TRUE(vespalib::unlink("test.udat"));
 }

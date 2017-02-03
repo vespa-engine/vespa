@@ -14,16 +14,16 @@ namespace attribute {
 
 namespace {
 
-// minimum dead bytes in multi value mapping before consider compaction
+// minimum dead bytes in unique store before consider compaction
 constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
 
 const vespalib::string uniqueValueCountTag = "uniqueValueCount";
 
 uint64_t
 extractUniqueValueCount(const vespalib::GenericHeader &header)
-    {
-        return (header.hasTag(uniqueValueCountTag)) ? header.getTag(uniqueValueCountTag).asInteger() : 0u;
-    }
+{
+    return (header.hasTag(uniqueValueCountTag)) ? header.getTag(uniqueValueCountTag).asInteger() : 0u;
+}
 
 }
 
@@ -41,17 +41,9 @@ ReferenceAttribute::~ReferenceAttribute()
 {
 }
 
-bool
-ReferenceAttribute::onAddDoc(DocId doc) {
-    if (doc < _indices.capacity()) {
-        _indices.reserve(doc+1);
-        return true;
-    }
-    return false;
-}
-
 void
-ReferenceAttribute::onAddDocs(DocId limit) {
+ReferenceAttribute::onAddDocs(DocId limit)
+{
     _indices.reserve(limit);
 }
 
@@ -63,7 +55,6 @@ ReferenceAttribute::addDoc(DocId &doc)
     _indices.push_back(EntryRef());
     incNumDocs();
     updateUncommittedDocIdLimit(doc);
-    incGen |= onAddDoc(doc);
     if (incGen) {
         incGeneration();
     } else {
@@ -141,47 +132,35 @@ ReferenceAttribute::onLoad()
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());
-
     if (!ok) {
         return false;
     }
-
     setCreateSerialNum(attrReader.getCreateSerialNum());
-
     assert(attrReader.getEnumerated());
     assert(!attrReader.hasIdx());
-
     size_t numDocs(0);
     uint64_t numValues(0);
-
     numValues = attrReader.getEnumCount();
     numDocs = numValues;
-
     fileutil::LoadedBuffer::UP udatBuffer(loadUDAT());
-
     const GenericHeader &header = udatBuffer->getHeader();
     uint32_t uniqueValueCount = extractUniqueValueCount(header);
     assert(uniqueValueCount * sizeof(GlobalId) == udatBuffer->size());
-
     vespalib::ConstArrayRef<GlobalId> uniques(static_cast<const GlobalId *>(udatBuffer->buffer()), uniqueValueCount);
 
     auto builder = _store.getBuilder(uniqueValueCount);
-
     for (const auto &value : uniques) {
         builder.add(value);
     }
     builder.setupRefCounts();
-
     _indices.clear();
     _indices.unsafe_reserve(numDocs);
-
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t enumValue = attrReader.getNextEnum();
         _indices.push_back(builder.mapEnumValueToEntryRef(enumValue));
     }
     builder.makeDictionary();
     incGeneration();
-
     return true;
 }
 

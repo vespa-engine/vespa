@@ -16,15 +16,18 @@ namespace attribute {
  */
 class ReferenceAttribute : public NotImplementedAttribute
 {
+public:
     using EntryRef = search::datastore::EntryRef;
     using GlobalId = document::GlobalId;
-    datastore::UniqueStore<GlobalId> _store;
-    RcuVectorBase<EntryRef> _indices;
-    MemoryUsage _cachedUniqueStoreMemoryUsage;
+    using Store = datastore::UniqueStore<GlobalId>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
 
+private:
+    Store _store;
+    RcuVectorBase<EntryRef> _indices;
+    MemoryUsage _cachedUniqueStoreMemoryUsage;
+
     virtual void onAddDocs(DocId docIdLimit) override;
-    virtual bool onAddDoc(DocId doc);
     virtual void removeOldGenerations(generation_t firstUsed) override;
     virtual void onGenerationChange(generation_t generation) override;
     virtual void onCommit() override;

@@ -222,10 +222,8 @@ TEST_F("require that builder works", NumberFixture)
     f.assertGet(val10Ref, 10);
     f.assertGet(val20Ref, 20);
     builder.makeDictionary();
-    EntryRef ref = f.add(10);
-    EXPECT_EQUAL(val10Ref.ref(), ref.ref());
-    ref = f.add(20);
-    EXPECT_EQUAL(val20Ref.ref(), ref.ref());
+    EXPECT_EQUAL(val10Ref.ref(), f.add(10).ref());
+    EXPECT_EQUAL(val20Ref.ref(), f.add(20).ref());
 }
 
 TEST_F("require that saver works", NumberFixture)

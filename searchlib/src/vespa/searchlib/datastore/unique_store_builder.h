@@ -10,8 +10,9 @@ namespace datastore {
 /**
  * Builder for related UniqueStore class.
  *
- * Contains utility method for adding new unique values and mapping from
- * enum value to EntryRef value.
+ * Contains utility method for adding new unique values and mapping
+ * from enum value to EntryRef value.  New unique values must be added
+ * in sorted order.
  */
 template <typename EntryT, typename RefT>
 class UniqueStoreBuilder {

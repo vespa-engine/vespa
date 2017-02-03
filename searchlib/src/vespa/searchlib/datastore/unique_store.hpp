@@ -216,17 +216,17 @@ UniqueStore<EntryT, RefT>::freeze()
 }
 
 template <typename EntryT, typename RefT>
-UniqueStoreBuilder<EntryT, RefT>
+typename UniqueStore<EntryT, RefT>::Builder
 UniqueStore<EntryT, RefT>::getBuilder(uint32_t uniqueValuesHint)
 {
-    return UniqueStoreBuilder<EntryType, RefType>(_store, _typeId, _dict, uniqueValuesHint);
+    return Builder(_store, _typeId, _dict, uniqueValuesHint);
 }
 
 template <typename EntryT, typename RefT>
-UniqueStoreSaver<EntryT, RefT>
+typename UniqueStore<EntryT, RefT>::Saver
 UniqueStore<EntryT, RefT>::getSaver() const
 {
-    return UniqueStoreSaver<EntryType, RefType>(_dict, _store);
+    return Saver(_dict, _store);
 }
 
 template <typename EntryT, typename RefT>
