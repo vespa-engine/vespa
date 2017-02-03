@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class AccessControlTest extends ContainerModelBuilderTestBase {
 
-    private static final Set<String> requiredBindings = ImmutableSet.of(
+    private static final Set<String> REQUIRED_BINDINGS = ImmutableSet.of(
             "/custom-handler/",
             "/search/",
             "/feed",
@@ -38,7 +38,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             "/feedstatus",
             ContainerCluster.RESERVED_URI_PREFIX);
 
-    private static final Set<String> forbiddenBindings = ImmutableSet.of(
+    private static final Set<String> FORBIDDEN_BINDINGS = ImmutableSet.of(
             "/ApplicationStatus",
             "/status.html",
             "/statistics/",
@@ -90,15 +90,15 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         Http http = cluster.getHttp();
         assertNotNull(http);
 
-        Set<String> foundRequiredBindings = requiredBindings.stream()
+        Set<String> foundRequiredBindings = REQUIRED_BINDINGS.stream()
                 .filter(requiredBinding -> containsBinding(http.getBindings(), requiredBinding))
                 .collect(Collectors.toSet());
-        Set<String> missingRequiredBindings = new HashSet<>(requiredBindings);
+        Set<String> missingRequiredBindings = new HashSet<>(REQUIRED_BINDINGS);
         missingRequiredBindings.removeAll(foundRequiredBindings);
-        assertTrue("Access control chain was not bound to: " + CollectionUtil.mkString(requiredBindings, ", "),
+        assertTrue("Access control chain was not bound to: " + CollectionUtil.mkString(REQUIRED_BINDINGS, ", "),
                    missingRequiredBindings.isEmpty());
 
-        for (String forbiddenBinding : forbiddenBindings) {
+        for (String forbiddenBinding : FORBIDDEN_BINDINGS) {
             for (Binding binding : http.getBindings())
                 assertFalse("Access control chain was bound to: ",
                             binding.binding.contains(forbiddenBinding));
