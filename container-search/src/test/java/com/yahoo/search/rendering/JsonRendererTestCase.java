@@ -1141,6 +1141,17 @@ public class JsonRendererTestCase {
         Map<String, Object> exp = m.readValue(expected, Map.class);
         Map<String, Object> gen = m.readValue(generated, Map.class);
         assertEquals(exp, gen);
+        assertTrue(isValidJson(expected));
+        assertTrue(isValidJson(generated));
+    }
+    private boolean isValidJson(String presumablyValidJson) {
+        try {
+            new JSONObject(presumablyValidJson);
+            return true;
+        } catch (JSONException e) {
+            assertEquals("", e.getMessage());
+            return false;
+        }
     }
 
 }
