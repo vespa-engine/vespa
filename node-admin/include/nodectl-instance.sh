@@ -10,10 +10,10 @@
 #
 # resume: Set the node "in service" by e.g. undraining container traffic
 #
-# start: Set the node "in service" by e.g. undraining container traffic.
-# start can be assumed to have completed successfully.
+# start: Start services on the node. Can be seen as a boot of a non-docker node.
+#        start can be assumed to have completed successfully.
 #
-# stop: Stop services on the node
+# stop: Stop services on the node, similar to shutdown of a non-docker node.
 #
 # suspend: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
 # node "out of service" by draining container traffic, and flush index for a
