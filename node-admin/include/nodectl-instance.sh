@@ -5,13 +5,15 @@
 #     vespa-cookbooks/hosted/files/default/prepost-instance.sh
 # TODO: Remove the above cookbook file (with the down-side that a new script
 # requires a new vespa release, instead of just a hosted release).
-
-# Usage: nodectl-instance.sh [start|stop|suspend]
 #
-# start: Set the node "in service" by e.g. undraining container traffic.
-# start can be assumed to have completed successfully.
+# Usage: nodectl-instance.sh [resume|start|stop|suspend]
 #
-# stop: Stop services on the node (Note: Only does suspend now, will be changed soon, Oct 24 2016)
+# resume: Set the node "in service" by e.g. undraining container traffic
+#
+# start: Start services on the node. Can be seen as a boot of a non-docker node.
+#        start can be assumed to have completed successfully.
+#
+# stop: Stop services on the node, similar to shutdown of a non-docker node.
 #
 # suspend: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
 # node "out of service" by draining container traffic, and flush index for a
@@ -95,6 +97,12 @@ container_drain() {
     sleep 60
 }
 
+Resume() {
+    # Always start vip for now
+    $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
+}
+
+# TODO: Remove vespa-routing when callers have been updated to use resume
 Start() {
     # Always start vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
@@ -137,6 +145,8 @@ main() {
         Stop
     elif [ "$action" = "suspend" ]; then
         Suspend
+    elif [ "$action" = "resume" ]; then
+        Resume
     else
         echo "Unknown action: $action" >&2
         exit 1
