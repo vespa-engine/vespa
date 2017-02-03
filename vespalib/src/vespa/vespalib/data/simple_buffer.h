@@ -28,6 +28,11 @@ public:
     Input &evict(size_t bytes) override;
     WritableMemory reserve(size_t bytes) override;
     Output &commit(size_t bytes) override;
+    SimpleBuffer &add(char c) {
+        _data.push_back(c);
+        ++_used;
+        return *this;
+    }
     Memory get() const { return Memory(&_data[0], _used); }
     bool operator==(const SimpleBuffer &rhs) const { return (get() == rhs.get()); }
 };
