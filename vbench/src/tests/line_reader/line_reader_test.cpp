@@ -4,16 +4,19 @@
 
 using namespace vbench;
 
+using OutputWriter = vespalib::OutputWriter;
+using SimpleBuffer = vespalib::SimpleBuffer;
+
 TEST("line reader") {
     SimpleBuffer buffer;
     {
-        BufferedOutput dst(buffer, 64);
-        dst.append("foo\n");
-        dst.append("bar\r\n");
-        dst.append("\n");
-        dst.append("\rbaz\n");
-        dst.append("\r\n");
-        dst.append("zzz");
+        OutputWriter dst(buffer, 64);
+        dst.write("foo\n");
+        dst.write("bar\r\n");
+        dst.write("\n");
+        dst.write("\rbaz\n");
+        dst.write("\r\n");
+        dst.write("zzz");
     }
     {
         LineReader src(buffer);

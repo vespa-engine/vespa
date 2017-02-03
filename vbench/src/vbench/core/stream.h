@@ -2,12 +2,15 @@
 
 #pragma once
 
-#include "input.h"
-#include "output.h"
+#include <vespa/vespalib/data/input.h>
+#include <vespa/vespalib/data/output.h>
 #include "taintable.h"
 #include <memory>
 
 namespace vbench {
+
+using Input = vespalib::Input;
+using Output = vespalib::Output;
 
 /**
  * A Stream is an abstract taintable entity that can act as both input

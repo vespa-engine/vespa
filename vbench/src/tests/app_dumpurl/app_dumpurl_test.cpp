@@ -6,16 +6,19 @@
 using namespace vbench;
 using vespalib::SlaveProc;
 
+using InputReader = vespalib::InputReader;
+using OutputWriter = vespalib::OutputWriter;
+
 bool endsWith(const Memory &mem, const string &str) {
     return (mem.size < str.size()) ? false
         : (strncmp(mem.data + mem.size - str.size(), str.data(), str.size()) == 0);
 }
 
 void readUntil(Input &input, SimpleBuffer &buffer, const string &end) {
-    ByteInput in(input);
+    InputReader in(input);
     while (!endsWith(buffer.get(), end)) {
-        int c = in.get();
-        if (c < 0) {
+        char c = in.read();
+        if (in.failed()) {
             return;
         }
         buffer.reserve(1).data[0] = c;
@@ -34,11 +37,11 @@ TEST_MT_F("run dumpurl", 2, ServerSocket()) {
         Stream::UP stream = f1.accept();
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
-        BufferedOutput out(*stream, 256);
-        out.append("HTTP/1.1 200\r\n");
-        out.append("content-length: 4\r\n");
-        out.append("\r\n");
-        out.append("data");
+        OutputWriter out(*stream, 256);
+        out.write("HTTP/1.1 200\r\n");
+        out.write("content-length: 4\r\n");
+        out.write("\r\n");
+        out.write("data");
     } else {
         std::string out;
         EXPECT_TRUE(SlaveProc::run(strfmt("../../apps/dumpurl/vbench_dumpurl_app localhost %d /foo",

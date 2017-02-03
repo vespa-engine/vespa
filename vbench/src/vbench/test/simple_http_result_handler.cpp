@@ -6,6 +6,8 @@
 
 namespace vbench {
 
+using WritableMemory = vespalib::WritableMemory;
+
 SimpleHttpResultHandler::SimpleHttpResultHandler()
     : _headers(),
       _content(),
