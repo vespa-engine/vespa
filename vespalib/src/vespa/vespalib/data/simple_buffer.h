@@ -32,8 +32,6 @@ public:
     bool operator==(const SimpleBuffer &rhs) const { return (get() == rhs.get()); }
 };
 
-std::ostream &operator<<(std::ostream &os, const SimpleBuffer &buf) {
-    return os << buf.get();
-}
+std::ostream &operator<<(std::ostream &os, const SimpleBuffer &buf);
 
 } // namespace vespalib
