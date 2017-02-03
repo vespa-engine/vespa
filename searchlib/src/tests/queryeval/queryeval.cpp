@@ -8,17 +8,14 @@
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/nearsearch.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/ranksearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/sourceblendersearch.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 
