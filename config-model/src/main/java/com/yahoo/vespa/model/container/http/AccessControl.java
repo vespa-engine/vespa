@@ -7,6 +7,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.http.Http.Binding;
 
 import java.util.ArrayList;
 
@@ -31,8 +32,8 @@ public final class AccessControl {
         return ! unprotectedHandlers.contains(handler.getClassId().getName());
     }
 
-    public static Http.Binding accessControlBinding(String binding) {
-        return new Http.Binding(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding);
+    public static Binding accessControlBinding(String binding) {
+        return new Binding(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding);
     }
 
 }

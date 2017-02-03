@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
+import com.yahoo.vespa.model.container.http.Http.Binding;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -98,14 +99,14 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                    missingRequiredBindings.isEmpty());
 
         for (String forbiddenBinding : forbiddenBindings) {
-            for (Http.Binding binding : http.getBindings())
+            for (Binding binding : http.getBindings())
                 assertFalse("Access control chain was bound to: ",
                             binding.binding.contains(forbiddenBinding));
         }
     }
 
-    private boolean containsBinding(Collection<Http.Binding> bindings, String binding) {
-        for (Http.Binding b : bindings) {
+    private boolean containsBinding(Collection<Binding> bindings, String binding) {
+        for (Binding b : bindings) {
             if (b.binding.contains(binding))
                 return true;
         }
