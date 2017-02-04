@@ -9,10 +9,12 @@ import com.yahoo.osgi.provider.model.ComponentModel;
  * @author tonytv
  */
 public class FileStatusHandlerComponent extends Handler implements VipStatusConfig.Producer {
+    public static final String CLASS = "com.yahoo.container.handler.VipStatusHandler";
+
     private final String fileName;
 
     public FileStatusHandlerComponent(String id, String fileName, String... bindings) {
-        super(new ComponentModel(id, "com.yahoo.container.handler.VipStatusHandler", null, null));
+        super(new ComponentModel(id, CLASS, null, null));
 
         this.fileName = fileName;
         addServerBindings(bindings);

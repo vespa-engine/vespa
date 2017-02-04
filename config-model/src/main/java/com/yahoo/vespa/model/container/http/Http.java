@@ -13,8 +13,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-// This can be collapsed into JettyHttpServer now
 /**
+ * Represents the http servers and filters of a Jdisc cluster.
+ *
  * @author tonytv
  */
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
