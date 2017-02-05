@@ -1,20 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("getconfig");
 
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/config/config.h>
-#include <vespa/config/frt/protocol.h>
 #include <vespa/config/frt/frtconfigrequestfactory.h>
 #include <vespa/config/frt/frtconnection.h>
 #include <vespa/config/common/payload_converter.h>
-#include <vespa/config/common/vespa_version.h>
+#include <vespa/fastos/app.h>
+
 
 #include <string>
 #include <sstream>
 #include <fstream>
+
+#include <vespa/log/log.h>
+LOG_SETUP("getconfig");
 
 using namespace config;
 

@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "docsumwriter.h"
+#include "attributedfw.h"
+#include "docsumstate.h"
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include "docsumwriter.h"
-#include "attributedfw.h"
-#include "docsumstate.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>

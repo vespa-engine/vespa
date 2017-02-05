@@ -1,10 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchcommon/config/subscriptionproxyng.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+
 #include "juniperproperties.h"
+#include <vespa/searchcommon/config/subscriptionproxyng.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespa::config::search::summary::JuniperrcConfig;
+using vespalib::make_string;
 
 namespace search {
 namespace docsummary {
@@ -56,34 +57,34 @@ JuniperProperties::configure(const JuniperrcConfig &cfg)
 {
     reset();
     _properties["juniper.dynsum.fallback"]      = cfg.prefix ? "prefix" : "none";
-    _properties["juniper.dynsum.length"]        = vespalib::make_vespa_string("%d", cfg.length);
-    _properties["juniper.dynsum.max_matches"]   = vespalib::make_vespa_string("%d", cfg.maxMatches);
-    _properties["juniper.dynsum.min_length"]    = vespalib::make_vespa_string("%d", cfg.minLength);
-    _properties["juniper.dynsum.surround_max"]  = vespalib::make_vespa_string("%d", cfg.surroundMax);
-    _properties["juniper.matcher.winsize"]  = vespalib::make_vespa_string("%d", cfg.winsize);
-    _properties["juniper.matcher.winsize_fallback_multiplier"]  = vespalib::make_vespa_string("%f", cfg.winsizeFallbackMultiplier);
-    _properties["juniper.matcher.max_match_candidates"]  = vespalib::make_vespa_string("%d", cfg.maxMatchCandidates);
-    _properties["juniper.stem.min_length"]  = vespalib::make_vespa_string("%d", cfg.stemMinLength);
-    _properties["juniper.stem.max_extend"]  = vespalib::make_vespa_string("%d", cfg.stemMaxExtend);
+    _properties["juniper.dynsum.length"]        = make_string("%d", cfg.length);
+    _properties["juniper.dynsum.max_matches"]   = make_string("%d", cfg.maxMatches);
+    _properties["juniper.dynsum.min_length"]    = make_string("%d", cfg.minLength);
+    _properties["juniper.dynsum.surround_max"]  = make_string("%d", cfg.surroundMax);
+    _properties["juniper.matcher.winsize"]  = make_string("%d", cfg.winsize);
+    _properties["juniper.matcher.winsize_fallback_multiplier"]  = make_string("%f", cfg.winsizeFallbackMultiplier);
+    _properties["juniper.matcher.max_match_candidates"]  = make_string("%d", cfg.maxMatchCandidates);
+    _properties["juniper.stem.min_length"]  = make_string("%d", cfg.stemMinLength);
+    _properties["juniper.stem.max_extend"]  = make_string("%d", cfg.stemMaxExtend);
 
     for (uint32_t i = 0; i < cfg.override.size(); ++i) {
         const JuniperrcConfig::Override &override = cfg.override[i];
-        const vespalib::string keyDynsum = vespalib::make_vespa_string("%s.dynsum.", override.fieldname.c_str());
-        const vespalib::string keyMatcher = vespalib::make_vespa_string("%s.matcher.", override.fieldname.c_str());
-        const vespalib::string keyStem = vespalib::make_vespa_string("%s.stem.", override.fieldname.c_str());
+        const vespalib::string keyDynsum = make_string("%s.dynsum.", override.fieldname.c_str());
+        const vespalib::string keyMatcher = make_string("%s.matcher.", override.fieldname.c_str());
+        const vespalib::string keyStem = make_string("%s.stem.", override.fieldname.c_str());
 
         _properties[keyDynsum + "fallback"]           = override.prefix ? "prefix" : "none";
-        _properties[keyDynsum + "length"]             = vespalib::make_vespa_string("%d", override.length);
-        _properties[keyDynsum + "max_matches"]        = vespalib::make_vespa_string("%d", override.maxMatches);
-        _properties[keyDynsum + "min_length"]         = vespalib::make_vespa_string("%d", override.minLength);
-        _properties[keyDynsum + "surround_max"]       = vespalib::make_vespa_string("%d", override.surroundMax);
+        _properties[keyDynsum + "length"]             = make_string("%d", override.length);
+        _properties[keyDynsum + "max_matches"]        = make_string("%d", override.maxMatches);
+        _properties[keyDynsum + "min_length"]         = make_string("%d", override.minLength);
+        _properties[keyDynsum + "surround_max"]       = make_string("%d", override.surroundMax);
 
-        _properties[keyMatcher + "winsize"]                     = vespalib::make_vespa_string("%d", override.winsize);
-        _properties[keyMatcher + "winsize_fallback_multiplier"] = vespalib::make_vespa_string("%f", override.winsizeFallbackMultiplier);
-        _properties[keyMatcher + "max_match_candidates"] = vespalib::make_vespa_string("%d", override.maxMatchCandidates);
+        _properties[keyMatcher + "winsize"]                     = make_string("%d", override.winsize);
+        _properties[keyMatcher + "winsize_fallback_multiplier"] = make_string("%f", override.winsizeFallbackMultiplier);
+        _properties[keyMatcher + "max_match_candidates"] = make_string("%d", override.maxMatchCandidates);
 
-        _properties[keyStem + "min_length"] = vespalib::make_vespa_string("%d", override.stemMinLength);
-        _properties[keyStem + "max_extend"] = vespalib::make_vespa_string("%d", override.stemMaxExtend);
+        _properties[keyStem + "min_length"] = make_string("%d", override.stemMinLength);
+        _properties[keyStem + "max_extend"] = make_string("%d", override.stemMaxExtend);
     }
 }
 

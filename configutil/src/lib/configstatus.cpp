@@ -1,19 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-config-status");
-#include <iostream>
-
+#include "configstatus.h"
+#include "tags.h"
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>
 #include <vbench/http/http_client.h>
+#include <iostream>
 
-#include <lib/tags.h>
-
-#include "configstatus.h"
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-config-status");
 
 using configdefinitions::tagsContain;
 
