@@ -11,7 +11,6 @@
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/log/log.h>
 
-
 LOG_SETUP(".proton.matching.match_thread");
 
 namespace proton {
@@ -243,9 +242,13 @@ MatchThread::findMatches(MatchTools &matchTools)
 {
     RankProgram::UP ranking = matchTools.first_phase_program();
     SearchIterator::UP search = matchTools.createSearch(ranking->match_data());
-    LOG(debug, "SearchIterator: %s", search->asString().c_str());
+    if (isFirstThread()) {
+        LOG(spam, "SearchIterator: %s", search->asString().c_str());
+    }
     search = search::queryeval::MultiBitVectorIteratorBase::optimize(std::move(search));
-    LOG(debug, "SearchIterator after MultiBitVectorIteratorBase::optimize(): %s", search->asString().c_str());
+    if (isFirstThread()) {
+        LOG(debug, "SearchIterator after MultiBitVectorIteratorBase::optimize(): %s", search->asString().c_str());
+    }
     HitCollector hits(matchParams.numDocs, matchParams.arraySize, matchParams.heapSize);
     if (matchTools.has_first_phase_rank() && ((matchParams.arraySize + matchParams.heapSize) != 0)) {
         match_loop_helper<SearchIterator::UP, true>(matchTools, std::move(search), *ranking, hits);

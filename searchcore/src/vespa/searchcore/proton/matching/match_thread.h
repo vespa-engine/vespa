@@ -92,6 +92,8 @@ private:
     search::ResultSet::UP findMatches(MatchTools &matchTools);
 
     void processResult(const Doom & hardDoom, search::ResultSet::UP result, ResultProcessor::Context &context);
+
+    bool isFirstThread() const { return thread_id == 0; }
 public:
     MatchThread(size_t thread_id_in,
                 size_t num_threads_in,
