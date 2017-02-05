@@ -32,8 +32,8 @@ public:
         }
     }
 
-    uint32_t getKey(void) const { return _cur->_key; }
-    inline int32_t getData(void) const { return _cur->getData(); }
+    uint32_t getKey() const { return _cur->_key; }
+    inline int32_t getData() const { return _cur->getData(); }
 
     void set(const P *begin, const P *end) {
         _cur = begin;
@@ -83,7 +83,7 @@ public:
     { }
     
     inline btree::MinMaxAggregated
-    getAggregated(void) const {
+    getAggregated() const {
         return btree::MinMaxAggregated(1, 1);
     }
 };

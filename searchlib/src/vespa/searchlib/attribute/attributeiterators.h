@@ -277,6 +277,10 @@ class FilterAttributePostingListIteratorT
 {
 private:
     PL                                     _iterator;
+public:
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
+
+private:
     queryeval::MinMaxPostingInfo           _postingInfo;
     bool                                   _postingInfoValid;
 
@@ -300,8 +304,7 @@ private:
 
 public:
     // Note: iterator constructor argument is destroyed
-    FilterAttributePostingListIteratorT(PL &iterator,
-                                        fef::TermFieldMatchData *matchData);
+    FilterAttributePostingListIteratorT(PL &iterator, fef::TermFieldMatchData *matchData);
 };
 
 
@@ -405,8 +408,7 @@ AttributePostingListIteratorT(PL &iterator,
 
 template <typename PL>
 FilterAttributePostingListIteratorT<PL>::
-FilterAttributePostingListIteratorT(PL &iterator,
-                              fef::TermFieldMatchData *matchData)
+FilterAttributePostingListIteratorT(PL &iterator, fef::TermFieldMatchData *matchData)
     : FilterAttributePostingListIterator(matchData),
       _iterator(),
       _postingInfo(1, 1),
@@ -416,6 +418,7 @@ FilterAttributePostingListIteratorT(PL &iterator,
     setupPostingInfo();
     _matchPosition->setElementWeight(1);
 }
+
 
 /**
  * This class acts as an iterator over a flag attribute.

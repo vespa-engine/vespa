@@ -23,6 +23,16 @@ AttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
 }
 
 template <typename PL>
+std::unique_ptr<BitVector>
+FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
+    BitVector::UP result(BitVector::create(begin_id, getEndId()));
+    for (; _iterator.getKey() < getEndId(); ++_iterator) {
+        result->setBit(_iterator.getKey());
+    }
+    return result;
+}
+
+template <typename PL>
 void
 FilterAttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
 {
