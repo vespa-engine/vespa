@@ -2,16 +2,16 @@
 
 #pragma once
 
-#include "dociditerator.h"
-#include "attributevector.h"
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/btree/btreenode.h>
 #include <vespa/searchlib/btree/btreeiterator.h>
-#include <vespa/vespalib/objects/visit.h>
 
 namespace search {
+
+namespace fef {
+    class TermFieldMatchData;
+    class TermFieldMatchDataPosition;
+}
 
 /**
  * Abstract superclass for all attribute iterators with convenience function
@@ -58,12 +58,7 @@ protected:
 class FilterAttributeIterator : public AttributeIteratorBase
 {
 public:
-    FilterAttributeIterator(fef::TermFieldMatchData * matchData, uint32_t docIdLimit)
-        : AttributeIteratorBase(matchData),
-          _docIdLimit(docIdLimit)
-    {
-        _matchPosition->setElementWeight(1);
-    }
+    FilterAttributeIterator(fef::TermFieldMatchData * matchData, uint32_t docIdLimit);
 protected:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doUnpack(uint32_t docId) override;
@@ -146,55 +141,6 @@ public:
     { }
 };
 
-
-template <typename SC>
-void
-AttributeIteratorT<SC>::doSeek(uint32_t docId)
-{
-    if (__builtin_expect(docId >= _docIdLimit, false)) {
-        setAtEnd();
-    } else if (_searchContext.cmp(docId, _weight)) {
-        setDocId(docId);
-    }
-}
-
-template <typename SC>
-void
-FilterAttributeIteratorT<SC>::doSeek(uint32_t docId)
-{
-    if (__builtin_expect(docId >= _docIdLimit, false)) {
-        setAtEnd();
-    } else if (_searchContext.cmp(docId)) {
-        setDocId(docId);
-    }
-}
-
-template <typename SC>
-void
-AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
-{
-    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
-        if (_searchContext.cmp(nextId, _weight)) {
-            setDocId(nextId);
-            return;
-        }
-    }
-    setAtEnd();
-}
-
-template <typename SC>
-void
-FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
-{
-    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
-        if (_searchContext.cmp(nextId)) {
-            setDocId(nextId);
-            return;
-        }
-    }
-    setAtEnd();
-}
-
 /**
  * This class acts as an iterator over documents that are results for
  * the subquery represented by the search context object associated
@@ -254,20 +200,11 @@ private:
         return _postingInfoValid ? &_postingInfo : NULL;
     }
 
-    void initRange(uint32_t begin, uint32_t end) override {
-        AttributePostingListIterator::initRange(begin, end);
-        _iterator.lower_bound(begin);
-        if (!_iterator.valid() || isAtEnd(_iterator.getKey())) {
-            setAtEnd();
-        } else {
-            setDocId(_iterator.getKey());
-        }
-    }
+    void initRange(uint32_t begin, uint32_t end) override;
 
 public:
     // Note: iterator constructor argument is destroyed
-    AttributePostingListIteratorT(PL &iterator,
-                                  bool hasWeight,
+    AttributePostingListIteratorT(PL &iterator, bool hasWeight,
                                   fef::TermFieldMatchData *matchData);
 };
 
@@ -291,16 +228,8 @@ private:
     const queryeval::PostingInfo * getPostingInfo() const override {
         return _postingInfoValid ? &_postingInfo : NULL;
     }
-    
-    void initRange(uint32_t begin, uint32_t end) override {
-        FilterAttributePostingListIterator::initRange(begin, end);
-        _iterator.lower_bound(begin);
-        if (!_iterator.valid() || isAtEnd(_iterator.getKey())) {
-            setAtEnd();
-        } else {
-            setDocId(_iterator.getKey());
-        }
-    }
+
+    void initRange(uint32_t begin, uint32_t end) override;
 
 public:
     // Note: iterator constructor argument is destroyed
@@ -320,105 +249,6 @@ getWeight()
 {
     return 1;	// default weight 1 for single value attributes
 }
-
-template <>
-void
-AttributePostingListIteratorT<btree::
-BTreeConstIterator<uint32_t,
-                   btree::BTreeNoLeafData,
-                   btree::NoAggregated,
-                   std::less<uint32_t>,
-                   btree::BTreeDefaultTraits> >::
-doUnpack(uint32_t docId);
-
-
-template <>
-void
-AttributePostingListIteratorT<btree::
-BTreeConstIterator<uint32_t,
-                   int32_t,
-                   btree::MinMaxAggregated,
-                   std::less<uint32_t>,
-                   btree::BTreeDefaultTraits> >::
-doUnpack(uint32_t docId);
-
-
-template <>
-void
-AttributePostingListIteratorT<InnerAttributePostingListIterator>::
-setupPostingInfo();
-
-
-template <>
-void
-AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
-setupPostingInfo();
-
-
-template <>
-void
-AttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::
-setupPostingInfo();
-
-
-template <>
-void
-AttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::
-setupPostingInfo();
-
-
-template <>
-void
-FilterAttributePostingListIteratorT<InnerAttributePostingListIterator>::
-setupPostingInfo();
-
-
-template <>
-void
-FilterAttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
-setupPostingInfo();
-
-
-template <>
-void
-FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::
-setupPostingInfo();
-
-
-template <>
-void
-FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::
-setupPostingInfo();
-
-
-template <typename PL>
-AttributePostingListIteratorT<PL>::
-AttributePostingListIteratorT(PL &iterator,
-                              bool hasWeight,
-                              fef::TermFieldMatchData *matchData)
-    : AttributePostingListIterator(hasWeight, matchData),
-      _iterator(),
-      _postingInfo(1, 1),
-      _postingInfoValid(false)
-{
-    _iterator.swap(iterator);
-    setupPostingInfo();
-}
-
-
-template <typename PL>
-FilterAttributePostingListIteratorT<PL>::
-FilterAttributePostingListIteratorT(PL &iterator, fef::TermFieldMatchData *matchData)
-    : FilterAttributePostingListIterator(matchData),
-      _iterator(),
-      _postingInfo(1, 1),
-      _postingInfoValid(false)
-{
-    _iterator.swap(iterator);
-    setupPostingInfo();
-    _matchPosition->setElementWeight(1);
-}
-
 
 /**
  * This class acts as an iterator over a flag attribute.

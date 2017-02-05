@@ -4,10 +4,7 @@
 
 #include "integerbase.h"
 #include "floatbase.h"
-#include "attributeiterators.hpp"
 #include <vespa/searchlib/common/rcuvector.h>
-#include <vespa/searchlib/query/query.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <limits>
 
 namespace search {
@@ -81,7 +78,7 @@ public:
         bool valid() const override;
 
     public:
-        SingleSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched);
+        SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
 
         bool cmp(DocId docId, int32_t & weight) const {
             const Word &word = _wordData[docId >> _wordShift];
@@ -128,7 +125,7 @@ public:
     bool onLoad() override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
 
-    SearchContext::UP getSearch(QueryTermSimple::UP term, const SearchContext::Params & params) const override;
+    SearchContext::UP getSearch(std::unique_ptr<QueryTermSimple> term, const SearchContext::Params & params) const override;
 
     T getFast(DocId doc) const {
         const Word &word = _wordData[doc >> _wordShift];

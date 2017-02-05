@@ -7,6 +7,7 @@
 #include "load_utils.h"
 #include "primitivereader.h"
 #include "attributeiterators.hpp"
+#include <vespa/searchlib/queryeval/emptysearch.h>
 
 namespace search {
 
@@ -223,8 +224,8 @@ SingleValueNumericAttribute<B>::SingleSearchContext<M>::getAsIntegerTerm() const
 template <typename B>
 template <typename M>
 std::unique_ptr<queryeval::SearchIterator>
-SingleValueNumericAttribute<B>::SingleSearchContext<M>::createFilterIterator(fef::TermFieldMatchData * matchData,
-                                                                             bool strict)
+SingleValueNumericAttribute<B>::SingleSearchContext<M>::
+createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
         return queryeval::SearchIterator::UP(new queryeval::EmptySearch());

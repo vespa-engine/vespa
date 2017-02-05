@@ -5,10 +5,63 @@
 #include "attributeiterators.h"
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/objects/visit.h>
 
 namespace search {
+
+template <typename PL>
+AttributePostingListIteratorT<PL>::
+AttributePostingListIteratorT(PL &iterator,
+                              bool hasWeight,
+                              fef::TermFieldMatchData *matchData)
+    : AttributePostingListIterator(hasWeight, matchData),
+      _iterator(),
+      _postingInfo(1, 1),
+      _postingInfoValid(false)
+{
+    _iterator.swap(iterator);
+    setupPostingInfo();
+}
+
+template <typename PL>
+void AttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) {
+    AttributePostingListIterator::initRange(begin, end);
+    _iterator.lower_bound(begin);
+    if (!_iterator.valid() || isAtEnd(_iterator.getKey())) {
+        setAtEnd();
+    } else {
+        setDocId(_iterator.getKey());
+    }
+}
+
+
+template <typename PL>
+FilterAttributePostingListIteratorT<PL>::
+FilterAttributePostingListIteratorT(PL &iterator, fef::TermFieldMatchData *matchData)
+    : FilterAttributePostingListIterator(matchData),
+      _iterator(),
+      _postingInfo(1, 1),
+      _postingInfoValid(false)
+{
+    _iterator.swap(iterator);
+    setupPostingInfo();
+    _matchPosition->setElementWeight(1);
+}
+
+template <typename PL>
+void  FilterAttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) {
+    FilterAttributePostingListIterator::initRange(begin, end);
+    _iterator.lower_bound(begin);
+    if (!_iterator.valid() || isAtEnd(_iterator.getKey())) {
+        setAtEnd();
+    } else {
+        setDocId(_iterator.getKey());
+    }
+}
 
 template <typename PL>
 void
@@ -144,5 +197,52 @@ FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
     }
 }
 
+template <typename SC>
+void
+AttributeIteratorT<SC>::doSeek(uint32_t docId)
+{
+    if (__builtin_expect(docId >= _docIdLimit, false)) {
+        setAtEnd();
+    } else if (_searchContext.cmp(docId, _weight)) {
+        setDocId(docId);
+    }
+}
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::doSeek(uint32_t docId)
+{
+    if (__builtin_expect(docId >= _docIdLimit, false)) {
+        setAtEnd();
+    } else if (_searchContext.cmp(docId)) {
+        setDocId(docId);
+    }
+}
+
+template <typename SC>
+void
+AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
+{
+    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
+        if (_searchContext.cmp(nextId, _weight)) {
+            setDocId(nextId);
+            return;
+        }
+    }
+    setAtEnd();
+}
+
+template <typename SC>
+void
+FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
+{
+    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
+        if (_searchContext.cmp(nextId)) {
+            setDocId(nextId);
+            return;
+        }
+    }
+    setAtEnd();
+}
 
 } // namespace search

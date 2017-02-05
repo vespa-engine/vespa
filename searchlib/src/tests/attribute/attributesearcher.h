@@ -8,6 +8,7 @@
 #include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/searchlib/parsequery/parse.h>
 
 namespace search {
 

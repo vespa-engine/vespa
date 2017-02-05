@@ -4,8 +4,6 @@
 
 #include "singleenumattribute.h"
 #include "numericbase.h"
-#include "attributeiterators.h"
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <map>
 
 namespace search {
