@@ -11,7 +11,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import org.glassfish.jersey.jaxb.internal.XmlCollectionJaxbProvider;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -145,24 +144,16 @@ public class AclProvisioningTest {
         List<Node> activeProxyNodes = allocateNodes(NodeType.proxy, applicationId);
         assertEquals(3, activeProxyNodes.size());
         // Allocate 2 Docker hosts, a total of 5 hosts
-        List<Node> activeDockerHosts = allocateNodes(NodeType.host, applicationId);
-        assertEquals(5, activeDockerHosts.size());
+        List<Node> activeDockerHostsAndProxyNodes = allocateNodes(NodeType.host, applicationId);
+        assertEquals(5, activeDockerHostsAndProxyNodes.size());
 
-        // Get trusted nodes for first proxy node
-        Node proxyNode = activeProxyNodes.get(0);
-        List<NodeAcl> proxyNodeAcls = tester.nodeRepository().getNodeAcls(proxyNode, false);
-
-        // Trusted nodes are all Docker hosts, all proxy nodes and all config servers
-        assertAcls(Arrays.asList(activeDockerHosts, activeProxyNodes, configServers), proxyNodeAcls);
-
-        // Get trusted nodes for first Docker host
-        Node dockerHost = activeDockerHosts.get(0);
-        List<NodeAcl> dockerHostNodeAcls = tester.nodeRepository().getNodeAcls(dockerHost, false);
-
-        // Trusted nodes are all Docker hosts, all proxy nodes and all config servers
-        assertAcls(Arrays.asList(activeDockerHosts, activeProxyNodes, configServers), dockerHostNodeAcls);
+        // Check trusted nodes for all nodes
+        activeDockerHostsAndProxyNodes.forEach(node -> {
+            System.out.println("Checking node " + node);
+            List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
+            assertAcls(Arrays.asList(activeDockerHostsAndProxyNodes, configServers), nodeAcls);
+        });
     }
-
 
     @Test
     public void trusted_nodes_for_child_nodes_of_docker_host() {
