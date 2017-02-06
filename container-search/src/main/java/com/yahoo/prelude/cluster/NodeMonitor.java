@@ -15,6 +15,7 @@ import com.yahoo.search.result.ErrorMessage;
  * <ul>
  * <li>A node is taken out of operation if it gives no response in 10 s</li>
  * <li>A node is put back in operation when it responds correctly again</li>
+ * <li>A node is initially considered not in operation until we have some data from it</li>
  * </ul>
  *
  * @author bratseth
@@ -27,13 +28,13 @@ public class NodeMonitor {
     /** The object representing the monitored node */
     private final VespaBackEndSearcher node;
 
-    private boolean isWorking = true;
+    private boolean isWorking = false;
 
     /** The last time this node responded successfully */
     private long succeededAt = 0;
 
     /** Whether it is assumed the node has documents available to serve */
-    private boolean searchNodesOnline = true;
+    private boolean searchNodesOnline = false;
 
     /**
      * Creates a new node monitor for a node
@@ -66,7 +67,8 @@ public class NodeMonitor {
         long respondedAt = System.currentTimeMillis();
 
         if (error.getCode() == BACKEND_COMMUNICATION_ERROR.code 
-            || error.getCode() == NO_ANSWER_WHEN_PINGING_NODE.code) {
+            || error.getCode() == NO_ANSWER_WHEN_PINGING_NODE.code)
+        {
             // Only count not being able to talk to backend at all
             // as errors we care about
             if ((respondedAt - succeededAt) > 10000) {
@@ -83,26 +85,19 @@ public class NodeMonitor {
     public void responded(boolean searchNodesOnline) {
         succeededAt = System.currentTimeMillis();
         this.searchNodesOnline = searchNodesOnline;
-        atStartUp = false;
-
-        if ( ! isWorking)
+        if (! isWorking)
             setWorking(true, "Responds correctly");
+        atStartUp = false;
     }
 
     /** Changes the state of this node if required */
     private void setWorking(boolean working, String explanation) {
         if (isWorking == working) return; // Old news
 
-        String explanationToLog;
-        if (explanation == null)
-            explanationToLog = "";
-        else
-            explanationToLog = ": " + explanation;
-
-        if (working)
-            log.info("Putting " + node + " in service" + explanationToLog);
-        else if ( ! atStartUp)
-            log.info("Taking " + node + " out of service" + explanationToLog);
+        if (working && ! atStartUp)
+            log.info("Putting " + node + " in service:" + explanation);
+        else if (! atStartUp)
+            log.info("Taking " + node + " out of service:" + explanation);
 
         isWorking = working;
     }
