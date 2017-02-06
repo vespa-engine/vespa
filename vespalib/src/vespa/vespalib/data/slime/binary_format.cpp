@@ -246,7 +246,8 @@ size_t decode(const Memory &memory, Slime &slime, const Inserter &inserter) {
 void
 BinaryFormat::encode(const Slime &slime, Output &output)
 {
-    OutputWriter out(output, 8000);
+    size_t chunk_size = 8000;
+    OutputWriter out(output, chunk_size);
     binary_format::BinaryEncoder encoder(out);
     encoder.encodeSymbolTable(slime);
     encoder.encodeValue(slime.get());

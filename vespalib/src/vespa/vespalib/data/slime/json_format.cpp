@@ -468,7 +468,8 @@ insertNumber(Inserter &inserter, bool isLong, const vespalib::string & value, ch
 void
 JsonFormat::encode(const Inspector &inspector, Output &output, bool compact)
 {
-    OutputWriter out(output, 8000);
+    size_t chunk_size = 8000;
+    OutputWriter out(output, chunk_size);
     if (compact) {
         JsonEncoder<true>::encode(inspector, out);
     } else {
