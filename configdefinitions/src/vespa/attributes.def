@@ -2,7 +2,7 @@
 namespace=vespa.config.search
 
 attribute[].name                string
-attribute[].datatype            enum { STRING, UINT1, UINT2, UINT4, INT8, INT16, INT32, INT64, FLOAT, DOUBLE, PREDICATE, TENSOR, NONE } default=NONE
+attribute[].datatype            enum { STRING, UINT1, UINT2, UINT4, INT8, INT16, INT32, INT64, FLOAT, DOUBLE, PREDICATE, TENSOR, REFERENCE, NONE } default=NONE
 attribute[].collectiontype      enum { SINGLE, ARRAY, WEIGHTEDSET } default=SINGLE
 attribute[].removeifzero        bool default=false
 attribute[].createifnonexistent bool default=false
