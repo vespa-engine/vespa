@@ -97,6 +97,8 @@ public class ReferenceFieldValue extends FieldValue {
     public void assign(Object o) {
         if (o == null) {
             clear();
+        } else if (o instanceof ReferenceFieldValue) {
+            assignFromFieldValue((ReferenceFieldValue) o);
         } else if (o instanceof DocumentId) {
             setDocumentId((DocumentId) o);
         } else {
@@ -104,6 +106,15 @@ public class ReferenceFieldValue extends FieldValue {
                     "Can't assign value of type '%s' to field of type '%s'. Expected value of type '%s'",
                     o.getClass().getName(), getClass().getName(), DocumentId.class.getName()));
         }
+    }
+
+    private void assignFromFieldValue(ReferenceFieldValue rhs) {
+        if (!getDataType().equals(rhs.getDataType())) {
+            throw new IllegalArgumentException(String.format(
+                    "Can't assign reference of type %s to reference of type %s",
+                    rhs.getDataType().getName(), getDataType().getName()));
+        }
+        rhs.getDocumentId().ifPresent(this::setDocumentId);
     }
 
     @Override

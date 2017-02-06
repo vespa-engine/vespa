@@ -6,7 +6,9 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,6 +20,9 @@ import static org.junit.Assert.assertTrue;
  * @since 6.65
  */
 public class ReferenceFieldValueTestCase {
+
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static DocumentType createDocumentType(String name) {
         DocumentType type = new DocumentType(name);
@@ -97,6 +102,33 @@ public class ReferenceFieldValueTestCase {
     public void assigning_non_reference_field_value_instance_throws_exception() {
         ReferenceFieldValue value = new ReferenceFieldValue(referenceTypeFoo());
         value.assign("nope!");
+    }
+
+    @Test
+    public void can_assign_empty_reference_field_value_instance_to_existing_reference() {
+        ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
+        ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeFoo());
+        // Logically a no-op, but still worth testing.
+        existing.assign(newValue);
+        assertEquals(newValue, existing);
+    }
+
+    @Test
+    public void can_assign_reference_field_value_instance_with_id_to_existing_reference() {
+        ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
+        ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad"));
+        existing.assign(newValue);
+        assertEquals(newValue, existing);
+    }
+
+    @Test
+    public void assigning_reference_field_with_different_type_to_existing_reference_throws_exception() {
+        ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
+        ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeBar());
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Can't assign reference of type Reference<bar> " +
+                "to reference of type Reference<foo>");
+        existing.assign(newValue);
     }
 
     @Test
