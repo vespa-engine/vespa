@@ -134,7 +134,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_docker_hosts_and_proxy_nodes_in_zone_application() {
-        ApplicationId applicationId = tester.makeApplicationId(); // use same id for bot allocate calls below
+        ApplicationId applicationId = tester.makeApplicationId(); // use same id for both allocate calls below
         List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
 
         // Populate repo
@@ -144,7 +144,7 @@ public class AclProvisioningTest {
         // Allocate 3 proxy nodes
         List<Node> activeProxyNodes = allocateNodes(NodeType.proxy, applicationId);
         assertEquals(3, activeProxyNodes.size());
-        // Allocate 2 Docker hosts, total of 5 hosts
+        // Allocate 2 Docker hosts, a total of 5 hosts
         List<Node> activeDockerHosts = allocateNodes(NodeType.host, applicationId);
         assertEquals(5, activeDockerHosts.size());
 
@@ -152,14 +152,14 @@ public class AclProvisioningTest {
         Node proxyNode = activeProxyNodes.get(0);
         List<NodeAcl> proxyNodeAcls = tester.nodeRepository().getNodeAcls(proxyNode, false);
 
-        // Trusted nodes is all config servers and all proxy nodes
+        // Trusted nodes are all Docker hosts, all proxy nodes and all config servers
         assertAcls(Arrays.asList(activeDockerHosts, activeProxyNodes, configServers), proxyNodeAcls);
 
         // Get trusted nodes for first Docker host
         Node dockerHost = activeDockerHosts.get(0);
         List<NodeAcl> dockerHostNodeAcls = tester.nodeRepository().getNodeAcls(dockerHost, false);
 
-        // Trusted nodes is all config servers and all proxy nodes
+        // Trusted nodes are all Docker hosts, all proxy nodes and all config servers
         assertAcls(Arrays.asList(activeDockerHosts, activeProxyNodes, configServers), dockerHostNodeAcls);
     }
 
