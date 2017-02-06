@@ -11,7 +11,9 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 import org.junit.Test;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -48,7 +50,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_filter_chain_is_set_up() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<jdisc version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='foo' />",
@@ -56,18 +58,14 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>",
                 "</jdisc>");
 
-        createModel(root, clusterElem);
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
-        Http http = cluster.getHttp();
-        assertNotNull(http);
-
+        Http http = getHttp(clusterElem);
         assertTrue(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
     }
 
     @Test
     public void access_control_filter_chain_has_correct_handler_bindings() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<jdisc version='1.0'>",
                 "  <search/>",
                 "  <document-api/>",
                 "  <handler id='custom.Handler'>",
@@ -80,10 +78,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>",
                 "</jdisc>");
 
-        createModel(root, clusterElem);
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
-        Http http = cluster.getHttp();
-        assertNotNull(http);
+        Http http = getHttp(clusterElem);
 
         Set<String> foundRequiredBindings = REQUIRED_BINDINGS.stream()
                 .filter(requiredBinding -> containsBinding(http.getBindings(), requiredBinding))
@@ -103,7 +98,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         final String notExcludedBinding = "http://*/custom-handler/*";
         final String excludedBinding = "http://*/excluded/*";
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<jdisc version='1.0'>",
                 "  <handler id='custom.Handler'>",
                 "    <binding>" + notExcludedBinding + "</binding>",
                 "    <binding>" + excludedBinding + "</binding>",
@@ -119,16 +114,20 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>",
                 "</jdisc>");
 
-        createModel(root, clusterElem);
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
-        Http http = cluster.getHttp();
-        assertNotNull(http);
-
+        Http http = getHttp(clusterElem);
         assertFalse("Excluded binding was not removed.",
                     containsBinding(http.getBindings(), excludedBinding));
         assertFalse("Not all bindings of an excluded handler was removed.",
                     containsBinding(http.getBindings(), notExcludedBinding));
 
+    }
+
+    private Http getHttp(Element clusterElem) throws SAXException, IOException {
+        createModel(root, clusterElem);
+        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("jdisc");
+        Http http = cluster.getHttp();
+        assertNotNull(http);
+        return http;
     }
 
     private boolean containsBinding(Collection<Binding> bindings, String binding) {
