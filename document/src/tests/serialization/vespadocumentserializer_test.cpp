@@ -100,9 +100,9 @@ DocumenttypesConfig getDocTypesConfig() {
                      Struct("my_type.body")
                      .addField(predicate_field_name, DataType::T_PREDICATE));
     builder.document(doc_with_ref_type_id, doc_with_ref_name,
-                     Struct(doc_with_ref_name + ".header"),
-                     Struct(doc_with_ref_name + ".body")
-                     .addField(ref_field_name, ref_type_id))
+                     Struct(doc_with_ref_name + ".header")
+                     .addField(ref_field_name, ref_type_id),
+                     Struct(doc_with_ref_name + ".body"))
         .referenceType(ref_type_id, doc_type_id);
     return builder.config();
 }
@@ -879,7 +879,8 @@ TEST("Require that tensor deserialization matches Java") {
 }
 
 struct RefFixture {
-    FixedTypeRepo fixed_repo{doc_repo, *doc_repo.getDocumentType(doc_with_ref_type_id)};
+    const DocumentType* ref_doc_type{doc_repo.getDocumentType(doc_with_ref_type_id)};
+    FixedTypeRepo fixed_repo{doc_repo, *ref_doc_type};
 
     const ReferenceDataType& ref_type() const {
         auto* raw_type = fixed_repo.getDataType(ref_type_id);
@@ -894,6 +895,19 @@ struct RefFixture {
 
         VespaDocumentDeserializer deserializer(fixed_repo, stream, serialization_version);
         deserializer.read(dest);
+    }
+
+    void verify_cross_language_serialization(const string& file_base_name,
+                                             const ReferenceFieldValue& value) {
+        const string data_dir = TEST_PATH("../../test/resources/reference/");
+        const string field_name = "ref_field";
+        serializeToFile(value, data_dir + file_base_name + "__cpp",
+                        ref_doc_type, field_name);
+
+        deserializeAndCheck(data_dir + file_base_name + "__cpp",
+                            value, fixed_repo, field_name);
+        deserializeAndCheck(data_dir + file_base_name + "__java",
+                            value, fixed_repo, field_name);
     }
 };
 
@@ -925,6 +939,17 @@ TEST_F("ReferenceFieldValue with ID has changed-flag cleared after deserializati
     f.roundtrip_serialize(src, dest);
 
     EXPECT_FALSE(dest.hasChanged());
+}
+
+TEST_F("Empty ReferenceFieldValue serialization matches Java", RefFixture) {
+    ReferenceFieldValue value(f.ref_type());
+    f.verify_cross_language_serialization("empty_reference", value);
+}
+
+TEST_F("ReferenceFieldValue with ID serialization matches Java", RefFixture) {
+    ReferenceFieldValue value(
+            f.ref_type(), DocumentId("id:ns:" + doc_name + "::bar"));
+    f.verify_cross_language_serialization("reference_with_id", value);
 }
 
 }  // namespace
