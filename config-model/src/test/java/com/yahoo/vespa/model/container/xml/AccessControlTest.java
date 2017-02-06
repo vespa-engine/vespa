@@ -49,11 +49,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     public void access_control_filter_chain_is_set_up() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
-                "  <search/>",
-                "  <document-api/>",
-                "  <handler id='custom.Handler'>",
-                "    <binding>http://*/custom-handler/*</binding>",
-                "  </handler>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='foo' />",
