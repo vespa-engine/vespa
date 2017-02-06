@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Helper class for http access control.
@@ -28,8 +29,15 @@ public final class AccessControl {
             ContainerCluster.STATISTICS_HANDLER_CLASS
     );
 
-    public static boolean shouldHandlerBeProtected(Handler<?> handler) {
-        return ! UNPROTECTED_HANDLERS.contains(handler.getClassId().getName());
+    private final Set<String> excludedBindings;
+
+    public AccessControl(Set<String> excludedBindings) {
+        this.excludedBindings = excludedBindings;
+    }
+
+    public boolean shouldHandlerBeProtected(Handler<?> handler) {
+        return ! UNPROTECTED_HANDLERS.contains(handler.getClassId().getName())
+                && handler.getServerBindings().stream().noneMatch(excludedBindings::contains);
     }
 
     public static Binding accessControlBinding(String binding) {
