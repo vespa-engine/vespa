@@ -151,10 +151,12 @@ public class NodeRepository extends AbstractComponent {
     private List<Node> getTrustedNodes(Node node) {
         final List<Node> trustedNodes = new ArrayList<>();
 
+        // For all cases below: Trust nodes in same application (if node is part of an application)
+        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+
         switch (node.type()) {
             case tenant:
                 // Tenant nodes trust nodes in same application and all infrastructure nodes
-                node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
                 trustedNodes.addAll(getNodes(NodeType.proxy));
                 trustedNodes.addAll(getConfigNodes());
                 break;
@@ -166,16 +168,18 @@ public class NodeRepository extends AbstractComponent {
                 break;
 
             case proxy:
-                // Proxy nodes only trust config servers and other proxy nodes. They also trust any traffic to ports
+                // Proxy nodes trust nodes in same application and config servers. They also trust any traffic to ports
                 // 4080/4443, but these static rules are configured by the node itself
                 trustedNodes.addAll(getConfigNodes());
-                trustedNodes.addAll(getNodes(NodeType.proxy));
+                if ( ! node.allocation().isPresent()) // TODO: Remove when proxy nodes are in zone app everywhere
+                    trustedNodes.addAll(getNodes(NodeType.proxy));
                 break;
 
             case host:
-                // Docker hosts trust all config servers and all Docker hosts
+                // Docker hosts trust nodes in same application and config servers
                 trustedNodes.addAll(getConfigNodes());
-                trustedNodes.addAll(getNodes(NodeType.host));
+                if ( ! node.allocation().isPresent()) // TODO: Remove when Docker hosts are in zone app everywhere
+                    trustedNodes.addAll(getNodes(NodeType.host));
                 break;
 
             default:

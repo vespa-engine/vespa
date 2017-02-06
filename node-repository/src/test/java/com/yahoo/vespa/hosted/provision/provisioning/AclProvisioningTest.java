@@ -130,6 +130,31 @@ public class AclProvisioningTest {
         assertAcls(Arrays.asList(dockerHostNodes, configServers), acls.get(0));
     }
 
+
+    @Test
+    public void trusted_nodes_for_docker_hosts_and_proxy_nodes_in_zone_application() {
+        ApplicationId applicationId = tester.makeApplicationId(); // use same id for both allocate calls below
+        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+
+        // Populate repo
+        tester.makeReadyNodes(3, "default", NodeType.proxy);
+        tester.makeReadyNodes(2, "default", NodeType.host);
+
+        // Allocate 3 proxy nodes
+        List<Node> activeProxyNodes = allocateNodes(NodeType.proxy, applicationId);
+        assertEquals(3, activeProxyNodes.size());
+        // Allocate 2 Docker hosts, a total of 5 hosts
+        List<Node> activeDockerHostsAndProxyNodes = allocateNodes(NodeType.host, applicationId);
+        assertEquals(5, activeDockerHostsAndProxyNodes.size());
+
+        // Check trusted nodes for all nodes
+        activeDockerHostsAndProxyNodes.forEach(node -> {
+            System.out.println("Checking node " + node);
+            List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
+            assertAcls(Arrays.asList(activeDockerHostsAndProxyNodes, configServers), nodeAcls);
+        });
+    }
+
     @Test
     public void trusted_nodes_for_child_nodes_of_docker_host() {
         List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
@@ -173,10 +198,17 @@ public class AclProvisioningTest {
     }
 
     private List<Node> allocateNodes(int nodeCount) {
-        ApplicationId applicationId = tester.makeApplicationId();
+        return allocateNodes(Capacity.fromNodeCount(nodeCount), tester.makeApplicationId());
+    }
+
+    private List<Node> allocateNodes(NodeType nodeType, ApplicationId applicationId) {
+        return allocateNodes(Capacity.fromRequiredNodeType(nodeType), applicationId);
+    }
+
+    private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                Optional.empty());
-        List<HostSpec> prepared = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(nodeCount), 1);
+                                                  Optional.empty());
+        List<HostSpec> prepared = tester.prepare(applicationId, cluster, capacity, 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         return tester.getNodes(applicationId, Node.State.active).asList();
     }
