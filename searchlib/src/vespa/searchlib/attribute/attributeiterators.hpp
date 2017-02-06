@@ -15,8 +15,7 @@ namespace search {
 
 template <typename PL>
 AttributePostingListIteratorT<PL>::
-AttributePostingListIteratorT(PL &iterator,
-                              bool hasWeight,
+AttributePostingListIteratorT(PL &iterator, bool hasWeight,
                               fef::TermFieldMatchData *matchData)
     : AttributePostingListIterator(hasWeight, matchData),
       _iterator(),
@@ -77,9 +76,19 @@ AttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
 
 template <typename PL>
 std::unique_ptr<BitVector>
+AttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
+    BitVector::UP result(BitVector::create(begin_id, getEndId()));
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+        result->setBit(_iterator.getKey());
+    }
+    return result;
+}
+
+template <typename PL>
+std::unique_ptr<BitVector>
 FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     BitVector::UP result(BitVector::create(begin_id, getEndId()));
-    for (; _iterator.getKey() < getEndId(); ++_iterator) {
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
         result->setBit(_iterator.getKey());
     }
     return result;

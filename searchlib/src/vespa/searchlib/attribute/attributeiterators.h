@@ -46,8 +46,7 @@ public:
         : AttributeIteratorBase(matchData),
           _docIdLimit(docIdLimit),
           _weight(1)
-    {
-    }
+    { }
 protected:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doUnpack(uint32_t docId) override;
@@ -201,6 +200,7 @@ private:
     }
 
     void initRange(uint32_t begin, uint32_t end) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 public:
     // Note: iterator constructor argument is destroyed
