@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "memory.h"
 #include "writable_memory.h"
 
 namespace vespalib {
@@ -64,6 +65,11 @@ public:
     void write(const char *data, size_t size) {
         memcpy(reserve(size), data, size);
         commit(size);
+    }
+
+    void write(const Memory &memory) {
+        memcpy(reserve(memory.size), memory.data, memory.size);
+        commit(memory.size);
     }
 
     void printf(const char *fmt, ...)

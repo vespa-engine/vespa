@@ -10,7 +10,7 @@ MapInserter<T, Converter>::MapInserter(std::map<vespalib::string, T> & map)
 
 template<typename T, typename Converter>
 void
-MapInserter<T, Converter>::field(const ::vespalib::slime::Memory & symbol, const ::vespalib::slime::Inspector & inspector)
+MapInserter<T, Converter>::field(const ::vespalib::Memory & symbol, const ::vespalib::slime::Inspector & inspector)
 {
     Converter converter;
     _map[symbol.make_string()] = converter(inspector);

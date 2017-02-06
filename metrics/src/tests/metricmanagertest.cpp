@@ -770,9 +770,9 @@ void MetricManagerTest::testJsonOutput()
         // Parse it back
     using namespace vespalib::slime;
     vespalib::Slime slime;
-    size_t parsed = JsonFormat::decode(Memory(jsonData), slime);
+    size_t parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime);
     if (jsonData.size() != parsed) {
-        SimpleBuffer buffer;
+        vespalib::SimpleBuffer buffer;
         JsonFormat::encode(slime, buffer, false);
         std::ostringstream ost;
         ost << "Failed to parse JSON: '\n"
@@ -902,7 +902,7 @@ public:
         : _jsonText(jsonText)
     {
         vespalib::slime::JsonFormat::decode(
-                vespalib::slime::Memory(jsonText), _tree);
+                vespalib::Memory(jsonText), _tree);
     }
 
     // XXX ideally all these should be const, but is not clear how/if it's

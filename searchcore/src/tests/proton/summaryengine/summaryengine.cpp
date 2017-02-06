@@ -21,6 +21,7 @@ using namespace vespalib::slime;
 using vespalib::stringref;
 using vespalib::ConstBufferRef;
 using vespalib::DataBuffer;
+using vespalib::Memory;
 
 namespace proton {
 
@@ -226,7 +227,7 @@ verify(vespalib::stringref exp, const Slime & slime)
     vespalib::Slime expSlime;
     size_t used = vespalib::slime::JsonFormat::decode(expMemory, expSlime);
     EXPECT_EQUAL(used, expMemory.size);
-    SimpleBuffer output;
+    vespalib::SimpleBuffer output;
     vespalib::slime::JsonFormat::encode(slime, output, true);
     Slime reSlimed;
     used = vespalib::slime::JsonFormat::decode(output.get(), reSlimed);
@@ -386,7 +387,7 @@ verifyRPC(size_t count,
 {
     Server server;
     vespalib::Slime slimeRequest = createSlimeRequestLarger(count);
-    SimpleBuffer buf; 
+    vespalib::SimpleBuffer buf; 
     BinaryFormat::encode(slimeRequest, buf);
     EXPECT_EQUAL(requestSize, buf.get().size);
 

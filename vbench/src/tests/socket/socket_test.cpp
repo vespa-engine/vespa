@@ -4,17 +4,19 @@
 
 using namespace vbench;
 
+using OutputWriter = vespalib::OutputWriter;
+
 const size_t numLines = 100;
 
 struct Agent {
     Stream::UP socket;
     Agent(Stream::UP s) : socket(std::move(s)) {}
     void write(const char *prefix) {
-        BufferedOutput out(*socket, 32);
+        OutputWriter out(*socket, 32);
         for (size_t i = 0; i < numLines; ++i) {
             out.printf("%s%zu\n", prefix, i);
         }
-        out.append("\n");
+        out.write("\n");
     }
     void read(const char *prefix) {
         LineReader reader(*socket);

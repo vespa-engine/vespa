@@ -191,11 +191,11 @@ DistributorHostInfoReporterTest::generateExampleJson()
     std::string path = TEST_PATH("../../../protocols/getnodestate/distributor.json");
     std::string goldenString = File::readAll(path);
 
-    vespalib::slime::Memory goldenMemory(goldenString);
+    vespalib::Memory goldenMemory(goldenString);
     vespalib::Slime goldenSlime;
     vespalib::slime::JsonFormat::decode(goldenMemory, goldenSlime);
 
-    vespalib::slime::Memory jsonMemory(jsonString);
+    vespalib::Memory jsonMemory(jsonString);
     vespalib::Slime jsonSlime;
     vespalib::slime::JsonFormat::decode(jsonMemory, jsonSlime);
 

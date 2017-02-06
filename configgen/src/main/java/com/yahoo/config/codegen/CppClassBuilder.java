@@ -859,12 +859,12 @@ public class CppClassBuilder implements ClassBuilder {
             w.write(indent + "vespalib::slime::Cursor & __croot = __slime.setObject();\n");
             w.write(indent + "__croot.setDouble(\"version\", CONFIG_DEF_SERIALIZE_VERSION);\n");
             w.write(indent + "vespalib::slime::Cursor & __key = __croot.setObject(\"configKey\");\n");
-            w.write(indent + "__key.setString(\"defName\", vespalib::slime::Memory(CONFIG_DEF_NAME));\n");
-            w.write(indent + "__key.setString(\"defNamespace\", vespalib::slime::Memory(CONFIG_DEF_NAMESPACE));\n");
-            w.write(indent + "__key.setString(\"defMd5\", vespalib::slime::Memory(CONFIG_DEF_MD5));\n");
+            w.write(indent + "__key.setString(\"defName\", vespalib::Memory(CONFIG_DEF_NAME));\n");
+            w.write(indent + "__key.setString(\"defNamespace\", vespalib::Memory(CONFIG_DEF_NAMESPACE));\n");
+            w.write(indent + "__key.setString(\"defMd5\", vespalib::Memory(CONFIG_DEF_MD5));\n");
             w.write(indent + "vespalib::slime::Cursor & __keySchema =__key.setArray(\"defSchema\");\n");
             w.write(indent + "for (size_t i = 0; i < CONFIG_DEF_SCHEMA.size(); i++) {\n");
-            w.write(indent + "    __keySchema.addString(vespalib::slime::Memory(CONFIG_DEF_SCHEMA[i]));\n");
+            w.write(indent + "    __keySchema.addString(vespalib::Memory(CONFIG_DEF_SCHEMA[i]));\n");
             w.write(indent + "}\n");
             w.write(indent + "vespalib::slime::Cursor & __cursor = __croot.setObject(\"configPayload\");\n");
         } else {
@@ -887,14 +887,14 @@ public class CppClassBuilder implements ClassBuilder {
                     String repType = slimeTypeMap.get("enum");
                     w.write(indent + "    __c3.setString(\"type\", \"enum\");\n");
                     w.write(indent + "    __c3.set" + repType);
-                    w.write("(\"value\", vespalib::slime::Memory(get" + childType + "Name(" + childName + "[__i])));\n");
+                    w.write("(\"value\", vespalib::Memory(get" + childType + "Name(" + childName + "[__i])));\n");
                 } else if (child instanceof LeafCNode) {
                     String type = ((LeafCNode) child).getType();
                     String repType = slimeTypeMap.get(type);
                     w.write(indent + "    __c3.setString(\"type\", \"" + type + "\");\n");
                     w.write(indent + "    __c3.set" + repType);
                     if ("String".equals(repType)) {
-                        w.write("(\"value\", vespalib::slime::Memory(" + childName + "[__i]));\n");
+                        w.write("(\"value\", vespalib::Memory(" + childName + "[__i]));\n");
                     } else {
                         w.write("(\"value\", " + childName + "[__i]);\n");
                     }
@@ -910,19 +910,19 @@ public class CppClassBuilder implements ClassBuilder {
                 String childMapType = getTypeName(child, true);
                 w.write(indent + "for (" + childMapType + "::const_iterator it(" + childName + ".begin()), mt(" + childName + ".end()); it != mt; it++) {\n");
                 w.write(indent + "    vespalib::slime::Cursor & __c3 = __c2.addObject();\n");
-                w.write(indent + "    __c3.setString(\"key\", vespalib::slime::Memory(it->first));\n");
+                w.write(indent + "    __c3.setString(\"key\", vespalib::Memory(it->first));\n");
                 if (child instanceof LeafCNode.EnumLeaf) {
                     String repType = slimeTypeMap.get("enum");
                     w.write(indent + "    __c3.setString(\"type\", \"enum\");\n");
                     w.write(indent + "    __c3.set" + repType);
-                    w.write("(\"value\", vespalib::slime::Memory(get" + childType + "Name(it->second)));\n");
+                    w.write("(\"value\", vespalib::Memory(get" + childType + "Name(it->second)));\n");
                 } else if (child instanceof LeafCNode) {
                     String type = ((LeafCNode) child).getType();
                     String repType = slimeTypeMap.get(type);
                     w.write(indent + "    __c3.setString(\"type\", \"" + type + "\");\n");
                     w.write(indent + "    __c3.set" + repType);
                     if ("String".equals(repType)) {
-                        w.write("(\"value\", vespalib::slime::Memory(it->second));\n");
+                        w.write("(\"value\", vespalib::Memory(it->second));\n");
                     } else {
                         w.write("(\"value\", it->second);\n");
                     }
@@ -937,14 +937,14 @@ public class CppClassBuilder implements ClassBuilder {
                     String repType = slimeTypeMap.get("enum");
                     w.write(indent + "__c.setString(\"type\", \"enum\");\n");
                     w.write(indent + "__c.set" + repType);
-                    w.write("(\"value\", vespalib::slime::Memory(get" + childType + "Name(" + childName + ")));\n");
+                    w.write("(\"value\", vespalib::Memory(get" + childType + "Name(" + childName + ")));\n");
                 } else if (child instanceof LeafCNode) {
                     String type = ((LeafCNode) child).getType();
                     String repType = slimeTypeMap.get(type);
                     w.write(indent + "__c.setString(\"type\", \"" + type + "\");\n");
                     w.write(indent + "__c.set" + repType);
                     if ("String".equals(repType)) {
-                        w.write("(\"value\", vespalib::slime::Memory(" + childName + "));\n");
+                        w.write("(\"value\", vespalib::Memory(" + childName + "));\n");
                     } else {
                         w.write("(\"value\", " + childName + ");\n");
                     }

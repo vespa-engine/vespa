@@ -64,7 +64,7 @@ ConfigValue::serializeV1(vespalib::slime::Cursor & cursor) const
     // TODO: Remove v1 when we can bump disk format.
     std::vector<vespalib::string> lines(getLegacyFormat());
     for (size_t i = 0; i < lines.size(); i++) {
-        cursor.addString(vespalib::slime::Memory(lines[i]));
+        cursor.addString(vespalib::Memory(lines[i]));
     }
 }
 

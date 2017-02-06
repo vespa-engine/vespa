@@ -120,7 +120,7 @@ vespalib::string render(const StateExplorer &state, const Url &url) {
         top.setObject();
     }
     inject_children(state, url, top.get());
-    slime::SimpleBuffer buf;
+    SimpleBuffer buf;
     slime::JsonFormat::encode(top, buf, true);
     return buf.get().make_string();
 }

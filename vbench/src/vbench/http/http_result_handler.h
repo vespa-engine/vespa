@@ -4,9 +4,11 @@
 #pragma once
 
 #include <vbench/core/string.h>
-#include <vbench/core/memory.h>
+#include <vespa/vespalib/data/memory.h>
 
 namespace vbench {
+
+using Memory = vespalib::Memory;
 
 /**
  * Callback interface that must be implemented in order to use the

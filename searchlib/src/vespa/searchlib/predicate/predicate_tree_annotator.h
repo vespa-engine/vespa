@@ -4,7 +4,7 @@
 
 #include "predicate_interval.h"
 #include <unordered_map>
-#include <vespa/vespalib/data/slime/memory.h>
+#include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <climits>
 #include <vector>
@@ -15,7 +15,7 @@ namespace search {
 namespace predicate {
 
 struct RangeFeature {
-    vespalib::slime::Memory label;
+    vespalib::Memory label;
     int64_t from;
     int64_t to;
 };

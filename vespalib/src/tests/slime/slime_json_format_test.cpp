@@ -8,7 +8,7 @@
 using namespace vespalib::slime::convenience;
 
 std::string make_json(const Slime &slime, bool compact) {
-    vespalib::slime::SimpleBuffer buf;
+    vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, compact);
     return buf.get().make_string();
 }
@@ -325,23 +325,23 @@ TEST("decode whitespace") {
 }
 
 TEST("decode invalid input") {
-    EXPECT_FALSE(check_valid(""));
-    EXPECT_FALSE(check_valid("["));
-    EXPECT_FALSE(check_valid("{"));
-    EXPECT_FALSE(check_valid("]"));
-    EXPECT_FALSE(check_valid("}"));
-    EXPECT_FALSE(check_valid("{]"));
-    EXPECT_FALSE(check_valid("[}"));
-    EXPECT_FALSE(check_valid("+5"));
-    EXPECT_FALSE(check_valid("fals"));
-    EXPECT_FALSE(check_valid("tru"));
-    EXPECT_FALSE(check_valid("nul"));
-    EXPECT_FALSE(check_valid("bar"));
-    EXPECT_FALSE(check_valid("\"bar"));
-    EXPECT_FALSE(check_valid("bar\""));
-    EXPECT_FALSE(check_valid("'bar\""));
-    EXPECT_FALSE(check_valid("\"bar'"));
-    EXPECT_FALSE(check_valid("{\"foo"));
+    EXPECT_TRUE(!check_valid(""));
+    EXPECT_TRUE(!check_valid("["));
+    EXPECT_TRUE(!check_valid("{"));
+    EXPECT_TRUE(!check_valid("]"));
+    EXPECT_TRUE(!check_valid("}"));
+    EXPECT_TRUE(!check_valid("{]"));
+    EXPECT_TRUE(!check_valid("[}"));
+    EXPECT_TRUE(!check_valid("+5"));
+    EXPECT_TRUE(!check_valid("fals"));
+    EXPECT_TRUE(!check_valid("tru"));
+    EXPECT_TRUE(!check_valid("nul"));
+    EXPECT_TRUE(!check_valid("bar"));
+    EXPECT_TRUE(!check_valid("\"bar"));
+    EXPECT_TRUE(!check_valid("bar\""));
+    EXPECT_TRUE(!check_valid("'bar\""));
+    EXPECT_TRUE(!check_valid("\"bar'"));
+    EXPECT_TRUE(!check_valid("{\"foo"));
 }
 
 TEST("decode simplified form") {

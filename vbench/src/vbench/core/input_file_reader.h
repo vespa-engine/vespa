@@ -5,7 +5,7 @@
 #include "string.h"
 #include "taint.h"
 #include "mapped_file_input.h"
-#include "byte_input.h"
+#include <vespa/vespalib/data/input_reader.h>
 #include "line_reader.h"
 
 namespace vbench {

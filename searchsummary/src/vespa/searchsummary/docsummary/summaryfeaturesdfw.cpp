@@ -31,7 +31,7 @@ SummaryFeaturesDFW::init(IDocsumEnvironment * env)
 }
 
 static vespalib::string _G_cached("vespa.summaryFeatures.cached");
-static vespalib::slime::Memory _M_cached("vespa.summaryFeatures.cached");
+static vespalib::Memory _M_cached("vespa.summaryFeatures.cached");
 
 void
 SummaryFeaturesDFW::insertField(uint32_t docid,
@@ -51,7 +51,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid,
     if (type == RES_FEATUREDATA && values != NULL) {
         vespalib::slime::Cursor& obj = target.insertObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
-            vespalib::slime::Memory name(names[i].c_str(), names[i].size());
+            vespalib::Memory name(names[i].c_str(), names[i].size());
             obj.setDouble(name, values[i]);
         }
         if (state->_summaryFeaturesCached) {
@@ -75,7 +75,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid,
             json.appendDouble(0.0);
         }
         json.endObject();
-        vespalib::slime::Memory value(json.toString().c_str(),
+        vespalib::Memory value(json.toString().c_str(),
                                       json.toString().size());
         if (type == RES_STRING || type == RES_LONG_STRING) {
             target.insertString(value);

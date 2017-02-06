@@ -48,8 +48,9 @@ TEST("input reader smoke test") {
         EXPECT_TRUE(!src.failed());
         EXPECT_EQUAL(src.get_offset(), strlen(data));
         EXPECT_EQUAL(src.obtain(), 0u);
-        EXPECT_TRUE(src.failed());
+        EXPECT_TRUE(!src.failed());
         EXPECT_EQUAL(src.read(5), Memory());
+        EXPECT_TRUE(src.failed());
         EXPECT_EQUAL(src.read(), '\0');
         EXPECT_EQUAL(src.obtain(), 0u);
         EXPECT_EQUAL(src.get_offset(), strlen(data));
@@ -97,6 +98,32 @@ TEST("require that reading a byte sequence crossing the end of input fails") {
         EXPECT_TRUE(src.failed());
         EXPECT_EQUAL(src.get_error_message(), vespalib::string("input underflow"));
         EXPECT_EQUAL(src.get_offset(), 10u);        
+    }
+}
+
+TEST("expect that obtain does not set failure state on input reader") {
+    const char *data = "12345";
+    for (bool byte_first: {true, false}) {
+        MemoryInput input(data);
+        InputReader src(input);
+        EXPECT_EQUAL(src.obtain(), 5);
+        EXPECT_EQUAL(src.obtain(), 5);
+        EXPECT_EQUAL(src.read(5), Memory("12345"));
+        EXPECT_TRUE(!src.failed());
+        EXPECT_EQUAL(src.obtain(), 0);
+        EXPECT_EQUAL(src.obtain(), 0);
+        EXPECT_TRUE(!src.failed());
+        if (byte_first) {
+            EXPECT_EQUAL(src.read(), 0);
+            EXPECT_TRUE(src.failed());
+            EXPECT_EQUAL(src.read(5), Memory());
+        } else {
+            EXPECT_EQUAL(src.read(5), Memory());
+            EXPECT_TRUE(src.failed());
+            EXPECT_EQUAL(src.read(), 0);
+        }
+        EXPECT_EQUAL(src.get_error_message(), vespalib::string("input underflow"));
+        EXPECT_EQUAL(src.obtain(), 0);
     }
 }
 

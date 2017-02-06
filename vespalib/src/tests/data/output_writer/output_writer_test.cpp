@@ -13,7 +13,7 @@ TEST("output writer smoke test") {
         dst.write('b');
         dst.write('c');
         dst.write('\n');
-        dst.write("foo bar", strlen("foo bar"));
+        dst.write("foo bar");
         dst.write('\n');
         dst.printf("%d + %d = %d\n", 2, 2, 4);
     }

@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include "input.h"
+#include <vespa/vespalib/data/input.h>
 #include "taintable.h"
 
 namespace vbench {
+
+using Input = vespalib::Input;
+using Memory = vespalib::Memory;
 
 /**
  * A Taintable Input implementation reading sequentially from a memory

@@ -434,13 +434,13 @@ Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id,
     memcpy(&classId, docsum.data.c_str(), sizeof(classId));
     ASSERT_EQUAL(::search::fs4transport::SLIME_MAGIC_ID, classId);
     vespalib::Slime slime;
-    vespalib::slime::Memory serialized(docsum.data.c_str() + sizeof(classId),
+    vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
                                        docsum.data.size() - sizeof(classId));
     size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized,
                                                              slime);
     ASSERT_EQUAL(decodeRes, serialized.size);
     if (relaxed) {
-        vespalib::slime::SimpleBuffer buf;
+        vespalib::SimpleBuffer buf;
         vespalib::slime::JsonFormat::encode(slime, buf, false);
         vespalib::Slime tmpSlime;
         size_t used = vespalib::slime::JsonFormat::decode(buf.get(), tmpSlime);

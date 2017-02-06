@@ -7,8 +7,8 @@
 #include "basic_value.h"
 #include "basic_value_factory.h"
 #include "binary_format.h"
-#include "buffered_input.h"
-#include "buffered_output.h"
+#include <vespa/vespalib/data/input_reader.h>
+#include <vespa/vespalib/data/output_writer.h>
 #include "convenience.h"
 #include "cursor.h"
 #include "empty_value_factory.h"
@@ -16,17 +16,16 @@
 #include "inserter.h"
 #include "inspector.h"
 #include "json_format.h"
-#include "memory.h"
+#include <vespa/vespalib/data/memory.h>
 #include "named_symbol_inserter.h"
 #include "named_symbol_lookup.h"
 #include "nix_value.h"
 #include "object_traverser.h"
 #include "object_value.h"
-#include "output.h"
+#include <vespa/vespalib/data/output.h>
 #include "resolved_symbol.h"
 #include "root_value.h"
-#include "simple_buffer.h"
-#include "stored_memory.h"
+#include <vespa/vespalib/data/simple_buffer.h>
 #include "symbol.h"
 #include "symbol_inserter.h"
 #include "symbol_lookup.h"
@@ -57,7 +56,6 @@ private:
     typedef slime::RootValue     RootValue;
     typedef slime::Cursor        Cursor;
     typedef slime::Inspector     Inspector;
-    typedef slime::Memory        Memory;
 
     SymbolTable::UP              _names;
     Stash::UP                    _stash;

@@ -5,7 +5,7 @@
 #include "resolved_symbol.h"
 #include "empty_value_factory.h"
 #include "basic_value_factory.h"
-#include "simple_buffer.h"
+#include <vespa/vespalib/data/simple_buffer.h>
 #include "json_format.h"
 
 namespace vespalib {
@@ -75,7 +75,7 @@ Value::traverse(ObjectTraverser &) const {}
 vespalib::string
 Value::toString() const
 {
-    slime::SimpleBuffer buf;
+    SimpleBuffer buf;
     slime::JsonFormat::encode(*this, buf, false);
     return buf.get().make_string();
 }

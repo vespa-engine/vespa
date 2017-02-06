@@ -4,21 +4,23 @@
 #include <vespa/fastos/fastos.h>
 #include "http_client.h"
 #include "hex_number.h"
-#include <vbench/core/buffered_output.h>
+#include <vespa/vespalib/data/output_writer.h>
 #include <vbench/core/line_reader.h>
 #include <algorithm>
 
 namespace vbench {
 
+using OutputWriter = vespalib::OutputWriter;
+
 void
 HttpClient::writeRequest() {
-    BufferedOutput dst(_conn->stream(), WRITE_SIZE);
+    OutputWriter dst(_conn->stream(), WRITE_SIZE);
     dst.printf("GET %s HTTP/1.1\r\n", _url.c_str());
     dst.printf("Host: %s\r\n", _conn->server().host.c_str());
-    dst.append("User-Agent: vbench\r\n");
-    dst.append("X-Yahoo-Vespa-Benchmarkdata: true\r\n");
-    dst.append("X-Yahoo-Vespa-Benchmarkdata-Coverage: true\r\n");
-    dst.append("\r\n");
+    dst.write("User-Agent: vbench\r\n");
+    dst.write("X-Yahoo-Vespa-Benchmarkdata: true\r\n");
+    dst.write("X-Yahoo-Vespa-Benchmarkdata-Coverage: true\r\n");
+    dst.write("\r\n");
 }
 
 bool

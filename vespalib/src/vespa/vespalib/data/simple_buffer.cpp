@@ -41,4 +41,8 @@ SimpleBuffer::commit(size_t bytes)
     return *this;
 }
 
+std::ostream &operator<<(std::ostream &os, const SimpleBuffer &buf) {
+    return os << buf.get();
+}
+
 } // namespace vespalib

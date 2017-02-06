@@ -5,7 +5,10 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/memory.h>
 #include "exceptions.h"
+
+using vespalib::Memory;
 
 namespace config {
 

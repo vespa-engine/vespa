@@ -4,9 +4,11 @@
 #pragma once
 
 #include <vbench/http/http_result_handler.h>
-#include <vbench/core/simple_buffer.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 
 namespace vbench {
+
+using SimpleBuffer = vespalib::SimpleBuffer;
 
 class SimpleHttpResultHandler : public HttpResultHandler
 {

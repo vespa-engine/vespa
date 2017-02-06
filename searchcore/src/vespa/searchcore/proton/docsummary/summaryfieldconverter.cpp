@@ -369,7 +369,7 @@ class JsonFiller : public ConstFieldValueVisitor {
         if (tensor) {
             auto slime =
                 vespalib::tensor::SlimeBinaryFormat::serialize(*tensor);
-            vespalib::slime::SimpleBuffer buf;
+            vespalib::SimpleBuffer buf;
             vespalib::slime::JsonFormat::encode(*slime, buf, true);
             _json.appendJSON(buf.get().make_string());
         } else {
@@ -652,7 +652,7 @@ class SlimeFiller : public ConstFieldValueVisitor {
         if (tensor) {
             vespalib::tensor::TypedBinaryFormat::serialize(s, *tensor);
         }
-        _inserter.insertData(vespalib::slime::Memory(s.peek(), s.size()));
+        _inserter.insertData(vespalib::Memory(s.peek(), s.size()));
     }
 
     void visit(const ReferenceFieldValue& value) override {

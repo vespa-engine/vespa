@@ -4,11 +4,12 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/memory.h>
 
 using vespalib::Slime;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inspector;
-using vespalib::slime::Memory;
+using vespalib::Memory;
 
 namespace config {
 
@@ -134,7 +135,7 @@ ConfigSnapshot::serializeKeyV1(Cursor & cursor, const ConfigKey & key) const
     Cursor & defSchema(cursor.setArray("defSchema"));
     const SchemaVector & vec(key.getDefSchema());
     for (SchemaVector::const_iterator it(vec.begin()), mt(vec.end()); it != mt; it++) {
-        defSchema.addString(vespalib::slime::Memory(*it));
+        defSchema.addString(vespalib::Memory(*it));
     }
 }
 

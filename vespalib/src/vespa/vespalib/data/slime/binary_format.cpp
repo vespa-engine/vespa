@@ -4,6 +4,7 @@
 #include "inserter.h"
 #include "slime.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/data/memory_input.h>
 
 namespace vespalib {
 namespace slime {
@@ -13,13 +14,13 @@ namespace binary_format {
 struct BinaryEncoder : public ArrayTraverser,
                        public ObjectSymbolTraverser
 {
-    BufferedOutput &out;
-    BinaryEncoder(BufferedOutput &out_in) : out(out_in) {}
+    OutputWriter &out;
+    BinaryEncoder(OutputWriter &out_in) : out(out_in) {}
     void encodeNix() {
-        out.writeByte(NIX::ID);
+        out.write(NIX::ID);
     }
     void encodeBool(bool value) {
-        out.writeByte(encode_type_and_meta(BOOL::ID, value ? 1 : 0));
+        out.write(encode_type_and_meta(BOOL::ID, value ? 1 : 0));
     }
     void encodeLong(int64_t value) {
         write_type_and_bytes<false>(out, LONG::ID, encode_zigzag(value));
@@ -29,11 +30,11 @@ struct BinaryEncoder : public ArrayTraverser,
     }
     void encodeString(const Memory &memory) {
         write_type_and_size(out, STRING::ID, memory.size);
-        out.writeBytes(memory.data, memory.size);
+        out.write(memory.data, memory.size);
     }
     void encodeData(const Memory &memory) {
         write_type_and_size(out, DATA::ID, memory.size);
-        out.writeBytes(memory.data, memory.size);
+        out.write(memory.data, memory.size);
     }
     void encodeArray(const Inspector &inspector) {
         ArrayTraverser &array_traverser = *this;
@@ -64,7 +65,7 @@ struct BinaryEncoder : public ArrayTraverser,
         for (size_t i = 0; i < numSymbols; ++i) {
             Memory image = slime.inspect(Symbol(i));
             write_cmpr_ulong(out, image.size);
-            out.writeBytes(image.data, image.size);
+            out.write(image.data, image.size);
         }
     }
     virtual void entry(size_t, const Inspector &inspector);
@@ -88,7 +89,7 @@ BinaryEncoder::field(const Symbol &symbol, const Inspector &inspector)
 
 struct DirectSymbols {
     void hint_symbol_count(size_t) {}
-    bool add_symbol(Symbol symbol, size_t i, BufferedInput &in) {
+    bool add_symbol(Symbol symbol, size_t i, InputReader &in) {
         if (symbol.getValue() != i) {
             in.fail("duplicate symbols in symbol table");
             return false;
@@ -103,7 +104,7 @@ struct MappedSymbols {
     void hint_symbol_count(size_t n) {
         symbol_mapping.reserve(n);
     }
-    bool add_symbol(Symbol symbol, size_t, BufferedInput &) {
+    bool add_symbol(Symbol symbol, size_t, InputReader &) {
         symbol_mapping.push_back(symbol);
         return true;
     }
@@ -122,13 +123,13 @@ struct SymbolHandler {
 template <bool remap_symbols>
 struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
 
-    BufferedInput &in;
+    InputReader &in;
 
     using SymbolHandler<remap_symbols>::type::hint_symbol_count;
     using SymbolHandler<remap_symbols>::type::add_symbol;
     using SymbolHandler<remap_symbols>::type::map_symbol;
 
-    BinaryDecoder(BufferedInput &input) : in(input) {}
+    BinaryDecoder(InputReader &input) : in(input) {}
 
     Cursor &decodeNix(const Inserter &inserter) {
         return inserter.insertNix();
@@ -148,12 +149,12 @@ struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
 
     Cursor &decodeString(const Inserter &inserter, uint32_t meta) {
         uint64_t size = read_size(in, meta);
-        return inserter.insertString(in.getBytes(size));
+        return inserter.insertString(in.read(size));
     }
 
     Cursor &decodeData(const Inserter &inserter, uint32_t meta) {
         uint64_t size = read_size(in, meta);
-        return inserter.insertData(in.getBytes(size));
+        return inserter.insertData(in.read(size));
     }
 
     Cursor &decodeArray(const Inserter &inserter, uint32_t meta);
@@ -175,7 +176,7 @@ struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
     }
 
     void decodeValue(const Inserter &inserter) {
-        char byte = in.getByte();
+        char byte = in.read();
         Cursor &cursor = decodeValue(inserter,
                                     decode_type(byte),
                                     decode_meta(byte));
@@ -189,7 +190,7 @@ struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
         hint_symbol_count(numSymbols);
         for (size_t i = 0; i < numSymbols; ++i) {
             uint64_t size = read_cmpr_ulong(in);
-            Memory image = in.getBytes(size);
+            Memory image = in.read(size);
             Symbol symbol = slime.insert(image);
             if (!add_symbol(symbol, i, in)) {
                 return;
@@ -227,16 +228,17 @@ BinaryDecoder<remap_symbols>::decodeObject(const Inserter &inserter, uint32_t me
 
 template <bool remap_symbols>
 size_t decode(const Memory &memory, Slime &slime, const Inserter &inserter) {
-    BufferedInput input(memory);
+    MemoryInput memory_input(memory);
+    InputReader input(memory_input);
     binary_format::BinaryDecoder<remap_symbols> decoder(input);
     decoder.decodeSymbolTable(slime);
     decoder.decodeValue(inserter);
     if (input.failed() && !remap_symbols) {
         slime.wrap("partial_result");
-        slime.get().setData("offending_input", input.getOffending());
-        slime.get().setString("error_message", input.getErrorMessage());
+        slime.get().setLong("offending_offset", input.get_offset());
+        slime.get().setString("error_message", input.get_error_message());
     }
-    return input.getConsumed().size;
+    return input.failed() ? 0 : input.get_offset();
 }
 
 } // namespace vespalib::slime::binary_format
@@ -244,7 +246,8 @@ size_t decode(const Memory &memory, Slime &slime, const Inserter &inserter) {
 void
 BinaryFormat::encode(const Slime &slime, Output &output)
 {
-    BufferedOutput out(output);
+    size_t chunk_size = 8000;
+    OutputWriter out(output, chunk_size);
     binary_format::BinaryEncoder encoder(out);
     encoder.encodeSymbolTable(slime);
     encoder.encodeValue(slime.get());

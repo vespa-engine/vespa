@@ -4,6 +4,9 @@
 
 using namespace vbench;
 
+using InputReader = vespalib::InputReader;
+using OutputWriter = vespalib::OutputWriter;
+
 void checkMemory(const string &expect, const Memory &mem) {
     EXPECT_EQUAL(expect, string(mem.data, mem.size));
 }
@@ -14,10 +17,10 @@ bool endsWith(const Memory &mem, const string &str) {
 }
 
 void readUntil(Input &input, SimpleBuffer &buffer, const string &end) {
-    ByteInput in(input);
+    InputReader in(input);
     while (!endsWith(buffer.get(), end)) {
-        int c = in.get();
-        if (c < 0) {
+        char c = in.read();
+        if (in.failed()) {
             return;
         }
         buffer.reserve(1).data[0] = c;
@@ -29,13 +32,13 @@ TEST_MT_F("verify request", 2, ServerSocket()) {
     if (thread_id == 0) {
         SimpleBuffer expect;
         {
-            BufferedOutput dst(expect, 256);
-            dst.append("GET /this/is/the/url HTTP/1.1\r\n");
-            dst.append("Host: localhost\r\n");
-            dst.append("User-Agent: vbench\r\n");
-            dst.append("X-Yahoo-Vespa-Benchmarkdata: true\r\n");
-            dst.append("X-Yahoo-Vespa-Benchmarkdata-Coverage: true\r\n");
-            dst.append("\r\n");
+            OutputWriter out(expect, 256);
+            out.write("GET /this/is/the/url HTTP/1.1\r\n");
+            out.write("Host: localhost\r\n");
+            out.write("User-Agent: vbench\r\n");
+            out.write("X-Yahoo-Vespa-Benchmarkdata: true\r\n");
+            out.write("X-Yahoo-Vespa-Benchmarkdata-Coverage: true\r\n");
+            out.write("\r\n");
         }
         SimpleBuffer actual;
         Stream::UP stream = f1.accept();
@@ -54,10 +57,10 @@ TEST_MT_F("verify connection close", 2, ServerSocket()) {
         Stream::UP stream = f1.accept();
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
-        BufferedOutput out(*stream, 256);
-        out.append("HTTP/1.0 200\r\n");
-        out.append("\r\n");
-        out.append("data");
+        OutputWriter out(*stream, 256);
+        out.write("HTTP/1.0 200\r\n");
+        out.write("\r\n");
+        out.write("data");
     } else {
         SimpleHttpResultHandler handler;
         HttpClient::fetch(ServerSpec("localhost", f1.port()),
@@ -73,11 +76,11 @@ TEST_MT_F("verify content length", 2, ServerSocket()) {
         Stream::UP stream = f1.accept();
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
-        BufferedOutput out(*stream, 256);
-        out.append("HTTP/1.1 200\r\n");
-        out.append("content-length: 4\r\n");
-        out.append("\r\n");
-        out.append("data");
+        OutputWriter out(*stream, 256);
+        out.write("HTTP/1.1 200\r\n");
+        out.write("content-length: 4\r\n");
+        out.write("\r\n");
+        out.write("data");
     } else {
         SimpleHttpResultHandler handler;
         HttpClient::fetch(ServerSpec("localhost", f1.port()),
@@ -93,16 +96,16 @@ TEST_MT_F("verify chunked encoding", 2, ServerSocket()) {
         Stream::UP stream = f1.accept();
         SimpleBuffer ignore;
         readUntil(*stream, ignore, "\r\n\r\n");
-        BufferedOutput out(*stream, 256);
-        out.append("HTTP/1.1 200\r\n");
-        out.append("transfer-encoding: chunked\r\n");
-        out.append("\r\n");
-        out.append("2\r\n");
-        out.append("da\r\n");
-        out.append("2\r\n");
-        out.append("ta\r\n");
-        out.append("0\r\n");
-        out.append("\r\n");
+        OutputWriter out(*stream, 256);
+        out.write("HTTP/1.1 200\r\n");
+        out.write("transfer-encoding: chunked\r\n");
+        out.write("\r\n");
+        out.write("2\r\n");
+        out.write("da\r\n");
+        out.write("2\r\n");
+        out.write("ta\r\n");
+        out.write("0\r\n");
+        out.write("\r\n");
     } else {
         SimpleHttpResultHandler handler;
         HttpClient::fetch(ServerSpec("localhost", f1.port()),

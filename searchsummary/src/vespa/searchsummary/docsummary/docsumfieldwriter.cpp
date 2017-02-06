@@ -160,7 +160,7 @@ CopyDFW::insertField(uint32_t /*docid*/,
             // resolve field
             entry->_resolve_field(&spt, &len,
                                   &state->_docSumFieldSpace);
-            vespalib::slime::Memory value(spt, len);
+            vespalib::Memory value(spt, len);
             target.insertString(value);
             break; }
 
@@ -172,7 +172,7 @@ CopyDFW::insertField(uint32_t /*docid*/,
             // resolve field
             entry->_resolve_field(&dpt, &len,
                                   &state->_docSumFieldSpace);
-            vespalib::slime::Memory value(dpt, len);
+            vespalib::Memory value(dpt, len);
             target.insertData(value);
             break; }
         }

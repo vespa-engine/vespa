@@ -67,4 +67,10 @@ TEST("simple buffer") {
     }
 }
 
+TEST("require that add works as expected") {
+    SimpleBuffer buf;
+    buf.add('a').add('b').add('c');
+    EXPECT_EQUAL(buf.get(), Memory("abc"));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

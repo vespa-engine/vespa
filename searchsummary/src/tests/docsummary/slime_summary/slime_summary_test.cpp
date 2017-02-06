@@ -6,7 +6,7 @@
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/slime/simple_buffer.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>

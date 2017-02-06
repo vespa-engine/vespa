@@ -35,7 +35,7 @@ using std::vector;
 using vespalib::Slime;
 using vespalib::asciistream;
 using vespalib::nbostream;
-using vespalib::slime::Memory;
+using vespalib::Memory;
 using vespalib::stringref;
 
 namespace document {

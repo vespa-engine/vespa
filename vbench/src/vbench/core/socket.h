@@ -4,12 +4,18 @@
 
 #include "string.h"
 #include "stream.h"
-#include "simple_buffer.h"
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <memory>
 
 class FastOS_SocketInterface;
 
 namespace vbench {
+
+using Input = vespalib::Input;
+using Memory = vespalib::Memory;
+using Output = vespalib::Output;
+using SimpleBuffer = vespalib::SimpleBuffer;
+using WritableMemory = vespalib::WritableMemory;
 
 class Socket : public Stream
 {

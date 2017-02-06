@@ -17,7 +17,7 @@ using namespace config::protocol::v3;
 namespace config {
 
 std::string make_json(const Slime &slime, bool compact) {
-    vespalib::slime::SimpleBuffer buf;
+    vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, compact);
     return buf.get().make_string();
 }
