@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeReadyResponse;
+import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
@@ -155,14 +155,24 @@ public class NodeRepositoryImpl implements NodeRepository {
         }
         throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
     }
-    
+
+    @Override
+    public void markAsDirty(String hostName) {
+        NodeMessageResponse response = requestExecutor.put(
+                "/nodes/v2/state/dirty/" + hostName,
+                port,
+                Optional.empty(), /* body */
+                NodeMessageResponse.class);
+        NODE_ADMIN_LOGGER.info(response.message);
+    }
+
     @Override
     public void markAsReady(final String hostName) {
-        NodeReadyResponse response = requestExecutor.put(
+        NodeMessageResponse response = requestExecutor.put(
                 "/nodes/v2/state/ready/" + hostName,
                 port,
                 Optional.empty(), /* body */
-                NodeReadyResponse.class);
+                NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);
     }
 }

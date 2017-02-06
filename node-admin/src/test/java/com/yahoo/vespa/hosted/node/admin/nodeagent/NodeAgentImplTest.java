@@ -354,8 +354,7 @@ public class NodeAgentImplTest {
                         .withVespaVersion(""));
     }
 
-    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State nodeState, Optional<Long> wantedRestartGeneration)
-            throws Exception {
+    private ContainerNodeSpec makeContainer(Node.State nodeState, Optional<Long> wantedRestartGeneration) {
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec.Builder nodeSpecBuilder = new ContainerNodeSpec.Builder()
@@ -379,10 +378,17 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(
                 Optional.of(new Container(hostName,
-                                          dockerImage,
-                                          containerName,
-                                          shouldBeRunning ? Container.State.RUNNING : Container.State.EXITED,
-                                          shouldBeRunning ? 1 : 0)));
+                        dockerImage,
+                        containerName,
+                        shouldBeRunning ? Container.State.RUNNING : Container.State.EXITED,
+                        shouldBeRunning ? 1 : 0)));
+        return nodeSpec;
+    }
+
+    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State nodeState, Optional<Long> wantedRestartGeneration)
+            throws Exception {
+        final ContainerNodeSpec nodeSpec = makeContainer(nodeState, wantedRestartGeneration);
+        final ContainerName containerName = nodeSpec.containerName;
 
         nodeAgent.tick();
 
@@ -414,8 +420,10 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void provisionedNodeWithNoContainerIsCleanedAndRecycled() throws Exception {
-        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State.provisioned, Optional.of(1L));
+    public void provisionedNodeIsMarkedAsDirty() throws Exception {
+        makeContainer(Node.State.provisioned, Optional.empty());
+        nodeAgent.tick();
+        verify(nodeRepository, times(1)).markAsDirty(eq(hostName));
     }
 
     @Test

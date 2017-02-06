@@ -65,6 +65,20 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
+    public void markAsDirty(String hostName) {
+        Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
+
+        synchronized (monitor) {
+            cns.ifPresent(containerNodeSpec -> updateContainerNodeSpec(new ContainerNodeSpec.Builder(containerNodeSpec)
+                    .nodeState(Node.State.dirty)
+                    .nodeType("tenant")
+                    .nodeFlavor("docker")
+                    .build()));
+            callOrderVerifier.add("markAsDirty with HostName: " + hostName);
+        }
+    }
+
+    @Override
     public void markAsReady(String hostName) {
         Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
 

@@ -5,12 +5,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Response from node/ready call from node-repo.
+ * Response from PUT /nodes/v2/state/ call to node-repository.
  *
  * @author dybis
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class NodeReadyResponse {
+public class NodeMessageResponse {
     @JsonProperty("message")
     public String message;
 }

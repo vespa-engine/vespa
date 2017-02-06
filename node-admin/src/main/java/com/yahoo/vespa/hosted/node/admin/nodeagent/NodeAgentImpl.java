@@ -454,6 +454,8 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
+                nodeRepository.markAsDirty(nodeSpec.hostname);
+                break;
             case dirty:
                 storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(nodeSpec.containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec);

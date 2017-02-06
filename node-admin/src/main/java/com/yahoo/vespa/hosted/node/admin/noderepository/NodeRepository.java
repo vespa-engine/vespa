@@ -21,5 +21,7 @@ public interface NodeRepository {
 
     void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
 
+    void markAsDirty(String hostName);
+
     void markAsReady(String hostName);
 }
