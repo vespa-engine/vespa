@@ -900,13 +900,14 @@ struct RefFixture {
     void verify_cross_language_serialization(const string& file_base_name,
                                              const ReferenceFieldValue& value) {
         const string data_dir = TEST_PATH("../../test/resources/reference/");
+        const string field_name = "ref_field";
         serializeToFile(value, data_dir + file_base_name + "__cpp",
-                        ref_doc_type, "ref_field");
+                        ref_doc_type, field_name);
 
         deserializeAndCheck(data_dir + file_base_name + "__cpp",
-                            value, fixed_repo, "ref_field");
+                            value, fixed_repo, field_name);
         deserializeAndCheck(data_dir + file_base_name + "__java",
-                            value, fixed_repo, "ref_field");
+                            value, fixed_repo, field_name);
     }
 };
 
