@@ -10,7 +10,8 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
-import com.yahoo.tensor.MapTensorBuilder;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -55,10 +56,10 @@ public class UserProfileSearcher extends Searcher {
     private void addUserProfileTensorToQuery(Query query, Hit userProfile) {
         Object userItemCf = userProfile.getField("user_item_cf");
         if (userItemCf != null && userItemCf instanceof Inspectable) {
-            MapTensorBuilder tensorBuilder = new MapTensorBuilder();
+            Tensor.Builder tensorBuilder = Tensor.Builder.of(new TensorType.Builder().indexed("user_item_cf", 10).build());
             Inspector cells = ((Inspectable)userItemCf).inspect().field("cells");
             for (Inspector cell : cells.entries()) {
-                MapTensorBuilder.CellBuilder cellBuilder = tensorBuilder.cell();
+                Tensor.Builder.CellBuilder cellBuilder = tensorBuilder.cell();
 
                 Inspector address = cell.field("address");
                 for (Map.Entry<String, Inspector> entry : address.fields()) {
