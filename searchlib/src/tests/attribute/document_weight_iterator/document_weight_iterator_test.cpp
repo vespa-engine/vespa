@@ -191,7 +191,7 @@ private:
     mutable fef::TermFieldMatchData _tfmd;
     AttributeVector::SP _attr;
 };
-TEST("verify init range for document weight search iterator") {
+TEST("verify document weight search iterator") {
     Verifier verifier;
     verifier.verify();
 }

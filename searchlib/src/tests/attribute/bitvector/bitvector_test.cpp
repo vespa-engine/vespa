@@ -522,7 +522,7 @@ BitVectorTest::test(BasicType bt,
 
 template <typename VectorType, typename BufferType>
 void
-BitVectorTest::test(BasicType bt,CollectionType ct, const vespalib::string &pref)
+BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pref)
 {
     LOG(info, "test run, pref is %s", pref.c_str());
     test<VectorType, BufferType>(bt, ct, pref, false, false, false, false);
@@ -626,7 +626,7 @@ private:
     BitVector::UP _bv;
 };
 
-TEST("Test that bitvector iterators adheres SearchIterator requirements") {
+TEST("Test that bitvector iterators adheres to SearchIterator requirements") {
     Verifier searchIteratorVerifier;
     searchIteratorVerifier.verify();
 }

@@ -60,7 +60,7 @@ private:
     void requireThatWeCanReadBitVector();
     void requireThatBlueprintIsCreated();
     void requireThatBlueprintCanCreateSearchIterators();
-    void requireThatInitRangeConforms();
+    void requireThatSearchIteratorsConforms();
 public:
     Test();
     int Main();
@@ -81,7 +81,7 @@ private:
 };
 
 void
-Test::requireThatInitRangeConforms()
+Test::requireThatSearchIteratorsConforms()
 {
     FakePosting::SP tmp;
     Verifier verTmp(tmp);
@@ -330,7 +330,7 @@ Test::Main()
     TEST_DO(requireThatWeCanReadBitVector());
     TEST_DO(requireThatBlueprintIsCreated());
     TEST_DO(requireThatBlueprintCanCreateSearchIterators());
-    TEST_DO(requireThatInitRangeConforms());
+    TEST_DO(requireThatSearchIteratorsConforms());
 
     TEST_DONE();
 }

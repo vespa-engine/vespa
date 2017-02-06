@@ -131,8 +131,8 @@ private:
     void checkResultSet(const ResultSet & rs, const DocSet & exp, bool bitVector);
 
     template<typename T, typename A>
-    void testInitRange(T key, const vespalib::string & keyAsString, const ConfigMap & cfgs);
-    void testInitRange();
+    void testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs);
+    void testSearchIteratorConformance();
     // test search functionality
     template <typename V, typename T>
     void testFind(const PostingList<V, T> & first);
@@ -630,7 +630,7 @@ private:
 };
 
 template<typename T, typename A>
-void SearchContextTest::testInitRange(T key, const vespalib::string & keyAsString, const ConfigMap & cfgs) {
+void SearchContextTest::testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs) {
 
     for (const auto & cfg : cfgs) {
         Verifier<T, A> verifier(key, keyAsString, cfg.first, cfg.second);
@@ -638,10 +638,10 @@ void SearchContextTest::testInitRange(T key, const vespalib::string & keyAsStrin
     }
 }
 
-void SearchContextTest::testInitRange() {
-    testInitRange<AttributeVector::largeint_t, IntegerAttribute>(42, "42", _integerCfg);
-    testInitRange<double, FloatingPointAttribute>(42.42, "42.42", _floatCfg);
-    testInitRange<vespalib::string, StringAttribute>("any-key", "any-key", _stringCfg);
+void SearchContextTest::testSearchIteratorConformance() {
+    testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>(42, "42", _integerCfg);
+    testSearchIterator<double, FloatingPointAttribute>(42.42, "42.42", _floatCfg);
+    testSearchIterator<vespalib::string, StringAttribute>("any-key", "any-key", _stringCfg);
 }
 
 void
@@ -1880,13 +1880,13 @@ SearchContextTest::Main()
     EXPECT_TRUE(true);
 
     testSearch();
-    testInitRange();
+    testSearchIterator();
     testRangeSearch();
     testRangeSearchLimited();
     testCaseInsensitiveSearch();
     testRegexSearch();
     testPrefixSearch();
-    testSearchIterator();
+    testSearchIteratorConformance();
     testSearchIteratorUnpacking();
     TEST_DO(requireThatSearchIsWorkingAfterClearDoc());
     TEST_DO(requireThatSearchIsWorkingAfterLoadAndClearDoc());
