@@ -7,7 +7,7 @@
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
-#include <vespa/searchlib/test/searchiteratorverifiers.h>
+#include <vespa/searchlib/test/weightedchildrenverifiers.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
@@ -111,7 +111,7 @@ private:
     }
 };
 
-TEST("verify initRange with search iterator children") {
+TEST("verify search iterator conformance") {
     IteratorChildrenVerifier verifier;
     verifier.verify();
 }

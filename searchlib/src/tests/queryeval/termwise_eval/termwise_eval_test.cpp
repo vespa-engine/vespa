@@ -636,7 +636,7 @@ public:
         return make_termwise(createIterator(getExpectedDocIds(), strict), strict);
     }
 };
-TEST("test that init range works for terwise too.") {
+TEST("test terwise adheres to search iterator requirements.") {
     Verifier verifier;
     verifier.verify();
 }

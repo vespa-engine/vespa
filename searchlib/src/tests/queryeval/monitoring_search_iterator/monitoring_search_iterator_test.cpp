@@ -329,7 +329,7 @@ public:
     }
 };
 
-TEST("test monitoring search iterator handles initRange accoring to spec") {
+TEST("test monitoring search iterator adheres to search iterator requirements") {
     MonitoringSearchIteratorVerifier searchVerifier;
     searchVerifier.verify();
     MonitoringDumpIteratorVerifier dumpVerifier;

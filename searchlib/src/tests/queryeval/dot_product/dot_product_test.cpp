@@ -9,7 +9,7 @@
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/test/searchiteratorverifiers.h>
+#include <vespa/searchlib/test/weightedchildrenverifiers.h>
 
 using namespace search;
 using namespace search::query;
@@ -174,19 +174,19 @@ private:
     }
 };
 
-class WeightIteratorChildrenVerifier : public search::test::WeightIteratorChildrenVerifier {
+class WeightIteratorChildrenVerifier : public search::test::DwaIteratorChildrenVerifier {
 private:
     SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const override {
         return SearchIterator::UP(DotProductSearch::create(_tfmd, _weights, std::move(children)));
     }
 };
 
-TEST("verify initRange with search iterator children") {
+TEST("verify search iterator conformance with search iterator children") {
     IteratorChildrenVerifier verifier;
     verifier.verify();
 }
 
-TEST("verify initRange with document weight iterator children") {
+TEST("verify search iterator conformance with document weight iterator children") {
     WeightIteratorChildrenVerifier verifier;
     verifier.verify();
 }

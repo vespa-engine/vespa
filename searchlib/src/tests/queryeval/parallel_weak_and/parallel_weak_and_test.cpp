@@ -9,7 +9,7 @@
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
-#include <vespa/searchlib/test/searchiteratorverifiers.h>
+#include <vespa/searchlib/test/weightedchildrenverifiers.h>
 #include <vespa/searchlib/test/document_weight_attribute_helper.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/fef/fef.h>
@@ -649,7 +649,7 @@ SearchIterator::UP create_wand(bool use_dwa,
     return SearchIterator::UP(ParallelWeakAndSearch::create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict));
 }
 
-class Verifier : public search::test::WeightIteratorChildrenVerifier {
+class Verifier : public search::test::DwaIteratorChildrenVerifier {
 public:
     Verifier(bool use_dwa) : _use_dwa(use_dwa) { }
 private:
@@ -665,7 +665,7 @@ private:
     mutable DummyHeap _dummy_heap;
 };
 
-TEST("verify initRange") {
+TEST("verify search iterator conformance") {
     for (bool use_dwa: {false, true}) {
         Verifier verifier(use_dwa);
         verifier.verify();

@@ -6,9 +6,9 @@
 namespace search {
 namespace test {
 
-class Verifier : public SearchIteratorVerifier {
+class WeightedChildrenVerifier : public SearchIteratorVerifier {
 public:
-    Verifier() :
+    WeightedChildrenVerifier() :
         _weights(_num_children, 1)
     { }
 
@@ -18,10 +18,10 @@ protected:
     std::vector<int32_t> _weights;
 };
 
-class IteratorChildrenVerifier : public Verifier {
+class IteratorChildrenVerifier : public WeightedChildrenVerifier {
 public:
     IteratorChildrenVerifier() :
-        Verifier(),
+        WeightedChildrenVerifier(),
         _split_lists(_num_children)
     {
         auto full_list = getExpectedDocIds();
@@ -45,10 +45,10 @@ protected:
     std::vector<DocIds> _split_lists;
 };
 
-class WeightIteratorChildrenVerifier : public Verifier {
+class DwaIteratorChildrenVerifier : public WeightedChildrenVerifier {
 public:
-    WeightIteratorChildrenVerifier() :
-        Verifier(),
+    DwaIteratorChildrenVerifier() :
+        WeightedChildrenVerifier(),
         _helper()
     {
         _helper.add_docs(getDocIdLimit());
