@@ -105,7 +105,7 @@ public class ReferenceFieldValueTestCase {
     }
 
     @Test
-    public void can_assign_empty_reference_field_value_instance__to_existing_reference() {
+    public void can_assign_empty_reference_field_value_instance_to_existing_reference() {
         ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
         ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeFoo());
         // Logically a no-op, but still worth testing.
@@ -114,7 +114,7 @@ public class ReferenceFieldValueTestCase {
     }
 
     @Test
-    public void can_assign_reference_field_value_instance__with_id_to_existing_reference() {
+    public void can_assign_reference_field_value_instance_with_id_to_existing_reference() {
         ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
         ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad"));
         existing.assign(newValue);
