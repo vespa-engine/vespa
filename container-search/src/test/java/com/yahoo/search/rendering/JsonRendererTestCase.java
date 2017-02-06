@@ -599,7 +599,40 @@ public class JsonRendererTestCase {
         r.hits().add(gg);
         r.hits().addError(ErrorMessage.createInternalServerError("boom"));
         String summary = render(execution, r);
-        // System.out.println(summary);
+        assertEqualJson(expected, summary);
+    }
+
+    @Test
+    public void testCoverage() throws InterruptedException, ExecutionException, IOException {
+        String expected = "{\n"
+                + "    \"root\": {\n"
+                + "        \"coverage\": {\n"
+                + "            \"coverage\": 83,\n"
+                + "            \"documents\": 500,\n"
+                + "            \"degraded\" : {\n"
+                + "                \"match-phase\" : true,\n"
+                + "                \"timeout\" : false,\n"
+                + "                \"adaptive-timeout\" : true,\n"
+                + "                \"non-ideal-state\" : false"
+                + "            },\n"
+                + "            \"full\": false,\n"
+                + "            \"nodes\": 0,\n"
+                + "            \"results\": 1,\n"
+                + "            \"resultsFull\": 0\n"
+                + "        },\n"
+                + "        \"fields\": {\n"
+                + "            \"totalCount\": 0\n"
+                + "        },\n"
+                + "        \"id\": \"toplevel\",\n"
+                + "        \"relevance\": 1.0\n"
+                + "    }\n"
+                + "}";
+        Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
+        Execution execution = new Execution(Execution.Context.createContextStub());
+        Result r = new Result(q);
+        r.setCoverage(new Coverage(500, 600).setDegradedReason(5));
+
+        String summary = render(execution, r);
         assertEqualJson(expected, summary);
     }
 

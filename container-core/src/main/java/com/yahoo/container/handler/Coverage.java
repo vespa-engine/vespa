@@ -2,6 +2,8 @@
 package com.yahoo.container.handler;
 
 
+import com.google.common.annotations.Beta;
+
 /**
  * The coverage report for a result set.
  *
@@ -105,15 +107,18 @@ public class Coverage {
 
     /**
      * Total number of documents that will be searchable once redistribution has settled.
+     * Still in beta, sematics not finalized yet.
      *
      * @return Total number of documents that will soon be available.
      */
+    @Beta
     public long getSoonActive() { return soonActive; }
 
-    public boolean isDegraded() { return degradedReason != 0; }
+    public boolean isDegraded() { return (degradedReason != 0) || isDegradedByNonIdealState(); }
     public boolean isDegradedByMatchPhase() { return (degradedReason & DEGRADED_BY_MATCH_PHASE) != 0; }
     public boolean isDegradedByTimeout() { return (degradedReason & DEGRADED_BY_TIMEOUT) != 0; }
     public boolean isDegradedByAdapativeTimeout() { return (degradedReason & DEGRADED_BY_ADAPTIVE_TIMEOUT) != 0; }
+    public boolean isDegradedByNonIdealState() { return (degradedReason == 0) && (getResultPercentage() != 100);}
 
     /**
      * @return whether the search had full coverage or not

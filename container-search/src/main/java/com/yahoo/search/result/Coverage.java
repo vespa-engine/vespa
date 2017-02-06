@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
+import com.google.common.annotations.Beta;
+
 /**
  * The coverage report for a result set.
  *
@@ -21,7 +23,19 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
         super(docs, nodes, full, resultSets);
     }
 
+    /**
+     * Will set number of documents present in ideal state
+     * @param soonActive
+     * @return self for chaining
+     */
+    @Beta
     public Coverage setSoonActive(long soonActive) { this.soonActive = soonActive; return this; }
+
+    /**
+     * Will set the reasons for degraded coverage as reported by vespa backend.
+     * @param degradedReason
+     * @return self for chaining
+     */
     public Coverage setDegradedReason(int degradedReason) { this.degradedReason = degradedReason; return this; }
 
 }

@@ -417,7 +417,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
 
         if (resultPacket.getCoverageFeature()) {
-            result.setCoverage(new Coverage(resultPacket.getCoverageDocs(), resultPacket.getActiveDocs()).setSoonActive(resultPacket.getSoonActiveDocs()).setDegradedReason(resultPacket.getDegradedReason()));
+            result.setCoverage(new Coverage(resultPacket.getCoverageDocs(), resultPacket.getActiveDocs())
+                    .setSoonActive(resultPacket.getSoonActiveDocs())
+                    .setDegradedReason(resultPacket.getDegradedReason()));
         }
     }
 
