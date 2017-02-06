@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -15,6 +16,7 @@
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -25,6 +27,7 @@ using namespace document;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::CollectionType;
+using search::attribute::ReferenceAttribute;
 
 namespace search {
 
@@ -139,6 +142,33 @@ public:
     int Main();
 };
 
+namespace {
+
+GlobalId toGid(vespalib::stringref docId) {
+    return DocumentId(docId).getGlobalId();
+}
+
+vespalib::string doc1("id:test:testdoc::1");
+vespalib::string doc2("id:test:testdoc::2");
+
+ReferenceAttribute &asReferenceAttribute(AttributeVector &vec)
+{
+    return dynamic_cast<ReferenceAttribute &>(vec);
+}
+
+void assertNoRef(AttributeVector &vec, uint32_t doc)
+{
+    EXPECT_TRUE(asReferenceAttribute(vec).getReference(doc) == nullptr);
+}
+
+void assertRef(AttributeVector &vec, vespalib::stringref str, uint32_t doc) {
+    const GlobalId *gid = asReferenceAttribute(vec).getReference(doc);
+    EXPECT_TRUE(gid != nullptr);
+    EXPECT_EQUAL(toGid(str), *gid);
+}
+
+}
+
 void
 Test::requireThatSingleAttributesAreUpdated()
 {
@@ -183,6 +213,26 @@ Test::requireThatSingleAttributesAreUpdated()
         EXPECT_TRUE(check(vec, 0, Vector<WeightedString>().pb(WeightedString("second"))));
         EXPECT_TRUE(check(vec, 1, Vector<WeightedString>().pb(WeightedString("first"))));
         EXPECT_TRUE(check(vec, 2, Vector<WeightedString>().pb(WeightedString(""))));
+    }
+    {
+        BasicType bt(BasicType::REFERENCE);
+        Config cfg(bt, ct);
+        AttributePtr vec = AttributeFactory::createAttribute("in1/ref", cfg);
+        uint32_t startDoc = 0;
+        uint32_t endDoc = 0;
+        EXPECT_TRUE(vec->addDocs(startDoc, endDoc, 3));
+        EXPECT_EQUAL(0u, startDoc);
+        EXPECT_EQUAL(2u, endDoc);
+        for (uint32_t docId = 0; docId < 3; ++docId) {
+            asReferenceAttribute(*vec).update(docId, toGid(doc1));
+        }
+        vec->commit();
+        applyValueUpdate(*vec, 0, AssignValueUpdate(ReferenceFieldValue(dynamic_cast<const ReferenceDataType &>(_docType->getField("ref").getDataType()), DocumentId(doc2))));
+        applyValueUpdate(*vec, 2, ClearValueUpdate());
+        EXPECT_EQUAL(3u, vec->getNumDocs());
+        TEST_DO(assertRef(*vec, doc2, 0));
+        TEST_DO(assertRef(*vec, doc1, 1));
+        TEST_DO(assertNoRef(*vec, 2));
     }
 }
 
