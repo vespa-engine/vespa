@@ -39,7 +39,6 @@ public:
         : _input(input), _data(), _pos(0), _bytes_evicted(0), _eof(false), _error(), _space() {}
     ~InputReader();
 
-    bool eof() const { return _eof; }
     bool failed() const { return !_error.empty(); }
     const vespalib::string &get_error_message() const { return _error; }
     size_t get_offset() const { return (_bytes_evicted + _pos); }
