@@ -5,12 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
+import com.yahoo.slime.Cursor;
+import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -19,15 +16,14 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
  * Checks for convergence of config generation for a given application.
  *
  * @author lulf
+ * @author hmusum
  */
 public class ApplicationConvergenceChecker extends AbstractComponent {
     private static final String statePath = "/state/v1/";
@@ -54,78 +50,36 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         this.stateApiFactory = stateApiFactory;
     }
 
-    public HttpResponse listConfigConvergence(Application application, URI uri) {
-        final JSONObject answer = new JSONObject();
-        final JSONArray nodes = new JSONArray();
-        final ModelConfig config;
+    public ServiceListResponse serviceListToCheckForConfigConvergence(Application application, URI uri) {
+        List<Service> services = new ArrayList<>();
+        Long wantedGeneration = application.getApplicationGeneration();
         try {
-            config = application.getConfig(ModelConfig.class, "");
+            // Note: Uses latest config model version to get config
+            ModelConfig config = application.getConfig(ModelConfig.class, "");
+            config.hosts()
+                  .forEach(host -> host.services().stream()
+                                       .filter(service -> serviceTypes.contains(service.type()))
+                                       .forEach(service -> getStatePort(service).ifPresent(
+                                               port -> services.add(new Service(host.name(), port, service.type())))));
+            return new ServiceListResponse(200, services, uri, wantedGeneration);
         } catch (IOException e) {
-            throw new RuntimeException("failed on get config model", e);
-        }
-        config.hosts()
-              .forEach(host -> {
-                  host.services().stream()
-                      .filter(service -> serviceTypes.contains(service.type()))
-                      .forEach(service -> {
-                          Optional<Integer> statePort = getStatePort(service);
-                          if (statePort.isPresent()) {
-                              JSONObject hostNode = new JSONObject();
-                              try {
-                                  hostNode.put("host", host.name());
-                                  hostNode.put("port", statePort.get());
-                                  hostNode.put("url", uri.toString() + "/" + host.name() + ":" + statePort.get());
-                                  hostNode.put("type", service.type());
-
-                              } catch (JSONException e) {
-                                  throw new RuntimeException(e);
-                              }
-                              nodes.put(hostNode);
-                          }
-                      });
-              });
-        try {
-            answer.put("services", nodes);
-            JSONObject debug = new JSONObject();
-            debug.put("wantedVersion", application.getApplicationGeneration());
-            answer.put("debug", debug);
-            answer.put("url", uri.toString());
-            return new JsonHttpResponse(200, answer);
-        } catch (JSONException e) {
-            try {
-                answer.put("error", e.getMessage());
-            } catch (JSONException e1) {
-                throw new RuntimeException("Failed while creating error message ", e1);
-            }
-            return new JsonHttpResponse(500, answer);
+            return new ServiceListResponse(500, services, uri, wantedGeneration);
         }
     }
 
-    public HttpResponse nodeConvergenceCheck(Application application, String hostFromRequest, URI uri) {
-        JSONObject answer = new JSONObject();
-        JSONObject debug = new JSONObject();
-        try {
-            answer.put("url", uri);
-            debug.put("wantedGeneration", application.getApplicationGeneration());
-            debug.put("host", hostFromRequest);
+    public ServiceResponse serviceConvergenceCheck(Application application, String hostAndPortToCheck, URI uri) {
+        Long wantedGeneration = application.getApplicationGeneration();
+        if ( ! hostInApplication(application, hostAndPortToCheck))
+            return ServiceResponse.createHostNotFoundInAppResponse(uri, hostAndPortToCheck, wantedGeneration);
 
-            if (!hostInApplication(application, hostFromRequest)) {
-                debug.put("problem", "Host:port (service) no longer part of application, refetch list of services.");
-                answer.put("debug", debug);
-                return new JsonHttpResponse(410, answer);
-            }
-            final long generation = getServiceGeneration(URI.create("http://" + hostFromRequest));
-            debug.put("currentGeneration", generation);
-            answer.put("debug", debug);
-            answer.put("converged", generation >= application.getApplicationGeneration());
-            return new JsonHttpResponse(200, answer);
-        } catch (JSONException | ProcessingException e) {
-            try {
-                answer.put("error", e.getMessage());
-            } catch (JSONException e1) {
-                throw new RuntimeException("Fail while creating error message ", e1);
-            }
-            return new JsonHttpResponse(500, answer);
+        try {
+            long currentGeneration = getServiceGeneration(URI.create("http://" + hostAndPortToCheck));
+            boolean converged = currentGeneration >= wantedGeneration;
+            return ServiceResponse.createOkResponse(uri, hostAndPortToCheck, wantedGeneration, currentGeneration, converged);
+        } catch (ProcessingException e) { // e.g. if we cannot connect to the service to find generation
+            return ServiceResponse.createNotFoundResponse(uri, hostAndPortToCheck, wantedGeneration, e.getMessage());
+        } catch (Exception e) {
+            return ServiceResponse.createErrorResponse(uri, hostAndPortToCheck, wantedGeneration, e.getMessage());
         }
     }
 
@@ -187,23 +141,71 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         return false;
     }
 
-    private static class JsonHttpResponse extends HttpResponse {
+    static class ServiceListResponse extends JSONResponse {
+        final Cursor debug;
 
-        private final JSONObject answer;
+        private ServiceListResponse(int status, List<Service> services, URI uri, Long wantedGeneration) {
+            super(status);
+            Cursor serviceArray = object.setArray("services");
+            for (Service s : services) {
+                Cursor service = serviceArray.addObject();
+                service.setString("host", s.hostname);
+                service.setLong("port", s.port);
+                service.setString("type", s.type);
+                service.setString("url", uri.toString() + "/" + s.hostname + ":" + s.port);
+            }
+            debug = object.setObject("debug");
+            object.setString("url", uri.toString());
+            debug.setLong("wantedGeneration", wantedGeneration);
+        }
+    }
 
-        JsonHttpResponse(int returnCode, JSONObject answer) {
-            super(returnCode);
-            this.answer = answer;
+    static class ServiceResponse extends JSONResponse {
+        final Cursor debug;
+
+        private ServiceResponse(int status, URI uri, String hostname, Long wantedGeneration) {
+            super(status);
+            debug = object.setObject("debug");
+            object.setString("url", uri.toString());
+            debug.setString("host", hostname);
+            debug.setLong("wantedGeneration", wantedGeneration);
         }
 
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            outputStream.write(answer.toString().getBytes(StandardCharsets.UTF_8));
+        static ServiceResponse createOkResponse(URI uri, String hostname, Long wantedGeneration, Long currentGeneration, boolean converged) {
+            ServiceResponse serviceResponse = new ServiceResponse(200, uri, hostname, wantedGeneration);
+            serviceResponse.object.setBool("converged", converged);
+            serviceResponse.debug.setLong("currentGeneration", currentGeneration);
+            return serviceResponse;
         }
 
-        @Override
-        public String getContentType() {
-            return HttpConfigResponse.JSON_CONTENT_TYPE;
+        static ServiceResponse createHostNotFoundInAppResponse(URI uri, String hostname, Long wantedGeneration) {
+            ServiceResponse serviceResponse = new ServiceResponse(410, uri, hostname, wantedGeneration);
+            serviceResponse.debug.setString("problem", "Host:port (service) no longer part of application, refetch list of services.");
+            return serviceResponse;
+        }
+
+        static ServiceResponse createErrorResponse(URI uri, String hostname, Long wantedGeneration, String error) {
+            ServiceResponse serviceResponse = new ServiceResponse(500, uri, hostname, wantedGeneration);
+            serviceResponse.object.setString("error", error);
+            return serviceResponse;
+        }
+
+        static ServiceResponse createNotFoundResponse(URI uri, String hostname, Long wantedGeneration, String error) {
+            ServiceResponse serviceResponse = new ServiceResponse(404, uri, hostname, wantedGeneration);
+            serviceResponse.object.setString("error", error);
+            return serviceResponse;
+        }
+    }
+
+    private static class Service {
+        private final String hostname;
+        private final int port;
+        private final String type;
+
+        private Service(String hostname, int port, String type) {
+            this.hostname = hostname;
+            this.port = port;
+            this.type = type;
         }
     }
 

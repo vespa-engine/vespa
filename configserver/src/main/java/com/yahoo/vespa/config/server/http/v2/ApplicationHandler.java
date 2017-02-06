@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.concurrent.Executor;
 
 /**
@@ -34,10 +33,7 @@ import java.util.concurrent.Executor;
  * @author hmusum
  * @since 5.4
  */
-// TODO: Move business logic out of the http layer
 public class ApplicationHandler extends HttpHandler {
-
-    private static final String REQUEST_PROPERTY_TIMEOUT = "timeout";
 
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
@@ -67,7 +63,7 @@ public class ApplicationHandler extends HttpHandler {
         Tenant tenant = verifyTenantAndApplication(applicationId);
 
         if (isServiceConvergeRequest(request)) {
-            return applicationRepository.nodeConvergenceCheck(tenant, applicationId, getHostFromRequest(request), request.getUri());
+            return applicationRepository.serviceConvergenceCheck(tenant, applicationId, getHostFromRequest(request), request.getUri());
         }
         if (isContentRequest(request)) {
             long sessionId = applicationRepository.getSessionIdForApplication(tenant, applicationId);
@@ -87,7 +83,7 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isServiceConvergeListRequest(request)) {
-            return applicationRepository.listConfigConvergence(tenant, applicationId, request.getUri());
+            return applicationRepository.serviceListToCheckForConfigConvergence(tenant, applicationId, request.getUri());
         }
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(tenant, applicationId));
     }
@@ -142,14 +138,6 @@ public class ApplicationHandler extends HttpHandler {
         } catch (IllegalArgumentException e) {
             throw new NotFoundException(e.getMessage());
         }
-    }
-
-    private Duration durationFromRequestTimeout(HttpRequest request) {
-        long timeoutInSeconds = 60;
-        if (request.hasProperty(REQUEST_PROPERTY_TIMEOUT)) {
-            timeoutInSeconds = Long.parseLong(request.getProperty(REQUEST_PROPERTY_TIMEOUT));
-        }
-        return Duration.ofSeconds(timeoutInSeconds);
     }
 
     // Note: Update src/main/resources/configserver-app/services.xml if you do any changes to the bindings
@@ -209,14 +197,14 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static class DeleteApplicationResponse extends JSONResponse {
-        public DeleteApplicationResponse(int status, ApplicationId applicationId) {
+        DeleteApplicationResponse(int status, ApplicationId applicationId) {
             super(status);
             object.setString("message", "Application '" + applicationId + "' deleted");
         }
     }
 
     private static class GetApplicationResponse extends JSONResponse {
-        public GetApplicationResponse(int status, long generation) {
+        GetApplicationResponse(int status, long generation) {
             super(status);
             object.setLong("generation", generation);
         }
