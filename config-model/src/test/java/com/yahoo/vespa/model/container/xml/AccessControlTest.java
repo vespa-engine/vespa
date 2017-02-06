@@ -98,6 +98,39 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                                        binding.binding.contains(forbiddenBinding))));
     }
 
+    @Test
+    public void handler_can_be_excluded_by_excluding_one_of_its_bindings() throws Exception {
+        final String notExcludedBinding = "http://*/custom-handler/*";
+        final String excludedBinding = "http://*/excluded/*";
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc id='default' version='1.0'>",
+                "  <handler id='custom.Handler'>",
+                "    <binding>" + notExcludedBinding + "</binding>",
+                "    <binding>" + excludedBinding + "</binding>",
+                "  </handler>",
+                "  <http>",
+                "    <filtering>",
+                "      <access-control domain='foo'>",
+                "        <exclude>",
+                "          <binding>" + excludedBinding + "</binding>",
+                "        </exclude>",
+                "      </access-control>",
+                "    </filtering>",
+                "  </http>",
+                "</jdisc>");
+
+        createModel(root, clusterElem);
+        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
+        Http http = cluster.getHttp();
+        assertNotNull(http);
+
+        assertFalse("Excluded binding was not removed.",
+                    containsBinding(http.getBindings(), excludedBinding));
+        assertFalse("Not all bindings of an excluded handler was removed.",
+                    containsBinding(http.getBindings(), notExcludedBinding));
+
+    }
+
     private boolean containsBinding(Collection<Binding> bindings, String binding) {
         for (Binding b : bindings) {
             if (b.binding.contains(binding))

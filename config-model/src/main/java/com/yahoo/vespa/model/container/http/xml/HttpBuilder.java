@@ -18,12 +18,12 @@ import com.yahoo.vespa.model.container.http.Http.Binding;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
-import static com.yahoo.vespa.model.container.http.AccessControl.accessControlBinding;
 
 /**
  * @author tonytv
@@ -43,7 +43,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
-                bindings.addAll(getAccessControlBindings(ancestor));
+                bindings.addAll(getAccessControlBindings(ancestor, buildAccessControl(accessControlElem)));
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
@@ -58,10 +58,20 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return http;
     }
 
-    private static List<Binding> getAccessControlBindings(AbstractConfigProducer ancestor) {
+    private AccessControl buildAccessControl(Element accessControlElem) {
+        Element excludeElem = XML.getChild(accessControlElem, "exclude");
+        if (excludeElem != null) {
+            return new AccessControl(XML.getChildren(excludeElem, "binding").stream()
+                    .map(XML::getValue)
+                    .collect(Collectors.toSet()));
+        }
+        return new AccessControl(Collections.emptySet());
+    }
+
+    private static List<Binding> getAccessControlBindings(AbstractConfigProducer ancestor, AccessControl accessControl) {
         return getContainerCluster(ancestor)
                 .map(cluster -> cluster.getHandlers().stream()
-                        .filter(AccessControl::shouldHandlerBeProtected)
+                        .filter(accessControl::shouldHandlerBeProtected)
                         .flatMap(handler -> handler.getServerBindings().stream())
                         .map(AccessControl::accessControlBinding)
                         .collect(Collectors.toList()))
