@@ -123,6 +123,7 @@ AttributeWeightedSetBlueprint::AttributeWeightedSetBlueprint(const queryeval::Fi
       _attr(attr),
       _contexts()
 {
+    set_allow_termwise_eval(true);
 }
 
 AttributeWeightedSetBlueprint::~AttributeWeightedSetBlueprint()
