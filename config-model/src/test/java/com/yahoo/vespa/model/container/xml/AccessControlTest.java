@@ -9,6 +9,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.Http.Binding;
+import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -50,15 +51,15 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_filter_chain_is_set_up() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='foo' />",
                 "    </filtering>",
-                "  </http>",
-                "</jdisc>");
+                "  </http>");
 
-        Http http = getHttp(clusterElem);
+        Http http = new HttpBuilder().build(root, clusterElem);
+        root.freezeModelTopology();
+
         assertTrue(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
     }
 
