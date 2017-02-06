@@ -1,30 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("dot_product_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
-
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/queryeval/dot_product_search.h>
-#include <vespa/searchlib/test/initrange.h>
-#include <vespa/searchlib/test/document_weight_attribute_helper.h>
-#include <memory>
-#include <string>
-#include <map>
+#include <vespa/searchlib/test/weightedchildrenverifiers.h>
 
 using namespace search;
 using namespace search::query;
 using namespace search::fef;
 using namespace search::queryeval;
-using search::test::InitRangeVerifier;
+using search::test::SearchIteratorVerifier;
 using search::test::DocumentWeightAttributeHelper;
 
 namespace {
@@ -174,46 +165,30 @@ TEST_F("test Eager Matching Child", MockFixture(5)) {
     EXPECT_EQUAL(1, mock->seekCnt);
 }
 
-TEST("verify initRange with search iterator children") {
-    const size_t num_children = 7;
-    InitRangeVerifier ir;
-    using DocIds = InitRangeVerifier::DocIds;
-    std::vector<DocIds> split_lists(num_children);
-    auto full_list = ir.getExpectedDocIds();
-    for (size_t i = 0; i < full_list.size(); ++i) {
-        split_lists[i % num_children].push_back(full_list[i]);
+class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
+private:
+    SearchIterator::UP create(const std::vector<SearchIterator*> &children) const override {
+        std::vector<fef::TermFieldMatchData*> no_child_match;
+        MatchData::UP no_match_data;
+        return DotProductSearch::create(children, _tfmd, no_child_match, _weights, std::move(no_match_data));
     }
-    bool strict = true;
-    std::vector<SearchIterator*> children;
-    for (size_t i = 0; i < num_children; ++i) {
-        children.push_back(ir.createIterator(split_lists[i], strict).release());
+};
+
+class WeightIteratorChildrenVerifier : public search::test::DwaIteratorChildrenVerifier {
+private:
+    SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const override {
+        return SearchIterator::UP(DotProductSearch::create(_tfmd, _weights, std::move(children)));
     }
-    TermFieldMatchData tfmd;
-    std::vector<int32_t> weights(num_children, 1);
-    std::vector<fef::TermFieldMatchData*> no_child_match; // unpack not called
-    MatchData::UP no_match_data; // unpack not called
-    SearchIterator::UP itr = DotProductSearch::create(children, tfmd, no_child_match, weights, std::move(no_match_data));
-    ir.verify(*itr);
+};
+
+TEST("verify search iterator conformance with search iterator children") {
+    IteratorChildrenVerifier verifier;
+    verifier.verify();
 }
 
-TEST("verify initRange with document weight iterator children") {
-    const size_t num_children = 7;
-    InitRangeVerifier ir;
-    DocumentWeightAttributeHelper helper;
-    helper.add_docs(ir.getDocIdLimit());
-    auto full_list = ir.getExpectedDocIds();
-    for (size_t i = 0; i < full_list.size(); ++i) {
-        helper.set_doc(full_list[i], i % num_children, 1);
-    }
-    TermFieldMatchData tfmd;
-    std::vector<int32_t> weights(num_children, 1);
-    std::vector<DocumentWeightIterator> children;
-    for (size_t i = 0; i < num_children; ++i) {
-        auto dict_entry = helper.dwa().lookup(vespalib::make_string("%zu", i).c_str());
-        helper.dwa().create(dict_entry.posting_idx, children);
-    }
-    SearchIterator::UP itr(DotProductSearch::create(tfmd, weights, std::move(children)));
-    ir.verify(*itr);
+TEST("verify search iterator conformance with document weight iterator children") {
+    WeightIteratorChildrenVerifier verifier;
+    verifier.verify();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

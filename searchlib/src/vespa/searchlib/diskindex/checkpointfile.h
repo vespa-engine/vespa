@@ -3,19 +3,13 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/fastos/file.h>
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
+namespace common { class FileHeaderContext; }
 
-class FileHeaderContext;
-
-}
-
-namespace diskindex
-{
+namespace diskindex {
 
 class CheckPointFile
 {
@@ -27,43 +21,23 @@ public:
     bool _writeOpened;
     uint32_t _headerLen;
 
-    void
-    writeOpen(const common::FileHeaderContext &fileHeaderContext);
-
-    bool
-    readOpen(void);
-
-    void
-    close(void);
-
-    void
-    rename1(void);
-
-    void
-    rename2(void);
-
-    void
-    remove(void);
-
-    void
-    makeHeader(const common::FileHeaderContext &fileHeaderContext);
-
-    void
-    updateHeader(void);
-
-    uint32_t
-    readHeader(void);
+    void writeOpen(const common::FileHeaderContext &fileHeaderContext);
+    bool readOpen();
+    void close();
+    void rename1();
+    void rename2();
+    void remove();
+    void makeHeader(const common::FileHeaderContext &fileHeaderContext);
+    void updateHeader();
+    uint32_t readHeader();
 public:
+    CheckPointFile(const CheckPointFile &) = delete;
+    CheckPointFile & operator = (const CheckPointFile &) = delete;
     CheckPointFile(const vespalib::string &name);
+    ~CheckPointFile();
 
-    ~CheckPointFile(void);
-
-    void
-    write(vespalib::nbostream &buf,
-          const common::FileHeaderContext &fileHeaderContext);
-
-    bool
-    read(vespalib::nbostream &buf);
+    void write(vespalib::nbostream &buf, const common::FileHeaderContext &fileHeaderContext);
+    bool read(vespalib::nbostream &buf);
 };
 
 

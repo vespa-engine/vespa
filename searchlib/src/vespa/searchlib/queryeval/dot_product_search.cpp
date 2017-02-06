@@ -1,15 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".queryeval.dot_product_search");
-
 #include "dot_product_search.h"
 #include "iterator_pack.h"
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
-#include <algorithm>
-#include <functional>
+
 
 using search::fef::TermFieldMatchData;
 using vespalib::ObjectVisitor;

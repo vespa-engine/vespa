@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("sourceblender_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/sourceblendersearch.h>
 #include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 
@@ -141,29 +139,41 @@ TEST("test full sourceblender search") {
     EXPECT_EQUAL(expect_unpacked_c, uc->getUnpacked());
 }
 
-using search::test::InitRangeVerifier;
+using search::test::SearchIteratorVerifier;
 
-SourceBlenderSearch::Children
-createChildren(const std::vector<InitRangeVerifier::DocIds> & indexes, const InitRangeVerifier & ir, bool strict) {
-    SourceBlenderSearch::Children children;
-    for (size_t index(0); index < indexes.size(); index++) {
-        children.emplace_back(ir.createIterator(indexes[index], strict).release(), index);
+class Verifier : public SearchIteratorVerifier {
+public:
+    Verifier() :
+        _indexes(3),
+        _selector(getDocIdLimit())
+    {
+        for (uint32_t docId : getExpectedDocIds()) {
+            const size_t indexId = docId % _indexes.size();
+            _selector.set(docId, indexId);
+            _indexes[indexId].push_back(docId);
+        }
     }
-    return children;
-}
+    SearchIterator::UP create(bool strict) const override {
+        return SearchIterator::UP(SourceBlenderSearch::create(_selector.createIterator(),
+                                                              createChildren(strict),
+                                                              strict));
+    }
+private:
+    SourceBlenderSearch::Children
+    createChildren(bool strict) const {
+        SourceBlenderSearch::Children children;
+        for (size_t index(0); index < _indexes.size(); index++) {
+            children.emplace_back(createIterator(_indexes[index], strict).release(), index);
+        }
+        return children;
+    }
+    std::vector<DocIds> _indexes;
+    MySelector _selector;
+};
 
-TEST("test init range") {
-    InitRangeVerifier ir;
-    std::vector<InitRangeVerifier::DocIds> indexes(3);
-    auto sel = make_unique<MySelector>(ir.getDocIdLimit());
-    for (uint32_t docId : ir.getExpectedDocIds()) {
-        const size_t indexId = docId%indexes.size();
-        sel->set(docId, indexId);
-        indexes[indexId].push_back(docId);
-    }
-    TermFieldMatchData tfmd;
-    TEST_DO(ir.verify(SourceBlenderSearch::create(sel->createIterator(), createChildren(indexes, ir, false), false)));
-    TEST_DO(ir.verify(SourceBlenderSearch::create(sel->createIterator(), createChildren(indexes, ir, true), true)));
+TEST("Test that source blender iterator adheres to SearchIterator requirements") {
+    Verifier searchIteratorVerifier;
+    searchIteratorVerifier.verify();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

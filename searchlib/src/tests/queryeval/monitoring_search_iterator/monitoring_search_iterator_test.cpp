@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/monitoring_search_iterator.h>
@@ -8,7 +7,7 @@
 #include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/test/searchhistory.h>
 #include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
@@ -310,15 +309,31 @@ TEST_F("require that iterator tree can be dumped verbosely", TreeFixture)
         dumper.toString());
 }
 
-MonitoringSearchIterator::UP
-create(SearchIterator::UP child) {
-    return make_unique<MonitoringSearchIterator>("test", std::move(child), false);
-}
+class MonitoringSearchIteratorVerifier : public search::test::SearchIteratorVerifier {
+public:
+    SearchIterator::UP create(bool strict) const override {
+        return createMonitoring(strict);
+    }
 
-TEST("test monitoring search iterator handles initRange accoring to spec") {
-    search::test::InitRangeVerifier ir;
-    ir.verify(*create(ir.createIterator(ir.getExpectedDocIds(), false)));
-    ir.verify(*make_unique<MonitoringDumpIterator>(create(ir.createIterator(ir.getExpectedDocIds(), false))));
+protected:
+    std::unique_ptr<MonitoringSearchIterator> createMonitoring(bool strict) const {
+        return std::make_unique<MonitoringSearchIterator>("test", createIterator(getExpectedDocIds(), strict), false);
+
+    }
+};
+
+class MonitoringDumpIteratorVerifier : public MonitoringSearchIteratorVerifier {
+public:
+    SearchIterator::UP create(bool strict) const override {
+        return std::make_unique<MonitoringDumpIterator>(createMonitoring(strict));
+    }
+};
+
+TEST("test monitoring search iterator adheres to search iterator requirements") {
+    MonitoringSearchIteratorVerifier searchVerifier;
+    searchVerifier.verify();
+    MonitoringDumpIteratorVerifier dumpVerifier;
+    dumpVerifier.verify();
 }
 
 

@@ -9,7 +9,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/termwise_blueprint_helper.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/searchlib/test/initrange.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
@@ -630,10 +630,15 @@ TEST("require that termwise blueprint helper calculates unpack info correctly") 
     EXPECT_TRUE(!helper.termwise_unpack.needUnpack(5));
 }
 
-TEST("test that init range works for terwise too.") {
-    search::test::InitRangeVerifier ir;
-    ir.verify(*make_termwise(ir.createIterator(ir.getExpectedDocIds(), false), false));
-    ir.verify(*make_termwise(ir.createIterator(ir.getExpectedDocIds(), true), true));
+class Verifier : public search::test::SearchIteratorVerifier {
+public:
+    SearchIterator::UP create(bool strict) const override {
+        return make_termwise(createIterator(getExpectedDocIds(), strict), strict);
+    }
+};
+TEST("test terwise adheres to search iterator requirements.") {
+    Verifier verifier;
+    verifier.verify();
 }
 
 //-----------------------------------------------------------------------------

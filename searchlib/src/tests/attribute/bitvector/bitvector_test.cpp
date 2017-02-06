@@ -12,8 +12,7 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
-#include <vespa/searchlib/test/initrange.h>
-#include <vespa/searchlib/test/termwise.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/parsequery/parse.h>
 
@@ -523,29 +522,17 @@ BitVectorTest::test(BasicType bt,
 
 template <typename VectorType, typename BufferType>
 void
-BitVectorTest::test(BasicType bt,
-                    CollectionType ct,
-                    const vespalib::string &pref)
+BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pref)
 {
-    LOG(info,
-        "test run, pref is %s",
-        pref.c_str());
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 false, false, false, false);
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 false, false, false, true);
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 true, false, false, false);
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 true, false, false, true);
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 true, true, false, false);
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 true, true, false, true);
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 true, true, true, false);
-    test<VectorType, BufferType>(bt, ct, pref,
-                                 true, true, true, true);
+    LOG(info, "test run, pref is %s", pref.c_str());
+    test<VectorType, BufferType>(bt, ct, pref, false, false, false, false);
+    test<VectorType, BufferType>(bt, ct, pref, false, false, false, true);
+    test<VectorType, BufferType>(bt, ct, pref, true, false, false, false);
+    test<VectorType, BufferType>(bt, ct, pref, true, false, false, true);
+    test<VectorType, BufferType>(bt, ct, pref, true, true, false, false);
+    test<VectorType, BufferType>(bt, ct, pref, true, true, false, true);
+    test<VectorType, BufferType>(bt, ct, pref, true, true, true, false);
+    test<VectorType, BufferType>(bt, ct, pref, true, true, true, true);
 }
 
 
@@ -621,18 +608,8 @@ TEST_F("Test bitvectors with weighted set value string", BitVectorTest)
                                          "string_ws");
 }
 
-TEST("Test bitvector iterators adheres to initRange") {
-    search::test::InitRangeVerifier initRangeTest;
-    BitVector::UP bv = BitVector::create(initRangeTest.getDocIdLimit());
-    for (uint32_t docId: initRangeTest.getExpectedDocIds()) {
-        bv->setBit(docId);
-    }
-    TermFieldMatchData tfmd;
-    initRangeTest.verify(*BitVectorIterator::create(bv.get(), initRangeTest.getDocIdLimit(), tfmd, false));
-    initRangeTest.verify(*BitVectorIterator::create(bv.get(), initRangeTest.getDocIdLimit(), tfmd, true));
-}
 
-class Verifier : public search::test::TermwiseVerifier {
+class Verifier : public search::test::SearchIteratorVerifier {
 public:
     Verifier() : _bv(BitVector::create(getDocIdLimit())) {
         for (uint32_t docId: getExpectedDocIds()) {
@@ -648,9 +625,10 @@ private:
     mutable TermFieldMatchData _tfmd;
     BitVector::UP _bv;
 };
-TEST("Test bitvector iterators adheres to termwise search too") {
-    Verifier termwiseTest;
-    termwiseTest.verify();
+
+TEST("Test that bitvector iterators adheres to SearchIterator requirements") {
+    Verifier searchIteratorVerifier;
+    searchIteratorVerifier.verify();
 }
 
 

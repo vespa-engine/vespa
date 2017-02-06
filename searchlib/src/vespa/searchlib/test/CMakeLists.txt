@@ -3,9 +3,9 @@ vespa_add_library(searchlib_test
     SOURCES
     document_weight_attribute_helper.cpp
     initrange.cpp
+    searchiteratorverifier.cpp
     statefile.cpp
     statestring.cpp
-    termwise.cpp
     $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
     DEPENDS

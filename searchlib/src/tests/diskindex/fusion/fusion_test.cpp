@@ -1,26 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/diskindex/checkpointfile.h>
+
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/indexbuilder.h>
-#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/memoryindex/dictionary.h>
 #include <vespa/searchlib/memoryindex/documentinverter.h>
-#include <vespa/searchlib/memoryindex/featurestore.h>
 #include <vespa/searchlib/memoryindex/postingiterator.h>
-#include <vespa/searchlib/memoryindex/i_document_insert_listener.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
@@ -47,25 +40,19 @@ private:
     Schema _schema;
     const Schema & getSchema() const { return _schema; }
 
-    void
-    requireThatFusionIsWorking(const vespalib::string &prefix,
-                               bool directio,
-                               bool readmmap);
+    void requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap);
 public:
     Test();
     int Main();
 };
 
-
-namespace
-{
+namespace {
 
 void
 myPushDocument(DocumentInverter &inv, Dictionary &d)
 {
     inv.pushDocuments(d, std::shared_ptr<IDestructorCallback>());
 }
-
 
 }
 

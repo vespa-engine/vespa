@@ -1,44 +1,24 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* -*- mode: C++; coding: utf-8; -*- */
 
-/*   $Id$
- *
- *   Copyright (C) 2011 Yahoo! Technologies Norway AS
- *
- *   All Rights Reserved
- *
- */
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchlib/diskindex/checkpointfile.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/indexbuilder.h>
-#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/btree/btreenodestore.hpp>
 #include <vespa/searchlib/memoryindex/dictionary.h>
 #include <vespa/searchlib/memoryindex/documentinverter.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/searchlib/memoryindex/document_remover.h>
-#include <vespa/searchlib/memoryindex/featurestore.h>
 #include <vespa/searchlib/memoryindex/postingiterator.h>
 #include <vespa/searchlib/memoryindex/ordereddocumentinserter.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
-#include <vespa/searchlib/test/initrange.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP("dictionary_test");
 
 namespace search {
@@ -49,14 +29,12 @@ using namespace fef;
 using namespace index;
 using queryeval::SearchIterator;
 using document::Document;
-using diskindex::CheckPointFile;
 using vespalib::GenerationHandler;
-using test::InitRangeVerifier;
+using test::SearchIteratorVerifier;
 
 namespace memoryindex {
 
 typedef Dictionary::PostingList PostingList;
-typedef PostingList::Iterator PostingItr;
 typedef PostingList::ConstIterator PostingConstItr;
 
 class MyBuilder : public IndexBuilder {
@@ -85,8 +63,7 @@ public:
           _firstDoc(true),
           _firstElem(true),
           _firstPos(true)
-    {
-    }
+    {}
 
     virtual void
     startWord(const vespalib::stringref &word)
@@ -754,21 +731,36 @@ TEST_F("requireThatFeaturesAreInPostingLists", Fixture)
                                   featureStorePtr(d, 1)));
 }
 
-TEST_F("require that initRange conforms", Fixture) {
-    Dictionary d(f.getSchema());
-    InitRangeVerifier ir;
-    WrapInserter inserter(d, 0);
-    inserter.word("a");
-    for (uint32_t docId : ir.getExpectedDocIds()) {
-        inserter.add(docId);
+class Verifier : public SearchIteratorVerifier {
+public:
+    Verifier(const Schema & schema) :
+        _tfmd(),
+        _dictionary(schema)
+    {
+        WrapInserter inserter(_dictionary, 0);
+        inserter.word("a");
+        for (uint32_t docId : getExpectedDocIds()) {
+            inserter.add(docId);
+        }
+        inserter.flush();
     }
-    inserter.flush();
 
-    TermFieldMatchData tfmd;
-    TermFieldMatchDataArray matchData;
-    matchData.add(&tfmd);
-    PostingIterator itr(d.find("a", 0), featureStoreRef(d, 0), 0, matchData);
-    ir.verify(itr);
+    SearchIterator::UP create(bool strict) const override {
+        (void) strict;
+        TermFieldMatchDataArray matchData;
+        matchData.add(&_tfmd);
+        return std::make_unique<PostingIterator>(_dictionary.find("a", 0), featureStoreRef(_dictionary, 0), 0, matchData);
+    }
+
+private:
+    mutable TermFieldMatchData _tfmd;
+    Dictionary                 _dictionary;
+};
+
+TEST_F("require that postingiterator conforms", Fixture) {
+    Verifier verifier(f.getSchema());
+    verifier.verify();
+
 }
 
 TEST_F("requireThatPostingIteratorIsWorking", Fixture)

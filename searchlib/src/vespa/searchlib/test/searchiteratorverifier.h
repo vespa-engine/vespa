@@ -8,22 +8,26 @@
 namespace search {
 namespace test {
 
-class TermwiseVerifier {
+class SearchIteratorVerifier {
 public:
     typedef queryeval::SearchIterator SearchIterator;
     typedef std::vector<uint32_t> DocIds;
     typedef std::pair<uint32_t, uint32_t> Range;
     typedef std::vector<Range> Ranges;
 
-    TermwiseVerifier();
-    virtual ~TermwiseVerifier();
+    static SearchIterator::UP createIterator(const DocIds &docIds, bool strict);
+    static SearchIterator::UP createEmptyIterator();
+    SearchIterator::UP createFullIterator() const;
+
+    SearchIteratorVerifier();
+    virtual ~SearchIteratorVerifier();
     void verify() const;
     virtual SearchIterator::UP create(bool strict) const = 0;
-protected:
     const DocIds & getExpectedDocIds() const { return _docIds; }
     static uint32_t getDocIdLimit() { return 207; }
 private:
-    SearchIterator::UP createIterator(const DocIds &docIds, bool strict) const;
+    void verifyTermwise() const;
+    void verifyInitRange() const;
     void verify(bool strict) const;
     void verifyAnd(bool strict) const;
     void verifyOr(bool strict) const;

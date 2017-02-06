@@ -6,8 +6,6 @@
 #include <vespa/searchlib/docstore/storebybucket.h>
 #include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/document/base/documentid.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exceptions.h>
