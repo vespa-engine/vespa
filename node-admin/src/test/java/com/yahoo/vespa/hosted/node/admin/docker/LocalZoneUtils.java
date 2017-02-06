@@ -57,7 +57,7 @@ public class LocalZoneUtils {
     public static void startConfigServerIfNeeded(Docker docker, Environment environment) throws UnknownHostException {
         Optional<Container> container = docker.getContainer(CONFIG_SERVER_HOSTNAME);
         if (container.isPresent()) {
-            if (container.get().isRunning) return;
+            if (container.get().state.isRunning()) return;
             else docker.deleteContainer(CONFIG_SERVER_CONTAINER_NAME);
         }
 
