@@ -11,6 +11,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.glassfish.jersey.jaxb.internal.XmlCollectionJaxbProvider;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -130,6 +131,39 @@ public class AclProvisioningTest {
         assertAcls(Arrays.asList(dockerHostNodes, configServers), acls.get(0));
     }
 
+
+    @Test
+    public void trusted_nodes_for_docker_hosts_and_proxy_nodes_in_zone_application() {
+        ApplicationId applicationId = tester.makeApplicationId(); // use same id for bot allocate calls below
+        List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
+
+        // Populate repo
+        tester.makeReadyNodes(3, "default", NodeType.proxy);
+        tester.makeReadyNodes(2, "default", NodeType.host);
+
+        // Allocate 3 proxy nodes
+        List<Node> activeProxyNodes = allocateNodes(NodeType.proxy, applicationId);
+        assertEquals(3, activeProxyNodes.size());
+        // Allocate 2 Docker hosts, total of 5 hosts
+        List<Node> activeDockerHosts = allocateNodes(NodeType.host, applicationId);
+        assertEquals(5, activeDockerHosts.size());
+
+        // Get trusted nodes for first proxy node
+        Node proxyNode = activeProxyNodes.get(0);
+        List<NodeAcl> proxyNodeAcls = tester.nodeRepository().getNodeAcls(proxyNode, false);
+
+        // Trusted nodes is all config servers and all proxy nodes
+        assertAcls(Arrays.asList(activeDockerHosts, activeProxyNodes, configServers), proxyNodeAcls);
+
+        // Get trusted nodes for first Docker host
+        Node dockerHost = activeDockerHosts.get(0);
+        List<NodeAcl> dockerHostNodeAcls = tester.nodeRepository().getNodeAcls(dockerHost, false);
+
+        // Trusted nodes is all config servers and all proxy nodes
+        assertAcls(Arrays.asList(activeDockerHosts, activeProxyNodes, configServers), dockerHostNodeAcls);
+    }
+
+
     @Test
     public void trusted_nodes_for_child_nodes_of_docker_host() {
         List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
@@ -173,10 +207,17 @@ public class AclProvisioningTest {
     }
 
     private List<Node> allocateNodes(int nodeCount) {
-        ApplicationId applicationId = tester.makeApplicationId();
+        return allocateNodes(Capacity.fromNodeCount(nodeCount), tester.makeApplicationId());
+    }
+
+    private List<Node> allocateNodes(NodeType nodeType, ApplicationId applicationId) {
+        return allocateNodes(Capacity.fromRequiredNodeType(nodeType), applicationId);
+    }
+
+    private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                Optional.empty());
-        List<HostSpec> prepared = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(nodeCount), 1);
+                                                  Optional.empty());
+        List<HostSpec> prepared = tester.prepare(applicationId, cluster, capacity, 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         return tester.getNodes(applicationId, Node.State.active).asList();
     }
