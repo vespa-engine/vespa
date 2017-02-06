@@ -229,7 +229,7 @@ void AttrUpdate::handleUpdate(ReferenceAttribute &vec, uint32_t lid, const Value
     } else if (op == ValueUpdate::Clear) {
         vec.clearDoc(lid);
     } else {
-        LOG(warning, "Unsupported value update operation %s on singlevalue tensor attribute %s",
+        LOG(warning, "Unsupported value update operation %s on singlevalue reference attribute %s",
                      upd.getClass().name(), vec.getName().c_str());
     }
 }
