@@ -93,9 +93,11 @@ public:
             return false;
         }
         search::attribute::BasicType::Type attrType = attribute->getBasicType();
-        // Partial update to tensor or predicate attribute must update document
+        // Partial update to tensor, predicate or reference attribute
+        // must update document
         return ((attrType != search::attribute::BasicType::Type::PREDICATE) &&
-                (attrType != search::attribute::BasicType::Type::TENSOR));
+                (attrType != search::attribute::BasicType::Type::TENSOR) &&
+                (attrType != search::attribute::BasicType::Type::REFERENCE));
     }
 };
 

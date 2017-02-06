@@ -34,6 +34,7 @@ getDataTypeMap()
     map[AttributesConfig::Attribute::DOUBLE] = BasicType::DOUBLE;
     map[AttributesConfig::Attribute::PREDICATE] = BasicType::PREDICATE;
     map[AttributesConfig::Attribute::TENSOR] = BasicType::TENSOR;
+    map[AttributesConfig::Attribute::REFERENCE] = BasicType::REFERENCE;
     map[AttributesConfig::Attribute::NONE] = BasicType::NONE;
     return map;
 }
