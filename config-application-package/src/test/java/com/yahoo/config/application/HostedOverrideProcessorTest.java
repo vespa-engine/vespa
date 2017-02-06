@@ -24,15 +24,17 @@ public class HostedOverrideProcessorTest {
     }
 
     private static final String input =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
-                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
-                "  <container id=\"foo\" version=\"1.0\">" +
-                "    <nodes count='1'/>" +
-                "    <nodes deploy:environment=\"staging\" count='2'/>" +
-                "    <nodes deploy:environment=\"prod\" count='3'/>" +
-                "    <nodes deploy:environment=\"prod\" deploy:region=\"us-west\" count='4'/>" +
-                "  </container>" +
-                "</services>";
+            "<?xml version='1.0' encoding='UTF-8' standalone='no'?>" +
+                    "<services xmlns:deploy='vespa' xmlns:preprocess='?' version='1.0'>" +
+                    "  <container id='foo' version='1.0'>" +
+                    "    <nodes count='1'/>" +
+                    "    <nodes count='3' deploy:environment='perf'/>" +
+                    "    <nodes deploy:environment='staging' count='2' required='true'/>" +
+                    "    <nodes deploy:environment='prod' count='3' flavor='v-4-8-100'/>" +
+                    "    <nodes deploy:environment='prod' deploy:region='us-west' count='4'/>" +
+                    "    <nodes deploy:environment='prod' deploy:region='us-east-3' flavor='v-8-8-100' count='5'/>" +
+                    "  </container>" +
+                    "</services>";
 
 
     @Test
@@ -60,15 +62,39 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
+    public void testParsingEnvironmentAndRegion2() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        String expected =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                        "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                        "  <container id=\"foo\" version=\"1.0\">" +
+                        "    <nodes count='5' flavor='v-8-8-100' required='true'/>" +
+                        "  </container>" +
+                        "</services>";
+        assertOverride(Environment.from("prod"), RegionName.from("us-east-3"), expected);
+    }
+
+    @Test
+    public void testParsingEnvironmentAndRegion3() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        String expected =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                        "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                        "  <container id=\"foo\" version=\"1.0\">" +
+                        "    <nodes count='3' required='true'/>" +
+                        "  </container>" +
+                        "</services>";
+        assertOverride(Environment.from("perf"), RegionName.from("us-east-3"), expected);
+    }
+
+    @Test
     public void testParsingEnvironmentUnknownRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
                 "  <container id=\"foo\" version=\"1.0\">" +
-                "    <nodes count='3' required='true'/>" +
+                "    <nodes count='3' flavor='v-4-8-100' required='true'/>" +
                 "  </container>" +
                 "</services>";
-        assertOverride(Environment.valueOf("prod"), RegionName.from("us-east"), expected);
+        assertOverride(Environment.valueOf("prod"), RegionName.from("unknown"), expected);
     }
 
     @Test
@@ -77,7 +103,7 @@ public class HostedOverrideProcessorTest {
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
                 "  <container id=\"foo\" version=\"1.0\">" +
-                "    <nodes count='3' required='true'/>" +
+                "    <nodes count='3' flavor='v-4-8-100' required='true'/>" +
                 "  </container>" +
                 "</services>";
         assertOverride(Environment.from("prod"), RegionName.defaultName(), expected);
