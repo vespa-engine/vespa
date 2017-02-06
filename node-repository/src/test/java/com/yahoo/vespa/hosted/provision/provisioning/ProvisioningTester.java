@@ -216,6 +216,7 @@ public class ProvisioningTester implements AutoCloseable {
                                                 nodeFlavors.getFlavorOrThrow(flavor),
                                                 type));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
         return nodes;
     }
@@ -234,6 +235,7 @@ public class ProvisioningTester implements AutoCloseable {
                                                 nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant));
         }
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
         return nodes;
     }

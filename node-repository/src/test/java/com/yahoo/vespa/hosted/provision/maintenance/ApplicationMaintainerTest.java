@@ -101,6 +101,7 @@ public class ApplicationMaintainerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
     }
 
@@ -109,6 +110,7 @@ public class ApplicationMaintainerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
     }
 

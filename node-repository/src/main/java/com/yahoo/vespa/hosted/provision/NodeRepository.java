@@ -252,8 +252,8 @@ public class NodeRepository extends AbstractComponent {
     /** Sets a list of nodes ready and returns the nodes in the ready state */
     public List<Node> setReady(List<Node> nodes) {
         for (Node node : nodes)
-            if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
-                throw new IllegalArgumentException("Can not set " + node + " ready. It is not provisioned or dirty.");
+            if (node.state() != Node.State.dirty)
+                throw new IllegalArgumentException("Can not set " + node + " ready. It is not dirty.");
         try (Mutex lock = lockUnallocated()) {
             return zkClient.writeTo(Node.State.ready, nodes);
         }

@@ -110,7 +110,8 @@ public class FailedExpirerTest {
         nodeRepository.write(node2);
 
         // Allocate the nodes
-        nodeRepository.setReady(nodeRepository.getNodes(NodeType.tenant, Node.State.provisioned));
+        List<Node> provisioned = nodeRepository.getNodes(NodeType.tenant, Node.State.provisioned);
+        nodeRepository.setReady(nodeRepository.setDirty(provisioned));
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(3), 1, null);

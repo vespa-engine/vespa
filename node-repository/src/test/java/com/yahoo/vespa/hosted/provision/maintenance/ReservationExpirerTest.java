@@ -46,9 +46,10 @@ public class ReservationExpirerTest {
         nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
 
         // Reserve 2 nodes
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.provisioned).size());
+        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
         nodeRepository.setReady(nodes);
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
