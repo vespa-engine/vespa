@@ -55,6 +55,7 @@ public class DocumentUpdateJsonSerializerTest {
         docType.addField(new Field("int_set", new WeightedSetDataType(DataType.INT, true, true)));
         docType.addField(new Field("string_set", new WeightedSetDataType(DataType.STRING, true, true)));
         docType.addField(new Field("string_map", new MapDataType(DataType.STRING, DataType.STRING)));
+        docType.addField(new Field("deep_map", new MapDataType(DataType.STRING, new MapDataType(DataType.STRING, DataType.STRING))));
         docType.addField(new Field("singlepos_field", PositionDataType.INSTANCE));
         docType.addField(new Field("multipos_field", new ArrayDataType(PositionDataType.INSTANCE)));
         types.registerDocumentType(docType);
@@ -327,6 +328,76 @@ public class DocumentUpdateJsonSerializerTest {
                 "              ]",
                 "        }",
                 "    }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void testAssignValueMap() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fields': {",
+                "        'singlepos_field': {",
+                "            'assign': 'N60.222333;E10.12'",
+                "        }",
+                "    },",
+                "    'fieldpaths': [",
+                "        {",
+                "           'operation': 'assign',",
+                "           'fieldpath': 'int_field',",
+                "           'value': '1',",
+                "           'createmissingpath': false,",
+                "           'removeifzero': false",
+                "        },",
+                "        {",
+                "           'operation': 'assign',",
+                "           'fieldpath': 'string_field',",
+                "           'value': 'test',",
+                "           'createmissingpath': false,",
+                "           'removeifzero': false",
+                "        }",
+                "    ]",
+                "}"
+        ));
+    }
+
+    @Test
+    public void testRemoveValueMap() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fieldpaths': [",
+                "        {",
+                "           'operation': 'remove',",
+                "           'fieldpath': 'int_field'",
+                "        },",
+                "        {",
+                "           'operation': 'remove',",
+                "           'fieldpath': 'string_field'",
+                "        }",
+                "    ]",
+                "}"
+        ));
+    }
+
+    @Test
+    public void testAddValueMap() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fieldpaths': [",
+                "        {",
+                "           'operation': 'add',",
+                "           'fieldpath': 'int_field',",
+                "           'items': [123, 456, 789]",
+                "        },",
+                "        {",
+                "           'operation': 'add',",
+                "           'fieldpath': 'string_field',",
+                "           'items': ['test', 'of', 'array', 'add']",
+                "        }",
+                "    ]",
                 "}"
         ));
     }

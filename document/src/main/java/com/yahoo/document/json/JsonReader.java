@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
-import com.yahoo.collections.Pair;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
@@ -20,6 +19,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
+import com.yahoo.document.NumericDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TestAndSetCondition;
@@ -31,19 +31,25 @@ import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.json.TokenBuffer.Token;
+import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 import org.apache.commons.codec.binary.Base64;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -63,6 +69,7 @@ public class JsonReader {
     static final String MAP_KEY = "key";
     static final String MAP_VALUE = "value";
     static final String FIELDS = "fields";
+    static final String FIELDPATHS = "fieldpaths";
     static final String REMOVE = "remove";
     static final String UPDATE_INCREMENT = "increment";
     static final String UPDATE_DECREMENT = "decrement";
@@ -94,6 +101,15 @@ public class JsonReader {
         public Optional<Boolean> create = Optional.empty();
         Optional<String> condition = Optional.empty();
         SupportedOperation operationType = null;
+        private List<FieldPathUpdate> fieldPathUpdatess = new ArrayList<>();
+
+        public void addFieldPathUpdates(FieldPathUpdate fieldPath) {
+            fieldPathUpdatess.add(fieldPath);
+        }
+
+        public List<FieldPathUpdate> getFieldPathUpdates() {
+            return fieldPathUpdatess;
+        }
     }
 
     enum SupportedOperation {
@@ -123,9 +139,10 @@ public class JsonReader {
      */
     public DocumentOperation readSingleDocument(SupportedOperation operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
-        DocumentParseInfo documentParseInfo = parseToDocumentsFieldsAndInsertFieldsIntoBuffer(docId);
+        DocumentType documentType = getDocumentTypeFromString(docId.getDocType(), typeManager);
+        DocumentParseInfo documentParseInfo = parseToDocumentsFieldsAndInsertFieldsIntoBuffer(docId, documentType);
         documentParseInfo.operationType = operationType;
-        DocumentOperation operation = createDocumentOperation(documentParseInfo);
+        DocumentOperation operation = createDocumentOperation(documentType, documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
     }
@@ -149,13 +166,14 @@ public class JsonReader {
             state = ReaderState.END_OF_FEED;
             return null;
         }
-        DocumentOperation operation = createDocumentOperation(documentParseInfo.get());
+
+        DocumentType documentType = getDocumentTypeFromString(documentParseInfo.get().documentId.getDocType(), typeManager);
+        DocumentOperation operation = createDocumentOperation(documentType, documentParseInfo.get());
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.get().condition));
         return operation;
     }
 
-    private DocumentOperation createDocumentOperation(DocumentParseInfo documentParseInfo) {
-        DocumentType documentType = getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager);
+    private DocumentOperation createDocumentOperation(DocumentType documentType, DocumentParseInfo documentParseInfo) {
         final DocumentOperation documentOperation;
         try {
             switch (documentParseInfo.operationType) {
@@ -169,8 +187,13 @@ public class JsonReader {
                     break;
                 case UPDATE:
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
-                    readUpdate((DocumentUpdate) documentOperation);
-                    verifyEndState();
+                    documentParseInfo.getFieldPathUpdates().forEach(
+                            ((DocumentUpdate) documentOperation)::addFieldPathUpdate);
+
+                    if (buffer.size() > 0) {
+                        readUpdate((DocumentUpdate) documentOperation);
+                        verifyEndState();
+                    }
                     break;
                 default:
                     throw new IllegalStateException("Implementation out of sync with itself. This is a bug.");
@@ -207,54 +230,109 @@ public class JsonReader {
         }
     }
 
-    private DocumentParseInfo parseToDocumentsFieldsAndInsertFieldsIntoBuffer(DocumentId documentId) {
-        long indentLevel = 0;
+    private DocumentParseInfo parseToDocumentsFieldsAndInsertFieldsIntoBuffer(DocumentId documentId, DocumentType documentType) {
         DocumentParseInfo documentParseInfo = new DocumentParseInfo();
         documentParseInfo.documentId = documentId;
+
         while (true) {
             // we should now be at the start of a feed operation or at the end of the feed
             JsonToken t = nextToken();
-            if (t == null) {
-                throw new IllegalArgumentException("Could not read document, no document?");
-            }
-            switch (t) {
-                case START_OBJECT:
-                    indentLevel++;
-                    break;
-                case END_OBJECT:
-                    indentLevel--;
-                    break;
-                case START_ARRAY:
-                    indentLevel+=10000L;
-                    break;
-                case END_ARRAY:
-                    indentLevel-=10000L;
-                    break;
-            }
-            if (indentLevel == 1 && (t == JsonToken.VALUE_TRUE || t == JsonToken.VALUE_FALSE)) {
-                try {
-                    if (CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
-                        documentParseInfo.create = Optional.ofNullable(parser.getBooleanValue());
-                        continue;
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException("Got IO exception while parsing document", e);
-                }
-            }
-            if (indentLevel == 2L && t == JsonToken.START_OBJECT) {
+            if (t == null) break;
 
-                try {
-                    if (!FIELDS.equals(parser.getCurrentName())) {
-                        continue;
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException("Got IO exception while parsing document", e);
+            try {
+                if (CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
+                    documentParseInfo.create = Optional.ofNullable(parser.getBooleanValue());
+
+                } else if (FIELDS.equals(parser.getCurrentName())) {
+                    bufferFields(t);
+
+                } else if (FIELDPATHS.equals(parser.getCurrentName())) {
+                    expectArrayStart(parser.currentToken());
+                    parser.nextToken();
+                    do {
+                        FieldPathUpdate fieldPathUpdate = parseFieldPathUpdate(documentType, parser);
+                        documentParseInfo.addFieldPathUpdates(fieldPathUpdate);
+                    } while (parser.nextToken() != JsonToken.END_ARRAY);
                 }
-                bufferFields(t);
-                break;
+            } catch (IOException e) {
+                throw new RuntimeException("Got IO exception while parsing document", e);
+            } catch (ParseException e) {
+                throw new RuntimeException("Failed to parse document", e);
             }
         }
         return documentParseInfo;
+    }
+
+    private static FieldPathUpdate parseFieldPathUpdate(DocumentType type, JsonParser parser) throws IOException, ParseException {
+        Map<String, Object> map = parseMap(parser);
+        String operation = (String) map.get("operation");
+        String fieldPath = (String) map.get("fieldpath");
+        Optional<String> where = Optional.ofNullable((String) map.get("where")).filter(s -> !s.isEmpty());
+        FieldPathUpdate fieldPathUpdate;
+
+        Preconditions.checkArgument(fieldPath != null && !fieldPath.isEmpty(), "fieldpath argument must be set");
+        switch (operation.toLowerCase()) {
+            case UPDATE_ADD:
+                fieldPathUpdate = new AddFieldPathUpdate(type, fieldPath, null);
+                break;
+
+            case UPDATE_ASSIGN:
+                fieldPathUpdate = new AssignFieldPathUpdate(type, fieldPath, null);
+
+                Optional.ofNullable((Boolean) map.get("removeifzero"))
+                        .ifPresent(((AssignFieldPathUpdate) fieldPathUpdate)::setRemoveIfZero);
+                Optional.ofNullable((Boolean) map.get("createmissingpath"))
+                        .ifPresent(((AssignFieldPathUpdate) fieldPathUpdate)::setCreateMissingPath);
+
+                DataType dt = fieldPathUpdate.getFieldPath().getResultingDataType();
+                if (dt instanceof NumericDataType) {
+                    ((AssignFieldPathUpdate) fieldPathUpdate).setExpression(String.valueOf(map.get("value")));
+                } else {
+                    FieldValue fv = dt.createFieldValue();
+                    fv.assign(map.get("value"));
+                    ((AssignFieldPathUpdate) fieldPathUpdate).setNewValue(fv);
+                }
+                break;
+
+            case UPDATE_REMOVE:
+                fieldPathUpdate = new RemoveFieldPathUpdate(type, fieldPath);
+                break;
+
+            default:
+                throw new RuntimeException("Unsupported fieldpath operation: " + operation);
+        }
+
+        if (where.isPresent()) {
+            fieldPathUpdate.setWhereClause(where.get());
+        }
+
+        return fieldPathUpdate;
+    }
+
+    private static Map<String, Object> parseMap(JsonParser parser) throws IOException {
+        Map<String, Object> map = new HashMap<>();
+        assert parser.isExpectedStartObjectToken();
+
+        parser.nextToken();
+        do {
+            String key = parser.getValueAsString();
+
+            parser.nextToken();
+            Object value = null;
+            if (parser.currentToken().isBoolean()) {
+                value = parser.getBooleanValue();
+            } else if (parser.currentToken().isNumeric()) {
+                value = parser.getNumberValue();
+            } else if (parser.currentToken().isScalarValue()) { // Non-structured value
+                value = parser.getValueAsString();
+            } else if (parser.isExpectedStartArrayToken()) {
+                // TODO: Her må vi parse array for 'add'
+            }
+            Preconditions.checkState(key != null && value != null, "Missing key or value for map entry.");
+            map.put(key, value);
+        } while (! parser.nextToken().isStructEnd());
+
+        return map;
     }
 
     private void verifyEndState() {
