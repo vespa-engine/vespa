@@ -1,23 +1,42 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.document.*;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
+import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.documentmodel.FieldView;
 import com.yahoo.vespa.documentmodel.SearchDef;
 import com.yahoo.vespa.documentmodel.SearchField;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * @author baldersheim
@@ -312,7 +331,8 @@ public class DocumentModelBuilder {
         NewDocumentType dt = new NewDocumentType(new NewDocumentType.Name(sdoc.getName()),
                                                  sdoc.getDocumentType().getHeaderType(),
                                                  sdoc.getDocumentType().getBodyType(),
-                                                 sdoc.getFieldSets());
+                                                 sdoc.getFieldSets(),
+                                                 convertDocumentRferences(sdoc.getDocumentReferences()));
         for (SDDocumentType n : sdoc.getInheritedTypes()) {
             NewDocumentType.Name name = new NewDocumentType.Name(n.getName());
                 NewDocumentType inherited =  model.getDocumentManager().getDocumentType(name);
@@ -367,6 +387,17 @@ public class DocumentModelBuilder {
         extractDataTypesFromFields(dt, sdoc.fieldSet());
         return dt;
     }
+
+    private static Set<NewDocumentType.Name> convertDocumentRferences(Optional<DocumentReferences> documentReferences) {
+        if (!documentReferences.isPresent()) {
+            return emptySet();
+        }
+        return documentReferences.get().referenceMap().values().stream()
+                .map(documentReference -> documentReference.search().getDocument())
+                .map(documentType -> new NewDocumentType.Name(documentType.getName()))
+                .collect(toSet());
+    }
+
     private static void extractDataTypesFromFields(NewDocumentType dt, Collection<Field> fields) {
         for (Field f : fields) {
             DataType type = f.getDataType();
