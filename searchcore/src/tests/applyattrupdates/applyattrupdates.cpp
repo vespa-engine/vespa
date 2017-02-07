@@ -162,9 +162,11 @@ void assertNoRef(AttributeVector &vec, uint32_t doc)
 }
 
 void assertRef(AttributeVector &vec, vespalib::stringref str, uint32_t doc) {
-    const GlobalId *gid = asReferenceAttribute(vec).getReference(doc);
-    EXPECT_TRUE(gid != nullptr);
-    EXPECT_EQUAL(toGid(str), *gid);
+    using Reference = ReferenceAttribute::Reference;
+    const Reference *ref = asReferenceAttribute(vec).getReference(doc);
+    EXPECT_TRUE(ref != nullptr);
+    const GlobalId &gid = ref->gid();
+    EXPECT_EQUAL(toGid(str), gid);
 }
 
 }

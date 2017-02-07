@@ -19,9 +19,28 @@ class ReferenceAttribute : public NotImplementedAttribute
 public:
     using EntryRef = search::datastore::EntryRef;
     using GlobalId = document::GlobalId;
-    using Store = datastore::UniqueStore<GlobalId>;
+    class Reference {
+        GlobalId _gid;
+        uint32_t _lid;
+    public:
+        Reference()
+            : _gid(),
+              _lid(0u)
+        {
+        }
+        Reference(const GlobalId &gid_)
+            : _gid(gid_),
+              _lid(0u)
+        {
+        }
+        bool operator<(const Reference &rhs) const {
+            return _gid < rhs._gid;
+        }
+        const GlobalId &gid() const { return _gid; }
+        uint32_t lid() const { return _lid; }
+    };
+    using Store = datastore::UniqueStore<Reference>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
-
 private:
     Store _store;
     RcuVectorBase<EntryRef> _indices;
@@ -48,7 +67,7 @@ public:
     virtual bool addDoc(DocId &doc) override;
     virtual uint32_t clearDoc(DocId doc) override;
     void update(DocId doc, const GlobalId &gid);
-    const GlobalId *getReference(DocId doc);
+    const Reference *getReference(DocId doc);
 };
 
 }

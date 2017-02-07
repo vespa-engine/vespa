@@ -20,6 +20,7 @@ struct Fixture
 {
     using EntryRefType = RefT;
     using UniqueStoreType = UniqueStore<EntryT, RefT>;
+    using UniqueStoreAddResult = typename UniqueStoreType::AddResult;
     using value_type = EntryT;
     using ReferenceStore = std::map<EntryRef, std::pair<EntryT,uint32_t>>;
 
@@ -36,12 +37,24 @@ struct Fixture
         assertGet(ref, input);
     }
     EntryRef add(const EntryT &input) {
-        EntryRef result = store.add(input);
+        UniqueStoreAddResult addResult = store.add(input);
+        EntryRef result = addResult.ref();
         auto insres = refStore.insert(std::make_pair(result, std::make_pair(input, 1u)));
+        EXPECT_EQUAL(insres.second, addResult.inserted());
         if (!insres.second) {
             ++insres.first->second.second;
         }
         return result;
+    }
+    void alignRefStore(EntryRef ref, const EntryT &input, uint32_t refcnt) {
+        if (refcnt > 0) {
+            auto insres = refStore.insert(std::make_pair(ref, std::make_pair(input, refcnt)));
+            if (!insres.second) {
+                insres.first->second.second = refcnt;
+            }
+        } else {
+            refStore.erase(ref);
+        }
     }
     void assertGet(EntryRef ref, const EntryT &exp) const {
         EntryT act = store.get(ref);
@@ -222,6 +235,9 @@ TEST_F("require that builder works", NumberFixture)
     f.assertGet(val10Ref, 10);
     f.assertGet(val20Ref, 20);
     builder.makeDictionary();
+    // Align refstore with the two entries added by builder.
+    f.alignRefStore(val10Ref, 10, 1);
+    f.alignRefStore(val20Ref, 20, 1);
     EXPECT_EQUAL(val10Ref.ref(), f.add(10).ref());
     EXPECT_EQUAL(val20Ref.ref(), f.add(20).ref());
 }
