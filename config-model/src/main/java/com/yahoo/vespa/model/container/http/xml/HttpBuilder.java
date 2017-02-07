@@ -18,7 +18,6 @@ import com.yahoo.vespa.model.container.http.Http.Binding;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,6 +34,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     protected Http doBuild(AbstractConfigProducer ancestor, Element spec) {
         FilterChains filterChains;
         List<Binding> bindings = new ArrayList<>();
+        AccessControl accessControl = null;
 
         Element filteringElem = XML.getChild(spec, "filtering");
         if (filteringElem != null) {
@@ -43,14 +43,15 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
-                bindings.addAll(getAccessControlBindings(ancestor, buildAccessControl(accessControlElem)));
+                accessControl = buildAccessControl(accessControlElem);
+                bindings.addAll(getAccessControlBindings(ancestor, accessControl));
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
             filterChains = new FilterChainsBuilder().newChainsInstance(ancestor);
         }
 
-        Http http = new Http(bindings);
+        Http http = new Http(bindings, accessControl);
         http.setFilterChains(filterChains);
 
         buildHttpServers(ancestor, http, spec);
@@ -59,13 +60,19 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     }
 
     private AccessControl buildAccessControl(Element accessControlElem) {
+        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"));
+        XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
+                readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
+        XmlHelper.getOptionalAttribute(accessControlElem, "write").ifPresent(
+                writeAttr -> builder.writeEnabled(Boolean.valueOf(writeAttr)));
+
         Element excludeElem = XML.getChild(accessControlElem, "exclude");
         if (excludeElem != null) {
-            return new AccessControl(XML.getChildren(excludeElem, "binding").stream()
+            XML.getChildren(excludeElem, "binding").stream()
                     .map(XML::getValue)
-                    .collect(Collectors.toSet()));
+                    .forEach(builder::excludeBinding);
         }
-        return new AccessControl(Collections.emptySet());
+        return builder.build();
     }
 
     private static List<Binding> getAccessControlBindings(AbstractConfigProducer ancestor, AccessControl accessControl) {
