@@ -41,16 +41,19 @@ public final class AccessControl {
             this.domain = domain;
         }
 
-        public void readEnabled(boolean readEnabled) {
+        public Builder readEnabled(boolean readEnabled) {
             this.readEnabled = readEnabled;
+            return this;
         }
 
-        public void writeEnabled(boolean writeEnalbed) {
+        public Builder writeEnabled(boolean writeEnalbed) {
             this.writeEnabled = writeEnalbed;
+            return this;
         }
 
-        public void excludeBinding(String binding) {
+        public Builder excludeBinding(String binding) {
             this.excludeBindings.add(binding);
+            return this;
         }
 
         public AccessControl build() {
