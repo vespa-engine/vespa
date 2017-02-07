@@ -10,10 +10,10 @@
 #
 # resume: Set the node "in service" by e.g. undraining container traffic
 #
-# start: Start services on the node. Can be seen as a boot of a non-docker node.
+# start: Start services on the node. Can be seen as a boot of a non-Docker node.
 #        start can be assumed to have completed successfully.
 #
-# stop: Stop services on the node, similar to shutdown of a non-docker node.
+# stop: Stop services on the node. Can be seen as a shutdown of a non-Docker node.
 #
 # suspend: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
 # node "out of service" by draining container traffic, and flush index for a
@@ -102,14 +102,34 @@ Resume() {
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
 }
 
-# TODO: Remove vespa-routing when callers have been updated to use resume
+# Start all services, can be seen as a reboot of a non-Docker node
 Start() {
-    # Always start vip for now
-    $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
+    # Make sure there are no pid files left behind from last time container was running
+    # TODO: Enable after yinst start is no longer called in start-services.sh
+    #sudo rm -f /home/y/var/run/*pid
+
+    echo "Configuring rsyslog service to work"
+    # Disable kernel log module
+    sed -i.bak 's/^\$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
+    echo "Starting rsyslog service"
+    service rsyslog start
+
+    echo "Starting crond service"
+    service crond start
+
+    echo "Starting all yinst packages"
+    yinst start
+    echo "yinst started, exited with $?"
 }
 
+# Stop all services, can be seen as a shutdown of a non-Docker node
 Stop() {
+    echo "Stopping services and other yinst packages running"
     yinst stop
+    echo "Stopping crond service"
+    service crond stop
+    echo "Stopping rsyslog service"
+    service rsyslog stop
 }
 
 Suspend() {
