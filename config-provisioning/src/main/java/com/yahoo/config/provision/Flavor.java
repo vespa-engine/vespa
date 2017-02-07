@@ -23,6 +23,7 @@ public class Flavor {
     private final double minMainMemoryAvailableGb;
     private final double minDiskAvailableGb;
     private final String description;
+    private final boolean retired;
     private List<Flavor> replacesFlavors;
 
     /**
@@ -39,6 +40,7 @@ public class Flavor {
         this.minMainMemoryAvailableGb = flavorConfig.minMainMemoryAvailableGb();
         this.minDiskAvailableGb = flavorConfig.minDiskAvailableGb();
         this.description = flavorConfig.description();
+        this.retired = flavorConfig.retired();
     }
 
     /** Returns the unique identity of this flavor */
@@ -61,6 +63,11 @@ public class Flavor {
     public double getMinCpuCores() { return minCpuCores; }
 
     public String getDescription() { return description; }
+
+    /** Returns whether the flavor is retired */
+    public boolean isRetired() {
+        return retired;
+    }
 
     public Type getType() { return type; }
 
@@ -97,7 +104,12 @@ public class Flavor {
      * (by being the same), or by directly or indirectly replacing it
      */
     public boolean satisfies(Flavor flavor) {
-        if (this.equals(flavor)) return true;
+        if (this.equals(flavor)) {
+            return true;
+        }
+        if (this.retired) {
+            return false;
+        }
         for (Flavor replaces : replacesFlavors)
             if (replaces.satisfies(flavor))
                 return true;

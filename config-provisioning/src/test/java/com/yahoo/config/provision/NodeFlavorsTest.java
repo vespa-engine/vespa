@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.node;
+package com.yahoo.config.provision;
 
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,10 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 
 public class NodeFlavorsTest {
+
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
@@ -55,4 +55,26 @@ public class NodeFlavorsTest {
         NodeFlavors nodeFlavors = new NodeFlavors(config);
         assertThat(nodeFlavors.getFlavor("banana").get().cost(), is(3));
     }
+
+    @Test
+    public void testRetiredFlavorWithoutReplacement() {
+        FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
+        List<FlavorsConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
+        {
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            flavorBuilder.name("retired").retired(true);
+            flavorBuilderList.add(flavorBuilder);
+        }
+        {
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            flavorBuilder.name("chocolate");
+            flavorBuilderList.add(flavorBuilder);
+        }
+        builder.flavor(flavorBuilderList);
+        FlavorsConfig config = new FlavorsConfig(builder);
+        exception.expect(IllegalStateException.class);
+        exception.expectMessage("Flavor 'retired' is retired, but has no replacement");
+        new NodeFlavors(config);
+    }
+
 }
