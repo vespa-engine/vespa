@@ -61,6 +61,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     private String documentSelection;
     ContentSearchCluster search;
     final Map<String, NewDocumentType> documentDefinitions;
+    private final Set<NewDocumentType> globallyDistributedDocuments;
     com.yahoo.vespa.model.content.StorageGroup rootGroup;
     StorageCluster storageNodes;
     DistributorCluster distributorNodes;
@@ -101,10 +102,11 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             Map<String, NewDocumentType> documentDefinitions =
                     new SearchDefinitionBuilder().build(ancestor.getRoot().getDeployState().getDocumentModel().getDocumentManager(), documentsElement);
 
-            String routingSelection = new DocumentSelectionBuilder().build(contentElement.getChild("documents"));
+            String routingSelection = new DocumentSelectionBuilder().build(documentsElement);
             Redundancy redundancy = new RedundancyBuilder().build(contentElement);
+            Set<NewDocumentType> globallyDistributedDocuments = new GlobalDistributionBuilder(documentDefinitions).build(documentsElement);
 
-            ContentCluster c = new ContentCluster(ancestor, getClusterName(contentElement), documentDefinitions, routingSelection, redundancy);
+            ContentCluster c = new ContentCluster(ancestor, getClusterName(contentElement), documentDefinitions, globallyDistributedDocuments, routingSelection, redundancy);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
@@ -455,11 +457,13 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     private ContentCluster(AbstractConfigProducer parent,
                            String clusterName,
                            Map<String, NewDocumentType> documentDefinitions,
+                           Set<NewDocumentType> globallyDistributedDocuments,
                            String routingSelection,
                            Redundancy redundancy) {
         super(parent, clusterName);
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
+        this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.documentSelection = routingSelection;
         this.redundancy = redundancy;
     }
