@@ -39,7 +39,6 @@ public class Hasher {
     }
 
     static private VespaBackEndSearcher[] addNode(VespaBackEndSearcher node, VespaBackEndSearcher[] oldNodes) {
-        assert node != null;
         for (VespaBackEndSearcher n : oldNodes) {
             if (n == node) return oldNodes; // already present
         }
@@ -51,6 +50,7 @@ public class Hasher {
 
     /**
      * Make a node available for search.
+     * @param node the backend searcher (must never be null)
      */
     public void add(VespaBackEndSearcher node) {
         allNodes = addNode(node, allNodes);
@@ -112,7 +112,7 @@ public class Hasher {
     /**
      * Return a node, prefer local nodes, try to skip already hit nodes.
      *
-     * @param trynum hint to skip already used nodes
+     * @param trynum hint for skipping (ignored in current implementation)
      * @return the selected node, or null if this hasher has no nodes
      */
     public VespaBackEndSearcher select(int trynum) {
@@ -128,7 +128,6 @@ public class Hasher {
         if (nodes.length > 1) {
             idx = Math.abs(avoidAllQrsHitSameTld.incrementAndGet() % nodes.length);
         }
-        assert nodes[idx] != null;
         return nodes[idx];
     }
 
