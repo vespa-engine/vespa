@@ -33,12 +33,15 @@ public final class AccessControl {
 
     public static final class Builder {
         private String domain;
+        private String applicationId;
+        private String vespaDomain = "";
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
         private final Set<String> excludeBindings = new LinkedHashSet<>();
 
-        public Builder(String domain) {
+        public Builder(String domain, String applicationId) {
             this.domain = domain;
+            this.applicationId = applicationId;
         }
 
         public Builder readEnabled(boolean readEnabled) {
@@ -56,21 +59,35 @@ public final class AccessControl {
             return this;
         }
 
+        public Builder vespaDomain(String vespaDomain) {
+            this.vespaDomain = vespaDomain;
+            return this;
+        }
+
         public AccessControl build() {
-            return new AccessControl(domain, writeEnabled, readEnabled, excludeBindings);
+            return new AccessControl(domain, applicationId, writeEnabled, readEnabled, excludeBindings, vespaDomain);
         }
     }
 
     public final String domain;
+    public final String applicationId;
     public final boolean readEnabled;
     public final boolean writeEnabled;
     public final Set<String> excludedBindings;
+    public final String vespaDomain;
 
-    private AccessControl(String domain, boolean writeEnabled, boolean readEnabled, Set<String> excludedBindings) {
+    private AccessControl(String domain,
+                          String applicationId,
+                          boolean writeEnabled,
+                          boolean readEnabled,
+                          Set<String> excludedBindings,
+                          String vespaDomain) {
         this.domain = domain;
+        this.applicationId = applicationId;
         this.readEnabled = readEnabled;
         this.writeEnabled = writeEnabled;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
+        this.vespaDomain = vespaDomain;
     }
 
     public boolean shouldHandlerBeProtected(Handler<?> handler) {
