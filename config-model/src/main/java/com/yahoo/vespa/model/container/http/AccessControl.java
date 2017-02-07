@@ -9,6 +9,8 @@ import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -29,10 +31,43 @@ public final class AccessControl {
             ContainerCluster.STATISTICS_HANDLER_CLASS
     );
 
-    private final Set<String> excludedBindings;
+    public static final class Builder {
+        private String domain;
+        private boolean readEnabled = false;
+        private boolean writeEnabled = true;
+        private final Set<String> excludeBindings = new LinkedHashSet<>();
 
-    public AccessControl(Set<String> excludedBindings) {
-        this.excludedBindings = excludedBindings;
+        public Builder(String domain) {
+            this.domain = domain;
+        }
+
+        public void readEnabled(boolean readEnabled) {
+            this.readEnabled = readEnabled;
+        }
+
+        public void writeEnabled(boolean writeEnalbed) {
+            this.writeEnabled = writeEnalbed;
+        }
+
+        public void excludeBinding(String binding) {
+            this.excludeBindings.add(binding);
+        }
+
+        public AccessControl build() {
+            return new AccessControl(domain, writeEnabled, readEnabled, excludeBindings);
+        }
+    }
+
+    public final String domain;
+    public final boolean readEnabled;
+    public final boolean writeEnabled;
+    public final Set<String> excludedBindings;
+
+    private AccessControl(String domain, boolean writeEnabled, boolean readEnabled, Set<String> excludedBindings) {
+        this.domain = domain;
+        this.readEnabled = readEnabled;
+        this.writeEnabled = writeEnabled;
+        this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
     }
 
     public boolean shouldHandlerBeProtected(Handler<?> handler) {

@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -61,6 +62,39 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         root.freezeModelTopology();
 
         assertTrue(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
+    }
+
+    @Test
+    public void read_is_disabled_and_write_is_enabled_by_default() throws Exception {
+        Element clusterElem = DomBuilderTest.parse(
+                "  <http>",
+                "    <filtering>",
+                "      <access-control domain='my-domain' />",
+                "    </filtering>",
+                "  </http>");
+
+        Http http = new HttpBuilder().build(root, clusterElem);
+        root.freezeModelTopology();
+
+        assertEquals("Wrong domain.", "my-domain", http.getAccessControl().get().domain);
+        assertFalse("Wrong default value for read.", http.getAccessControl().get().readEnabled);
+        assertTrue("Wrong default value for write.", http.getAccessControl().get().writeEnabled);
+    }
+
+    @Test
+    public void read_and_write_can_be_overridden() throws Exception {
+        Element clusterElem = DomBuilderTest.parse(
+                "  <http>",
+                "    <filtering>",
+                "      <access-control domain='foo' read='true' write='false'/>",
+                "    </filtering>",
+                "  </http>");
+
+        Http http = new HttpBuilder().build(root, clusterElem);
+        root.freezeModelTopology();
+
+        assertTrue("Given read value not honoured.", http.getAccessControl().get().readEnabled);
+        assertFalse("Given write value not honoured.", http.getAccessControl().get().writeEnabled);
     }
 
     @Test
