@@ -3,8 +3,10 @@ package com.yahoo.vespa.config.server.application;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.PortInfo;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
@@ -31,7 +33,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
     private final StateApiFactory stateApiFactory;
     private final Client client = ClientBuilder.newClient();
 
-    private final static Set<String> serviceTypes = new HashSet<>(Arrays.asList(
+    private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
             "container",
             "container-clustercontroller",
             "qrserver",
@@ -51,28 +53,20 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
     }
 
     public ServiceListResponse serviceListToCheckForConfigConvergence(Application application, URI uri) {
-        List<Service> services = new ArrayList<>();
-        Long wantedGeneration = application.getApplicationGeneration();
-        try {
-            // Note: Uses latest config model version to get config
-            ModelConfig config = application.getConfig(ModelConfig.class, "");
-            config.hosts()
-                  .forEach(host -> host.services().stream()
-                                       .filter(service -> serviceTypes.contains(service.type()))
-                                       .forEach(service -> getStatePort(service).ifPresent(
-                                               port -> services.add(new Service(host.name(), port, service.type())))));
-            return new ServiceListResponse(200, services, uri, wantedGeneration);
-        } catch (IOException e) {
-            return new ServiceListResponse(500, services, uri, wantedGeneration);
-        }
+        List<ServiceInfo> servicesToCheck = new ArrayList<>();
+        application.getModel().getHosts()
+                   .forEach(host -> host.getServices().stream()
+                                        .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
+                                        .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
+        return new ServiceListResponse(200, servicesToCheck, uri, application.getApplicationGeneration());
     }
 
     public ServiceResponse serviceConvergenceCheck(Application application, String hostAndPortToCheck, URI uri) {
         Long wantedGeneration = application.getApplicationGeneration();
-        if ( ! hostInApplication(application, hostAndPortToCheck))
-            return ServiceResponse.createHostNotFoundInAppResponse(uri, hostAndPortToCheck, wantedGeneration);
-
         try {
+            if (! hostInApplication(application, hostAndPortToCheck))
+                return ServiceResponse.createHostNotFoundInAppResponse(uri, hostAndPortToCheck, wantedGeneration);
+
             long currentGeneration = getServiceGeneration(URI.create("http://" + hostAndPortToCheck));
             boolean converged = currentGeneration >= wantedGeneration;
             return ServiceResponse.createOkResponse(uri, hostAndPortToCheck, wantedGeneration, currentGeneration, converged);
@@ -99,9 +93,10 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         StateApi createStateApi(Client client, URI serviceUri);
     }
 
-    private Optional<Integer> getStatePort(ModelConfig.Hosts.Services service) { return service.ports().stream()
-                .filter(port -> port.tags().contains("state"))
-                .map(ModelConfig.Hosts.Services.Ports::number)
+    private static Optional<Integer> getStatePort(ServiceInfo service) {
+        return service.getPorts().stream()
+                .filter(port -> port.getTags().contains("state"))
+                .map(PortInfo::getPort)
                 .findFirst();
     }
 
@@ -119,19 +114,12 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
         return generationFromContainerState(state.config());
     }
 
-    private boolean hostInApplication(Application application, String hostPort) {
-        final ModelConfig config;
-        try {
-            config = application.getConfig(ModelConfig.class, "");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        final List<ModelConfig.Hosts> hosts = config.hosts();
-        for (ModelConfig.Hosts host : hosts) {
-            if (hostPort.startsWith(host.name())) {
-                for (ModelConfig.Hosts.Services service : host.services()) {
-                    for (ModelConfig.Hosts.Services.Ports port : service.ports()) {
-                        if (hostPort.equals(host.name() + ":" + port.number())) {
+    private boolean hostInApplication(Application application, String hostPort) throws IOException {
+        for (HostInfo host : application.getModel().getHosts()) {
+            if (hostPort.startsWith(host.getHostname())) {
+                for (ServiceInfo service : host.getServices()) {
+                    for (PortInfo port : service.getPorts()) {
+                        if (hostPort.equals(host.getHostname() + ":" + port.getPort())) {
                             return true;
                         }
                     }
@@ -144,15 +132,18 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
     static class ServiceListResponse extends JSONResponse {
         final Cursor debug;
 
-        private ServiceListResponse(int status, List<Service> services, URI uri, Long wantedGeneration) {
+        // Pre-condition: servicesToCheck has a state port
+        private ServiceListResponse(int status, List<ServiceInfo> servicesToCheck, URI uri, Long wantedGeneration) {
             super(status);
             Cursor serviceArray = object.setArray("services");
-            for (Service s : services) {
+            for (ServiceInfo s : servicesToCheck) {
                 Cursor service = serviceArray.addObject();
-                service.setString("host", s.hostname);
-                service.setLong("port", s.port);
-                service.setString("type", s.type);
-                service.setString("url", uri.toString() + "/" + s.hostname + ":" + s.port);
+                String hostName = s.getHostName();
+                int statePort = getStatePort(s).get();
+                service.setString("host", hostName);
+                service.setLong("port", statePort);
+                service.setString("type", s.getServiceType());
+                service.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
             }
             debug = object.setObject("debug");
             object.setString("url", uri.toString());
@@ -194,18 +185,6 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
             ServiceResponse serviceResponse = new ServiceResponse(404, uri, hostname, wantedGeneration);
             serviceResponse.object.setString("error", error);
             return serviceResponse;
-        }
-    }
-
-    private static class Service {
-        private final String hostname;
-        private final int port;
-        private final String type;
-
-        private Service(String hostname, int port, String type) {
-            this.hostname = hostname;
-            this.port = port;
-            this.type = type;
         }
     }
 
