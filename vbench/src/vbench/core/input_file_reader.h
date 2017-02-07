@@ -3,8 +3,8 @@
 #pragma once
 
 #include "string.h"
-#include "taint.h"
-#include "mapped_file_input.h"
+#include "taintable.h"
+#include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/input_reader.h>
 #include "line_reader.h"
 
@@ -17,12 +17,12 @@ namespace vbench {
 class InputFileReader : public Taintable
 {
 private:
-    MappedFileInput _file;
-    LineReader      _lines;
+    vespalib::MappedFileInput _file;
+    LineReader                _lines;
+    Taint                     _taint;
 
 public:
-    InputFileReader(const string &name)
-        : _file(name), _lines(_file) {}
+    InputFileReader(const string &name);
 
     /**
      * Read a single line from the input file and put it into
@@ -34,7 +34,7 @@ public:
      **/
     bool readLine(string &dst);
 
-    virtual const Taint &tainted() const { return _file.tainted(); }
+    virtual const Taint &tainted() const { return _taint; }
 };
 
 } // namespace vbench
