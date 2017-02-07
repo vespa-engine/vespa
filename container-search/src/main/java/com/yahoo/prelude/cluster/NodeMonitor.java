@@ -28,7 +28,7 @@ public class NodeMonitor {
     /** The object representing the monitored node */
     private final VespaBackEndSearcher node;
 
-    private boolean isWorking = false;
+    private boolean isWorking = true;
 
     /** The last time this node responded successfully */
     private long succeededAt = 0;
@@ -72,6 +72,7 @@ public class NodeMonitor {
             // Only count not being able to talk to backend at all
             // as errors we care about
             if ((respondedAt - succeededAt) > 10000) {
+                this.searchNodesOnline = false;
                 setWorking(false, "Not working for 10 s: " + error.toString());
             }
         } else {
@@ -95,9 +96,9 @@ public class NodeMonitor {
         if (isWorking == working) return; // Old news
 
         if (working && ! atStartUp)
-            log.info("Putting " + node + " in service:" + explanation);
+            log.info("Putting " + node + " in service: " + explanation);
         else if (! atStartUp)
-            log.info("Taking " + node + " out of service:" + explanation);
+            log.info("Taking " + node + " out of service: " + explanation);
 
         isWorking = working;
     }

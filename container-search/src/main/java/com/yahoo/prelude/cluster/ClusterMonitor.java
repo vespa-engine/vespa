@@ -89,7 +89,7 @@ public class ClusterMonitor implements Runnable, Freezable {
         monitor.responded(hasSearchNodesOnline);
         if (wasFailing && monitor.isWorking()) {
             log.info("Failed node '" + node + "' started working again.");
-            nodeManager.working(monitor.getNode());
+            nodeManager.working(node);
         }
         updateVipStatus();
     }
