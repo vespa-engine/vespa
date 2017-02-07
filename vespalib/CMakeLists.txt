@@ -4,6 +4,9 @@ vespa_define_module(
     fastos
     vespalog
 
+    EXTERNAL_DEPENDS
+    lz4
+
     APPS
     src/apps/make_fixture_macros
 
