@@ -9,6 +9,7 @@
         <redundancy>1</redundancy>
         <documents>
             <document type='simple' mode="index"/>
+            <document type='parent' mode="index" global="true"/>
         </documents>
         <nodes>
             <node hostalias='node1' distribution-key='0'/>
