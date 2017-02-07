@@ -5,6 +5,8 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import com.yahoo.collections.Pair;
+import com.yahoo.system.ProcessExecuter;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -12,11 +14,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -107,27 +118,91 @@ public class RunSystemTests {
         startSystemTestNodeIfNeeded(containerName);
 
         for (String module : modules) {
-            Path pathToModule = pathToVespaRepoInContainer.resolve(module);
             Path pathToTargetInHost = pathToVespaRepoInHost.resolve(module).resolve("target");
             Path pathToTargetBackupInHost = pathToVespaRepoInHost.resolve(module).resolve("target_bcp");
 
             if (Files.exists(pathToTargetInHost)) {
                 Files.move(pathToTargetInHost, pathToTargetBackupInHost, StandardCopyOption.REPLACE_EXISTING);
             }
+        }
 
-            try {
-                executeInContainer(containerName, "mvn", "-DskipTests", "-Dmaven.javadoc.skip=true", "-e",
-                        "-f=" + pathToModule.resolve("pom.xml"), "install");
+        try {
+            String projects = Arrays.stream(modules)
+                    .collect(Collectors.joining(","));
+            executeInContainer(containerName,
+                    "/bin/sh", "-c", "cd /vespa; mvn -DskipTests -Dmaven.javadoc.skip=true -e " +
+                            "-pl=" + projects + " install");
 
+            for (String module : modules) {
+                Path pathToModule = pathToVespaRepoInContainer.resolve(module);
                 executeInContainer(containerName, "rsync", "--archive", "--existing", "--update",
                         pathToModule.resolve("target").toString() + "/", pathToLibJars.toString() + "/");
-            } finally {
+            }
+        } finally {
+            for (String module : modules) {
+                Path pathToModule = pathToVespaRepoInContainer.resolve(module);
+                Path pathToTargetInHost = pathToVespaRepoInHost.resolve(module).resolve("target");
+                Path pathToTargetBackupInHost = pathToVespaRepoInHost.resolve(module).resolve("target_bcp");
                 executeInContainer(containerName, "rm", "-rf", pathToModule.resolve("target").toString());
 
                 if (Files.exists(pathToTargetBackupInHost)) {
                     Files.move(pathToTargetBackupInHost, pathToTargetInHost);
                 }
             }
+        }
+    }
+
+    /**
+     * Builds all modules that depend on 'modules' and 'modules' themselves in the order they need to be built
+     */
+    void mavenInstallModulesThatDependOn(ContainerName containerName, String... modules) throws IOException, ExecutionException, InterruptedException {
+        logger.info("Building dependency graph...");
+        Path outputFile = Paths.get("/tmp/vespa-maven-dependencies");
+        if (Files.exists(outputFile)) {
+            Files.delete(outputFile);
+        }
+
+        String[] command = new String[]{"mvn", "dependency:tree", "-Dincludes=com.yahoo.vespa",
+                "-DoutputFile=" + outputFile, "-DoutputType=dot", "-DappendOutput=true"};
+        ProcessExecuter processExecuter = new ProcessExecuter();
+        Pair<Integer, String> result = processExecuter.exec(command);
+        if (result.getFirst() != 0) {
+            throw new RuntimeException("Failed to get maven dependency tree: " + result.getSecond());
+        }
+
+        String modulePattern = "[a-z-]+";
+        Pattern dependencyPattern = Pattern.compile("com\\.yahoo\\.vespa:(" + modulePattern + "):.* -> " +
+                ".*com\\.yahoo\\.vespa:(" + modulePattern + "):.*", Pattern.CASE_INSENSITIVE);
+        String dependenciesRaw = new String(Files.readAllBytes(outputFile));
+        Matcher m = dependencyPattern.matcher(dependenciesRaw);
+
+        Map<String, Set<String>> dependencyGraph = new HashMap<>();
+        while (m.find()) {
+            if (! dependencyGraph.containsKey(m.group(2))) {
+                dependencyGraph.put(m.group(2), new HashSet<>());
+            }
+
+            dependencyGraph.get(m.group(2)).add(m.group(1));
+        }
+
+        List<String> buildOrder = new ArrayList<>();
+        for (String module: modules) {
+            dfs(module, dependencyGraph, buildOrder);
+        }
+
+        Collections.reverse(buildOrder);
+        mavenInstallModules(containerName, buildOrder.stream().toArray(String[]::new));
+    }
+
+    private static void dfs(String root, Map<String, Set<String>> dependencies, List<String> order) {
+        if (! order.contains(root)) {
+            if (dependencies.containsKey(root)) {
+                for (String child : dependencies.get(root)) {
+                    dfs(child, dependencies, order);
+                }
+            }
+
+            order.add(root);
         }
     }
 
