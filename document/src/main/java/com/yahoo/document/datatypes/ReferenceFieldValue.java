@@ -8,6 +8,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlStream;
+import com.yahoo.vespa.objects.Ids;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +31,9 @@ import java.util.Optional;
  * @since 6.65
  */
 public class ReferenceFieldValue extends FieldValue {
+
+    // Magic number for Identifiable, see document/util/identifiable.h
+    public static final int classId = registerClass(Ids.document + 39, ReferenceFieldValue.class);
 
     private final ReferenceDataType referenceType;
     private Optional<DocumentId> documentId;

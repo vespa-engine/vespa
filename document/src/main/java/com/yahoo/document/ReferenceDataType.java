@@ -3,6 +3,7 @@ package com.yahoo.document;
 
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
+import com.yahoo.vespa.objects.Ids;
 
 /**
  * A <code>ReferenceDataType</code> specifies a particular concrete document type that a
@@ -12,6 +13,9 @@ import com.yahoo.document.datatypes.ReferenceFieldValue;
  * @since 6.65
  */
 public class ReferenceDataType extends DataType {
+
+    // Magic number for Identifiable, see document/util/identifiable.h
+    public static final int classId = registerClass(Ids.document + 68, ReferenceDataType.class);
 
     private StructuredDataType targetType;
 
