@@ -179,6 +179,7 @@ public class NodeFailTester {
         for (int i = startIndex; i < startIndex + count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, nodeType));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
     }
 
@@ -187,6 +188,7 @@ public class NodeFailTester {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
     }
 

@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 // Node state transitions:
-// 1) (new) - > provisioned -> ready -> reserved -> active -> inactive -> dirty -> ready
+// 1) (new) - > provisioned -> dirty -> ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved
 // 3) reserved -> dirty
 // 3) * -> failed | parked -> dirty | active | (removed)
@@ -252,8 +252,8 @@ public class NodeRepository extends AbstractComponent {
     /** Sets a list of nodes ready and returns the nodes in the ready state */
     public List<Node> setReady(List<Node> nodes) {
         for (Node node : nodes)
-            if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
-                throw new IllegalArgumentException("Can not set " + node + " ready. It is not provisioned or dirty.");
+            if (node.state() != Node.State.dirty)
+                throw new IllegalArgumentException("Can not set " + node + " ready. It is not dirty.");
         try (Mutex lock = lockUnallocated()) {
             return zkClient.writeTo(Node.State.ready, nodes);
         }
@@ -299,24 +299,24 @@ public class NodeRepository extends AbstractComponent {
         return zkClient.writeTo(Node.State.inactive, nodes, transaction);
     }
 
-    /** Deallocates these nodes, causing them to move to the dirty state */
-    public List<Node> deallocate(List<Node> nodes) {
+    /** Move nodes to the dirty state */
+    public List<Node> setDirty(List<Node> nodes) {
         return performOn(NodeListFilter.from(nodes), node -> zkClient.writeTo(Node.State.dirty, node));
     }
 
     /** 
-     * Deallocate a node which is in the failed or parked state. 
-     * Use this to recycle failed nodes which have been repaired or put on hold.
+     * Set a node dirty, which is in the provisioned, failed or parked state.
+     * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
      *
      * @throws IllegalArgumentException if the node has hardware failure
      */
-    public Node deallocate(String hostname) {
-        Optional<Node> nodeToDeallocate = getNode(hostname, Node.State.failed, Node.State.parked);
-        if ( ! nodeToDeallocate.isPresent())
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the failed or parked state");
-        if (nodeToDeallocate.get().status().hardwareFailure().isPresent())
+    public Node setDirty(String hostname) {
+        Optional<Node> nodeToDirty = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked);
+        if ( ! nodeToDirty.isPresent())
+            throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the provisioned, failed or parked state");
+        if (nodeToDirty.get().status().hardwareFailure().isPresent())
             throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure");
-        return deallocate(Collections.singletonList(nodeToDeallocate.get())).get(0);
+        return setDirty(Collections.singletonList(nodeToDirty.get())).get(0);
     }
 
     /**

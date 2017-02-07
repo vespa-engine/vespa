@@ -13,11 +13,11 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
-import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Generic maintenance tester
@@ -38,6 +38,8 @@ public class MaintenanceTester {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
+        nodes = simulateInitialReboot(nodes);
         nodeRepository.setReady(nodes);
     }
 
@@ -46,7 +48,16 @@ public class MaintenanceTester {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
+        nodes = simulateInitialReboot(nodes);
         nodeRepository.setReady(nodes);
+    }
+
+    /** Simulate the initial reboot the node performs when it's in dirty */
+    private List<Node> simulateInitialReboot(List<Node> nodes) {
+        return nodes.stream()
+                .map(n -> n.withCurrentRebootGeneration(n.status().reboot().wanted(), Instant.now(clock)))
+                .collect(Collectors.toList());
     }
 
 }

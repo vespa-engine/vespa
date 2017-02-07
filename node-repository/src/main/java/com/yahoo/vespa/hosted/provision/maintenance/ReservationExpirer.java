@@ -28,6 +28,6 @@ public class ReservationExpirer extends Expirer {
     }
 
     @Override
-    protected void expire(List<Node> expired) { nodeRepository.deallocate(expired); }
+    protected void expire(List<Node> expired) { nodeRepository.setDirty(expired); }
 
 }

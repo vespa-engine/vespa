@@ -83,9 +83,10 @@ public class InactiveAndFailedExpirerTest {
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
         assertEquals(1, inactiveNodes.size());
 
-        // Check reboot generation before node is moved
+        // Check reboot generation before node is moved. New nodes transistion from provisioned to dirty, so their
+        // wanted reboot generation will always be 1.
         long wantedRebootGeneration = inactiveNodes.get(0).status().reboot().wanted();
-        assertEquals(0, wantedRebootGeneration);
+        assertEquals(1, wantedRebootGeneration);
 
         // Inactive times out and node is moved to dirty
         tester.advanceTime(Duration.ofMinutes(14));

@@ -97,6 +97,7 @@ public class RestApiTest {
             nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
             nodes = addNodes(nodes);
             nodes.remove(5);
+            nodes = setDirty(nodes);
             setReady(nodes);
             fail("host5.yahoo.com");
 

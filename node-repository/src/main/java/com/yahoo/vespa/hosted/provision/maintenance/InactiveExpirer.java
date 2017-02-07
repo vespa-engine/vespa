@@ -33,7 +33,7 @@ public class InactiveExpirer extends Expirer {
 
     @Override
     protected void expire(List<Node> expired) {
-        nodeRepository.deallocate(expired);
+        nodeRepository.setDirty(expired);
     }
 
 }

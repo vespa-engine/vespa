@@ -127,6 +127,7 @@ public class RetiredExpirerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "node" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
     }
 
@@ -135,6 +136,7 @@ public class RetiredExpirerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
+        nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
     }
 

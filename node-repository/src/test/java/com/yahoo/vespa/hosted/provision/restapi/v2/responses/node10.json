@@ -28,7 +28,7 @@
   "restartGeneration": 0,
   "currentRestartGeneration": 0,
   "wantedDockerImage":"image-123",
-  "rebootGeneration": 0,
+  "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "vespaVersion": "5.104.142",
   "hostedVersion": "2.1.2408",

@@ -28,7 +28,7 @@
   "restartGeneration": 0,
   "currentRestartGeneration": 0,
   "wantedDockerImage":"image-123",
-  "rebootGeneration": 0,
+  "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "currentDockerImage":"image-12",
   "failCount": 0,
