@@ -10,8 +10,8 @@
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
     </parent>
-    <groupId>com.yahoo.container.container-test-jars</groupId>
-    <artifactId>container-test-jars</artifactId>
+    <groupId>com.yahoo.vespa.container-test-jars</groupId>
+    <artifactId>parent</artifactId>
     <version>6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>

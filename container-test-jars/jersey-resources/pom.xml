@@ -6,8 +6,8 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>com.yahoo.container.container-test-jars</groupId>
-    <artifactId>container-test-jars</artifactId>
+    <groupId>com.yahoo.vespa.container-test-jars</groupId>
+    <artifactId>parent</artifactId>
     <version>6-SNAPSHOT</version>
   </parent>
 
