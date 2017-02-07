@@ -3,13 +3,15 @@ package com.yahoo.vespa.config.server.application;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.PortInfo;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.TenantName;
@@ -29,7 +31,11 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -53,7 +59,7 @@ public class ApplicationConvergenceCheckerTest {
 
     @Before
     public void setup() throws IOException, SAXException, InterruptedException {
-        Model mockModel = new MockModel(1337);
+        Model mockModel = new MockModel("localhost", 1337);
         application = new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
     }
 
@@ -106,36 +112,24 @@ public class ApplicationConvergenceCheckerTest {
         }
     }
 
+    // Model with two services, one that does not have a state port
     private static class MockModel implements Model {
+        private final String hostname;
         private final int statePort;
-        MockModel(int statePort) {
+
+        MockModel(String hostname, int statePort) {
+            this.hostname = hostname;
             this.statePort = statePort;
         }
 
         @Override
         public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
-            if (configKey.equals(new ConfigKey<>(ModelConfig.class, ""))) {
-                return createModelConfig();
-            }
             throw new UnsupportedOperationException();
         }
 
         @Override
         public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) {
-            return getConfig(configKey, (ConfigDefinition)null, override);
-        }
-
-        private ConfigPayload createModelConfig() {
-            ModelConfig.Builder builder = new ModelConfig.Builder();
-            ModelConfig.Hosts.Builder hostBuilder = new ModelConfig.Hosts.Builder();
-            hostBuilder.name("localhost");
-            ModelConfig.Hosts.Services.Builder serviceBuilder = new ModelConfig.Hosts.Services.Builder();
-            serviceBuilder.type("container");
-            serviceBuilder.ports(new ModelConfig.Hosts.Services.Ports.Builder().number(statePort).tags("state"));
-            hostBuilder.services(serviceBuilder);
-            builder.hosts(hostBuilder);
-            ModelConfig config = new ModelConfig(builder);
-            return ConfigPayload.fromInstance(config);
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -145,7 +139,19 @@ public class ApplicationConvergenceCheckerTest {
 
         @Override
         public Collection<HostInfo> getHosts() {
-            throw new UnsupportedOperationException();
+            ServiceInfo container = createServiceInfo(hostname, "container", "container",
+                                                      ClusterSpec.Type.container, statePort, "state");
+            ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "logserver", "logserver",
+                                                               ClusterSpec.Type.admin, 1234, "logtp");
+            return Collections.singleton(new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort)));
+        }
+
+        ServiceInfo createServiceInfo(String hostname, String name, String type, ClusterSpec.Type clusterType, int port, String portTags) {
+            PortInfo portInfo = new PortInfo(port, Collections.singleton(portTags));
+            Map<String, String> properties = new HashMap<>();
+            properties.put("clustername", "default");
+            properties.put("clustertype", clusterType.name());
+            return new ServiceInfo(name, type, Collections.singleton(portInfo), properties, "", hostname);
         }
 
         @Override
