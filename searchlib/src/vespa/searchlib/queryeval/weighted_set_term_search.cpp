@@ -1,14 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".queryeval.weighted_set_term.search");
-
 #include "weighted_set_term_search.h"
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/objects/visit.h>
-#include <algorithm>
-#include <functional>
+
 #include "iterator_pack.h"
 
 using search::fef::TermFieldMatchData;
@@ -120,7 +115,18 @@ public:
     }
     Trinary is_strict() const override { return Trinary::True; }
 
-    void visitMembers(vespalib::ObjectVisitor &) const override {}
+    void visitMembers(vespalib::ObjectVisitor &) const override { }
+
+    BitVector::UP get_hits(uint32_t begin_id) override {
+        BitVector::UP result(BitVector::create(begin_id, getEndId()));
+
+        for (size_t i = 0; i < _children.size(); ++i) {
+            for (uint32_t docId = _children.get_docid(i); ! isAtEnd(docId); docId = _children.next(i)) {
+                result->setBit(docId);
+            }
+        }
+        return result;
+    }
 };
 
 //-----------------------------------------------------------------------------

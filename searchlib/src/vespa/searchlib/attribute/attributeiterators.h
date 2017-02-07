@@ -21,6 +21,8 @@ namespace fef {
 class AttributeIteratorBase : public queryeval::SearchIterator
 {
 protected:
+    template <typename SC>
+    void and_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     fef::TermFieldMatchData * _matchData;
     fef::TermFieldMatchDataPosition * _matchPosition;
@@ -71,6 +73,7 @@ class AttributeIteratorT : public AttributeIterator
 private:
     void doSeek(uint32_t docId) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void and_hits_into(BitVector & result, uint32_t begin_id) override;
 
 protected:
     const SC & _searchContext;
@@ -87,6 +90,7 @@ class FilterAttributeIteratorT : public FilterAttributeIterator
 private:
     void doSeek(uint32_t docId) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void and_hits_into(BitVector & result, uint32_t begin_id) override;
 
 protected:
     const SC & _searchContext;

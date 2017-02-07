@@ -13,10 +13,15 @@
 
 namespace search {
 
+template <typename SC>
+void
+AttributeIteratorBase::and_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
+    result.foreach_truebit([&](uint32_t key) { if ( ! sc.cmp(key)) { result.clearBit(key); }}, begin_id);
+}
+
 template <typename PL>
 AttributePostingListIteratorT<PL>::
-AttributePostingListIteratorT(PL &iterator, bool hasWeight,
-                              fef::TermFieldMatchData *matchData)
+AttributePostingListIteratorT(PL &iterator, bool hasWeight, fef::TermFieldMatchData *matchData)
     : AttributePostingListIterator(hasWeight, matchData),
       _iterator(),
       _postingInfo(1, 1),
@@ -252,6 +257,19 @@ FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
         }
     }
     setAtEnd();
+}
+
+template <typename SC>
+void
+AttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
+}
+
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
 }
 
 } // namespace search
