@@ -69,17 +69,14 @@ public:
                                     DictionaryTraits>;
     class AddResult {
         EntryRef _ref;
-        EntryType &_value;
         bool _inserted;
     public:
-        AddResult(EntryRef ref_, EntryType &value_, bool inserted_)
+        AddResult(EntryRef ref_, bool inserted_)
             : _ref(ref_),
-              _value(value_),
               _inserted(inserted_)
         {
         }
         EntryRef ref() const { return _ref; }
-        EntryType &value() { return _value; }
         bool inserted() { return _inserted; }
     };
 private:
@@ -89,11 +86,6 @@ private:
     Dictionary _dict;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
-    EntryType &getWritable(EntryRef ref)
-    {
-        RefType iRef(ref);
-        return *_store.template getBufferEntry<EntryType>(iRef.bufferId(), iRef.offset());
-    }
 public:
     UniqueStore();
     ~UniqueStore();
