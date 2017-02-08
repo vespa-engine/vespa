@@ -13,6 +13,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -187,6 +188,18 @@ public class ReferenceFieldValueTestCase {
         ReferenceFieldValue value = new ReferenceFieldValue(referenceTypeFoo());
         DocumentId newId = docId("id:ns:bar::mama-mia");
         value.assign(newId);
+    }
+
+    @Test
+    public void exposed_wrapped_value_is_null_for_empty_reference() {
+        ReferenceFieldValue nullRef = new ReferenceFieldValue(referenceTypeFoo());
+        assertNull(nullRef.getWrappedValue());
+    }
+
+    @Test
+    public void expose_wrapped_value_is_doc_id_for_non_empty_reference() {
+        ReferenceFieldValue idRef = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad"));
+        assertEquals(docId("id:ns:foo::toad"), idRef.getWrappedValue());
     }
 
 }
