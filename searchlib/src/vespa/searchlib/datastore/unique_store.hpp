@@ -50,12 +50,12 @@ UniqueStore<EntryT, RefT>::add(const EntryType &value)
         assert(refCount != std::numeric_limits<uint32_t>::max());
         itr.writeData(refCount + 1);
         RefType iRef(itr.getKey());
-        return AddResult(itr.getKey(), getWritable(itr.getKey()), false);
+        return AddResult(itr.getKey(), false);
 
     } else {
         EntryRef newRef = _store.template allocator<EntryType>(_typeId).alloc(value).ref;
         _dict.insert(itr, newRef, 1u);
-        return AddResult(newRef, getWritable(newRef), true);
+        return AddResult(newRef, true);
     }
 }
 
