@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/util/filealign.h>
+#include "filealign.h"
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/fastos/file.h>
 
-namespace search
-{
+namespace search {
 
 using vespalib::nbostream;
 
@@ -35,7 +34,7 @@ getMinBlocking(size_t elementsize, size_t alignment)
 }
 
 
-FileAlign::FileAlign(void)
+FileAlign::FileAlign()
     : _directIOFileAlign(1),
       _preferredFileAlign(1),
       _minDirectIOSize(1),
@@ -44,13 +43,10 @@ FileAlign::FileAlign(void)
       _directIOMemAlign(1),
       _directio(false),
       _checkPointResumed(false)
-{
-}
+{ }
 
 
-FileAlign::~FileAlign(void)
-{
-}
+FileAlign::~FileAlign() { }
 
 
 size_t
@@ -92,10 +88,7 @@ FileAlign::setupAlign(size_t elements,
     size_t transferMaximum;
 
     if (file != NULL) {
-        _directio =
-            file->GetDirectIORestrictions(memoryAlignment,
-                    transferGranularity,
-                    transferMaximum);
+        _directio = file->GetDirectIORestrictions(memoryAlignment, transferGranularity, transferMaximum);
     } else
         _directio = false;
     if (_directio) {

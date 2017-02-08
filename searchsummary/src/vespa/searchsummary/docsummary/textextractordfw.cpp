@@ -49,7 +49,7 @@ TextExtractorDFW::insertField(uint32_t,
     } else {
         LOG(warning, "Did not find input entry using field enum %d. Write an empty field", _inputFieldEnum);
     }
-    target.insertString(vespalib::slime::Memory(extracted.c_str(), extracted.size()));
+    target.insertString(vespalib::Memory(extracted.c_str(), extracted.size()));
 }
 
 uint32_t

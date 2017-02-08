@@ -1149,6 +1149,7 @@
         <module>metrics</module>
         <module>node-repository</module>
         <module>node-admin</module>
+        <module>node-admin-maintenance</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
         <module>persistence</module>
@@ -1156,6 +1157,7 @@
         <module>predicate-search-core</module>
         <module>processing</module>
         <module>provided-dependencies</module>
+        <module>sample-apps</module>
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>

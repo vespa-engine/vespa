@@ -149,14 +149,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return logServerLogGrabber.grabLog(application);
     }
 
-    public HttpResponse nodeConvergenceCheck(Tenant tenant, ApplicationId applicationId, String hostname, URI uri) {
+    public HttpResponse serviceConvergenceCheck(Tenant tenant, ApplicationId applicationId, String hostname, URI uri) {
         Application application = getApplication(tenant, applicationId);
-        return convergeChecker.nodeConvergenceCheck(application, hostname, uri);
+        return convergeChecker.serviceConvergenceCheck(application, hostname, uri);
     }
 
-    public HttpResponse listConfigConvergence(Tenant tenant, ApplicationId applicationId, URI uri) {
+    public HttpResponse serviceListToCheckForConfigConvergence(Tenant tenant, ApplicationId applicationId, URI uri) {
         Application application = getApplication(tenant, applicationId);
-        return convergeChecker.listConfigConvergence(application, uri);
+        return convergeChecker.serviceListToCheckForConfigConvergence(application, uri);
     }
 
     public Long getApplicationGeneration(Tenant tenant, ApplicationId applicationId) {

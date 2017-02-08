@@ -3,10 +3,10 @@
 #include "jsonconfigformatter.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/slime/json_format.h>
-#include <vespa/vespalib/data/slime/simple_buffer.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 
-using vespalib::slime::SimpleBuffer;
-using vespalib::slime::Output;
+using vespalib::SimpleBuffer;
+using vespalib::Output;
 using vespalib::slime::JsonFormat;
 
 namespace config {

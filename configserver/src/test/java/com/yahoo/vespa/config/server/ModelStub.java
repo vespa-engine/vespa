@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
@@ -21,12 +20,12 @@ import java.util.Set;
 public class ModelStub implements Model {
 
     @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) throws IOException {
+    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
         return null;
     }
 
     @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) throws IOException {
+    public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) {
         return null;
     }
 

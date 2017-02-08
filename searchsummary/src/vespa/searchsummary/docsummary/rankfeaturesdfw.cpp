@@ -79,7 +79,7 @@ RankFeaturesDFW::insertField(uint32_t docid,
     if (type == RES_FEATUREDATA && values != NULL) {
         vespalib::slime::Cursor& obj = target.insertObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
-            vespalib::slime::Memory name(names[i].c_str(), names[i].size());
+            vespalib::Memory name(names[i].c_str(), names[i].size());
             obj.setDouble(name, values[i]);
         }
         return;
@@ -92,7 +92,7 @@ RankFeaturesDFW::insertField(uint32_t docid,
             featureDump(json, names[i], values[i]);
         }
         json.endObject();
-        vespalib::slime::Memory value(json.toString().c_str(),
+        vespalib::Memory value(json.toString().c_str(),
                                       json.toString().size());
         if (type == RES_STRING || type == RES_LONG_STRING) {
             target.insertString(value);

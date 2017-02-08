@@ -3,8 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/data/slime/type.h>
-#include <vespa/vespalib/data/slime/memory.h>
-#include <vespa/vespalib/data/slime/stored_memory.h>
+#include <vespa/vespalib/data/memory.h>
 
 namespace vespalib {
 namespace slime {
@@ -36,13 +35,11 @@ template<> struct TypeTraits<DOUBLE> {
 
 template<> struct TypeTraits<STRING> {
     typedef Memory PassType;
-    typedef StoredMemory StoreType;
     static const Memory unsetValue;
 };
 
 template<> struct TypeTraits<DATA> {
     typedef Memory PassType;
-    typedef StoredMemory StoreType;
     static const Memory unsetValue;
 };
 

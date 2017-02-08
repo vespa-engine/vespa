@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.node.filter;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
@@ -35,7 +36,7 @@ public class ParentHostFilter extends NodeFilter {
 
     /** Returns a copy of the given filter which only matches for the given parent */
     public static ParentHostFilter from(String parentNames, NodeFilter filter) {
-        return new ParentHostFilter(HostFilter.split(parentNames).stream().collect(Collectors.toSet()), filter);
+        return new ParentHostFilter(StringUtilities.split(parentNames).stream().collect(Collectors.toSet()), filter);
     }
 
 }

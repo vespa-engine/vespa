@@ -9,24 +9,16 @@
 #include <vespa/vespalib/util/array.h>
 #include <set>
 #include <vespa/searchlib/btree/btree.h>
-#include <vespa/searchlib/common/bitvector.h>
 #include <atomic>
 
-namespace vespalib {
-    class asciistream;
-}
+namespace vespalib { class asciistream; }
 namespace search {
 
 class BufferWriter;
 
-namespace attribute {
-
-class Status;
-
-}
+namespace attribute { class Status; }
 
 class EnumStoreBase;
-
 class EnumStoreComparator;
 class EnumStoreComparatorWrapper;
 

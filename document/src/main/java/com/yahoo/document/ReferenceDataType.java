@@ -3,6 +3,7 @@ package com.yahoo.document;
 
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
+import com.yahoo.vespa.objects.Ids;
 
 /**
  * A <code>ReferenceDataType</code> specifies a particular concrete document type that a
@@ -12,6 +13,9 @@ import com.yahoo.document.datatypes.ReferenceFieldValue;
  * @since 6.65
  */
 public class ReferenceDataType extends DataType {
+
+    // Magic number for Identifiable, see document/util/identifiable.h
+    public static final int classId = registerClass(Ids.document + 68, ReferenceDataType.class);
 
     private StructuredDataType targetType;
 
@@ -58,14 +62,14 @@ public class ReferenceDataType extends DataType {
     public StructuredDataType getTargetType() { return targetType; }
 
     /**
-     * Overrides the stored temporary data type with a concrete DocumentType instance. Should only
+     * Overrides the stored temporary data type with a concrete StructuredDataType instance. Should only
      * be invoked from configuration or model code when resolving temporary types.
      *
      * @throws IllegalStateException if the previously stored target type is already a concrete
-     *     instance of DocumentType.
+     *     instance (not TemporaryStructuredDataType).
      */
-    public void setTargetType(DocumentType targetType) {
-        if (this.targetType instanceof DocumentType) {
+    public void setTargetType(StructuredDataType targetType) {
+        if (! (this.targetType instanceof TemporaryStructuredDataType)) {
             throw new IllegalStateException(String.format(
                     "Unexpected attempt to replace already concrete target " +
                     "type in ReferenceDataType instance (type is '%s')", this.targetType.getName()));

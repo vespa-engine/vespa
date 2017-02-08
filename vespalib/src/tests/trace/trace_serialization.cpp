@@ -78,7 +78,7 @@ TEST("that a trace node with children can be deserialized") {
     bar.setLong("timestamp", 67);
     bar.setString("payload", "!");
 
-    vespalib::slime::SimpleBuffer buf;
+    vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, false);
 
     SlimeTraceDeserializer deserializer(root);

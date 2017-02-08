@@ -17,6 +17,7 @@
 #include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/fastos/file.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchcorespi.index.indexmaintainer");
@@ -41,8 +42,7 @@ using vespalib::Runnable;
 namespace searchcorespi {
 namespace index {
 
-namespace
-{
+namespace {
 
 class ReconfigRunnable : public Runnable
 {

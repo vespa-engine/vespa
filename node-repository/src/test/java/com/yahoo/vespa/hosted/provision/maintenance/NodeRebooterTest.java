@@ -17,42 +17,37 @@ public class NodeRebooterTest {
 
     @Test
     public void testRebootScheduling() throws InterruptedException {
+        Duration rebootInterval = Duration.ofMinutes(250);
         MaintenanceTester tester = new MaintenanceTester();
         tester.createReadyTenantNodes(15);
         tester.createReadyHostNodes(15);
+        // New nodes are rebooted when transitioning from dirty to ready. Advance the time so that additional reboots
+        // will be performed.
+        tester.clock.advance(rebootInterval);
         
-        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, Duration.ofMinutes(250));
-        // No nodes have a reboot event - reboots should be scheduled for most nodes during 10 invocations
-        // (the rebooter run interval is 25 minutes).
-        maintenanceIterations(rebooter, tester, 5);
-        assertEquals("About half of the nodes have reboot scheduled",
-                     6,
-                     withCurrentRebootGeneration(1L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
+        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, rebootInterval);
 
-        maintenanceIterations(rebooter, tester, 5);
-        assertEquals("Most nodes have reboot scheduled", 
-                     13, 
-                     withCurrentRebootGeneration(1L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
+        maintenanceIterations(rebooter, tester, 1);
+        assertEquals("All tenant nodes have reboot scheduled",
+                     15,
+                     withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
         assertEquals("No nodes have 2 reboots scheduled",
                      0,
-                     withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
+                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
         assertEquals("Host nodes are not rebooted",
-                     0,
+                     15,
                      withCurrentRebootGeneration(1L, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready)).size());
 
         maintenanceIterations(rebooter, tester, 11);
         assertEquals("Reboot interval is 10x iteration interval, so the same number of nodes are now rebooted twice",
-                     13,
-                     withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
-        assertEquals("The last 2 nodes have had their first reboot",
-                     2,
-                     withCurrentRebootGeneration(1L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
+                     15,
+                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
     }
     
     private void maintenanceIterations(NodeRebooter rebooter, MaintenanceTester tester, int iterations) {
         for (int i = 0; i < iterations; i++) {
-            rebooter.maintain();
             tester.clock.advance(Duration.ofMinutes(25));
+            rebooter.maintain();
             simulateReboot(tester);
         }
     }

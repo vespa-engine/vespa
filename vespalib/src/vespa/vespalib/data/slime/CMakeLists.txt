@@ -6,8 +6,6 @@ vespa_add_library(vespalib_vespalib_data_slime OBJECT
     basic_value.cpp
     basic_value_factory.cpp
     binary_format.cpp
-    buffered_input.cpp
-    buffered_output.cpp
     convenience.cpp
     cursor.cpp
     empty_value_factory.cpp
@@ -15,18 +13,14 @@ vespa_add_library(vespalib_vespalib_data_slime OBJECT
     inserter.cpp
     inspector.cpp
     json_format.cpp
-    memory.cpp
     named_symbol_inserter.cpp
     named_symbol_lookup.cpp
     nix_value.cpp
     object_traverser.cpp
     object_value.cpp
-    output.cpp
     resolved_symbol.cpp
     root_value.cpp
-    simple_buffer.cpp
     slime.cpp
-    stored_memory.cpp
     strfmt.cpp
     symbol.cpp
     symbol_inserter.cpp

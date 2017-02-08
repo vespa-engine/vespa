@@ -3,8 +3,6 @@
 
 #include <vespa/searchcore/proton/flushengine/iflushstrategy.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <map>
 
 namespace proton {
 
@@ -25,8 +23,7 @@ public:
         /// Maximum disk bloat factor. When this limit is reached
         /// flush is forced.
         double            diskBloatFactor;
-        /// Maximum count of what a target can have outstanding in the TLS.
-        int64_t           maxSerialGain;
+
         /// Maximum age of unflushed data.
         fastos::TimeStamp maxTimeGain;
         Config();
@@ -35,11 +32,10 @@ public:
                double globalDiskBloatFactor_in,
                uint64_t maxMemoryGain_in,
                double diskBloatFactor_in,
-               uint64_t maxSerialGain_in,
                fastos::TimeStamp maxTimeGain_in);
     };
 
-    enum OrderType { DEFAULT, MAXAGE, MAXSERIAL, DISKBLOAT, TLSSIZE, MEMORY };
+    enum OrderType { DEFAULT, MAXAGE, DISKBLOAT, TLSSIZE, MEMORY };
 
 private:
     /// Needed as flushDone is called in different context from the rest
@@ -55,8 +51,7 @@ private:
                       const flushengine::TlsStatsMap &tlsStatsMap)
             : _order(order),
               _tlsStatsMap(tlsStatsMap)
-        {
-        }
+        { }
 
         bool
         operator ()(const FlushContext::SP &lfc,
@@ -74,6 +69,7 @@ public:
 
     MemoryFlush(const Config &config,
                 fastos::TimeStamp startTime = fastos::TimeStamp(fastos::ClockSystem::now()));
+    ~MemoryFlush();
 
     // Implements IFlushStrategy
     virtual FlushContext::List

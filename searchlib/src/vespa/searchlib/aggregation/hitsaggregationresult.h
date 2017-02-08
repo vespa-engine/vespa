@@ -3,16 +3,16 @@
 
 #include "aggregationresult.h"
 #include "hitlist.h"
+#include <vespa/searchlib/expression/floatresultnode.h>
 
 namespace search {
 namespace aggregation {
 
-using search::expression::FloatResultNode;
-
 class HitsAggregationResult : public AggregationResult
 {
 public:
-    typedef vespalib::string SummaryClassType;
+    using FloatResultNode = expression::FloatResultNode;
+    using SummaryClassType = vespalib::string;
 
     class SummaryGenerator
     {

@@ -2,19 +2,13 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
 
-namespace vespalib
-{
+namespace vespalib { class nbostream; }
 
-class nbostream;
+namespace search {
 
-}
-
-namespace search
-{
-
-namespace index
-{
+namespace index {
 
 /**
  * Basic class for holding the result of a dictionary lookup result
@@ -40,12 +34,11 @@ public:
         uint32_t _numDocs;	// Number of documents in segment
         uint32_t _lastDoc;	// Last document id in segment
 
-        Segment(void)
+        Segment()
             : _bitLength(0),
               _numDocs(0),
               _lastDoc(0)
-        {
-        }
+        { }
 
         bool
         operator==(const Segment &rhs) const
@@ -77,29 +70,24 @@ public:
      */
     std::vector<Segment> _segments;
 
-    PostingListCounts(void)
+    PostingListCounts()
         : _numDocs(0),
           _bitLength(0),
           _segments()
-    {
-    }
+    { }
     void swap(PostingListCounts & rhs) {
         std::swap(_numDocs, rhs._numDocs);
         std::swap(_bitLength, rhs._bitLength);
         std::swap(_segments, rhs._segments);
     }
 
-    void
-    clear(void)
-    {
+    void clear() {
         _bitLength = 0;
         _numDocs = 0;
         _segments.clear();
     }
 
-    bool
-    operator==(const PostingListCounts &rhs) const
-    {
+    bool operator==(const PostingListCounts &rhs) const {
         return (_numDocs == rhs._numDocs &&
                 _bitLength == rhs._bitLength &&
                 _segments == rhs._segments);
@@ -122,20 +110,17 @@ public:
     uint64_t _accNumDocs;	// Used by prefix search for now.
     PostingListCounts _counts;
 
-    PostingListOffsetAndCounts(void)
+    PostingListOffsetAndCounts()
         : _offset(0),
           _accNumDocs(0u),
           _counts()
-    {
-    }
+    { }
 
     friend vespalib::nbostream &
-    operator<<(vespalib::nbostream &out,
-               const PostingListOffsetAndCounts &offsetAndCounts);
+    operator<<(vespalib::nbostream &out, const PostingListOffsetAndCounts &offsetAndCounts);
 
     friend vespalib::nbostream &
-    operator>>(vespalib::nbostream &in,
-               PostingListOffsetAndCounts &offsetAndCounts);
+    operator>>(vespalib::nbostream &in, PostingListOffsetAndCounts &offsetAndCounts);
 };
 
 } // namespace index

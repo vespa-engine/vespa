@@ -66,7 +66,7 @@ public class RestApiTest {
         assertReboot(10, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
-                               "\"rebootGeneration\":3");
+                               "\"rebootGeneration\":4");
 
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -83,6 +83,9 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
 
         // PUT nodes ready
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host8.yahoo.com",
+                        new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved host8.yahoo.com to dirty\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host8.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host8.yahoo.com to ready\"}");
@@ -248,6 +251,9 @@ public class RestApiTest {
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/" + hostname,
+                        new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved foo.yahoo.com to dirty\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved foo.yahoo.com to ready\"}");

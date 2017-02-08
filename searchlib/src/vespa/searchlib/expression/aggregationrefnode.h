@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/aggregation/aggregationresult.h>
-#include <vespa/searchlib/expression/expressionnode.h>
-#include <vespa/searchlib/expression/resultvector.h>
-#include <vespa/searchlib/expression/serializer.h>
+#include "expressionnode.h"
+#include "serializer.h"
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 

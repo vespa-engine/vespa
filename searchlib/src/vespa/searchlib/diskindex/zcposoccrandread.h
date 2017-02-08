@@ -7,16 +7,14 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 class ZcPosOccRandRead : public index::PostingListFileRandRead
 {
 protected:
-    FastOS_File _file;
+    std::unique_ptr<FastOS_FileInterface> _file;
     uint64_t	     _fileSize;
 
     uint32_t _minChunkDocs;	// # of documents needed for chunking
@@ -31,10 +29,8 @@ protected:
 
 
 public:
-    ZcPosOccRandRead(void);
-
-    virtual
-    ~ZcPosOccRandRead(void);
+    ZcPosOccRandRead();
+    ~ZcPosOccRandRead();
 
     typedef index::PostingListCounts PostingListCounts;
     typedef index::PostingListHandle PostingListHandle;
@@ -43,41 +39,26 @@ public:
      * Create iterator for single word.  Semantic lifetime of counts and
      * handle must exceed lifetime of iterator.
      */
-    virtual search::queryeval::SearchIterator *
+    search::queryeval::SearchIterator *
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
                    const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const;
+                   bool usebitVector) const override;
 
     /**
      * Read (possibly partial) posting list into handle.
      */
-    virtual void
+    void
     readPostingList(const PostingListCounts &counts,
                     uint32_t firstSegment,
                     uint32_t numSegments,
-                    PostingListHandle &handle);
+                    PostingListHandle &handle) override;
 
-    /**
-     * Open posting list file for random read.
-     */
-    virtual bool
-    open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead);
-
-    /**
-     * Close posting list file.
-     */
-    virtual bool
-    close(void);
-
-    virtual void
-    readHeader(void);
-
-    static const vespalib::string &
-    getIdentifier(void);
-
-    static const vespalib::string &
-    getSubIdentifier(void);
+    bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
+    bool close() override;
+    virtual void readHeader();
+    static const vespalib::string &getIdentifier();
+    static const vespalib::string &getSubIdentifier();
 };
 
 class Zc4PosOccRandRead : public ZcPosOccRandRead
@@ -89,20 +70,16 @@ public:
      * Create iterator for single word.  Semantic lifetime of counts and
      * handle must exceed lifetime of iterator.
      */
-    virtual search::queryeval::SearchIterator *
+    search::queryeval::SearchIterator *
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
                    const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const;
+                   bool usebitVector) const override;
 
-    virtual void
-    readHeader(void);
+    void readHeader() override;
 
-    static const vespalib::string &
-    getIdentifier(void);
-
-    static const vespalib::string &
-    getSubIdentifier(void);
+    static const vespalib::string &getIdentifier();
+    static const vespalib::string &getSubIdentifier();
 };
 
 

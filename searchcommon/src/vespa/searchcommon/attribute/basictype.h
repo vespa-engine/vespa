@@ -24,6 +24,7 @@ class BasicType
         DOUBLE    = 10,
         PREDICATE = 11,
         TENSOR    = 12,
+        REFERENCE = 13,
         MAX_TYPE
     };
 

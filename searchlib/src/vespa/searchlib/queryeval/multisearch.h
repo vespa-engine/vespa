@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/array.h>
 #include "searchiterator.h"
+#include <vector>
 
 namespace search {
 namespace queryeval {

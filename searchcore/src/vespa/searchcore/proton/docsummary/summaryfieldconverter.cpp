@@ -29,6 +29,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/encoding/base64.h>
@@ -79,6 +80,7 @@ using document::StructFieldValue;
 using document::WeightedSetDataType;
 using document::WeightedSetFieldValue;
 using document::TensorFieldValue;
+using document::ReferenceFieldValue;
 using search::index::Schema;
 using search::util::URL;
 using std::make_pair;
@@ -367,7 +369,7 @@ class JsonFiller : public ConstFieldValueVisitor {
         if (tensor) {
             auto slime =
                 vespalib::tensor::SlimeBinaryFormat::serialize(*tensor);
-            vespalib::slime::SimpleBuffer buf;
+            vespalib::SimpleBuffer buf;
             vespalib::slime::JsonFormat::encode(*slime, buf, true);
             _json.appendJSON(buf.get().make_string());
         } else {
@@ -375,6 +377,12 @@ class JsonFiller : public ConstFieldValueVisitor {
             _json.beginObject();
             _json.endObject();
         }
+    }
+
+    void visit(const ReferenceFieldValue& value) override {
+        _json.appendString(value.hasValidDocumentId()
+                ? value.getDocumentId().toString()
+                : string());
     }
 
 public:
@@ -475,6 +483,12 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
 
     virtual void visit(const TensorFieldValue &value) override {
         visitPrimitive(value);
+    }
+
+    void visit(const ReferenceFieldValue& value) override {
+        if (value.hasValidDocumentId()) {
+            _str << value.getDocumentId().toString();
+        } // else: implicit empty string
     }
 
 public:
@@ -638,7 +652,13 @@ class SlimeFiller : public ConstFieldValueVisitor {
         if (tensor) {
             vespalib::tensor::TypedBinaryFormat::serialize(s, *tensor);
         }
-        _inserter.insertData(vespalib::slime::Memory(s.peek(), s.size()));
+        _inserter.insertData(vespalib::Memory(s.peek(), s.size()));
+    }
+
+    void visit(const ReferenceFieldValue& value) override {
+        _inserter.insertString(Memory(value.hasValidDocumentId()
+                ? value.getDocumentId().toString()
+                : string()));
     }
 
 public:

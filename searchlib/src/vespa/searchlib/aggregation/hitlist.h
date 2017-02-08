@@ -9,10 +9,11 @@ namespace search {
 namespace aggregation {
 
 
-class HitList : public ResultNode
+class HitList : public expression::ResultNode
 {
 public:
 private:
+    using ResultNode = expression::ResultNode;
     typedef std::vector<FS4Hit> Fs4V;
     typedef std::vector<VdsHit> VdsV;
     std::vector<FS4Hit>         _fs4hits;

@@ -18,7 +18,7 @@ public:
     static AndSearch *create(const Children &children, bool strict, const UnpackInfo & unpackInfo);
     static AndSearch *create(const Children &children, bool strict);
 
-    BitVector::UP get_hits(uint32_t begin_id) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
     AndSearch & estimate(uint32_t est) { _estimate = est; return *this; }
     uint32_t estimate() const { return _estimate; }

@@ -85,6 +85,7 @@ vespa_define_module(
     src/tests/attribute/multi_value_mapping
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
+    src/tests/attribute/reference_attribute
     src/tests/attribute/searchable
     src/tests/attribute/searchcontext
     src/tests/attribute/sourceselector
@@ -105,6 +106,7 @@ vespa_define_module(
     src/tests/datastore/array_store
     src/tests/datastore/array_store_config
     src/tests/datastore/datastore
+    src/tests/datastore/unique_store
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex
     src/tests/diskindex/fieldwriter

@@ -15,14 +15,14 @@ class PayloadConverter : public vespalib::slime::ObjectTraverser, public vespali
 public:
     PayloadConverter(const vespalib::slime::Inspector & inspector);
     const std::vector<vespalib::string> & convert();
-    void field(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & inspector);
+    void field(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector);
     void entry(size_t idx, const vespalib::slime::Inspector & inspector);
 private:
     void printPrefix();
     void encode(const vespalib::slime::Inspector & inspector);
-    void encode(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & inspector);
-    void encodeObject(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & object);
-    void encodeArray(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & object);
+    void encode(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector);
+    void encodeObject(const vespalib::Memory & symbol, const vespalib::slime::Inspector & object);
+    void encodeArray(const vespalib::Memory & symbol, const vespalib::slime::Inspector & object);
     void encodeValue(const vespalib::slime::Inspector & value);
     void encodeString(const vespalib::string & value);
     void encodeQuotedString(const vespalib::string & value);

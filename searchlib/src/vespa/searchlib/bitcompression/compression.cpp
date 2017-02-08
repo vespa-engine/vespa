@@ -1,21 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".compression");
 #include "compression.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/data/fileheader.h>
 
-namespace search
-{
+namespace search {
 
-namespace bitcompression
-{
+namespace bitcompression {
 
 using vespalib::nbostream;
 
@@ -142,8 +135,7 @@ DecodeContext64Base::checkPointRead(nbostream &in)
 } // namespace bitcompression
 
 
-namespace
-{
+namespace {
 
 vespalib::string noFeatures = "NoFeatures";
 

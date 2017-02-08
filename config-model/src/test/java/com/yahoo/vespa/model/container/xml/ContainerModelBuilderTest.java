@@ -19,10 +19,10 @@ import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.config.StatisticsRequestHandler;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
-import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.handler.VipStatusHandler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
+import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
@@ -52,7 +52,12 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -378,22 +383,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(cluster.getContainers().size(), is(2));
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.0").requesttimeout(), 111);
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.1").requesttimeout(), 222);
-    }
-
-    @Test
-    public void http_section_can_be_set_up() throws Exception {
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
-                "  <http>",
-                "    <chain id='filterChain2'>",
-                "      <filter id='filter' />",
-                "    </chain>",
-                "  </http>",
-                "</jdisc>");
-
-        createModel(root, clusterElem);
-
-        root.getChildren();
     }
 
     @Test

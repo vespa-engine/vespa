@@ -161,7 +161,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         // If the container is already running, initialize vespaVersion
         vespaVersion = dockerOperations.getContainer(hostname)
-                .filter(container -> container.isRunning)
+                .filter(container -> container.state.isRunning())
                 .flatMap(container -> dockerOperations.getVespaVersion(container.name));
 
         loopThread = new Thread(this::loop);
@@ -279,13 +279,13 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void restartServices(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
             throws Exception {
-        if (existingContainer.isRunning) {
+        if (existingContainer.state.isRunning()) {
             ContainerName containerName = existingContainer.name;
             if (nodeSpec.nodeState == Node.State.active) {
                 logger.info("Restarting services for " + containerName);
                 // Since we are restarting the services we need to suspend the node.
                 orchestratorSuspendNode(orchestrator, nodeSpec, logger);
-                dockerOperations.restartServicesOnNode(containerName);
+                dockerOperations.restartVespaOnNode(containerName);
             }
         }
     }
@@ -305,7 +305,7 @@ public class NodeAgentImpl implements NodeAgent {
             return Optional.of("The node is supposed to run a new Docker image: "
                                        + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
         }
-        if (!existingContainer.isRunning) {
+        if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");
         }
         return Optional.empty();
@@ -323,7 +323,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (removeReason.isPresent()) {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
-            if (existingContainer.get().isRunning) {
+            if (existingContainer.get().state.isRunning()) {
                 final ContainerName containerName = existingContainer.get().name;
                 orchestratorSuspendNode(orchestrator, nodeSpec, logger);
                 dockerOperations.trySuspendNode(containerName);
@@ -454,6 +454,8 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
+                nodeRepository.markAsDirty(nodeSpec.hostname);
+                break;
             case dirty:
                 storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(nodeSpec.containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec);

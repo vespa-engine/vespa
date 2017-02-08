@@ -612,9 +612,9 @@ FS4Packet_DOCSUM::toString(uint32_t indent) const
     if (_buf.size() >= sizeof(magic) &&
         memcmp(_buf.c_str(), &magic, sizeof(magic)) == 0) {
         vespalib::Slime slime;
-        vespalib::slime::Memory input(_buf.c_str() + sizeof(magic),
+        vespalib::Memory input(_buf.c_str() + sizeof(magic),
                                       _buf.size() - sizeof(magic));
-        vespalib::slime::SimpleBuffer buf;
+        vespalib::SimpleBuffer buf;
         vespalib::slime::BinaryFormat::decode(input, slime);
         vespalib::slime::JsonFormat::encode(slime, buf, false);
         s += make_string("%*s  json dump : ", indent, "");

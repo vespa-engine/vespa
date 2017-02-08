@@ -57,7 +57,7 @@ public class LocalZoneUtils {
     public static void startConfigServerIfNeeded(Docker docker, Environment environment) throws UnknownHostException {
         Optional<Container> container = docker.getContainer(CONFIG_SERVER_HOSTNAME);
         if (container.isPresent()) {
-            if (container.get().isRunning) return;
+            if (container.get().state.isRunning()) return;
             else docker.deleteContainer(CONFIG_SERVER_CONTAINER_NAME);
         }
 
@@ -114,7 +114,6 @@ public class LocalZoneUtils {
                     "/home/y/var/vespa",
                     "/home/y/var/yca",
                     "/home/y/var/ycore++",
-                    "/home/y/var/ymon",
                     "/home/y/var/zookeeper")
                 .forEach(path -> createCmd.withVolume(pathToContainerStorage.resolve("node-admin" + path).toString(), path));
 
@@ -123,9 +122,9 @@ public class LocalZoneUtils {
     }
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/Dockerfile");
+        Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/include/Dockerfile");
 
-        Path dockerfileTemplatePath = Paths.get("node-admin/Dockerfile.template");
+        Path dockerfileTemplatePath = Paths.get("node-admin/include/Dockerfile.template");
         String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
                 .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
                 .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());

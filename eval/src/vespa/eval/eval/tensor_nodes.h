@@ -6,6 +6,7 @@
 #include "function.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include "aggr.h"
 
 namespace vespalib {
 namespace eval {
@@ -102,19 +103,6 @@ public:
         handler.handle(std::move(_lhs));
         handler.handle(std::move(_rhs));
     }
-};
-
-enum class Aggr { AVG, COUNT, PROD, SUM, MAX, MIN };
-class AggrNames {
-private:
-    static const AggrNames _instance;
-    std::map<vespalib::string,Aggr> _name_aggr_map;
-    std::map<Aggr,vespalib::string> _aggr_name_map;
-    void add(Aggr aggr, const vespalib::string &name);
-    AggrNames();
-public:
-    static const vespalib::string *name_of(Aggr aggr);
-    static const Aggr *from_name(const vespalib::string &name);
 };
 
 class TensorReduce : public Node {

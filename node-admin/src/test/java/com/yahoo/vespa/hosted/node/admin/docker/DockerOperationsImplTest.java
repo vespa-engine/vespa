@@ -106,7 +106,7 @@ public class DockerOperationsImplTest {
 
     @Test
     public void runsCommandInNetworkNamespace() {
-        Container container = makeContainer("container-42", 42);
+        Container container = makeContainer("container-42", Container.State.RUNNING, 42);
         List<String> capturedArgs = new ArrayList<>();
         DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation), capturedArgs::addAll);
@@ -123,9 +123,9 @@ public class DockerOperationsImplTest {
                 "-nvL"), capturedArgs);
     }
 
-    private Container makeContainer(String name, int pid) {
+    private Container makeContainer(String name, Container.State state, int pid) {
         final Container container = new Container(name + ".fqdn", new DockerImage("mock"),
-                new ContainerName(name), true, Optional.of(pid));
+                new ContainerName(name), state, pid);
         when(docker.getContainer(eq(container.name))).thenReturn(Optional.of(container));
         return container;
     }

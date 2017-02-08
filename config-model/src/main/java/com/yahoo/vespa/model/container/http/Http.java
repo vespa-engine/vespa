@@ -12,9 +12,11 @@ import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
-// This can be collapsed into JettyHttpServer now
 /**
+ * Represents the http servers and filters of a Jdisc cluster.
+ *
  * @author tonytv
  */
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
@@ -33,10 +35,16 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
     private FilterChains filterChains;
     private JettyHttpServer httpServer;
     public final List<Binding> bindings;
+    private final Optional<AccessControl> accessControl;
 
     public Http(List<Binding> bindings) {
+        this(bindings, null);
+    }
+
+    public Http(List<Binding> bindings, AccessControl accessControl) {
         super( "http");
         this.bindings = Collections.unmodifiableList(bindings);
+        this.accessControl = Optional.ofNullable(accessControl);
     }
 
     public void setFilterChains(FilterChains filterChains) {
@@ -74,6 +82,10 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>>
 
     public List<Binding> getBindings() {
         return bindings;
+    }
+
+    public Optional<AccessControl> getAccessControl() {
+        return accessControl;
     }
 
     @Override

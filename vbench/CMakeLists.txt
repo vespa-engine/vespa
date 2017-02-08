@@ -20,8 +20,6 @@ vespa_define_module(
     src/tests/app_dumpurl
     src/tests/app_vbench
     src/tests/benchmark_headers
-    src/tests/buffered_output
-    src/tests/byte_input
     src/tests/dispatcher
     src/tests/dropped_tagger
     src/tests/handler_thread
@@ -32,8 +30,6 @@ vespa_define_module(
     src/tests/input_file_reader
     src/tests/latency_analyzer
     src/tests/line_reader
-    src/tests/mapped_file_input
-    src/tests/memory
     src/tests/qps_analyzer
     src/tests/qps_tagger
     src/tests/request_dumper
@@ -42,10 +38,8 @@ vespa_define_module(
     src/tests/server_socket
     src/tests/server_spec
     src/tests/server_tagger
-    src/tests/simple_buffer
     src/tests/socket
     src/tests/taint
     src/tests/time_queue
     src/tests/timer
-    src/tests/writable_memory
 )

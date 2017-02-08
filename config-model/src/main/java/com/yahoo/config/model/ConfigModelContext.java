@@ -8,6 +8,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * This class contains a context that is passed to a model builder, and can be used to retrieve the application package,
@@ -16,15 +17,20 @@ import java.util.Optional;
  * @author lulf
  * @since 5.1
  */
-public class ConfigModelContext {
+public final class ConfigModelContext {
 
     private final AbstractConfigProducer parent;
     private final String producerId;
     private final DeployState deployState;
     private final ConfigModelRepoAdder configModelRepoAdder;
+    private final ApplicationType applicationType;
 
-    private ConfigModelContext(DeployState deployState, ConfigModelRepoAdder configModelRepoAdder,
-                               AbstractConfigProducer parent, String producerId) {
+    private ConfigModelContext(ApplicationType applicationType,
+                               DeployState deployState,
+                               ConfigModelRepoAdder configModelRepoAdder,
+                               AbstractConfigProducer parent,
+                               String producerId) {
+        this.applicationType = applicationType;
         this.deployState = deployState;
         this.configModelRepoAdder = configModelRepoAdder;
         this.parent = parent;
@@ -36,6 +42,7 @@ public class ConfigModelContext {
     public AbstractConfigProducer getParentProducer() { return parent; }
     public DeployLogger getDeployLogger() { return deployState.getDeployLogger(); }
     public DeployState getDeployState() { return deployState; }
+    public ApplicationType getApplicationType() { return applicationType; }
 
     /** Returns write access to the config model repo, or null (only) if this is improperly initialized during testing */
     public ConfigModelRepoAdder getConfigModelRepoAdder() { return configModelRepoAdder; }
@@ -53,19 +60,6 @@ public class ConfigModelContext {
     /**
      * Create an application context from a parent producer and an id.
      * 
-     * @param deployState the global deploy state for this model
-     * @param parent the parent to be used for the config model
-     * @param producerId the id to be used for the config model
-     * @return a model context that can be passed to a model
-     */
-    public static ConfigModelContext create(DeployState deployState, ConfigModelRepoAdder configModelRepoAdder,
-                                            AbstractConfigProducer parent, String producerId) {
-        return new ConfigModelContext(deployState, configModelRepoAdder, parent, producerId);
-    }
-
-    /**
-     * Create an application context from a parent producer and an id.
-     * 
      * @param parent the parent to be used for the config model.
      * @param producerId the id to be used for the config model.
      * @return a model context that can be passed to a model.
@@ -75,4 +69,53 @@ public class ConfigModelContext {
         return create(parent.getRoot().getDeployState(), configModelRepoAdder, parent, producerId);
     }
 
+    /**
+     * Create an application context from a parent producer and an id.
+     *
+     * @param deployState the global deploy state for this model
+     * @param parent the parent to be used for the config model
+     * @param producerId the id to be used for the config model
+     * @return a model context that can be passed to a model
+     */
+    public static ConfigModelContext create(DeployState deployState, ConfigModelRepoAdder configModelRepoAdder,
+                                            AbstractConfigProducer parent, String producerId) {
+        return new ConfigModelContext(ApplicationType.DEFAULT, deployState, configModelRepoAdder, parent, producerId);
+    }
+
+    /**
+     * Create an application context from an application type, a parent producer and an id.
+     *
+     * @param applicationType the application type
+     * @param deployState the global deploy state for this model
+     * @param parent the parent to be used for the config model
+     * @param producerId the id to be used for the config model
+     * @return a model context that can be passed to a model
+     */
+    public static ConfigModelContext create(ApplicationType applicationType,
+                                            DeployState deployState,
+                                            ConfigModelRepoAdder configModelRepoAdder,
+                                            AbstractConfigProducer parent,
+                                            String producerId) {
+        return new ConfigModelContext(applicationType, deployState, configModelRepoAdder, parent, producerId);
+    }
+
+    public enum ApplicationType {
+        DEFAULT("default"),
+        HOSTED_INFRASTRUCTURE("hosted-infrastructure");
+
+        private final String type;
+
+        ApplicationType(String type) {
+            this.type = type;
+        }
+
+        public static ApplicationType fromString(String value) {
+            return Stream.of(ApplicationType.values())
+                    .filter(applicationType -> applicationType.type.equals(value))
+                    .findFirst()
+                    .orElse(DEFAULT);
+
+        }
+
+    }
 }

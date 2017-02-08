@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
@@ -11,6 +10,7 @@
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
+#include <vespa/searchlib/expression/documentfieldnode.h>
 #include <cmath>
 #include <iostream>
 

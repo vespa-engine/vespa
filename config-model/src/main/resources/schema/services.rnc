@@ -13,6 +13,7 @@ include "legacygenericcluster.rnc"
 start = element services {
    attribute version { "1.0" }? &
    attribute major-version { text }? &
+   attribute application-type { "hosted-infrastructure" }? &
    LegacyGenericCluster* &
    GenericCluster* &
    GenericConfig* &

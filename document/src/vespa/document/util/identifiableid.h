@@ -40,6 +40,7 @@
 #define CID_MapFieldValue          DOCUMENT_CID(36)
 #define CID_PredicateFieldValue    DOCUMENT_CID(37)
 #define CID_TensorFieldValue       DOCUMENT_CID(38)
+#define CID_ReferenceFieldValue    DOCUMENT_CID(39)
 
 #define CID_DataType               DOCUMENT_CID(50)
 #define CID_PrimitiveDataType      DOCUMENT_CID(51)
@@ -58,6 +59,7 @@
 #define CID_MapDataType            DOCUMENT_CID(65)
 #define CID_AnnotationReferenceDataType DOCUMENT_CID(66)
 #define CID_TensorDataType         DOCUMENT_CID(67)
+#define CID_ReferenceDataType      DOCUMENT_CID(68)
 
 #define CID_document_FieldPathEntry DOCUMENT_CID(80)
 

@@ -31,7 +31,7 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container</artifactId>  <!-- not container-dev -->
+            <artifactId>container-dev</artifactId>  <!-- not container-dev -->
             <version>${vespa_version}</version>
             <scope>provided</scope>
         </dependency>

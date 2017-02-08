@@ -7,11 +7,9 @@
 #include "searchiterator.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-namespace search
-{
+namespace search {
 
-namespace queryeval
-{
+namespace queryeval {
 
 class DocIdAndFeatures;
 

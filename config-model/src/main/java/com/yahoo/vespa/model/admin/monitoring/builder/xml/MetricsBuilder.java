@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring.builder.xml;
 
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
@@ -22,9 +23,11 @@ public class MetricsBuilder {
 
     private static final String ID_ATTRIBUTE = "id";
 
+    private final ApplicationType applicationType;
     private final Map<String, MetricSet> availableMetricSets;
 
-    public MetricsBuilder(Map<String, MetricSet> availableMetricSets) {
+    public MetricsBuilder(ApplicationType applicationType, Map<String, MetricSet> availableMetricSets) {
+        this.applicationType = applicationType;
         this.availableMetricSets = availableMetricSets;
     }
 
@@ -57,7 +60,7 @@ public class MetricsBuilder {
     }
 
     private void throwIfIllegalConsumerId(Metrics metrics, String consumerId) {
-        if (consumerId.equalsIgnoreCase(VESPA_CONSUMER_ID))
+        if (consumerId.equalsIgnoreCase(VESPA_CONSUMER_ID) && applicationType != ApplicationType.HOSTED_INFRASTRUCTURE)
             throw new IllegalArgumentException("'Vespa' is not allowed as metrics consumer id (case is ignored.)");
         if (metrics.hasConsumerIgnoreCase(consumerId))
             throw new IllegalArgumentException("'" + consumerId + "' is used as id for two metrics consumers (case is ignored.)");

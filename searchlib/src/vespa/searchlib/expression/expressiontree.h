@@ -5,22 +5,28 @@
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/searchlib/expression/expressionnode.h>
-#include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
-#include <vespa/searchlib/expression/arrayatlookupfunctionnode.h>
-#include <vespa/searchlib/expression/relevancenode.h>
-#include <vespa/searchlib/expression/documentfieldnode.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/document/fieldvalue/document.h>
 
+namespace document {
+    class DocumentType;
+    class Document;
+}
 namespace search {
+
+namespace attribute { class IAttributeContext; }
+
 namespace expression {
 
+class AttributeNode;
+class DocumentAccessorNode;
+class RelevanceNode;
+class InterpolatedLookup;
+class ArrayAtLookup;
+
 struct ConfigureStaticParams {
-    ConfigureStaticParams (const search::attribute::IAttributeContext * attrCtx,
+    ConfigureStaticParams (const attribute::IAttributeContext * attrCtx,
                            const document::DocumentType * docType)
         : _attrCtx(attrCtx), _docType(docType) { }
-    const search::attribute::IAttributeContext * _attrCtx;
+    const attribute::IAttributeContext * _attrCtx;
     const document::DocumentType * _docType;
 };
 

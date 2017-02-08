@@ -595,8 +595,7 @@ void DocumentUpdateTest::testReadSerializedFile()
 
     // Verify assign value update.
     FieldUpdate serField = upd[0];
-    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(Document::getNewestSerializationVersion()),
-                         type->getField("intfield").getId(Document::getNewestSerializationVersion()));
+    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("intfield").getId());
 
     const ValueUpdate* serValue = &serField[0];
     CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Assign);
@@ -608,8 +607,7 @@ void DocumentUpdateTest::testReadSerializedFile()
 
     // Verify clear field update.
     serField = upd[1];
-    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(Document::getNewestSerializationVersion()),
-                         type->getField("floatfield").getId(Document::getNewestSerializationVersion()));
+    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("floatfield").getId());
 
     serValue = &serField[0];
     CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Clear);
@@ -617,8 +615,7 @@ void DocumentUpdateTest::testReadSerializedFile()
 
     // Verify add value update.
     serField = upd[2];
-    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(Document::getNewestSerializationVersion()),
-                         type->getField("arrayoffloatfield").getId(Document::getNewestSerializationVersion()));
+    CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("arrayoffloatfield").getId());
 
     serValue = &serField[0];
     CPPUNIT_ASSERT_EQUAL(serValue->getType(), ValueUpdate::Add);

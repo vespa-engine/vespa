@@ -1,6 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #include "bitvector.h"
 #include "allocatedbitvector.h"
@@ -9,6 +7,7 @@
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/fastos/file.h>
 
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
@@ -39,26 +38,20 @@ using vespalib::GenerationHeldBase;
 using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;
 
-namespace {
-
-template <typename T>
-void fillUp(T * v, T startVal) {
-    for (size_t i(0); i < (sizeof(T)*8); i++) {
-        v[i] = startVal << i;
-    }
-}
-
-}
-
-BitWord::Init BitWord::_initializer;
-
-BitWord::Init::Init()
+Alloc
+BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity)
 {
-    fillUp(BitWord::_checkTab, std::numeric_limits<BitWord::Word>::max());
+    assert(capacity >= end);
+    uint32_t words = numActiveWords(start, capacity);
+    words += (-words & 15);	// Pad to 64 byte alignment
+    const size_t sz(words * sizeof(Word));
+    Alloc alloc = Alloc::alloc(sz);
+    assert(alloc.size()/sizeof(Word) >= words);
+    // Clear padding
+    size_t usedBytes = numBytes(end - start);
+    memset(static_cast<char *>(alloc.get()) + usedBytes, 0, sz - usedBytes);
+    return alloc;
 }
-
-BitWord::Word BitWord::_checkTab[BitWord::WordLen];
-
 
 BitVector::BitVector(void * buf, Index start, Index end) :
     _words(static_cast<Word *>(buf) - wordNum(start)),
@@ -79,7 +72,7 @@ BitVector::init(void * buf,  Index start, Index end)
 }
 
 void
-BitVector::clear(void)
+BitVector::clear()
 {
     memset(getActiveStart(), '\0', getActiveBytes());
     setBit(size()); // Guard bit
@@ -133,7 +126,7 @@ BitVector::setInterval(Index start, Index end)
 }
 
 BitVector::Index
-BitVector::count(void) const
+BitVector::count() const
 {
     // Subtract by one to compensate for guard bit
     return internalCount(getActiveStart(), numActiveWords()) - 1;
@@ -252,7 +245,7 @@ BitVector::operator==(const BitVector &rhs) const
 }
 
 bool
-BitVector::hasTrueBitsInternal(void) const
+BitVector::hasTrueBitsInternal() const
 {
     Index bitVectorSizeL1(numActiveWords() - 1);
     const Word *words(getActiveStart());
@@ -337,6 +330,14 @@ BitVector::create(Index start, Index end)
     return (start == 0)
            ? create(end)
            : UP(new PartialBitVector(start, end));
+}
+
+BitVector::UP
+BitVector::create(const BitVector & org, Index start, Index end)
+{
+    return (start == 0)
+           ? create(end)
+           : UP(new PartialBitVector(org, start, end));
 }
 
 BitVector::UP

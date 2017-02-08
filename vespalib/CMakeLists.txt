@@ -20,6 +20,10 @@ vespa_define_module(
     src/tests/closure
     src/tests/component
     src/tests/compress
+    src/tests/data/input_reader
+    src/tests/data/memory_input
+    src/tests/data/output_writer
+    src/tests/data/simple_buffer
     src/tests/delegatelist
     src/tests/dotproduct
     src/tests/dual_merge_director
@@ -34,6 +38,7 @@ vespa_define_module(
     src/tests/hashmap
     src/tests/host_name
     src/tests/io/fileutil
+    src/tests/io/mapped_file_input
     src/tests/left_right_heap
     src/tests/linkedptr
     src/tests/make_fixture_macros

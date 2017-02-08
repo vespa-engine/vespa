@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <cmath>
 #include <sstream>
+#include <vespa/vespalib/data/memory_input.h>
 
 namespace vespalib {
 namespace slime {
@@ -17,22 +18,22 @@ template <bool COMPACT>
 struct JsonEncoder : public ArrayTraverser,
                      public ObjectTraverser
 {
-    BufferedOutput &out;
+    OutputWriter &out;
     int level;
     bool head;
 
-    JsonEncoder(BufferedOutput &out_in)
+    JsonEncoder(OutputWriter &out_in)
         : out(out_in), level(0), head(true) {}
 
     void openScope(char c) {
-        out.writeByte(c);
+        out.write(c);
         ++level;
         head = true;
     }
 
     void separate(bool useComma) {
         if (!head && useComma) {
-            out.writeByte(',');
+            out.write(',');
         } else {
             head = false;
         }
@@ -44,17 +45,17 @@ struct JsonEncoder : public ArrayTraverser,
     void closeScope(char c) {
         --level;
         separate(false);
-        out.writeByte(c);
+        out.write(c);
     }
 
     void encodeNIX() {
-        out.writeBytes("null", 4);
+        out.write("null", 4);
     }
     void encodeBOOL(bool value) {
         if (value) {
-            out.writeBytes("true", 4);
+            out.write("true", 4);
         } else {
-            out.writeBytes("false", 5);
+            out.write("false", 5);
         }
     }
     void encodeLONG(int64_t value) {
@@ -62,7 +63,7 @@ struct JsonEncoder : public ArrayTraverser,
     }
     void encodeDOUBLE(double value) {
         if (std::isnan(value) || std::isinf(value)) {
-            out.writeBytes("null", 4);
+            out.write("null", 4);
         } else {
             out.printf("%g", value);
         }
@@ -138,11 +139,11 @@ struct JsonEncoder : public ArrayTraverser,
     virtual void entry(size_t idx, const Inspector &inspector);
     virtual void field(const Memory &symbol_name, const Inspector &inspector);
 
-    static void encode(const Inspector &inspector, BufferedOutput &out) {
+    static void encode(const Inspector &inspector, OutputWriter &out) {
         JsonEncoder<COMPACT> encoder(out);
         encoder.encodeValue(inspector);
         if (!COMPACT) {
-            out.writeByte('\n');
+            out.write('\n');
         }
     }
 };
@@ -162,9 +163,9 @@ JsonEncoder<COMPACT>::field(const Memory &symbol_name, const Inspector &inspecto
     separate(true);
     encodeSTRING(symbol_name);
     if (COMPACT) {
-        out.writeByte(':');
+        out.write(':');
     } else {
-        out.writeBytes(": ", 2);
+        out.write(": ", 2);
     }
     encodeValue(inspector);
 }
@@ -172,16 +173,16 @@ JsonEncoder<COMPACT>::field(const Memory &symbol_name, const Inspector &inspecto
 //-----------------------------------------------------------------------------
 
 struct JsonDecoder {
-    BufferedInput &in;
+    InputReader &in;
     char c;
     vespalib::string key;
     vespalib::string value;
 
-    JsonDecoder(BufferedInput &input) : in(input), c(in.getByte()), key(), value() {}
+    JsonDecoder(InputReader &input) : in(input), c(in.read()), key(), value() {}
 
     void next() {
-        if (!in.eof()) {
-            c = in.getByte();
+        if (in.obtain() > 0) {
+            c = in.read();
         } else {
             c = 0;
         }
@@ -467,7 +468,8 @@ insertNumber(Inserter &inserter, bool isLong, const vespalib::string & value, ch
 void
 JsonFormat::encode(const Inspector &inspector, Output &output, bool compact)
 {
-    BufferedOutput out(output);
+    size_t chunk_size = 8000;
+    OutputWriter out(output, chunk_size);
     if (compact) {
         JsonEncoder<true>::encode(inspector, out);
     } else {
@@ -484,15 +486,16 @@ JsonFormat::encode(const Slime &slime, Output &output, bool compact)
 size_t
 JsonFormat::decode(const Memory &memory, Slime &slime)
 {
-    BufferedInput input(memory);
+    MemoryInput memory_input(memory);
+    InputReader input(memory_input);
     JsonDecoder decoder(input);
     decoder.decodeValue(slime);
     if (input.failed()) {
         slime.wrap("partial_result");
-        slime.get().setString("offending_input", input.getOffending());
-        slime.get().setString("error_message", input.getErrorMessage());
+        slime.get().setLong("offending_offset", input.get_offset());
+        slime.get().setString("error_message", input.get_error_message());
     }
-    return input.getConsumed().size;
+    return input.failed() ? 0 : input.get_offset();
 }
 
 } // namespace vespalib::slime

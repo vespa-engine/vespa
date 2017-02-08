@@ -12,7 +12,7 @@ namespace {
 using Object = vespalib::JsonStream::Object;
 using End = vespalib::JsonStream::End;
 using JsonFormat = vespalib::slime::JsonFormat;
-using Memory = vespalib::slime::Memory;
+using Memory = vespalib::Memory;
 }
 
 void

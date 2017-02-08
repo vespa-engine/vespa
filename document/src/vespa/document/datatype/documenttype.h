@@ -58,7 +58,7 @@ public:
     DocumentType(const vespalib::stringref &name,
                  const StructDataType& fields);
 
-    virtual ~DocumentType();
+    ~DocumentType();
 
     const StructDataType& getFieldsType() const { return *_fields; }
 
@@ -71,25 +71,23 @@ public:
      */
     void inherit(const DocumentType &docType);
 
-    virtual bool isA(const DataType& other) const;
+    bool isA(const DataType& other) const override;
 
-    const std::vector<const DocumentType *> & getInheritedTypes() const
-        { return _inheritedTypes; };
+    const std::vector<const DocumentType *> & getInheritedTypes() const { return _inheritedTypes; };
 
-        // Implementation of StructuredDataType
-    virtual std::unique_ptr<FieldValue> createFieldValue() const;
-    virtual void print(
-            std::ostream&, bool verbose, const std::string& indent) const;
-    virtual bool operator==(const DataType& type) const;
-    virtual uint32_t getFieldCount() const {
+    // Implementation of StructuredDataType
+    std::unique_ptr<FieldValue> createFieldValue() const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    bool operator==(const DataType& type) const override;
+    uint32_t getFieldCount() const override {
         return _fields->getFieldCount();
     }
-    virtual const Field & getField(const vespalib::stringref & name) const;
-    virtual const Field & getField(int fieldId, int version) const;
-    virtual bool hasField(const vespalib::stringref &name) const;
-    virtual bool hasField(int fieldId, int version) const;
-    virtual Field::Set getFieldSet() const;
-    virtual DocumentType* clone() const { return new DocumentType(*this); }
+    const Field & getField(const vespalib::stringref & name) const override;
+    const Field & getField(int fieldId) const override;
+    bool hasField(const vespalib::stringref &name) const override;
+    bool hasField(int fieldId) const override;
+    Field::Set getFieldSet() const override;
+    DocumentType* clone() const override;
 
     DocumentType & addFieldSet(const vespalib::string & name, const FieldSet::Fields & fields);
     const FieldSet * getFieldSet(const vespalib::string & name) const;

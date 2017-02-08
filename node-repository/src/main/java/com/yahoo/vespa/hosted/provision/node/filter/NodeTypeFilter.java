@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.node.filter;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Collections;
@@ -36,7 +37,7 @@ public class NodeTypeFilter extends NodeFilter {
 
     /** Returns a node filter which matches a comma or space-separated list of types */
     public static NodeTypeFilter from(String types, NodeFilter next) {
-        return new NodeTypeFilter(HostFilter.split(types).stream().map(NodeType::valueOf).collect(Collectors.toSet()), next);
+        return new NodeTypeFilter(StringUtilities.split(types).stream().map(NodeType::valueOf).collect(Collectors.toSet()), next);
     }
 
 }

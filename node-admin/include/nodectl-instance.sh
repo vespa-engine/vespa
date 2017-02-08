@@ -5,13 +5,15 @@
 #     vespa-cookbooks/hosted/files/default/prepost-instance.sh
 # TODO: Remove the above cookbook file (with the down-side that a new script
 # requires a new vespa release, instead of just a hosted release).
-
-# Usage: nodectl-instance.sh [start|stop|suspend]
 #
-# start: Set the node "in service" by e.g. undraining container traffic.
-# start can be assumed to have completed successfully.
+# Usage: nodectl-instance.sh [resume|start|stop|suspend]
 #
-# stop: Stop services on the node (Note: Only does suspend now, will be changed soon, Oct 24 2016)
+# resume: Set the node "in service" by e.g. undraining container traffic
+#
+# start: Start services on the node. Can be seen as a boot of a non-Docker node.
+#        start can be assumed to have completed successfully.
+#
+# stop: Stop services on the node. Can be seen as a shutdown of a non-Docker node.
 #
 # suspend: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
 # node "out of service" by draining container traffic, and flush index for a
@@ -95,13 +97,38 @@ container_drain() {
     sleep 60
 }
 
-Start() {
+Resume() {
     # Always start vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
 }
 
+# Start all services, can be seen as a reboot of a non-Docker node
+Start() {
+    echo "Configuring rsyslog service to work"
+    # Disable kernel log module
+    sed -i.bak 's/^\$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
+    echo "Starting rsyslog service"
+    service rsyslog start
+
+    echo "Starting crond service"
+    service crond start
+
+    echo "Starting all yinst packages"
+    # Start yinst the way it is done when a non-Docker node is booted.
+    # As this is implemented in yinst now (2017-02-08), this will take care of
+    # cleaning up /home/y/tmp and /home/y/var/run
+    /etc/rc.d/init.d/yinst start
+    echo "yinst started, exited with $?"
+}
+
+# Stop all services, can be seen as a shutdown of a non-Docker node
 Stop() {
+    echo "Stopping services and other yinst packages running"
     yinst stop
+    echo "Stopping crond service"
+    service crond stop
+    echo "Stopping rsyslog service"
+    service rsyslog stop
 }
 
 Suspend() {
@@ -137,6 +164,8 @@ main() {
         Stop
     elif [ "$action" = "suspend" ]; then
         Suspend
+    elif [ "$action" = "resume" ]; then
+        Resume
     else
         echo "Unknown action: $action" >&2
         exit 1

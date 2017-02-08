@@ -25,6 +25,7 @@ public:
      *
      */
     PartialBitVector(Index start, Index end);
+    PartialBitVector(const BitVector & org, Index start, Index end);
 
     virtual ~PartialBitVector(void);
 

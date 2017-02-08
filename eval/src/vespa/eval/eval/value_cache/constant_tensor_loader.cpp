@@ -9,41 +9,17 @@
 #include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 
 LOG_SETUP(".vespalib.eval.value_cache.constant_tensor_loader");
 
 namespace vespalib {
 namespace eval {
 
-using Memory = slime::Memory;
 using Inspector = slime::Inspector;
 using ObjectTraverser = slime::ObjectTraverser;
 
 namespace {
-
-struct File {
-    int     file;
-    char   *data;
-    size_t  size;
-    File(const std::string &file_name) : file(open(file_name.c_str(), O_RDONLY)), data((char*)MAP_FAILED), size(0) {
-        struct stat info;
-        if ((file != -1) && (fstat(file, &info) == 0)) {
-            data = (char*)mmap(0, info.st_size, PROT_READ, MAP_SHARED, file, 0);
-            if (data != MAP_FAILED) {
-                size = info.st_size;
-            }
-        }
-    }
-    bool valid() const { return (data != MAP_FAILED); }
-    ~File() {
-        if (valid()) {
-            munmap(data, size);
-        }
-        if (file != -1) {
-            close(file);
-        }
-    }
-};
 
 struct AddressExtractor : ObjectTraverser {
     const std::set<vespalib::string> &indexed;
@@ -81,10 +57,10 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         return std::make_unique<TensorConstant>(_engine.type_of(*tensor), std::move(tensor));
     }
     Slime slime;
-    File file(path);
+    MappedFileInput file(path);
     if (!file.valid()) {
         LOG(warning, "could not read file: %s", path.c_str());
-    } else if (slime::JsonFormat::decode(Memory(file.data, file.size), slime) == 0) {
+    } else if (slime::JsonFormat::decode(file.get(), slime) == 0) {
         LOG(warning, "file contains invalid json: %s", path.c_str());
     }
     std::set<vespalib::string> indexed;

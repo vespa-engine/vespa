@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/aggregation/aggregationresult.h>
+#include "aggregationresult.h"
+#include <vespa/searchlib/expression/numericresultnode.h>
+
 
 namespace search {
 namespace aggregation {
@@ -9,6 +11,7 @@ namespace aggregation {
 class AverageAggregationResult : public AggregationResult
 {
 public:
+    using NumericResultNode = expression::NumericResultNode;
     DECLARE_AGGREGATIONRESULT(AverageAggregationResult);
     AverageAggregationResult() : _sum(), _count(0) {}
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;

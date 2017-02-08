@@ -107,7 +107,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
-            nodeRepository.deallocate(lastElement(path));
+            nodeRepository.setDirty(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {

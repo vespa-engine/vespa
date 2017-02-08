@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "output.h"
+#include <vespa/vespalib/data/output.h>
 #include "type.h"
-#include "buffered_input.h"
-#include "buffered_output.h"
+#include <vespa/vespalib/data/input_reader.h>
+#include <vespa/vespalib/data/output_writer.h>
 
 namespace vespalib {
 

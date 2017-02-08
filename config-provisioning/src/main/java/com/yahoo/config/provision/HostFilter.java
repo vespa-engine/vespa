@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.text.StringUtilities;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -86,20 +87,10 @@ public class HostFilter {
     /** Returns a host filter from three comma and-or space separated string lists. The strings may be null or empty. */
     public static HostFilter from(String hostNames, String flavors, String clusterTypes, String clusterIds) {
         return new HostFilter(
-                split(hostNames),
-                split(flavors),
-                split(clusterTypes).stream().map(ClusterSpec.Type::from).collect(Collectors.toSet()),
-                split(clusterIds).stream().map(ClusterSpec.Id::from).collect(Collectors.toSet()));
-    }
-
-    /** Splits a string on space and comma */
-    public static Set<String> split(String s) {
-        if (s == null || s.isEmpty()) return Collections.emptySet();
-        ImmutableSet.Builder<String> b = new ImmutableSet.Builder<>();
-        for (String item : s.split("[\\s\\,]"))
-            if ( ! item.isEmpty())
-                b.add(item);
-        return b.build();
+                StringUtilities.split(hostNames),
+                StringUtilities.split(flavors),
+                StringUtilities.split(clusterTypes).stream().map(ClusterSpec.Type::from).collect(Collectors.toSet()),
+                StringUtilities.split(clusterIds).stream().map(ClusterSpec.Id::from).collect(Collectors.toSet()));
     }
 
 }

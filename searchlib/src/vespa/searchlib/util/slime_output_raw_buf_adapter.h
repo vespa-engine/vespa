@@ -2,21 +2,24 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/slime/output.h>
+#include <vespa/vespalib/data/output.h>
 #include "rawbuf.h"
 
 namespace search {
 
-class SlimeOutputRawBufAdapter : public ::vespalib::slime::Output
+class SlimeOutputRawBufAdapter : public ::vespalib::Output
 {
 private:
     RawBuf &_buf;
 
 public:
     SlimeOutputRawBufAdapter(RawBuf &buf) : _buf(buf) {}
-    virtual char *exchange(char *, size_t commit, size_t reserve) {
+    vespalib::WritableMemory reserve(size_t reserve) override {
+        return vespalib::WritableMemory(_buf.GetWritableFillPos(reserve), reserve);
+    }
+    Output &commit(size_t commit) override {
         _buf.Fill(commit);
-        return _buf.GetWritableFillPos(reserve);
+        return *this;
     }
 };
 

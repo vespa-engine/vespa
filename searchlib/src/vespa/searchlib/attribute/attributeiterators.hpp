@@ -2,13 +2,13 @@
 
 #pragma once
 
+#include "attributeiterators.h"
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
-#include "attributeiterators.h"
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/common/bitvector.h>
 
 namespace search {
-
 
 template <typename PL>
 void
@@ -22,7 +22,6 @@ AttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
     }
 }
 
-
 template <typename PL>
 void
 FilterAttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
@@ -34,7 +33,6 @@ FilterAttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
         setAtEnd();
     }
 }
-
 
 template <typename PL>
 void
@@ -50,7 +48,6 @@ AttributePostingListIteratorT<PL>::doUnpack(uint32_t docId)
         _matchPosition->setElementWeight(numOccs);
     }
 }
-
 
 template <typename PL>
 void
@@ -89,5 +86,53 @@ FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &searchContext, 
         : FilterAttributeIterator(matchData, searchContext._attr.getCommittedDocIdLimit()),
           _searchContext(searchContext)
 { }
+
+
+template <typename SC>
+void
+FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
+{
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr =
+            static_cast<const typename SC::Attribute &>(sc.attribute());
+    for (int i = sc._low; (i <= sc._high); ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if ((bv != NULL) && docId < _docIdLimit && bv->testBit(docId)) {
+            setDocId(docId);
+            return;
+        }
+    }
+
+    uint32_t minNextBit(search::endDocId);
+    for (int i = sc._low; (i <= sc._high); ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL && docId < _docIdLimit) {
+            uint32_t nextBit = bv->getNextTrueBit(docId);
+            minNextBit = std::min(nextBit, minNextBit);
+        }
+    }
+    if (minNextBit < _docIdLimit) {
+        setDocId(minNextBit);
+    } else {
+        setAtEnd();
+    }
+}
+
+template <typename SC>
+void
+FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
+{
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr =
+            static_cast<const typename SC::Attribute &>(sc.attribute());
+    for (int i = sc._low; (i <= sc._high); ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if ((bv != NULL) && docId < _docIdLimit && bv->testBit(docId)) {
+            setDocId(docId);
+            return;
+        }
+    }
+}
+
 
 } // namespace search

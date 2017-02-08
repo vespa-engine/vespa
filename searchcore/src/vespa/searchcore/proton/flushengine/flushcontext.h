@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/flushengine/iflushhandler.h>
+#include "iflushhandler.h"
 #include <vespa/vespalib/util/executor.h>
 
 namespace proton {
@@ -14,11 +14,11 @@ using searchcorespi::IFlushTarget;
  */
 class FlushContext {
 private:
-    vespalib::string                  _name;
-    IFlushHandler::SP                 _handler;
-    IFlushTarget::SP                  _target;
-    searchcorespi::FlushTask::UP      _task;
-    search::SerialNum _lastSerial;
+    vespalib::string               _name;
+    IFlushHandler::SP              _handler;
+    IFlushTarget::SP               _target;
+    searchcorespi::FlushTask::UP   _task;
+    search::SerialNum              _lastSerial;
 
 public:
     typedef std::shared_ptr<FlushContext> SP;

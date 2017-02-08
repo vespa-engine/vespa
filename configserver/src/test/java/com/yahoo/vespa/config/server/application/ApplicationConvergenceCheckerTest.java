@@ -3,13 +3,15 @@ package com.yahoo.vespa.config.server.application;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.PortInfo;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.TenantName;
@@ -19,6 +21,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.server.ServerCache;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,17 +29,20 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker.ServiceResponse;
 
 /**
  * @author lulf
@@ -53,49 +59,49 @@ public class ApplicationConvergenceCheckerTest {
 
     @Before
     public void setup() throws IOException, SAXException, InterruptedException {
-        Model mockModel = new MockModel(1337);
+        Model mockModel = new MockModel("localhost", 1337);
         application = new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
-    }
-
-    private void assertJsonResponseEquals(HttpResponse httpResponse, String expected) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        httpResponse.render(out);
-        String response = out.toString(StandardCharsets.UTF_8.name());
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonResponse = mapper.readTree(response);
-        JsonNode jsonExpected = mapper.readTree(expected);
-        if (jsonExpected.equals(jsonResponse)) {
-            return;
-        }
-        fail("Not equal, response is '" + response + "' expected '"+ expected + "'");
     }
 
     @Test
     public void converge() throws IOException, SAXException {
-        ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker((client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
-        final HttpResponse httpResponse = checker.listConfigConvergence(application, URI.create("http://foo:234/serviceconvergence"));
-        assertThat(httpResponse.getStatus(), is(200));
-        assertJsonResponseEquals(httpResponse, "{\"services\":[" +
-                "{\"port\":1337,\"host\":\"localhost\"," +
-                "\"url\":\"http://foo:234/serviceconvergence/localhost:1337\"," +
-                "\"type\":\"container\"}]," +
-                "\"debug\":{\"wantedVersion\":3}," +
-                "\"url\":\"http://foo:234/serviceconvergence\"}");
-        final HttpResponse nodeHttpResponse = checker.nodeConvergenceCheck(application, "localhost:1337", URI.create("http://foo:234/serviceconvergence"));
-        assertThat(nodeHttpResponse.getStatus(), is(200));
-        assertJsonResponseEquals(nodeHttpResponse, "{" +
-                "\"converged\":true," +
-                "\"debug\":{\"wantedGeneration\":3," +
-                "\"currentGeneration\":3," +
-                "\"host\":\"localhost:1337\"}," +
-                "\"url\":\"http://foo:234/serviceconvergence\"}");
-        final HttpResponse hostMissingHttpResponse = checker.nodeConvergenceCheck(application, "notPresent:1337", URI.create("http://foo:234/serviceconvergence"));
-        assertThat(hostMissingHttpResponse.getStatus(), is(410));
-        assertJsonResponseEquals(hostMissingHttpResponse, "{\"debug\":{" +
-                "\"problem\":\"Host:port (service) no longer part of application, refetch list of services.\"," +
-                "\"wantedGeneration\":3," +
-                "\"host\":\"notPresent:1337\"}," +
-                "\"url\":\"http://foo:234/serviceconvergence\"}");
+        ApplicationConvergenceChecker checker = new ApplicationConvergenceChecker(
+                (client, serviceUri) -> () -> string2json("{\"config\":{\"generation\":3}}"));
+        HttpResponse serviceListResponse = checker.serviceListToCheckForConfigConvergence(application,
+                                                                                          URI.create("http://foo:234/serviceconverge"));
+        assertThat(serviceListResponse.getStatus(), is(200));
+        assertEquals("{\"services\":[" +
+                             "{\"host\":\"localhost\"," +
+                             "\"port\":1337," +
+                             "\"type\":\"container\"," +
+                             "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"}]," +
+                             "\"debug\":{\"wantedGeneration\":3}," +
+                             "\"url\":\"http://foo:234/serviceconverge\"}",
+                     SessionHandlerTest.getRenderedString(serviceListResponse));
+
+        ServiceResponse serviceResponse = checker.serviceConvergenceCheck(application,
+                                                                          "localhost:1337",
+                                                                          URI.create("http://foo:234/serviceconverge/localhost:1337"));
+        assertThat(serviceResponse.getStatus(), is(200));
+        assertEquals("{" +
+                             "\"debug\":{" +
+                             "\"host\":\"localhost:1337\"," +
+                             "\"wantedGeneration\":3," +
+                             "\"currentGeneration\":3}," +
+                             "\"url\":\"http://foo:234/serviceconverge/localhost:1337\"," +
+                             "\"converged\":true}",
+                     SessionHandlerTest.getRenderedString(serviceResponse));
+
+        ServiceResponse hostMissingResponse = checker.serviceConvergenceCheck(application,
+                                                                              "notPresent:1337",
+                                                                              URI.create("http://foo:234/serviceconverge/notPresent:1337"));
+        assertThat(hostMissingResponse.getStatus(), is(410));
+        assertEquals("{\"debug\":{" +
+                             "\"host\":\"notPresent:1337\"," +
+                             "\"wantedGeneration\":3," +
+                             "\"problem\":\"Host:port (service) no longer part of application, refetch list of services.\"}," +
+                             "\"url\":\"http://foo:234/serviceconverge/notPresent:1337\"}",
+                     SessionHandlerTest.getRenderedString(hostMissingResponse));
     }
 
     private JsonNode string2json(String data) {
@@ -106,36 +112,24 @@ public class ApplicationConvergenceCheckerTest {
         }
     }
 
+    // Model with two services, one that does not have a state port
     private static class MockModel implements Model {
+        private final String hostname;
         private final int statePort;
-        public MockModel(int statePort) {
+
+        MockModel(String hostname, int statePort) {
+            this.hostname = hostname;
             this.statePort = statePort;
         }
 
         @Override
-        public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) throws IOException {
-            if (configKey.equals(new ConfigKey<>(ModelConfig.class, ""))) {
-                return createModelConfig();
-            }
+        public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) throws IOException {
-            return getConfig(configKey, (ConfigDefinition)null, override);
-        }
-
-        private ConfigPayload createModelConfig() {
-            ModelConfig.Builder builder = new ModelConfig.Builder();
-            ModelConfig.Hosts.Builder hostBuilder = new ModelConfig.Hosts.Builder();
-            hostBuilder.name("localhost");
-            ModelConfig.Hosts.Services.Builder serviceBuilder = new ModelConfig.Hosts.Services.Builder();
-            serviceBuilder.type("container");
-            serviceBuilder.ports(new ModelConfig.Hosts.Services.Ports.Builder().number(statePort).tags("state"));
-            hostBuilder.services(serviceBuilder);
-            builder.hosts(hostBuilder);
-            ModelConfig config = new ModelConfig(builder);
-            return ConfigPayload.fromInstance(config);
+        public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -145,7 +139,19 @@ public class ApplicationConvergenceCheckerTest {
 
         @Override
         public Collection<HostInfo> getHosts() {
-            throw new UnsupportedOperationException();
+            ServiceInfo container = createServiceInfo(hostname, "container", "container",
+                                                      ClusterSpec.Type.container, statePort, "state");
+            ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "logserver", "logserver",
+                                                               ClusterSpec.Type.admin, 1234, "logtp");
+            return Collections.singleton(new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort)));
+        }
+
+        ServiceInfo createServiceInfo(String hostname, String name, String type, ClusterSpec.Type clusterType, int port, String portTags) {
+            PortInfo portInfo = new PortInfo(port, Collections.singleton(portTags));
+            Map<String, String> properties = new HashMap<>();
+            properties.put("clustername", "default");
+            properties.put("clustertype", clusterType.name());
+            return new ServiceInfo(name, type, Collections.singleton(portInfo), properties, "", hostname);
         }
 
         @Override

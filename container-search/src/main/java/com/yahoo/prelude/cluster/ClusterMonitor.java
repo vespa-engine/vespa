@@ -67,6 +67,7 @@ public class ClusterMonitor implements Runnable, Freezable {
         if (isFrozen())
             throw new IllegalStateException("Can not add new nodes after ClusterMonitor has been frozen.");
         nodeMonitors.put(node, new NodeMonitor(node));
+        updateVipStatus();
     }
 
     /** Called from ClusterSearcher/NodeManager when a node failed */
@@ -88,7 +89,7 @@ public class ClusterMonitor implements Runnable, Freezable {
         monitor.responded(hasSearchNodesOnline);
         if (wasFailing && monitor.isWorking()) {
             log.info("Failed node '" + node + "' started working again.");
-            nodeManager.working(monitor.getNode());
+            nodeManager.working(node);
         }
         updateVipStatus();
     }

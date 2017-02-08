@@ -1,37 +1,27 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/attribute/flagattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/fef/termfieldmatchdataposition.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/searchlib/test/initrange.h>
-#include <iterator>
-#include <set>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");
 
 namespace search {
 
-namespace
-{
+namespace {
 
 bool
 isUnsignedSmallIntAttribute(const AttributeVector &a)
@@ -105,6 +95,12 @@ public:
 
 class SearchContextTest : public vespalib::TestApp
 {
+public:
+    // helper functions
+    static void addReservedDoc(AttributeVector &ptr);
+    static void addDocs(AttributeVector & ptr, uint32_t numDocs);
+    template <typename V, typename T>
+    static SearchContextPtr getSearch(const V & vec, const T & term, QueryTermSimple::SearchTerm termType=QueryTermSimple::WORD);
 private:
     typedef std::map<vespalib::string, Config> ConfigMap;
     // Map of all config objects
@@ -113,11 +109,6 @@ private:
     ConfigMap _stringCfg;
 
 
-    // helper functions
-    void
-    addReservedDoc(AttributeVector &ptr);
-
-    void addDocs(AttributeVector & ptr, uint32_t numDocs);
     template <typename T>
     void fillVector(std::vector<T> & values, size_t numValues);
     template <typename V, typename T>
@@ -128,10 +119,9 @@ private:
     void fillPostingList(PostingList<V, T> & pl, const DocRange & range);
     template <typename V, typename T>
     void fillPostingList(PostingList<V, T> & pl);
-    void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const vespalib::string & term,
-                        QueryTermSimple::SearchTerm termType=QueryTermSimple::WORD);
-    template <typename V, typename T>
-    SearchContextPtr getSearch(const V & vec, const T & term, QueryTermSimple::SearchTerm termType=QueryTermSimple::WORD);
+    static void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const vespalib::string & term,
+                               QueryTermSimple::SearchTerm termType=QueryTermSimple::WORD);
+
     ResultSetPtr performSearch(SearchIterator & sb, uint32_t numDocs);
     template <typename V, typename T>
     ResultSetPtr performSearch(const V & vec, const T & term, QueryTermSimple::SearchTerm termType=QueryTermSimple::WORD);
@@ -141,8 +131,8 @@ private:
     void checkResultSet(const ResultSet & rs, const DocSet & exp, bool bitVector);
 
     template<typename T, typename A>
-    void testInitRange(T key, const vespalib::string & keyAsString, const ConfigMap & cfgs);
-    void testInitRange();
+    void testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs);
+    void testSearchIteratorConformance();
     // test search functionality
     template <typename V, typename T>
     void testFind(const PostingList<V, T> & first);
@@ -612,32 +602,46 @@ void SearchContextTest::testSearch(const ConfigMap & cfgs) {
     }
 }
 
-using search::test::InitRangeVerifier;
 
 template<typename T, typename A>
-void SearchContextTest::testInitRange(T key, const vespalib::string & keyAsString, const ConfigMap & cfgs) {
-    InitRangeVerifier ir;
-    for (const auto & cfg : cfgs) {
-        AttributePtr attribute = AttributeFactory::createAttribute(cfg.first + "-initrange", cfg.second);
-        addDocs(*attribute, ir.getDocIdLimit());
-        for (uint32_t doc : ir.getExpectedDocIds()) {
-            EXPECT_TRUE(nullptr != dynamic_cast<A *>(attribute.get()));
-            EXPECT_TRUE(dynamic_cast<A *>(attribute.get())->update(doc, key));
+class Verifier : public search::test::SearchIteratorVerifier {
+public:
+    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg) :
+            _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
+            _sc()
+    {
+        SearchContextTest::addDocs(*_attribute, getDocIdLimit());
+        for (uint32_t doc : getExpectedDocIds()) {
+            EXPECT_TRUE(nullptr != dynamic_cast<A *>(_attribute.get()));
+            EXPECT_TRUE(dynamic_cast<A *>(_attribute.get())->update(doc, key));
         }
-        attribute->commit(true);
-        SearchContextPtr sc = getSearch(*attribute, keyAsString);
-        ASSERT_TRUE(sc->valid());
-        sc->fetchPostings(true);
-        TermFieldMatchData dummy;
-        SearchBasePtr sb = sc->createIterator(&dummy, true);
-        ir.verify(*sb);
+        _attribute->commit(true);
+        _sc = SearchContextTest::getSearch(*_attribute, keyAsString);
+        ASSERT_TRUE(_sc->valid());
+        _sc->fetchPostings(true);
+    }
+    SearchIterator::UP create(bool strict) const override {
+        return _sc->createIterator(&_dummy, strict);
+    }
+private:
+    mutable TermFieldMatchData _dummy;
+    AttributePtr _attribute;
+    SearchContextPtr _sc;
+};
+
+template<typename T, typename A>
+void SearchContextTest::testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs) {
+
+    for (const auto & cfg : cfgs) {
+        Verifier<T, A> verifier(key, keyAsString, cfg.first, cfg.second);
+        verifier.verify();
     }
 }
 
-void SearchContextTest::testInitRange() {
-    testInitRange<AttributeVector::largeint_t, IntegerAttribute>(42, "42", _integerCfg);
-    testInitRange<double, FloatingPointAttribute>(42.42, "42.42", _floatCfg);
-    testInitRange<vespalib::string, StringAttribute>("any-key", "any-key", _stringCfg);
+void SearchContextTest::testSearchIteratorConformance() {
+    testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>(42, "42", _integerCfg);
+    testSearchIterator<double, FloatingPointAttribute>(42.42, "42.42", _floatCfg);
+    testSearchIterator<vespalib::string, StringAttribute>("any-key", "any-key", _stringCfg);
 }
 
 void
@@ -1876,13 +1880,13 @@ SearchContextTest::Main()
     EXPECT_TRUE(true);
 
     testSearch();
-    testInitRange();
+    testSearchIterator();
     testRangeSearch();
     testRangeSearchLimited();
     testCaseInsensitiveSearch();
     testRegexSearch();
     testPrefixSearch();
-    testSearchIterator();
+    testSearchIteratorConformance();
     testSearchIteratorUnpacking();
     TEST_DO(requireThatSearchIsWorkingAfterClearDoc());
     TEST_DO(requireThatSearchIsWorkingAfterLoadAndClearDoc());

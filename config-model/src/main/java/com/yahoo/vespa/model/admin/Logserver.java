@@ -37,8 +37,6 @@ public class Logserver extends AbstractService {
      */
     private String getMyJVMArgs() {
         StringBuilder sb = new StringBuilder();
-        sb.append("-Dlogserver.http.port=").append(getRelativePort(0));
-        sb.append(" ");
         sb.append("-Dlogserver.listenport=").append(getRelativePort(1));
         sb.append(" ");
         sb.append("-Dlogserver.last-errors-holder.port=").append(getRelativePort(2));

@@ -1,19 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.checkpointfile");
+
 #include "checkpointfile.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.checkpointfile");
+
 using vespalib::getLastErrorString;
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 using common::FileHeaderContext;
 
@@ -24,11 +23,10 @@ CheckPointFile::CheckPointFile(const vespalib::string &name)
       _nameNewNew(name + ".NEW.NEW"),
       _writeOpened(false),
       _headerLen(0u)
-{
-}
+{ }
 
 
-CheckPointFile::~CheckPointFile(void)
+CheckPointFile::~CheckPointFile()
 {
     close();
 }
@@ -45,7 +43,7 @@ CheckPointFile::writeOpen(const FileHeaderContext &fileHeaderContext)
 
 
 bool
-CheckPointFile::readOpen(void)
+CheckPointFile::readOpen()
 {
     bool openres;
 
@@ -65,7 +63,7 @@ CheckPointFile::readOpen(void)
 
 
 void
-CheckPointFile::close(void)
+CheckPointFile::close()
 {
     if (_writeOpened) {
         _file.Sync();
@@ -81,7 +79,7 @@ CheckPointFile::close(void)
 
 
 void
-CheckPointFile::rename1(void)
+CheckPointFile::rename1()
 {
     FastOS_File::Delete(_nameNew.c_str());
     bool renameres = FastOS_File::Rename(_nameNewNew.c_str(),
@@ -95,7 +93,7 @@ CheckPointFile::rename1(void)
 
 
 void
-CheckPointFile::rename2(void)
+CheckPointFile::rename2()
 {
     FastOS_File::Delete(_name.c_str());
     bool renameres = FastOS_File::Rename(_nameNew.c_str(), _name.c_str());
@@ -108,7 +106,7 @@ CheckPointFile::rename2(void)
 
 
 void
-CheckPointFile::remove(void)
+CheckPointFile::remove()
 {
     FastOS_File::Delete(_nameNew.c_str());
     FastOS_File::Delete(_name.c_str());
@@ -157,7 +155,7 @@ CheckPointFile::makeHeader(const FileHeaderContext &fileHeaderContext)
 
 
 void
-CheckPointFile::updateHeader(void)
+CheckPointFile::updateHeader()
 {
     vespalib::FileHeader h;
     FastOS_File f;
@@ -173,7 +171,7 @@ CheckPointFile::updateHeader(void)
 
 
 uint32_t
-CheckPointFile::readHeader(void)
+CheckPointFile::readHeader()
 {
     vespalib::FileHeader h;
     uint32_t headerLen = h.readFile(_file);

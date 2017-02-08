@@ -28,6 +28,7 @@ public interface Model {
      * @param targetDef The config definition to use for applying defaults.
      * @return override The global override to apply to the generated config.
      */
+    // TODO: Remove 'throws IOException' when 6.67 is deployed everywhere
     ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) throws IOException;
 
     /**

@@ -11,10 +11,10 @@
 namespace vespalib {
 
 class Slime;
+struct Memory;
 
 namespace slime {
 
-struct Memory;
 class Type;
 class Symbol;
 
@@ -23,7 +23,7 @@ namespace convenience {
 using ::vespalib::Slime;
 
 using ::vespalib::slime::Symbol;
-using ::vespalib::slime::Memory;
+using ::vespalib::Memory;
 using ::vespalib::slime::Cursor;
 using ::vespalib::slime::Inspector;
 using ::vespalib::slime::Type;

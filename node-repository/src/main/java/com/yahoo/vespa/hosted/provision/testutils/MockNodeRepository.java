@@ -85,6 +85,7 @@ public class MockNodeRepository extends NodeRepository {
 
         nodes = addNodes(nodes);
         nodes.remove(6);
+        nodes = setDirty(nodes);
         setReady(nodes);
         fail("host5.yahoo.com");
         move("host55.yahoo.com", Node.State.dirty);

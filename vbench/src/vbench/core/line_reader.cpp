@@ -22,7 +22,7 @@ bool
 LineReader::readLine(string &dst)
 {
     dst.clear();
-    for (int c = _input.get(); c >= 0; c = _input.get()) {
+    for (char c = _input.read(); !_input.failed(); c = _input.read()) {
         if (c != '\n') {
             dst.push_back(c);
         } else {

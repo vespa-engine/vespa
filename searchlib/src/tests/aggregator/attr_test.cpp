@@ -5,6 +5,8 @@
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/vespalib/objects/objectdumper.h>
+#include <vespa/searchlib/expression/arrayatlookupfunctionnode.h>
+#include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
 
 using namespace search;
 using namespace search::expression;

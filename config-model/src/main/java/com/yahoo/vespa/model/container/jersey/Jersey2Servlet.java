@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.container.component.Servlet;
  * @author tonytv
  */
 public class Jersey2Servlet extends Servlet {
+
     public static final String BUNDLE = "container-jersey2";
     public static final String CLASS = "com.yahoo.container.servlet.jersey.JerseyServletProvider";
 
@@ -26,10 +27,9 @@ public class Jersey2Servlet extends Servlet {
     }
 
     private static ComponentSpecification idSpecFromPath(String path) {
-        return new ComponentSpecification(
-                RestApi.idFromPath(path),
-                VersionSpecification.emptyVersionSpecification,
-                REST_API_NAMESPACE);
+        return new ComponentSpecification(RestApi.idFromPath(path),
+                                          VersionSpecification.emptyVersionSpecification,
+                                          REST_API_NAMESPACE);
     }
 
 }

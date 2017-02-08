@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/fieldvalue/document.h>
+
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
@@ -8,8 +8,6 @@
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
@@ -23,11 +21,10 @@
 #include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/encoding/base64.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
@@ -437,13 +434,13 @@ Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id,
     memcpy(&classId, docsum.data.c_str(), sizeof(classId));
     ASSERT_EQUAL(::search::fs4transport::SLIME_MAGIC_ID, classId);
     vespalib::Slime slime;
-    vespalib::slime::Memory serialized(docsum.data.c_str() + sizeof(classId),
+    vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
                                        docsum.data.size() - sizeof(classId));
     size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized,
                                                              slime);
     ASSERT_EQUAL(decodeRes, serialized.size);
     if (relaxed) {
-        vespalib::slime::SimpleBuffer buf;
+        vespalib::SimpleBuffer buf;
         vespalib::slime::JsonFormat::encode(slime, buf, false);
         vespalib::Slime tmpSlime;
         size_t used = vespalib::slime::JsonFormat::decode(buf.get(), tmpSlime);

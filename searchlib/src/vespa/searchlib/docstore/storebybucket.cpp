@@ -43,7 +43,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
 Chunk::UP
 StoreByBucket::createChunk()
 {
-    return std::make_unique<Chunk>(_chunkSerial++, Chunk::Config(0x10000, 1000));
+    return std::make_unique<Chunk>(_chunkSerial++, Chunk::Config(0x10000));
 }
 
 uint64_t

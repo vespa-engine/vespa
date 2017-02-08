@@ -1,42 +1,36 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.pagedict4randread");
-#include <vespa/searchlib/util/filekit.h>
 #include "pagedict4randread.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/fastos/file.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.pagedict4randread");
 
-namespace
-{
+namespace {
 
 vespalib::string myPId("PageDict4P.1");
 vespalib::string mySPId("PageDict4SP.1");
 vespalib::string mySSId("PageDict4SS.1");
-vespalib::string emptyId;
-vespalib::string emptyStr;
 
 }
 
 using vespalib::getLastErrorString;
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 
 PageDict4RandRead::PageDict4RandRead(void)
     : DictionaryFileRandRead(),
-      _ssReader(NULL),
+      _ssReader(),
       _ssd(),
       _ssReadContext(_ssd),
-      _ssfile(),
-      _spfile(),
-      _pfile(),
+      _ssfile(new FastOS_File()),
+      _spfile(new FastOS_File()),
+      _pfile(new FastOS_File()),
       _ssFileBitSize(0u),
       _spFileBitSize(0u),
       _pFileBitSize(0u),
@@ -48,10 +42,7 @@ PageDict4RandRead::PageDict4RandRead(void)
 }
 
 
-PageDict4RandRead::~PageDict4RandRead(void)
-{
-    delete _ssReader;
-}
+PageDict4RandRead::~PageDict4RandRead() { }
 
 
 void
@@ -60,7 +51,7 @@ PageDict4RandRead::readSSHeader()
     DC &ssd = _ssd;
 
     vespalib::FileHeader header;
-    uint32_t headerLen = ssd.readHeader(header, _ssfile.getSize());
+    uint32_t headerLen = ssd.readHeader(header, _ssfile->getSize());
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
     assert(header.hasTag("format.0"));
@@ -95,14 +86,14 @@ PageDict4RandRead::readSPHeader(void)
     ComprFileReadContext rc(d);
 
     d.setReadContext(&rc);
-    rc.setFile(&_spfile);
-    rc.setFileSize(_spfile.GetSize());
+    rc.setFile(_spfile.get());
+    rc.setFileSize(_spfile->GetSize());
     rc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     rc.readComprBuffer();
 
     vespalib::FileHeader header;
-    uint32_t headerLen = d.readHeader(header, _spfile.getSize());
+    uint32_t headerLen = d.readHeader(header, _spfile->getSize());
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
     assert(header.hasTag("format.0"));
@@ -128,14 +119,14 @@ PageDict4RandRead::readPHeader(void)
     ComprFileReadContext rc(d);
 
     d.setReadContext(&rc);
-    rc.setFile(&_pfile);
-    rc.setFileSize(_pfile.GetSize());
+    rc.setFile(_pfile.get());
+    rc.setFileSize(_pfile->GetSize());
     rc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     rc.readComprBuffer();
 
     vespalib::FileHeader header;
-    uint32_t headerLen = d.readHeader(header, _pfile.getSize());
+    uint32_t headerLen = d.readHeader(header, _pfile->getSize());
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
     assert(header.hasTag("format.0"));
@@ -177,8 +168,7 @@ PageDict4RandRead::lookup(const vespalib::stringref &word,
     } else {
         SPLookupRes spRes;
         size_t pageSize = PageDict4PageParams::getPageByteSize();
-        const char *spData = static_cast<const char *>
-                             (_spfile.MemoryMapPtr(0));
+        const char *spData = static_cast<const char *>(_spfile->MemoryMapPtr(0));
         spRes.lookup(*_ssReader,
                      spData + pageSize * ssRes._sparsePageNum,
                      word,
@@ -190,7 +180,7 @@ PageDict4RandRead::lookup(const vespalib::stringref &word,
 
         PLookupRes pRes;
         const char *pData = static_cast<const char *>
-                             (_pfile.MemoryMapPtr(0));
+                             (_pfile->MemoryMapPtr(0));
         pRes.lookup(*_ssReader,
                     pData + pageSize * spRes._pageNum,
                     word,
@@ -221,37 +211,32 @@ PageDict4RandRead::open(const vespalib::string &name,
 
     if (tuneFileRead.getWantMemoryMap() || true) {
         int mmapFlags(tuneFileRead.getMemoryMapFlags());
-        _ssfile.enableMemoryMap(mmapFlags);
-        _spfile.enableMemoryMap(mmapFlags);
-        _pfile.enableMemoryMap(mmapFlags);
+        _ssfile->enableMemoryMap(mmapFlags);
+        _spfile->enableMemoryMap(mmapFlags);
+        _pfile->enableMemoryMap(mmapFlags);
     } else if (tuneFileRead.getWantDirectIO()) {
-        _ssfile.EnableDirectIO();
-        _spfile.EnableDirectIO();
-        _pfile.EnableDirectIO();
+        _ssfile->EnableDirectIO();
+        _spfile->EnableDirectIO();
+        _pfile->EnableDirectIO();
     }
 
-    if (!_ssfile.OpenReadOnly(ssname.c_str())) {
-        LOG(error, "could not open %s: %s",
-            _ssfile.GetFileName(), getLastErrorString().c_str());
+    if (!_ssfile->OpenReadOnly(ssname.c_str())) {
+        LOG(error, "could not open %s: %s", _ssfile->GetFileName(), getLastErrorString().c_str());
         return false;
     }
-    if (!_spfile.OpenReadOnly(spname.c_str())) {
-        LOG(error, "could not open %s: %s",
-            _spfile.GetFileName(), getLastErrorString().c_str());
+    if (!_spfile->OpenReadOnly(spname.c_str())) {
+        LOG(error, "could not open %s: %s", _spfile->GetFileName(), getLastErrorString().c_str());
         return false;
     }
-    if (!_pfile.OpenReadOnly(pname.c_str())) {
-        LOG(error, "could not open %s: %s",
-            _pfile.GetFileName(), getLastErrorString().c_str());
+    if (!_pfile->OpenReadOnly(pname.c_str())) {
+        LOG(error, "could not open %s: %s", _pfile->GetFileName(), getLastErrorString().c_str());
         return false;
     }
 
-    uint64_t fileSize = _ssfile.GetSize();
-    _ssReadContext.setFile(&_ssfile);
+    uint64_t fileSize = _ssfile->GetSize();
+    _ssReadContext.setFile(_ssfile.get());
     _ssReadContext.setFileSize(fileSize);
-    _ssReadContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) /
-                                 sizeof(uint64_t),
-                                 32768u);
+    _ssReadContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) / sizeof(uint64_t), 32768u);
     _ssd.emptyBuffer(0);
     _ssReadContext.readComprBuffer();
     assert(_ssReadContext.getBufferEndFilePos() >= fileSize);
@@ -260,13 +245,8 @@ PageDict4RandRead::open(const vespalib::string &name,
     readSPHeader();
     readPHeader();
 
-    _ssReader = new SSReader(_ssReadContext,
-                             _ssHeaderLen,
-                             _ssFileBitSize,
-                             _spHeaderLen,
-                             _spFileBitSize,
-                             _pHeaderLen,
-                             _pFileBitSize);
+    _ssReader = std::make_unique<SSReader>(_ssReadContext, _ssHeaderLen, _ssFileBitSize, _spHeaderLen,
+                                           _spFileBitSize, _pHeaderLen, _pFileBitSize);
     _ssReader->setup(_ssd);
 
     return true;
@@ -276,14 +256,13 @@ PageDict4RandRead::open(const vespalib::string &name,
 bool
 PageDict4RandRead::close(void)
 {
-    delete _ssReader;
-    _ssReader = NULL;
+    _ssReader.reset();
 
     _ssReadContext.dropComprBuf();
     _ssReadContext.setFile(NULL);
-    _ssfile.Close();
-    _spfile.Close();
-    _pfile.Close();
+    _ssfile->Close();
+    _spfile->Close();
+    _pfile->Close();
     return true;
 }
 

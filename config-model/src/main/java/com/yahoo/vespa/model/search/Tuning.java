@@ -97,7 +97,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             public Long componentMaxMemoryGain = null;
             public Double componentDiskBloatFactor = null;
             public Double componentMaxage = null;
-            public Long transactionLogMaxEntries = null;
             public Long transactionLogMaxSize = null;
             public Double conservativeMemoryLimitFactor = null;
             public Double conservativeDiskLimitFactor = null;
@@ -118,7 +117,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 ProtonConfig.Flush.Memory.Maxage.Builder maxageBuilder = new ProtonConfig.Flush.Memory.Maxage.Builder();
                 if (componentMaxage != null) maxageBuilder.time(componentMaxage);
-                if (transactionLogMaxEntries != null) maxageBuilder.serial(transactionLogMaxEntries);
                 memoryBuilder.maxage(maxageBuilder);
 
                 ProtonConfig.Flush.Memory.Conservative.Builder conservativeBuilder = new ProtonConfig.Flush.Memory.Conservative.Builder();
@@ -253,7 +251,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 public static class Component {
                     public Long maxSize = null;
-                    public Long maxEntries = null;
                     public Long initialEntries = null;
                     public Compression compression = null;
                     private final boolean outputInt;
@@ -269,11 +266,9 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     public void getConfig(ProtonConfig.Summary.Cache.Builder cache) {
                         if (outputInt) {
                             if (maxSize!=null) cache.maxbytes(maxSize.intValue());
-                            if (maxEntries!=null) cache.initialentries(maxEntries.intValue());
                             if (initialEntries!=null) cache.initialentries(initialEntries.intValue());
                         } else {
                             if (maxSize!=null) cache.maxbytes(maxSize);
-                            if (maxEntries!=null) cache.initialentries(maxEntries);
                             if (initialEntries!=null) cache.initialentries(initialEntries);
                         }
                         if (compression != null) {
@@ -286,7 +281,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     public void getConfig(ProtonConfig.Summary.Log.Chunk.Builder chunk) {
                         if (outputInt) {
                             if (maxSize!=null) chunk.maxbytes(maxSize.intValue());
-                            if (maxEntries!=null) chunk.maxentries(maxEntries.intValue());
                         } else {
                             throw new IllegalStateException("Fix this, chunk does not have long types");
                         }

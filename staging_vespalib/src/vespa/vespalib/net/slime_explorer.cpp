@@ -10,7 +10,7 @@ namespace {
 struct SelfState : slime::ObjectTraverser {
     Slime result;
     SelfState() : result() { result.setObject(); }
-    virtual void field(const slime::Memory &key, const slime::Inspector &value) {
+    virtual void field(const Memory &key, const slime::Inspector &value) {
         if (value.type().getId() != slime::OBJECT::ID) {
             slime::inject(value, slime::ObjectInserter(result.get(), key));
         }
@@ -19,7 +19,7 @@ struct SelfState : slime::ObjectTraverser {
 
 struct ChildrenNames : slime::ObjectTraverser {
     std::vector<vespalib::string> result;
-    virtual void field(const slime::Memory &key, const slime::Inspector &value) {
+    virtual void field(const Memory &key, const slime::Inspector &value) {
         if (value.type().getId() == slime::OBJECT::ID) {
             result.push_back(key.make_string());
         }

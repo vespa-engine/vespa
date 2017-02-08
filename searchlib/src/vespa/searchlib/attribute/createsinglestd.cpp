@@ -8,6 +8,7 @@ LOG_SETUP(".createsinglestd");
 
 #include "predicate_attribute.h"
 #include "singlesmallnumericattribute.h"
+#include "reference_attribute.h"
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
@@ -64,6 +65,9 @@ AttributeFactory::createSingleStd(const vespalib::string & baseFileName, const C
         } else {
             ret.reset(new tensor::GenericTensorAttribute(baseFileName, info));
         }
+        break;
+    case BasicType::REFERENCE:
+        ret = std::make_shared<attribute::ReferenceAttribute>(baseFileName, info);
         break;
     default:
         break;

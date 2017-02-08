@@ -8,8 +8,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.MatchPhase;
+import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.RankFeatures;
 import com.yahoo.search.query.ranking.RankProperties;
+import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
 
 /**
@@ -38,6 +40,7 @@ public class Ranking implements Cloneable {
     public static final String MATCH_PHASE = "matchPhase";
     public static final String DIVERSITY = "diversity";
     public static final String SOFTTIMEOUT = "softtimeout";
+    public static final String MATCHING = "matching";
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
 
@@ -82,6 +85,8 @@ public class Ranking implements Cloneable {
     private RankFeatures rankFeatures = new RankFeatures();
 
     private MatchPhase matchPhase = new MatchPhase();
+
+    private Matching matching = new Matching();
 
     private SoftTimeout softTimeout = new SoftTimeout();
 
@@ -172,6 +177,9 @@ public class Ranking implements Cloneable {
     /** Returns the match phase rank settings of this. This is never null. */
     public MatchPhase getMatchPhase() { return matchPhase; }
 
+    /** Returns the matching settings of this. This is never null. */
+    public Matching getMatching() { return matching; }
+
     /** Returns the soft timeout settings of this. This is never null. */
     public SoftTimeout getSoftTimeout() { return softTimeout; }
 
@@ -185,6 +193,7 @@ public class Ranking implements Cloneable {
             clone.rankProperties = this.rankProperties.clone();
             clone.rankFeatures = this.rankFeatures.clone();
             clone.matchPhase = this.matchPhase.clone();
+            clone.matching = this.matching.clone();
             clone.softTimeout = this.softTimeout.clone();
             return clone;
         }
@@ -216,6 +225,7 @@ public class Ranking implements Cloneable {
         hash += 13 * rankProperties.hashCode();
         hash += 17 * matchPhase.hashCode();
         hash += 19 * softTimeout.hashCode();
+        hash += 23 * matching.hashCode();
         return Ranking.class.hashCode() + QueryHelper.combineHash(sorting,location,profile,hash);
     }
 
@@ -240,6 +250,7 @@ public class Ranking implements Cloneable {
     public void prepare() {
         rankFeatures.prepare(rankProperties);
         matchPhase.prepare(rankProperties);
+        matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
     }

@@ -234,7 +234,7 @@ StateManagerTest::testClusterStateVersion()
     _manager->setClusterState(state);
 
     std::string nodeInfoString(_manager->getNodeInfo());
-    vespalib::slime::Memory goldenMemory(nodeInfoString);
+    vespalib::Memory goldenMemory(nodeInfoString);
     vespalib::Slime nodeInfo;
     vespalib::slime::JsonFormat::decode(nodeInfoString, nodeInfo);
     

@@ -157,7 +157,8 @@ fixlimits () {
     fi
 
     # number of processes/threads
-    if [ `ulimit -u` -lt 409600 ]; then
+    max_processes=`ulimit -u`
+    if [ "$max_processes" != "unlimited" ] && [ "$max_processes" -lt 409600 ]; then
         ulimit -u 409600
     fi
 }

@@ -1,21 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/base/testdocrepo.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <fstream>
 #include <vespa/document/util/serializableexceptions.h>
 
 using vespalib::nbostream;
@@ -772,7 +766,6 @@ void DocumentTest::testReadSerializedAllVersions()
     std::vector<TestDoc> tests;
     tests.push_back(TestDoc(TEST_PATH("data/document-cpp-v8-uncompressed.dat"), 8));
     tests.push_back(TestDoc(TEST_PATH("data/document-cpp-v7-uncompressed.dat"), 7));
-    tests.push_back(TestDoc(TEST_PATH("data/serializev6.dat"), 6));
     tests.push_back(TestDoc(jpath + "document-java-v8-uncompressed.dat", 8));
     for (uint32_t i=0; i<tests.size(); ++i) {
         int version = tests[i]._createdVersion;
@@ -1304,32 +1297,6 @@ DocumentTest::testUnknownEntries()
 
     CPPUNIT_ASSERT_EQUAL(size_t(2), doc2.getSetFieldCount());
     CPPUNIT_ASSERT_EQUAL(size_t(2), doc3.getSetFieldCount());
-
-        // Copy paste of above test to read an old version document and
-        // deserialize it with some fields lacking to see that it doesn't
-        // report failure. (Had a bug on this earlier)
-    int fd = open(TEST_PATH("data/serializev6.dat").c_str(), O_RDONLY);
-    int len = lseek(fd,0,SEEK_END);
-    ByteBuffer buf(len);
-    lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
-    	throw vespalib::Exception("read failed");
-    }
-    close(fd);
-
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(42, "docindoc", Struct("docindoc.header"),
-                     Struct("docindoc.body")
-                     .addField("stringindocfield", DataType::T_STRING));
-    builder.document(43, "serializetest",
-                     Struct("serializetest.header")
-                     .addField("floatfield", DataType::T_FLOAT),
-                     Struct("serializetest.body")
-                     .addField("rawfield", DataType::T_RAW));
-    DocumentTypeRepo repo2(builder.config());
-
-    Document doc(repo2, buf);
-    doc.toXml();
 }
 
 void DocumentTest::testAnnotationDeserialization()

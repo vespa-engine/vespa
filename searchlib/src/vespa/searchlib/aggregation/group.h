@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/aggregation/aggregationresult.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vector>
 #include "rawrank.h"
+#include "aggregationresult.h"
+#include <vespa/searchlib/common/hitrank.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/fastos/dynamiclibrary.h>
+#include <vector>
 
 namespace search {
 namespace aggregation {
@@ -33,8 +35,10 @@ class Grouping;
 class Group : public vespalib::Identifiable
 {
 public:
+    using ResultNode = expression::ResultNode;
+    using ExpressionNode = expression::ExpressionNode;
+    using UP = std::unique_ptr<Group>;
     typedef Group * ChildP;
-    typedef std::unique_ptr<Group> UP;
     typedef ChildP * GroupList;
     struct GroupEqual : public std::binary_function<ChildP, ChildP, bool> {
         GroupEqual(const GroupList * v) : _v(v) { }

@@ -6,6 +6,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
@@ -15,6 +16,7 @@
 #include <vespa/document/base/forcelink.h>
 #include <vespa/searchlib/common/base.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
@@ -25,6 +27,7 @@ LOG_SETUP(".attrupdate");
 using namespace document;
 using vespalib::make_string;
 using search::tensor::TensorAttribute;
+using search::attribute::ReferenceAttribute;
 
 namespace {
     std::string toString(const FieldUpdate & update) {
@@ -213,6 +216,24 @@ void AttrUpdate::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUpd
     }
 }
 
+template <>
+void AttrUpdate::handleUpdate(ReferenceAttribute &vec, uint32_t lid, const ValueUpdate &upd) {
+    LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
+    ValueUpdate::ValueUpdateType op = upd.getType();
+    assert(!vec.hasMultiValue());
+    if (op == ValueUpdate::Assign) {
+        const AssignValueUpdate &assign(static_cast<const AssignValueUpdate &>(upd));
+        if (assign.hasValue()) {
+            updateValue(vec, lid, assign.getValue());
+        }
+    } else if (op == ValueUpdate::Clear) {
+        vec.clearDoc(lid);
+    } else {
+        LOG(warning, "Unsupported value update operation %s on singlevalue reference attribute %s",
+                     upd.getClass().name(), vec.getName().c_str());
+    }
+}
+
 void
 AttrUpdate::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & fUpdate)
 {
@@ -243,6 +264,8 @@ AttrUpdate::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate 
             handleUpdate(static_cast<PredicateAttribute &>(vec), lid, vUp);
         } else if (info.inherits(TensorAttribute::classId)) {
             handleUpdate(static_cast<TensorAttribute &>(vec), lid, vUp);
+        } else if (info.inherits(ReferenceAttribute::classId)) {
+            handleUpdate(static_cast<ReferenceAttribute &>(vec), lid, vUp);
         } else {
             LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), info.name());
             return;
@@ -267,6 +290,9 @@ AttrUpdate::handleValue(AttributeVector & vec, uint32_t lid, const FieldValue & 
     } else if (rc.inherits(TensorAttribute::classId)) {
         // TensorAttribute is never multivalue.
         updateValue(static_cast<TensorAttribute &>(vec), lid, val);
+    } else if (rc.inherits(ReferenceAttribute::classId)) {
+        // ReferenceAttribute is never multivalue.
+        updateValue(static_cast<ReferenceAttribute &>(vec), lid, val);
     } else {
         LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), rc.name());
         return;
@@ -428,6 +454,22 @@ void AttrUpdate::updateValue(TensorAttribute &vec, uint32_t lid, const FieldValu
                          getAsTensorPtr();
     if (tensor) {
         vec.setTensor(lid, *tensor);
+    } else {
+        vec.clearDoc(lid);
+    }
+}
+
+void AttrUpdate::updateValue(ReferenceAttribute &vec, uint32_t lid, const FieldValue &val)
+{
+    if (!val.inherits(ReferenceFieldValue::classId)) {
+        vec.clearDoc(lid);
+        throw UpdateException(
+                make_string("ReferenceAttribute must be updated with "
+                            "ReferenceFieldValues."));
+    }
+    const auto &reffv = static_cast<const ReferenceFieldValue &>(val);
+    if (reffv.hasValidDocumentId()) {
+        vec.update(lid, reffv.getDocumentId().getGlobalId());
     } else {
         vec.clearDoc(lid);
     }

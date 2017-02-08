@@ -96,13 +96,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String COVERAGE = "coverage";
     private static final String COVERAGE_COVERAGE = "coverage";
     private static final String COVERAGE_DOCUMENTS = "documents";
-    private static final String COVERAGE_ACTIVE = "active";
-    private static final String COVERAGE_SOON_ACTIVE = "soon-active";
     private static final String COVERAGE_DEGRADE = "degraded";
     private static final String COVERAGE_DEGRADE_MATCHPHASE = "match-phase";
     private static final String COVERAGE_DEGRADE_TIMEOUT = "timeout";
     private static final String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = "adaptive-timeout";
-    private static final String COVERAGE_NON_IDEAL_STATE = "non-ideal-state";
+    private static final String COVERAGE_DEGRADED_NON_IDEAL_STATE = "non-ideal-state";
     private static final String COVERAGE_FULL = "full";
     private static final String COVERAGE_NODES = "nodes";
     private static final String COVERAGE_RESULTS = "results";
@@ -451,14 +449,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeBooleanField(COVERAGE_DEGRADE_MATCHPHASE, c.isDegradedByMatchPhase());
             generator.writeBooleanField(COVERAGE_DEGRADE_TIMEOUT, c.isDegradedByTimeout());
             generator.writeBooleanField(COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT, c.isDegradedByAdapativeTimeout());
-            generator.writeEndObject();
-        } else if (c.getResultPercentage() != 100) {
-            generator.writeObjectFieldStart(COVERAGE_NON_IDEAL_STATE);
-            generator.writeNumberField(COVERAGE_ACTIVE, c.getActive());
-            generator.writeNumberField(COVERAGE_SOON_ACTIVE, c.getSoonActive());
+            generator.writeBooleanField(COVERAGE_DEGRADED_NON_IDEAL_STATE, c.isDegradedByNonIdealState());
             generator.writeEndObject();
         }
-        generator.writeNumberField(COVERAGE_DOCUMENTS, c.getDocs());
         generator.writeBooleanField(COVERAGE_FULL, c.getFull());
         generator.writeNumberField(COVERAGE_NODES, c.getNodes());
         generator.writeNumberField(COVERAGE_RESULTS, c.getResultSets());

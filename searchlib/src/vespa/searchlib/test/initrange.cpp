@@ -66,6 +66,8 @@ InitRangeVerifier::InitRangeVerifier() :
     }
 }
 
+InitRangeVerifier::~InitRangeVerifier() { }
+
 InitRangeVerifier::DocIds
 InitRangeVerifier::invert(const DocIds & docIds, uint32_t docIdlimit)
 {
@@ -85,13 +87,13 @@ InitRangeVerifier::invert(const DocIds & docIds, uint32_t docIdlimit)
 }
 
 SearchIterator::UP
-InitRangeVerifier::createIterator(const DocIds &docIds, bool strict) const
+InitRangeVerifier::createIterator(const DocIds &docIds, bool strict)
 {
     return make_unique<DocIdIterator>(docIds, strict);
 }
 
 SearchIterator::UP
-InitRangeVerifier::createEmptyIterator() const
+InitRangeVerifier::createEmptyIterator()
 {
     return make_unique<EmptySearch>();
 }

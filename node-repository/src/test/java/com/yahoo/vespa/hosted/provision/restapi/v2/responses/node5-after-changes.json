@@ -13,7 +13,7 @@
   "description":"Flavor-name-is-default",
   "minCpuCores":2.0,
   "environment":"BARE_METAL",
-  "rebootGeneration": 0,
+  "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "failCount": 1,
   "hardwareFailure" : false,

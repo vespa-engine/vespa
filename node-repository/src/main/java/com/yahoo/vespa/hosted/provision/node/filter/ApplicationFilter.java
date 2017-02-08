@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Collections;
@@ -47,7 +48,7 @@ public class ApplicationFilter extends NodeFilter {
     }
 
     public static ApplicationFilter from(String applicationIds, NodeFilter next) {
-        return new ApplicationFilter(HostFilter.split(applicationIds).stream().map(ApplicationFilter::toApplicationId).collect(Collectors.toSet()), next);
+        return new ApplicationFilter(StringUtilities.split(applicationIds).stream().map(ApplicationFilter::toApplicationId).collect(Collectors.toSet()), next);
     }
 
     public static ApplicationId toApplicationId(String applicationIdString) {

@@ -8,6 +8,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlStream;
+import com.yahoo.vespa.objects.Ids;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +31,9 @@ import java.util.Optional;
  * @since 6.65
  */
 public class ReferenceFieldValue extends FieldValue {
+
+    // Magic number for Identifiable, see document/util/identifiable.h
+    public static final int classId = registerClass(Ids.document + 39, ReferenceFieldValue.class);
 
     private final ReferenceDataType referenceType;
     private Optional<DocumentId> documentId;
@@ -79,6 +83,7 @@ public class ReferenceFieldValue extends FieldValue {
     }
 
     public void setDocumentId(DocumentId documentId) {
+        requireIdOfMatchingType(referenceType, documentId);
         this.documentId = Optional.of(documentId);
     }
 
@@ -96,13 +101,24 @@ public class ReferenceFieldValue extends FieldValue {
     public void assign(Object o) {
         if (o == null) {
             clear();
+        } else if (o instanceof ReferenceFieldValue) {
+            assignFromFieldValue((ReferenceFieldValue) o);
         } else if (o instanceof DocumentId) {
-            this.documentId = Optional.of((DocumentId)o);
+            setDocumentId((DocumentId) o);
         } else {
             throw new IllegalArgumentException(String.format(
                     "Can't assign value of type '%s' to field of type '%s'. Expected value of type '%s'",
                     o.getClass().getName(), getClass().getName(), DocumentId.class.getName()));
         }
+    }
+
+    private void assignFromFieldValue(ReferenceFieldValue rhs) {
+        if (!getDataType().equals(rhs.getDataType())) {
+            throw new IllegalArgumentException(String.format(
+                    "Can't assign reference of type %s to reference of type %s",
+                    rhs.getDataType().getName(), getDataType().getName()));
+        }
+        rhs.getDocumentId().ifPresent(this::setDocumentId);
     }
 
     @Override

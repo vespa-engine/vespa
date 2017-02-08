@@ -5,8 +5,6 @@
 #include <vespa/searchlib/index/postinglisthandle.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <map>
-#include <string>
 
 class FastOS_FileInterface;
 

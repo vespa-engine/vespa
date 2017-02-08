@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include "byte_input.h"
+#include <vespa/vespalib/data/input_reader.h>
 #include "string.h"
 
 namespace vbench {
+
+using Input = vespalib::Input;
+using InputReader = vespalib::InputReader;
 
 /**
  * Concrete utility class used to read individual lines of text from
@@ -15,7 +18,7 @@ namespace vbench {
 class LineReader
 {
 private:
-    ByteInput _input;
+    InputReader _input;
 
 public:
     /**

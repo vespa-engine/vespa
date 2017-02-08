@@ -89,7 +89,7 @@ AbsDistanceDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *st
         target.insertLong(absdist);
     } else {
         vespalib::string value = vespalib::stringify(absdist);
-        vespalib::slime::Memory data(value.c_str(), value.size());
+        vespalib::Memory data(value.c_str(), value.size());
 
         if (type == RES_STRING      ||
             type == RES_LONG_STRING ||
@@ -272,7 +272,7 @@ PositionsDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsS
                           ResType type, vespalib::slime::Inserter &target)
 {
     vespalib::asciistream val(formatField(vec(*dsState), docid, type));
-    target.insertString(vespalib::slime::Memory(val.c_str(), val.size()));
+    target.insertString(vespalib::Memory(val.c_str(), val.size()));
 }
 
 //--------------------------------------------------------------------------

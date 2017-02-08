@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.docsummary.fieldcache");
 #include "fieldcache.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.docsummary.fieldcache");
 
 using namespace document;
 using namespace search::docsummary;
@@ -27,8 +26,7 @@ FieldCache::FieldCache(const ResultClass &resClass,
         if (docType.hasField(fieldName)) {
             const Field &field = docType.getField(fieldName);
             LOG(debug, "Caching Field instance for field '%s': %s.%u",
-                fieldName.c_str(), field.getName().c_str(),
-                field.getId(Document::getNewestSerializationVersion()));
+                fieldName.c_str(), field.getName().c_str(), field.getId());
             _cache.push_back(Field::CSP(new Field(field)));
         } else {
             _cache.push_back(Field::CSP());

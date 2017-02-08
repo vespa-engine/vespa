@@ -9,6 +9,7 @@
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/aggr.h>
 
 namespace vespalib {
 namespace eval {
@@ -241,6 +242,10 @@ TensorSpec spec(const vespalib::string &type,
     return spec;
 }
 
+double as_double(const TensorSpec &spec) {
+    return spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
+}
+
 // abstract evaluation wrapper
 struct Eval {
     // typed result wrapper
@@ -260,7 +265,7 @@ struct Eval {
                 _type = Type::TENSOR;
                 _tensor = value.as_tensor()->engine().to_spec(*value.as_tensor());
                 if (_tensor.type() == "double") {
-                    _number = _tensor.cells().empty() ? 0.0 : _tensor.cells().begin()->second.value;
+                    _number = as_double(_tensor);
                 }
             }
         }
@@ -378,18 +383,18 @@ struct Expr_TT : Eval {
 
 const Value &make_value(const TensorEngine &engine, const TensorSpec &spec, Stash &stash) {
     if (spec.type() == "double") {
-        double number = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
+        double number = as_double(spec);
         return stash.create<DoubleValue>(number);
     }
     return stash.create<TensorValue>(engine.create(spec));
 }
 
 // evaluate tensor reduce operation using tensor engine immediate api
-struct ImmediateReduce : Eval {
+struct ImmediateReduceOld : Eval {
     const BinaryOperation &op;
     std::vector<vespalib::string> dimensions;
-    ImmediateReduce(const BinaryOperation &op_in) : op(op_in), dimensions() {}
-    ImmediateReduce(const BinaryOperation &op_in, const vespalib::string &dimension)
+    ImmediateReduceOld(const BinaryOperation &op_in) : op(op_in), dimensions() {}
+    ImmediateReduceOld(const BinaryOperation &op_in, const vespalib::string &dimension)
         : op(op_in), dimensions({dimension}) {}    
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
@@ -398,9 +403,9 @@ struct ImmediateReduce : Eval {
 };
 
 // evaluate tensor map operation using tensor engine immediate api
-struct ImmediateMap : Eval {
+struct ImmediateMapOld : Eval {
     const UnaryOperation &op;
-    ImmediateMap(const UnaryOperation &op_in) : op(op_in) {}
+    ImmediateMapOld(const UnaryOperation &op_in) : op(op_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         Stash stash;
         return Result(engine.map(op, *engine.create(a), stash));
@@ -408,12 +413,51 @@ struct ImmediateMap : Eval {
 };
 
 // evaluate tensor apply operation using tensor engine immediate api
-struct ImmediateApply : Eval {
+struct ImmediateApplyOld : Eval {
     const BinaryOperation &op;
-    ImmediateApply(const BinaryOperation &op_in) : op(op_in) {}
+    ImmediateApplyOld(const BinaryOperation &op_in) : op(op_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
         Stash stash;
         return Result(engine.apply(op, *engine.create(a), *engine.create(b), stash));
+    }
+};
+
+//-----------------------------------------------------------------------------
+
+// evaluate tensor reduce operation using tensor engine immediate api
+struct ImmediateReduce : Eval {
+    Aggr aggr;
+    std::vector<vespalib::string> dimensions;
+    ImmediateReduce(Aggr aggr_in) : aggr(aggr_in), dimensions() {}
+    ImmediateReduce(Aggr aggr_in, const vespalib::string &dimension)
+        : aggr(aggr_in), dimensions({dimension}) {}    
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        Stash stash;
+        const auto &lhs = make_value(engine, a, stash);
+        return Result(engine.reduce(lhs, aggr, dimensions, stash));
+    }
+};
+
+// evaluate tensor map operation using tensor engine immediate api
+struct ImmediateMap : Eval {
+    std::function<double(double)> function;
+    ImmediateMap(const std::function<double(double)> &function_in) : function(function_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        Stash stash;
+        const auto &lhs = make_value(engine, a, stash);
+        return Result(engine.map(lhs, function, stash));
+    }
+};
+
+// evaluate tensor map operation using tensor engine immediate api
+struct ImmediateJoin : Eval {
+    std::function<double(double,double)> function;
+    ImmediateJoin(const std::function<double(double,double)> &function_in) : function(function_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        Stash stash;
+        const auto &lhs = make_value(engine, a, stash);
+        const auto &rhs = make_value(engine, b, stash);
+        return Result(engine.join(lhs, rhs, function, stash));
     }
 };
 
@@ -441,6 +485,8 @@ struct ImmediateRename : Eval {
         return Result(engine.rename(lhs, from, to, stash));
     }
 };
+
+//-----------------------------------------------------------------------------
 
 const size_t tensor_id_a = 11;
 const size_t tensor_id_b = 12;
@@ -528,6 +574,23 @@ const double X = error_value;
 // NaN value
 const double my_nan = std::numeric_limits<double>::quiet_NaN();
 
+void verify_result(const Eval::Result &result, const Eval::Result &expect) {
+    if (expect.is_number()) {
+        EXPECT_EQUAL(result.number(), expect.number());
+    } else if (expect.is_tensor()) {
+        EXPECT_EQUAL(result.tensor(), expect.tensor());
+    } else {
+        TEST_FATAL("expected result should be valid");
+    }
+}
+
+void verify_result(const Eval::Result &result, const TensorSpec &expect) {
+    if (expect.type() == "double") {
+        EXPECT_EQUAL(result.number(), as_double(expect));
+    } else {
+        EXPECT_EQUAL(result.tensor(), expect);
+    }
+}
 
 // Test wrapper to avoid passing global test parameters around
 struct TestContext {
@@ -638,16 +701,10 @@ struct TestContext {
     //-------------------------------------------------------------------------
 
     void verify_reduce_result(const Eval &eval, const TensorSpec &a, const Eval::Result &expect) {
-        if (expect.is_tensor()) {
-            EXPECT_EQUAL(eval.eval(engine, a).tensor(), expect.tensor());
-        } else if (expect.is_number()) {
-            EXPECT_EQUAL(eval.eval(engine, a).number(), expect.number());
-        } else {
-            TEST_FATAL("expected result should be valid");
-        }
+        TEST_DO(verify_result(eval.eval(engine, a), expect));
     }
 
-    void test_reduce_op(const vespalib::string &name, const BinaryOperation &op, const Sequence &seq) {
+    void test_reduce_op(const vespalib::string &name, Aggr aggr, const BinaryOperation &op, const Sequence &seq) {
         std::vector<Layout> layouts = {
             {x(3)},
             {x(3),y(5)},
@@ -663,35 +720,37 @@ struct TestContext {
         for (const Layout &layout: layouts) {
             TensorSpec input = spec(layout, seq);
             for (const Domain &domain: layout) {
-                Eval::Result expect = ImmediateReduce(op, domain.dimension).eval(ref_engine, input);
+                Eval::Result expect = ImmediateReduceOld(op, domain.dimension).eval(ref_engine, input);
                 TEST_STATE(make_string("shape: %s, reduce dimension: %s",
                                        infer_type(layout).c_str(), domain.dimension.c_str()).c_str());
                 if (!name.empty()) {
                     vespalib::string expr = make_string("%s(a,%s)", name.c_str(), domain.dimension.c_str());
                     TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 }
-                TEST_DO(verify_reduce_result(ImmediateReduce(op, domain.dimension), input, expect));
+                TEST_DO(verify_reduce_result(ImmediateReduceOld(op, domain.dimension), input, expect));
+                TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
                 TEST_DO(verify_reduce_result(RetainedReduce(op, domain.dimension), input, expect));
             }
             {
-                Eval::Result expect = ImmediateReduce(op).eval(ref_engine, input);
+                Eval::Result expect = ImmediateReduceOld(op).eval(ref_engine, input);
                 TEST_STATE(make_string("shape: %s, reduce all dimensions",
                                        infer_type(layout).c_str()).c_str());
                 if (!name.empty()) {
                     vespalib::string expr = make_string("%s(a)", name.c_str());
                     TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 }
-                TEST_DO(verify_reduce_result(ImmediateReduce(op), input, expect));
+                TEST_DO(verify_reduce_result(ImmediateReduceOld(op), input, expect));
+                TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
                 TEST_DO(verify_reduce_result(RetainedReduce(op), input, expect));
             }
         }
     }
 
     void test_tensor_reduce() {
-        TEST_DO(test_reduce_op("sum", operation::Add(), N()));
-        TEST_DO(test_reduce_op("", operation::Mul(), Sigmoid(N())));
-        TEST_DO(test_reduce_op("", operation::Min(), N()));
-        TEST_DO(test_reduce_op("", operation::Max(), N()));
+        TEST_DO(test_reduce_op("sum", Aggr::SUM, operation::Add(), N()));
+        TEST_DO(test_reduce_op("", Aggr::PROD, operation::Mul(), Sigmoid(N())));
+        TEST_DO(test_reduce_op("", Aggr::MIN, operation::Min(), N()));
+        TEST_DO(test_reduce_op("", Aggr::MAX, operation::Max(), N()));
     }
 
     //-------------------------------------------------------------------------
@@ -711,12 +770,14 @@ struct TestContext {
             layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
         }
         for (const Layout &layout: layouts) {
-            EXPECT_EQUAL(eval.eval(engine, spec(layout, seq)).tensor(), spec(layout, OpSeq(seq, ref_op)));
+            TEST_DO(verify_result(eval.eval(engine, spec(layout, seq)), spec(layout, OpSeq(seq, ref_op))));
         }
     }
 
     void test_map_op(const vespalib::string &expr, const UnaryOperation &op, const Sequence &seq) {
-        TEST_DO(test_map_op(ImmediateMap(op), op, seq));
+        auto function = [&op](double a){ return op.eval(a); };
+        TEST_DO(test_map_op(ImmediateMapOld(op), op, seq));
+        TEST_DO(test_map_op(ImmediateMap(function), op, seq));
         TEST_DO(test_map_op(RetainedMap(op), op, seq));
         TEST_DO(test_map_op(Expr_T(expr), op, seq));
     }
@@ -752,7 +813,7 @@ struct TestContext {
                        const TensorSpec &expect,
                        const TensorSpec &lhs,
                        const TensorSpec &rhs) {
-        EXPECT_EQUAL(safe(eval).eval(engine, lhs, rhs).tensor(), expect);
+        TEST_DO(verify_result(safe(eval).eval(engine, lhs, rhs), expect));
     }
 
     void test_fixed_sparse_cases_apply_op(const Eval &eval,
@@ -917,7 +978,7 @@ struct TestContext {
                                          const BinaryOperation &op)
     {
         TEST_DO(test_apply_op(eval,
-                              spec(op.eval(0,0)), spec(0.0), spec(0.0)));
+                              spec(op.eval(0.1,0.2)), spec(0.1), spec(0.2)));
         TEST_DO(test_apply_op(eval,
                               spec(x(1), Seq({ op.eval(3,5) })),
                               spec(x(1), Seq({ 3 })),
@@ -986,15 +1047,17 @@ struct TestContext {
             TEST_STATE(make_string("lhs shape: %s, rhs shape: %s",
                                    lhs_input.type().c_str(),
                                    rhs_input.type().c_str()).c_str());
-            TensorSpec expect = ImmediateApply(op).eval(ref_engine, lhs_input, rhs_input).tensor(); 
-            EXPECT_EQUAL(safe(eval).eval(engine, lhs_input, rhs_input).tensor(), expect);
+            Eval::Result expect = ImmediateApplyOld(op).eval(ref_engine, lhs_input, rhs_input); 
+            TEST_DO(verify_result(safe(eval).eval(engine, lhs_input, rhs_input), expect));
         }
         TEST_DO(test_fixed_sparse_cases_apply_op(eval, op));
         TEST_DO(test_fixed_dense_cases_apply_op(eval, op));
     }
 
     void test_apply_op(const vespalib::string &expr, const BinaryOperation &op, const Sequence &seq) {
-        TEST_DO(test_apply_op(ImmediateApply(op), op, seq));
+        auto function = [&op](double a, double b){ return op.eval(a, b); };
+        TEST_DO(test_apply_op(ImmediateApplyOld(op), op, seq));
+        TEST_DO(test_apply_op(ImmediateJoin(function), op, seq));
         TEST_DO(test_apply_op(RetainedApply(op), op, seq));
         TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
     }
@@ -1029,7 +1092,7 @@ struct TestContext {
                           const TensorSpec &rhs)
     {
         Expr_TT eval("sum(a*b)");
-        EXPECT_EQUAL(expect, safe(eval).eval(engine, lhs, rhs).number());
+        TEST_DO(verify_result(safe(eval).eval(engine, lhs, rhs), spec(expect)));
     }
 
     void test_dot_product() {
@@ -1052,7 +1115,7 @@ struct TestContext {
                      const vespalib::string &dimension)
     {
         ImmediateConcat eval(dimension);
-        EXPECT_EQUAL(eval.eval(engine, a, b).tensor(), expect);
+        TEST_DO(verify_result(eval.eval(engine, a, b), expect));
     }
 
     void test_concat() {
@@ -1084,7 +1147,7 @@ struct TestContext {
                      const std::vector<vespalib::string> &to)
     {
         ImmediateRename eval(from, to);
-        EXPECT_EQUAL(eval.eval(engine, input).tensor(), expect);
+        TEST_DO(verify_result(eval.eval(engine, input), expect));
     }
 
     void test_rename() {
@@ -1099,7 +1162,7 @@ struct TestContext {
     //-------------------------------------------------------------------------
 
     void test_tensor_lambda(const vespalib::string &expr, const TensorSpec &expect) {
-        EXPECT_EQUAL(Expr_V(expr).eval(engine).tensor(), expect);
+        TEST_DO(verify_result(Expr_V(expr).eval(engine), expect));
     }
 
     void test_tensor_lambda() {

@@ -162,6 +162,8 @@
 #define CID_search_TrueNode                                 SEARCHLIB_CID(162)
 
 #define CID_PredicateAttribute                              SEARCHLIB_CID(163)
+#define CID_TensorAttribute                                 SEARCHLIB_CID(164)
+#define CID_ReferenceAttribute                              SEARCHLIB_CID(165)
 
 #define CID_search_NormalSketch                             SEARCHLIB_CID(170)
 #define CID_search_SparseSketch                             SEARCHLIB_CID(171)

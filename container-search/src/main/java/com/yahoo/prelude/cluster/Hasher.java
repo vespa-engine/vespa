@@ -39,6 +39,10 @@ public class Hasher {
     }
 
     static private VespaBackEndSearcher[] addNode(VespaBackEndSearcher node, VespaBackEndSearcher[] oldNodes) {
+        assert node != null;
+        for (VespaBackEndSearcher n : oldNodes) {
+            if (n == node) return oldNodes; // already present
+        }
         VespaBackEndSearcher[] newNodes = new VespaBackEndSearcher[oldNodes.length + 1];
         System.arraycopy(oldNodes, 0, newNodes, 0, oldNodes.length);
         newNodes[oldNodes.length] = node;
@@ -56,25 +60,25 @@ public class Hasher {
         }
     }
 
-    private VespaBackEndSearcher[] removeNode(VespaBackEndSearcher node, VespaBackEndSearcher[] nodes) {
-        VespaBackEndSearcher[] newNodes = null;
-        for (VespaBackEndSearcher n : nodes) {
+    private VespaBackEndSearcher[] removeNode(VespaBackEndSearcher node, VespaBackEndSearcher[] oldNodes) {
+        int newLen = oldNodes.length;
+        for (VespaBackEndSearcher n : oldNodes) {
             if (n == node) {
-                newNodes = new VespaBackEndSearcher[nodes.length - 1];
-                break;
+                --newLen;
             }
         }
-        if (newNodes != null) {
-            int numToKeep = 0;
-
-            for (VespaBackEndSearcher n : nodes) {
-                if (n != node) {
-                    newNodes[numToKeep++] = n;
-                }
-            }
-            return newNodes;
+        if (newLen == oldNodes.length) {
+            return oldNodes;
         }
-        return nodes;
+        VespaBackEndSearcher[] newNodes = new VespaBackEndSearcher[newLen];
+        int idx = 0;
+        for (VespaBackEndSearcher n : oldNodes) {
+            if (n != node) {
+                newNodes[idx++] = n;
+            }
+        }
+        assert idx == newLen;
+        return newNodes;
     }
 
     /** Removes a node */
@@ -113,18 +117,19 @@ public class Hasher {
      */
     public VespaBackEndSearcher select(int trynum) {
         VespaBackEndSearcher[] nodes = allNodes;
-        if (nodes.length == 0) return null;
 
         if (localNodes.length > 0) {
             nodes = localNodes;
-            if (localNodes.length == 1) {
-                return nodes[0];
-            } else {
-                return nodes[Math.abs(avoidAllQrsHitSameTld.incrementAndGet() % nodes.length)];
-            }
-        } else {
-            return nodes[Math.abs(avoidAllQrsHitSameTld.incrementAndGet() % nodes.length)];
         }
+        if (nodes.length == 0) {
+            return null;
+        }
+        int idx = 0;
+        if (nodes.length > 1) {
+            idx = Math.abs(avoidAllQrsHitSameTld.incrementAndGet() % nodes.length);
+        }
+        assert nodes[idx] != null;
+        return nodes[idx];
     }
 
 }

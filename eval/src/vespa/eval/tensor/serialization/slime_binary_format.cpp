@@ -9,7 +9,7 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/slime.h>
-
+#include <vespa/vespalib/data/memory.h>
 
 namespace vespalib {
 namespace tensor {
@@ -19,7 +19,6 @@ using slime::Inserter;
 using slime::SlimeInserter;
 using slime::Cursor;
 using slime::ObjectInserter;
-using slime::Memory;
 
 namespace {
 

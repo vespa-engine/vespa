@@ -6,6 +6,8 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
+import java.util.logging.Level;
+
 /**
  * Builder for the tuning config for a search cluster.
  *
@@ -20,7 +22,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             if (equals("dispatch", e)) {
                 handleDispatch(e, tuning);
             } else if (equals("searchnode", e)) {
-                handleSearchNode(e, tuning);
+                handleSearchNode(parent, e, tuning);
             }
         }
         return tuning;
@@ -55,13 +57,13 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSearchNode(Element spec, Tuning t) {
+    private void handleSearchNode(AbstractConfigProducer parent, Element spec, Tuning t) {
         t.searchNode = new Tuning.SearchNode();
         for (Element e : XML.getChildren(spec)) {
             if (equals("requestthreads", e)) {
                handleRequestThreads(e, t.searchNode);
             } else if (equals("flushstrategy", e)) {
-                handleFlushStrategy(e, t.searchNode);
+                handleFlushStrategy(parent,e, t.searchNode);
             } else if (equals("resizing", e)) {
                 handleResizing(e, t.searchNode);
             } else if (equals("index", e)) {
@@ -69,7 +71,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("attribute", e)) {
                 handleAttribute(e, t.searchNode);
             } else if (equals("summary", e)) {
-                handleSummary(e, t.searchNode);
+                handleSummary(parent, e, t.searchNode);
             } else if (equals("initialize", e)) {
                 handleInitialize(e, t.searchNode);
             }
@@ -90,15 +92,15 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleFlushStrategy(Element spec, Tuning.SearchNode sn) {
+    private void handleFlushStrategy(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         for (Element e : XML.getChildren(spec)) {
             if (equals("native", e)) {
-                handleNativeStrategy(e, sn);
+                handleNativeStrategy(parent, e, sn);
             }
         }
     }
 
-    private void handleNativeStrategy(Element spec, Tuning.SearchNode sn) {
+    private void handleNativeStrategy(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         sn.strategy = new Tuning.SearchNode.FlushStrategy();
         Tuning.SearchNode.FlushStrategy fs = sn.strategy;
         for (Element e : XML.getChildren(spec)) {
@@ -123,7 +125,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("transactionlog", e)) {
                 for (Element subElem : XML.getChildren(e)) {
                     if (equals("maxentries", subElem)) {
-                        fs.transactionLogMaxEntries = asLong(subElem);
+                        parent.deployLogger().log(Level.WARNING, "Element 'transactionlog.maxentries is deprecated and ignored in 'native' flush strategy. Use 'transactionlog.maxsize' to limit by size.");
                     } else if (equals("maxsize", subElem)) {
                         fs.transactionLogMaxSize = asLong(subElem);
                     }
@@ -182,7 +184,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummary(Element spec, Tuning.SearchNode sn) {
+    private void handleSummary(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         sn.summary = new Tuning.SearchNode.Summary();
         for (Element e : XML.getChildren(spec)) {
             if (equals("io", e)) {
@@ -195,29 +197,29 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                     }
                 }
             } else if (equals("store", e)) {
-                handleSummaryStore(e, sn.summary);
+                handleSummaryStore(parent, e, sn.summary);
             }
         }
     }
 
-    private void handleSummaryStore(Element spec, Tuning.SearchNode.Summary s) {
+    private void handleSummaryStore(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary s) {
         s.store = new Tuning.SearchNode.Summary.Store();
         for (Element e : XML.getChildren(spec)) {
             if (equals("cache", e)) {
                 s.store.cache = new Tuning.SearchNode.Summary.Store.Component();
-                handleSummaryStoreComponent(e, s.store.cache);
+                handleSummaryStoreComponent(parent, e, s.store.cache);
             } else if (equals("logstore", e)) {
-                handleSummaryLogStore(e, s.store);
+                handleSummaryLogStore(parent, e, s.store);
             }
         }
     }
 
-    private void handleSummaryStoreComponent(Element spec, Tuning.SearchNode.Summary.Store.Component c) {
+    private void handleSummaryStoreComponent(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store.Component c) {
          for (Element e : XML.getChildren(spec)) {
             if (equals("maxsize", e)) {
                 c.maxSize = asLong(e);
             } else if (equals("maxentries", e)) {
-                c.maxEntries = asLong(e);
+                parent.deployLogger().log(Level.WARNING, "Element 'maxentries is deprecated and ignored. Will only limit by size.");
             } else if (equals("initialentries", e)) {
                 c.initialEntries = asLong(e);
             } else if (equals("compression", e)) {
@@ -237,7 +239,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummaryLogStore(Element spec, Tuning.SearchNode.Summary.Store s) {
+    private void handleSummaryLogStore(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store s) {
         s.logStore = new Tuning.SearchNode.Summary.Store.LogStore();
         for (Element e : XML.getChildren(spec)) {
             if (equals("maxfilesize", e)) {
@@ -250,7 +252,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 s.logStore.numThreads = asInt(e);
             } else if (equals("chunk", e)) {
                 s.logStore.chunk = new Tuning.SearchNode.Summary.Store.Component(true);
-                handleSummaryStoreComponent(e, s.logStore.chunk);
+                handleSummaryStoreComponent(parent, e, s.logStore.chunk);
             }
         }
     }

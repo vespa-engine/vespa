@@ -23,6 +23,7 @@ vespa_add_library(document_fieldvalues OBJECT
     structuredfieldvalue.cpp
     tensorfieldvalue.cpp
     weightedsetfieldvalue.cpp
+    referencefieldvalue.cpp
     DEPENDS
     AFTER
     document_documentconfig

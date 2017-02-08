@@ -480,7 +480,7 @@ DynamicTeaserDFW::insertField(uint32_t docid,
                               vespalib::slime::Inserter &target)
 {
     vespalib::string teaser = makeDynamicTeaser(docid, gres, state);
-    vespalib::slime::Memory value(teaser.c_str(), teaser.size());
+    vespalib::Memory value(teaser.c_str(), teaser.size());
     target.insertString(value);
 }
 

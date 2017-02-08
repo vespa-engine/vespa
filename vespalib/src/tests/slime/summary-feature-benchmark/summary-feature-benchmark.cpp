@@ -6,12 +6,17 @@
 using namespace vespalib;
 using namespace vespalib::slime::convenience;
 
-struct MyBuffer : public slime::Output {
+struct MyBuffer : public Output {
     std::vector<char> data;
     size_t            used;
     MyBuffer() : data(1024 * 1024), used(0) {}
-    virtual char *exchange(char *, size_t commit, size_t) {
-        return &data[used += commit];
+    WritableMemory reserve(size_t bytes) override {
+        assert(data.size() >= (used + bytes));
+        return WritableMemory(&data[used], data.size() - used);
+    }
+    Output &commit(size_t bytes) override {
+        used += bytes;
+        return *this;
     }
 };
 

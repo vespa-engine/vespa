@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vector>
 
 namespace search {
 namespace test {
@@ -15,10 +16,11 @@ public:
     typedef std::vector<Range> Ranges;
 
     static DocIds invert(const DocIds & docIds, uint32_t docIdlimit);
-    SearchIterator::UP createIterator(const DocIds &docIds, bool strict) const;
-    SearchIterator::UP createEmptyIterator() const;
+    static SearchIterator::UP createIterator(const DocIds &docIds, bool strict);
+    static SearchIterator::UP createEmptyIterator();
     SearchIterator::UP createFullIterator() const;
     InitRangeVerifier();
+    ~InitRangeVerifier();
     const DocIds & getExpectedDocIds() const { return _docIds; }
     uint32_t getDocIdLimit() const { return 207; }
     void verify(SearchIterator & iterator) const;

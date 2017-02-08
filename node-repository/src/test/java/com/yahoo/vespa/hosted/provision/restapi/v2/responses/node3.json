@@ -24,7 +24,7 @@
   },
   "restartGeneration": 0,
   "currentRestartGeneration": 0,
-  "rebootGeneration": 0,
+  "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "failCount": 0,
   "hardwareFailure" : false,

@@ -52,7 +52,7 @@ public class FailedExpirer extends Expirer {
             if (failCountIndicatesHwFail(zone) && recycleCandidate.status().failCount() >= 5) continue;
             nodesToRecycle.add(recycleCandidate);
         }
-        nodeRepository.deallocate(nodesToRecycle);
+        nodeRepository.setDirty(nodesToRecycle);
     }
 
     private boolean failCountIndicatesHwFail(Zone zone) {

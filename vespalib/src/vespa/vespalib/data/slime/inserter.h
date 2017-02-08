@@ -3,7 +3,7 @@
 #pragma once
 
 #include "type.h"
-#include "memory.h"
+#include <vespa/vespalib/data/memory.h>
 #include "symbol.h"
 
 namespace vespalib {

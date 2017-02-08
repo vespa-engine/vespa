@@ -9,6 +9,7 @@
 #include "operator_nodes.h"
 #include "call_nodes.h"
 #include "delete_node.h"
+#include "aggr.h"
 
 namespace vespalib {
 namespace eval {
@@ -581,15 +582,15 @@ void parse_tensor_reduce(ParseContext &ctx) {
     Node_UP child = ctx.pop_expression();
     ctx.eat(',');
     auto aggr_name = get_ident(ctx, false);
-    auto maybe_aggr = nodes::AggrNames::from_name(aggr_name);
+    auto maybe_aggr = AggrNames::from_name(aggr_name);
     if (!maybe_aggr) {
         ctx.fail(make_string("unknown aggregator: '%s'", aggr_name.c_str()));
         return;
     }
     auto dimensions = get_ident_list(ctx, false);
-    if ((*maybe_aggr == nodes::Aggr::SUM) && dimensions.empty()) {
+    if ((*maybe_aggr == Aggr::SUM) && dimensions.empty()) {
         ctx.push_expression(std::make_unique<nodes::TensorSum>(std::move(child)));
-    } else if ((*maybe_aggr == nodes::Aggr::SUM) && (dimensions.size() == 1)) {
+    } else if ((*maybe_aggr == Aggr::SUM) && (dimensions.size() == 1)) {
         ctx.push_expression(std::make_unique<nodes::TensorSum>(std::move(child), dimensions[0]));
     } else {
         ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));

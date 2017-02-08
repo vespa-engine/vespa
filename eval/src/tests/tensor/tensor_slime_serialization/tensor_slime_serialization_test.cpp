@@ -32,7 +32,7 @@ struct Fixture
                           const TensorDimensions &rhsDimensions) {
         Tensor::UP rhsTensor(createTensor(rhs, rhsDimensions));
         auto slime = SlimeBinaryFormat::serialize(*rhsTensor);
-        vespalib::slime::Memory memory_exp(exp);
+        vespalib::Memory memory_exp(exp);
         vespalib::Slime expSlime;
         size_t used = vespalib::slime::JsonFormat::decode(memory_exp, expSlime);
         EXPECT_EQUAL(used, memory_exp.size);
@@ -132,7 +132,7 @@ struct DenseFixture
                           const DenseTensorCells &rhs) {
         Tensor::UP rhsTensor(createTensor(rhs));
         auto slime = SlimeBinaryFormat::serialize(*rhsTensor);
-        vespalib::slime::Memory memory_exp(exp);
+        vespalib::Memory memory_exp(exp);
         vespalib::Slime expSlime;
         size_t used = vespalib::slime::JsonFormat::decode(memory_exp, expSlime);
         EXPECT_EQUAL(used, memory_exp.size);

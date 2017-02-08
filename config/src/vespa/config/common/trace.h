@@ -39,8 +39,8 @@ public:
 private:
     void serializeTraceLog(vespalib::slime::Cursor & array) const;
     void deserializeTraceLog(const vespalib::slime::Inspector & inspector);
-    static const vespalib::slime::Memory TRACELOG;
-    static const vespalib::slime::Memory TRACELEVEL;
+    static const vespalib::Memory TRACELOG;
+    static const vespalib::Memory TRACELEVEL;
     vespalib::TraceNode _root;
     uint32_t _traceLevel;
     const Clock & _clock;

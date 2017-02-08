@@ -91,7 +91,7 @@ TEST("require that simple tensors can have their values negated") {
             .add({{"x","1"},{"y","1"}}, -1)
             .add({{"x","2"},{"y","1"}}, 3)
             .add({{"x","1"},{"y","2"}}, -5));
-    auto result = SimpleTensor::map(operation::Neg(), *tensor);
+    auto result = tensor->map([](double a){ return -a; });
     EXPECT_EQUAL(*expect, *result);
     Stash stash;
     const Value &result2 = SimpleTensorEngine::ref().map(operation::Neg(), *tensor, stash);
@@ -116,7 +116,7 @@ TEST("require that simple tensors can be multiplied with each other") {
             .add({{"x","2"},{"y","1"},{"z","1"}}, 21)
             .add({{"x","2"},{"y","1"},{"z","2"}}, 39)
             .add({{"x","1"},{"y","2"},{"z","1"}}, 55));
-    auto result = SimpleTensor::join(operation::Mul(), *lhs, *rhs);
+    auto result = SimpleTensor::join(*lhs, *rhs, [](double a, double b){ return (a * b); });
     EXPECT_EQUAL(*expect, *result);
     Stash stash;
     const Value &result2 = SimpleTensorEngine::ref().apply(operation::Mul(), *lhs, *rhs, stash);
@@ -142,13 +142,14 @@ TEST("require that simple tensors support dimension reduction") {
             .add({{"y",0}}, 6)
             .add({{"y",1}}, 15));
     auto expect_sum_all = SimpleTensor::create(TensorSpec("double").add({}, 21));
-    auto result_sum_y = tensor->reduce(operation::Add(), {"y"});
-    auto result_sum_x = tensor->reduce(operation::Add(), {"x"});
-    auto result_sum_all = tensor->reduce(operation::Add(), {"x", "y"});
+    Stash stash;
+    Aggregator &aggr_sum = Aggregator::create(Aggr::SUM, stash);
+    auto result_sum_y = tensor->reduce(aggr_sum, {"y"});
+    auto result_sum_x = tensor->reduce(aggr_sum, {"x"});
+    auto result_sum_all = tensor->reduce(aggr_sum, {"x", "y"});
     EXPECT_EQUAL(*expect_sum_y, *result_sum_y);
     EXPECT_EQUAL(*expect_sum_x, *result_sum_x);
     EXPECT_EQUAL(*expect_sum_all, *result_sum_all);
-    Stash stash;
     const Value &result_sum_y_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"y"}, stash);
     const Value &result_sum_x_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"x"}, stash);
     const Value &result_sum_all_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"x", "y"}, stash); 

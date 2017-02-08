@@ -6,7 +6,9 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,6 +20,9 @@ import static org.junit.Assert.assertTrue;
  * @since 6.65
  */
 public class ReferenceFieldValueTestCase {
+
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static DocumentType createDocumentType(String name) {
         DocumentType type = new DocumentType(name);
@@ -100,6 +105,33 @@ public class ReferenceFieldValueTestCase {
     }
 
     @Test
+    public void can_assign_empty_reference_field_value_instance_to_existing_reference() {
+        ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
+        ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeFoo());
+        // Logically a no-op, but still worth testing.
+        existing.assign(newValue);
+        assertEquals(newValue, existing);
+    }
+
+    @Test
+    public void can_assign_reference_field_value_instance_with_id_to_existing_reference() {
+        ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
+        ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad"));
+        existing.assign(newValue);
+        assertEquals(newValue, existing);
+    }
+
+    @Test
+    public void assigning_reference_field_with_different_type_to_existing_reference_throws_exception() {
+        ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
+        ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeBar());
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Can't assign reference of type Reference<bar> " +
+                "to reference of type Reference<foo>");
+        existing.assign(newValue);
+    }
+
+    @Test
     public void reference_value_can_be_cleared() {
         ReferenceFieldValue value = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::yoshi-egg-feast"));
         value.clear();
@@ -142,6 +174,19 @@ public class ReferenceFieldValueTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void reference_constructor_requires_that_id_has_same_document_type_as_data_type() {
         new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:bar::mismatch"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void reference_doc_id_setter_requires_that_id_has_same_document_type_as_data_type() {
+        ReferenceFieldValue value = new ReferenceFieldValue(referenceTypeFoo());
+        value.setDocumentId(docId("id:ns:bar::mismatch"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void assigning_new_id_for_existing_reference_requires_that_id_has_same_document_type_as_data_type() {
+        ReferenceFieldValue value = new ReferenceFieldValue(referenceTypeFoo());
+        DocumentId newId = docId("id:ns:bar::mama-mia");
+        value.assign(newId);
     }
 
 }

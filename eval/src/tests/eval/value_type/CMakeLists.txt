@@ -5,4 +5,4 @@ vespa_add_executable(eval_value_type_test_app TEST
     DEPENDS
     vespaeval
 )
-vespa_add_test(NAME eval_value_type_test_app NO_VALGRIND COMMAND eval_value_type_test_app)
+vespa_add_test(NAME eval_value_type_test_app COMMAND eval_value_type_test_app)

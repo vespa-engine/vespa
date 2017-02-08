@@ -54,17 +54,15 @@ public class SearchDataTypeValidator extends Validator {
     private boolean isSupportedInSearchClusters(DataType dataType) {
         if (dataType instanceof ArrayDataType || dataType instanceof WeightedSetDataType) {
             return isSupportedInSearchClusters(((CollectionDataType)dataType).getNestedType());
-        }
-        else if (dataType instanceof StructDataType) {
+        } else if (dataType instanceof StructDataType) {
             return true; // Struct will work for summary TODO maybe check individual fields
-        }
-        else if (dataType instanceof MapDataType) {
+        } else if (dataType instanceof MapDataType) {
             return true; // Maps will work for summary, see disallowIndexingOfMaps()
-        }
-        else if (dataType instanceof TensorDataType) {
+        } else if (dataType instanceof TensorDataType) {
             return true;
-        }
-        else {
+        } else if (dataType instanceof ReferenceDataType) {
+            return true;
+        } else {
             return dataType.equals(DataType.INT) ||
                    dataType.equals(DataType.FLOAT) ||
                    dataType.equals(DataType.STRING) ||

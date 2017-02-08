@@ -268,7 +268,7 @@ TEST("slime toString produces human-readable JSON") {
     }
     std::string expect;
     {
-        vespalib::slime::SimpleBuffer buf;
+        vespalib::SimpleBuffer buf;
         vespalib::slime::JsonFormat::encode(slime, buf, false);
         expect = buf.get().make_string();
     }

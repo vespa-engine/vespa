@@ -4,7 +4,6 @@
 #include "annotationserializer.h"
 #include "slime_output_to_vector.h"
 #include "util.h"
-#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
@@ -18,12 +17,11 @@
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/shortfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
-#include <vespa/document/util/compressionconfig.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
@@ -236,20 +234,17 @@ void serializeFields(const StructFieldValue &value, nbostream &stream,
                      vector<pair<uint32_t, uint32_t> > &field_info,
                      const FieldSet& fieldSet) {
     VespaDocumentSerializer serializer(stream);
-    for (StructuredFieldValue::const_iterator
-             it(value.begin()), e(value.end());
-         it != e; ++it)
-    {
+    for (StructuredFieldValue::const_iterator it(value.begin()), e(value.end()); it != e; ++it) {
         if (!fieldSet.contains(it.field())) {
             continue;
         }
         size_t original_size = stream.size();
-        int id = it.field().getId(value.getVersion());
+        int id = it.field().getId();
         if (!value.serializeField(id, VespaDocumentSerializer::getCurrentVersion(), serializer)) {
             continue;
         }
         size_t field_size = stream.size() - original_size;
-        field_info.push_back(make_pair(it.field().getId(VespaDocumentSerializer::getCurrentVersion()), field_size));
+        field_info.push_back(make_pair(it.field().getId(), field_size));
     }
 }
 
@@ -405,6 +400,13 @@ VespaDocumentSerializer::write(const TensorFieldValue &value) {
     }
 }
 
+void VespaDocumentSerializer::write(const ReferenceFieldValue& value) {
+    _stream << static_cast<uint8_t>(value.hasValidDocumentId() ? 1 : 0);
+    if (value.hasValidDocumentId()) {
+       write(value.getDocumentId());
+    }
+}
+
 namespace {
     const uint8_t CONTENT_HASTYPE(0x01);
     const uint8_t CONTENT_HASVALUE(0x01);
@@ -444,7 +446,7 @@ void VespaDocumentSerializer::writeHEAD(const DocumentUpdate &value)
 
 void VespaDocumentSerializer::write(const FieldUpdate &value)
 {
-    _stream << static_cast<int32_t>(value.getField().getId(Document::getNewestSerializationVersion()));
+    _stream << static_cast<int32_t>(value.getField().getId());
     _stream << static_cast<int32_t>(value.size());
     for (size_t i(0), m(value.size()); i < m; i++) {
         write(value[i]);

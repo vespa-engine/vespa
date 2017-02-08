@@ -203,6 +203,8 @@ TensorAttribute::getRefCopy() const
     return RefCopyVector(&_refVector[0], &_refVector[0] + size);
 }
 
+IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);
+
 }  // namespace search::tensor
 
 }  // namespace search
