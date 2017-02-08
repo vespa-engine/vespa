@@ -18,6 +18,7 @@ class Inspector;
 struct JsonFormat {
     static void encode(const Inspector &inspector, Output &output, bool compact);
     static void encode(const Slime &slime, Output &output, bool compact);
+    static size_t decode(Input &input, Slime &slime);
     static size_t decode(const Memory &memory, Slime &slime);
 };
 

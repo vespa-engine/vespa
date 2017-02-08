@@ -178,7 +178,7 @@ struct JsonDecoder {
     vespalib::string key;
     vespalib::string value;
 
-    JsonDecoder(InputReader &input) : in(input), c(in.read()), key(), value() {}
+    JsonDecoder(InputReader &reader) : in(reader), c(in.read()), key(), value() {}
 
     void next() {
         if (in.obtain() > 0) {
@@ -484,18 +484,24 @@ JsonFormat::encode(const Slime &slime, Output &output, bool compact)
 }
 
 size_t
+JsonFormat::decode(Input &input, Slime &slime)
+{
+    InputReader reader(input);
+    JsonDecoder decoder(reader);
+    decoder.decodeValue(slime);
+    if (reader.failed()) {
+        slime.wrap("partial_result");
+        slime.get().setLong("offending_offset", reader.get_offset());
+        slime.get().setString("error_message", reader.get_error_message());
+    }
+    return reader.failed() ? 0 : reader.get_offset();
+}
+
+size_t
 JsonFormat::decode(const Memory &memory, Slime &slime)
 {
-    MemoryInput memory_input(memory);
-    InputReader input(memory_input);
-    JsonDecoder decoder(input);
-    decoder.decodeValue(slime);
-    if (input.failed()) {
-        slime.wrap("partial_result");
-        slime.get().setLong("offending_offset", input.get_offset());
-        slime.get().setString("error_message", input.get_error_message());
-    }
-    return input.failed() ? 0 : input.get_offset();
+    MemoryInput input(memory);
+    return decode(input, slime);
 }
 
 } // namespace vespalib::slime
