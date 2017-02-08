@@ -33,11 +33,14 @@ public class GlobalDistributionValidatorTest {
                 .collect(toMap(identity(), name -> new NewDocumentType(new NewDocumentType.Name(name))));
         HashSet<NewDocumentType> globallyDistributedDocuments = new HashSet<>(documentTypes.values());
         Redundancy redundancy = createRedundancyWithGlobalDistributionValue(false);
+        when(redundancy.effectiveFinalRedundancy()).thenReturn(1);
+        when(redundancy.totalNodes()).thenReturn(2);
 
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "The following document types are marked as global, " +
-                        "but do not have high enough redundancy to make the documents globally distributed: 'bar', 'foo'");
+                        "but do not have high enough redundancy to make the documents globally distributed: " +
+                        "'bar', 'foo'. Redundancy is 1, expected 2.");
         new GlobalDistributionValidator()
                 .validate(documentTypes, globallyDistributedDocuments, redundancy);
     }

@@ -32,9 +32,14 @@ public class GlobalDistributionValidator {
     private static void verifyGlobalDocumentsHaveRequiredRedundancy(Set<NewDocumentType> globallyDistributedDocuments,
                                                                     Redundancy redundancy) {
         if (!globallyDistributedDocuments.isEmpty() && !redundancy.isEffectivelyGloballyDistributed()) {
-            throw new IllegalArgumentException("The following document types are marked as global, " +
-                    "but do not have high enough redundancy to make the documents globally distributed: " +
-                    asPrintableString(toDocumentNameStream(globallyDistributedDocuments)));
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The following document types are marked as global, " +
+                                    "but do not have high enough redundancy to make the documents globally distributed: %s. " +
+                                    "Redundancy is %d, expected %d.",
+                            asPrintableString(toDocumentNameStream(globallyDistributedDocuments)),
+                            redundancy.effectiveFinalRedundancy(),
+                            redundancy.totalNodes()));
         }
     }
 
