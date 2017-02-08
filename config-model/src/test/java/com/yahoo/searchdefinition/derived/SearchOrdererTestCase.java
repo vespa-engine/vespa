@@ -130,7 +130,7 @@ public class SearchOrdererTestCase extends SearchDefinitionTestCase {
                     Arrays.asList("daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
     }
     @Test
-    public void referee_are_ordered_before_referer() {
+    public void referees_are_ordered_before_referrer() {
         assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "accessory-pc", "son"),
                     Arrays.asList("accessory-pc", "daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
     }

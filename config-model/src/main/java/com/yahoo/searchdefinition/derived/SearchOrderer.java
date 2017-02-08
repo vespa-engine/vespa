@@ -23,7 +23,7 @@ import java.util.*;
 public class SearchOrderer {
 
     /** A map from DataTypeName to the Search defining them */
-    private Map<DataTypeName, Search> documentNameToSearch = new HashMap<>();
+    private final Map<DataTypeName, Search> documentNameToSearch = new HashMap<>();
 
     /**
      * Reorders the given list of search definitions such that any supertype
@@ -42,7 +42,7 @@ public class SearchOrderer {
         List<Search> ordered = new ArrayList<>(unordered.size());
         List<Search> moveOutwards = new ArrayList<>();
         for (Search search : unordered) {
-            if (containsInheritedAndReferenced(ordered, search)) {
+            if (allDependenciesAlreadyEmitted(ordered, search)) {
                 addOrdered(ordered, search, moveOutwards);
             }
             else {
@@ -62,7 +62,7 @@ public class SearchOrderer {
         ordered.add(search);
         Search eligibleMove;
         do {
-            eligibleMove = removeFirstEligibleMoveOutwards(moveOutwards, ordered);
+            eligibleMove = removeFirstEntryWithFullyEmittedDependencies(moveOutwards, ordered);
             if (eligibleMove != null) {
                 ordered.add(eligibleMove);
             }
@@ -70,9 +70,9 @@ public class SearchOrderer {
     }
 
     /** Removes and returns the first search from the move list which can now be added, or null if none */
-    private Search removeFirstEligibleMoveOutwards(List<Search> moveOutwards, List<Search> ordered) {
+    private Search removeFirstEntryWithFullyEmittedDependencies(List<Search> moveOutwards, List<Search> ordered) {
         for (Search move : moveOutwards) {
-            if (containsInheritedAndReferenced(ordered, move)) {
+            if (allDependenciesAlreadyEmitted(ordered, move)) {
                 moveOutwards.remove(move);
                 return move;
             }
@@ -80,35 +80,35 @@ public class SearchOrderer {
         return null;
     }
 
-    private boolean containsInheritedAndReferenced(List<Search> list, Search search) {
+    private boolean allDependenciesAlreadyEmitted(List<Search> alreadyOrdered, Search search) {
         if (search.getDocument() == null) {
             return true;
         }
         SDDocumentType document = search.getDocument();
-        return containsInherited(list, document) && containsReferenced(list, document);
+        return allInheritedDependenciesEmitted(alreadyOrdered, document) && allReferenceDependenciesEmitted(alreadyOrdered, document);
     }
 
-    private boolean containsInherited(List<Search> list, SDDocumentType document) {
+    private boolean allInheritedDependenciesEmitted(List<Search> alreadyOrdered, SDDocumentType document) {
         for (SDDocumentType sdoc : document.getInheritedTypes() ) {
             DataTypeName inheritedName = sdoc.getDocumentName();
             if ("document".equals(inheritedName.getName())) {
                 continue;
             }
             Search inheritedSearch = documentNameToSearch.get(inheritedName);
-            if (!list.contains(inheritedSearch)) {
+            if (!alreadyOrdered.contains(inheritedSearch)) {
                 return false;
             }
         }
         return true;
     }
 
-    private static boolean containsReferenced(List<Search> list, SDDocumentType document) {
+    private static boolean allReferenceDependenciesEmitted(List<Search> alreadyOrdered, SDDocumentType document) {
         DocumentReferences documentReferences = document.getDocumentReferences()
                 .orElseThrow(() -> new IllegalStateException("Missing document references. Should have been processed by now."));
         return documentReferences.stream()
                 .map(Map.Entry::getValue)
                 .map(DocumentReference::search)
-                .allMatch(list::contains);
+                .allMatch(alreadyOrdered::contains);
     }
 
     private void indexOnDocumentName(List<Search> searches) {
