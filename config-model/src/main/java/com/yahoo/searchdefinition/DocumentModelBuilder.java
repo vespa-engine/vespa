@@ -332,7 +332,7 @@ public class DocumentModelBuilder {
                                                  sdoc.getDocumentType().getHeaderType(),
                                                  sdoc.getDocumentType().getBodyType(),
                                                  sdoc.getFieldSets(),
-                                                 convertDocumentRferences(sdoc.getDocumentReferences()));
+                                                 convertDocumentReferences(sdoc.getDocumentReferences()));
         for (SDDocumentType n : sdoc.getInheritedTypes()) {
             NewDocumentType.Name name = new NewDocumentType.Name(n.getName());
                 NewDocumentType inherited =  model.getDocumentManager().getDocumentType(name);
@@ -388,7 +388,7 @@ public class DocumentModelBuilder {
         return dt;
     }
 
-    private static Set<NewDocumentType.Name> convertDocumentRferences(Optional<DocumentReferences> documentReferences) {
+    private static Set<NewDocumentType.Name> convertDocumentReferences(Optional<DocumentReferences> documentReferences) {
         if (!documentReferences.isPresent()) {
             return emptySet();
         }

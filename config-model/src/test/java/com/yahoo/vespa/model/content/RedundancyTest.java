@@ -17,6 +17,7 @@ public class RedundancyTest {
         assertFalse(createRedundancy(5, 2, 12).isEffectivelyGloballyDistributed());
         assertTrue(createRedundancy(5, 2, 10).isEffectivelyGloballyDistributed());
         assertTrue(createRedundancy(5, 3, 10).isEffectivelyGloballyDistributed());
+        assertTrue(createRedundancy(1, 1, 1).isEffectivelyGloballyDistributed());
     }
 
     private static Redundancy createRedundancy(int redundancy, int implicitGroups, int totalNodes) {
