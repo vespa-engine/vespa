@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Contains all document references for a document mapped by field name
@@ -24,5 +25,9 @@ public class DocumentReferences implements Iterable<Map.Entry<String, DocumentRe
 
     public Map<String, DocumentReference> referenceMap() {
         return Collections.unmodifiableMap(references);
+    }
+
+    public Stream<Map.Entry<String, DocumentReference>> stream() {
+        return references.entrySet().stream();
     }
 }
