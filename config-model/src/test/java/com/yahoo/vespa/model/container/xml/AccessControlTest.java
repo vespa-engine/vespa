@@ -6,7 +6,6 @@ import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
@@ -48,21 +47,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             "/statistics/",
             StateHandler.STATE_API_ROOT,
             ContainerCluster.ROOT_HANDLER_BINDING);
-
-    @Test
-    public void access_control_filter_chain_is_set_up() throws Exception {
-        Element clusterElem = DomBuilderTest.parse(
-                "  <http>",
-                "    <filtering>",
-                "      <access-control domain='foo' />",
-                "    </filtering>",
-                "  </http>");
-
-        Http http = new HttpBuilder().build(root, clusterElem);
-        root.freezeModelTopology();
-
-        assertTrue(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
-    }
 
     @Test
     public void properties_are_set_from_xml() throws Exception {
