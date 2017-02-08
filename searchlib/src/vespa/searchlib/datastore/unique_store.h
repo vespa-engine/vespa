@@ -67,6 +67,21 @@ public:
                                     btree::NoAggregated,
                                     Compare,
                                     DictionaryTraits>;
+    class AddResult {
+        EntryRef _ref;
+        EntryType &_value;
+        bool _inserted;
+    public:
+        AddResult(EntryRef ref_, EntryType &value_, bool inserted_)
+            : _ref(ref_),
+              _value(value_),
+              _inserted(inserted_)
+        {
+        }
+        EntryRef ref() const { return _ref; }
+        EntryType &value() { return _value; }
+        bool inserted() { return _inserted; }
+    };
 private:
     DataStoreType _store;
     UniqueStoreBufferType _typeHandler;
@@ -74,11 +89,16 @@ private:
     Dictionary _dict;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
+    EntryType &getWritable(EntryRef ref)
+    {
+        RefType iRef(ref);
+        return *_store.template getBufferEntry<EntryType>(iRef.bufferId(), iRef.offset());
+    }
 public:
     UniqueStore();
     ~UniqueStore();
     EntryRef move(EntryRef ref);
-    EntryRef add(const EntryType &value);
+    AddResult add(const EntryType &value);
     const EntryType &get(EntryRef ref) const
     {
         RefType iRef(ref);
