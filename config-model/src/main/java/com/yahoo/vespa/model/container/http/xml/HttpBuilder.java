@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.application.Xml;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -60,7 +61,9 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     }
 
     private AccessControl buildAccessControl(Element accessControlElem) {
-        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"));
+        String applicationId = XML.getValue(XML.getChild(accessControlElem, "application"));
+        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), applicationId);
+
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
         XmlHelper.getOptionalAttribute(accessControlElem, "write").ifPresent(
@@ -72,6 +75,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                     .map(XML::getValue)
                     .forEach(builder::excludeBinding);
         }
+        XmlHelper.getOptionalChildValue(accessControlElem, "vespa-domain").ifPresent(builder::vespaDomain);
         return builder.build();
     }
 
