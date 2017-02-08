@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.attributefeature");
 #include "attributefeature.h"
 #include "utils.h"
 #include "valuefeature.h"
@@ -10,15 +7,15 @@ LOG_SETUP(".features.attributefeature");
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/features/constant_tensor_executor.h>
 #include <vespa/searchlib/features/dense_tensor_attribute_executor.h>
 #include <vespa/searchlib/features/tensor_attribute_executor.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/eval/eval/value_type.h>
-#include <vespa/searchlib/fef/feature_type.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.attributefeature");
+
 
 using search::attribute::IAttributeVector;
 using search::attribute::BasicType;

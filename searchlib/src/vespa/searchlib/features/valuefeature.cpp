@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.value");
 #include "valuefeature.h"
-
-#include <sstream>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace search {
 namespace features {
@@ -51,9 +47,9 @@ ValueBlueprint::setup(const search::fef::IIndexEnvironment &,
 {
     for (uint32_t i = 0; i < params.size(); ++i) {
         _values.push_back(params[i].asDouble());
-        std::ostringstream name;
+        vespalib::asciistream name;
         name << i;
-        std::ostringstream desc;
+        vespalib::asciistream desc;
         desc << "value " << i;
         describeOutput(name.str(), desc.str());
         // we have no inputs
