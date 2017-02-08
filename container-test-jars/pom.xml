@@ -11,7 +11,7 @@
         <version>6-SNAPSHOT</version>
     </parent>
     <groupId>com.yahoo.vespa.container-test-jars</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>container-test-jars</artifactId>
     <version>6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
