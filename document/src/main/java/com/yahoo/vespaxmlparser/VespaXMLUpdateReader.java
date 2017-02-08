@@ -338,7 +338,6 @@ public class VespaXMLUpdateReader extends VespaXMLFieldReader implements Documen
                 }
             }
             DataType dt = update.getFieldPath().getResultingDataType();
-            dt.
 
             if (dt instanceof NumericDataType) {
                 update.setExpression(reader.getElementText());
