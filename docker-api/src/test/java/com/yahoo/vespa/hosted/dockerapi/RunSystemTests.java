@@ -5,7 +5,6 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
-import com.yahoo.collections.Pair;
 import com.yahoo.system.ProcessExecuter;
 
 import java.io.IOException;
@@ -13,20 +12,12 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -46,8 +37,11 @@ import static org.junit.Assert.assertEquals;
      RunSystemTests runSystemTests = new RunSystemTests(vespaDockerBase, pathToSystemtestsInHost);
 
      ContainerName systemtestsHost = new ContainerName("stest-1");
-     // Update maven local repository and /home/y/lib/jars with the current version of these modules...
-     runSystemTests.mavenInstallModules(systemtestsHost, "docproc", "container-search-and-docproc", "container-dev");
+     // Rebuild run maven install on new updated modules (and the modules that depend on them), this
+     // is optional and can be run from command line if you know specifically which modules need to be rebuilt
+     runSystemTests.mavenInstallModules("docproc");
+     // Update maven local repository and /home/y/lib/jars with the current version of these modules inside container
+     runSystemTests.updateContainerMavenLocalRepository(systemtestsHost);
 
      Path systemTestToRun = Paths.get("tests/search/basicsearch/basic_search.rb");
      runSystemTests.runSystemTest(systemtestsHost, systemTestToRun);
@@ -66,10 +60,11 @@ public class RunSystemTests {
     private final Path pathToVespaRepoInContainer = Paths.get("/vespa");
     private final Path pathToTestRunner = pathToSystemtestsInContainer.resolve("bin/run_test.rb");
     private final Path pathToLibJars = Paths.get("/home/y/lib/jars");
+    private final String username = System.getProperty("user.name");
 
     private final Logger logger = Logger.getLogger("systemtest");
 
-    public RunSystemTests(DockerImage vespaBaseImage, Path pathToSystemtestsInHost) {
+    public RunSystemTests(DockerImage vespaBaseImage, Path pathToSystemtestsInHost) throws IOException {
         this.docker = DockerTestUtils.getDocker();
         this.vespaBaseImage = vespaBaseImage;
         this.pathToSystemtestsInHost = pathToSystemtestsInHost;
@@ -103,107 +98,45 @@ public class RunSystemTests {
         assertEquals("Test did not finish with exit code 0", Integer.valueOf(0), testExitCode);
     }
 
+
     /**
-     * This method runs mvn install inside container to update container's local repository, then copies any
-     * existing and updated file from target to /home/y/lib/jars.
-     *
-     * Because it runs as root we have to temporarily move around the target/ otherwise mvn will overwrite it and
-     * as root, making mvn on host fail next time it runs.
+     * This method updates container's local repository with all artifacts that are built on host machine, then
+     * copies any existing and updated file from target to /home/y/lib/jars.
      *
      * @param containerName name of the container to install modules in, if it does not exist, a new
      *                       one will be started.
-     * @param modules list of modules to install in order
      */
-    void mavenInstallModules(ContainerName containerName, String... modules) throws InterruptedException, IOException, ExecutionException {
+    void updateContainerMavenLocalRepository(ContainerName containerName) throws InterruptedException, IOException, ExecutionException {
         startSystemTestNodeIfNeeded(containerName);
 
-        for (String module : modules) {
-            Path pathToTargetInHost = pathToVespaRepoInHost.resolve(module).resolve("target");
-            Path pathToTargetBackupInHost = pathToVespaRepoInHost.resolve(module).resolve("target_bcp");
+        String sources = Files.list(pathToVespaRepoInHost)
+                .filter(module -> Files.exists(module.resolve("target")))
+                .map(module -> pathToVespaRepoInContainer.resolve(module.getFileName()).resolve("target").toString() + "/")
+                .collect(Collectors.joining(" "));
+        docker.executeInContainerAsRoot(containerName, "/bin/sh", "-c", "rsync --archive --existing --update " +
+                sources + " " + pathToLibJars.toString() + "/");
 
-            if (Files.exists(pathToTargetInHost)) {
-                Files.move(pathToTargetInHost, pathToTargetBackupInHost, StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-
-        try {
-            String projects = Arrays.stream(modules)
-                    .collect(Collectors.joining(","));
-            executeInContainer(containerName,
-                    "/bin/sh", "-c", "cd /vespa; mvn -DskipTests -Dmaven.javadoc.skip=true -e " +
-                            "-pl=" + projects + " install");
-
-            for (String module : modules) {
-                Path pathToModule = pathToVespaRepoInContainer.resolve(module);
-                executeInContainer(containerName, "rsync", "--archive", "--existing", "--update",
-                        pathToModule.resolve("target").toString() + "/", pathToLibJars.toString() + "/");
-            }
-        } finally {
-            for (String module : modules) {
-                Path pathToModule = pathToVespaRepoInContainer.resolve(module);
-                Path pathToTargetInHost = pathToVespaRepoInHost.resolve(module).resolve("target");
-                Path pathToTargetBackupInHost = pathToVespaRepoInHost.resolve(module).resolve("target_bcp");
-                executeInContainer(containerName, "rm", "-rf", pathToModule.resolve("target").toString());
-
-                if (Files.exists(pathToTargetBackupInHost)) {
-                    Files.move(pathToTargetBackupInHost, pathToTargetInHost);
-                }
-            }
-        }
+        executeInContainer(containerName, "/bin/sh", "-c", "cd " + pathToVespaRepoInContainer + ";" +
+                "mvn jar:jar install:install");
     }
 
     /**
-     * Builds all modules that depend on 'modules' and 'modules' themselves in the order they need to be built
+     * This method runs mvn install on host inside container to update container's local repository
+     *
+     * @param modules list of modules to install in order
      */
-    void mavenInstallModulesThatDependOn(ContainerName containerName, String... modules) throws IOException, ExecutionException, InterruptedException {
-        logger.info("Building dependency graph...");
-        Path outputFile = Paths.get("/tmp/vespa-maven-dependencies");
-        if (Files.exists(outputFile)) {
-            Files.delete(outputFile);
-        }
+    void mavenInstallModules(String... modules) throws InterruptedException, IOException, ExecutionException {
+        System.out.println("Installing " + Arrays.toString(modules));
+        String projects = String.join(",", modules);
+        Process process = new ProcessBuilder("mvn", "-DskipTests", "-Dmaven.javadoc.skip=true", "--errors",
+                "--projects=" + projects, "--also-make", "install")
+                .directory(pathToVespaRepoInHost.toFile())
+                .inheritIO()
+                .start();
 
-        String[] command = new String[]{"mvn", "dependency:tree", "-Dincludes=com.yahoo.vespa",
-                "-DoutputFile=" + outputFile, "-DoutputType=dot", "-DappendOutput=true"};
-        ProcessExecuter processExecuter = new ProcessExecuter();
-        Pair<Integer, String> result = processExecuter.exec(command);
-        if (result.getFirst() != 0) {
-            throw new RuntimeException("Failed to get maven dependency tree: " + result.getSecond());
-        }
-
-        String modulePattern = "[a-z-]+";
-        Pattern dependencyPattern = Pattern.compile("com\\.yahoo\\.vespa:(" + modulePattern + "):.* -> " +
-                ".*com\\.yahoo\\.vespa:(" + modulePattern + "):.*", Pattern.CASE_INSENSITIVE);
-        String dependenciesRaw = new String(Files.readAllBytes(outputFile));
-        Matcher m = dependencyPattern.matcher(dependenciesRaw);
-
-        Map<String, Set<String>> dependencyGraph = new HashMap<>();
-        while (m.find()) {
-            if (! dependencyGraph.containsKey(m.group(2))) {
-                dependencyGraph.put(m.group(2), new HashSet<>());
-            }
-
-            dependencyGraph.get(m.group(2)).add(m.group(1));
-        }
-
-        List<String> buildOrder = new ArrayList<>();
-        for (String module: modules) {
-            dfs(module, dependencyGraph, buildOrder);
-        }
-
-        Collections.reverse(buildOrder);
-        mavenInstallModules(containerName, buildOrder.stream().toArray(String[]::new));
-    }
-
-    private static void dfs(String root, Map<String, Set<String>> dependencies, List<String> order) {
-        if (! order.contains(root)) {
-            if (dependencies.containsKey(root)) {
-                for (String child : dependencies.get(root)) {
-                    dfs(child, dependencies, order);
-                }
-            }
-
-            order.add(root);
-        }
+        int exitValue = process.waitFor();
+        assert exitValue == 0;
+        System.out.println(process.exitValue());
     }
 
     private void startSystemTestNodeIfNeeded(ContainerName containerName) throws IOException, InterruptedException, ExecutionException {
@@ -229,7 +162,8 @@ public class RunSystemTests {
                 .withUlimit("nofile", 16384, 16384)
                 .withUlimit("nproc", 409600, 409600)
                 .withUlimit("core", -1, -1)
-                .withVolume(Paths.get(System.getProperty("user.home")).resolve(".m2/settings.xml").toString(), "/root/.m2/settings.xml")
+                .withVolume(Paths.get(System.getProperty("user.home")).resolve(".m2").toString(),
+                        Paths.get("/home/").resolve(username).resolve(".m2").toString())
                 .withVolume(pathToSystemtestsInHost.toString(), pathToSystemtestsInContainer.toString())
                 .withVolume(pathToVespaRepoInHost.toString(), pathToVespaRepoInContainer.toString())
                 .create();
@@ -237,6 +171,9 @@ public class RunSystemTests {
         docker.startContainer(containerName);
         docker.dockerClient.copyArchiveToContainerCmd(containerName.asString())
                 .withHostResource("/etc/hosts").withRemotePath("/etc/").exec();
+
+        String uid = new ProcessExecuter().exec(new String[]{"/bin/sh", "-c", "id -u " + username}).getSecond();
+        docker.executeInContainerAsRoot(containerName, "useradd", "-u", uid.trim(), username);
 
         // TODO: Should check something to see if node_server.rb is ready
         Thread.sleep(1000);
@@ -264,6 +201,7 @@ public class RunSystemTests {
                 .withCmd(args)
                 .withAttachStdout(true)
                 .withAttachStderr(true)
+                .withUser(username)
                 .exec();
 
         ExecStartCmd execStartCmd = docker.dockerClient.execStartCmd(response.getId());
