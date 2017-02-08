@@ -14,8 +14,7 @@ import java.util.Collections;
  * An HTTP response as an opaque payload with headers and content type.
  *
  * @author hmusum
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1
+ * @author Steinar Knutsen
  */
 public abstract class HttpResponse {
 

@@ -4,16 +4,18 @@ package com.yahoo.application.container.handler;
 import com.google.common.annotations.Beta;
 import net.jcip.annotations.Immutable;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * A request for use with {@link com.yahoo.application.container.JDisc#handleRequest(Request)}.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.15
+ * @author Einar M R Rosenvinge
  * @see Response
  */
 @Immutable
 @Beta
 public class Request {
+
     private final Headers headers = new Headers();
     private final String uri;
     private final byte[] body;
@@ -29,7 +31,7 @@ public class Request {
     }
 
     /**
-     * Creates a Request with a message body.
+     * Creates a GET Request with a message body.
      *
      * @param uri the URI of the request
      * @param body the body of the request
@@ -38,6 +40,15 @@ public class Request {
         this(uri, body, Method.GET);
     }
 
+    /**
+     * Creates a GET Request with a message body.
+     *
+     * @param uri the URI of the request
+     * @param body the body of the request as a UTF-8 string
+     */
+    public Request(String uri, String body) {
+        this(uri, body.getBytes(StandardCharsets.UTF_8), Method.GET);
+    }
 
     /**
      * Creates a Request with a message body.
@@ -51,6 +62,15 @@ public class Request {
         this.method = method;
     }
 
+    /**
+     * Creates a Request with a message body.
+     *
+     * @param uri the URI of the request
+     * @param body the body of the request as a UTF-8 string
+     */
+    public Request(String uri, String body, Method method) {
+        this(uri, body.getBytes(StandardCharsets.UTF_8), method);
+    }
     /**
      * Returns a mutable multi-map of headers for this Request.
      *
@@ -99,4 +119,5 @@ public class Request {
         TRACE,
         CONNECT
     }
+
 }

@@ -5,9 +5,10 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public interface RequestFilter extends com.yahoo.jdisc.SharedResource, RequestFilterBase {
 
-    public void filter(HttpRequest request, ResponseHandler handler);
+    void filter(HttpRequest request, ResponseHandler handler);
+
 }

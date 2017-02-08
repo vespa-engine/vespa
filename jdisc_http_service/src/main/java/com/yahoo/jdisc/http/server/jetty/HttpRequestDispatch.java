@@ -32,9 +32,10 @@ import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URL
 import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class HttpRequestDispatch {
+
     private static final Logger log = Logger.getLogger(HttpRequestDispatch.class.getName());
 
     private final static String CHARSET_ANNOTATION = ";charset=";
@@ -47,12 +48,11 @@ class HttpRequestDispatch {
     private final RequestHandler requestHandler;
     private final MetricReporter metricReporter;
 
-    public HttpRequestDispatch(
-            final JDiscContext jDiscContext,
-            final AccessLogEntry accessLogEntry,
-            final Context metricContext,
-            final HttpServletRequest servletRequest,
-            final HttpServletResponse servletResponse) throws IOException {
+    public HttpRequestDispatch(JDiscContext jDiscContext,
+                               AccessLogEntry accessLogEntry,
+                               Context metricContext,
+                               HttpServletRequest servletRequest,
+                               HttpServletResponse servletResponse) throws IOException {
         this.jDiscContext = jDiscContext;
 
         requestHandler = newRequestHandler(jDiscContext, accessLogEntry, servletRequest);
@@ -73,7 +73,7 @@ class HttpRequestDispatch {
     }
 
     public void dispatch() throws IOException {
-        final ServletRequestReader servletRequestReader;
+        ServletRequestReader servletRequestReader;
         try {
             servletRequestReader = handleRequest();
         } catch (Throwable throwable) {
@@ -145,7 +145,7 @@ class HttpRequestDispatch {
     private ServletRequestReader handleRequest() throws IOException {
         servletResponseController.registerWriteListener();
         HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, servletRequest);
-        final ContentChannel requestContentChannel;
+        ContentChannel requestContentChannel;
 
         try (ResourceReference ref = References.fromResource(jdiscRequest)) {
             HttpRequestFactory.copyHeaders(servletRequest, jdiscRequest);
@@ -186,25 +186,23 @@ class HttpRequestDispatch {
     }
 
 
-    private static RequestHandler newRequestHandler(
-            final JDiscContext context,
-            final AccessLogEntry accessLogEntry,
-            final HttpServletRequest servletRequest) {
-        final RequestHandler requestHandler = wrapHandlerIfFormPost(
+    private static RequestHandler newRequestHandler(JDiscContext context,
+                                                    AccessLogEntry accessLogEntry,
+                                                    HttpServletRequest servletRequest) {
+        RequestHandler requestHandler = wrapHandlerIfFormPost(
                 new FilteringRequestHandler(context.requestFilters, context.responseFilters),
                 servletRequest, context.serverConfig.removeRawPostBodyForWwwUrlEncodedPost());
 
         return new AccessLoggingRequestHandler(requestHandler, accessLogEntry);
     }
 
-    private static RequestHandler wrapHandlerIfFormPost(
-            final RequestHandler requestHandler,
-            final HttpServletRequest servletRequest,
-            final boolean removeBodyForFormPost) {
+    private static RequestHandler wrapHandlerIfFormPost(RequestHandler requestHandler,
+                                                        HttpServletRequest servletRequest,
+                                                        boolean removeBodyForFormPost) {
         if (!servletRequest.getMethod().equals("POST")) {
             return requestHandler;
         }
-        final String contentType = servletRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE);
+        String contentType = servletRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE);
         if (contentType == null) {
             return requestHandler;
         }
@@ -214,7 +212,7 @@ class HttpRequestDispatch {
         return new FormPostRequestHandler(requestHandler, getCharsetName(contentType), removeBodyForFormPost);
     }
 
-    private static String getCharsetName(final String contentType) {
+    private static String getCharsetName(String contentType) {
         if (!contentType.startsWith(CHARSET_ANNOTATION, APPLICATION_X_WWW_FORM_URLENCODED.length())) {
             return StandardCharsets.UTF_8.name();
         }
