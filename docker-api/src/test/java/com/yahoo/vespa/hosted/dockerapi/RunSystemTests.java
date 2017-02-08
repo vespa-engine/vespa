@@ -64,7 +64,7 @@ public class RunSystemTests {
 
     private final Logger logger = Logger.getLogger("systemtest");
 
-    public RunSystemTests(DockerImage vespaBaseImage, Path pathToSystemtestsInHost) throws IOException {
+    public RunSystemTests(DockerImage vespaBaseImage, Path pathToSystemtestsInHost) {
         this.docker = DockerTestUtils.getDocker();
         this.vespaBaseImage = vespaBaseImage;
         this.pathToSystemtestsInHost = pathToSystemtestsInHost;
@@ -97,7 +97,6 @@ public class RunSystemTests {
         Integer testExitCode = runTest(systemtestHosts.get(0), pathToSystestToRun, arguments);
         assertEquals("Test did not finish with exit code 0", Integer.valueOf(0), testExitCode);
     }
-
 
     /**
      * This method updates container's local repository with all artifacts that are built on host machine, then
