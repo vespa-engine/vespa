@@ -46,10 +46,17 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     public int initialRedundancy() { return initialRedundancy; }
     public int finalRedundancy() { return finalRedundancy; }
     public int readyCopies() { return readyCopies; }
+    public int totalNodes() {
+        return totalNodes;
+    }
 
     public int effectiveInitialRedundancy() { return Math.min(totalNodes, initialRedundancy * implicitGroups); }
     public int effectiveFinalRedundancy() { return Math.min(totalNodes, finalRedundancy * implicitGroups); }
     public int effectiveReadyCopies() { return Math.min(totalNodes, readyCopies * implicitGroups); }
+
+    public boolean isEffectivelyGloballyDistributed() {
+        return totalNodes == effectiveFinalRedundancy();
+    }
 
     @Override
     public void getConfig(StorDistributionConfig.Builder builder) {

@@ -1,7 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentmodel;
 
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.Field;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypeRegistry;
 import com.yahoo.document.datatypes.FieldValue;
@@ -10,12 +15,23 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.processing.BuiltInFieldSets;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+
+import static java.util.Collections.emptySet;
 
 /**
  * @author baldersheim
  */
 public final class NewDocumentType extends StructuredDataType implements DataTypeCollection {
+
 
     public static final class Name {
 
@@ -53,13 +69,26 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     private final StructDataType header;
     private final StructDataType body;
     private final Set<FieldSet> fieldSets = new LinkedHashSet<>();
+    private final Set<Name> documentReferences;
 
     public NewDocumentType(Name name) {
-        this(name,
-             new StructDataType(name.getName() + ".header"),
-             new StructDataType(name.getName() + ".body"), new FieldSets());
+        this(name, emptySet());
     }
-    public NewDocumentType(Name name, StructDataType header, StructDataType body, FieldSets fs) {
+
+    public NewDocumentType(Name name, Set<Name> documentReferences) {
+        this(
+                name,
+                new StructDataType(name.getName() + ".header"),
+                new StructDataType(name.getName() + ".body"),
+                new FieldSets(),
+                documentReferences);
+    }
+
+    public NewDocumentType(Name name,
+                           StructDataType header,
+                           StructDataType body,
+                           FieldSets fs,
+                           Set<Name> documentReferences) {
         super(name.getName());
         this.name = name;
         this.header = header;
@@ -73,6 +102,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
                 }
             }
         }
+        this.documentReferences = documentReferences;
     }
 
     public Name getFullName() {
@@ -353,9 +383,13 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     /**
      * The field sets defined for this type and its {@link Search}
-     * @return fieldsets 
+     * @return fieldsets
      */
     public Set<FieldSet> getFieldSets() {
         return Collections.unmodifiableSet(fieldSets);
+    }
+
+    public Set<Name> getDocumentReferences() {
+        return documentReferences;
     }
 }

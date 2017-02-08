@@ -190,7 +190,8 @@ Documents = element documents {
         GenericConfig* &
         attribute type { xsd:string } &
         attribute selection { xsd:string }? &
-        attribute mode { string "index" | string "streaming" | string "store-only" }
+        attribute mode { string "index" | string "streaming" | string "store-only" } &
+        attribute global { xsd:boolean }?
     }+
 }
 
