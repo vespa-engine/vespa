@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -16,14 +17,14 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -32,6 +33,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,20 +44,24 @@ import static org.junit.Assert.assertEquals;
  */
 public class ApplicationMaintainerTest {
 
-    private Curator curator = new MockCurator();
+    private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
+
+    private NodeRepository nodeRepository;
+    private Fixture fixture;
+
+    @Before
+    public void before() {
+        Curator curator = new MockCurator();
+        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
+        this.nodeRepository = new NodeRepository(nodeFlavors, curator, new ManualClock(), zone,
+                                                 new MockNameResolver().mockAnyLookup());
+        this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
+    }
 
     @Test
     public void test_application_maintenance() throws InterruptedException {
-        ManualClock clock = new ManualClock();
-        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
-        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                                                           new MockNameResolver().mockAnyLookup());
-
         createReadyNodes(15, nodeRepository, nodeFlavors);
         createHostNodes(2, nodeRepository, nodeFlavors);
-
-        Fixture fixture = new Fixture(zone, nodeRepository, nodeFlavors);
 
         // Create applications
         fixture.activate();
@@ -96,6 +104,29 @@ public class ApplicationMaintainerTest {
                      reactivatedInApp1, fixture.getNodes(Node.State.inactive).size());
     }
 
+    @Test
+    public void deleted_application_is_not_reactivated() {
+        createReadyNodes(15, nodeRepository, nodeFlavors);
+        createHostNodes(2, nodeRepository, nodeFlavors);
+
+        // Create applications
+        fixture.activate();
+
+        // Freeze active nodes to simulate an application being deleted during a maintenance run
+        Set<ApplicationId> frozenActiveApplications = nodeRepository.getNodes(Node.State.active).stream()
+                .map(n -> n.allocation().get().owner())
+                .collect(Collectors.toSet());
+
+        // Remove one application without letting the application maintainer know about it
+        fixture.remove(fixture.app2);
+        assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
+
+        // Nodes belonging to app2 are inactive after maintenance
+        fixture.runApplicationMaintainer((ignored) -> frozenActiveApplications);
+        assertEquals("Inactive nodes were incorrectly activated after maintenance", fixture.wantedNodesApp2,
+                     nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
+    }
+
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
@@ -118,6 +149,7 @@ public class ApplicationMaintainerTest {
 
         final NodeRepository nodeRepository;
         final NodeRepositoryProvisioner provisioner;
+        final Curator curator;
 
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
@@ -126,8 +158,9 @@ public class ApplicationMaintainerTest {
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
 
-        Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors) {
+        Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors, Curator curator) {
             this.nodeRepository = nodeRepository;
+            this.curator = curator;
             this.provisioner =  new NodeRepositoryProvisioner(nodeRepository, flavors, zone);
         }
 
@@ -145,14 +178,24 @@ public class ApplicationMaintainerTest {
             transaction.commit();
         }
 
+        void remove(ApplicationId application) {
+            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
+            provisioner.remove(transaction, application);
+            transaction.commit();
+        }
+
         void runApplicationMaintainer() {
+            runApplicationMaintainer(ApplicationMaintainer::getActiveApplications);
+        }
+
+        void runApplicationMaintainer(Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
             apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
                                                                Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
                                                                Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
-            new ApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30)).run();
+            new ApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), activeApplicationsGetter).run();
         }
 
         NodeList getNodes(Node.State ... states) {
