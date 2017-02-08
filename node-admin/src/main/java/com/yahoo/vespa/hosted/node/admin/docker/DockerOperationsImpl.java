@@ -46,14 +46,14 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
-    private static final String[] RESTART_NODE_COMMAND = new String[] {NODE_PROGRAM, "restart"};
+    private static final String[] RESTART_VESPA_ON_NODE_COMMAND = new String[] {NODE_PROGRAM, "restart-vespa"};
     private static final String[] STOP_NODE_COMMAND = new String[] {NODE_PROGRAM, "stop"};
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
     private static final String MANAGER_NAME = "node-admin";
 
-    // Map of directories to mount and whether they should be writeable by everyone
+    // Map of directories to mount and whether they should be writable by everyone
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
     static {
         DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
@@ -192,7 +192,7 @@ public class DockerOperationsImpl implements DockerOperations {
             }
 
             // TODO: Enforce disk constraints
-            // TODO: Consider if CPU shares or quoata should be set. For now we are just assuming they are
+            // TODO: Consider if CPU shares or quota should be set. For now we are just assuming they are
             // nicely controlled by docker.
             if (nodeSpec.minMainMemoryAvailableGb.isPresent()) {
                 long minMainMemoryAvailableMb = (long) (nodeSpec.minMainMemoryAvailableGb.get() * 1024);
@@ -310,8 +310,8 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void restartServicesOnNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, RESTART_NODE_COMMAND);
+    public void restartVespaOnNode(ContainerName containerName) {
+        executeCommandInContainer(containerName, RESTART_VESPA_ON_NODE_COMMAND);
     }
 
     @Override
