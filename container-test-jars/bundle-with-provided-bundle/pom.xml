@@ -6,7 +6,7 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>com.yahoo.container.container-test-jars</groupId>
+    <groupId>com.yahoo.vespa.container-test-jars</groupId>
     <artifactId>container-test-jars</artifactId>
     <version>6-SNAPSHOT</version>
   </parent>
@@ -22,7 +22,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.yahoo.container.container-test-jars</groupId>
+      <groupId>com.yahoo.vespa.container-test-jars</groupId>
       <artifactId>jersey-resources</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
