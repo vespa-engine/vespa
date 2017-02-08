@@ -67,6 +67,18 @@ public:
                                     btree::NoAggregated,
                                     Compare,
                                     DictionaryTraits>;
+    class AddResult {
+        EntryRef _ref;
+        bool _inserted;
+    public:
+        AddResult(EntryRef ref_, bool inserted_)
+            : _ref(ref_),
+              _inserted(inserted_)
+        {
+        }
+        EntryRef ref() const { return _ref; }
+        bool inserted() { return _inserted; }
+    };
 private:
     DataStoreType _store;
     UniqueStoreBufferType _typeHandler;
@@ -78,7 +90,7 @@ public:
     UniqueStore();
     ~UniqueStore();
     EntryRef move(EntryRef ref);
-    EntryRef add(const EntryType &value);
+    AddResult add(const EntryType &value);
     const EntryType &get(EntryRef ref) const
     {
         RefType iRef(ref);

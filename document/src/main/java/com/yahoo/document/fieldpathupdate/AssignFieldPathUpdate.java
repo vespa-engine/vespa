@@ -15,9 +15,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class AssignFieldPathUpdate extends FieldPathUpdate {
+
     class SimpleAssignIteratorHandler extends FieldPathIteratorHandler {
         FieldValue newValue;
         boolean removeIfZero;
@@ -278,4 +279,5 @@ public class AssignFieldPathUpdate extends FieldPathUpdate {
     public FieldValue getFieldValue() {
         return fieldValue;
     }
+
 }

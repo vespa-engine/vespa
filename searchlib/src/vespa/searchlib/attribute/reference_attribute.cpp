@@ -7,6 +7,7 @@
 #include "readerbase.h"
 #include <vespa/searchlib/datastore/unique_store_builder.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/searchlib/datastore/unique_store.hpp>
 #include "reference_attribute_saver.h"
 
 namespace search {
@@ -170,7 +171,7 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
     updateUncommittedDocIdLimit(doc);
     assert(doc < _indices.size());
     EntryRef oldRef = _indices[doc];
-    EntryRef newRef = _store.add(gid);
+    EntryRef newRef = _store.add(gid).ref();
     std::atomic_thread_fence(std::memory_order_release);
     _indices[doc] = newRef;
     if (oldRef.valid()) {
@@ -178,7 +179,7 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
     }
 }
 
-const ReferenceAttribute::GlobalId *
+const ReferenceAttribute::Reference *
 ReferenceAttribute::getReference(DocId doc)
 {
     assert(doc < _indices.size());
@@ -228,6 +229,16 @@ ReferenceAttribute::getIndicesCopy(uint32_t size) const
 }
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
+
+}
+
+namespace datastore {
+
+using Reference = attribute::ReferenceAttribute::Reference;
+
+template class UniqueStore<Reference, EntryRefT<22>>;
+template class UniqueStoreBuilder<Reference, EntryRefT<22>>;
+template class UniqueStoreSaver<Reference, EntryRefT<22>>;
 
 }
 }

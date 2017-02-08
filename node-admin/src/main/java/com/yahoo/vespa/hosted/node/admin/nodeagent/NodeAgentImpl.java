@@ -285,7 +285,7 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info("Restarting services for " + containerName);
                 // Since we are restarting the services we need to suspend the node.
                 orchestratorSuspendNode(orchestrator, nodeSpec, logger);
-                dockerOperations.restartServicesOnNode(containerName);
+                dockerOperations.restartVespaOnNode(containerName);
             }
         }
     }

@@ -15,6 +15,7 @@
 #include <vespa/eval/eval/vm_forest.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 #include <cmath>
 
 //-----------------------------------------------------------------------------
@@ -25,34 +26,6 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
 using namespace vespalib::eval::gbdt;
 using namespace search::features::rankingexpression;
-
-//-----------------------------------------------------------------------------
-
-struct File {
-    int     file;
-    char   *data;
-    size_t  size;
-    File(const vespalib::string &file_name)
-        : file(open(file_name.c_str(), O_RDONLY)), data((char*)MAP_FAILED), size(0)
-    {
-        struct stat info;
-        if ((file != -1) && (fstat(file, &info) == 0)) {
-            data = (char*)mmap(0, info.st_size, PROT_READ, MAP_SHARED, file, 0);
-            if (data != MAP_FAILED) {
-                size = info.st_size;
-            }
-        }
-    }
-    ~File() {
-        if (valid()) {
-            munmap(data, size);
-        }
-        if (file != -1) {
-            close(file);
-        }
-    }
-    bool valid() const { return (data != MAP_FAILED); }
-};
 
 //-----------------------------------------------------------------------------
 
@@ -279,9 +252,9 @@ struct State {
     std::vector<double> options_us;
 
     explicit State(const vespalib::string &file_name,
-                   vespalib::stringref expression_in)
+                   vespalib::string expression_in)
         : name(strip_name(file_name)),
-          expression(expression_in),
+          expression(std::move(expression_in)),
           function(Function::parse(expression, FeatureNameExtractor())),
           fun_info(function),
           compiled_function(),
@@ -360,13 +333,13 @@ MyApp::Main()
         return usage();
     }
     vespalib::string file_name(_argv[1]);
-    File file(file_name);
+    vespalib::MappedFileInput file(file_name);
     if (!file.valid()) {
         fprintf(stderr, "could not read input file: '%s'\n",
                 file_name.c_str());
         return 1;
     }
-    State state(file_name, vespalib::stringref(file.data, file.size));
+    State state(file_name, file.get().make_string());
     if (state.function.has_error()) {
         vespalib::string error_message = state.function.get_error();
         fprintf(stderr, "input file (%s) contains an illegal expression:\n%s\n",

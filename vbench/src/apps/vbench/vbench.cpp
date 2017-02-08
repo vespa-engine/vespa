@@ -29,10 +29,9 @@ void setupSignals() {
 }
 
 int run(const std::string &cfg_name) {
-    MappedFileInput cfg_file(cfg_name);
-    if (cfg_file.tainted()) {
-        fprintf(stderr, "could not load config file: %s\n",
-                cfg_file.tainted().reason().c_str());
+    vespalib::MappedFileInput cfg_file(cfg_name);
+    if (!cfg_file.valid()) {
+        fprintf(stderr, "could not load config file: %s\n", cfg_name.c_str());
         return 1;
     }
     vespalib::Slime cfg;

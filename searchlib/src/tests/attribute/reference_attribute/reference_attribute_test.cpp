@@ -67,7 +67,12 @@ struct Fixture
     }
 
     const GlobalId *get(uint32_t doc) {
-        return _attr->getReference(doc);
+        const ReferenceAttribute::Reference *ref = _attr->getReference(doc);
+        if (ref != nullptr) {
+            return &ref->gid();
+        } else {
+            return nullptr;
+        }
     }
 
     void set(uint32_t doc, const GlobalId &gid) {

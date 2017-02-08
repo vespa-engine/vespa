@@ -40,7 +40,7 @@ public class RestartTest {
             dockerTester.updateContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
 
             callOrderVerifier.assertInOrder("Suspend for host1",
-                                            "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", restart]");
+                                            "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", restart-vespa]");
         }
     }
 

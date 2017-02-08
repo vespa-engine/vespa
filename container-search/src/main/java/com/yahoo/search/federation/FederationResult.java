@@ -88,7 +88,7 @@ class FederationResult {
         /**
          * Returns the result of this by blocking until timeout if necessary. 
          * 
-         * @return the result if available, or null otherwise
+         * @return the result if available, or empty otherwise
          */
         public Optional<Result> getIfAvailable(long timeout) {
             if (availableResult.isPresent()) return availableResult;

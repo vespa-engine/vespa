@@ -4,7 +4,7 @@ package com.yahoo.jdisc.http.filter;
 import com.yahoo.jdisc.handler.ResponseHandler;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface SecurityRequestFilter extends RequestFilterBase {
 

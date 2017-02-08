@@ -32,7 +32,7 @@ public interface DockerOperations {
 
     void resumeNode(ContainerName containerName);
 
-    void restartServicesOnNode(ContainerName containerName);
+    void restartVespaOnNode(ContainerName containerName);
 
     void stopServicesOnNode(ContainerName containerName);
 
