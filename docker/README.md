@@ -12,8 +12,9 @@ Execute ```./build-vespa.sh <Vespa version number>``` to build Vespa from this s
 The produced rpms will be available in this folder after compiliation.
 
 ### Troubleshooting
-If the build fails, start from scratch: ```docker rmi -f vesparun vespabuild``` - then build again
-
+If the build fails, start from scratch: ```docker rmi -f vesparun vespabuild``` - then build again. Clean local docker if docker image disk full:
+- ```docker rm -v $(docker ps -a -q -f status=exited)```
+- ```docker rmi $(docker images -f "dangling=true" -q)```
 
 ## Running Vespa
 Execute ```./run-vespa.sh <Vespa version number>``` to start Vespa.
