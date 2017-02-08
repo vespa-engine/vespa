@@ -105,7 +105,7 @@ Resume() {
 # Start all services, can be seen as a reboot of a non-Docker node
 Start() {
     # Make sure there are no pid files left behind from last time container was running
-    sudo rm -f /home/y/var/run/*pid
+    sudo rm -f $VESPA_HOME/var/run/*pid
 
     echo "Configuring rsyslog service to work"
     # Disable kernel log module
