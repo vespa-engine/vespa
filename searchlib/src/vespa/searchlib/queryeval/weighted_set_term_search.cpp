@@ -121,7 +121,11 @@ public:
         BitVector::UP result(BitVector::create(begin_id, getEndId()));
 
         for (size_t i = 0; i < _children.size(); ++i) {
-            for (uint32_t docId = _children.get_docid(i); ! isAtEnd(docId); docId = _children.next(i)) {
+            uint32_t docId = _children.get_docid(i);
+            if (begin_id > docId) {
+                _children.seek(i, begin_id);
+            }
+            for (docId = _children.get_docid(i); ! isAtEnd(docId); docId = _children.next(i)) {
                 result->setBit(docId);
             }
         }
