@@ -469,7 +469,7 @@ public class RestApiTest {
         assertResponse(request, 200, "{\"message\":\"Scheduled reboot of " + rebootCount + " matching nodes\"}");
     }
 
-    /** Replace @include(localFile) with the content of the file */
+    /** Replaces @include(localFile) with the content of the file */
     private String include(String response) throws IOException {
         // Please don't look at this code
         int includeIndex = response.indexOf("@include(");

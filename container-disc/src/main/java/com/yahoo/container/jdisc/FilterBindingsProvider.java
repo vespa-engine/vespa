@@ -21,15 +21,15 @@ import java.util.List;
  * @author bakksjo
  */
 public class FilterBindingsProvider implements Provider<FilterBindings> {
+
     final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
     final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
 
-    public FilterBindingsProvider(
-            final ComponentId componentId,
-            final ServerConfig config,
-            final FilterChainRepository filterChainRepository,
-            final ComponentRegistry<SecurityRequestFilter> legacyRequestFilters) {
-        final ComponentId serverId = componentId.getNamespace();
+    public FilterBindingsProvider(ComponentId componentId,
+                                  ServerConfig config,
+                                  FilterChainRepository filterChainRepository,
+                                  ComponentRegistry<SecurityRequestFilter> legacyRequestFilters) {
+        ComponentId serverId = componentId.getNamespace();
         try {
             FilterUtil.setupFilters(
                     componentId,
@@ -58,4 +58,5 @@ public class FilterBindingsProvider implements Provider<FilterBindings> {
 
     @Override
     public void deconstruct() {}
+
 }

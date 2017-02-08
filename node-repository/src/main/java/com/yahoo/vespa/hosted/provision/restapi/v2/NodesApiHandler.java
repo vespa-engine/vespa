@@ -67,13 +67,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 case PATCH: return handlePATCH(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
-        } catch (NotFoundException | com.yahoo.vespa.hosted.provision.NotFoundException e) {
+        } 
+        catch (NotFoundException | com.yahoo.vespa.hosted.provision.NotFoundException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
-        } catch (IllegalArgumentException e) {
+        } 
+        catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (RuntimeException e) {
-            e.printStackTrace();
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
@@ -88,7 +89,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, nodeRepository);
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
-        return ErrorResponse.notFoundError("Nothing at path '" + request.getUri().getPath() + "'");
+        return ErrorResponse.notFoundError("Nothing at path '" + path + "'");
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
@@ -114,7 +115,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else {
-            return ErrorResponse.notFoundError("Cannot put to path '" + request.getUri().getPath() + "'");
+            return ErrorResponse.notFoundError("Cannot put to path '" + path + "'");
         }
     }
 
@@ -171,11 +172,11 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     public int addNodes(InputStream jsonStream) {
-        List<Node> nodes = createNodesFromSlime(getSlimeFromInputStream(jsonStream).get());
+        List<Node> nodes = createNodesFromSlime(toSlime(jsonStream).get());
         return nodeRepository.addNodes(nodes).size();
     }
 
-    private static Slime getSlimeFromInputStream(InputStream jsonStream) {
+    private Slime toSlime(InputStream jsonStream) {
         try {
             byte[] jsonBytes = IOUtils.readBytes(jsonStream, 1000 * 1000);
             return SlimeUtils.jsonToSlime(jsonBytes);

@@ -14,11 +14,11 @@ import com.yahoo.document.serialization.DocumentUpdateReader;
 import com.yahoo.document.serialization.VespaDocumentSerializerHead;
 
 /**
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public abstract class FieldPathUpdate {
 
-    public static enum Type {
+    public enum Type {
         ASSIGN(0),
         REMOVE(1),
         ADD(2);

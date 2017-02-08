@@ -13,8 +13,8 @@ import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Simon Thoresen
+ * @author Einar M R Rosenvinge
  */
 public class HeadersTestCase {
 
