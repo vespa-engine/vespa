@@ -3,24 +3,14 @@
 #include <vespa/vespalib/websocket/websocket_server.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 #include <thread>
 #include <chrono>
 
 using namespace vespalib;
 
 vespalib::string read_file(const vespalib::string &file_name) {
-    vespalib::string ret;
-    struct stat info;
-    int fd = open(file_name.c_str(), O_RDONLY);
-    if (fd >= 0 && fstat(fd, &info) == 0) {
-        char *data = (char*)(mmap(0, info.st_size, PROT_READ, MAP_SHARED, fd, 0));
-        if (data != MAP_FAILED) {
-            ret = vespalib::string(data, info.st_size);
-        }
-        munmap(data, info.st_size);
-    }
-    close(fd);
-    return ret;
+    return MappedFileInput(file_name).get().make_string();
 }
 
 vespalib::string find_content_type(const vespalib::string &file_name) {
@@ -36,10 +26,9 @@ vespalib::string find_content_type(const vespalib::string &file_name) {
     return "text/plain";
 }
 
-int main(int argc, char **argv) {
+int main(int, char **) {
     ws::WebsocketServer::StaticRepo repo;
-    for (int i = 1; i < argc; ++i) {
-        vespalib::string file_name(argv[i]);
+    for (vespalib::string file_name: { "index.html", "test.html", "favicon.ico" }) {
         vespalib::string content = read_file(file_name);
         vespalib::string content_type = find_content_type(file_name);
         if (!content.empty()) {

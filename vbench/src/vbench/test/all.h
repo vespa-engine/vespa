@@ -23,7 +23,7 @@
 #include <vbench/core/taintable.h>
 #include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/memory.h>
-#include <vbench/core/mapped_file_input.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 #include <vbench/core/time_queue.h>
 #include <vespa/vespalib/data/output_writer.h>
 #include <vbench/core/socket.h>

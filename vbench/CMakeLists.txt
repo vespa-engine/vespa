@@ -30,7 +30,6 @@ vespa_define_module(
     src/tests/input_file_reader
     src/tests/latency_analyzer
     src/tests/line_reader
-    src/tests/mapped_file_input
     src/tests/qps_analyzer
     src/tests/qps_tagger
     src/tests/request_dumper
