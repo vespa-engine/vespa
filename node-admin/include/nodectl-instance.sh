@@ -104,9 +104,6 @@ Resume() {
 
 # Start all services, can be seen as a reboot of a non-Docker node
 Start() {
-    # Make sure there are no pid files left behind from last time container was running
-    sudo rm -f $VESPA_HOME/var/run/*pid
-
     echo "Configuring rsyslog service to work"
     # Disable kernel log module
     sed -i.bak 's/^\$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
@@ -117,7 +114,10 @@ Start() {
     service crond start
 
     echo "Starting all yinst packages"
-    yinst start
+    # Start yinst the way it is done when a non-Docker node is booted.
+    # As this is implemented in yinst now (2017-02-08), this will take care of
+    # cleaning up /home/y/tmp and /home/y/var/run
+    /etc/rc.d/init.d/yinst start
     echo "yinst started, exited with $?"
 }
 
