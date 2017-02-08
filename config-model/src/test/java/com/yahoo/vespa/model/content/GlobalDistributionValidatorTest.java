@@ -5,6 +5,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -12,10 +13,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonMap;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,9 +27,9 @@ public class GlobalDistributionValidatorTest {
 
     @Test
     public void throws_exception_if_redudancy_does_not_imply_global_distribution() {
-        Map<String, NewDocumentType> documentTypes = Stream.of("foo", "bar")
-                .collect(toMap(identity(), name -> new NewDocumentType(new NewDocumentType.Name(name))));
-        HashSet<NewDocumentType> globallyDistributedDocuments = new HashSet<>(documentTypes.values());
+        Fixture fixture = new Fixture()
+                .addGlobalDocument(createDocumentType("foo"))
+                .addGlobalDocument(createDocumentType("bar"));
         Redundancy redundancy = createRedundancyWithGlobalDistributionValue(false);
         when(redundancy.effectiveFinalRedundancy()).thenReturn(1);
         when(redundancy.totalNodes()).thenReturn(2);
@@ -42,19 +40,16 @@ public class GlobalDistributionValidatorTest {
                         "but do not have high enough redundancy to make the documents globally distributed: " +
                         "'bar', 'foo'. Redundancy is 1, expected 2.");
         new GlobalDistributionValidator()
-                .validate(documentTypes, globallyDistributedDocuments, redundancy);
+                .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
     @Test
     public void validation_succeeds_when_globally_distributed() {
+        Fixture fixture = new Fixture()
+                .addGlobalDocument(createDocumentType("foo"));
         Redundancy redundancy = createRedundancyWithGlobalDistributionValue(true);
-
-        NewDocumentType document = new NewDocumentType(new NewDocumentType.Name("foo"));
-        Map<String, NewDocumentType> documentTypes = singletonMap("foo", document);
-        Set<NewDocumentType> globallyDistributedDocuments = singleton(document);
-
         new GlobalDistributionValidator()
-                .validate(documentTypes, globallyDistributedDocuments, redundancy);
+                .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
     @Test
@@ -65,64 +60,90 @@ public class GlobalDistributionValidatorTest {
 
     @Test
     public void validation_succeeds_on_no_global_documents() {
-        NewDocumentType document = new NewDocumentType(new NewDocumentType.Name("foo"));
-        Map<String, NewDocumentType> documentTypes = singletonMap("foo", document);
+        Fixture fixture = new Fixture()
+                .addNonGlobalDocument(createDocumentType("foo"));
         Redundancy redundancy = createRedundancyWithGlobalDistributionValue(false);
-
         new GlobalDistributionValidator()
-                .validate(documentTypes, emptySet(), redundancy);
+                .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
     @Test
     public void throws_exception_if_referenced_document_not_global() {
-        NewDocumentType parentDocument = new NewDocumentType(new NewDocumentType.Name("parent"));
-        NewDocumentType childDocument = new NewDocumentType(
-                new NewDocumentType.Name("child"), singleton(parentDocument.getFullName()));
-
-        Map<String, NewDocumentType> documentTypes = Stream.of(parentDocument, childDocument)
-                .collect(toMap(doc -> doc.getFullName().toString(), identity()));
+        NewDocumentType parent = createDocumentType("parent");
+        Fixture fixture = new Fixture()
+                .addNonGlobalDocument(parent)
+                .addNonGlobalDocument(createDocumentType("child", parent));
         Redundancy redundancy = createRedundancyWithGlobalDistributionValue(false);
-
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "The following document types are referenced from other documents, but are not globally distributed: 'parent'");
         new GlobalDistributionValidator()
-                .validate(documentTypes, emptySet(), redundancy);
+                .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
     @Test
     public void validation_succeeds_if_referenced_document_is_global() {
-        NewDocumentType parentDocument = new NewDocumentType(new NewDocumentType.Name("parent"));
-        NewDocumentType childDocument = new NewDocumentType(
-                new NewDocumentType.Name("child"), singleton(parentDocument.getFullName()));
-
-        Map<String, NewDocumentType> documentTypes = Stream.of(parentDocument, childDocument)
-                .collect(toMap(doc -> doc.getFullName().toString(), identity()));
-        Set<NewDocumentType> globallyDistributedDocuments = singleton(parentDocument);
+        NewDocumentType parent = createDocumentType("parent");
+        Fixture fixture = new Fixture()
+                .addGlobalDocument(parent)
+                .addNonGlobalDocument(createDocumentType("child", parent));
         Redundancy redundancy = createRedundancyWithGlobalDistributionValue(true);
-
         new GlobalDistributionValidator()
-                .validate(documentTypes, globallyDistributedDocuments, redundancy);
+                .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
     @Test
     public void throws_exception_on_unknown_document() {
-        NewDocumentType childDocument = new NewDocumentType(
-                new NewDocumentType.Name("child"), singleton(new NewDocumentType.Name("unknown")));
-        Map<String, NewDocumentType> documentTypes = singletonMap(childDocument.getName(), childDocument);
+        NewDocumentType unknown = new NewDocumentType(new NewDocumentType.Name("unknown"));
+        NewDocumentType child = createDocumentType("child", unknown);
+        Fixture fixture = new Fixture()
+                .addNonGlobalDocument(child);
         Redundancy redundancy = createRedundancyWithGlobalDistributionValue(true);
-
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "The following document types are referenced from other documents, but are not listed in services.xml: 'unknown'");
         new GlobalDistributionValidator()
-                .validate(documentTypes, emptySet(), redundancy);
-
+                .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
     private static Redundancy createRedundancyWithGlobalDistributionValue(boolean isGloballyDistributed) {
         Redundancy redundancy = mock(Redundancy.class);
         when(redundancy.isEffectivelyGloballyDistributed()).thenReturn(isGloballyDistributed);
         return redundancy;
+    }
+
+    private static NewDocumentType createDocumentType(String name, NewDocumentType... references) {
+        Set<NewDocumentType.Name> documentReferences = Stream.of(references).map(NewDocumentType::getFullName).collect(toSet());
+        return new NewDocumentType(new NewDocumentType.Name(name), documentReferences);
+    }
+
+    private static class Fixture {
+        private final Map<String, NewDocumentType> documentTypes = new HashMap<>();
+        private final Set<NewDocumentType> globallyDistributedDocuments = new HashSet<>();
+
+        public Fixture addGlobalDocument(NewDocumentType documentType) {
+            addDocument(documentType, true);
+            return this;
+        }
+
+        public Fixture addNonGlobalDocument(NewDocumentType documentType) {
+            addDocument(documentType, false);
+            return this;
+        }
+
+        private void addDocument(NewDocumentType documentType, boolean isGlobal) {
+            if (isGlobal) {
+                globallyDistributedDocuments.add(documentType);
+            }
+            documentTypes.put(documentType.getName(), documentType);
+        }
+
+        public Map<String, NewDocumentType> getDocumentTypes() {
+            return documentTypes;
+        }
+
+        public Set<NewDocumentType> getGloballyDistributedDocuments() {
+            return globallyDistributedDocuments;
+        }
     }
 }
