@@ -2,5 +2,6 @@
 vespa_add_library(vespalib_vespalib_io OBJECT
     SOURCES
     fileutil.cpp
+    mapped_file_input.cpp
     DEPENDS
 )

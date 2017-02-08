@@ -40,7 +40,7 @@ UniqueStore<EntryT, RefT>::~UniqueStore()
 }
 
 template <typename EntryT, typename RefT>
-EntryRef
+typename UniqueStore<EntryT, RefT>::AddResult
 UniqueStore<EntryT, RefT>::add(const EntryType &value)
 {
     Compare comp(_store, value);
@@ -49,11 +49,13 @@ UniqueStore<EntryT, RefT>::add(const EntryType &value)
         uint32_t refCount = itr.getData();
         assert(refCount != std::numeric_limits<uint32_t>::max());
         itr.writeData(refCount + 1);
-        return itr.getKey();
+        RefType iRef(itr.getKey());
+        return AddResult(itr.getKey(), false);
+
     } else {
         EntryRef newRef = _store.template allocator<EntryType>(_typeId).alloc(value).ref;
         _dict.insert(itr, newRef, 1u);
-        return newRef;
+        return AddResult(newRef, true);
     }
 }
 

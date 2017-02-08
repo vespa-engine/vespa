@@ -10,9 +10,10 @@ import com.yahoo.processing.test.ProcessorLibrary;
 import static com.yahoo.application.container.docprocs.Rot13DocumentProcessor.rot13;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class Rot13Processor extends Processor {
+
     @Override
     public Response process(Request request, Execution execution) {
         Object fooObj = request.properties().get("title");
@@ -23,4 +24,5 @@ public class Rot13Processor extends Processor {
         }
         return response;
     }
+
 }

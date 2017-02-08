@@ -6,21 +6,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 
 using namespace vespalib;
 
 std::string readFile(const std::string &filename) {
     TEST_STATE(filename.c_str());
-    std::string ret;
-    struct stat info;
-    int fd = open(filename.c_str(), O_RDONLY);
-    ASSERT_TRUE(fd >= 0 && fstat(fd, &info) == 0);
-    char *data = (char*)(mmap(0, info.st_size, PROT_READ, MAP_SHARED, fd, 0));
-    ASSERT_NOT_EQUAL(data, MAP_FAILED);
-    ret = std::string(data, info.st_size);
-    munmap(data, info.st_size);
-    close(fd);
-    return ret;
+    MappedFileInput file(filename);
+    ASSERT_TRUE(file.valid());
+    Memory data = file.get();
+    return std::string(data.data, data.size);
 }
 
 std::string runCommand(const std::string &cmd) {

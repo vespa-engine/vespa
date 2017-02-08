@@ -7,11 +7,13 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 
 /**
-* @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+* @author Einar M R Rosenvinge
 */
 public class EchoRequestHandler extends AbstractRequestHandler {
+
     @Override
     public ContentChannel handleRequest(com.yahoo.jdisc.Request request, ResponseHandler handler) {
         return handler.handleResponse(new com.yahoo.jdisc.Response(Response.Status.OK));
     }
+
 }

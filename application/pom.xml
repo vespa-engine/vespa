@@ -71,7 +71,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.container.container-test-jars</groupId>
+      <groupId>com.yahoo.vespa.container-test-jars</groupId>
       <artifactId>jersey-resources</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -169,7 +169,7 @@
             <configuration>
               <artifactItems>
                 <artifactItem>
-                  <groupId>com.yahoo.container.container-test-jars</groupId>
+                  <groupId>com.yahoo.vespa.container-test-jars</groupId>
                   <artifactId>jersey-resources</artifactId>
                   <version>${project.version}</version>
                   <type>jar</type>

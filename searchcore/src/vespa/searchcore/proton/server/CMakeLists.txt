@@ -58,7 +58,6 @@ vespa_add_library(searchcore_server STATIC
     maintenancecontroller.cpp
     maintenancejobrunner.cpp
     matchers.cpp
-    matchhandlerproxy.cpp
     matchview.cpp
     memoryconfigstore.cpp
     memory_flush_config_updater.cpp

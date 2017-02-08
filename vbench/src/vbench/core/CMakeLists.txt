@@ -7,7 +7,6 @@ vespa_add_library(vbench_core OBJECT
     handler_thread.cpp
     input_file_reader.cpp
     line_reader.cpp
-    mapped_file_input.cpp
     provider.cpp
     socket.cpp
     stream.cpp
