@@ -22,7 +22,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
+      <groupId>com.yahoo.vespa.container-test-jars</groupId>
       <artifactId>jersey-resources</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
