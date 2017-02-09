@@ -4,7 +4,6 @@
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
 #include "flushhandlerproxy.h"
-#include "matchhandlerproxy.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
 #include "persistenceproviderproxy.h"

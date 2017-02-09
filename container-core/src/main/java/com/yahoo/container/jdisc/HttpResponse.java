@@ -14,8 +14,7 @@ import java.util.Collections;
  * An HTTP response as an opaque payload with headers and content type.
  *
  * @author hmusum
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1
+ * @author Steinar Knutsen
  */
 public abstract class HttpResponse {
 
@@ -43,7 +42,7 @@ public abstract class HttpResponse {
     }
 
     /**
-     * Marshal this response to the network layer.
+     * Marshal this response to the network layer. The caller is responsible for flushing and closing outputStream.
      */
     public abstract void render(OutputStream outputStream) throws IOException;
 

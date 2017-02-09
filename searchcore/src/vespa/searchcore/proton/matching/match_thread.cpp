@@ -9,8 +9,9 @@
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/log/log.h>
+#include <vespa/searchlib/common/bitvector.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
 
 namespace proton {
@@ -18,7 +19,6 @@ namespace matching {
 
 using search::queryeval::OptimizedAndNotForBlackListing;
 using search::queryeval::SearchIterator;
-using search::fef::TermFieldHandle;
 using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::fef::FeatureResolver;

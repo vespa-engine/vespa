@@ -40,7 +40,7 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer42 {
             for (int i = 0; i < size; i++) {
                 int type = getByte(null);
                 update.addFieldPathUpdate(FieldPathUpdate.create(FieldPathUpdate.Type.valueOf(type),
-                        update.getDocumentType(), this));
+                                          update.getDocumentType(), this));
             }
         } catch (ParseException e) {
             throw new DeserializationException(e);

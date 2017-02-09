@@ -5,10 +5,67 @@
 #include "attributeiterators.h"
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/objects/visit.h>
 
 namespace search {
+
+template <typename SC>
+void
+AttributeIteratorBase::and_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
+    result.foreach_truebit([&](uint32_t key) { if ( ! sc.cmp(key)) { result.clearBit(key); }}, begin_id);
+}
+
+template <typename PL>
+AttributePostingListIteratorT<PL>::
+AttributePostingListIteratorT(PL &iterator, bool hasWeight, fef::TermFieldMatchData *matchData)
+    : AttributePostingListIterator(hasWeight, matchData),
+      _iterator(),
+      _postingInfo(1, 1),
+      _postingInfoValid(false)
+{
+    _iterator.swap(iterator);
+    setupPostingInfo();
+}
+
+template <typename PL>
+void AttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) {
+    AttributePostingListIterator::initRange(begin, end);
+    _iterator.lower_bound(begin);
+    if (!_iterator.valid() || isAtEnd(_iterator.getKey())) {
+        setAtEnd();
+    } else {
+        setDocId(_iterator.getKey());
+    }
+}
+
+
+template <typename PL>
+FilterAttributePostingListIteratorT<PL>::
+FilterAttributePostingListIteratorT(PL &iterator, fef::TermFieldMatchData *matchData)
+    : FilterAttributePostingListIterator(matchData),
+      _iterator(),
+      _postingInfo(1, 1),
+      _postingInfoValid(false)
+{
+    _iterator.swap(iterator);
+    setupPostingInfo();
+    _matchPosition->setElementWeight(1);
+}
+
+template <typename PL>
+void  FilterAttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) {
+    FilterAttributePostingListIterator::initRange(begin, end);
+    _iterator.lower_bound(begin);
+    if (!_iterator.valid() || isAtEnd(_iterator.getKey())) {
+        setAtEnd();
+    } else {
+        setDocId(_iterator.getKey());
+    }
+}
 
 template <typename PL>
 void
@@ -20,6 +77,26 @@ AttributePostingListIteratorT<PL>::doSeek(uint32_t docId)
     } else {
         setAtEnd();
     }
+}
+
+template <typename PL>
+std::unique_ptr<BitVector>
+AttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
+    BitVector::UP result(BitVector::create(begin_id, getEndId()));
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+        result->setBit(_iterator.getKey());
+    }
+    return result;
+}
+
+template <typename PL>
+std::unique_ptr<BitVector>
+FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
+    BitVector::UP result(BitVector::create(begin_id, getEndId()));
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+        result->setBit(_iterator.getKey());
+    }
+    return result;
 }
 
 template <typename PL>
@@ -134,5 +211,65 @@ FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
     }
 }
 
+template <typename SC>
+void
+AttributeIteratorT<SC>::doSeek(uint32_t docId)
+{
+    if (__builtin_expect(docId >= _docIdLimit, false)) {
+        setAtEnd();
+    } else if (_searchContext.cmp(docId, _weight)) {
+        setDocId(docId);
+    }
+}
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::doSeek(uint32_t docId)
+{
+    if (__builtin_expect(docId >= _docIdLimit, false)) {
+        setAtEnd();
+    } else if (_searchContext.cmp(docId)) {
+        setDocId(docId);
+    }
+}
+
+template <typename SC>
+void
+AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
+{
+    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
+        if (_searchContext.cmp(nextId, _weight)) {
+            setDocId(nextId);
+            return;
+        }
+    }
+    setAtEnd();
+}
+
+template <typename SC>
+void
+FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
+{
+    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
+        if (_searchContext.cmp(nextId)) {
+            setDocId(nextId);
+            return;
+        }
+    }
+    setAtEnd();
+}
+
+template <typename SC>
+void
+AttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
+}
+
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
+}
 
 } // namespace search

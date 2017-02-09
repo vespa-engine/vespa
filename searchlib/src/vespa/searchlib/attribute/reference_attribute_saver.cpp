@@ -43,7 +43,7 @@ public:
     {
     }
     void operator()(EntryRef ref) {
-        const GlobalId &gid = _store.get(ref);
+        const GlobalId &gid = _store.get(ref).gid();
         _writer.write(&gid, sizeof(GlobalId));;
     }
 };

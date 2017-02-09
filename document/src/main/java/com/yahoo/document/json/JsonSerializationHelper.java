@@ -21,6 +21,7 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.json.readers.TensorReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -33,6 +34,9 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import static com.yahoo.document.json.readers.MapReader.MAP_KEY;
+import static com.yahoo.document.json.readers.MapReader.MAP_VALUE;
 
 /**
  * @author Steinar Knutsen
@@ -78,7 +82,7 @@ public class JsonSerializationHelper {
     }
 
     private static void serializeTensorDimensions(JsonGenerator generator, Set<String> dimensions) throws IOException {
-        generator.writeArrayFieldStart(JsonReader.TENSOR_DIMENSIONS);
+        generator.writeArrayFieldStart(TensorReader.TENSOR_DIMENSIONS);
         for (String dimension : dimensions) {
             generator.writeString(dimension);
         }
@@ -87,11 +91,11 @@ public class JsonSerializationHelper {
     }
 
     private static void serializeTensorCells(JsonGenerator generator, Tensor tensor) throws IOException {
-        generator.writeArrayFieldStart(JsonReader.TENSOR_CELLS);
+        generator.writeArrayFieldStart(TensorReader.TENSOR_CELLS);
         for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
             generator.writeStartObject();
             serializeTensorAddress(generator, cell.getKey(), tensor.type());
-            generator.writeNumberField(JsonReader.TENSOR_VALUE, cell.getValue());
+            generator.writeNumberField(TensorReader.TENSOR_VALUE, cell.getValue());
             generator.writeEndObject();
         }
 
@@ -99,7 +103,7 @@ public class JsonSerializationHelper {
     }
 
     private static void serializeTensorAddress(JsonGenerator generator, TensorAddress address, TensorType type) throws IOException {
-        generator.writeObjectFieldStart(JsonReader.TENSOR_ADDRESS);
+        generator.writeObjectFieldStart(TensorReader.TENSOR_ADDRESS);
         for (int i = 0; i < type.dimensions().size(); i++)
             generator.writeStringField(type.dimensions().get(i).name(), address.label(i));
 
@@ -186,9 +190,9 @@ public class JsonSerializationHelper {
 
             for (Map.Entry<K, V> entry : map.entrySet()) {
                 generator.writeStartObject();
-                generator.writeFieldName(JsonReader.MAP_KEY);
+                generator.writeFieldName(MAP_KEY);
                 entry.getKey().serialize(null, fieldWriter);
-                generator.writeFieldName(JsonReader.MAP_VALUE);
+                generator.writeFieldName(MAP_VALUE);
                 entry.getValue().serialize(null, fieldWriter);
                 generator.writeEndObject();
             }

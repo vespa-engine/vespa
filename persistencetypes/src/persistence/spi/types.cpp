@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "types.h"
+
 #include <vespa/vespalib/objects/nbostream.h>
 
-namespace storage
-{
+namespace storage {
 
-namespace spi
-{
+namespace spi {
 
 DEFINE_PRIMITIVE_WRAPPER_NBOSTREAM(NodeIndex);
 DEFINE_PRIMITIVE_WRAPPER_NBOSTREAM(PartitionId);

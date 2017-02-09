@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/common/packets.h>
 #include "docsumformat.h"
 #include "summaryfeaturesdfw.h"
 #include "docsumstate.h"
+#include <vespa/searchlib/common/featureset.h>
+#include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <cmath>
 

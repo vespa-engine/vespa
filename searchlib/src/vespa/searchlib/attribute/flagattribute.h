@@ -2,8 +2,6 @@
 #pragma once
 
 #include "multinumericattribute.h"
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/common/rcuvector.h>
 
 namespace search {
 
@@ -20,7 +18,7 @@ private:
     class SearchContext : public BaseSC {
     public:
         typedef FlagAttributeT<B> Attribute;
-        SearchContext(QueryTermSimple::UP qTerm, const FlagAttributeT<B> & toBeSearched);
+        SearchContext(std::unique_ptr<QueryTermSimple> qTerm, const FlagAttributeT<B> & toBeSearched);
 
         std::unique_ptr<queryeval::SearchIterator>
         createIterator(fef::TermFieldMatchData * matchData, bool strict) override;
@@ -34,7 +32,7 @@ private:
     bool onLoad() override;
     bool onLoadEnumerated(ReaderBase &attrReader) override;
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(std::unique_ptr<QueryTermSimple> term, const AttributeVector::SearchContext::Params & params) const override;
     void clearOldValues(DocId doc) override;
     void setNewValues(DocId doc, const std::vector<typename B::WType> & values) override;
 

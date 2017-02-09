@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "proxycmd.h"
 #include <iostream>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 ProxyCmd::ProxyCmd(const Flags& flags)
     : _supervisor(NULL),
@@ -46,7 +46,7 @@ void ProxyCmd::printArray(FRT_Values *rvals) {
 }
 
 vespalib::string ProxyCmd::makeSpec() {
-    return vespalib::make_vespa_string("tcp/%s:%d", _flags.hostname.c_str(), _flags.portnumber);
+    return vespalib::make_string("tcp/%s:%d", _flags.hostname.c_str(), _flags.portnumber);
 }
 
 void ProxyCmd::autoPrint() {

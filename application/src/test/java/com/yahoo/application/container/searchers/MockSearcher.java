@@ -13,10 +13,12 @@ import com.yahoo.search.searchchain.Execution;
  * @author Christian Andersen
  */
 public class MockSearcher extends Searcher {
+
     @Override
     public Result search(Query query, Execution execution) {
         HitGroup hits = new HitGroup();
         hits.add(new Hit("foo", query));
         return new Result(query, hits);
     }
+
 }

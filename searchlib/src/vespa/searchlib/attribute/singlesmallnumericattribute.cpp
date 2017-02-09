@@ -3,6 +3,8 @@
 #include "singlesmallnumericattribute.h"
 #include "attributevector.hpp"
 #include "primitivereader.h"
+#include "attributeiterators.hpp"
+#include <vespa/searchlib/queryeval/emptysearch.h>
 
 namespace search {
 
@@ -165,7 +167,7 @@ SingleValueSmallNumericAttribute::onSave(IAttributeSaveTarget &saveTarget)
 
 
 AttributeVector::SearchContext::UP
-SingleValueSmallNumericAttribute::getSearch(QueryTermSimple::UP qTerm,
+SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTerm,
                                             const SearchContext::Params & params) const
 {
     (void) params;
@@ -211,7 +213,7 @@ SingleValueSmallNumericAttribute::getEstimatedSaveByteSize() const
 bool SingleValueSmallNumericAttribute::SingleSearchContext::valid() const { return this->isValid(); }
 
 
-SingleValueSmallNumericAttribute::SingleSearchContext::SingleSearchContext(QueryTermSimple::UP qTerm,
+SingleValueSmallNumericAttribute::SingleSearchContext::SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm,
                                                                            const NumericAttribute & toBeSearched)
     : NumericAttribute::Range<T>(*qTerm),
       SearchContext(toBeSearched), _wordData(&static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._wordData[0]),

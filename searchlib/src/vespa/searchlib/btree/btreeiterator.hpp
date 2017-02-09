@@ -4,6 +4,7 @@
 
 #include "btreeiterator.h"
 #include "btreeaggregator.h"
+#include "btreenode.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace search {

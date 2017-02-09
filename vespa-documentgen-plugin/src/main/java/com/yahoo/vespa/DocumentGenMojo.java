@@ -330,7 +330,8 @@ public class DocumentGenMojo extends AbstractMojo {
             out.write("}\n");
             annotationTypes.put(annType.getName(), packageName+".annotation."+className);
         } catch (IOException e) {
-            throw new RuntimeException("Could not export sources for annotation type '"+annType.getName()+"'", e);        }
+            throw new RuntimeException("Could not export sources for annotation type '"+annType.getName()+"'", e);
+        }
     }
 
     /**
@@ -837,6 +838,9 @@ public class DocumentGenMojo extends AbstractMojo {
         if (dt instanceof ArrayDataType) return "java.util.List<"+toJavaType(((ArrayDataType)dt).getNestedType())+">";
         if (dt instanceof MapDataType) return "java.util.Map<"+toJavaType(((MapDataType)dt).getKeyType())+","+toJavaType(((MapDataType)dt).getValueType())+">";
         if (dt instanceof AnnotationReferenceDataType) return className(((AnnotationReferenceDataType) dt).getAnnotationType().getName());
+        if (dt instanceof ReferenceDataType) {
+            return "com.yahoo.document.DocumentId";
+        }
         return "byte[]";
     }
 
@@ -862,6 +866,11 @@ public class DocumentGenMojo extends AbstractMojo {
         // For annotation references and generated types, the references are to the actual objects of the correct types, so most likely this is never needed,
         // but there might be scenarios where we want to look up the AnnotationType in the AnnotationTypeRegistry here instead.
         if (dt instanceof AnnotationReferenceDataType) return "new com.yahoo.document.annotation.AnnotationReferenceDataType(new com.yahoo.document.annotation.AnnotationType(\""+((AnnotationReferenceDataType)dt).getAnnotationType().getName()+"\"))";
+        if (dt instanceof ReferenceDataType) {
+            // All concrete document types have a public `type` constant with their DocumentType.
+            return String.format("new com.yahoo.document.ReferenceDataType(%s.type, %d)",
+                    className(((ReferenceDataType) dt).getTargetType().getName()), dt.getId());
+        }
         return "DataType.RAW";
     }
 

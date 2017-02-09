@@ -65,18 +65,38 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    public void properties_are_set_from_xml() throws Exception {
+        Element clusterElem = DomBuilderTest.parse(
+                "  <http>",
+                "    <filtering>",
+                "      <access-control domain='my-domain'>",
+                "        <application>my-app</application>",
+                "        <vespa-domain>custom-vespa-domain</vespa-domain>",
+                "      </access-control>",
+                "    </filtering>",
+                "  </http>");
+
+        Http http = new HttpBuilder().build(root, clusterElem);
+        root.freezeModelTopology();
+        AccessControl accessControl = http.getAccessControl().get();
+
+        assertEquals("Wrong domain.", "my-domain", accessControl.domain);
+        assertEquals("Wrong application.", "my-app", accessControl.applicationId);
+        assertEquals("Wrong vespa-domain.", "custom-vespa-domain", accessControl.vespaDomain.get());
+    }
+
+    @Test
     public void read_is_disabled_and_write_is_enabled_by_default() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
                 "  <http>",
                 "    <filtering>",
-                "      <access-control domain='my-domain' />",
+                "      <access-control domain='foo' />",
                 "    </filtering>",
                 "  </http>");
 
         Http http = new HttpBuilder().build(root, clusterElem);
         root.freezeModelTopology();
 
-        assertEquals("Wrong domain.", "my-domain", http.getAccessControl().get().domain);
         assertFalse("Wrong default value for read.", http.getAccessControl().get().readEnabled);
         assertTrue("Wrong default value for write.", http.getAccessControl().get().writeEnabled);
     }

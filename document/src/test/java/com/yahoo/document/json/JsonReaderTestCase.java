@@ -30,6 +30,8 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.json.document.DocumentParser;
+import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate.Operator;
@@ -52,6 +54,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.internal.matchers.Contains;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -63,6 +66,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import static com.yahoo.document.json.readers.SingleValueReader.*;
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -170,7 +174,7 @@ public class JsonReaderTestCase {
                         + " \"fields\": { \"something\": \"smoketest\","
                         + " \"nalle\": \"bamse\"}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentPut put = (DocumentPut) r.readSingleDocument(JsonReader.SupportedOperation.PUT, "id:unittest:smoke::whee");
+        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentParser.SupportedOperation.PUT, "id:unittest:smoke::whee");
         smokeTestDoc(put.getDocument());
     }
 
@@ -181,7 +185,7 @@ public class JsonReaderTestCase {
                         + " \"fields\": { \"something\": {"
                         + " \"assign\": \"orOther\" }}" + " }"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(JsonReader.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof AssignValueUpdate);
@@ -194,7 +198,7 @@ public class JsonReaderTestCase {
                         + " \"fields\": { \"int1\": {"
                         + " \"assign\": null }}" + " }"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(JsonReader.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("int1");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof ClearValueUpdate);
@@ -203,21 +207,21 @@ public class JsonReaderTestCase {
 
 
     @Test
-    public final void smokeTest() {
+    public final void smokeTest() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"something\": \"smoketest\","
                         + " \"nalle\": \"bamse\"}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         smokeTestDoc(put.getDocument());
     }
 
     @Test
-    public final void docIdLookaheadTest() {
+    public final void docIdLookaheadTest() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{"
                         + " \"fields\": { \"something\": \"smoketest\","
@@ -225,29 +229,29 @@ public class JsonReaderTestCase {
                         + "\"put\": \"id:unittest:smoke::whee\""
                         + "}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         smokeTestDoc(put.getDocument());
     }
 
 
     @Test
-    public final void emptyDocTest() {
+    public final void emptyDocTest() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:smoke::whee\","
                         + " \"fields\": {}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         assertEquals("id:unittest:smoke::whee", parseInfo.documentId.toString());
     }
 
     @Test
-    public final void testStruct() {
+    public final void testStruct() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:mirrors::whee\","
                         + " \"fields\": { "
@@ -255,10 +259,10 @@ public class JsonReaderTestCase {
                         + "\"sandra\": \"person\","
                         + " \"cloud\": \"another person\"}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("skuggsjaa"));
         assertSame(Struct.class, f.getClass());
@@ -267,7 +271,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testUpdateArray() {
+    public final void testUpdateArray() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { " + "\"actualarray\": {"
@@ -275,15 +279,15 @@ public class JsonReaderTestCase {
                         + " \"person\","
                         + " \"another person\"]}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(doc);
+        r.readUpdate(parseInfo.fieldsBuffer, doc);
         checkSimpleArrayAdd(doc);
     }
 
     @Test
-    public final void testUpdateWeighted() {
+    public final void testUpdateWeighted() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
@@ -291,10 +295,10 @@ public class JsonReaderTestCase {
                         + " \"person\": 37,"
                         + " \"another person\": 41}}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(doc);
+        r.readUpdate(parseInfo.fieldsBuffer, doc);
         Map<String, Integer> weights = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
         for (ValueUpdate<?> v : x.getValueUpdates()) {
@@ -312,7 +316,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testUpdateMatch() {
+    public final void testUpdateMatch() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
@@ -320,11 +324,11 @@ public class JsonReaderTestCase {
                         + " \"element\": \"person\","
                         + " \"increment\": 13}}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
 
-        r.readUpdate(doc);
+        r.readUpdate(parseInfo.fieldsBuffer, doc);
         Map<String, Tuple2<Number, String>> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
         for (ValueUpdate<?> v : x.getValueUpdates()) {
@@ -344,15 +348,15 @@ public class JsonReaderTestCase {
 
     @SuppressWarnings({ "cast", "unchecked", "rawtypes" })
     @Test
-    public final void testArithmeticOperators() {
+    public final void testArithmeticOperators() throws IOException {
         Tuple2[] operations = new Tuple2[] {
-                new Tuple2<String, Operator>(JsonReader.UPDATE_DECREMENT,
+                new Tuple2<String, Operator>(UPDATE_DECREMENT,
                         ArithmeticValueUpdate.Operator.SUB),
-                new Tuple2<String, Operator>(JsonReader.UPDATE_DIVIDE,
+                new Tuple2<String, Operator>(UPDATE_DIVIDE,
                         ArithmeticValueUpdate.Operator.DIV),
-                new Tuple2<String, Operator>(JsonReader.UPDATE_INCREMENT,
+                new Tuple2<String, Operator>(UPDATE_INCREMENT,
                         ArithmeticValueUpdate.Operator.ADD),
-                new Tuple2<String, Operator>(JsonReader.UPDATE_MULTIPLY,
+                new Tuple2<String, Operator>(UPDATE_MULTIPLY,
                         ArithmeticValueUpdate.Operator.MUL) };
         for (Tuple2<String, Operator> operator : operations) {
             InputStream rawDoc = new ByteArrayInputStream(
@@ -362,11 +366,11 @@ public class JsonReaderTestCase {
                             + " \"" + (String) operator.first + "\": 13}}}}"));
 
             JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-            JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+            DocumentParseInfo parseInfo = r.parseDocument().get();
             DocumentType docType = r.readDocumentType(parseInfo.documentId);
             DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
 
-            r.readUpdate(doc);
+            r.readUpdate(parseInfo.fieldsBuffer, doc);
             Map<String, Tuple2<Number, Operator>> matches = new HashMap<>();
             FieldUpdate x = doc.getFieldUpdate("actualset");
             for (ValueUpdate v : x.getValueUpdates()) {
@@ -388,7 +392,7 @@ public class JsonReaderTestCase {
 
     @SuppressWarnings("rawtypes")
     @Test
-    public final void testArrayIndexing() {
+    public final void testArrayIndexing() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { " + "\"actualarray\": {"
@@ -396,11 +400,11 @@ public class JsonReaderTestCase {
                         + " \"element\": 3,"
                         + " \"assign\": \"nalle\"}}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
 
-        r.readUpdate(doc);
+        r.readUpdate(parseInfo.fieldsBuffer, doc);
         Map<Number, String> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualarray");
         for (ValueUpdate v : x.getValueUpdates()) {
@@ -427,17 +431,17 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testWeightedSet() {
+    public final void testWeightedSet() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testset::whee\","
                         + " \"fields\": { \"actualset\": {"
                         + " \"nalle\": 2,"
                         + " \"tralle\": 7 }}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualset"));
         assertSame(WeightedSet.class, f.getClass());
@@ -448,17 +452,17 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testArray() {
+    public final void testArray() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { \"actualarray\": ["
                         + " \"nalle\","
                         + " \"tralle\"]}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualarray"));
         assertSame(Array.class, f.getClass());
@@ -469,17 +473,17 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testMap() {
+    public final void testMap() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testmap::whee\","
                         + " \"fields\": { \"actualmap\": ["
                         + " { \"key\": \"nalle\", \"value\": \"kalle\"},"
                         + " { \"key\": \"tralle\", \"value\": \"skalle\"} ]}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualmap"));
         assertSame(MapFieldValue.class, f.getClass());
@@ -490,15 +494,15 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testPositionPositive() {
+    public final void testPositionPositive() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testsinglepos::bamf\","
                         + " \"fields\": { \"singlepos\": \"N63.429722;E10.393333\" }}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
@@ -507,15 +511,15 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testPositionNegative() {
+    public final void testPositionNegative() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testsinglepos::bamf\","
                         + " \"fields\": { \"singlepos\": \"W46.63;S23.55\" }}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
@@ -524,7 +528,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testRaw() {
+    public final void testRaw() throws IOException {
         String stuff = new String(new JsonStringEncoder().quoteAsString(new Base64().encodeToString(Utf8.toBytes("smoketest"))));
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testraw::whee\","
@@ -533,10 +537,10 @@ public class JsonReaderTestCase {
                         + "\""
                         + " }}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualraw"));
         assertSame(Raw.class, f.getClass());
@@ -546,17 +550,17 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testMapStringToArrayOfInt() {
+    public final void testMapStringToArrayOfInt() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": ["
                         + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }"
                         + "]}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue("actualMapStringToArrayOfInt");
         assertSame(MapFieldValue.class, f.getClass());
@@ -569,16 +573,16 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testAssignToString() {
+    public final void testAssignToString() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"something\": {"
                         + " \"assign\": \"orOther\" }}" + " }"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(doc);
+        r.readUpdate(parseInfo.fieldsBuffer, doc);
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         AssignValueUpdate a = (AssignValueUpdate) f.getValueUpdate(0);
@@ -586,7 +590,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testAssignToArray() {
+    public final void testAssignToArray() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": {"
@@ -594,10 +598,10 @@ public class JsonReaderTestCase {
                         + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }"
                         + "]}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(doc);
+        r.readUpdate(parseInfo.fieldsBuffer, doc);
         FieldUpdate f = doc.getFieldUpdate("actualMapStringToArrayOfInt");
         assertEquals(1, f.size());
         AssignValueUpdate assign = (AssignValueUpdate) f.getValueUpdate(0);
@@ -610,7 +614,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testAssignToWeightedSet() {
+    public final void testAssignToWeightedSet() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
@@ -618,10 +622,10 @@ public class JsonReaderTestCase {
                         + " \"person\": 37,"
                         + " \"another person\": 41}}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(doc);
+        r.readUpdate(parseInfo.fieldsBuffer, doc);
         FieldUpdate x = doc.getFieldUpdate("actualset");
         assertEquals(1, x.size());
         AssignValueUpdate assign = (AssignValueUpdate) x.getValueUpdate(0);
@@ -813,18 +817,18 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void misspelledFieldTest() {
+    public final void misspelledFieldTest()  throws IOException{
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"smething\": \"smoketest\","
                         + " \"nalle\": \"bamse\"}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
         exception.expect(NullPointerException.class);
         exception.expectMessage("Could not get field \"smething\" in the structure of type \"smoke\".");
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
     }
 
     @Test
@@ -842,16 +846,16 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void idAsAliasForPutTest() {
+    public final void idAsAliasForPutTest()  throws IOException{
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"id\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"something\": \"smoketest\","
                         + " \"nalle\": \"bamse\"}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(put);
+        r.readPut(parseInfo.fieldsBuffer, put);
         smokeTestDoc(put.getDocument());
     }
 

@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * A HTTP response.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class HttpResponse extends Response implements ServletOrJdiscHttpResponse {
 
@@ -27,7 +27,6 @@ public class HttpResponse extends Response implements ServletOrJdiscHttpResponse
     private String message;
 
     public interface Status extends Response.Status {
-
         int REQUEST_ENTITY_TOO_LARGE = REQUEST_TOO_LONG;
         int REQUEST_RANGE_NOT_SATISFIABLE = REQUESTED_RANGE_NOT_SATISFIABLE;
     }

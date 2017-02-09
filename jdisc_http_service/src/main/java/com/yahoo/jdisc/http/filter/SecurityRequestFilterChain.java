@@ -17,11 +17,10 @@ import java.util.List;
  * Implementation of TypedFilterChain for DiscFilterRequest
  *
  * @author tejalk
- *
  */
 public final class SecurityRequestFilterChain extends AbstractResource implements RequestFilter {
 
-    private final List<SecurityRequestFilter> filters = new ArrayList<SecurityRequestFilter>();
+    private final List<SecurityRequestFilter> filters = new ArrayList<>();
 
     private SecurityRequestFilterChain(Iterable<? extends SecurityRequestFilter> filters) {
         for (SecurityRequestFilter filter : filters) {

@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchsummary/docsummary/urlresult.h>
-#include <vespa/searchsummary/docsummary/resultconfig.h>
+#include "urlresult.h"
+#include "resultconfig.h"
 #include <zlib.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.urlresult");
 
 namespace search {
@@ -17,12 +14,10 @@ urlresult::urlresult(uint32_t partition, uint32_t docid, HitRank metric)
     : _partition(partition),
       _docid(docid),
       _metric(metric)
-{}
+{ }
 
 
-urlresult::~urlresult()
-{
-}
+urlresult::~urlresult() { }
 
 
 /*===============================================================*/
@@ -30,16 +25,15 @@ urlresult::~urlresult()
 
 badurlresult::badurlresult()
     : urlresult(0, 0, 0)
-{}
+{ }
 
 
 badurlresult::badurlresult(uint32_t partition, uint32_t docid, HitRank metric)
     : urlresult(partition, docid, metric)
-{}
+{ }
 
 
-badurlresult::~badurlresult()
-{}
+badurlresult::~badurlresult() { }
 
 
 int

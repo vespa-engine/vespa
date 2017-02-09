@@ -20,18 +20,17 @@ private:
     bool _isWord;
     document::GlobalId _gid;
 
-    virtual unsigned int approximateHits() const;
-    virtual bool onCmp(DocId docId, int32_t &weight) const;
-    virtual bool onCmp(DocId docId) const;
+    unsigned int approximateHits() const override;
+    bool onCmp(DocId docId, int32_t &weight) const override;
+    bool onCmp(DocId docId) const override;
 
-    virtual search::queryeval::SearchIterator::UP
-    createIterator(search::fef::TermFieldMatchData *matchData,
-                   bool strict);
+    search::queryeval::SearchIterator::UP
+    createIterator(search::fef::TermFieldMatchData *matchData, bool strict) override;
 
     const DocumentMetaStore &getStore() const;
 
 public:
-    SearchContext(search::QueryTermSimple::UP qTerm,
+    SearchContext(std::unique_ptr<search::QueryTermSimple> qTerm,
                   const DocumentMetaStore &toBeSearched);
 };
 

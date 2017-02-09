@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -13,11 +14,10 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,6 +38,8 @@ public class CuratorDatabaseClient {
     private static final Logger log = Logger.getLogger(CuratorDatabaseClient.class.getName());
 
     private static final Path root = Path.fromString("/provision/v1");
+
+    private static final Duration defaultLockTimeout = Duration.ofMinutes(1);
 
     private final NodeSerializer nodeSerializer;
 
@@ -262,17 +264,21 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
     public CuratorMutex lockInactive() {
-        return lock(root.append("locks").append("unallocatedLock"));
+        return lock(root.append("locks").append("unallocatedLock"), defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
     public CuratorMutex lock(ApplicationId application) {
-        return lock(lockPath(application));
+        return lock(lockPath(application), defaultLockTimeout);
     }
 
-    /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
-    public CuratorMutex lock(Path path) {
-        return curatorDatabase.lock(path);
+    /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
+    public CuratorMutex lock(ApplicationId application, Duration timeout) {
+        return lock(lockPath(application), timeout);
+    }
+
+    private CuratorMutex lock(Path path, Duration timeout) {
+        return curatorDatabase.lock(path, timeout);
     }
 
 }

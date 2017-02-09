@@ -3,8 +3,6 @@
 #pragma once
 
 #include "multienumattribute.h"
-#include "attributeiterators.h"
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include "numericbase.h"
 #include "primitivereader.h"
 

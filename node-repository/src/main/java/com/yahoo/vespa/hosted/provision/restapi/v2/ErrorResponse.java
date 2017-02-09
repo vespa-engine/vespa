@@ -15,20 +15,18 @@ public class ErrorResponse extends HttpResponse {
 
     private final Slime slime = new Slime();
 
+    public enum errorCodes {
+        NOT_FOUND,
+        BAD_REQUEST,
+        METHOD_NOT_ALLOWED,
+        INTERNAL_SERVER_ERROR
+    }
+
     public ErrorResponse(int code, String errorType, String message) {
         super(code);
         Cursor root = slime.setObject();
         root.setString("error-code", errorType);
         root.setString("message", message);
-    }
-
-    public enum errorCodes {
-        NOT_FOUND,
-        BAD_REQUEST,
-        METHOD_NOT_ALLOWED,
-        INTERNAL_SERVER_ERROR,
-        INVALID_APPLICATION_PACKAGE,
-        UNKNOWN_VESPA_VERSION
     }
 
     public static ErrorResponse notFoundError(String message) {

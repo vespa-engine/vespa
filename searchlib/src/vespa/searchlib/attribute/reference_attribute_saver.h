@@ -32,6 +32,7 @@ private:
     using GlobalId = document::GlobalId;
     using IndicesCopyVector = ReferenceAttribute::IndicesCopyVector;
     using Store = ReferenceAttribute::Store;
+    using Reference = ReferenceAttribute::Reference;
     using Saver = Store::Saver;
     IndicesCopyVector _indices;
     const Store &_store;

@@ -8,17 +8,19 @@ package com.yahoo.vespa.hosted.provision.testutils;
  * @author dybis
  */
 public class ContainerConfig {
+
         public static final String servicesXmlV2(int port) {
                 return
-                        "<jdisc version=\"1.0\">" +
-                                "  <component id=\"com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors\"/>" +
-                                "  <component id=\"com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository\"/>" +
-                                "  <handler id=\"com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler\">" +
-                                "    <binding>http://*/nodes/v2/*</binding>" +
-                                "  </handler>" +
-                                " <http>\n" +
-                                "    <server id='myServer' port='" + port + "' />\n" +
-                                "  </http>" +
-                                "</jdisc>";
+                        "<jdisc version='1.0'>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>" +
+                        "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>" +
+                        "    <binding>http://*/nodes/v2/*</binding>" +
+                        "  </handler>" +
+                        "  <http>" +
+                        "    <server id='myServer' port='" + port + "' />" +
+                        "  </http>" +
+                        "</jdisc>";
         }
+
 }

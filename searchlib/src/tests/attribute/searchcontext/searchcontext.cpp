@@ -10,10 +10,12 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
-
+#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 
 #include <vespa/log/log.h>

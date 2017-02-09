@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/defaults.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-LOG_SETUP("vespa-config-status");
 #include <iostream>
 #include <lib/configstatus.h>
-#include <lib/hostfilter.h>
+#include <vespa/fastos/app.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-config-status");
 
 class Application : public FastOS_Application {
     ConfigStatus::Flags _flags;

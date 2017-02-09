@@ -25,7 +25,7 @@ import com.yahoo.document.serialization.DocumentUpdateWriter;
  * must represent a legal operation on an integer value.</li>
  * </ul>
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MapValueUpdate extends ValueUpdate {
     protected FieldValue value;
