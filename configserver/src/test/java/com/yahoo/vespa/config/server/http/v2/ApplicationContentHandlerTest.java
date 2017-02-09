@@ -11,8 +11,10 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -62,7 +64,8 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                                                                    HostProvisionerProvider.empty(),
                                                                    new MockCurator(),
                                                                    new LogServerLogGrabber(),
-                                                                   new ApplicationConvergenceChecker()));
+                                                                   new ApplicationConvergenceChecker(),
+                                                                   new HttpProxy(new SimpleHttpFetcher())));
         pathPrefix = createPath(idTenant1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }

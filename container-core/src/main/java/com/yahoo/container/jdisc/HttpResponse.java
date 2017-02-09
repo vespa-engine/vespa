@@ -42,7 +42,7 @@ public abstract class HttpResponse {
     }
 
     /**
-     * Marshal this response to the network layer.
+     * Marshal this response to the network layer. The caller is responsible for flushing and closing outputStream.
      */
     public abstract void render(OutputStream outputStream) throws IOException;
 

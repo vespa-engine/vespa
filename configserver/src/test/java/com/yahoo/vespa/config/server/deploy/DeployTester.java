@@ -29,7 +29,9 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -149,7 +151,8 @@ public class DeployTester {
                                                                                 HostProvisionerProvider.withProvisioner(createHostProvisioner()),
                                                                                 curator,
                                                                                 new LogServerLogGrabber(),
-                                                                                new ApplicationConvergenceChecker());
+                                                                                new ApplicationConvergenceChecker(),
+                                                                                new HttpProxy(new SimpleHttpFetcher()));
 
         return applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
     }

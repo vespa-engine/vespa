@@ -63,8 +63,15 @@ public class ApplicationHandler extends HttpHandler {
         Tenant tenant = verifyTenantAndApplication(applicationId);
 
         if (isServiceConvergeRequest(request)) {
-            return applicationRepository.serviceConvergenceCheck(tenant, applicationId, getHostFromRequest(request), request.getUri());
+            return applicationRepository.serviceConvergenceCheck(tenant, applicationId, getHostNameFromRequest(request), request.getUri());
         }
+
+        if (isClusterControllerStatusRequest(request)) {
+            String hostName = getHostNameFromRequest(request);
+            String pathSuffix = getPathSuffix(request);
+            return applicationRepository.clusterControllerStatusPage(tenant, applicationId, hostName, pathSuffix);
+        }
+
         if (isContentRequest(request)) {
             long sessionId = applicationRepository.getSessionIdForApplication(tenant, applicationId);
             String contentPath = ApplicationContentRequest.getContentPath(request);
@@ -85,6 +92,7 @@ public class ApplicationHandler extends HttpHandler {
         if (isServiceConvergeListRequest(request)) {
             return applicationRepository.serviceListToCheckForConfigConvergence(tenant, applicationId, request.getUri());
         }
+
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(tenant, applicationId));
     }
 
@@ -148,6 +156,7 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
+                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
                 "http://*/application/v2/tenant/*/application/*");
     }
@@ -162,13 +171,24 @@ public class ApplicationHandler extends HttpHandler {
                 request.getUri().getPath().contains("/serviceconverge/");
     }
 
-    private static boolean isContentRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() > 7;
+    private static boolean isClusterControllerStatusRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 9 &&
+                request.getUri().getPath().contains("/clustercontroller/");
     }
 
-    private static String getHostFromRequest(HttpRequest req) {
+    private static boolean isContentRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() > 7 &&
+                request.getUri().getPath().contains("/content/");
+    }
+
+    private static String getHostNameFromRequest(HttpRequest req) {
         BindingMatch<?> bm = getBindingMatch(req);
         return bm.group(7);
+    }
+
+    private static String getPathSuffix(HttpRequest req) {
+        BindingMatch<?> bm = getBindingMatch(req);
+        return bm.group(8);
     }
 
     private static ApplicationId getApplicationIdFromRequest(HttpRequest req) {

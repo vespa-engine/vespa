@@ -58,6 +58,8 @@ public class HttpHandler extends LoggingRequestHandler {
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         } catch (UnknownVespaVersionException e) {
             return HttpErrorResponse.unknownVespaVersion(getMessage(e, request));
+        } catch (RequestTimeoutException e) {
+            return HttpErrorResponse.requestTimeout(getMessage(e, request));
         } catch (Exception e) {
             e.printStackTrace();
             return HttpErrorResponse.internalServerError(getMessage(e, request));

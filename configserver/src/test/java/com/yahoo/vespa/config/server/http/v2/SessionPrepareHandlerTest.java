@@ -22,6 +22,7 @@ import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -350,7 +351,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                                                    HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
                                                                    new MockCurator(),
                                                                    new LogServerLogGrabber(),
-                                                                   new ApplicationConvergenceChecker()));
+                                                                   new ApplicationConvergenceChecker(),
+                                                                   new HttpProxy(new SimpleHttpFetcher())));
     }
 
     private TestTenantBuilder addTenant(TenantName tenantName,
