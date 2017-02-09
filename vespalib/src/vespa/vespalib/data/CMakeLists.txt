@@ -3,6 +3,8 @@ vespa_add_library(vespalib_vespalib_data OBJECT
     SOURCES
     input.cpp
     input_reader.cpp
+    lz4_input_decoder.cpp
+    lz4_output_encoder.cpp
     memory.cpp
     memory_input.cpp
     memorydatastore.cpp
