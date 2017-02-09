@@ -10,6 +10,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.*;
 import com.yahoo.vespa.config.server.tenant.Tenants;
@@ -249,7 +251,8 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                                                                   HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
                                                                   new MockCurator(),
                                                                   new LogServerLogGrabber(),
-                                                                  new ApplicationConvergenceChecker()));
+                                                                  new ApplicationConvergenceChecker(),
+                                                                  new HttpProxy(new SimpleHttpFetcher())));
     }
 
     public HttpRequest post() throws FileNotFoundException {

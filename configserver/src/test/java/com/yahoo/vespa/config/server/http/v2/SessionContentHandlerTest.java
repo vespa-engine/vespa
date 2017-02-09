@@ -11,9 +11,11 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.apache.commons.io.FileUtils;
@@ -175,6 +177,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                                                                    HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
                                                                    new MockCurator(),
                                                                    new LogServerLogGrabber(),
-                                                                   new ApplicationConvergenceChecker()));
+                                                                   new ApplicationConvergenceChecker(),
+                                                                   new HttpProxy(new SimpleHttpFetcher())));
     }
 }

@@ -38,7 +38,8 @@ public class HttpErrorResponse extends HttpResponse {
         INTERNAL_SERVER_ERROR,
         INVALID_APPLICATION_PACKAGE,
         UNKNOWN_VESPA_VERSION,
-        OUT_OF_CAPACITY
+        OUT_OF_CAPACITY,
+        REQUEST_TIMEOUT
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -67,6 +68,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpResponse unknownVespaVersion(String message) {
         return new HttpErrorResponse(BAD_REQUEST, errorCodes.UNKNOWN_VESPA_VERSION.name(), message);
+    }
+
+    public static HttpResponse requestTimeout(String message) {
+        return new HttpErrorResponse(REQUEST_TIMEOUT, errorCodes.REQUEST_TIMEOUT.name(), message);
     }
 
     @Override

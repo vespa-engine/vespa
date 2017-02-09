@@ -12,6 +12,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.LiteralResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.path.Path;
@@ -19,25 +20,27 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.ZKTenantApplications;
+import com.yahoo.vespa.config.server.http.HandlerTest;
+import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.session.MockSessionZKClient;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
-import com.yahoo.vespa.config.server.http.HandlerTest;
-import com.yahoo.vespa.config.server.http.HttpErrorResponse;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.session.MockSessionZKClient;
-import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Assert;
@@ -54,10 +57,14 @@ import java.util.Collections;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author hmusum
@@ -74,6 +81,7 @@ public class ApplicationHandlerTest {
     private Tenants tenants;
     private SessionActiveHandlerTest.MockProvisioner provisioner;
     private MockStateApiFactory stateApiFactory = new MockStateApiFactory();
+    private final HttpProxy mockHttpProxy = mock(HttpProxy.class);
 
     @Before
     public void setup() throws Exception {
@@ -84,7 +92,10 @@ public class ApplicationHandlerTest {
         tenants = testBuilder.createTenants();
         provisioner = new SessionActiveHandlerTest.MockProvisioner();
         mockHandler = createMockApplicationHandler(
-                provisioner, new ApplicationConvergenceChecker(stateApiFactory), new LogServerLogGrabber());
+                provisioner,
+                new ApplicationConvergenceChecker(stateApiFactory),
+                mockHttpProxy,
+                new LogServerLogGrabber());
         listApplicationsHandler = new ListApplicationsHandler(
                 Runnable::run, AccessLog.voidAccessLog(), tenants, Zone.defaultZone());
     }
@@ -92,6 +103,7 @@ public class ApplicationHandlerTest {
     private ApplicationHandler createMockApplicationHandler(
             Provisioner provisioner,
             ApplicationConvergenceChecker convergeChecker,
+            HttpProxy httpProxy,
             LogServerLogGrabber logServerLogGrabber) {
         return new ApplicationHandler(
                 Runnable::run,
@@ -101,7 +113,8 @@ public class ApplicationHandlerTest {
                                           HostProvisionerProvider.withProvisioner(provisioner),
                                           new MockCurator(),
                                           logServerLogGrabber,
-                                          convergeChecker));
+                                          convergeChecker,
+                                          httpProxy));
     }
 
     private ApplicationHandler createApplicationHandler(Tenants tenants) {
@@ -113,7 +126,8 @@ public class ApplicationHandlerTest {
                                           HostProvisionerProvider.withProvisioner(provisioner),
                                           new MockCurator(),
                                           new LogServerLogGrabber(),
-                                          new ApplicationConvergenceChecker(stateApiFactory)));
+                                          new ApplicationConvergenceChecker(stateApiFactory),
+                                          new HttpProxy(new SimpleHttpFetcher())));
     }
 
     @Test
@@ -205,6 +219,21 @@ public class ApplicationHandlerTest {
     }
 
     @Test
+    public void testClusterControllerStatus() throws Exception {
+        long sessionId = 1;
+        ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
+        String host = "foo.yahoo.com";
+        String url = toUrlPath(application, Zone.defaultZone(), true) + "/clustercontroller/" + host + "/status/v1/clusterName1";
+
+        when(mockHttpProxy.get(any(), eq(host), eq("container-clustercontroller"), eq("clustercontroller-status/v1/clusterName1")))
+                .thenReturn(new LiteralResponse(200, "<html>...</html>"));
+
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "<html>...</html>");
+    }
+
+    @Test
     public void testPutIsIllegal() throws IOException {
         assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method.PUT);
     }
@@ -214,7 +243,10 @@ public class ApplicationHandlerTest {
     public void testFailingProvisioner() throws Exception {
         provisioner = new SessionActiveHandlerTest.FailingMockProvisioner();
         mockHandler = createMockApplicationHandler(
-                provisioner, new ApplicationConvergenceChecker(stateApiFactory), new LogServerLogGrabber());
+                provisioner,
+                new ApplicationConvergenceChecker(stateApiFactory),
+                new HttpProxy(new SimpleHttpFetcher()),
+                new LogServerLogGrabber());
         final ApplicationId applicationId = ApplicationId.defaultId();
         addMockApplication(tenants.getTenant(mytenantName), applicationId, 1);
         assertApplicationExists(mytenantName, applicationId, Zone.defaultZone());

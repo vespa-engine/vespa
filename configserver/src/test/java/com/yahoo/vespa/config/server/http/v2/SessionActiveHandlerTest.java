@@ -1,23 +1,35 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.path.Path;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.SessionActiveHandlerTestBase;
+import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSession;
@@ -25,20 +37,23 @@ import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
-
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.Before;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
-import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
-import com.yahoo.vespa.config.server.http.SessionActiveHandlerTestBase;
-import com.yahoo.vespa.config.server.http.SessionHandler;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
 
@@ -167,7 +182,8 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
                                           HostProvisionerProvider.withProvisioner(hostProvisioner),
                                           curator,
                                           new LogServerLogGrabber(),
-                                          new ApplicationConvergenceChecker()));
+                                          new ApplicationConvergenceChecker(),
+                                          new HttpProxy(new SimpleHttpFetcher())));
     }
 
     public static class MockProvisioner implements Provisioner {
