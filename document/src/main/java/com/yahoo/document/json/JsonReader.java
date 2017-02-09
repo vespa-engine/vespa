@@ -24,8 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
-import static com.yahoo.document.json.document.DocumentParser.parseToDocumentsFieldsAndInsertFieldsIntoBuffer;
-import static com.yahoo.document.json.readers.AddRemoveCreator.createAddsOrRemoves;
+import static com.yahoo.document.json.document.DocumentParser.parseDocumentsFields;
+import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
+import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
 import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
@@ -48,11 +49,6 @@ public class JsonReader {
     public Optional<DocumentParseInfo> parseDocument() {
         return DocumentParser.parseDocument(parser);
     }
-
-    public enum FieldOperation {
-        ADD, REMOVE
-    }
-
 
     private static final String UPDATE_REMOVE = "remove";
     private static final String UPDATE_ADD = "add";
@@ -84,7 +80,7 @@ public class JsonReader {
      */
     public DocumentOperation readSingleDocument(DocumentParser.SupportedOperation operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
-        DocumentParseInfo documentParseInfo = parseToDocumentsFieldsAndInsertFieldsIntoBuffer(parser, docId);
+        DocumentParseInfo documentParseInfo = parseDocumentsFields(parser, docId);
         documentParseInfo.operationType = operationType;
         DocumentOperation operation = createDocumentOperation(documentParseInfo.fieldsBuffer, documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
@@ -198,10 +194,10 @@ public class JsonReader {
         while (localNesting <= buffer.nesting()) {
             switch (buffer.currentName()) {
             case UPDATE_REMOVE:
-                createAddsOrRemoves(buffer, field, fieldUpdate, FieldOperation.REMOVE);
+                createRemoves(buffer, field, fieldUpdate);
                 break;
             case UPDATE_ADD:
-                createAddsOrRemoves(buffer, field, fieldUpdate, FieldOperation.ADD);
+                createAdds(buffer, field, fieldUpdate);
                 break;
             case UPDATE_MATCH:
                 fieldUpdate.addValueUpdate(createMapUpdate(buffer, field));

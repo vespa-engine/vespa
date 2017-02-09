@@ -91,8 +91,7 @@ public class DocumentParser {
         }
     }
 
-
-    public static DocumentParseInfo parseToDocumentsFieldsAndInsertFieldsIntoBuffer(JsonParser parser, DocumentId documentId) {
+    public static DocumentParseInfo parseDocumentsFields(JsonParser parser, DocumentId documentId) {
         long indentLevel = 0;
         DocumentParseInfo documentParseInfo = new DocumentParseInfo();
         documentParseInfo.documentId = documentId;

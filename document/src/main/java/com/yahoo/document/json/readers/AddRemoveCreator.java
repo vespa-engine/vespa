@@ -8,7 +8,6 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
-import com.yahoo.document.json.JsonReader;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.FieldUpdate;
 
@@ -23,7 +22,21 @@ public class AddRemoveCreator {
     // yes, this suppresswarnings ugliness is by intention, the code relies on
     // the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes", "unchecked" })
-    public static void createAddsOrRemoves(TokenBuffer buffer, Field field, FieldUpdate update, JsonReader.FieldOperation op) {
+    public static void createAdds(TokenBuffer buffer, Field field, FieldUpdate update) {
+        createAddsOrRemoves(buffer, field, update, false);
+    }
+
+    // yes, this suppresswarnings ugliness is by intention, the code relies on
+    // the contracts in the builders
+    @SuppressWarnings({ "cast", "rawtypes", "unchecked" })
+    public static void createRemoves(TokenBuffer buffer, Field field, FieldUpdate update) {
+        createAddsOrRemoves(buffer, field, update, true);
+    }
+
+    // yes, this suppresswarnings ugliness is by intention, the code relies on
+    // the contracts in the builders
+    @SuppressWarnings({ "cast", "rawtypes", "unchecked" })
+    private static void createAddsOrRemoves(TokenBuffer buffer, Field field, FieldUpdate update, boolean isRemove) {
         FieldValue container = field.getDataType().createFieldValue();
         FieldUpdate singleUpdate;
         int initNesting = buffer.nesting();
@@ -38,7 +51,7 @@ public class AddRemoveCreator {
                 // types) and values which are the weight
                 WeightedSet weightedSet = (WeightedSet) container;
                 fillWeightedSetUpdate(buffer, initNesting, valueType, weightedSet);
-                if (op == JsonReader.FieldOperation.REMOVE) {
+                if (isRemove) {
                     singleUpdate = FieldUpdate.createRemoveAll(field, weightedSet);
                 } else {
                     singleUpdate = FieldUpdate.createAddAll(field, weightedSet);
@@ -50,7 +63,7 @@ public class AddRemoveCreator {
                 if (token != JsonToken.END_ARRAY) {
                     throw new IllegalStateException("Expected END_ARRAY. Got '" + token + "'.");
                 }
-                if (op == JsonReader.FieldOperation.REMOVE) {
+                if (isRemove) {
                     singleUpdate = FieldUpdate.createRemoveAll(field, arrayContents);
                 } else {
                     singleUpdate = FieldUpdate.createAddAll(field, arrayContents);
