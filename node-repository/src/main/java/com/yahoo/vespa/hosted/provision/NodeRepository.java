@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -465,6 +466,9 @@ public class NodeRepository extends AbstractComponent {
     
     /** Create a lock which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application) { return zkClient.lock(application); }
+
+    /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
+    public Mutex lock(ApplicationId application, Duration timeout) { return zkClient.lock(application, timeout); }
 
     /** Create a lock which provides exclusive rights to changing the set of ready nodes */
     public Mutex lockUnallocated() { return zkClient.lockInactive(); }

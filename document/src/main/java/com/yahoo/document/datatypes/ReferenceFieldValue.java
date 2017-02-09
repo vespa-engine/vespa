@@ -151,4 +151,15 @@ public class ReferenceFieldValue extends FieldValue {
     public void deserialize(Field field, FieldReader reader) {
         reader.read(field, this);
     }
+
+    /**
+     * Expose target document ID as this value's wrapped value. Primarily implemented to
+     * allow for transparent interoperability when used in concrete document types.
+     *
+     * @return reference DocumentId, or null if none has been set
+     */
+    @Override
+    public DocumentId getWrappedValue() {
+        return documentId.orElse(null);
+    }
 }

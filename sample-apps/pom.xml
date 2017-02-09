@@ -11,9 +11,7 @@
 
     <modules>
         <module>basic-search-java</module>
-<!--
         <module>blog-recommendation</module>
         <module>boolean-search</module>
--->
     </modules>
 </project>

@@ -78,10 +78,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
         Http http = new HttpBuilder().build(root, clusterElem);
         root.freezeModelTopology();
+        AccessControl accessControl = http.getAccessControl().get();
 
-        assertEquals("Wrong domain.", "my-domain", http.getAccessControl().get().domain);
-        assertEquals("Wrong application.", "my-app", http.getAccessControl().get().applicationId);
-        assertEquals("Wrong vespa-domain.", "custom-vespa-domain", http.getAccessControl().get().vespaDomain);
+        assertEquals("Wrong domain.", "my-domain", accessControl.domain);
+        assertEquals("Wrong application.", "my-app", accessControl.applicationId);
+        assertEquals("Wrong vespa-domain.", "custom-vespa-domain", accessControl.vespaDomain.get());
     }
 
     @Test

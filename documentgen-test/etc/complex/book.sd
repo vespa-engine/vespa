@@ -66,6 +66,9 @@ search book {
         field myraw type raw {
 
         }
+        field ref type reference<parent> {
+
+        }
     }
     field sw1 type float {
     }
