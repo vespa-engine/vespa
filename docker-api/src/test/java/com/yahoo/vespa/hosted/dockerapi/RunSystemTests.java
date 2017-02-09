@@ -5,6 +5,7 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import com.yahoo.collections.Pair;
 import com.yahoo.system.ProcessExecuter;
 
 import java.io.IOException;
@@ -12,11 +13,18 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -125,13 +133,65 @@ public class RunSystemTests {
      */
     void mavenInstallModules(String... modules) throws InterruptedException, IOException, ExecutionException {
         String projects = String.join(",", modules);
-        Process process = new ProcessBuilder("mvn", "-DskipTests", "-Dmaven.javadoc.skip=true", "--errors",
-                "--projects=" + projects, "--also-make", "install")
+        Process process = new ProcessBuilder("mvn", "install", "-DskipTests", "-Dmaven.javadoc.skip=true", "--errors",
+                "--projects=" + projects)
                 .directory(pathToVespaRepoInHost.toFile())
                 .inheritIO()
                 .start();
 
-        assertEquals("Failed to build modules", 0, process.waitFor());
+        if (process.waitFor() != 0) {
+            throw new RuntimeException("Failed to build modules");
+        }
+    }
+
+    // TODO: Add support for multiple modules
+    void mavenInstallModulesThatDependOn(String module) throws IOException, ExecutionException, InterruptedException {
+        logger.info("Building dependency graph...");
+        Path outputFile = Paths.get("/tmp/vespa-maven-dependencies");
+        if (Files.exists(outputFile)) {
+            Files.delete(outputFile);
+        }
+
+        String[] command = new String[]{"mvn", "dependency:tree", "-Dincludes=com.yahoo.vespa",
+                "-DoutputFile=" + outputFile, "-DoutputType=dot", "-DappendOutput=true"};
+        ProcessExecuter processExecuter = new ProcessExecuter();
+        Pair<Integer, String> result = processExecuter.exec(command);
+        if (result.getFirst() != 0) {
+            throw new RuntimeException("Failed to get maven dependency tree: " + result.getSecond());
+        }
+
+        String modulePattern = "[a-z-]+";
+        Pattern dependencyPattern = Pattern.compile("com\\.yahoo\\.vespa:(" + modulePattern + "):.* -> " +
+                ".*com\\.yahoo\\.vespa:(" + modulePattern + "):.*", Pattern.CASE_INSENSITIVE);
+        String dependenciesRaw = new String(Files.readAllBytes(outputFile));
+        Matcher m = dependencyPattern.matcher(dependenciesRaw);
+
+        Map<String, Set<String>> dependencyGraph = new HashMap<>();
+        while (m.find()) {
+            if (! dependencyGraph.containsKey(m.group(2))) {
+                dependencyGraph.put(m.group(2), new HashSet<>());
+            }
+
+            dependencyGraph.get(m.group(2)).add(m.group(1));
+        }
+
+        List<String> buildOrder = new ArrayList<>();
+        dfs(module, dependencyGraph, buildOrder);
+
+        Collections.reverse(buildOrder);
+        mavenInstallModules(buildOrder.stream().toArray(String[]::new));
+    }
+
+    private static void dfs(String root, Map<String, Set<String>> dependencies, List<String> order) {
+        if (! order.contains(root)) {
+            if (dependencies.containsKey(root)) {
+                for (String child : dependencies.get(root)) {
+                    dfs(child, dependencies, order);
+                }
+            }
+
+            order.add(root);
+        }
     }
 
     private void startSystemTestNodeIfNeeded(ContainerName containerName) throws IOException, InterruptedException, ExecutionException {
