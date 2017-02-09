@@ -12,6 +12,7 @@ import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.datatypes.*;
 import com.yahoo.document.serialization.*;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.vespa.document.NodeImpl;
 import com.yahoo.vespa.document.dom.DocumentImpl;
@@ -32,6 +33,7 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 
 /**
@@ -328,6 +330,61 @@ public class DocumentGenPluginTest {
     }
 
     @Test
+    public void concrete_reference_id_is_initially_null() {
+        final Book book = getBook();
+        assertNull(book.getRef());
+    }
+
+    @Test
+    public void can_set_and_get_concrete_reference_document_id() {
+        final Book book = getBook();
+        final DocumentId docId = new DocumentId("id:ns:parent::foo");
+        book.setRef(docId); // TODO currently no validation of ID upon setRef time
+        assertEquals(docId, book.getRef());
+    }
+
+    @Test
+    public void clearing_document_nulls_out_reference_id() {
+        final Book book = getBook();
+        book.setRef(new DocumentId("id:ns:parent::foo"));
+        book.clear();
+
+        assertNull(book.getRef());
+    }
+
+    @Test
+    public void reference_field_has_correct_reference_data_type() {
+        final Book book = getBook();
+        final Field field = book.getField("ref");
+        assertEquals(ReferenceDataType.createWithInferredId(Parent.type), field.getDataType());
+    }
+
+    @Test
+    public void concrete_reference_id_can_be_transparently_converted_to_field_value() {
+        final Book book = getBook();
+        final DocumentId docId = new DocumentId("id:ns:parent::bar");
+        book.setRef(docId);
+
+        final Field field = book.getField("ref");
+        final FieldValue value = book.getFieldValue(field);
+        assertThat(value, instanceOf(ReferenceFieldValue.class));
+        final ReferenceFieldValue refValue = (ReferenceFieldValue)value;
+        assertEquals(field.getDataType(), refValue.getDataType());
+        assertTrue(refValue.getDocumentId().isPresent());
+        assertEquals(docId, refValue.getDocumentId().get());
+    }
+
+    @Test
+    public void reference_field_value_can_be_transparently_converted_to_concrete_reference_id() {
+        final Book book = getBook();
+        final DocumentId docId = new DocumentId("id:ns:parent::bar");
+        final Field field = book.getField("ref");
+        book.setFieldValue(field, new ReferenceFieldValue((ReferenceDataType)field.getDataType(), docId));
+
+        assertEquals(docId, book.getRef());
+    }
+
+    @Test
     public void testPackDocFromGenericDoc() {
         DocumentType bookGeneric = new DocumentType("book");
         DocumentType somethingElse = new DocumentType("somethingElse");
@@ -379,11 +436,20 @@ public class DocumentGenPluginTest {
         }
     }
 
+    private DocumentTypeManager typeManagerFromSDs(String... files) {
+        final DocumentTypeManager mgr = new DocumentTypeManager();
+        mgr.configure("raw:" + getDocumentConfig(Arrays.asList(files)));
+        return mgr;
+    }
+
+    private DocumentTypeManager typeManagerForBookType() {
+        return typeManagerFromSDs("etc/complex/common.sd", "etc/complex/parent.sd", "etc/complex/book.sd");
+    }
+
     @Test
     @Ignore // Just to test memory usage
     public void testMemUseGeneric() {
-        DocumentTypeManager mgr = new DocumentTypeManager();
-        mgr.configure("raw:" + getDocumentConfig(new ArrayList<String>() {{ add("etc/complex/common.sd"); add("etc/complex/book.sd"); }}));
+        final DocumentTypeManager mgr = typeManagerForBookType();
         DocumentType bookT=mgr.getDocumentType("book");
         List<Document> manyGenericBooks = new ArrayList<>();
         for (int i = 0; i < NUM_BOOKS; i++) {
@@ -399,8 +465,7 @@ public class DocumentGenPluginTest {
     @Test
     @Ignore // Just to test memory usage
     public void testMemUseConcrete() {
-        DocumentTypeManager mgr = new DocumentTypeManager();
-        mgr.configure("raw:" + getDocumentConfig(new ArrayList<String>() {{ add("etc/complex/common.sd"); add("etc/complex/book.sd"); }}));
+        final DocumentTypeManager mgr = typeManagerForBookType();
         List<Book> manyConcreteBooks = new ArrayList<>();
         for (int i = 0; i < NUM_BOOKS; i++) {
             manyConcreteBooks.add(newBookConcrete(i));
@@ -417,9 +482,6 @@ public class DocumentGenPluginTest {
         book.titleSpanTrees().put(t.getName(), t);
         book.setTitle("Moby Dick");
         book.setYear(1851);
-        //Array myAs1 = new Array(DataType.getArray(DataType.STRING));
-        //myAs1.add("as1_1");
-        //myAs1.add("as1_2");
         book.setMystruct(new Ss1().setSs01(new Ss0().setS0("My s0").setD0(99d)).setS1("My s1").setL1(89l));//.setAl1(myAs1));
         Map<Float, Integer> wsFloat = new HashMap<>();
         wsFloat.put(56f, 55);
@@ -488,9 +550,8 @@ public class DocumentGenPluginTest {
 
     @Test
     public void testPackComplex() {
-        DocumentTypeManager mgr = new DocumentTypeManager();
-        mgr.configure("raw:" + getDocumentConfig(new ArrayList<String>() {{ add("etc/complex/common.sd"); add("etc/complex/book.sd"); }}));
-        DocumentType bookT=mgr.getDocumentType("book");
+        final DocumentTypeManager mgr = typeManagerForBookType();
+        DocumentType bookT = mgr.getDocumentType("book");
         Document bookGeneric = new Document(bookT, new DocumentId("doc:book:0"));
         bookGeneric.setFieldValue("author", new StringFieldValue("Melville"));
         StringFieldValue title = new StringFieldValue("Moby Dick");
@@ -591,8 +652,9 @@ public class DocumentGenPluginTest {
         assertEquals(b.getMystruct().getFieldValue("d1").getWrappedValue(), 678d);
         assertEquals(b.getMystruct().getD1(), (Double)678d);
 
-        assertEquals(ConcreteDocumentFactory.documentTypeObjects.size(), 9);
+        assertEquals(ConcreteDocumentFactory.documentTypeObjects.size(), 10);
         assertEquals(ConcreteDocumentFactory.documentTypeObjects.get("music"), Music.type);
+        assertEquals(ConcreteDocumentFactory.documentTypeObjects.get("parent"), Parent.type);
         assertEquals(ConcreteDocumentFactory.documentTypeObjects.get("common"), Common.type);
     }
 
@@ -712,9 +774,17 @@ public class DocumentGenPluginTest {
         assertTrue(Modifier.isAbstract(Emptyannotation.class.getModifiers()));
     }
 
+    private static Document roundtripSerialize(Document docToSerialize, DocumentTypeManager mgr) {
+        final GrowableByteBuffer outputBuffer = new GrowableByteBuffer();
+        final DocumentSerializer serializer = DocumentSerializerFactory.createHead(outputBuffer);
+        serializer.write(docToSerialize);
+        outputBuffer.flip();
+        return new Document(DocumentDeserializerFactory.createHead(mgr, outputBuffer));
+    }
+
     @Test
     public void testSerialization() {
-        Book book = getBook();
+        final Book book = getBook();
         assertEquals(book.getMystruct().getD1(), (Double)56.777);
         assertEquals(book.getMystruct().getCompressionType(), CompressionType.NONE);
         assertEquals(book.getBody().getFieldCount(), 3);
@@ -723,13 +793,7 @@ public class DocumentGenPluginTest {
         assertEquals(book.getContent().get(0), 3);
         assertEquals(book.getContent().get(1), 4);
         assertEquals(book.getContent().get(2), 5);
-        DocumentSerializer serializer = DocumentSerializerFactory.create42();
-        serializer.write(book);
-        serializer.getBuf().flip();
-        DocumentTypeManager dtm = new DocumentTypeManager();
-        dtm.configure("raw:" + getDocumentConfig(new ArrayList<String>() {{ add("etc/complex/common.sd"); add("etc/complex/book.sd"); }}));
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(dtm, serializer.getBuf());
-        Document des = new Document(deserializer);
+        final Document des = roundtripSerialize(book, typeManagerForBookType());
         assertEquals(des.getBody().getFieldCount(), 3);
         assertEquals(des.getHeader().getFieldCount(), 10);
         assertEquals(des.getDataType().getName(), "book");
@@ -767,6 +831,22 @@ public class DocumentGenPluginTest {
         assertEquals(sstrctArr.size(), 2);
         assertEquals(sstrctArr.get(0).getFieldValue("s1").getWrappedValue().toString(), "YEPS");
         assertEquals(sstrctArr.get(1).getFieldValue("s1").getWrappedValue().toString(), "JA");
+    }
+
+    @Test
+    public void concrete_reference_fields_can_be_roundtrip_serialized() {
+        final Book book = getBook();
+        final DocumentId id = new DocumentId("id:ns:parent::baz");
+        book.setRef(id);
+
+        final Document doc = roundtripSerialize(book, typeManagerForBookType());
+        final ReferenceFieldValue refValue = (ReferenceFieldValue) doc.getFieldValue(doc.getField("ref"));
+        assertTrue(refValue.getDocumentId().isPresent());
+        assertEquals(id, refValue.getDocumentId().get());
+
+        final Book bookCopy = (Book)new ConcreteDocumentFactory().getDocumentCopy(
+                "book", doc, new DocumentId("id:ns:book::helloworld"));
+        assertEquals(id, bookCopy.getRef());
     }
 
     @Test
