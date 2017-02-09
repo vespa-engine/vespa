@@ -38,8 +38,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static com.yahoo.document.json.JsonSerializationHelper.*;
-import static com.yahoo.document.json.document.DocumentParser.FIELDS;
-import static com.yahoo.document.json.document.DocumentParser.REMOVE;
 
 /**
  * Serialize Document and other FieldValue instances as JSON.
@@ -108,7 +106,7 @@ public class JsonWriter implements DocumentWriter {
             // this makes it impossible to refeed directly, not sure what's correct
             // perhaps just change to "put"?
             generator.writeStringField("id", value.getId().toString());
-            generator.writeObjectFieldStart(FIELDS);
+            generator.writeObjectFieldStart(JsonReader.FIELDS);
 
             Iterator<Map.Entry<Field, FieldValue>> i = value.iterator();
             while (i.hasNext()) {
@@ -253,7 +251,7 @@ public class JsonWriter implements DocumentWriter {
         try {
             JsonGenerator throwAway = jsonFactory.createGenerator(out);
             throwAway.writeStartObject();
-            throwAway.writeStringField(REMOVE, docId.toString());
+            throwAway.writeStringField(JsonReader.REMOVE, docId.toString());
             throwAway.writeEndObject();
             throwAway.close();
         } catch (IOException e) {
