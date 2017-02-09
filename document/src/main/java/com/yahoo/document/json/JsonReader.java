@@ -61,10 +61,6 @@ public class JsonReader {
     private final DocumentTypeManager typeManager;
     private ReaderState state = ReaderState.AT_START;
 
-    public enum SupportedOperation {
-        PUT, UPDATE, REMOVE
-    }
-
     enum ReaderState {
         AT_START, READING, END_OF_FEED
     }
@@ -86,7 +82,7 @@ public class JsonReader {
      * @param docIdString document ID.
      * @return the document
      */
-    public DocumentOperation readSingleDocument(SupportedOperation operationType, String docIdString) {
+    public DocumentOperation readSingleDocument(DocumentParser.SupportedOperation operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
         DocumentParseInfo documentParseInfo = parseToDocumentsFieldsAndInsertFieldsIntoBuffer(parser, docId);
         documentParseInfo.operationType = operationType;
@@ -156,7 +152,7 @@ public class JsonReader {
     // Exposed for unit testing...
     void readUpdate(TokenBuffer buffer, DocumentUpdate next) {
         if (buffer.size() == 0) {
-            bufferFields(parser, buffer, nextToken(parser));
+            buffer.bufferObject(nextToken(parser), parser);
         }
         populateUpdateFromBuffer(buffer, next);
     }
@@ -164,7 +160,7 @@ public class JsonReader {
     // Exposed for unit testing...
     void readPut(TokenBuffer buffer, DocumentPut put) {
         if (buffer.size() == 0) {
-            bufferFields(parser, buffer, nextToken(parser));
+            buffer.bufferObject(nextToken(parser), parser);
         }
         try {
             populateComposite(buffer, put.getDocument());
@@ -217,10 +213,6 @@ public class JsonReader {
             buffer.next();
         }
         update.addFieldUpdate(fieldUpdate);
-    }
-
-    public static void bufferFields(JsonParser parser, TokenBuffer buffer, JsonToken current) {
-        buffer.bufferObject(current, parser);
     }
 
     public DocumentType readDocumentType(DocumentId docId) {

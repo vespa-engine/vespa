@@ -4,17 +4,17 @@ package com.yahoo.document.json.document;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.json.JsonReader;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 
 import java.io.IOException;
 import java.util.Optional;
 
-import static com.yahoo.document.json.JsonReader.bufferFields;
-import static com.yahoo.document.json.JsonReader.nextToken;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 
 public class DocumentParser {
+    public enum SupportedOperation {
+        PUT, UPDATE, REMOVE
+    }
     private static final String UPDATE = "update";
     private static final String PUT = "put";
     private static final String ID = "id";
@@ -54,7 +54,7 @@ public class DocumentParser {
                         // TODO more specific wrapping
                         throw new RuntimeException(e);
                     }
-                    bufferFields(parser, documentParseInfo.fieldsBuffer, token);
+                    documentParseInfo.fieldsBuffer.bufferObject(token, parser);
                     continue;
                 }
                 if (token == JsonToken.END_OBJECT) {
@@ -75,15 +75,15 @@ public class DocumentParser {
         }
     }
 
-    private static JsonReader.SupportedOperation operationNameToOperationType(String operationName) {
+    private static SupportedOperation operationNameToOperationType(String operationName) {
         switch (operationName) {
             case PUT:
             case ID:
-                return JsonReader.SupportedOperation.PUT;
+                return SupportedOperation.PUT;
             case REMOVE:
-                return JsonReader.SupportedOperation.REMOVE;
+                return SupportedOperation.REMOVE;
             case UPDATE:
-                return JsonReader.SupportedOperation.UPDATE;
+                return SupportedOperation.UPDATE;
             default:
                 throw new IllegalArgumentException(
                         "Got " + operationName + " as document operation, only \"put\", " +
@@ -135,10 +135,18 @@ public class DocumentParser {
                 } catch (IOException e) {
                     throw new RuntimeException("Got IO exception while parsing document", e);
                 }
-                bufferFields(parser, documentParseInfo.fieldsBuffer, t);
+                documentParseInfo.fieldsBuffer.bufferObject(t, parser);
                 break;
             }
         }
         return documentParseInfo;
+    }
+
+    private static JsonToken nextToken(JsonParser parser) {
+        try {
+            return parser.nextValue();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

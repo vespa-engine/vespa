@@ -72,7 +72,7 @@ public class TokenBuffer {
         buffer.addLast(new Token(token, name, text));
     }
 
-    void  bufferObject(JsonToken first, JsonParser tokens) {
+    public void  bufferObject(JsonToken first, JsonParser tokens) {
         int localNesting = 0;
         JsonToken t = first;
 

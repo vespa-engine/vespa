@@ -30,8 +30,8 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
-import com.yahoo.document.json.readers.SingleValueReader;
 import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate.Operator;
@@ -173,7 +173,7 @@ public class JsonReaderTestCase {
                         + " \"fields\": { \"something\": \"smoketest\","
                         + " \"nalle\": \"bamse\"}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentPut put = (DocumentPut) r.readSingleDocument(JsonReader.SupportedOperation.PUT, "id:unittest:smoke::whee");
+        DocumentPut put = (DocumentPut) r.readSingleDocument(DocumentParser.SupportedOperation.PUT, "id:unittest:smoke::whee");
         smokeTestDoc(put.getDocument());
     }
 
@@ -184,7 +184,7 @@ public class JsonReaderTestCase {
                         + " \"fields\": { \"something\": {"
                         + " \"assign\": \"orOther\" }}" + " }"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(JsonReader.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof AssignValueUpdate);
@@ -197,7 +197,7 @@ public class JsonReaderTestCase {
                         + " \"fields\": { \"int1\": {"
                         + " \"assign\": null }}" + " }"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(JsonReader.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
+        DocumentUpdate doc = (DocumentUpdate) r.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::whee");
         FieldUpdate f = doc.getFieldUpdate("int1");
         assertEquals(1, f.size());
         assertTrue(f.getValueUpdate(0) instanceof ClearValueUpdate);
