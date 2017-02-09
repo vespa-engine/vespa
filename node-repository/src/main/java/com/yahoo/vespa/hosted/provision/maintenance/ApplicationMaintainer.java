@@ -47,8 +47,10 @@ public class ApplicationMaintainer extends Maintainer {
         for (ApplicationId application : applications) {
             try {
                 // An application might change it's state between the time the set of applications is retrieved and the
-                // time deployment happens. Lock on application and check if it's still active
-                try (Mutex lock = nodeRepository().lock(application)) {
+                // time deployment happens. Lock on application and check if it's still active.
+                //
+                // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
+                try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
                     if (isApplicationActive(application)) {
                         Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
                         if ( ! deployment.isPresent()) continue; // this will be done at another config server
