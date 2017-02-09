@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.container.http.Http.Binding;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -34,7 +35,7 @@ public final class AccessControl {
     public static final class Builder {
         private String domain;
         private String applicationId;
-        private String vespaDomain = "";
+        private Optional<String> vespaDomain = Optional.empty();
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
         private final Set<String> excludeBindings = new LinkedHashSet<>();
@@ -60,7 +61,7 @@ public final class AccessControl {
         }
 
         public Builder vespaDomain(String vespaDomain) {
-            this.vespaDomain = vespaDomain;
+            this.vespaDomain = Optional.ofNullable(vespaDomain);
             return this;
         }
 
@@ -74,14 +75,14 @@ public final class AccessControl {
     public final boolean readEnabled;
     public final boolean writeEnabled;
     public final Set<String> excludedBindings;
-    public final String vespaDomain;
+    public final Optional<String> vespaDomain;
 
     private AccessControl(String domain,
                           String applicationId,
                           boolean writeEnabled,
                           boolean readEnabled,
                           Set<String> excludedBindings,
-                          String vespaDomain) {
+                          Optional<String> vespaDomain) {
         this.domain = domain;
         this.applicationId = applicationId;
         this.readEnabled = readEnabled;

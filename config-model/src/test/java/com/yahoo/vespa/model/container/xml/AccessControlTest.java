@@ -6,6 +6,7 @@ import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
@@ -49,6 +50,21 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             ContainerCluster.ROOT_HANDLER_BINDING);
 
     @Test
+    public void access_control_filter_chain_is_set_up() throws Exception {
+        Element clusterElem = DomBuilderTest.parse(
+                "  <http>",
+                "    <filtering>",
+                "      <access-control domain='foo' />",
+                "    </filtering>",
+                "  </http>");
+
+        Http http = new HttpBuilder().build(root, clusterElem);
+        root.freezeModelTopology();
+
+        assertTrue(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
+    }
+
+    @Test
     public void properties_are_set_from_xml() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
                 "  <http>",
@@ -62,10 +78,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
         Http http = new HttpBuilder().build(root, clusterElem);
         root.freezeModelTopology();
+        AccessControl accessControl = http.getAccessControl().get();
 
-        assertEquals("Wrong domain.", "my-domain", http.getAccessControl().get().domain);
-        assertEquals("Wrong application.", "my-app", http.getAccessControl().get().applicationId);
-        assertEquals("Wrong vespa-domain.", "custom-vespa-domain", http.getAccessControl().get().vespaDomain);
+        assertEquals("Wrong domain.", "my-domain", accessControl.domain);
+        assertEquals("Wrong application.", "my-app", accessControl.applicationId);
+        assertEquals("Wrong vespa-domain.", "custom-vespa-domain", accessControl.vespaDomain.get());
     }
 
     @Test
