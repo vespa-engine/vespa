@@ -1,16 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request.properties;
 
+import com.yahoo.collections.MethodCache;
 import com.yahoo.component.provider.FreezableClass;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.Properties;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -29,6 +27,7 @@ import java.util.logging.Logger;
 public class PropertyMap extends Properties {
 
     private static Logger log = Logger.getLogger(PropertyMap.class.getName());
+    private static final MethodCache cloneMethodCache = new MethodCache("clone");
 
     /**
      * The properties of this
@@ -115,13 +114,17 @@ public class PropertyMap extends Properties {
         else if (object instanceof LinkedList) { // TODO: Why? Somebody's infatuation with LinkedList knows no limits
             return ((LinkedList) object).clone();
         }
+        else if (object instanceof ArrayList) { // TODO: Why? Likewise
+            return ((ArrayList) object).clone();
+        }
 
         try {
-            Method cloneMethod = object.getClass().getMethod("clone");
+            Method cloneMethod = cloneMethodCache.get(object);
+            if (cloneMethod == null) {
+                log.warning("'" + object + "' is Cloneable, but has no clone method - will use the same instance in all requests");
+                return null;
+            }
             return cloneMethod.invoke(object);
-        } catch (NoSuchMethodException e) {
-            log.warning("'" + object + "' is Cloneable, but has no clone method - will use the same instance in all requests");
-            return null;
         } catch (IllegalAccessException e) {
             log.warning("'" + object + "' is Cloneable, but clone method cannot be accessed - will use the same instance in all requests");
             return null;
