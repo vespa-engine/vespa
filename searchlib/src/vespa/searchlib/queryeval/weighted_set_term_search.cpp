@@ -118,18 +118,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &) const override { }
 
     BitVector::UP get_hits(uint32_t begin_id) override {
-        BitVector::UP result(BitVector::create(begin_id, getEndId()));
-
-        for (size_t i = 0; i < _children.size(); ++i) {
-            uint32_t docId = _children.get_docid(i);
-            if (begin_id > docId) {
-                _children.seek(i, begin_id);
-            }
-            for (docId = _children.get_docid(i); ! isAtEnd(docId); docId = _children.next(i)) {
-                result->setBit(docId);
-            }
-        }
-        return result;
+        return _children.get_hits(begin_id, getEndId());
     }
 };
 
