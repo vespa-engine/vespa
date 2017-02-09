@@ -159,7 +159,7 @@ public class ReferenceFieldValue extends FieldValue {
      * @return reference DocumentId, or null if none has been set
      */
     @Override
-    public Object getWrappedValue() {
+    public DocumentId getWrappedValue() {
         return documentId.orElse(null);
     }
 }
