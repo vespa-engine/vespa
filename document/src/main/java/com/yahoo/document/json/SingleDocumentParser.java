@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.io.IOException;
@@ -25,14 +26,14 @@ public class SingleDocumentParser {
     }
 
     public VespaXMLFeedReader.Operation parsePut(InputStream inputStream, String docId) {
-        return parse(inputStream, docId, JsonReader.SupportedOperation.PUT);
+        return parse(inputStream, docId, DocumentParser.SupportedOperation.PUT);
     }
 
     public VespaXMLFeedReader.Operation parseUpdate(InputStream inputStream, String docId)  {
-        return parse(inputStream, docId, JsonReader.SupportedOperation.UPDATE);
+        return parse(inputStream, docId, DocumentParser.SupportedOperation.UPDATE);
     }
 
-    private VespaXMLFeedReader.Operation parse(InputStream inputStream, String docId, JsonReader.SupportedOperation supportedOperation)  {
+    private VespaXMLFeedReader.Operation parse(InputStream inputStream, String docId, DocumentParser.SupportedOperation supportedOperation)  {
         final JsonReader reader = new JsonReader(docMan, inputStream, jsonFactory);
         final DocumentOperation documentOperation = reader.readSingleDocument(supportedOperation, docId);
         VespaXMLFeedReader.Operation operation = new VespaXMLFeedReader.Operation();
@@ -41,7 +42,7 @@ public class SingleDocumentParser {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        if (supportedOperation == JsonReader.SupportedOperation.PUT) {
+        if (supportedOperation == DocumentParser.SupportedOperation.PUT) {
             operation.setDocument(((DocumentPut) documentOperation).getDocument());
         } else {
             operation.setDocumentUpdate((DocumentUpdate) documentOperation);
