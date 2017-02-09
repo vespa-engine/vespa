@@ -19,6 +19,12 @@ AttributeIteratorBase::and_hits_into(const SC & sc, BitVector & result, uint32_t
     result.foreach_truebit([&](uint32_t key) { if ( ! sc.cmp(key)) { result.clearBit(key); }}, begin_id);
 }
 
+template <typename SC>
+void
+AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
+    result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
+}
+
 template <typename PL>
 AttributePostingListIteratorT<PL>::
 AttributePostingListIteratorT(PL &iterator, bool hasWeight, fef::TermFieldMatchData *matchData)
@@ -259,6 +265,19 @@ FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
     setAtEnd();
 }
 
+template <typename SC>
+void
+AttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
+}
+
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
+}
+    
 template <typename SC>
 void
 AttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
