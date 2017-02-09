@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
+
 /**
  * @author tonytv
  * @author gjoranv
@@ -44,7 +46,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             if (accessControlElem != null) {
                 accessControl = buildAccessControl(accessControlElem);
                 bindings.addAll(getAccessControlBindings(ancestor, accessControl));
-                // The chain itself must be added by amenders.
+                filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
             filterChains = new FilterChainsBuilder().newChainsInstance(ancestor);
