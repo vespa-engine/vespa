@@ -133,7 +133,7 @@ public class JsonReader {
     public DocumentOperation next() {
         switch (state) {
             case AT_START:
-                JsonToken t = nextToken();
+                JsonToken t = nextToken(parser);
                 expectArrayStart(t);
                 state = ReaderState.READING;
                 break;
@@ -190,14 +190,14 @@ public class JsonReader {
 
     void readUpdate(TokenBuffer buffer, DocumentUpdate next) {
         if (buffer.size() == 0) {
-            bufferFields(buffer, nextToken());
+            bufferFields(buffer, nextToken(parser));
         }
         populateUpdateFromBuffer(buffer, next);
     }
 
     void readPut(TokenBuffer buffer, DocumentPut put) {
         if (buffer.size() == 0) {
-            bufferFields(buffer, nextToken());
+            bufferFields(buffer, nextToken(parser));
         }
         JsonToken t = buffer.currentToken();
         try {
@@ -213,7 +213,7 @@ public class JsonReader {
         documentParseInfo.documentId = documentId;
         while (true) {
             // we should now be at the start of a feed operation or at the end of the feed
-            JsonToken t = nextToken();
+            JsonToken t = nextToken(parser);
             if (t == null) {
                 throw new IllegalArgumentException("Could not read document, no document?");
             }
@@ -477,7 +477,7 @@ public class JsonReader {
         // TODO populateComposite is extremely similar to add/remove, refactor
     // yes, this suppresswarnings ugliness is by intention, the code relies on the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes" })
-    private void populateComposite(TokenBuffer buffer, FieldValue parent, JsonToken token) {
+    private static void populateComposite(TokenBuffer buffer, FieldValue parent, JsonToken token) {
         if ((token != JsonToken.START_OBJECT) && (token != JsonToken.START_ARRAY)) {
             throw new IllegalArgumentException("Expected '[' or '{'. Got '" + token + "'.");
         }
@@ -506,7 +506,7 @@ public class JsonReader {
         Preconditions.checkState(token.isStructEnd(), "Expected end of composite, got %s", token);
     }
 
-    private void fillStruct(TokenBuffer buffer, StructuredFieldValue parent) {
+    private static void fillStruct(TokenBuffer buffer, StructuredFieldValue parent) {
         // do note the order of initializing initNesting and token is relevant for empty docs
         int initNesting = buffer.nesting();
         JsonToken token = buffer.next();
@@ -523,7 +523,7 @@ public class JsonReader {
         }
     }
 
-    private Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
+    private static Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
         Field f = parent.getField(buffer.currentName());
         if (f == null) {
             throw new NullPointerException("Could not get field \"" + buffer.currentName() +
@@ -533,7 +533,7 @@ public class JsonReader {
     }
 
     @SuppressWarnings({ "rawtypes", "cast", "unchecked" })
-    private void fillMap(TokenBuffer buffer, MapFieldValue parent) {
+    private static void fillMap(TokenBuffer buffer, MapFieldValue parent) {
         JsonToken token = buffer.currentToken();
         int initNesting = buffer.nesting();
         expectArrayStart(token);
@@ -561,7 +561,7 @@ public class JsonReader {
         }
     }
 
-    private void expectArrayStart(JsonToken token) {
+    private static void expectArrayStart(JsonToken token) {
         Preconditions.checkState(token == JsonToken.START_ARRAY, "Expected start of array, got %s", token);
     }
 
@@ -569,12 +569,12 @@ public class JsonReader {
         Preconditions.checkState(token == JsonToken.START_OBJECT, "Expected start of JSON object, got %s", token);
     }
 
-    private void expectObjectEnd(JsonToken token) {
+    private static void expectObjectEnd(JsonToken token) {
         Preconditions.checkState(token == JsonToken.END_OBJECT, "Expected end of JSON object, got %s", token);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void fillArray(TokenBuffer buffer, CollectionFieldValue parent, DataType valueType) {
+    private static void fillArray(TokenBuffer buffer, CollectionFieldValue parent, DataType valueType) {
         int initNesting = buffer.nesting();
         expectArrayStart(buffer.currentToken());
         JsonToken token = buffer.next();
@@ -591,7 +591,7 @@ public class JsonReader {
         iterateThroughWeightedSet(buffer, initNesting, valueType, weightedSet);
     }
 
-    private void fillTensor(TokenBuffer buffer, TensorFieldValue tensorFieldValue) {
+    private static void fillTensor(TokenBuffer buffer, TensorFieldValue tensorFieldValue) {
         Tensor.Builder tensorBuilder = Tensor.Builder.of(tensorFieldValue.getDataType().getTensorType());
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
@@ -604,7 +604,7 @@ public class JsonReader {
         tensorFieldValue.assign(tensorBuilder.build());
     }
 
-    private void readTensorCells(TokenBuffer buffer, Tensor.Builder tensorBuilder) {
+    private static void readTensorCells(TokenBuffer buffer, Tensor.Builder tensorBuilder) {
         expectArrayStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
@@ -612,7 +612,7 @@ public class JsonReader {
         expectCompositeEnd(buffer.currentToken());
     }
 
-    private void readTensorCell(TokenBuffer buffer, Tensor.Builder tensorBuilder) {
+    private static void readTensorCell(TokenBuffer buffer, Tensor.Builder tensorBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         double cellValue = 0.0;
@@ -629,7 +629,7 @@ public class JsonReader {
         cellBuilder.value(cellValue);
     }
 
-    private void readTensorAddress(TokenBuffer buffer, MappedTensor.Builder.CellBuilder cellBuilder) {
+    private static void readTensorAddress(TokenBuffer buffer, MappedTensor.Builder.CellBuilder cellBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
@@ -640,7 +640,7 @@ public class JsonReader {
         expectObjectEnd(buffer.currentToken());
     }
 
-    private FieldValue readSingleValue(TokenBuffer buffer, JsonToken t, DataType expectedType) {
+    private static FieldValue readSingleValue(TokenBuffer buffer, JsonToken t, DataType expectedType) {
         if (t.isScalarValue()) {
             return readAtomic(buffer, expectedType);
         } else {
@@ -677,7 +677,7 @@ public class JsonReader {
 
     Optional<DocumentParseInfo> parseDocument() {
         // we should now be at the start of a feed operation or at the end of the feed
-        JsonToken token = nextToken();
+        JsonToken token = nextToken(parser);
         if (token == JsonToken.END_ARRAY) {
             return Optional.empty(); // end of feed
         }
@@ -687,7 +687,7 @@ public class JsonReader {
 
         while (true) {
             try {
-                token = nextToken();
+                token = nextToken(parser);
                 if ((token == JsonToken.VALUE_TRUE || token == JsonToken.VALUE_FALSE) &&
                      CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
                     documentParseInfo.create = Optional.of(token == JsonToken.VALUE_TRUE);
@@ -756,12 +756,13 @@ public class JsonReader {
         return docType;
     }
 
-    private JsonToken nextToken() {
+    private static JsonToken nextToken(JsonParser parser) {
         try {
             return parser.nextValue();
         } catch (IOException e) {
             // Jackson is not able to recover from structural parse errors
-            state = ReaderState.END_OF_FEED;
+            // TODO Do we really need to set state on exception?
+            // state = ReaderState.END_OF_FEED;
             throw new RuntimeException(e);
         }
     }
