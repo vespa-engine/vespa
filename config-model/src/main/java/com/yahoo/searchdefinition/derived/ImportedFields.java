@@ -38,22 +38,17 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
     }
 
     private static void considerField(ImportedFieldsConfig.Builder builder, ImportedField field) {
-        if (field.referencedField().doesAttributing()) {
-            builder.attribute.add(buildAttribute(field));
+        if (field.targetField().doesAttributing()) {
+            builder.attribute.add(createAttributeBuilder(field));
         }
     }
 
-    private static ImportedFieldsConfig.Attribute.Builder buildAttribute(ImportedField field) {
+    private static ImportedFieldsConfig.Attribute.Builder createAttributeBuilder(ImportedField field) {
         ImportedFieldsConfig.Attribute.Builder result = new ImportedFieldsConfig.Attribute.Builder();
-        result.name(field.aliasFieldName());
-        result.reference(buildReference(field));
+        result.name(field.fieldName());
+        result.referencefield(field.reference().referenceField().getName());
+        result.targetfield(field.targetField().getName());
         return result;
     }
 
-    private static ImportedFieldsConfig.Attribute.Reference.Builder buildReference(ImportedField field) {
-        ImportedFieldsConfig.Attribute.Reference.Builder result = new ImportedFieldsConfig.Attribute.Reference.Builder();
-        result.field(field.documentReference().documentReferenceField().getName());
-        result.targetfield(field.referencedField().getName());
-        return result;
-    }
 }

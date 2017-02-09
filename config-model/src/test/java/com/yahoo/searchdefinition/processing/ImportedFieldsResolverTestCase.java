@@ -42,17 +42,17 @@ public class ImportedFieldsResolverTestCase {
         assertEquals(1, model.importedFields.fields().size());
         ImportedField myBudget = model.importedFields.fields().get("my_budget");
         assertNotNull(myBudget);
-        assertEquals("my_budget", myBudget.aliasFieldName());
-        assertSame(model.adSearch.getField("campaign_ref"), myBudget.documentReference().documentReferenceField());
-        assertSame(model.campaignSearch, myBudget.documentReference().search());
-        assertSame(model.campaignSearch.getField("budget"), myBudget.referencedField());
+        assertEquals("my_budget", myBudget.fieldName());
+        assertSame(model.adSearch.getField("campaign_ref"), myBudget.reference().referenceField());
+        assertSame(model.campaignSearch, myBudget.reference().targetSearch());
+        assertSame(model.campaignSearch.getField("budget"), myBudget.targetField());
     }
 
     @Test
     public void resolver_fails_if_document_reference_is_not_found() {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("For search 'ad', import field 'my_budget': "
-                + "Document reference field 'not_campaign_ref' not found");
+                + "Reference field 'not_campaign_ref' not found");
         new SearchModel().add(new TemporaryImportedField("my_budget", "not_campaign_ref", "budget")).resolve();
     }
 
@@ -60,7 +60,7 @@ public class ImportedFieldsResolverTestCase {
     public void resolver_fails_if_referenced_field_is_not_found() {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("For search 'ad', import field 'my_budget': "
-                + "Field 'not_budget' via document reference field 'campaign_ref': Not found");
+                + "Field 'not_budget' via reference field 'campaign_ref': Not found");
         new SearchModel().add(new TemporaryImportedField("my_budget", "campaign_ref", "not_budget")).resolve();
     }
 
@@ -68,7 +68,7 @@ public class ImportedFieldsResolverTestCase {
     public void resolver_fails_if_referenced_field_is_not_an_attribute() {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("For search 'ad', import field 'my_not_attribute': "
-                + "Field 'not_attribute' via document reference field 'campaign_ref': Is not an attribute");
+                + "Field 'not_attribute' via reference field 'campaign_ref': Is not an attribute");
         new SearchModel().add(new TemporaryImportedField("my_not_attribute", "campaign_ref", "not_attribute")).resolve();
     }
 

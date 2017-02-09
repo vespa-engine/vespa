@@ -48,8 +48,8 @@ public class DocumentReferenceResolverTest {
 
         Map<String, DocumentReference> fooReferenceMap = fooDocument.getDocumentReferences().get().referenceMap();
         assertEquals(1, fooReferenceMap.size());
-        assertSame(barSearch, fooReferenceMap.get("bar_ref").search());
-        assertSame(fooRefToBarField, fooReferenceMap.get("bar_ref").documentReferenceField());
+        assertSame(barSearch, fooReferenceMap.get("bar_ref").targetSearch());
+        assertSame(fooRefToBarField, fooReferenceMap.get("bar_ref").referenceField());
     }
 
     @Test

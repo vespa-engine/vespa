@@ -5,8 +5,8 @@ namespace=vespa.config.search
 attribute[].name string
 
 # The name of the field (in this document type) that refers to a parent document type.
-attribute[].reference.field string
+attribute[].referencefield string
 
 # The name of the target attribute field in the parent document type that is imported into this document type.
-attribute[].reference.targetfield string
+attribute[].targetfield string
 
