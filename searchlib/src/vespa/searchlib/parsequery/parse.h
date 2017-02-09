@@ -1,16 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Creation date: 2000-05-15
- *
- * Declaration of ParseItem class.
- *
- *   Copyright (C) 1997-2003 Fast Search & Transfer ASA
- *   Copyright (C) 2003 Overture Services Norway AS
- *               ALL RIGHTS RESERVED
- */
+
 #pragma once
 
-#include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>

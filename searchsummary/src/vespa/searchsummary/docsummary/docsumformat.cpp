@@ -1,16 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchsummary/docsummary/docsumformat.h>
+#include "docsumformat.h"
 
 namespace search {
 namespace docsummary {
-
-LOG_SETUP(".searchlib.docsummary.docsumformat");
-
 
 size_t
 DocsumFormat::addByte(search::RawBuf &target, uint8_t value)
@@ -101,7 +94,7 @@ DocsumFormat::addEmpty(ResType type, search::RawBuf &target)
     case RES_FEATUREDATA:
         return addLongData(target, "", 0);
     }
-    LOG_ASSERT(type <= RES_FEATUREDATA);
+    assert(type <= RES_FEATUREDATA);
     return 0;
 }
 

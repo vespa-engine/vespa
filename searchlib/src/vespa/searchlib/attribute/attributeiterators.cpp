@@ -25,6 +25,13 @@ AttributeIteratorBase::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "tfmd.docId", _matchData->getDocId());
 }
 
+FilterAttributeIterator::FilterAttributeIterator(fef::TermFieldMatchData * matchData, uint32_t docIdLimit)
+    : AttributeIteratorBase(matchData),
+      _docIdLimit(docIdLimit)
+{
+    _matchPosition->setElementWeight(1);
+}
+
 void
 FilterAttributeIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 {

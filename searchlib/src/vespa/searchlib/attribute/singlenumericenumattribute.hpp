@@ -8,6 +8,7 @@
 #include "loadednumericvalue.h"
 #include "primitivereader.h"
 #include "attributeiterators.hpp"
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/query/queryterm.h>
 
 namespace search {

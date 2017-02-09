@@ -54,6 +54,10 @@ public:
         return _children[ref]->getDocId();
     }
 
+    uint32_t next(uint32_t ref) {
+        return seek(ref, _children[ref]->getDocId()+1);
+    }
+
     uint32_t seek(uint32_t ref, uint32_t docid) {
         _children[ref]->seek(docid);
         return _children[ref]->getDocId();

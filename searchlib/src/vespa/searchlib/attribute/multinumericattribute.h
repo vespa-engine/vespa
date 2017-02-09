@@ -2,14 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/multivalueattribute.h>
-#include <vespa/searchlib/attribute/attributeiterators.h>
-#include <vespa/searchlib/query/query.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
+#include "integerbase.h"
+#include "floatbase.h"
+#include "multivalueattribute.h"
 #include <limits>
-#include <string>
 
 namespace search {
 
@@ -84,7 +80,7 @@ public:
         bool valid() const override;
 
     public:
-        SetSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched);
+        SetSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
 
         Int64Range getAsIntegerTerm() const override;
 
@@ -133,7 +129,7 @@ public:
         bool valid() const override;
 
     public:
-        ArraySearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched);
+        ArraySearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
         bool cmp(DocId doc, int32_t & weight) const {
             uint32_t hitCount = 0;
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
@@ -176,7 +172,7 @@ public:
     virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(std::unique_ptr<QueryTermSimple> term, const AttributeVector::SearchContext::Params & params) const override;
 
     virtual void clearOldValues(DocId doc);
     virtual void setNewValues(DocId doc, const std::vector<WType> & values);

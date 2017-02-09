@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
 #include <vespa/searchlib/common/fslimits.h>
 #include <vespa/searchcore/fdispatch/common/stdincl.h>
 #include <vespa/searchcore/config/config-partitions.h>
+#include <cassert>
 
 using vespa::config::search::core::PartitionsConfig;
 
@@ -35,8 +34,7 @@ public:
           _unitrefcost(1),
           _isBad(false),
           _confPartIDOverrides(false)
-    {
-    }
+    { }
 
     void SetNext(FastS_EngineDesc *next) { _next = next; }
     void SetConfPartID(int32_t value) { assert(value >= 0); _confPartID = value; }

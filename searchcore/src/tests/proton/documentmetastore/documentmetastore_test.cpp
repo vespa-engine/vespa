@@ -16,6 +16,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/log/log.h>
 LOG_SETUP("documentmetastore_test");
 

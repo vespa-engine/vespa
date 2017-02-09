@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/defaults.h>
 #include <vector>
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <cstdio>
 #include <dirent.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #include "application.h"

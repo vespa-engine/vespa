@@ -32,7 +32,7 @@ public:
     // Caller takes ownership of the returned SearchIterator.
     static SearchIterator *create(const Children &children, bool strict);
 
-    BitVector::UP get_hits(uint32_t begin_id) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 private:
     bool isAndNot() const override { return true; }

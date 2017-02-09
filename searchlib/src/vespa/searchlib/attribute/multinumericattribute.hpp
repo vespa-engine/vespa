@@ -5,11 +5,12 @@
 #include "multivalueattribute.hpp"
 #include "attributevector.hpp"
 #include "attributeiterators.hpp"
-#include <vespa/searchlib/util/fileutil.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 #include "multinumericattributesaver.h"
 #include "load_utils.h"
 #include "primitivereader.h"
+#include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/util/fileutil.h>
+#include <vespa/fastlib/io/bufferedfile.h>
 
 namespace search {
 
@@ -211,8 +212,7 @@ std::unique_ptr<queryeval::SearchIterator>
 MultiValueNumericAttribute<B, M>::SetSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(
-                new queryeval::EmptySearch());
+        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
     }
     if (getIsFilter()) {
         return queryeval::SearchIterator::UP

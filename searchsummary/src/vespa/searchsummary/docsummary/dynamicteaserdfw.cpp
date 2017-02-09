@@ -1,24 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <cstdio>
-#include <vespa/log/log.h>
 #include "juniperdfw.h"
+#include "docsumwriter.h"
+#include "docsumfieldwriter.h"
+#include "docsumstate.h"
+#include "keywordextractor.h"
+#include "docsumformat.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/queryeval/split_float.h>
 
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
-#include <vespa/searchsummary/docsummary/docsumstate.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
-#include <vespa/searchsummary/docsummary/docsumformat.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");
 
 namespace juniper {
@@ -317,9 +313,7 @@ JuniperDFW::JuniperDFW(juniper::Juniper * juniper)
 }
 
 
-JuniperDFW::~JuniperDFW()
-{
-}
+JuniperDFW::~JuniperDFW() { }
 
 bool
 JuniperDFW::Init(

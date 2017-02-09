@@ -2,11 +2,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/runnable.h>
-#include <vespa/vespalib/util/dual_merge_director.h>
-#include <vespa/searchlib/common/resultset.h>
-#include <vespa/searchlib/common/sortresults.h>
-#include <vespa/searchlib/queryeval/hitcollector.h>
 #include "match_tools.h"
 #include "i_match_loop_communicator.h"
 #include "match_params.h"
@@ -14,6 +9,11 @@
 #include "partial_result.h"
 #include "result_processor.h"
 #include "docid_range_scheduler.h"
+#include <vespa/vespalib/util/runnable.h>
+#include <vespa/vespalib/util/dual_merge_director.h>
+#include <vespa/searchlib/common/resultset.h>
+#include <vespa/searchlib/common/sortresults.h>
+#include <vespa/searchlib/queryeval/hitcollector.h>
 
 namespace proton {
 namespace matching {

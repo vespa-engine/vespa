@@ -17,6 +17,7 @@
 #include <vespa/vespalib/util/generationholder.h>
 #include <experimental/optional>
 
+
 namespace search {
 namespace predicate {
 

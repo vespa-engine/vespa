@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/defaults.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-model-inspect");
 #include <iostream>
 #include <lib/modelinspect.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/fastos/app.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-model-inspect");
 
 class Application : public FastOS_Application
 {
