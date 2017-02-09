@@ -57,7 +57,19 @@ public class DockerOperationsImpl implements DockerOperations {
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
     static {
         DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/daemontools_y"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/jdisc_core"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/langdetect/"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/vespa"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yca"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yck"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yell"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ykeykey"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ykeykeyd"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yms_agent"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ysar"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ystatus"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/zpe_policy_updater"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/cache"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/crash"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/jdisc"), false);
