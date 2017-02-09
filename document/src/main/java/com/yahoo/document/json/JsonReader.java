@@ -250,7 +250,7 @@ public class JsonReader {
                     expectArrayStart(parser.currentToken());
                     parser.nextToken();
                     do {
-                        FieldPathUpdate fieldPathUpdate = parseFieldPathUpdate(documentType, parser);
+                       FieldPathUpdate fieldPathUpdate = parseFieldPathUpdate(documentType, parser);
                         documentParseInfo.addFieldPathUpdates(fieldPathUpdate);
                     } while (parser.nextToken() != JsonToken.END_ARRAY);
                 }
@@ -263,76 +263,17 @@ public class JsonReader {
         return documentParseInfo;
     }
 
-    private static FieldPathUpdate parseFieldPathUpdate(DocumentType type, JsonParser parser) throws IOException, ParseException {
-        Map<String, Object> map = parseMap(parser);
-        String operation = (String) map.get("operation");
-        String fieldPath = (String) map.get("fieldpath");
-        Optional<String> where = Optional.ofNullable((String) map.get("where")).filter(s -> !s.isEmpty());
-        FieldPathUpdate fieldPathUpdate;
-
-        Preconditions.checkArgument(fieldPath != null && !fieldPath.isEmpty(), "fieldpath argument must be set");
-        switch (operation.toLowerCase()) {
-            case UPDATE_ADD:
-                fieldPathUpdate = new AddFieldPathUpdate(type, fieldPath, null);
-                break;
-
-            case UPDATE_ASSIGN:
-                fieldPathUpdate = new AssignFieldPathUpdate(type, fieldPath, null);
-
-                Optional.ofNullable((Boolean) map.get("removeifzero"))
-                        .ifPresent(((AssignFieldPathUpdate) fieldPathUpdate)::setRemoveIfZero);
-                Optional.ofNullable((Boolean) map.get("createmissingpath"))
-                        .ifPresent(((AssignFieldPathUpdate) fieldPathUpdate)::setCreateMissingPath);
-
-                DataType dt = fieldPathUpdate.getFieldPath().getResultingDataType();
-                if (dt instanceof NumericDataType) {
-                    ((AssignFieldPathUpdate) fieldPathUpdate).setExpression(String.valueOf(map.get("value")));
-                } else {
-                    FieldValue fv = dt.createFieldValue();
-                    fv.assign(map.get("value"));
-                    ((AssignFieldPathUpdate) fieldPathUpdate).setNewValue(fv);
-                }
-                break;
-
-            case UPDATE_REMOVE:
-                fieldPathUpdate = new RemoveFieldPathUpdate(type, fieldPath);
-                break;
-
-            default:
-                throw new RuntimeException("Unsupported fieldpath operation: " + operation);
-        }
-
-        if (where.isPresent()) {
-            fieldPathUpdate.setWhereClause(where.get());
-        }
-
-        return fieldPathUpdate;
-    }
-
-    private static Map<String, Object> parseMap(JsonParser parser) throws IOException {
-        Map<String, Object> map = new HashMap<>();
+    private static FieldPathUpdate parseFieldPathUpdate(DocumentType documentType, JsonParser parser) throws IOException, ParseException {
         assert parser.isExpectedStartObjectToken();
 
         parser.nextToken();
-        do {
-            String key = parser.getValueAsString();
+        FieldPathUpdate.Type operation = FieldPathUpdate.Type.valueOf(parser.getValueAsString().toUpperCase());
+        parser.nextToken();
 
-            parser.nextToken();
-            Object value = null;
-            if (parser.currentToken().isBoolean()) {
-                value = parser.getBooleanValue();
-            } else if (parser.currentToken().isNumeric()) {
-                value = parser.getNumberValue();
-            } else if (parser.currentToken().isScalarValue()) { // Non-structured value
-                value = parser.getValueAsString();
-            } else if (parser.isExpectedStartArrayToken()) {
-                // TODO: Her må vi parse array for 'add'
-            }
-            Preconditions.checkState(key != null && value != null, "Missing key or value for map entry.");
-            map.put(key, value);
-        } while (! parser.nextToken().isStructEnd());
+        VespaJsonDocumentReader jsonDocumentReader = new VespaJsonDocumentReader(parser);
+        FieldPathUpdate fieldPathUpdate = FieldPathUpdate.create(operation, documentType, jsonDocumentReader);
 
-        return map;
+        return fieldPathUpdate;
     }
 
     private void verifyEndState() {
