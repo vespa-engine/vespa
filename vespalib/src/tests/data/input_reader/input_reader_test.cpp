@@ -2,32 +2,18 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/data/input_reader.h>
+#include <vespa/vespalib/test/chunked_input.h>
 #include <algorithm>
 
 using namespace vespalib;
-
-// make sure input is split into chunks
-struct ChunkedInput : Input {
-    Input &input;
-    ChunkedInput(Input &input_in) : input(input_in) {}
-    Memory obtain() override {
-        Memory memory = input.obtain();
-        memory.size = std::min(memory.size, size_t(3));
-        return memory;
-    }
-    Input &evict(size_t bytes) override {
-        EXPECT_LESS_EQUAL(bytes, 3u);
-        input.evict(bytes);
-        return *this;
-    }
-};
+using vespalib::test::ChunkedInput;
 
 TEST("input reader smoke test") {
     const char *data = "abc\n"
                        "foo bar\n"
                        "2 + 2 = 4\n";
     MemoryInput memory_input(data);
-    ChunkedInput input(memory_input);
+    ChunkedInput input(memory_input, 3);
     {
         InputReader src(input);
         EXPECT_EQUAL(src.get_offset(), 0u);
@@ -91,7 +77,7 @@ TEST("require that input can be explicitly failed with custom message") {
 TEST("require that reading a byte sequence crossing the end of input fails") {
     const char *data = "1234567890";
     MemoryInput memory_input(data);
-    ChunkedInput input(memory_input);
+    ChunkedInput input(memory_input, 3);
     {
         InputReader src(input);
         EXPECT_EQUAL(src.read(15), Memory());

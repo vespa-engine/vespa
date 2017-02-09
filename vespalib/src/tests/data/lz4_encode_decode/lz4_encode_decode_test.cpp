@@ -4,24 +4,10 @@
 #include <vespa/vespalib/data/lz4_input_decoder.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/memory_input.h>
+#include <vespa/vespalib/test/chunked_input.h>
 
 using namespace vespalib;
-
-// make sure input is split into chunks
-struct ChunkedInput : Input {
-    Input &input;
-    ChunkedInput(Input &input_in) : input(input_in) {}
-    Memory obtain() override {
-        Memory memory = input.obtain();
-        memory.size = std::min(memory.size, size_t(3));
-        return memory;
-    }
-    Input &evict(size_t bytes) override {
-        EXPECT_LESS_EQUAL(bytes, 3u);
-        input.evict(bytes);
-        return *this;
-    }
-};
+using vespalib::test::ChunkedInput;
 
 void transfer(Input &input, Output &output) {
     for (Memory src = input.obtain(); src.size > 0; src = input.obtain()) {
@@ -41,14 +27,14 @@ TEST("require that lz4 encode-decode works") {
     SimpleBuffer encoded;
     {
         MemoryInput memory_input(data.get());
-        ChunkedInput chunked_input(memory_input);
+        ChunkedInput chunked_input(memory_input, 3);
         Lz4OutputEncoder lz4_encoder(encoded, 10);
         transfer(chunked_input, lz4_encoder);
     }
     SimpleBuffer decoded;
     {
         MemoryInput memory_input(encoded.get());
-        ChunkedInput chunked_input(memory_input);
+        ChunkedInput chunked_input(memory_input, 3);
         Lz4InputDecoder input_decoder(chunked_input, 10);
         transfer(input_decoder, decoded);
         EXPECT_TRUE(!input_decoder.failed());
