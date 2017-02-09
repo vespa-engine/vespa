@@ -47,7 +47,7 @@ public class ImportedFieldsResolver extends Processor {
         String documentReferenceFieldName = importedField.documentReferenceFieldName();
         DocumentReference reference = references.get().referenceMap().get(documentReferenceFieldName);
         if (reference == null) {
-            fail(importedField.aliasFieldName(), "Document reference field '" + documentReferenceFieldName + "' not found");
+            fail(importedField, "Document reference field '" + documentReferenceFieldName + "' not found");
         }
         return reference;
     }
@@ -56,13 +56,19 @@ public class ImportedFieldsResolver extends Processor {
         String foreignFieldName = importedField.foreignFieldName();
         SDField referencedField = reference.search().getField(foreignFieldName);
         if (referencedField == null) {
-            fail(importedField.aliasFieldName(), "Field '" + foreignFieldName + "' via document reference field '" + reference.documentReferenceField().getName() + "' not found");
+            fail(importedField, foreignFieldAsString(foreignFieldName, reference) + "Not found");
+        } else if (!referencedField.doesAttributing()) {
+            fail(importedField, foreignFieldAsString(foreignFieldName, reference) + "Is not an attribute");
         }
         return referencedField;
     }
 
-    private void fail(String importedFieldName, String msg) {
-        throw new IllegalArgumentException("For search '" + search.getName() + "', import field '" + importedFieldName + "': Imported field is not valid. " + msg);
+    private String foreignFieldAsString(String foreignFieldName, DocumentReference reference) {
+        return "Field '" + foreignFieldName + "' via document reference field '" + reference.documentReferenceField().getName() + "': ";
+    }
+
+    private void fail(TemporaryImportedField importedField, String msg) {
+        throw new IllegalArgumentException("For search '" + search.getName() + "', import field '" + importedField.aliasFieldName() + "': " + msg);
     }
 
 }

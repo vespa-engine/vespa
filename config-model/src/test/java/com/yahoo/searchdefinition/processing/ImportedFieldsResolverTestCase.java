@@ -51,7 +51,7 @@ public class ImportedFieldsResolverTestCase {
     @Test
     public void resolver_fails_if_document_reference_is_not_found() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'ad', import field 'my_budget': Imported field is not valid. "
+        exceptionRule.expectMessage("For search 'ad', import field 'my_budget': "
                 + "Document reference field 'not_campaign_ref' not found");
         new SearchModel().add(new TemporaryImportedField("my_budget", "not_campaign_ref", "budget")).resolve();
     }
@@ -59,9 +59,17 @@ public class ImportedFieldsResolverTestCase {
     @Test
     public void resolver_fails_if_referenced_field_is_not_found() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'ad', import field 'my_budget': Imported field is not valid. "
-                + "Field 'not_budget' via document reference field 'campaign_ref' not found");
+        exceptionRule.expectMessage("For search 'ad', import field 'my_budget': "
+                + "Field 'not_budget' via document reference field 'campaign_ref': Not found");
         new SearchModel().add(new TemporaryImportedField("my_budget", "campaign_ref", "not_budget")).resolve();
+    }
+
+    @Test
+    public void resolver_fails_if_referenced_field_is_not_an_attribute() {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("For search 'ad', import field 'my_not_attribute': "
+                + "Field 'not_attribute' via document reference field 'campaign_ref': Is not an attribute");
+        new SearchModel().add(new TemporaryImportedField("my_not_attribute", "campaign_ref", "not_attribute")).resolve();
     }
 
     private static class SearchModel {
@@ -73,7 +81,10 @@ public class ImportedFieldsResolverTestCase {
 
             campaignSearch = new Search("campaign", app);
             campaignSearch.addDocument(new SDDocumentType("campaign"));
-            campaignSearch.getDocument().addField(new TemporarySDField("budget", DataType.INT));
+            TemporarySDField budgetField = new TemporarySDField("budget", DataType.INT);
+            budgetField.parseIndexingScript("{ attribute }");
+            campaignSearch.getDocument().addField(budgetField);
+            campaignSearch.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
 
             adSearch = new Search("ad", app);
             adSearch.addDocument(new SDDocumentType("ad"));
