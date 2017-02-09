@@ -69,7 +69,7 @@ double calculate_expression(const vespalib::string &expression, const Params &pa
     const Function function = Function::parse(expression);
     const NodeTypes types(function, extract_param_types(function, params));
     const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
-    InterpretedFunction::Context context;
+    InterpretedFunction::Context context(interpreted);
     inject_params(function, params, context);
     const Value &result = interpreted.eval(context);
     EXPECT_TRUE(result.is_double());
@@ -83,7 +83,7 @@ double benchmark_expression_us(const vespalib::string &expression, const Params 
     const Function function = Function::parse(expression);
     const NodeTypes types(function, extract_param_types(function, params));
     const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
-    InterpretedFunction::Context context;
+    InterpretedFunction::Context context(interpreted);
     inject_params(function, params, context);
     auto ranking = [&](){ interpreted.eval(context); };
     auto baseline = [&](){ dummy_ranking(context); };

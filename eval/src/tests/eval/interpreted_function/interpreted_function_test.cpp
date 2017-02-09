@@ -15,29 +15,6 @@ using vespalib::Stash;
 
 //-----------------------------------------------------------------------------
 
-std::vector<vespalib::string> unsupported = {
-    "map(",
-    "join(",
-    "reduce(",
-    "rename(",
-    "tensor(",
-    "concat("
-};
-
-bool is_unsupported(const vespalib::string &expression) {
-    if (expression == "reduce(a,sum)") {
-        return false;
-    }
-    for (const auto &prefix: unsupported) {
-        if (starts_with(expression, prefix)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-//-----------------------------------------------------------------------------
-
 struct MyEvalTest : test::EvalSpec::EvalTest {
     size_t pass_cnt = 0;
     size_t fail_cnt = 0;
@@ -48,7 +25,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     {
         Function function = Function::parse(param_names, expression);
         ASSERT_TRUE(!function.has_error());
-        bool is_supported = !is_unsupported(expression);
+        bool is_supported = true;
         bool has_issues = InterpretedFunction::detect_issues(function);
         if (is_supported == has_issues) {
             const char *supported_str = is_supported ? "supported" : "not supported";
@@ -65,12 +42,12 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     {
         Function function = Function::parse(param_names, expression);
         ASSERT_TRUE(!function.has_error());
-        bool is_supported = !is_unsupported(expression);
+        bool is_supported = true;
         bool has_issues = InterpretedFunction::detect_issues(function);
         if (is_supported && !has_issues) {
             InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
             ASSERT_EQUAL(ifun.num_params(), param_values.size());
-            InterpretedFunction::Context ictx;
+            InterpretedFunction::Context ictx(ifun);
             for (double param: param_values) {
                 ictx.add_param(param);
             }
@@ -106,7 +83,7 @@ TEST("require that invalid function evaluates to a error") {
     Function function = Function::parse(params, "x & y");
     EXPECT_TRUE(function.has_error());
     InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
-    InterpretedFunction::Context ctx;
+    InterpretedFunction::Context ctx(ifun);
     ctx.add_param(1);
     ctx.add_param(2);
     ctx.add_param(3);
@@ -121,7 +98,7 @@ TEST("require that invalid function evaluates to a error") {
 size_t count_ifs(const vespalib::string &expr, std::initializer_list<double> params_in) {
     Function fun = Function::parse(expr);
     InterpretedFunction ifun(SimpleTensorEngine::ref(), fun, NodeTypes());
-    InterpretedFunction::Context ctx;
+    InterpretedFunction::Context ctx(ifun);
     for (double param: params_in) {
         ctx.add_param(param);
     }
@@ -147,7 +124,7 @@ TEST("require that interpreted function instructions have expected size") {
 TEST("require that basic addition works") {
     Function function = Function::parse("a+10");
     InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
-    InterpretedFunction::Context ctx;
+    InterpretedFunction::Context ctx(interpreted);
     ctx.add_param(20);
     EXPECT_EQUAL(interpreted.eval(ctx).as_double(), 30.0);
     ctx.clear_params();
@@ -165,7 +142,7 @@ TEST("require that dot product like expression is not optimized for unknown type
     double expect = (2.0 * 3.0);
     InterpretedFunction interpreted(engine, function, NodeTypes());
     EXPECT_EQUAL(4u, interpreted.program_size());
-    InterpretedFunction::Context ctx;
+    InterpretedFunction::Context ctx(interpreted);
     ctx.add_param(a);
     ctx.add_param(b);
     const Value &result = interpreted.eval(ctx);
@@ -188,7 +165,7 @@ TEST("require that dot product works with tensor function") {
     NodeTypes types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())});
     InterpretedFunction interpreted(engine, function, types);
     EXPECT_EQUAL(1u, interpreted.program_size());
-    InterpretedFunction::Context ctx;
+    InterpretedFunction::Context ctx(interpreted);
     TensorValue va(engine.create(a));
     TensorValue vb(engine.create(b));
     ctx.add_param(va);
@@ -219,7 +196,7 @@ TEST("require that matrix multiplication works with tensor function") {
     NodeTypes types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())});
     InterpretedFunction interpreted(engine, function, types);
     EXPECT_EQUAL(1u, interpreted.program_size());
-    InterpretedFunction::Context ctx;
+    InterpretedFunction::Context ctx(interpreted);
     TensorValue va(engine.create(a));
     TensorValue vb(engine.create(b));
     ctx.add_param(va);
@@ -231,15 +208,27 @@ TEST("require that matrix multiplication works with tensor function") {
 
 //-----------------------------------------------------------------------------
 
-TEST("require function issues can be detected") {
-    auto simple = Function::parse("a+b");
-    auto complex = Function::parse("join(a,b,f(a,b)(a+b))");
-    EXPECT_FALSE(simple.has_error());
-    EXPECT_FALSE(complex.has_error());
-    EXPECT_FALSE(InterpretedFunction::detect_issues(simple));
-    EXPECT_TRUE(InterpretedFunction::detect_issues(complex));
+TEST("require that functions with non-compilable lambdas cannot be interpreted") {
+    auto good_map = Function::parse("map(a,f(x)(x+1))");
+    auto good_join = Function::parse("join(a,b,f(x,y)(x+y))");
+    auto good_tensor = Function::parse("tensor(a[10],b[10])(a+b)");
+    auto bad_map = Function::parse("map(a,f(x)(map(x,f(i)(i+1))))");
+    auto bad_join = Function::parse("join(a,b,f(x,y)(join(x,y,f(i,j)(i+j))))");
+    auto bad_tensor = Function::parse("tensor(a[10],b[10])(join(a,b,f(i,j)(i+j)))");
+    for (const Function *good: {&good_map, &good_join, &good_tensor}) {
+        if (!EXPECT_TRUE(!good->has_error())) {
+            fprintf(stderr, "parse error: %s\n", good->get_error().c_str());
+        }
+        EXPECT_TRUE(!InterpretedFunction::detect_issues(*good));
+    }
+    for (const Function *bad: {&bad_map, &bad_join, &bad_tensor}) {
+        if (!EXPECT_TRUE(!bad->has_error())) {
+            fprintf(stderr, "parse error: %s\n", bad->get_error().c_str());
+        }
+        EXPECT_TRUE(InterpretedFunction::detect_issues(*bad));
+    }
     std::cerr << "Example function issues:" << std::endl
-              << InterpretedFunction::detect_issues(complex).list
+              << InterpretedFunction::detect_issues(bad_tensor).list
               << std::endl;
 }
 

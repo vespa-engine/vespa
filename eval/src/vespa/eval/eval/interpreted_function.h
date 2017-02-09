@@ -27,13 +27,15 @@ class InterpretedFunction
 {
 public:
     struct State {
+        const TensorEngine      &engine;
         std::vector<Value::CREF> params;
         Stash                    stash;
         std::vector<Value::CREF> stack;
         std::vector<Value::CREF> let_values;
         uint32_t                 program_offset;
         uint32_t                 if_cnt;
-        State() : params(), stash(), stack(), let_values(), program_offset(0) {}
+        State(const TensorEngine &engine_in)
+            : engine(engine_in), params(), stash(), stack(), let_values(), program_offset(0) {}
         void clear() {
             stash.clear();
             stack.clear();
@@ -57,6 +59,7 @@ public:
         State _state;
         Stash _param_stash;
     public:
+        explicit Context(const InterpretedFunction &ifun);
         void clear_params() {
             _state.params.clear();
             _param_stash.clear();

@@ -165,7 +165,7 @@ struct FunctionInfo {
         size_t path = 0;
         for (const Node *tree: trees) {
             InterpretedFunction ifun(DefaultTensorEngine::ref(), *tree, params.size(), NodeTypes());
-            InterpretedFunction::Context ctx;
+            InterpretedFunction::Context ctx(ifun);
             for (double param: params) {
                 ctx.add_param(param);
             }

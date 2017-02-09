@@ -341,7 +341,7 @@ struct Expr_V : Eval {
         Function fun = Function::parse(expr);
         NodeTypes types(fun, {});
         InterpretedFunction ifun(engine, fun, types);
-        InterpretedFunction::Context ctx;
+        InterpretedFunction::Context ctx(ifun);
         return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
     }
 };
@@ -355,7 +355,7 @@ struct Expr_T : Eval {
         auto a_type = ValueType::from_spec(a.type());
         NodeTypes types(fun, {a_type});
         InterpretedFunction ifun(engine, fun, types);
-        InterpretedFunction::Context ctx;
+        InterpretedFunction::Context ctx(ifun);
         TensorValue va(engine.create(a));
         ctx.add_param(va);
         return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
@@ -372,7 +372,7 @@ struct Expr_TT : Eval {
         auto b_type = ValueType::from_spec(b.type());
         NodeTypes types(fun, {a_type, b_type});
         InterpretedFunction ifun(engine, fun, types);
-        InterpretedFunction::Context ctx;
+        InterpretedFunction::Context ctx(ifun);
         TensorValue va(engine.create(a));
         TensorValue vb(engine.create(b));
         ctx.add_param(va);
