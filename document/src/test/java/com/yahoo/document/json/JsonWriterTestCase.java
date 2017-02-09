@@ -294,7 +294,7 @@ public class JsonWriterTestCase {
         JsonReader.DocumentParseInfo raw = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(raw.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, raw.documentId));
-        r.readPut(put);
+        r.readPut(raw.fieldsBuffer, put);
         return put.getDocument();
     }
 

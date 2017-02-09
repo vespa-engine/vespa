@@ -85,7 +85,6 @@ public class JsonReader {
     private static final String UPDATE_ELEMENT = "element";
 
     private final JsonParser parser;
-    private TokenBuffer buffer = new TokenBuffer();
     private final DocumentTypeManager typeManager;
     private ReaderState state = ReaderState.AT_START;
 
@@ -94,6 +93,7 @@ public class JsonReader {
         public Optional<Boolean> create = Optional.empty();
         Optional<String> condition = Optional.empty();
         SupportedOperation operationType = null;
+        TokenBuffer fieldsBuffer = new TokenBuffer();
     }
 
     enum SupportedOperation {
@@ -125,7 +125,7 @@ public class JsonReader {
         DocumentId docId = new DocumentId(docIdString);
         DocumentParseInfo documentParseInfo = parseToDocumentsFieldsAndInsertFieldsIntoBuffer(docId);
         documentParseInfo.operationType = operationType;
-        DocumentOperation operation = createDocumentOperation(documentParseInfo);
+        DocumentOperation operation = createDocumentOperation(documentParseInfo.fieldsBuffer, documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
     }
@@ -149,28 +149,28 @@ public class JsonReader {
             state = ReaderState.END_OF_FEED;
             return null;
         }
-        DocumentOperation operation = createDocumentOperation(documentParseInfo.get());
+        DocumentOperation operation = createDocumentOperation(documentParseInfo.get().fieldsBuffer, documentParseInfo.get());
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.get().condition));
         return operation;
     }
 
-    private DocumentOperation createDocumentOperation(DocumentParseInfo documentParseInfo) {
+    private DocumentOperation createDocumentOperation(TokenBuffer buffer, DocumentParseInfo documentParseInfo) {
         DocumentType documentType = getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager);
         final DocumentOperation documentOperation;
         try {
             switch (documentParseInfo.operationType) {
                 case PUT:
                     documentOperation = new DocumentPut(new Document(documentType, documentParseInfo.documentId));
-                    readPut((DocumentPut) documentOperation);
-                    verifyEndState();
+                    readPut(buffer, (DocumentPut) documentOperation);
+                    verifyEndState(buffer);
                     break;
                 case REMOVE:
                     documentOperation = new DocumentRemove(documentParseInfo.documentId);
                     break;
                 case UPDATE:
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
-                    readUpdate((DocumentUpdate) documentOperation);
-                    verifyEndState();
+                    readUpdate(buffer, (DocumentUpdate) documentOperation);
+                    verifyEndState(buffer);
                     break;
                 default:
                     throw new IllegalStateException("Implementation out of sync with itself. This is a bug.");
@@ -188,20 +188,20 @@ public class JsonReader {
         return documentOperation;
     }
 
-    void readUpdate(DocumentUpdate next) {
+    void readUpdate(TokenBuffer buffer, DocumentUpdate next) {
         if (buffer.size() == 0) {
-            bufferFields(nextToken());
+            bufferFields(buffer, nextToken());
         }
-        populateUpdateFromBuffer(next);
+        populateUpdateFromBuffer(buffer, next);
     }
 
-    void readPut(DocumentPut put) {
+    void readPut(TokenBuffer buffer, DocumentPut put) {
         if (buffer.size() == 0) {
-            bufferFields(nextToken());
+            bufferFields(buffer, nextToken());
         }
         JsonToken t = buffer.currentToken();
         try {
-            populateComposite(put.getDocument(), t);
+            populateComposite(buffer, put.getDocument(), t);
         } catch (JsonReaderException e) {
             throw JsonReaderException.addDocId(e, put.getId());
         }
@@ -250,21 +250,21 @@ public class JsonReader {
                 } catch (IOException e) {
                     throw new RuntimeException("Got IO exception while parsing document", e);
                 }
-                bufferFields(t);
+                bufferFields(documentParseInfo.fieldsBuffer, t);
                 break;
             }
         }
         return documentParseInfo;
     }
 
-    private void verifyEndState() {
+    private void verifyEndState(TokenBuffer buffer) {
         Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
         expectObjectEnd(buffer.currentToken());
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
         Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
     }
 
-    private void populateUpdateFromBuffer(DocumentUpdate update) {
+    private void populateUpdateFromBuffer(TokenBuffer buffer, DocumentUpdate update) {
         expectObjectStart(buffer.currentToken());
         int localNesting = buffer.nesting();
         JsonToken t = buffer.next();
@@ -273,12 +273,12 @@ public class JsonReader {
             expectObjectStart(t);
             String fieldName = buffer.currentName();
             Field field = update.getType().getField(fieldName);
-            addFieldUpdates(update, field);
+            addFieldUpdates(buffer, update, field);
             t = buffer.next();
         }
     }
 
-    private void addFieldUpdates(DocumentUpdate update, Field field) {
+    private void addFieldUpdates(TokenBuffer buffer, DocumentUpdate update, Field field) {
         int localNesting = buffer.nesting();
         FieldUpdate fieldUpdate = FieldUpdate.create(field);
 
@@ -286,17 +286,17 @@ public class JsonReader {
         while (localNesting <= buffer.nesting()) {
             switch (buffer.currentName()) {
             case UPDATE_REMOVE:
-                createAddsOrRemoves(field, fieldUpdate, FieldOperation.REMOVE);
+                createAddsOrRemoves(buffer, field, fieldUpdate, FieldOperation.REMOVE);
                 break;
             case UPDATE_ADD:
-                createAddsOrRemoves(field, fieldUpdate, FieldOperation.ADD);
+                createAddsOrRemoves(buffer, field, fieldUpdate, FieldOperation.ADD);
                 break;
             case UPDATE_MATCH:
-                fieldUpdate.addValueUpdate(createMapUpdate(field));
+                fieldUpdate.addValueUpdate(createMapUpdate(buffer, field));
                 break;
             default:
                 String action = buffer.currentName();
-                fieldUpdate.addValueUpdate(readSingleUpdate(field.getDataType(), action));
+                fieldUpdate.addValueUpdate(readSingleUpdate(buffer, field.getDataType(), action));
             }
             buffer.next();
         }
@@ -304,9 +304,9 @@ public class JsonReader {
     }
 
     @SuppressWarnings("rawtypes")
-    private ValueUpdate createMapUpdate(Field field) {
+    private ValueUpdate createMapUpdate(TokenBuffer buffer, Field field) {
         buffer.next();
-        MapValueUpdate m = (MapValueUpdate) createMapUpdate(field.getDataType(), null, null);
+        MapValueUpdate m = (MapValueUpdate) createMapUpdate(buffer, field.getDataType(), null, null);
         buffer.next();
         // must generate the field value in parallell with the actual
         return m;
@@ -314,7 +314,7 @@ public class JsonReader {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private ValueUpdate createMapUpdate(DataType currentLevel, FieldValue keyParent, FieldValue topLevelKey) {
+    private ValueUpdate createMapUpdate(TokenBuffer buffer, DataType currentLevel, FieldValue keyParent, FieldValue topLevelKey) {
         TokenBuffer.Token element = buffer.prefetchScalar(UPDATE_ELEMENT);
         if (UPDATE_ELEMENT.equals(buffer.currentName())) {
             buffer.next();
@@ -329,16 +329,16 @@ public class JsonReader {
         if (!UPDATE_MATCH.equals(buffer.currentName())) {
             // we have reached an action...
             if (topLevelKey == null) {
-                return ValueUpdate.createMap(key, readSingleUpdate(valueTypeForMapUpdate(currentLevel), buffer.currentName()));
+                return ValueUpdate.createMap(key, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName()));
             } else {
-                return ValueUpdate.createMap(topLevelKey, readSingleUpdate(valueTypeForMapUpdate(currentLevel), buffer.currentName()));
+                return ValueUpdate.createMap(topLevelKey, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName()));
             }
         } else {
             // next level of matching
             if (topLevelKey == null) {
-                return createMapUpdate(valueTypeForMapUpdate(currentLevel), key, key);
+                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, key);
             } else {
-                return createMapUpdate(valueTypeForMapUpdate(currentLevel), key, topLevelKey);
+                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, topLevelKey);
             }
         }
     }
@@ -370,14 +370,14 @@ public class JsonReader {
     }
 
     @SuppressWarnings("rawtypes")
-    private ValueUpdate readSingleUpdate(DataType expectedType, String action) {
+    private ValueUpdate readSingleUpdate(TokenBuffer buffer, DataType expectedType, String action) {
         ValueUpdate update;
 
         switch (action) {
             case UPDATE_ASSIGN:
                 update = (buffer.currentToken() == JsonToken.VALUE_NULL)
                         ? ValueUpdate.createClear()
-                        : ValueUpdate.createAssign(readSingleValue(buffer.currentToken(), expectedType));
+                        : ValueUpdate.createAssign(readSingleValue(buffer, buffer.currentToken(), expectedType));
                 break;
                 // double is silly, but it's what is used internally anyway
             case UPDATE_INCREMENT:
@@ -401,7 +401,7 @@ public class JsonReader {
     // yes, this suppresswarnings ugliness is by intention, the code relies on
     // the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes", "unchecked" })
-    private void createAddsOrRemoves(Field field, FieldUpdate update, FieldOperation op) {
+    private void createAddsOrRemoves(TokenBuffer buffer, Field field, FieldUpdate update, FieldOperation op) {
         FieldValue container = field.getDataType().createFieldValue();
         FieldUpdate singleUpdate;
         int initNesting = buffer.nesting();
@@ -415,7 +415,7 @@ public class JsonReader {
                 // these are objects with string keys (which are the nested
                 // types) and values which are the weight
                 WeightedSet weightedSet = (WeightedSet) container;
-                fillWeightedSetUpdate(initNesting, valueType, weightedSet);
+                fillWeightedSetUpdate(buffer, initNesting, valueType, weightedSet);
                 if (op == FieldOperation.REMOVE) {
                     singleUpdate = FieldUpdate.createRemoveAll(field, weightedSet);
                 } else {
@@ -424,7 +424,7 @@ public class JsonReader {
                 }
             } else {
                 List<FieldValue> arrayContents = new ArrayList<>();
-                token = fillArrayUpdate(initNesting, token, valueType, arrayContents);
+                token = fillArrayUpdate(buffer, initNesting, token, valueType, arrayContents);
                 if (token != JsonToken.END_ARRAY) {
                     throw new IllegalStateException("Expected END_ARRAY. Got '" + token + "'.");
                 }
@@ -443,21 +443,21 @@ public class JsonReader {
         update.addAll(singleUpdate);
     }
 
-    private JsonToken fillArrayUpdate(int initNesting, JsonToken initToken, DataType valueType, List<FieldValue> arrayContents) {
+    private JsonToken fillArrayUpdate(TokenBuffer buffer, int initNesting, JsonToken initToken, DataType valueType, List<FieldValue> arrayContents) {
         JsonToken token = initToken;
         while (buffer.nesting() >= initNesting) {
-            arrayContents.add(readSingleValue(token, valueType));
+            arrayContents.add(readSingleValue(buffer, token, valueType));
             token = buffer.next();
         }
         return token;
     }
 
-    private void fillWeightedSetUpdate(int initNesting, DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
-        iterateThroughWeightedSet(initNesting, valueType, weightedSet);
+    private static void fillWeightedSetUpdate(TokenBuffer buffer, int initNesting, DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
+        iterateThroughWeightedSet(buffer, initNesting, valueType, weightedSet);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private void iterateThroughWeightedSet(int initNesting, DataType valueType, WeightedSet weightedSet) {
+    private static void iterateThroughWeightedSet(TokenBuffer buffer, int initNesting, DataType valueType, WeightedSet weightedSet) {
         while (buffer.nesting() >= initNesting) {
             // XXX the keys are defined in the spec to always be represented as strings
             FieldValue v = valueType.createFieldValue(buffer.currentName());
@@ -466,26 +466,34 @@ public class JsonReader {
         }
     }
 
-    // TODO populateComposite is extremely similar to add/remove, refactor
+    public static FieldValue NEWpopulateComposite(DataType dataType, JsonParser parser) throws IOException {
+        // bla
+        JsonToken t = parser.nextToken();
+        return null;
+    }
+
+
+
+        // TODO populateComposite is extremely similar to add/remove, refactor
     // yes, this suppresswarnings ugliness is by intention, the code relies on the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes" })
-    private void populateComposite(FieldValue parent, JsonToken token) {
+    private void populateComposite(TokenBuffer buffer, FieldValue parent, JsonToken token) {
         if ((token != JsonToken.START_OBJECT) && (token != JsonToken.START_ARRAY)) {
             throw new IllegalArgumentException("Expected '[' or '{'. Got '" + token + "'.");
         }
         if (parent instanceof CollectionFieldValue) {
             DataType valueType = ((CollectionFieldValue) parent).getDataType().getNestedType();
             if (parent instanceof WeightedSet) {
-                fillWeightedSet(valueType, (WeightedSet) parent);
+                fillWeightedSet(buffer, valueType, (WeightedSet) parent);
             } else {
-                fillArray((CollectionFieldValue) parent, valueType);
+                fillArray(buffer, (CollectionFieldValue) parent, valueType);
             }
         } else if (parent instanceof MapFieldValue) {
-            fillMap((MapFieldValue) parent);
+            fillMap(buffer, (MapFieldValue) parent);
         } else if (parent instanceof StructuredFieldValue) {
-            fillStruct((StructuredFieldValue) parent);
+            fillStruct(buffer, (StructuredFieldValue) parent);
         } else if (parent instanceof TensorFieldValue) {
-            fillTensor((TensorFieldValue) parent);
+            fillTensor(buffer, (TensorFieldValue) parent);
         } else {
             throw new IllegalStateException("Has created a composite field"
                     + " value the reader does not know how to handle: "
@@ -494,19 +502,19 @@ public class JsonReader {
         expectCompositeEnd(buffer.currentToken());
     }
 
-    private void expectCompositeEnd(JsonToken token) {
+    private static void expectCompositeEnd(JsonToken token) {
         Preconditions.checkState(token.isStructEnd(), "Expected end of composite, got %s", token);
     }
 
-    private void fillStruct(StructuredFieldValue parent) {
+    private void fillStruct(TokenBuffer buffer, StructuredFieldValue parent) {
         // do note the order of initializing initNesting and token is relevant for empty docs
         int initNesting = buffer.nesting();
         JsonToken token = buffer.next();
 
         while (buffer.nesting() >= initNesting) {
-            Field f = getField(parent);
+            Field f = getField(buffer, parent);
             try {
-                FieldValue v = readSingleValue(token, f.getDataType());
+                FieldValue v = readSingleValue(buffer, token, f.getDataType());
                 parent.setFieldValue(f, v);
                 token = buffer.next();
             } catch (IllegalArgumentException e) {
@@ -515,7 +523,7 @@ public class JsonReader {
         }
     }
 
-    private Field getField(StructuredFieldValue parent) {
+    private Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
         Field f = parent.getField(buffer.currentName());
         if (f == null) {
             throw new NullPointerException("Could not get field \"" + buffer.currentName() +
@@ -525,7 +533,7 @@ public class JsonReader {
     }
 
     @SuppressWarnings({ "rawtypes", "cast", "unchecked" })
-    private void fillMap(MapFieldValue parent) {
+    private void fillMap(TokenBuffer buffer, MapFieldValue parent) {
         JsonToken token = buffer.currentToken();
         int initNesting = buffer.nesting();
         expectArrayStart(token);
@@ -539,9 +547,9 @@ public class JsonReader {
             token = buffer.next();
             for (int i = 0; i < 2; ++i) {
                 if (MAP_KEY.equals(buffer.currentName())) {
-                    key = readSingleValue(token, keyType);
+                    key = readSingleValue(buffer, token, keyType);
                 } else if (MAP_VALUE.equals(buffer.currentName())) {
-                    value = readSingleValue(token, valueType);
+                    value = readSingleValue(buffer, token, valueType);
                 }
                 token = buffer.next();
             }
@@ -557,7 +565,7 @@ public class JsonReader {
         Preconditions.checkState(token == JsonToken.START_ARRAY, "Expected start of array, got %s", token);
     }
 
-    private void expectObjectStart(JsonToken token) {
+    private static void expectObjectStart(JsonToken token) {
         Preconditions.checkState(token == JsonToken.START_OBJECT, "Expected start of JSON object, got %s", token);
     }
 
@@ -566,45 +574,45 @@ public class JsonReader {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void fillArray(CollectionFieldValue parent, DataType valueType) {
+    private void fillArray(TokenBuffer buffer, CollectionFieldValue parent, DataType valueType) {
         int initNesting = buffer.nesting();
         expectArrayStart(buffer.currentToken());
         JsonToken token = buffer.next();
         while (buffer.nesting() >= initNesting) {
-            parent.add(readSingleValue(token, valueType));
+            parent.add(readSingleValue(buffer, token, valueType));
             token = buffer.next();
         }
     }
 
-    private void fillWeightedSet(DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
+    private static void fillWeightedSet(TokenBuffer buffer, DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
         int initNesting = buffer.nesting();
         expectObjectStart(buffer.currentToken());
         buffer.next();
-        iterateThroughWeightedSet(initNesting, valueType, weightedSet);
+        iterateThroughWeightedSet(buffer, initNesting, valueType, weightedSet);
     }
 
-    private void fillTensor(TensorFieldValue tensorFieldValue) {
+    private void fillTensor(TokenBuffer buffer, TensorFieldValue tensorFieldValue) {
         Tensor.Builder tensorBuilder = Tensor.Builder.of(tensorFieldValue.getDataType().getTensorType());
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         // read tensor cell fields and ignore everything else
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             if (TENSOR_CELLS.equals(buffer.currentName()))
-                readTensorCells(tensorBuilder);
+                readTensorCells(buffer, tensorBuilder);
         }
         expectObjectEnd(buffer.currentToken());
         tensorFieldValue.assign(tensorBuilder.build());
     }
 
-    private void readTensorCells(Tensor.Builder tensorBuilder) {
+    private void readTensorCells(TokenBuffer buffer, Tensor.Builder tensorBuilder) {
         expectArrayStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
-            readTensorCell(tensorBuilder);
+            readTensorCell(buffer, tensorBuilder);
         expectCompositeEnd(buffer.currentToken());
     }
 
-    private void readTensorCell(Tensor.Builder tensorBuilder) {
+    private void readTensorCell(TokenBuffer buffer, Tensor.Builder tensorBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         double cellValue = 0.0;
@@ -612,7 +620,7 @@ public class JsonReader {
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             String currentName = buffer.currentName();
             if (TENSOR_ADDRESS.equals(currentName)) {
-                readTensorAddress(cellBuilder);
+                readTensorAddress(buffer, cellBuilder);
             } else if (TENSOR_VALUE.equals(currentName)) {
                 cellValue = Double.valueOf(buffer.currentText());
             }
@@ -621,7 +629,7 @@ public class JsonReader {
         cellBuilder.value(cellValue);
     }
 
-    private void readTensorAddress(MappedTensor.Builder.CellBuilder cellBuilder) {
+    private void readTensorAddress(TokenBuffer buffer, MappedTensor.Builder.CellBuilder cellBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
@@ -632,29 +640,29 @@ public class JsonReader {
         expectObjectEnd(buffer.currentToken());
     }
 
-    private FieldValue readSingleValue(JsonToken t, DataType expectedType) {
+    private FieldValue readSingleValue(TokenBuffer buffer, JsonToken t, DataType expectedType) {
         if (t.isScalarValue()) {
-            return readAtomic(expectedType);
+            return readAtomic(buffer, expectedType);
         } else {
             FieldValue v = expectedType.createFieldValue();
-            populateComposite(v, t);
+            populateComposite(buffer, v, t);
             return v;
         }
     }
 
-    private FieldValue readAtomic(DataType expectedType) {
+    private static FieldValue readAtomic(TokenBuffer buffer, DataType expectedType) {
         if (expectedType.equals(DataType.RAW)) {
             return expectedType.createFieldValue(new Base64().decode(buffer.currentText()));
         } else if (expectedType.equals(PositionDataType.INSTANCE)) {
             return PositionDataType.fromString(buffer.currentText());
         } else if (expectedType instanceof ReferenceDataType) {
-            return readReferenceFieldValue(expectedType);
+            return readReferenceFieldValue(buffer, expectedType);
         } else {
             return expectedType.createFieldValue(buffer.currentText());
         }
     }
 
-    private FieldValue readReferenceFieldValue(DataType expectedType) {
+    private static FieldValue readReferenceFieldValue(TokenBuffer buffer, DataType expectedType) {
         final FieldValue value = expectedType.createFieldValue();
         final String refText = buffer.currentText();
         if (!refText.isEmpty()) {
@@ -663,7 +671,7 @@ public class JsonReader {
         return value;
     }
 
-    private void bufferFields(JsonToken current) {
+    private void bufferFields(TokenBuffer buffer, JsonToken current) {
         buffer.bufferObject(current, parser);
     }
 
@@ -698,7 +706,7 @@ public class JsonReader {
                         // TODO more specific wrapping
                         throw new RuntimeException(e);
                     }
-                    bufferFields(token);
+                    bufferFields(documentParseInfo.fieldsBuffer, token);
                     continue;
                 }
                 if (token == JsonToken.END_OBJECT) {
@@ -757,4 +765,7 @@ public class JsonReader {
             throw new RuntimeException(e);
         }
     }
+
+
+
 }
