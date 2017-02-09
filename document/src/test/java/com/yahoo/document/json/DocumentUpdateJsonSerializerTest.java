@@ -13,7 +13,6 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
@@ -64,7 +63,7 @@ public class DocumentUpdateJsonSerializerTest {
     private static DocumentUpdate deSerializeDocumentUpdate(String jsonDoc, String docId) {
         final InputStream rawDoc = new ByteArrayInputStream(Utf8.toBytes(jsonDoc));
         JsonReader reader = new JsonReader(types, rawDoc, parserFactory);
-        return (DocumentUpdate) reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, docId);
+        return (DocumentUpdate) reader.readSingleDocument(JsonReader.SupportedOperation.UPDATE, docId);
     }
 
     private static String serializeDocumentUpdate(DocumentUpdate update) {
