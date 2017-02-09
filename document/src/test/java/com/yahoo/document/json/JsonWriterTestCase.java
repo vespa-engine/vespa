@@ -291,7 +291,7 @@ public class JsonWriterTestCase {
         assertEquals(populateMap(inputMap), populateMap(generatedMap));
     }
 
-    private Document readDocumentFromJson(String docId, String fields) {
+    private Document readDocumentFromJson(String docId, String fields) throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(asFeed(docId, fields));
 
 
@@ -393,7 +393,7 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public void non_empty_reference_field_results_in_reference_value_with_doc_id_present() {
+    public void non_empty_reference_field_results_in_reference_value_with_doc_id_present() throws IOException {
         final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld",
                 "{ \"ref_field\": \"id:unittest:smoke::and_mirrors_too\" }");
         ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
@@ -408,7 +408,7 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public void empty_reference_field_results_in_reference_value_without_doc_id_present() {
+    public void empty_reference_field_results_in_reference_value_without_doc_id_present() throws IOException {
         final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld", "{ \"ref_field\": \"\" }");
         ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
         assertFalse(ref.getDocumentId().isPresent());

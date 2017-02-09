@@ -23,9 +23,9 @@ public class DocumentParser {
     public static final String FIELDS = "fields";
     public static final String REMOVE = "remove";
 
-    public static Optional<DocumentParseInfo> parseDocument(JsonParser parser) {
+    public static Optional<DocumentParseInfo> parseDocument(JsonParser parser) throws IOException {
         // we should now be at the start of a feed operation or at the end of the feed
-        JsonToken token = nextToken(parser);
+        JsonToken token = parser.nextValue();
         if (token == JsonToken.END_ARRAY) {
             return Optional.empty(); // end of feed
         }
@@ -35,7 +35,7 @@ public class DocumentParser {
 
         while (true) {
             try {
-                token = nextToken(parser);
+                token = parser.nextValue();
                 if ((token == JsonToken.VALUE_TRUE || token == JsonToken.VALUE_FALSE) &&
                         CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
                     documentParseInfo.create = Optional.of(token == JsonToken.VALUE_TRUE);
@@ -91,13 +91,13 @@ public class DocumentParser {
         }
     }
 
-    public static DocumentParseInfo parseDocumentsFields(JsonParser parser, DocumentId documentId) {
+    public static DocumentParseInfo parseDocumentsFields(JsonParser parser, DocumentId documentId) throws IOException {
         long indentLevel = 0;
         DocumentParseInfo documentParseInfo = new DocumentParseInfo();
         documentParseInfo.documentId = documentId;
         while (true) {
             // we should now be at the start of a feed operation or at the end of the feed
-            JsonToken t = nextToken(parser);
+            JsonToken t = parser.nextValue();
             if (t == null) {
                 throw new IllegalArgumentException("Could not read document, no document?");
             }
@@ -139,13 +139,5 @@ public class DocumentParser {
             }
         }
         return documentParseInfo;
-    }
-
-    private static JsonToken nextToken(JsonParser parser) {
-        try {
-            return parser.nextValue();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

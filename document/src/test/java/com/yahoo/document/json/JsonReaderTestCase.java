@@ -54,6 +54,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.internal.matchers.Contains;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -206,7 +207,7 @@ public class JsonReaderTestCase {
 
 
     @Test
-    public final void smokeTest() {
+    public final void smokeTest() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"something\": \"smoketest\","
@@ -220,7 +221,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void docIdLookaheadTest() {
+    public final void docIdLookaheadTest() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{"
                         + " \"fields\": { \"something\": \"smoketest\","
@@ -237,7 +238,7 @@ public class JsonReaderTestCase {
 
 
     @Test
-    public final void emptyDocTest() {
+    public final void emptyDocTest() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:smoke::whee\","
                         + " \"fields\": {}}"));
@@ -250,7 +251,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testStruct() {
+    public final void testStruct() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:mirrors::whee\","
                         + " \"fields\": { "
@@ -270,7 +271,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testUpdateArray() {
+    public final void testUpdateArray() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { " + "\"actualarray\": {"
@@ -286,7 +287,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testUpdateWeighted() {
+    public final void testUpdateWeighted() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
@@ -315,7 +316,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testUpdateMatch() {
+    public final void testUpdateMatch() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
@@ -347,7 +348,7 @@ public class JsonReaderTestCase {
 
     @SuppressWarnings({ "cast", "unchecked", "rawtypes" })
     @Test
-    public final void testArithmeticOperators() {
+    public final void testArithmeticOperators() throws IOException {
         Tuple2[] operations = new Tuple2[] {
                 new Tuple2<String, Operator>(UPDATE_DECREMENT,
                         ArithmeticValueUpdate.Operator.SUB),
@@ -391,7 +392,7 @@ public class JsonReaderTestCase {
 
     @SuppressWarnings("rawtypes")
     @Test
-    public final void testArrayIndexing() {
+    public final void testArrayIndexing() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { " + "\"actualarray\": {"
@@ -430,7 +431,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testWeightedSet() {
+    public final void testWeightedSet() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testset::whee\","
                         + " \"fields\": { \"actualset\": {"
@@ -451,7 +452,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testArray() {
+    public final void testArray() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { \"actualarray\": ["
@@ -472,7 +473,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testMap() {
+    public final void testMap() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testmap::whee\","
                         + " \"fields\": { \"actualmap\": ["
@@ -493,7 +494,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testPositionPositive() {
+    public final void testPositionPositive() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testsinglepos::bamf\","
                         + " \"fields\": { \"singlepos\": \"N63.429722;E10.393333\" }}"));
@@ -510,7 +511,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testPositionNegative() {
+    public final void testPositionNegative() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testsinglepos::bamf\","
                         + " \"fields\": { \"singlepos\": \"W46.63;S23.55\" }}"));
@@ -527,7 +528,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testRaw() {
+    public final void testRaw() throws IOException {
         String stuff = new String(new JsonStringEncoder().quoteAsString(new Base64().encodeToString(Utf8.toBytes("smoketest"))));
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testraw::whee\","
@@ -549,7 +550,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testMapStringToArrayOfInt() {
+    public final void testMapStringToArrayOfInt() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": ["
@@ -572,7 +573,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testAssignToString() {
+    public final void testAssignToString() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"something\": {"
@@ -589,7 +590,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testAssignToArray() {
+    public final void testAssignToArray() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": {"
@@ -613,7 +614,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testAssignToWeightedSet() {
+    public final void testAssignToWeightedSet() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
@@ -816,7 +817,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void misspelledFieldTest() {
+    public final void misspelledFieldTest()  throws IOException{
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"smething\": \"smoketest\","
@@ -845,7 +846,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void idAsAliasForPutTest() {
+    public final void idAsAliasForPutTest()  throws IOException{
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"id\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"something\": \"smoketest\","

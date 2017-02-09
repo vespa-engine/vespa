@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
+import static com.yahoo.document.json.JsonReader.ReaderState.END_OF_FEED;
 import static com.yahoo.document.json.document.DocumentParser.parseDocumentsFields;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
@@ -46,7 +47,7 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate
 public class JsonReader {
 
     // Only used for testing.
-    public Optional<DocumentParseInfo> parseDocument() {
+    public Optional<DocumentParseInfo> parseDocument() throws IOException {
         return DocumentParser.parseDocument(parser);
     }
 
@@ -67,7 +68,7 @@ public class JsonReader {
         try {
             parser = parserFactory.createParser(input);
         } catch (IOException e) {
-            state = ReaderState.END_OF_FEED;
+            state = END_OF_FEED;
             throw new RuntimeException(e);
         }
     }
@@ -80,7 +81,13 @@ public class JsonReader {
      */
     public DocumentOperation readSingleDocument(DocumentParser.SupportedOperation operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
-        DocumentParseInfo documentParseInfo = parseDocumentsFields(parser, docId);
+        DocumentParseInfo documentParseInfo = null;
+        try {
+            documentParseInfo = parseDocumentsFields(parser, docId);
+        } catch (IOException e) {
+            state = END_OF_FEED;
+            throw new RuntimeException(e);
+        }
         documentParseInfo.operationType = operationType;
         DocumentOperation operation = createDocumentOperation(documentParseInfo.fieldsBuffer, documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
@@ -99,11 +106,16 @@ public class JsonReader {
             case READING:
                 break;
         }
-
-        Optional<DocumentParseInfo> documentParseInfo = DocumentParser.parseDocument(parser);
-
+        Optional<DocumentParseInfo> documentParseInfo;
+        try {
+            documentParseInfo = DocumentParser.parseDocument(parser);
+        } catch (IOException r) {
+            // Jackson is not able to recover from structural parse errors
+            state = END_OF_FEED;
+            throw new RuntimeException(r);
+        }
         if (! documentParseInfo.isPresent()) {
-            state = ReaderState.END_OF_FEED;
+            state = END_OF_FEED;
             return null;
         }
         DocumentOperation operation = createDocumentOperation(documentParseInfo.get().fieldsBuffer, documentParseInfo.get());
@@ -223,13 +235,12 @@ public class JsonReader {
         return docType;
     }
 
-    public static JsonToken nextToken(JsonParser parser) {
+    public JsonToken nextToken(JsonParser parser) {
         try {
             return parser.nextValue();
         } catch (IOException e) {
             // Jackson is not able to recover from structural parse errors
-            // TODO Do we really need to set state on exception?
-            // state = ReaderState.END_OF_FEED;
+            state = END_OF_FEED;
             throw new RuntimeException(e);
         }
     }
