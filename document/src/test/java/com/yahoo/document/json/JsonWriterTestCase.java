@@ -22,6 +22,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
@@ -36,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.document.json.readers.MapReader.MAP_KEY;
+import static com.yahoo.document.json.readers.MapReader.MAP_VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -244,8 +247,8 @@ public class JsonWriterTestCase {
     private Map<Object, Object> populateMap(List<?> actualMap) {
         Map<Object, Object> m = new HashMap<>();
         for (Object o : actualMap) {
-            Object key = ((Map) o).get(JsonReader.MAP_KEY);
-            Object value = ((Map) o).get(JsonReader.MAP_VALUE);
+            Object key = ((Map) o).get(MAP_KEY);
+            Object value = ((Map) o).get(MAP_VALUE);
             m.put(key, value);
         }
         return m;
@@ -288,13 +291,15 @@ public class JsonWriterTestCase {
         assertEquals(populateMap(inputMap), populateMap(generatedMap));
     }
 
-    private Document readDocumentFromJson(String docId, String fields) {
+    private Document readDocumentFromJson(String docId, String fields) throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(asFeed(docId, fields));
+
+
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo raw = r.parseDocument().get();
+        DocumentParseInfo raw = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(raw.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, raw.documentId));
-        r.readPut(put);
+        r.readPut(raw.fieldsBuffer, put);
         return put.getDocument();
     }
 
@@ -388,7 +393,7 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public void non_empty_reference_field_results_in_reference_value_with_doc_id_present() {
+    public void non_empty_reference_field_results_in_reference_value_with_doc_id_present() throws IOException {
         final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld",
                 "{ \"ref_field\": \"id:unittest:smoke::and_mirrors_too\" }");
         ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
@@ -403,7 +408,7 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public void empty_reference_field_results_in_reference_value_without_doc_id_present() {
+    public void empty_reference_field_results_in_reference_value_without_doc_id_present() throws IOException {
         final Document doc = readDocumentFromJson("id:unittest:testrefs::helloworld", "{ \"ref_field\": \"\" }");
         ReferenceFieldValue ref = (ReferenceFieldValue)doc.getFieldValue("ref_field");
         assertFalse(ref.getDocumentId().isPresent());

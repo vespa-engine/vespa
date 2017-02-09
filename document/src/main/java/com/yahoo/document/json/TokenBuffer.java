@@ -15,11 +15,11 @@ import com.google.common.base.Preconditions;
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
-class TokenBuffer {
-    static final class Token {
-        final JsonToken token;
-        final String name;
-        final String text;
+public class TokenBuffer {
+    public static final class Token {
+        public final JsonToken token;
+        public final String name;
+        public final String text;
 
         Token(JsonToken token, String name, String text) {
             this.token = token;
@@ -31,7 +31,7 @@ class TokenBuffer {
     private Deque<Token> buffer;
     private int nesting = 0;
 
-    TokenBuffer() {
+    public TokenBuffer() {
         this(new ArrayDeque<>());
     }
 
@@ -42,7 +42,7 @@ class TokenBuffer {
         }
     }
 
-    JsonToken next() {
+    public JsonToken next() {
         buffer.removeFirst();
         Token t = buffer.peekFirst();
         if (t == null) {
@@ -52,15 +52,15 @@ class TokenBuffer {
         return t.token;
     }
 
-    JsonToken currentToken() {
+    public JsonToken currentToken() {
         return buffer.peekFirst().token;
     }
 
-    String currentName() {
+    public String currentName() {
         return buffer.peekFirst().name;
     }
 
-    String currentText() {
+    public String currentText() {
         return buffer.peekFirst().text;
     }
 
@@ -72,7 +72,7 @@ class TokenBuffer {
         buffer.addLast(new Token(token, name, text));
     }
 
-    void bufferObject(JsonToken first, JsonParser tokens) {
+    public void  bufferObject(JsonToken first, JsonParser tokens) {
         int localNesting = 0;
         JsonToken t = first;
 
@@ -146,7 +146,7 @@ class TokenBuffer {
         }
     }
 
-    TokenBuffer prefetchCurrentElement() {
+    public TokenBuffer prefetchCurrentElement() {
         Deque<Token> copy = new ArrayDeque<>();
 
         if (currentToken().isScalarValue()) {
@@ -165,7 +165,7 @@ class TokenBuffer {
         return new TokenBuffer(copy);
     }
 
-    Token prefetchScalar(String name) {
+    public Token prefetchScalar(String name) {
         int localNesting = nesting();
         int nestingBarrier = localNesting;
         Token toReturn = null;
