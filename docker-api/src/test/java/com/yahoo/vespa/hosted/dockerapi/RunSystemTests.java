@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -115,12 +114,10 @@ public class RunSystemTests {
     void updateContainerMavenLocalRepository(ContainerName containerName) throws InterruptedException, IOException, ExecutionException {
         startSystemTestNodeIfNeeded(containerName);
 
-        String sources = Files.list(pathToVespaRepoInHost)
-                .filter(module -> Files.exists(module.resolve("target")))
-                .map(module -> pathToVespaRepoInContainer.resolve(module.getFileName()).resolve("target").toString() + "/")
-                .collect(Collectors.joining(" "));
-        docker.executeInContainerAsRoot(containerName, "/bin/sh", "-c", "rsync --archive --existing --update " +
-                sources + " " + pathToLibJars.toString() + "/");
+        String sources = pathToVespaRepoInContainer.toString() + "/*/target/";
+        String destination = pathToLibJars.toString() + "/";
+        executeInContainer(containerName, "root","/bin/sh", "-c",
+                "rsync --existing --update --recursive --times " + sources + " " + destination);
 
         executeInContainer(containerName, username, "/bin/sh", "-c", "cd " + pathToVespaRepoInContainer + ";" +
                 "mvn jar:jar install:install");
@@ -251,7 +248,7 @@ public class RunSystemTests {
     }
 
     private Integer executeInContainer(ContainerName containerName, String runAsUser, String... args) throws InterruptedException {
-        logger.info("Executing in container: " + String.join(" ", args));
+        logger.info("Executing as '" + runAsUser + "' in '" + containerName.asString() + "': " + String.join(" ", args));
         ExecCreateCmdResponse response = docker.dockerClient.execCreateCmd(containerName.asString())
                 .withCmd(args)
                 .withAttachStdout(true)
