@@ -40,10 +40,10 @@ public class HttpProxy {
 
         // "http" and "state" seems to uniquely identify an interesting HTTP port on each service
         PortInfo port = service.getPorts().stream()
-                .filter(portInfo -> !portInfo.getTags().stream().collect(Collectors.toSet()).containsAll(
+                .filter(portInfo -> portInfo.getTags().stream().collect(Collectors.toSet()).containsAll(
                         Stream.of("http", "state").collect(Collectors.toSet())))
                 .findFirst()
-                .orElseThrow(() -> new InternalServerException("Failed to find HTTP status port"));
+                .orElseThrow(() -> new InternalServerException("Failed to find HTTP state port"));
 
         return internalGet(host.getHostname(), port.getPort(), relativePath);
     }

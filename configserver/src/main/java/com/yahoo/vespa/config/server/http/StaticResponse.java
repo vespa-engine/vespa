@@ -4,30 +4,33 @@ package com.yahoo.vespa.config.server.http;
 import com.yahoo.container.jdisc.HttpResponse;
 import org.apache.commons.io.IOUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
-public class ProxyResponse extends HttpResponse {
+public class StaticResponse extends HttpResponse {
     private final String contentType;
-    private final InputStream inputStream;
+    private final InputStream body;
 
     /**
-     *
-     * @param status
-     * @param contentType
-     * @param inputStream    Ownership is passed to ProxyResponse (responsible for closing it)
+     * @param body    Ownership is passed to StaticResponse (is responsible for closing it)
      */
-    public ProxyResponse(int status, String contentType, InputStream inputStream) {
+    public StaticResponse(int status, String contentType, InputStream body) {
         super(status);
         this.contentType = contentType;
-        this.inputStream = inputStream;
+        this.body = body;
+    }
+
+    public StaticResponse(int status, String contentType, String body) {
+        this(status, contentType, new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
     }
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        IOUtils.copy(inputStream, outputStream);
-        inputStream.close();
+        IOUtils.copy(body, outputStream);
+        body.close();
     }
 
     @Override

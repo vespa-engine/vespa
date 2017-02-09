@@ -72,7 +72,6 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.clusterControllerStatusPage(tenant, applicationId, hostName, pathSuffix);
         }
 
-        // This matches if group count > 7!? It should claim a namespace... We will have to mangle the namespace above.
         if (isContentRequest(request)) {
             long sessionId = applicationRepository.getSessionIdForApplication(tenant, applicationId);
             String contentPath = ApplicationContentRequest.getContentPath(request);
@@ -178,7 +177,8 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static boolean isContentRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() > 7;
+        return getBindingMatch(request).groupCount() > 7 &&
+                request.getUri().getPath().contains("/content/");
     }
 
     private static String getHostFromRequest(HttpRequest req) {

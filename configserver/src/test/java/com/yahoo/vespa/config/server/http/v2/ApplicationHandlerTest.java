@@ -12,7 +12,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LiteralResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.path.Path;
@@ -28,6 +27,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -227,10 +227,10 @@ public class ApplicationHandlerTest {
         String url = toUrlPath(application, Zone.defaultZone(), true) + "/clustercontroller/" + host + "/status/v1/clusterName1";
 
         when(mockHttpProxy.get(any(), eq(host), eq("container-clustercontroller"), eq("clustercontroller-status/v1/clusterName1")))
-                .thenReturn(new LiteralResponse(200, "<html>...</html>"));
+                .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
 
         HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
-        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "<html>...</html>");
+        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>...</html>");
     }
 
     @Test

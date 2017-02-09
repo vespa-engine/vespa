@@ -21,10 +21,9 @@ public class SimpleHttpFetcher implements HttpFetcher {
             connection.setReadTimeout(params.readTimeoutMs);
             int code = connection.getResponseCode();
             String contentType = connection.getContentType();
-            try (InputStream inputStream = connection.getInputStream()) {
-                ProxyResponse response = new ProxyResponse(code, contentType, inputStream);
-                return response;
-            }
+            InputStream inputStream = connection.getInputStream();
+            StaticResponse response = new StaticResponse(code, contentType, inputStream);
+            return response;
         } catch (SocketTimeoutException e) {
             String message = "Timed out after " + params.readTimeoutMs + " ms reading response from " + url;
             logger.log(LogLevel.WARNING, message, e);
