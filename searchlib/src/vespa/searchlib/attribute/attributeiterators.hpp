@@ -34,7 +34,6 @@ AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
             result->setBit(docId);
         }
     }
-    result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
     return result;
 }
 
