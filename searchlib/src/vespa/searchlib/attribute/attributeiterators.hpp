@@ -291,14 +291,14 @@ FilterAttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id
 }
 
 template <typename SC>
-void
+BitVector::UP
 AttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     return AttributeIteratorBase::get_hits(_searchContext, begin_id);
 }
 
 
 template <typename SC>
-void
+BitVector::UP
 FilterAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     return AttributeIteratorBase::get_hits(_searchContext, begin_id);
 }
