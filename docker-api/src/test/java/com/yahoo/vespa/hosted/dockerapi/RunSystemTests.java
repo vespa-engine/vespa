@@ -12,7 +12,6 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -115,7 +114,7 @@ public class RunSystemTests {
         docker.executeInContainerAsRoot(containerName, "/bin/sh", "-c", "rsync --archive --existing --update " +
                 sources + " " + pathToLibJars.toString() + "/");
 
-        executeInContainer(containerName, "/bin/sh", "-c", "cd " + pathToVespaRepoInContainer + ";" +
+        executeInContainer(containerName, username, "/bin/sh", "-c", "cd " + pathToVespaRepoInContainer + ";" +
                 "mvn jar:jar install:install");
     }
 
@@ -125,7 +124,6 @@ public class RunSystemTests {
      * @param modules list of modules to install in order
      */
     void mavenInstallModules(String... modules) throws InterruptedException, IOException, ExecutionException {
-        System.out.println("Installing " + Arrays.toString(modules));
         String projects = String.join(",", modules);
         Process process = new ProcessBuilder("mvn", "-DskipTests", "-Dmaven.javadoc.skip=true", "--errors",
                 "--projects=" + projects, "--also-make", "install")
@@ -133,9 +131,7 @@ public class RunSystemTests {
                 .inheritIO()
                 .start();
 
-        int exitValue = process.waitFor();
-        assert exitValue == 0;
-        System.out.println(process.exitValue());
+        assertEquals("Failed to build modules", 0, process.waitFor());
     }
 
     private void startSystemTestNodeIfNeeded(ContainerName containerName) throws IOException, InterruptedException, ExecutionException {
@@ -194,13 +190,13 @@ public class RunSystemTests {
         docker.buildImage(systestDockerfile.toFile(), SYSTEMTESTS_DOCKER_IMAGE);
     }
 
-    private Integer executeInContainer(ContainerName containerName, String... args) throws InterruptedException {
+    private Integer executeInContainer(ContainerName containerName, String runAsUser, String... args) throws InterruptedException {
         logger.info("Executing in container: " + String.join(" ", args));
         ExecCreateCmdResponse response = docker.dockerClient.execCreateCmd(containerName.asString())
                 .withCmd(args)
                 .withAttachStdout(true)
                 .withAttachStderr(true)
-                .withUser(username)
+                .withUser(runAsUser)
                 .exec();
 
         ExecStartCmd execStartCmd = docker.dockerClient.execStartCmd(response.getId());
@@ -216,6 +212,6 @@ public class RunSystemTests {
         combinedArgs[1] = testToRun.toString();
         System.arraycopy(args, 0, combinedArgs, 2, args.length);
 
-        return executeInContainer(containerName, combinedArgs);
+        return executeInContainer(containerName, "root", combinedArgs);
     }
 }
