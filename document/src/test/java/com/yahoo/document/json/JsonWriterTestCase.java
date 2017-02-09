@@ -22,6 +22,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
@@ -36,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.document.json.readers.MapReader.MAP_KEY;
+import static com.yahoo.document.json.readers.MapReader.MAP_VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -244,8 +247,8 @@ public class JsonWriterTestCase {
     private Map<Object, Object> populateMap(List<?> actualMap) {
         Map<Object, Object> m = new HashMap<>();
         for (Object o : actualMap) {
-            Object key = ((Map) o).get(JsonReader.MAP_KEY);
-            Object value = ((Map) o).get(JsonReader.MAP_VALUE);
+            Object key = ((Map) o).get(MAP_KEY);
+            Object value = ((Map) o).get(MAP_VALUE);
             m.put(key, value);
         }
         return m;
@@ -290,8 +293,10 @@ public class JsonWriterTestCase {
 
     private Document readDocumentFromJson(String docId, String fields) {
         InputStream rawDoc = new ByteArrayInputStream(asFeed(docId, fields));
+
+
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        JsonReader.DocumentParseInfo raw = r.parseDocument().get();
+        DocumentParseInfo raw = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(raw.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, raw.documentId));
         r.readPut(raw.fieldsBuffer, put);
