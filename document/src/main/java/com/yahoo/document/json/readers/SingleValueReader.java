@@ -8,8 +8,6 @@ import com.yahoo.document.json.JsonReader;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.ValueUpdate;
 
-import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
-
 public class SingleValueReader {
     public static final String UPDATE_ASSIGN = "assign";
     public static final String UPDATE_INCREMENT = "increment";
@@ -21,9 +19,7 @@ public class SingleValueReader {
         if (t.isScalarValue()) {
             return JsonReader.readAtomic(buffer, expectedType);
         } else {
-            FieldValue v = expectedType.createFieldValue();
-            populateComposite(buffer, v, t);
-            return v;
+            return CompositeReader.createComposite(buffer, expectedType);
         }
     }
 

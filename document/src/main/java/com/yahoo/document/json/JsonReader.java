@@ -172,9 +172,8 @@ public class JsonReader {
         if (buffer.size() == 0) {
             bufferFields(parser, buffer, nextToken(parser));
         }
-        JsonToken t = buffer.currentToken();
         try {
-            populateComposite(buffer, put.getDocument(), t);
+            populateComposite(buffer, put.getDocument());
         } catch (JsonReaderException e) {
             throw JsonReaderException.addDocId(e, put.getId());
         }
@@ -235,13 +234,6 @@ public class JsonReader {
         return m;
 
     }
-
-    public static FieldValue NEWpopulateComposite(DataType dataType, JsonParser parser) throws IOException {
-        // bla
-        JsonToken t = parser.nextToken();
-        return null;
-    }
-
 
     public static void expectCompositeEnd(JsonToken token) {
         Preconditions.checkState(token.isStructEnd(), "Expected end of composite, got %s", token);

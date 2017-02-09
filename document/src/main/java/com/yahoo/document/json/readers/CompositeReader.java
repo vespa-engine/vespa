@@ -17,31 +17,44 @@ import static com.yahoo.document.json.readers.WeightedSetReader.fillWeightedSet;
 
 public class CompositeReader {
 
-    // TODO populateComposite is extremely similar to add/remove, refactor
+    // TODO createComposite is extremely similar to add/remove, refactor
     // yes, this suppresswarnings ugliness is by intention, the code relies on the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes" })
-    public static void populateComposite(TokenBuffer buffer, FieldValue parent, JsonToken token) {
+    public static FieldValue createComposite(TokenBuffer buffer, DataType expectedType) {
+        FieldValue fieldValue = expectedType.createFieldValue();
+        populateComposite(buffer, fieldValue);
+        return fieldValue;
+    }
+
+    // TODO createComposite is extremely similar to add/remove, refactor
+    // yes, this suppresswarnings ugliness is by intention, the code relies on the contracts in the builders
+    @SuppressWarnings({ "cast", "rawtypes" })
+    public static void populateComposite(TokenBuffer buffer, FieldValue fieldValue) {
+        JsonToken token = buffer.currentToken();
         if ((token != JsonToken.START_OBJECT) && (token != JsonToken.START_ARRAY)) {
             throw new IllegalArgumentException("Expected '[' or '{'. Got '" + token + "'.");
         }
-        if (parent instanceof CollectionFieldValue) {
-            DataType valueType = ((CollectionFieldValue) parent).getDataType().getNestedType();
-            if (parent instanceof WeightedSet) {
-                fillWeightedSet(buffer, valueType, (WeightedSet) parent);
+        if (fieldValue instanceof CollectionFieldValue) {
+            DataType valueType = ((CollectionFieldValue) fieldValue).getDataType().getNestedType();
+            if (fieldValue instanceof WeightedSet) {
+                fillWeightedSet(buffer, valueType, (WeightedSet) fieldValue);
             } else {
-                fillArray(buffer, (CollectionFieldValue) parent, valueType);
+                fillArray(buffer, (CollectionFieldValue) fieldValue, valueType);
             }
-        } else if (parent instanceof MapFieldValue) {
-            MapReader.fillMap(buffer, (MapFieldValue) parent);
-        } else if (parent instanceof StructuredFieldValue) {
-            StructReader.fillStruct(buffer, (StructuredFieldValue) parent);
-        } else if (parent instanceof TensorFieldValue) {
-            TensorReader.fillTensor(buffer, (TensorFieldValue) parent);
+        } else if (fieldValue instanceof MapFieldValue) {
+            MapReader.fillMap(buffer, (MapFieldValue) fieldValue);
+        } else if (fieldValue instanceof StructuredFieldValue) {
+            StructReader.fillStruct(buffer, (StructuredFieldValue) fieldValue);
+        } else if (fieldValue instanceof TensorFieldValue) {
+            TensorReader.fillTensor(buffer, (TensorFieldValue) fieldValue);
         } else {
             throw new IllegalStateException("Has created a composite field"
                     + " value the reader does not know how to handle: "
-                    + parent.getClass().getName() + " This is a bug. token = " + token);
+                    + fieldValue.getClass().getName() + " This is a bug. token = " + token);
         }
         expectCompositeEnd(buffer.currentToken());
     }
+
+
+
 }
