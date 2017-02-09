@@ -4,9 +4,11 @@
 
 #include "i_document_weight_attribute.h"
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
-#include <assert.h>
+#include <cassert>
 
 namespace search {
+
+class BitVector;
 
 class AttributeIteratorPack
 {
@@ -42,10 +44,7 @@ public:
         return _children[ref].getData();
     }
 
-    uint32_t next(uint16_t ref) {
-        ++_children[ref];
-        return get_docid(ref);
-    }
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id, uint32_t end_id);
 
     size_t size() const { return _children.size(); }
     void initRange(uint32_t begin, uint32_t end) {
@@ -53,6 +52,11 @@ public:
         for (auto &child: _children) {
             child.lower_bound(begin);
         }
+    }
+private:
+    uint32_t next(uint16_t ref) {
+        ++_children[ref];
+        return get_docid(ref);
     }
 };
 
