@@ -7,6 +7,10 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.geo.DegreesParser;
 import com.yahoo.document.serialization.XmlStream;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
@@ -20,6 +24,19 @@ public final class PositionDataType {
     private static final Field FFIELD_X = INSTANCE.getField(FIELD_X);
     private static final Field FFIELD_Y = INSTANCE.getField(FIELD_Y);
 
+    private static final DecimalFormat degreeFmt;
+
+    static {
+        degreeFmt = new DecimalFormat("0.0#####", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+        degreeFmt.setMinimumIntegerDigits(1);
+        degreeFmt.setMinimumFractionDigits(1);
+        degreeFmt.setMaximumFractionDigits(6);
+    }
+
+    static String fmtD(double degrees) {
+        return degreeFmt.format(degrees);
+    }
+
     private PositionDataType() {
         // unreachable
     }
@@ -29,10 +46,10 @@ public final class PositionDataType {
         double ns = getYValue(pos).getInteger() / 1.0e6;
         double ew = getXValue(pos).getInteger() / 1.0e6;
         buf.append(ns < 0 ? "S" : "N");
-        buf.append(ns < 0 ? (-ns) : ns);
+        buf.append(fmtD(ns < 0 ? (-ns) : ns));
         buf.append(";");
         buf.append(ew < 0 ? "W" : "E");
-        buf.append(ew < 0 ? (-ew) : ew);
+        buf.append(fmtD(ew < 0 ? (-ew) : ew));
         return buf.toString();
     }
 
