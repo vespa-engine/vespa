@@ -25,6 +25,19 @@ AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t 
     result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
 }
 
+template <typename SC>
+std::unique_ptr<BitVector>
+AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
+    BitVector::UP result = BitVector::create(begin_id, getEndId());
+    for (uint32_t docId(begin_id); docId < getEndId(); docId++) {
+        if (sc.cmp(docId)) {
+            result->setBit(docId);
+        }
+    }
+    result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
+    return result;
+}
+
 template <typename PL>
 AttributePostingListIteratorT<PL>::
 AttributePostingListIteratorT(PL &iterator, bool hasWeight, fef::TermFieldMatchData *matchData)
@@ -277,7 +290,20 @@ void
 FilterAttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
     AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
 }
-    
+
+template <typename SC>
+void
+AttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
+    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
+}
+
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
+    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
+}
+
 template <typename SC>
 void
 AttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
