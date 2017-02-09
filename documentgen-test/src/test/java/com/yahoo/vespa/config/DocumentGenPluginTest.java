@@ -12,6 +12,7 @@ import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.datatypes.*;
 import com.yahoo.document.serialization.*;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.vespa.document.NodeImpl;
 import com.yahoo.vespa.document.dom.DocumentImpl;
@@ -774,11 +775,11 @@ public class DocumentGenPluginTest {
     }
 
     private static Document roundtripSerialize(Document docToSerialize, DocumentTypeManager mgr) {
-        DocumentSerializer serializer = DocumentSerializerFactory.create42();
+        final GrowableByteBuffer outputBuffer = new GrowableByteBuffer();
+        final DocumentSerializer serializer = DocumentSerializerFactory.createHead(outputBuffer);
         serializer.write(docToSerialize);
-        serializer.getBuf().flip();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(mgr, serializer.getBuf());
-        return new Document(deserializer);
+        outputBuffer.flip();
+        return new Document(DocumentDeserializerFactory.createHead(mgr, outputBuffer));
     }
 
     @Test
