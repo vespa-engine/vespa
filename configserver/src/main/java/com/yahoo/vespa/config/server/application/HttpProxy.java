@@ -6,10 +6,9 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
-import com.yahoo.vespa.config.server.http.InternalServerException;
+import com.yahoo.vespa.config.server.http.NotFoundException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,12 +29,12 @@ public class HttpProxy {
         HostInfo host = application.getModel().getHosts().stream()
                 .filter(hostInfo -> hostInfo.getHostname().equals(hostName))
                 .findFirst()
-                .orElseThrow(() -> new BadRequestException("Failed to find host " + hostName));
+                .orElseThrow(() -> new NotFoundException("Failed to find host " + hostName));
 
         ServiceInfo service = host.getServices().stream()
                 .filter(serviceInfo -> serviceType.equals(serviceInfo.getServiceType()))
                 .findFirst()
-                .orElseThrow(() -> new BadRequestException("Failed to find any service of type " + serviceType
+                .orElseThrow(() -> new NotFoundException("Failed to find any service of type " + serviceType
                         + " on host " + hostName));
 
         // "http" and "state" seems to uniquely identify an interesting HTTP port on each service
@@ -43,7 +42,7 @@ public class HttpProxy {
                 .filter(portInfo -> portInfo.getTags().stream().collect(Collectors.toSet()).containsAll(
                         Stream.of("http", "state").collect(Collectors.toSet())))
                 .findFirst()
-                .orElseThrow(() -> new InternalServerException("Failed to find HTTP state port"));
+                .orElseThrow(() -> new NotFoundException("Failed to find HTTP state port"));
 
         return internalGet(host.getHostname(), port.getPort(), relativePath);
     }

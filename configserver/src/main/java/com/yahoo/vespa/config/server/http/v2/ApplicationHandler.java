@@ -63,7 +63,7 @@ public class ApplicationHandler extends HttpHandler {
         Tenant tenant = verifyTenantAndApplication(applicationId);
 
         if (isServiceConvergeRequest(request)) {
-            return applicationRepository.serviceConvergenceCheck(tenant, applicationId, getHostFromRequest(request), request.getUri());
+            return applicationRepository.serviceConvergenceCheck(tenant, applicationId, getHostNameFromRequest(request), request.getUri());
         }
 
         if (isClusterControllerStatusRequest(request)) {
@@ -179,11 +179,6 @@ public class ApplicationHandler extends HttpHandler {
     private static boolean isContentRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() > 7 &&
                 request.getUri().getPath().contains("/content/");
-    }
-
-    private static String getHostFromRequest(HttpRequest req) {
-        BindingMatch<?> bm = getBindingMatch(req);
-        return bm.group(7);
     }
 
     private static String getHostNameFromRequest(HttpRequest req) {
