@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
-import com.yahoo.document.json.JsonReader;
 import com.yahoo.document.json.JsonReaderException;
 import com.yahoo.document.json.TokenBuffer;
 
@@ -18,7 +17,7 @@ public class StructReader {
         JsonToken token = buffer.next();
 
         while (buffer.nesting() >= initNesting) {
-            Field f = JsonReader.getField(buffer, parent);
+            Field f = getField(buffer, parent);
             try {
                 FieldValue v = readSingleValue(buffer, token, f.getDataType());
                 parent.setFieldValue(f, v);
@@ -28,4 +27,14 @@ public class StructReader {
             }
         }
     }
+
+    public static Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
+        Field f = parent.getField(buffer.currentName());
+        if (f == null) {
+            throw new NullPointerException("Could not get field \"" + buffer.currentName() +
+                    "\" in the structure of type \"" + parent.getDataType().getDataTypeName() + "\".");
+        }
+        return f;
+    }
+
 }

@@ -9,7 +9,7 @@ import com.yahoo.document.json.TokenBuffer;
 
 import java.util.List;
 
-import static com.yahoo.document.json.JsonReader.expectArrayStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class ArrayReader {

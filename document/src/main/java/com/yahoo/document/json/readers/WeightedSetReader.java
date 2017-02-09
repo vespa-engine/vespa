@@ -6,7 +6,8 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.json.TokenBuffer;
 
-import static com.yahoo.document.json.JsonReader.expectObjectStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+
 
 public class WeightedSetReader {
     public static void fillWeightedSet(TokenBuffer buffer, DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {

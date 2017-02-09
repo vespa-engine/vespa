@@ -15,7 +15,7 @@ import com.yahoo.document.update.FieldUpdate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.yahoo.document.json.JsonReader.expectCompositeEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectCompositeEnd;
 import static com.yahoo.document.json.readers.WeightedSetReader.fillWeightedSetUpdate;
 
 public class AddRemoveCreator {

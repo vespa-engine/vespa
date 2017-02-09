@@ -11,8 +11,8 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.json.TokenBuffer;
 
-import static com.yahoo.document.json.JsonReader.expectCompositeEnd;
 import static com.yahoo.document.json.readers.ArrayReader.fillArray;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectCompositeEnd;
 import static com.yahoo.document.json.readers.WeightedSetReader.fillWeightedSet;
 
 public class CompositeReader {

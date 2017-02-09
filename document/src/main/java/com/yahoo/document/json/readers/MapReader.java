@@ -6,6 +6,7 @@ import com.google.common.base.Preconditions;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.CollectionFieldValue;
@@ -13,15 +14,20 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.json.TokenBuffer;
+import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 
-import static com.yahoo.document.json.JsonReader.*;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class MapReader {
     public static final String MAP_KEY = "key";
     public static final String MAP_VALUE = "value";
+    public static final String UPDATE_ELEMENT = "element";
+    public static final String UPDATE_MATCH = "match";
 
     @SuppressWarnings({ "rawtypes", "cast", "unchecked" })
     public static void fillMap(TokenBuffer buffer, MapFieldValue parent) {
@@ -80,6 +86,16 @@ public class MapReader {
                 return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, topLevelKey);
             }
         }
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static ValueUpdate createMapUpdate(TokenBuffer buffer, Field field) {
+        buffer.next();
+        MapValueUpdate m = (MapValueUpdate) MapReader.createMapUpdate(buffer, field.getDataType(), null, null);
+        buffer.next();
+        // must generate the field value in parallell with the actual
+        return m;
+
     }
 
     private static DataType valueTypeForMapUpdate(DataType parentType) {

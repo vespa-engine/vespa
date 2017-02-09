@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
-import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
@@ -16,26 +15,23 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
-import com.yahoo.document.PositionDataType;
-import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TestAndSetCondition;
-import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
-import com.yahoo.document.json.readers.DocumentToFields;
-import com.yahoo.document.json.readers.MapReader;
 import com.yahoo.document.update.FieldUpdate;
-import com.yahoo.document.update.MapValueUpdate;
-import com.yahoo.document.update.ValueUpdate;
-import org.apache.commons.codec.binary.Base64;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
+import static com.yahoo.document.json.document.DocumentParser.parseToDocumentsFieldsAndInsertFieldsIntoBuffer;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createAddsOrRemoves;
 import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
+import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate;
 
 /**
@@ -48,6 +44,7 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate
 @Beta
 public class JsonReader {
 
+    // Only used for testing.
     public Optional<DocumentParseInfo> parseDocument() {
         return DocumentParser.parseDocument(parser);
     }
@@ -55,15 +52,10 @@ public class JsonReader {
     public enum FieldOperation {
         ADD, REMOVE
     }
-    public static final String FIELDS = "fields";
-    public static final String REMOVE = "remove";
 
-    public static final String CONDITION = "condition";
-    public static final String CREATE_IF_NON_EXISTENT = "create";
+
     private static final String UPDATE_REMOVE = "remove";
-    public static final String UPDATE_MATCH = "match";
     private static final String UPDATE_ADD = "add";
-    public static final String UPDATE_ELEMENT = "element";
 
     private final JsonParser parser;
     private final DocumentTypeManager typeManager;
@@ -96,7 +88,7 @@ public class JsonReader {
      */
     public DocumentOperation readSingleDocument(SupportedOperation operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
-        DocumentParseInfo documentParseInfo = DocumentToFields.parseToDocumentsFieldsAndInsertFieldsIntoBuffer(parser, docId);
+        DocumentParseInfo documentParseInfo = parseToDocumentsFieldsAndInsertFieldsIntoBuffer(parser, docId);
         documentParseInfo.operationType = operationType;
         DocumentOperation operation = createDocumentOperation(documentParseInfo.fieldsBuffer, documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
@@ -161,6 +153,7 @@ public class JsonReader {
         return documentOperation;
     }
 
+    // Exposed for unit testing...
     void readUpdate(TokenBuffer buffer, DocumentUpdate next) {
         if (buffer.size() == 0) {
             bufferFields(parser, buffer, nextToken(parser));
@@ -168,6 +161,7 @@ public class JsonReader {
         populateUpdateFromBuffer(buffer, next);
     }
 
+    // Exposed for unit testing...
     void readPut(TokenBuffer buffer, DocumentPut put) {
         if (buffer.size() == 0) {
             bufferFields(parser, buffer, nextToken(parser));
@@ -186,7 +180,7 @@ public class JsonReader {
         Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
     }
 
-    private void populateUpdateFromBuffer(TokenBuffer buffer, DocumentUpdate update) {
+    private static void populateUpdateFromBuffer(TokenBuffer buffer, DocumentUpdate update) {
         expectObjectStart(buffer.currentToken());
         int localNesting = buffer.nesting();
         JsonToken t = buffer.next();
@@ -200,7 +194,7 @@ public class JsonReader {
         }
     }
 
-    private void addFieldUpdates(TokenBuffer buffer, DocumentUpdate update, Field field) {
+    private static void addFieldUpdates(TokenBuffer buffer, DocumentUpdate update, Field field) {
         int localNesting = buffer.nesting();
         FieldUpdate fieldUpdate = FieldUpdate.create(field);
 
@@ -223,62 +217,6 @@ public class JsonReader {
             buffer.next();
         }
         update.addFieldUpdate(fieldUpdate);
-    }
-
-    @SuppressWarnings("rawtypes")
-    public ValueUpdate createMapUpdate(TokenBuffer buffer, Field field) {
-        buffer.next();
-        MapValueUpdate m = (MapValueUpdate) MapReader.createMapUpdate(buffer, field.getDataType(), null, null);
-        buffer.next();
-        // must generate the field value in parallell with the actual
-        return m;
-
-    }
-
-    public static void expectCompositeEnd(JsonToken token) {
-        Preconditions.checkState(token.isStructEnd(), "Expected end of composite, got %s", token);
-    }
-
-    public static Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
-        Field f = parent.getField(buffer.currentName());
-        if (f == null) {
-            throw new NullPointerException("Could not get field \"" + buffer.currentName() +
-                    "\" in the structure of type \"" + parent.getDataType().getDataTypeName() + "\".");
-        }
-        return f;
-    }
-
-    public static void expectArrayStart(JsonToken token) {
-        Preconditions.checkState(token == JsonToken.START_ARRAY, "Expected start of array, got %s", token);
-    }
-
-    public static void expectObjectStart(JsonToken token) {
-        Preconditions.checkState(token == JsonToken.START_OBJECT, "Expected start of JSON object, got %s", token);
-    }
-
-    public static void expectObjectEnd(JsonToken token) {
-        Preconditions.checkState(token == JsonToken.END_OBJECT, "Expected end of JSON object, got %s", token);
-    }
-
-    public static FieldValue readAtomic(TokenBuffer buffer, DataType expectedType) {
-        if (expectedType.equals(DataType.RAW)) {
-            return expectedType.createFieldValue(new Base64().decode(buffer.currentText()));
-        } else if (expectedType.equals(PositionDataType.INSTANCE)) {
-            return PositionDataType.fromString(buffer.currentText());
-        } else if (expectedType instanceof ReferenceDataType) {
-            return readReferenceFieldValue(buffer, expectedType);
-        } else {
-            return expectedType.createFieldValue(buffer.currentText());
-        }
-    }
-
-    private static FieldValue readReferenceFieldValue(TokenBuffer buffer, DataType expectedType) {
-        final FieldValue value = expectedType.createFieldValue();
-        final String refText = buffer.currentText();
-        if (!refText.isEmpty()) {
-            value.assign(new DocumentId(buffer.currentText()));
-        }
-        return value;
     }
 
     public static void bufferFields(JsonParser parser, TokenBuffer buffer, JsonToken current) {
