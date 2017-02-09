@@ -5,6 +5,7 @@ import com.yahoo.transaction.Mutex;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -23,12 +24,12 @@ public class CuratorMutex implements Mutex {
         mutex = new InterProcessMutex(curator, lockPath);
     }
 
-    /** Take the lock. This may be called multiple times from the same thread - each matched by a close */
-    public void acquire() {
+    /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
+    public void acquire(Duration timeout) {
         try {
-            boolean acquired = mutex.acquire(60, TimeUnit.SECONDS);
+            boolean acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
             if ( ! acquired) {
-                throw new TimeoutException("Timed out after waiting 60 seconds");
+                throw new TimeoutException("Timed out after waiting " + timeout.toString());
             }
         }
         catch (Exception e) {

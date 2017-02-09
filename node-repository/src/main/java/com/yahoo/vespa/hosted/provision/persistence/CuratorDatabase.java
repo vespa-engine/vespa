@@ -8,6 +8,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Thius encapsulated the curator database of the node repo.
+ * This encapsulated the curator database of the node repo.
  * It serves reads from an in-memory cache of the content which is invalidated when changed on another node
  * using a global, shared counter. The counter is updated on all write operations, ensured by wrapping write
  * operations in a 2pc transaction containing the counter update.
@@ -57,9 +58,9 @@ public class CuratorDatabase {
 
     /** Create a reentrant lock */
     // Locks are not cached in the in-memory state
-    public CuratorMutex lock(Path path) {
+    public CuratorMutex lock(Path path, Duration timeout) {
         CuratorMutex lock = locks.computeIfAbsent(path, (pathArg) -> new CuratorMutex(pathArg.getAbsolute(), curator.framework()));
-        lock.acquire();
+        lock.acquire(timeout);
         return lock;
 
     }
