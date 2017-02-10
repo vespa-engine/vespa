@@ -93,7 +93,8 @@ using vespalib::make_string;
 using vespalib::string;
 using vespalib::stringref;
 
-namespace proton {
+namespace search {
+namespace docsummary {
 
 namespace {
 string getSpanString(const string &s, const Span &span) {
@@ -703,4 +704,5 @@ SummaryFieldConverter::convertSummaryField(bool markup,
 }
 
 
-}  // namespace proton
+}  // namespace search::docsummary
+}  // namespace search

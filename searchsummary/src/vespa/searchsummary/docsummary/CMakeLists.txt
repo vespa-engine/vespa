@@ -21,6 +21,9 @@ vespa_add_library(searchsummary_docsummary OBJECT
     geoposdfw.cpp
     tokenizer.cpp
     positionsdfw.cpp
+    linguisticsannotation.cpp
+    searchdatatype.cpp
+    summaryfieldconverter.cpp
     AFTER
     searchsummary_config
 )

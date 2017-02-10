@@ -4,11 +4,12 @@
 
 #include <vespa/document/datatype/datatype.h>
 
-namespace proton {
+namespace search {
+namespace docsummary {
 
 struct SearchDataType {
     static const document::DataType *URI;
 };
 
-}  // namespace proton
-
+}  // namespace search::docsummary
+}  // namespace search
