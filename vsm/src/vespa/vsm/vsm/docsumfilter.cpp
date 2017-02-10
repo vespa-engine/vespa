@@ -3,6 +3,7 @@
 #include "docsumfilter.h"
 #include "jsondocsumwriter.h"
 #include <vespa/searchsummary/docsummary/resultclass.h>
+#include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/document/base/exceptions.h>
@@ -335,6 +336,44 @@ DocsumFilter::writeJSONField(const DocsumFieldSpec & fieldSpec,
 }
 
 void
+DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
+                              const Document & docsum,
+                              ResultPacker & packer)
+{
+    if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
+        const DocsumFieldSpec::FieldIdentifier & fieldId = fieldSpec.getOutputField();
+        const document::FieldValue * fv = docsum.getField(fieldId.getId());
+        if (fv != NULL) {
+            LOG(debug, "writeSlimeField: About to write field '%d' as Slime: field value = '%s'",
+                fieldId.getId(), fv->toString().c_str());
+            const document::FieldValue::UP converted =
+                SummaryFieldConverter::convertSummaryField(false, *fv, true);
+            if (converted.get() != NULL) {
+                if (converted->getClass().inherits(document::LiteralFieldValueB::classId)) {
+                    const document::LiteralFieldValueB *lfv =
+                        static_cast<const document::LiteralFieldValueB *>(converted.get());
+                    vespalib::stringref s = lfv->getValueRef();
+                    packer.AddLongString(s.c_str(), s.size());
+                    return;
+                } else {
+                    vespalib::string s = converted->getAsString();
+                    packer.AddLongString(s.c_str(), s.size());
+                    return;
+                }
+            } else {
+                LOG(warning, "writeSlimeField: Could not convert value for field '%d'", fieldId.getId());
+            }
+        } else {
+            LOG(warning, "writeSlimeField: Field value not set for field '%d'", fieldId.getId());
+            packer.AddEmpty();
+        }
+    } else {
+        LOG(warning, "writeSlimeField: Cannot handle this command");
+        packer.AddEmpty();
+    }
+}
+
+void
 DocsumFilter::writeFlattenField(const DocsumFieldSpec & fieldSpec,
                                 const Document & docsum,
                                 ResultPacker & packer)
@@ -436,15 +475,16 @@ DocsumFilter::getMappedDocsum(uint32_t id, bool useSlimeInsideFields)
         return DocsumStoreValue(NULL, 0);
     }
 
-    const Document & doc   = _docsumCache->getDocSum(id);
+    const Document & doc = _docsumCache->getDocSum(id);
+
+    LOG(spam, "getMappedDocsum %u [useSlimeInsideFields=%s]", id, useSlimeInsideFields ? "true" : "false");
 
     _packer.Init(resClass->GetClassID());
     for (FieldSpecList::iterator it(_fields.begin()), end = _fields.end(); it != end; ++it) {
         ResType type = it->getResultType();
         if (type == RES_JSONSTRING || type == RES_XMLSTRING) {
             if (useSlimeInsideFields) {
-                // XXX no support for slime serialized data here yet
-                writeEmpty(type, _packer);
+                writeSlimeField(*it, doc, _packer);
             } else {
                 writeJSONField(*it, doc, _packer);
             }
@@ -457,6 +497,9 @@ DocsumFilter::getMappedDocsum(uint32_t id, bool useSlimeInsideFields)
                 } else {
                     writeEmpty(type, _packer); // void input
                 }
+            } else if (it->getInputFields().size() == 0 && it->getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
+                LOG(spam, "0 inputfields for output field %u",  it->getOutputField().getId());
+                writeEmpty(type, _packer); // no input
             } else {
                 writeFlattenField(*it, doc, _packer);
             }
