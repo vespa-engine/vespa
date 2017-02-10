@@ -29,7 +29,6 @@ import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
 import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
-import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
 import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
@@ -131,7 +130,7 @@ public class JsonReader {
                 case PUT:
                     documentOperation = new DocumentPut(new Document(documentType, documentParseInfo.documentId));
                     readPut(documentParseInfo.fieldsBuffer, (DocumentPut) documentOperation);
-                    verifyEndState(documentParseInfo.fieldsBuffer);
+                    verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
                     break;
                 case REMOVE:
                     documentOperation = new DocumentRemove(documentParseInfo.documentId);
@@ -140,11 +139,12 @@ public class JsonReader {
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
                     if (documentParseInfo.fieldsBuffer.size() > 0) {
                         readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
-                        verifyEndState(documentParseInfo.fieldsBuffer);
+                        verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
                     }
                     if (documentParseInfo.fieldpathsBuffer.size() > 0) {
                         VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(documentType, documentParseInfo);
                         vespaJsonDocumentReader.read((DocumentUpdate) documentOperation);
+                        verifyEndState(documentParseInfo.fieldpathsBuffer, JsonToken.END_ARRAY);
                     }
                     break;
                 default:
@@ -183,9 +183,10 @@ public class JsonReader {
         }
     }
 
-    private void verifyEndState(TokenBuffer buffer) {
+    private void verifyEndState(TokenBuffer buffer, JsonToken expectedFinalToken) {
+        Preconditions.checkState(buffer.currentToken() == expectedFinalToken,
+                "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.currentToken());
         Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
-        expectObjectEnd(buffer.currentToken());
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
         Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
     }
