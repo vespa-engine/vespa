@@ -94,8 +94,12 @@ class GroupPreparer {
     }
     
     private String outOfCapacityDetails(NodeList nodeList) {
-        if (nodeList.wouldBeFulfilledWithClashingParentHost()) 
-            return  ": Not enough nodes available on separate physical hosts.";
+        if (nodeList.wouldBeFulfilledWithClashingParentHost()) {
+            return ": Not enough nodes available on separate physical hosts.";
+        }
+        if (nodeList.wouldBeFulfilledWithRetiredNodes()) {
+            return ": Not enough nodes available due to retirement.";
+        }
         return ".";
     }
 
@@ -224,6 +228,7 @@ class GroupPreparer {
                     // conditions on which we want to retire nodes that were allocated previously
                     if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) wantToRetireNode = true;
                     if ( !hasCompatibleFlavor(offered)) wantToRetireNode = true;
+                    if ( offered.flavor().isRetired()) wantToRetireNode = true;
 
                     if ((!saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) )
                         accepted.add(acceptNode(offered, wantToRetireNode));
@@ -293,9 +298,8 @@ class GroupPreparer {
                 acceptedOfRequestedFlavor++;
             } else {
                 ++wasRetiredJustNow;
-                // retire nodes which are of an unwanted flavor
-                // or have an overlapping parent host
-                node = node.retireByApplication(clock.instant());
+                // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
+                node = node.retire(clock.instant());
             }
             if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
                 // group may be different

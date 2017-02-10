@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -10,8 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import com.yahoo.config.provisioning.FlavorsConfig;
 
 /**
  * All the available node flavors.
@@ -38,9 +37,8 @@ public class NodeFlavors {
 
     /** Returns the flavor with the given name or throws an IllegalArgumentException if it does not exist */
     public Flavor getFlavorOrThrow(String flavorName) {
-        Optional<Flavor> flavor = getFlavor(flavorName);
-        if ( flavor.isPresent()) return flavor.get();
-        throw new IllegalArgumentException("Unknown flavor '" + flavorName + "'. Flavors are " + canonicalFlavorNames());
+        return getFlavor(flavorName).orElseThrow(() -> new IllegalArgumentException("Unknown flavor '" + flavorName +
+                "'. Flavors are " + canonicalFlavorNames()));
     }
 
     private List<String> canonicalFlavorNames() {
@@ -65,7 +63,21 @@ public class NodeFlavors {
             }
             flavor.freeze();
         }
+        // Third pass, ensure that retired flavors have a replacement
+        for (Flavor flavor : flavors.values()) {
+            if (flavor.isRetired() && !hasReplacement(flavors.values(), flavor)) {
+                throw new IllegalStateException(
+                        String.format("Flavor '%s' is retired, but has no replacement", flavor.name())
+                );
+            }
+        }
         return flavors.values();
+    }
+
+    private static boolean hasReplacement(Collection<Flavor> flavors, Flavor flavor) {
+        return flavors.stream()
+                .filter(f -> !f.equals(flavor))
+                .anyMatch(f -> f.satisfies(flavor));
     }
 
 }

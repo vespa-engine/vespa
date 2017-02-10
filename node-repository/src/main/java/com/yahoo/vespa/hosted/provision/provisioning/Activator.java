@@ -95,7 +95,9 @@ class Activator {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
-            node = hostSpec.membership().get().retired() ? node.retireByApplication(clock.instant()) : node.unretire();
+            node = hostSpec.membership().get().retired()
+                    ? node.retire(clock.instant())
+                    : node.unretire();
             node = node.with(node.allocation().get().with(hostSpec.membership().get()));
             updated.add(node);
         }

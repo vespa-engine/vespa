@@ -3,26 +3,31 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,7 +35,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Various allocation sequence scenarios
@@ -269,7 +281,7 @@ public class ProvisioningTest {
 
         try {
             SystemState state4 = prepare(application1, 3, 4, 4, 5, "large-variant", tester);
-            org.junit.Assert.fail("Should fail as we don't have that many large-variant nodes");
+            fail("Should fail as we don't have that many large-variant nodes");
         }
         catch (OutOfCapacityException expected) {
         }
@@ -298,7 +310,7 @@ public class ProvisioningTest {
         // redeploy a too large application
         try {
             SystemState state2 = prepare(application1, 3, 0, 3, 0, "default", tester);
-            org.junit.Assert.fail("Expected out of capacity exception");
+            fail("Expected out of capacity exception");
         }
         catch (OutOfCapacityException expected) {
         }
@@ -390,7 +402,7 @@ public class ProvisioningTest {
 
         try {
             tester.activate(application, state.allHosts);
-            org.junit.Assert.fail("Expected exception");
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().startsWith("Activation of " + application + " failed"));
@@ -405,7 +417,7 @@ public class ProvisioningTest {
         ApplicationId application = tester.makeApplicationId();
         try {
             prepare(application, 2, 2, 3, 3, "default", tester);
-            org.junit.Assert.fail("Expected exception");
+            fail("Expected exception");
         }
         catch (OutOfCapacityException e) {
             assertTrue(e.getMessage().startsWith("Could not satisfy request"));
@@ -421,11 +433,36 @@ public class ProvisioningTest {
         ApplicationId application = tester.makeApplicationId();
         try {
             prepare(application, 2, 2, 3, 3, "large", tester);
-            org.junit.Assert.fail("Expected exception");
+            fail("Expected exception");
         }
         catch (OutOfCapacityException e) {
             assertTrue(e.getMessage().startsWith("Could not satisfy request for 3 nodes of flavor 'large'"));
         }
+    }
+
+    @Test
+    public void out_of_capacity_no_replacements_for_retired_flavor() {
+        String flavorToRetire = "default";
+        String replacementFlavor = "new-default";
+
+        FlavorConfigBuilder b = new FlavorConfigBuilder();
+        b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Type.BARE_METAL).cost(2).retired(true);
+        FlavorsConfig.Flavor.Builder newDefault = b.addFlavor(replacementFlavor, 2., 2., 20,
+                                                              Flavor.Type.BARE_METAL).cost(2);
+        b.addReplaces(flavorToRetire, newDefault);
+
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
+                                                           b.build());
+        ApplicationId application = tester.makeApplicationId();
+
+        try {
+            prepare(application, 2, 0, 2, 0, flavorToRetire,
+                    tester);
+            fail("Expected exception");
+        } catch (OutOfCapacityException ignored) {}
+
+        NodeList retired = tester.getNodes(application).retired();
+        assertTrue("No nodes are retired", retired.asList().isEmpty());
     }
 
     @Test
@@ -435,7 +472,7 @@ public class ProvisioningTest {
         ApplicationId application = tester.makeApplicationId();
         try {
             prepare(application, 2, 2, 3, 3, "nonexisting", tester);
-            org.junit.Assert.fail("Expected exception");
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("Unknown flavor 'nonexisting'. Flavors are [default, docker1, large, old-large1, old-large2, small, v-4-8-100]", e.getMessage());
@@ -477,6 +514,63 @@ public class ProvisioningTest {
     @Test
     public void application_deployment_prefers_exact_nonstock_nodes() {
         assertCorrectFlavorPreferences(false);
+    }
+
+    @Test
+    public void application_deployment_retires_nodes_having_retired_flavor() {
+        String flavorToRetire = "default";
+        String replacementFlavor = "new-default";
+        ApplicationId application = ApplicationId.from(
+                TenantName.from(UUID.randomUUID().toString()),
+                ApplicationName.from(UUID.randomUUID().toString()),
+                InstanceName.from(UUID.randomUUID().toString()));
+        Curator curator = new MockCurator();
+        NameResolver nameResolver = new MockNameResolver().mockAnyLookup();
+
+        // Deploy with flavor that will eventually be retired
+        {
+            FlavorConfigBuilder b = new FlavorConfigBuilder();
+            b.addFlavor("default", 1., 1., 10, Flavor.Type.BARE_METAL).cost(2);
+
+            ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
+                                                               b.build(), curator, nameResolver);
+            tester.makeReadyNodes(4, flavorToRetire);
+            SystemState state = prepare(application, 2, 0, 2, 0,
+                                        flavorToRetire, tester);
+            tester.activate(application, state.allHosts);
+        }
+
+        // Re-deploy with same flavor, which is now retired
+        {
+            // Retire "default" flavor and add "new-default" as replacement
+            FlavorConfigBuilder b = new FlavorConfigBuilder();
+            b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Type.BARE_METAL).cost(2).retired(true);
+            FlavorsConfig.Flavor.Builder newDefault = b.addFlavor(replacementFlavor, 2., 2., 20,
+                                                                  Flavor.Type.BARE_METAL).cost(2);
+            b.addReplaces(flavorToRetire, newDefault);
+
+            ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
+                                                               b.build(), curator, nameResolver);
+
+            // Add nodes with "new-default" flavor
+            tester.makeReadyNodes(4, replacementFlavor);
+
+            SystemState state = prepare(application, 2, 0, 2, 0,
+                                        flavorToRetire, tester);
+
+            tester.activate(application, state.allHosts);
+
+            // Nodes with retired flavor are retired
+            Predicate<Node> retiredBySystem = (node) -> node.history().event(History.Event.Type.retired)
+                    .filter(e -> e instanceof History.RetiredEvent)
+                    .map(e -> (History.RetiredEvent) e)
+                    .filter(e -> e.agent() == History.RetiredEvent.Agent.system)
+                    .isPresent();
+
+            NodeList retired = tester.getNodes(application).retired();
+            assertEquals(4, retired.size());
+            assertTrue("Nodes are retired by system", retired.asList().stream().allMatch(retiredBySystem));
+        }
     }
     
     private void assertCorrectFlavorPreferences(boolean largeIsStock) {

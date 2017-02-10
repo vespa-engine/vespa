@@ -101,6 +101,10 @@ public class ProvisioningTester implements AutoCloseable {
         return b.build();
     }
 
+    public Curator getCurator() {
+        return curator;
+    }
+
     @Override
     public void close() throws IOException {
         //testingServer.close();
