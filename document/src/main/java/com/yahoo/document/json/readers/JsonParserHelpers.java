@@ -9,6 +9,10 @@ public class JsonParserHelpers {
         Preconditions.checkState(token == JsonToken.START_ARRAY, "Expected start of array, got %s", token);
     }
 
+    public static void expectArrayEnd(JsonToken token) {
+        Preconditions.checkState(token == JsonToken.END_ARRAY, "Expected start of array, got %s", token);
+    }
+
     public static void expectObjectStart(JsonToken token) {
         Preconditions.checkState(token == JsonToken.START_OBJECT, "Expected start of JSON object, got %s", token);
     }

@@ -89,7 +89,7 @@ public class JsonReader {
             throw new RuntimeException(e);
         }
         documentParseInfo.operationType = operationType;
-        DocumentOperation operation = createDocumentOperation(documentParseInfo.fieldsBuffer, documentParseInfo);
+        DocumentOperation operation = createDocumentOperation(documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
     }
@@ -118,28 +118,34 @@ public class JsonReader {
             state = END_OF_FEED;
             return null;
         }
-        DocumentOperation operation = createDocumentOperation(documentParseInfo.get().fieldsBuffer, documentParseInfo.get());
+        DocumentOperation operation = createDocumentOperation(documentParseInfo.get());
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.get().condition));
         return operation;
     }
 
-    private DocumentOperation createDocumentOperation(TokenBuffer buffer, DocumentParseInfo documentParseInfo) {
+    private DocumentOperation createDocumentOperation(DocumentParseInfo documentParseInfo) {
         DocumentType documentType = getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager);
         final DocumentOperation documentOperation;
         try {
             switch (documentParseInfo.operationType) {
                 case PUT:
                     documentOperation = new DocumentPut(new Document(documentType, documentParseInfo.documentId));
-                    readPut(buffer, (DocumentPut) documentOperation);
-                    verifyEndState(buffer);
+                    readPut(documentParseInfo.fieldsBuffer, (DocumentPut) documentOperation);
+                    verifyEndState(documentParseInfo.fieldsBuffer);
                     break;
                 case REMOVE:
                     documentOperation = new DocumentRemove(documentParseInfo.documentId);
                     break;
                 case UPDATE:
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
-                    readUpdate(buffer, (DocumentUpdate) documentOperation);
-                    verifyEndState(buffer);
+                    if (documentParseInfo.fieldsBuffer.size() > 0) {
+                        readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
+                        verifyEndState(documentParseInfo.fieldsBuffer);
+                    }
+                    if (documentParseInfo.fieldpathsBuffer.size() > 0) {
+                        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(documentType, documentParseInfo);
+                        vespaJsonDocumentReader.read((DocumentUpdate) documentOperation);
+                    }
                     break;
                 default:
                     throw new IllegalStateException("Implementation out of sync with itself. This is a bug.");
