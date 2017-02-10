@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.google.inject.Inject;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -19,7 +18,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class HttpProxy extends AbstractComponent {
+public class HttpProxy {
     private static Logger logger = Logger.getLogger(HttpProxy.class.getName());
 
     private final HttpFetcher fetcher;

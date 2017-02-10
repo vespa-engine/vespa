@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.google.inject.Inject;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
@@ -62,6 +63,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
 
+    @Inject
     public ApplicationRepository(Tenants tenants,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  Curator curator,

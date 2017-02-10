@@ -12,15 +12,15 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
-import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,7 +34,6 @@ import java.util.concurrent.Executor;
  * @since 5.4
  */
 public class ApplicationHandler extends HttpHandler {
-
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
 
@@ -148,9 +147,9 @@ public class ApplicationHandler extends HttpHandler {
         }
     }
 
-    // Note: Update src/main/resources/configserver-app/services.xml if you do any changes to the bindings
     private static BindingMatch<?> getBindingMatch(HttpRequest request) {
         return HttpConfigRequests.getBindingMatch(request,
+                // WARNING: UPDATE src/main/resources/configserver-app/services.xml IF YOU MAKE ANY CHANGES TO THESE BINDINGS!
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/log",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
