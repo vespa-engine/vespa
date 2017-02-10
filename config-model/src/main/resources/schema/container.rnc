@@ -22,6 +22,17 @@ Server = element server {
    ComponentDefinition
 }
 
+AccessControl = element access-control {
+    attribute domain { xsd:NCName } &
+    attribute read { string "true" | string "false" }? &
+    attribute write { string "true" | string "false" }? &
+    element vespa-domain { xsd:NCName }? &
+    element application { xsd:NCName }? &
+    element exclude {
+        Binding+
+    }?
+}
+
 HttpFilterChain =
     HttpFilter* &
     ChainBaseContent &

@@ -64,7 +64,7 @@ public class TokenBuffer {
         return buffer.peekFirst().text;
     }
 
-    int size() {
+    public int size() {
         return buffer.size();
     }
 

@@ -10,19 +10,19 @@ import com.yahoo.document.Field;
  */
 public class DocumentReference {
 
-    private final Field documentReferenceField;
-    private final Search search;
+    private final Field referenceField;
+    private final Search targetSearch;
 
-    public DocumentReference(Field documentReferenceField, Search search) {
-        this.documentReferenceField = documentReferenceField;
-        this.search = search;
+    public DocumentReference(Field referenceField, Search targetSearch) {
+        this.referenceField = referenceField;
+        this.targetSearch = targetSearch;
     }
 
-    public Field documentReferenceField() {
-        return documentReferenceField;
+    public Field referenceField() {
+        return referenceField;
     }
 
-    public Search search() {
-        return search;
+    public Search targetSearch() {
+        return targetSearch;
     }
 }

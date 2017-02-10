@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -9,6 +11,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -16,11 +19,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class HttpProxy {
+public class HttpProxy extends AbstractComponent {
     private static Logger logger = Logger.getLogger(HttpProxy.class.getName());
 
     private final HttpFetcher fetcher;
 
+    @Inject
+    public HttpProxy() { this(new SimpleHttpFetcher()); }
     public HttpProxy(HttpFetcher fetcher) {
         this.fetcher = fetcher;
     }

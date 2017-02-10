@@ -62,12 +62,20 @@ TEST_F("require that dense tensors can be loaded", ConstantTensorLoader(SimpleTe
     TEST_DO(verify_tensor(make_dense_tensor(), f1.create(TEST_PATH("dense.json"), "tensor(x[2],y[2])")));
 }
 
-TEST_F("require that sparse tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_tensor(make_sparse_tensor(), f1.create(TEST_PATH("sparse.json"), "tensor(x{},y{})")));
-}
-
 TEST_F("require that mixed tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
     TEST_DO(verify_tensor(make_mixed_tensor(), f1.create(TEST_PATH("mixed.json"), "tensor(x{},y[2])")));
+}
+
+TEST_F("require that lz4 compressed dense tensor can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+    TEST_DO(verify_tensor(make_dense_tensor(), f1.create(TEST_PATH("dense.json.lz4"), "tensor(x[2],y[2])")));
+}
+
+TEST_F("require that lz4 compressed sparse tensor can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+    TEST_DO(verify_tensor(make_sparse_tensor(), f1.create(TEST_PATH("sparse.json.lz4"), "tensor(x{},y{})")));
+}
+
+TEST_F("require that bad lz4 file fails to load creating empty result", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+    TEST_DO(verify_tensor(dense_tensor_nocells(), f1.create(TEST_PATH("bad_lz4.json.lz4"), "tensor(x[2],y[2])")));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

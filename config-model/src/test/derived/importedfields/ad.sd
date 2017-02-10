@@ -1,0 +1,8 @@
+search ad {
+  document ad {
+    field campaign_ref type reference<campaign> {}
+    field person_ref type reference<person> {}
+  }
+  import field campaign_ref.budget as my_budget {}
+  import field person_ref.name as my_person_name {}
+}

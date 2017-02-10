@@ -6,6 +6,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -22,15 +23,16 @@ import com.yahoo.vespa.model.utils.FileSender;
  * @author geirst
  */
 public class DocumentDatabase extends AbstractConfigProducer implements
-    IndexInfoConfig.Producer,
-    IlscriptsConfig.Producer,
-    AttributesConfig.Producer,
-    RankProfilesConfig.Producer,
-    RankingConstantsConfig.Producer,
-    IndexschemaConfig.Producer,
-    JuniperrcConfig.Producer,
-    SummarymapConfig.Producer,
-    SummaryConfig.Producer {
+        IndexInfoConfig.Producer,
+        IlscriptsConfig.Producer,
+        AttributesConfig.Producer,
+        RankProfilesConfig.Producer,
+        RankingConstantsConfig.Producer,
+        IndexschemaConfig.Producer,
+        JuniperrcConfig.Producer,
+        SummarymapConfig.Producer,
+        SummaryConfig.Producer,
+        ImportedFieldsConfig.Producer {
 
     private final String inputDocType;
     private final DerivedConfiguration derivedCfg;
@@ -105,5 +107,10 @@ public class DocumentDatabase extends AbstractConfigProducer implements
     @Override
     public void getConfig(SummaryConfig.Builder builder) {
         derivedCfg.getSummaries().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(ImportedFieldsConfig.Builder builder) {
+        derivedCfg.getImportedFields().getConfig(builder);
     }
 }

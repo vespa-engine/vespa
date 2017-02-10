@@ -393,7 +393,7 @@ public class DocumentModelBuilder {
             return emptySet();
         }
         return documentReferences.get().referenceMap().values().stream()
-                .map(documentReference -> documentReference.search().getDocument())
+                .map(documentReference -> documentReference.targetSearch().getDocument())
                 .map(documentType -> new NewDocumentType.Name(documentType.getName()))
                 .collect(toSet());
     }
