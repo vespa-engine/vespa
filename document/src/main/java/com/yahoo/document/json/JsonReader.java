@@ -29,7 +29,6 @@ import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
 import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
-import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
 import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
@@ -89,7 +88,7 @@ public class JsonReader {
             throw new RuntimeException(e);
         }
         documentParseInfo.operationType = operationType;
-        DocumentOperation operation = createDocumentOperation(documentParseInfo.fieldsBuffer, documentParseInfo);
+        DocumentOperation operation = createDocumentOperation(documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
     }
@@ -118,28 +117,39 @@ public class JsonReader {
             state = END_OF_FEED;
             return null;
         }
-        DocumentOperation operation = createDocumentOperation(documentParseInfo.get().fieldsBuffer, documentParseInfo.get());
+        DocumentOperation operation = createDocumentOperation(documentParseInfo.get());
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.get().condition));
         return operation;
     }
 
-    private DocumentOperation createDocumentOperation(TokenBuffer buffer, DocumentParseInfo documentParseInfo) {
+    private DocumentOperation createDocumentOperation(DocumentParseInfo documentParseInfo) {
         DocumentType documentType = getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager);
         final DocumentOperation documentOperation;
         try {
             switch (documentParseInfo.operationType) {
                 case PUT:
                     documentOperation = new DocumentPut(new Document(documentType, documentParseInfo.documentId));
-                    readPut(buffer, (DocumentPut) documentOperation);
-                    verifyEndState(buffer);
+                    readPut(documentParseInfo.fieldsBuffer, (DocumentPut) documentOperation);
+                    verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
                     break;
                 case REMOVE:
                     documentOperation = new DocumentRemove(documentParseInfo.documentId);
                     break;
                 case UPDATE:
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
-                    readUpdate(buffer, (DocumentUpdate) documentOperation);
-                    verifyEndState(buffer);
+                    if (documentParseInfo.fieldsBuffer.size() == 0 && documentParseInfo.fieldpathsBuffer.size() == 0) {
+                        throw new IllegalArgumentException("Either 'fields' or 'fieldpaths' must be set");
+                    }
+
+                    if (documentParseInfo.fieldsBuffer.size() > 0) {
+                        readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
+                        verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
+                    }
+                    if (documentParseInfo.fieldpathsBuffer.size() > 0) {
+                        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(documentType, documentParseInfo);
+                        vespaJsonDocumentReader.read((DocumentUpdate) documentOperation);
+                        verifyEndState(documentParseInfo.fieldpathsBuffer, JsonToken.END_ARRAY);
+                    }
                     break;
                 default:
                     throw new IllegalStateException("Implementation out of sync with itself. This is a bug.");
@@ -177,9 +187,10 @@ public class JsonReader {
         }
     }
 
-    private void verifyEndState(TokenBuffer buffer) {
+    private void verifyEndState(TokenBuffer buffer, JsonToken expectedFinalToken) {
+        Preconditions.checkState(buffer.currentToken() == expectedFinalToken,
+                "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.currentToken());
         Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
-        expectObjectEnd(buffer.currentToken());
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
         Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
     }

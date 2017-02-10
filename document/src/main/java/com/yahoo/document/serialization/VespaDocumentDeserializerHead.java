@@ -5,7 +5,6 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
-import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 
@@ -32,18 +31,14 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer42 {
             update.addFieldUpdateNoCheck(new FieldUpdate(this, update.getDocumentType(), 8));
         }
 
-        try {
-            int sizeAndFlags = getInt(null);
-            update.setCreateIfNonExistent(DocumentUpdateFlags.extractFlags(sizeAndFlags).getCreateIfNonExistent());
-            size = DocumentUpdateFlags.extractValue(sizeAndFlags);
+        int sizeAndFlags = getInt(null);
+        update.setCreateIfNonExistent(DocumentUpdateFlags.extractFlags(sizeAndFlags).getCreateIfNonExistent());
+        size = DocumentUpdateFlags.extractValue(sizeAndFlags);
 
-            for (int i = 0; i < size; i++) {
-                int type = getByte(null);
-                update.addFieldPathUpdate(FieldPathUpdate.create(FieldPathUpdate.Type.valueOf(type),
-                                          update.getDocumentType(), this));
-            }
-        } catch (ParseException e) {
-            throw new DeserializationException(e);
+        for (int i = 0; i < size; i++) {
+            int type = getByte(null);
+            update.addFieldPathUpdate(FieldPathUpdate.create(FieldPathUpdate.Type.valueOf(type),
+                                      update.getDocumentType(), this));
         }
     }
 

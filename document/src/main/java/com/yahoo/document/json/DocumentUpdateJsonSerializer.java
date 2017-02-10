@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.ByteFieldValue;
@@ -24,6 +25,10 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.update.AddValueUpdate;
@@ -95,15 +100,58 @@ public class DocumentUpdateJsonSerializer
                     generator.writeBooleanField("create", createIfNotExistent.get());
                 }
 
-                generator.writeObjectFieldStart("fields");
-                for (FieldUpdate up : update.getFieldUpdates()) {
-                    up.serialize(this);
+                if (! update.getFieldUpdates().isEmpty()) {
+                    generator.writeObjectFieldStart("fields");
+                    for (FieldUpdate up : update.getFieldUpdates()) {
+                        up.serialize(this);
+                    }
+                    generator.writeEndObject();
                 }
-                generator.writeEndObject();
+
+                if (! update.getFieldPathUpdates().isEmpty()) {
+                    generator.writeArrayFieldStart("fieldpaths");
+                    for (FieldPathUpdate up : update.getFieldPathUpdates()) {
+                        write(up, generator);
+                    }
+                    generator.writeEndArray();
+                }
 
                 generator.writeEndObject();
                 generator.flush();
             });
+        }
+
+        private void write(FieldPathUpdate update, JsonGenerator generator) throws IOException {
+            generator.writeStartObject(); // Ends fieldpath operation object inside 'fieldpaths' array
+            generator.writeObjectFieldStart(update.getUpdateType().name().toLowerCase());
+            generator.writeObjectFieldStart(update.getOriginalFieldPath());
+
+            if (update instanceof AssignFieldPathUpdate) {
+                AssignFieldPathUpdate assignUp = (AssignFieldPathUpdate) update;
+                generator.writeBooleanField("createmissingpath", assignUp.getCreateMissingPath());
+                generator.writeBooleanField("removeifzero", assignUp.getRemoveIfZero());
+                if (assignUp.getExpression() != null) {
+                    generator.writeStringField("value", assignUp.getExpression());
+                } else {
+                    Field value = new Field("value");
+                    assignUp.getNewValue().serialize(value, this);
+                }
+            } else if (update instanceof AddFieldPathUpdate) {
+                Field items = new Field("items");
+                ((AddFieldPathUpdate) update).getNewValues().serialize(items, this);
+            } else if (update instanceof RemoveFieldPathUpdate) {
+
+            } else {
+                throw new RuntimeException("Unsupported fieldpaths operation: " + update.getClass().getName());
+            }
+
+            generator.writeEndObject(); // Ends fieldpath object
+            if (update.getOriginalWhereClause() != null) {
+                generator.writeStringField("where", update.getOriginalWhereClause());
+            }
+
+            generator.writeEndObject(); // Ends operation object
+            generator.writeEndObject(); // Ends fieldpath operation object inside 'fieldpaths' array
         }
 
         @Override

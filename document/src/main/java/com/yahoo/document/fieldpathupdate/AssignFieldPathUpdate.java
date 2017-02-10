@@ -160,6 +160,10 @@ public class AssignFieldPathUpdate extends FieldPathUpdate {
         reader.read(this);
     }
 
+    public AssignFieldPathUpdate(DocumentType type) {
+        super(FieldPathUpdate.Type.ASSIGN, type);
+    }
+
     /**
      * Turns this assignment into a literal one.
      *
