@@ -25,6 +25,7 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
@@ -110,12 +111,9 @@ public class DocumentUpdateJsonSerializer
                 if (! update.getFieldPathUpdates().isEmpty()) {
                     generator.writeArrayFieldStart("fieldpaths");
                     for (FieldPathUpdate up : update.getFieldPathUpdates()) {
-                        generator.writeStartObject();
-                        generator.writeStringField("fieldpath", up.getOriginalFieldPath());
-                        generator.writeStringField("operation", up.getUpdateType().name().toLowerCase());
-                        if (up.getOriginalWhereClause() != null) {
-                            generator.writeStringField("where", up.getOriginalWhereClause());
-                        }
+                        generator.writeStartObject(); // Ends fieldpath operation object inside 'fieldpaths' array
+                        generator.writeObjectFieldStart(up.getUpdateType().name().toLowerCase());
+                        generator.writeObjectFieldStart(up.getOriginalFieldPath());
 
                         if (up instanceof AssignFieldPathUpdate) {
                             AssignFieldPathUpdate assignUp = (AssignFieldPathUpdate) up;
@@ -127,12 +125,22 @@ public class DocumentUpdateJsonSerializer
                                 Field value = new Field("value");
                                 assignUp.getNewValue().serialize(value, this);
                             }
+                        } else if (up instanceof AddFieldPathUpdate) {
+                            Field items = new Field("items");
+                            ((AddFieldPathUpdate) up).getNewValues().serialize(items, this);
                         } else if (up instanceof RemoveFieldPathUpdate) {
 
                         } else {
                             throw new RuntimeException("Unsupported fieldpaths operation: " + up.getClass().getName());
                         }
-                        generator.writeEndObject();
+
+                        generator.writeEndObject(); // Ends fieldpath object
+                        if (up.getOriginalWhereClause() != null) {
+                            generator.writeStringField("where", up.getOriginalWhereClause());
+                        }
+
+                        generator.writeEndObject(); // Ends operation object
+                        generator.writeEndObject(); // Ends fieldpath operation object inside 'fieldpaths' array
                     }
                     generator.writeEndArray();
                 }
