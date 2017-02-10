@@ -49,6 +49,7 @@ Http = element http {
 
 Filtering = element filtering {
     HttpFilter* &
+    AccessControl? &
     element request-chain {
         HttpFilterChain
     }* &
