@@ -39,3 +39,6 @@ flavor[].minDiskAvailableGb double default=0.0
 
 # Human readable free text for description of node.
 flavor[].description string default=""
+
+# The flavor is retired and should no longer be used.
+flavor[].retired bool default=false

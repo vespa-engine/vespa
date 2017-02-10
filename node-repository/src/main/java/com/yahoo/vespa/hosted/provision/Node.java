@@ -130,10 +130,19 @@ public final class Node {
     }
 
     /** Returns a copy of this node which is retired by the system */
-    // We will use this when we support operators retiring a flavor completely from hosted Vespa
     public Node retireBySystem(Instant retiredAt) {
+        if (allocation().get().membership().retired()) return this;
         return with(allocation.get().retire())
                .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.system)));
+    }
+
+    /** Returns a copy of this node which is retired by the system if the flavor is retired, otherwise it's retired by
+     * the application */
+    public Node retire(Instant retiredAt) {
+        if (flavor.isRetired()) {
+            return retireBySystem(retiredAt);
+        }
+        return retireByApplication(retiredAt);
     }
 
     /** Returns a copy of this node which is not retired */
