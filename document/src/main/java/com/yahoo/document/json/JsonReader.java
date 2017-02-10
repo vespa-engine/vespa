@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.util.Optional;
 
 import static com.yahoo.document.json.JsonReader.ReaderState.END_OF_FEED;
-import static com.yahoo.document.json.document.DocumentParser.parseDocumentsFields;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
 import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
 import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
@@ -41,14 +40,14 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate
  * valid JSON representation of a feed.
  *
  * @author Steinar Knutsen
- * @since 5.1.25
+ * @author dybis
  */
 @Beta
 public class JsonReader {
 
-    // Only used for testing.
     public Optional<DocumentParseInfo> parseDocument() throws IOException {
-        return DocumentParser.parseDocument(parser);
+        DocumentParser documentParser = new DocumentParser(parser);
+        return documentParser.parse(Optional.empty());
     }
 
     private static final String UPDATE_REMOVE = "remove";
@@ -81,9 +80,10 @@ public class JsonReader {
      */
     public DocumentOperation readSingleDocument(DocumentParser.SupportedOperation operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
-        DocumentParseInfo documentParseInfo = null;
+        final DocumentParseInfo documentParseInfo;
         try {
-            documentParseInfo = parseDocumentsFields(parser, docId);
+            DocumentParser documentParser = new DocumentParser(parser);
+            documentParseInfo = documentParser.parse(Optional.of(docId)).get();
         } catch (IOException e) {
             state = END_OF_FEED;
             throw new RuntimeException(e);
@@ -108,7 +108,7 @@ public class JsonReader {
         }
         Optional<DocumentParseInfo> documentParseInfo;
         try {
-            documentParseInfo = DocumentParser.parseDocument(parser);
+            documentParseInfo = parseDocument();
         } catch (IOException r) {
             // Jackson is not able to recover from structural parse errors
             state = END_OF_FEED;

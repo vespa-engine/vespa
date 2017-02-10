@@ -9,8 +9,11 @@ import com.yahoo.document.json.readers.DocumentParseInfo;
 import java.io.IOException;
 import java.util.Optional;
 
-import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
-
+/**
+ * Parses a document operation.
+ *
+ * @author dybis
+ */
 public class DocumentParser {
     public enum SupportedOperation {
         PUT, UPDATE, REMOVE
@@ -22,56 +25,101 @@ public class DocumentParser {
     public static final String CREATE_IF_NON_EXISTENT = "create";
     public static final String FIELDS = "fields";
     public static final String REMOVE = "remove";
+    private final JsonParser parser;
+    private  long indentLevel;
 
-    public static Optional<DocumentParseInfo> parseDocument(JsonParser parser) throws IOException {
-        // we should now be at the start of a feed operation or at the end of the feed
-        JsonToken token = parser.nextValue();
-        if (token == JsonToken.END_ARRAY) {
-            return Optional.empty(); // end of feed
-        }
-        expectObjectStart(token);
+    public DocumentParser(JsonParser parser) {
+        this.parser = parser;
+    }
 
+    public Optional<DocumentParseInfo> parse(Optional<DocumentId> documentIdArg) throws IOException {
+        indentLevel = 0;
         DocumentParseInfo documentParseInfo = new DocumentParseInfo();
+        if (documentIdArg.isPresent()) {
+            documentParseInfo.documentId = documentIdArg.get();
+        }
+        do {
+            parseOneItem(documentParseInfo, documentIdArg.isPresent() /* doc id set externally */);
+        } while (indentLevel > 0L);
 
-        while (true) {
+        if (documentParseInfo.documentId != null) {
+            return Optional.of(documentParseInfo);
+        }
+        return Optional.empty();
+    }
+
+    private void parseOneItem(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally) throws IOException {
+        parser.nextValue();
+        processIndent();
+        if (parser.getCurrentName() == null) {
+            return;
+        }
+        if (indentLevel == 1L) {
+            handleIdentLevelOne(documentParseInfo, docIdAndOperationIsSetExternally);
+        } else if (indentLevel == 2L) {
+            handleIdentLevelTwo(documentParseInfo);
+        }
+    }
+
+    private void processIndent() throws IOException {
+        JsonToken currentToken = parser.currentToken();
+        if (currentToken == null) {
+            throw new IllegalArgumentException("Could not read document, no document?");
+        }
+        switch (currentToken) {
+            case START_OBJECT:
+                indentLevel++;
+                break;
+            case END_OBJECT:
+                indentLevel--;
+                return;
+            case START_ARRAY:
+                indentLevel+=10000L;
+                break;
+            case END_ARRAY:
+                indentLevel-=10000L;
+                break;
+        }
+    }
+
+    private void handleIdentLevelOne(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally)
+            throws IOException {
+        JsonToken currentToken = parser.getCurrentToken();
+        if (currentToken == JsonToken.VALUE_TRUE || currentToken == JsonToken.VALUE_FALSE) {
             try {
-                token = parser.nextValue();
-                if ((token == JsonToken.VALUE_TRUE || token == JsonToken.VALUE_FALSE) &&
-                        CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
-                    documentParseInfo.create = Optional.of(token == JsonToken.VALUE_TRUE);
-                    continue;
+                if (CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
+                    documentParseInfo.create = Optional.ofNullable(parser.getBooleanValue());
+                    return;
                 }
-                if (token == JsonToken.VALUE_STRING && CONDITION.equals(parser.getCurrentName())) {
-                    documentParseInfo.condition = Optional.of(parser.getText());
-                    continue;
-                }
-                if (token == JsonToken.START_OBJECT) {
-                    try {
-                        if (!FIELDS.equals(parser.getCurrentName())) {
-                            throw new IllegalArgumentException("Unexpected object key: " + parser.getCurrentName());
-                        }
-                    } catch (IOException e) {
-                        // TODO more specific wrapping
-                        throw new RuntimeException(e);
-                    }
-                    documentParseInfo.fieldsBuffer.bufferObject(token, parser);
-                    continue;
-                }
-                if (token == JsonToken.END_OBJECT) {
-                    if (documentParseInfo.documentId == null) {
-                        throw new RuntimeException("Did not find document operation");
-                    }
-                    return Optional.of(documentParseInfo);
-                }
-                if (token == JsonToken.VALUE_STRING) {
-                    documentParseInfo.operationType = operationNameToOperationType(parser.getCurrentName());
-                    documentParseInfo.documentId = new DocumentId(parser.getText());
-                    continue;
-                }
-                throw new RuntimeException("Expected document start or document operation.");
             } catch (IOException e) {
-                throw new IllegalStateException(e);
+                throw new RuntimeException("Got IO exception while parsing document", e);
             }
+        }
+        if ((currentToken == JsonToken.VALUE_TRUE || currentToken == JsonToken.VALUE_FALSE) &&
+                CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
+            documentParseInfo.create = Optional.of(currentToken == JsonToken.VALUE_TRUE);
+        } else if (currentToken == JsonToken.VALUE_STRING && CONDITION.equals(parser.getCurrentName())) {
+            documentParseInfo.condition = Optional.of(parser.getText());
+        } else if (currentToken == JsonToken.VALUE_STRING) {
+            // Value is expected to be set in the header not in the document. Ignore any unknown field
+            // as well.
+            if (! docIdAndOperationIsSetExternally) {
+                documentParseInfo.operationType = operationNameToOperationType(parser.getCurrentName());
+                documentParseInfo.documentId = new DocumentId(parser.getText());
+            }
+        }
+    }
+
+    private  void handleIdentLevelTwo(DocumentParseInfo documentParseInfo) {
+        try {
+            JsonToken currentToken = parser.getCurrentToken();
+            // "Fields" opens a dictionary and is therefore on level two which might be surprising.
+            if (currentToken == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
+                documentParseInfo.fieldsBuffer.bufferObject(currentToken, parser);
+                processIndent();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Got IO exception while parsing document", e);
         }
     }
 
@@ -89,55 +137,5 @@ public class DocumentParser {
                         "Got " + operationName + " as document operation, only \"put\", " +
                                 "\"remove\" and \"update\" are supported.");
         }
-    }
-
-    public static DocumentParseInfo parseDocumentsFields(JsonParser parser, DocumentId documentId) throws IOException {
-        long indentLevel = 0;
-        DocumentParseInfo documentParseInfo = new DocumentParseInfo();
-        documentParseInfo.documentId = documentId;
-        while (true) {
-            // we should now be at the start of a feed operation or at the end of the feed
-            JsonToken t = parser.nextValue();
-            if (t == null) {
-                throw new IllegalArgumentException("Could not read document, no document?");
-            }
-            switch (t) {
-                case START_OBJECT:
-                    indentLevel++;
-                    break;
-                case END_OBJECT:
-                    indentLevel--;
-                    break;
-                case START_ARRAY:
-                    indentLevel+=10000L;
-                    break;
-                case END_ARRAY:
-                    indentLevel-=10000L;
-                    break;
-            }
-            if (indentLevel == 1 && (t == JsonToken.VALUE_TRUE || t == JsonToken.VALUE_FALSE)) {
-                try {
-                    if (CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
-                        documentParseInfo.create = Optional.ofNullable(parser.getBooleanValue());
-                        continue;
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException("Got IO exception while parsing document", e);
-                }
-            }
-            if (indentLevel == 2L && t == JsonToken.START_OBJECT) {
-
-                try {
-                    if (!FIELDS.equals(parser.getCurrentName())) {
-                        continue;
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException("Got IO exception while parsing document", e);
-                }
-                documentParseInfo.fieldsBuffer.bufferObject(t, parser);
-                break;
-            }
-        }
-        return documentParseInfo;
     }
 }
