@@ -12,7 +12,6 @@ namespace test {
 
 constexpr double my_nan = std::numeric_limits<double>::quiet_NaN();
 constexpr double my_inf = std::numeric_limits<double>::infinity();
-constexpr double my_error_value = 31212.0;
  
 vespalib::string
 EvalSpec::EvalTest::as_string(const std::vector<vespalib::string> &param_names,
@@ -128,11 +127,14 @@ EvalSpec::add_tensor_operation_cases() {
     add_rule({"a", -1.0, 1.0}, "map(a,f(x)(x+x*3))", [](double x){ return (x + (x * 3)); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x+y))", [](double x, double y){ return (x + y); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "join(a,b,f(x,y)(x+y*3))", [](double x, double y){ return (x + (y * 3)); });
-    add_rule({"a", -1.0, 1.0}, "reduce(a,sum)", [](double a){ return a; });
-    add_rule({"a", -1.0, 1.0}, "reduce(a,prod)", [](double a){ return a; });
+    add_rule({"a", -1.0, 1.0}, "reduce(a,avg)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,count)", [](double){ return 1.0; });
-    add_rule({"a", -1.0, 1.0}, "rename(a,x,y)", [](double){ return my_error_value; });
-    add_rule({"a", -1.0, 1.0}, "rename(a,(x,y),(y,x))", [](double){ return my_error_value; });
+    add_rule({"a", -1.0, 1.0}, "reduce(a,prod)", [](double a){ return a; });
+    add_rule({"a", -1.0, 1.0}, "reduce(a,sum)", [](double a){ return a; });
+    add_rule({"a", -1.0, 1.0}, "reduce(a,max)", [](double a){ return a; });
+    add_rule({"a", -1.0, 1.0}, "reduce(a,min)", [](double a){ return a; });
+    add_expression({"a"}, "rename(a,x,y)");
+    add_expression({"a"}, "rename(a,(x,y),(y,x))");
     add_expression({}, "tensor(x[10])(x)");
     add_expression({}, "tensor(x[10],y[10])(x==y)");
     add_expression({"a","b"}, "concat(a,b,x)");
