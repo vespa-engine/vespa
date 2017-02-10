@@ -36,9 +36,7 @@ public class DocumentParser {
     public Optional<DocumentParseInfo> parse(Optional<DocumentId> documentIdArg) throws IOException {
         indentLevel = 0;
         DocumentParseInfo documentParseInfo = new DocumentParseInfo();
-        if (documentIdArg.isPresent()) {
-            documentParseInfo.documentId = documentIdArg.get();
-        }
+        documentIdArg.ifPresent(documentId -> documentParseInfo.documentId = documentId);
         do {
             parseOneItem(documentParseInfo, documentIdArg.isPresent() /* doc id set externally */);
         } while (indentLevel > 0L);
@@ -57,8 +55,8 @@ public class DocumentParser {
         }
         if (indentLevel == 1L) {
             handleIdentLevelOne(documentParseInfo, docIdAndOperationIsSetExternally);
-        } else if (indentLevel == 2L) {
-            handleIdentLevelTwo(documentParseInfo);
+        } else if (indentLevel > 1L) {
+            handleIdentLevelOnePlus(documentParseInfo);
         }
     }
 
@@ -75,10 +73,10 @@ public class DocumentParser {
                 indentLevel--;
                 return;
             case START_ARRAY:
-                indentLevel+=10000L;
+                indentLevel += 10000L;
                 break;
             case END_ARRAY:
-                indentLevel-=10000L;
+                indentLevel -= 10000L;
                 break;
         }
     }
@@ -111,12 +109,17 @@ public class DocumentParser {
         }
     }
 
-    private  void handleIdentLevelTwo(DocumentParseInfo documentParseInfo) {
+    private  void handleIdentLevelOnePlus(DocumentParseInfo documentParseInfo) {
         try {
             JsonToken currentToken = parser.getCurrentToken();
-            // "Fields" opens a dictionary and is therefore on level two which might be surprising.
-            if (currentToken == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
+            // "fields" opens a dictionary and is therefore on level two which might be surprising.
+            if (indentLevel == 2 && currentToken == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
                 documentParseInfo.fieldsBuffer.bufferObject(currentToken, parser);
+                processIndent();
+
+            // "fieldpaths" opens an array and is therefore on level 10001 which might be surprising
+            } else if (indentLevel == 10001 && currentToken == JsonToken.START_ARRAY && FIELDPATHS.equals(parser.getCurrentName())) {
+                documentParseInfo.fieldpathsBuffer.bufferArray(currentToken, parser);
                 processIndent();
             }
         } catch (IOException e) {

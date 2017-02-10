@@ -22,7 +22,11 @@ public class CompositeReader {
     @SuppressWarnings({ "cast", "rawtypes" })
     public static FieldValue createComposite(TokenBuffer buffer, DataType expectedType) {
         FieldValue fieldValue = expectedType.createFieldValue();
-        populateComposite(buffer, fieldValue);
+        if (buffer.currentToken().isStructStart()) {
+            populateComposite(buffer, fieldValue);
+        } else {
+            fieldValue.assign(buffer.currentText());
+        }
         return fieldValue;
     }
 
@@ -54,7 +58,4 @@ public class CompositeReader {
         }
         expectCompositeEnd(buffer.currentToken());
     }
-
-
-
 }
