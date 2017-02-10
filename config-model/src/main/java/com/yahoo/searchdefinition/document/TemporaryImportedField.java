@@ -10,28 +10,28 @@ package com.yahoo.searchdefinition.document;
  */
 public class TemporaryImportedField {
 
-    private final String aliasFieldName;
-    private final String documentReferenceFieldName;
-    private final String foreignFieldName;
+    private final String fieldName;
+    private final String referenceFieldName;
+    private final String targetFieldName;
 
-    public TemporaryImportedField(String aliasFieldName,
-                                  String documentReferenceFieldName,
-                                  String foreignFieldName) {
-        this.aliasFieldName = aliasFieldName;
-        this.documentReferenceFieldName = documentReferenceFieldName;
-        this.foreignFieldName = foreignFieldName;
+    public TemporaryImportedField(String fieldName,
+                                  String referenceFieldName,
+                                  String targetFieldName) {
+        this.fieldName = fieldName;
+        this.referenceFieldName = referenceFieldName;
+        this.targetFieldName = targetFieldName;
     }
 
-    public String aliasFieldName() {
-        return aliasFieldName;
+    public String fieldName() {
+        return fieldName;
     }
 
-    public String documentReferenceFieldName() {
-        return documentReferenceFieldName;
+    public String referenceFieldName() {
+        return referenceFieldName;
     }
 
-    public String foreignFieldName() {
-        return foreignFieldName;
+    public String targetFieldName() {
+        return targetFieldName;
     }
 
 }

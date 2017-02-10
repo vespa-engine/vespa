@@ -39,30 +39,36 @@ public class ImportedFieldsResolver extends Processor {
 
     private void resolveImportedField(TemporaryImportedField importedField) {
         DocumentReference reference = validateDocumentReference(importedField);
-        SDField referencedField = validateReferencedField(importedField, reference);
-        importedFields.put(importedField.aliasFieldName(), new ImportedField(importedField.aliasFieldName(), reference, referencedField));
+        SDField targetField = validateTargetField(importedField, reference);
+        importedFields.put(importedField.fieldName(), new ImportedField(importedField.fieldName(), reference, targetField));
     }
 
     private DocumentReference validateDocumentReference(TemporaryImportedField importedField) {
-        String documentReferenceFieldName = importedField.documentReferenceFieldName();
-        DocumentReference reference = references.get().referenceMap().get(documentReferenceFieldName);
+        String referenceFieldName = importedField.referenceFieldName();
+        DocumentReference reference = references.get().referenceMap().get(referenceFieldName);
         if (reference == null) {
-            fail(importedField.aliasFieldName(), "Document reference field '" + documentReferenceFieldName + "' not found");
+            fail(importedField, "Reference field '" + referenceFieldName + "' not found");
         }
         return reference;
     }
 
-    private SDField validateReferencedField(TemporaryImportedField importedField, DocumentReference reference) {
-        String foreignFieldName = importedField.foreignFieldName();
-        SDField referencedField = reference.search().getField(foreignFieldName);
-        if (referencedField == null) {
-            fail(importedField.aliasFieldName(), "Field '" + foreignFieldName + "' via document reference field '" + reference.documentReferenceField().getName() + "' not found");
+    private SDField validateTargetField(TemporaryImportedField importedField, DocumentReference reference) {
+        String targetFieldName = importedField.targetFieldName();
+        SDField targetField = reference.targetSearch().getField(targetFieldName);
+        if (targetField == null) {
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
+        } else if (!targetField.doesAttributing()) {
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute");
         }
-        return referencedField;
+        return targetField;
     }
 
-    private void fail(String importedFieldName, String msg) {
-        throw new IllegalArgumentException("For search '" + search.getName() + "', import field '" + importedFieldName + "': Imported field is not valid. " + msg);
+    private String targetFieldAsString(String targetFieldName, DocumentReference reference) {
+        return "Field '" + targetFieldName + "' via reference field '" + reference.referenceField().getName() + "'";
+    }
+
+    private void fail(TemporaryImportedField importedField, String msg) {
+        throw new IllegalArgumentException("For search '" + search.getName() + "', import field '" + importedField.fieldName() + "': " + msg);
     }
 
 }
