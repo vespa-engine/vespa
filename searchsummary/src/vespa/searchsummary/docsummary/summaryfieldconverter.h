@@ -4,7 +4,8 @@
 
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
-namespace proton {
+namespace search {
+namespace docsummary {
 
 /**
  * This class converts a summary field for docsum fetching.
@@ -16,5 +17,5 @@ public:
     convertSummaryField(bool markup, const document::FieldValue &value, bool useSlimeInsideFields);
 };
 
-}  // namespace proton
-
+}  // namespace search::docsummary
+}  // namespace search

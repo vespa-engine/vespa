@@ -5,12 +5,11 @@
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace proton {
+namespace search {
 namespace linguistics {
 
 extern const vespalib::string SPANTREE_NAME;
 extern const document::AnnotationType *const TERM;
 
-}  // namespace linguistics;
-}  // namespace proton
-
+}  // namespace search::linguistics
+}  // namespace search
