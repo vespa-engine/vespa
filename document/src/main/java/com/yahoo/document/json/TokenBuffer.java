@@ -72,12 +72,20 @@ public class TokenBuffer {
         buffer.addLast(new Token(token, name, text));
     }
 
-    public void  bufferObject(JsonToken first, JsonParser tokens) {
+    public void bufferObject(JsonToken first, JsonParser tokens) {
+        bufferJsonStruct(first, tokens, JsonToken.START_OBJECT);
+    }
+
+    public void bufferArray(JsonToken first, JsonParser tokens) {
+        bufferJsonStruct(first, tokens, JsonToken.START_ARRAY);
+    }
+
+    private void bufferJsonStruct(JsonToken first, JsonParser tokens, JsonToken firstToken) {
         int localNesting = 0;
         JsonToken t = first;
 
-        Preconditions.checkArgument(first == JsonToken.START_OBJECT,
-                "Expected START_OBJECT, got %s.", t);
+        Preconditions.checkArgument(first == firstToken,
+                "Expected %s, got %s.", firstToken.name(), t);
         if (size() == 0) {
             updateNesting(t);
         }

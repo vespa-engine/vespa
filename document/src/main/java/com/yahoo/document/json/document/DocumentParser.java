@@ -21,6 +21,7 @@ public class DocumentParser {
     private static final String CONDITION = "condition";
     public static final String CREATE_IF_NON_EXISTENT = "create";
     public static final String FIELDS = "fields";
+    public static final String FIELDPATHS = "fieldpaths";
     public static final String REMOVE = "remove";
 
     public static Optional<DocumentParseInfo> parseDocument(JsonParser parser) throws IOException {
@@ -109,35 +110,31 @@ public class DocumentParser {
                     indentLevel--;
                     break;
                 case START_ARRAY:
-                    indentLevel+=10000L;
+                    indentLevel += 10000L;
                     break;
                 case END_ARRAY:
-                    indentLevel-=10000L;
+                    indentLevel -= 10000L;
                     break;
             }
-            if (indentLevel == 1 && (t == JsonToken.VALUE_TRUE || t == JsonToken.VALUE_FALSE)) {
-                try {
+            try {
+                if (indentLevel == 0L && t == JsonToken.END_OBJECT) {
+                    break;
+                } else if (indentLevel == 1L && (t == JsonToken.VALUE_TRUE || t == JsonToken.VALUE_FALSE)) {
                     if (CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
                         documentParseInfo.create = Optional.ofNullable(parser.getBooleanValue());
-                        continue;
                     }
-                } catch (IOException e) {
-                    throw new RuntimeException("Got IO exception while parsing document", e);
+                } else if (indentLevel == 2L && t == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
+                    documentParseInfo.fieldsBuffer.bufferObject(t, parser);
+                    indentLevel--;
+                } else if (indentLevel == 10001L && t == JsonToken.START_ARRAY && FIELDPATHS.equals(parser.getCurrentName())) {
+                    documentParseInfo.fieldpathsBuffer.bufferArray(t, parser);
+                    indentLevel -= 10000L;
                 }
-            }
-            if (indentLevel == 2L && t == JsonToken.START_OBJECT) {
-
-                try {
-                    if (!FIELDS.equals(parser.getCurrentName())) {
-                        continue;
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException("Got IO exception while parsing document", e);
-                }
-                documentParseInfo.fieldsBuffer.bufferObject(t, parser);
-                break;
+            } catch (IOException e) {
+                throw new RuntimeException("Got IO exception while parsing document", e);
             }
         }
+
         return documentParseInfo;
     }
 }
