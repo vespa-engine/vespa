@@ -71,6 +71,7 @@ private:
     Cells _cells;
 
 public:
+    SimpleTensor();
     explicit SimpleTensor(double value);
     SimpleTensor(const ValueType &type_in, Cells &&cells_in);
     const ValueType &type() const { return _type; }
