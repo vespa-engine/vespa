@@ -4,12 +4,15 @@
 #include "document_db_referent.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include "gid_to_lid_mapper_factory.h"
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 
 namespace proton {
 
-DocumentDBReferent::DocumentDBReferent()
-    : _attrMgr(),
-      _dms()
+DocumentDBReferent::DocumentDBReferent(std::shared_ptr<search::IAttributeManager> attrMgr,
+                                       std::shared_ptr<DocumentMetaStore> dms)
+    : _attrMgr(std::move(attrMgr)),
+      _dms(std::move(dms))
 {
 }
 
@@ -31,7 +34,7 @@ DocumentDBReferent::getAttribute(vespalib::stringref name)
 std::shared_ptr<search::IGidToLidMapperFactory>
 DocumentDBReferent::getGidToLidMapperFactory()
 {
-    return std::shared_ptr<search::IGidToLidMapperFactory>();
+    return std::make_shared<GidToLidMapperFactory>(_dms);
 }
 
 } // namespace proton

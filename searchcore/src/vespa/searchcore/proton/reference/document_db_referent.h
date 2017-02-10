@@ -7,11 +7,12 @@ namespace search
 {
 
 class IAttributeManager;
-class DocumentMetaStore;
 
 }
 
 namespace proton {
+
+class DocumentMetaStore;
 
 /*
  * Class for getting target attributes for imported
@@ -21,9 +22,10 @@ namespace proton {
 class DocumentDBReferent : public IDocumentDBReferent
 {
     std::shared_ptr<search::IAttributeManager> _attrMgr;
-    std::shared_ptr<search::DocumentMetaStore> _dms;
+    std::shared_ptr<DocumentMetaStore> _dms;
 public:
-    DocumentDBReferent();
+    DocumentDBReferent(std::shared_ptr<search::IAttributeManager> attrMgr,
+                       std::shared_ptr<DocumentMetaStore> dms);
     virtual ~DocumentDBReferent();
     virtual std::shared_ptr<search::AttributeVector> getAttribute(vespalib::stringref name) override;
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override;

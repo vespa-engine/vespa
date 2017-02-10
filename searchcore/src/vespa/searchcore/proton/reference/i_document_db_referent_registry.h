@@ -18,11 +18,11 @@ public:
     /*
      * Get named IDocumentDBReferent.  Block while it doesn't exist.
      */
-    virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent(vespalib::stringref name) const = 0;
+    virtual std::shared_ptr<IDocumentDBReferent> get(vespalib::stringref name) const = 0;
 
-    virtual void addDocumentDBReferent(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee) = 0;
+    virtual void add(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee) = 0;
 
-    virtual void removeDocumentDBReferent(vespalib::stringref name) = 0;
+    virtual void remove(vespalib::stringref name) = 0;
 };
 
 } // namespace proton

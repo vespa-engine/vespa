@@ -20,9 +20,9 @@ public:
     DocumentDBReferentRegistry();
     virtual ~DocumentDBReferentRegistry();
 
-    virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent(vespalib::stringref docType) const override;
-    virtual void addDocumentDBReferent(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee) override;
-    virtual void removeDocumentDBReferent(vespalib::stringref name) override;
+    virtual std::shared_ptr<IDocumentDBReferent> get(vespalib::stringref docType) const override;
+    virtual void add(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee) override;
+    virtual void remove(vespalib::stringref name) override;
 };
 
 } // namespace proton

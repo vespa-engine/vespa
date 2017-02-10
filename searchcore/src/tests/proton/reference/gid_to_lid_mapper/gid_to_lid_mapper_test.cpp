@@ -76,8 +76,9 @@ struct Fixture
     }
 
     void remove(uint32_t lid) {
-        _dms->remove(lid);
-        _dms->removeComplete(lid);
+        if (_dms->remove(lid)) {
+            _dms->removeComplete(lid);
+        }
         _dms->commit();
     }
 
@@ -94,13 +95,20 @@ struct Fixture
 
     void assertGenerations(generation_t currentGeneration, generation_t firstUsedGeneration)
     {
-        (void) currentGeneration;
-        (void) firstUsedGeneration;
-#if 1
         const GenerationHandler &handler = _dms->getGenerationHandler();
         EXPECT_EQUAL(currentGeneration, handler.getCurrentGeneration());
         EXPECT_EQUAL(firstUsedGeneration, handler.getFirstUsedGeneration());
-#endif
+    }
+
+    template <typename Function>
+    void assertPut(vespalib::stringref docId, uint32_t expLid,
+                   generation_t currentGeneration, generation_t firstUsedGeneration,
+                   Function &&func)
+    {
+        uint32_t lid = put(docId);
+        EXPECT_EQUAL(expLid, lid);
+        TEST_DO(assertLid(func(), docId, expLid));
+        TEST_DO(assertGenerations(currentGeneration, firstUsedGeneration));
     }
 };
 
@@ -117,23 +125,14 @@ TEST_F("Test that mapper holds read guard", Fixture)
 {
     TEST_DO(f.assertGenerations(3, 3));
     auto factory = f.getGidToLidMapperFactory();
-    uint32_t lid3 = f.put(doc3);
-    EXPECT_EQUAL(1u, lid3);
-    TEST_DO(assertLid(factory->getMapper(), doc3, 1));
-    TEST_DO(f.assertGenerations(4, 4));
+    TEST_DO(f.assertPut(doc3, 1, 4, 4, [&]() { return factory->getMapper(); }));
     // Remove and readd withoug guard, old docid can be reused
-    f.remove(lid3);
-    lid3 = f.put(doc3);
-    EXPECT_EQUAL(1u, lid3);
-    TEST_DO(assertLid(factory->getMapper(), doc3, 1));
-    TEST_DO(f.assertGenerations(7, 7));
+    f.remove(1);
+    TEST_DO(f.assertPut(doc3, 1, 7, 7, [&]() { return factory->getMapper(); }));
     // Remove and readd withoug guard, old docid cannot be reused
     auto mapper = factory->getMapper();
-    f.remove(lid3);
-    lid3 = f.put(doc3);
-    EXPECT_EQUAL(2u, lid3);
-    TEST_DO(assertLid(mapper, doc3, 2));
-    TEST_DO(f.assertGenerations(10, 7));
+    f.remove(1);
+    TEST_DO(f.assertPut(doc3, 2, 10, 7, [&]() -> auto & { return mapper; }));
 }
 
 }

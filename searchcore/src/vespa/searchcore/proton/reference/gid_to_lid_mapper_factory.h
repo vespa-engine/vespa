@@ -3,9 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
-#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 
 namespace proton {
+
+class DocumentMetaStore;
 
 class GidToLidMapperFactory : public search::IGidToLidMapperFactory
 {

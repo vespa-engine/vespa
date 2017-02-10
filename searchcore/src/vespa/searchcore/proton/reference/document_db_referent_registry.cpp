@@ -6,7 +6,9 @@
 namespace proton {
 
 DocumentDBReferentRegistry::DocumentDBReferentRegistry()
-    : _lock()
+    : _lock(),
+      _cv(),
+      _handlers()
 {
 }
 
@@ -15,7 +17,7 @@ DocumentDBReferentRegistry::~DocumentDBReferentRegistry()
 }
 
 std::shared_ptr<IDocumentDBReferent>
-DocumentDBReferentRegistry::getDocumentDBReferent(vespalib::stringref name) const
+DocumentDBReferentRegistry::get(vespalib::stringref name) const
 {
     std::unique_lock<std::mutex> guard(_lock);
     auto itr = _handlers.find(name);
@@ -27,7 +29,7 @@ DocumentDBReferentRegistry::getDocumentDBReferent(vespalib::stringref name) cons
 }
 
 void
-DocumentDBReferentRegistry::addDocumentDBReferent(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee)
+DocumentDBReferentRegistry::add(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _handlers[name] = referee;
@@ -35,7 +37,7 @@ DocumentDBReferentRegistry::addDocumentDBReferent(vespalib::stringref name, std:
 }
 
 void
-DocumentDBReferentRegistry::removeDocumentDBReferent(vespalib::stringref name)
+DocumentDBReferentRegistry::remove(vespalib::stringref name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _handlers.erase(name);

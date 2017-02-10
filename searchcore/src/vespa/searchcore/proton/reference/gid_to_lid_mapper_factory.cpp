@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "gid_to_lid_mapper_factory.h"
 #include "gid_to_lid_mapper.h"
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 
 namespace proton {
 

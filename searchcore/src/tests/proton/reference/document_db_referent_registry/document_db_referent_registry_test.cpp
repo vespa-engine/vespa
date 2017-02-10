@@ -19,7 +19,7 @@ std::shared_ptr<IDocumentDBReferent> getFooResult;
 
 void getFooTask(const IDocumentDBReferentRegistry *registry)
 {
-    auto result = registry->getDocumentDBReferent("foo");
+    auto result = registry->get("foo");
     std::lock_guard<std::mutex> guard(lock);
     getFooResult = result;
 }
@@ -60,7 +60,7 @@ struct Fixture
     std::shared_ptr<MyDocumentDBReferent>
     add(vespalib::string name) {
         auto referent = std::make_shared<MyDocumentDBReferent>();
-        _registry.addDocumentDBReferent(name, referent);
+        _registry.add(name, referent);
         return referent;
     }
 };
@@ -70,9 +70,9 @@ TEST_F("Test that we can instantiate registry with two referents", Fixture)
     auto referentFoo = f.add("foo");
     auto referentBar = f.add("bar");
     EXPECT_NOT_EQUAL(referentFoo.get(), referentBar.get());
-    auto referent = f._registry.getDocumentDBReferent("foo");
+    auto referent = f._registry.get("foo");
     EXPECT_EQUAL(referentFoo.get(), referent.get());
-    referent = f._registry.getDocumentDBReferent("bar");
+    referent = f._registry.get("bar");
     EXPECT_EQUAL(referentBar.get(), referent.get());
 }
 
