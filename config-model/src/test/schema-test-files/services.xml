@@ -62,6 +62,15 @@
 
     <http>
       <filtering>
+        <access-control domain="my.athens-domain" read="true">
+          <exclude>
+            <binding>http//*/foo/*</binding>
+            <binding>https://*/foo/*</binding>
+          </exclude>
+          <application>my-app</application>
+          <vespa-domain>vespa.vespa.cd</vespa-domain>
+        </access-control>
+
         <filter id="com.yahoo.YcaFilter" bundle="mybundle">
           <filter-config>
             <foo>bar</foo>
