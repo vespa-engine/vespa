@@ -149,7 +149,7 @@ struct Model {
     void verify_invalid(std::initializer_list<std::string> features) {
         for (const std::string &f: features) {
             first_phase(f);
-            if (!EXPECT_FALSE(verify())) {
+            if (!EXPECT_TRUE(!verify())) {
                 fprintf(stderr, "--> feature '%s' was valid (should be invalid)\n", f.c_str());
             }
         }
@@ -178,7 +178,7 @@ struct ShadowModel : Model {
 };
 
 TEST_F("print usage", Model()) {
-    EXPECT_FALSE(vespalib::SlaveProc::run(vespalib::make_string("%s", prog).c_str()));
+    EXPECT_TRUE(!vespalib::SlaveProc::run(vespalib::make_string("%s", prog).c_str()));
 }
 
 TEST_F("setup output directory", Model()) {
@@ -197,43 +197,43 @@ TEST_F("require that we can verify multiple rank profiles", SimpleModel()) {
     f.good_profile();
     EXPECT_TRUE(f.verify());
     f.bad_profile();
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
 }
 
 TEST_F("require that first phase can break validation", SimpleModel()) {
     f.first_phase(invalid_feature);
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
 }
 
 TEST_F("require that second phase can break validation", SimpleModel()) {
     f.second_phase(invalid_feature);
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
 }
 
 TEST_F("require that summary features can break validation", SimpleModel()) {
     f.summary_feature(invalid_feature);
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
 }
 
 TEST_F("require that dump features can break validation", SimpleModel()) {
     f.dump_feature(invalid_feature);
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
 }
 
 TEST_F("require that fieldMatch feature requires single value field", SimpleModel()) {
     f.first_phase("fieldMatch(keywords)");
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
     f.first_phase("fieldMatch(list)");
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
     f.first_phase("fieldMatch(title)");
     EXPECT_TRUE(f.verify());
 }
 
 TEST_F("require that age feature requires attribute parameter", SimpleModel()) {
     f.first_phase("age(unknown)");
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
     f.first_phase("age(title)");
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
     f.first_phase("age(date)");
     EXPECT_TRUE(f.verify());
 }
@@ -260,7 +260,7 @@ TEST_F("require that ranking constants can be used", SimpleModel()) {
 
 TEST_F("require that undefined ranking constants cannot be used", SimpleModel()) {
     f.first_phase("constant(bogus_tensor)");
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(!f.verify());
 }
 
 TEST_F("require that ranking expressions can be verified", SimpleModel()) {
@@ -270,9 +270,14 @@ TEST_F("require that ranking expressions can be verified", SimpleModel()) {
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that tensor join is not yet supported", SimpleModel()) {
+TEST_F("require that tensor join is supported", SimpleModel()) {
     f.first_phase("rankingExpression(\\\"join(constant(my_tensor),attribute(date),f(t,d)(t+d))\\\")");
-    EXPECT_FALSE(f.verify());
+    EXPECT_TRUE(f.verify());
+}
+
+TEST_F("require that nested tensor join is not supported", SimpleModel()) {
+    f.first_phase("rankingExpression(\\\"join(constant(my_tensor),attribute(date),f(t,d)(join(t,d,f(x,y)(x+y))))\\\")");
+    EXPECT_TRUE(!f.verify());
 }
 
 //-----------------------------------------------------------------------------
