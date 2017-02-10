@@ -704,7 +704,7 @@ struct TestContext {
         TEST_DO(verify_result(eval.eval(engine, a), expect));
     }
 
-    void test_reduce_op(const vespalib::string &name, Aggr aggr, const BinaryOperation &op, const Sequence &seq) {
+    void test_reduce_op(Aggr aggr, const BinaryOperation &op, const Sequence &seq) {
         std::vector<Layout> layouts = {
             {x(3)},
             {x(3),y(5)},
@@ -723,10 +723,9 @@ struct TestContext {
                 Eval::Result expect = ImmediateReduceOld(op, domain.dimension).eval(ref_engine, input);
                 TEST_STATE(make_string("shape: %s, reduce dimension: %s",
                                        infer_type(layout).c_str(), domain.dimension.c_str()).c_str());
-                if (!name.empty()) {
-                    vespalib::string expr = make_string("%s(a,%s)", name.c_str(), domain.dimension.c_str());
-                    TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
-                }
+                vespalib::string expr = make_string("reduce(a,%s,%s)",
+                        AggrNames::name_of(aggr)->c_str(), domain.dimension.c_str());
+                TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduceOld(op, domain.dimension), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
                 TEST_DO(verify_reduce_result(RetainedReduce(op, domain.dimension), input, expect));
@@ -735,10 +734,9 @@ struct TestContext {
                 Eval::Result expect = ImmediateReduceOld(op).eval(ref_engine, input);
                 TEST_STATE(make_string("shape: %s, reduce all dimensions",
                                        infer_type(layout).c_str()).c_str());
-                if (!name.empty()) {
-                    vespalib::string expr = make_string("%s(a)", name.c_str());
-                    TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
-                }
+                vespalib::string expr = make_string("reduce(a,%s)",
+                        AggrNames::name_of(aggr)->c_str());
+                TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduceOld(op), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
                 TEST_DO(verify_reduce_result(RetainedReduce(op), input, expect));
@@ -746,11 +744,48 @@ struct TestContext {
         }
     }
 
+    void test_reduce_op(Aggr aggr, const Sequence &seq) {
+        std::vector<Layout> layouts = {
+            {x(3)},
+            {x(3),y(5)},
+            {x(3),y(5),z(7)},
+            {x({"a","b","c"})},
+            {x({"a","b","c"}),y({"foo","bar"})},
+            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}
+        };
+        if (mixed(2 * 4)) {
+            layouts.push_back({x(3),y({"foo", "bar"}),z(7)});
+            layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
+        }
+        for (const Layout &layout: layouts) {
+            TensorSpec input = spec(layout, seq);
+            for (const Domain &domain: layout) {
+                Eval::Result expect = ImmediateReduce(aggr, domain.dimension).eval(ref_engine, input);
+                TEST_STATE(make_string("shape: %s, reduce dimension: %s",
+                                       infer_type(layout).c_str(), domain.dimension.c_str()).c_str());
+                vespalib::string expr = make_string("reduce(a,%s,%s)",
+                        AggrNames::name_of(aggr)->c_str(), domain.dimension.c_str());
+                TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
+                TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
+            }
+            {
+                Eval::Result expect = ImmediateReduce(aggr).eval(ref_engine, input);
+                TEST_STATE(make_string("shape: %s, reduce all dimensions",
+                                       infer_type(layout).c_str()).c_str());
+                vespalib::string expr = make_string("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
+                TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
+                TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
+            }
+        }
+    }
+
     void test_tensor_reduce() {
-        TEST_DO(test_reduce_op("sum", Aggr::SUM, operation::Add(), N()));
-        TEST_DO(test_reduce_op("", Aggr::PROD, operation::Mul(), Sigmoid(N())));
-        TEST_DO(test_reduce_op("", Aggr::MIN, operation::Min(), N()));
-        TEST_DO(test_reduce_op("", Aggr::MAX, operation::Max(), N()));
+        TEST_DO(test_reduce_op(Aggr::AVG, N()));
+        TEST_DO(test_reduce_op(Aggr::COUNT, N()));
+        TEST_DO(test_reduce_op(Aggr::PROD, operation::Mul(), Sigmoid(N())));
+        TEST_DO(test_reduce_op(Aggr::SUM, operation::Add(), N()));
+        TEST_DO(test_reduce_op(Aggr::MAX, operation::Max(), N()));
+        TEST_DO(test_reduce_op(Aggr::MIN, operation::Min(), N()));
     }
 
     //-------------------------------------------------------------------------
@@ -780,6 +815,7 @@ struct TestContext {
         TEST_DO(test_map_op(ImmediateMap(function), op, seq));
         TEST_DO(test_map_op(RetainedMap(op), op, seq));
         TEST_DO(test_map_op(Expr_T(expr), op, seq));
+        TEST_DO(test_map_op(Expr_T(make_string("map(x,f(a)(%s))", expr.c_str())), op, seq));
     }
 
     void test_tensor_map() {
@@ -1060,6 +1096,7 @@ struct TestContext {
         TEST_DO(test_apply_op(ImmediateJoin(function), op, seq));
         TEST_DO(test_apply_op(RetainedApply(op), op, seq));
         TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
+        TEST_DO(test_apply_op(Expr_TT(make_string("join(x,y,f(a,b)(%s))", expr.c_str())), op, seq));
     }
 
     void test_tensor_apply() {
@@ -1109,54 +1146,53 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
-    void test_concat(const TensorSpec &expect,
-                     const TensorSpec &a,
+    void test_concat(const TensorSpec &a,
                      const TensorSpec &b,
-                     const vespalib::string &dimension)
+                     const vespalib::string &dimension,
+                     const TensorSpec &expect)
     {
         ImmediateConcat eval(dimension);
+        vespalib::string expr = make_string("concat(a,b,%s)", dimension.c_str());
         TEST_DO(verify_result(eval.eval(engine, a, b), expect));
+        TEST_DO(verify_result(Expr_TT(expr).eval(engine, a, b), expect));
     }
 
     void test_concat() {
-        TEST_DO(test_concat(spec(x(2), Seq({10.0, 20.0})), spec(10.0), spec(20.0), "x"));
-        TEST_DO(test_concat(spec(x(2), Seq({10.0, 20.0})), spec(x(1), Seq({10.0})), spec(20.0), "x"));
-        TEST_DO(test_concat(spec(x(2), Seq({10.0, 20.0})), spec(10.0), spec(x(1), Seq({20.0})), "x"));
-        TEST_DO(test_concat(spec(x(5), Seq({1.0, 2.0, 3.0, 4.0, 5.0})),
-                            spec(x(3), Seq({1.0, 2.0, 3.0})),
-                            spec(x(2), Seq({4.0, 5.0})), "x"));
-        TEST_DO(test_concat(spec({x(2),y(4)}, Seq({1.0, 2.0, 5.0, 6.0, 3.0, 4.0, 5.0, 6.0})),
-                            spec({x(2),y(2)}, Seq({1.0, 2.0, 3.0, 4.0})),
-                            spec(y(2), Seq({5.0, 6.0})), "y"));
-        TEST_DO(test_concat(spec({x(4),y(2)}, Seq({1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 6.0, 6.0})),
-                            spec({x(2),y(2)}, Seq({1.0, 2.0, 3.0, 4.0})),
-                            spec(x(2), Seq({5.0, 6.0})), "x"));
-        TEST_DO(test_concat(spec({x(2),y(2),z(3)}, Seq({1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0})),
-                            spec(z(3), Seq({1.0, 2.0, 3.0})),
-                            spec(y(2), Seq({4.0, 5.0})), "x"));
-        TEST_DO(test_concat(spec({x(2), y(2)}, Seq({1.0, 2.0, 4.0, 5.0})),
-                            spec(y(3), Seq({1.0, 2.0, 3.0})),
-                            spec(y(2), Seq({4.0, 5.0})), "x"));
+        TEST_DO(test_concat(spec(10.0), spec(20.0), "x", spec(x(2), Seq({10.0, 20.0}))));
+        TEST_DO(test_concat(spec(x(1), Seq({10.0})), spec(20.0), "x", spec(x(2), Seq({10.0, 20.0}))));
+        TEST_DO(test_concat(spec(10.0), spec(x(1), Seq({20.0})), "x", spec(x(2), Seq({10.0, 20.0}))));
+        TEST_DO(test_concat(spec(x(3), Seq({1.0, 2.0, 3.0})), spec(x(2), Seq({4.0, 5.0})), "x",
+                            spec(x(5), Seq({1.0, 2.0, 3.0, 4.0, 5.0}))));
+        TEST_DO(test_concat(spec({x(2),y(2)}, Seq({1.0, 2.0, 3.0, 4.0})), spec(y(2), Seq({5.0, 6.0})), "y",
+                            spec({x(2),y(4)}, Seq({1.0, 2.0, 5.0, 6.0, 3.0, 4.0, 5.0, 6.0}))));
+        TEST_DO(test_concat(spec({x(2),y(2)}, Seq({1.0, 2.0, 3.0, 4.0})), spec(x(2), Seq({5.0, 6.0})), "x",
+                            spec({x(4),y(2)}, Seq({1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 6.0, 6.0}))));
+        TEST_DO(test_concat(spec(z(3), Seq({1.0, 2.0, 3.0})), spec(y(2), Seq({4.0, 5.0})), "x",
+                            spec({x(2),y(2),z(3)}, Seq({1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0}))));
+        TEST_DO(test_concat(spec(y(3), Seq({1.0, 2.0, 3.0})), spec(y(2), Seq({4.0, 5.0})), "x",
+                            spec({x(2), y(2)}, Seq({1.0, 2.0, 4.0, 5.0}))));
     }
 
     //-------------------------------------------------------------------------
 
-    void test_rename(const TensorSpec &expect,
+    void test_rename(const vespalib::string &expr,
                      const TensorSpec &input,
                      const std::vector<vespalib::string> &from,
-                     const std::vector<vespalib::string> &to)
+                     const std::vector<vespalib::string> &to,
+                     const TensorSpec &expect)
     {
         ImmediateRename eval(from, to);
         TEST_DO(verify_result(eval.eval(engine, input), expect));
+        TEST_DO(verify_result(Expr_T(expr).eval(engine, input), expect));
     }
 
     void test_rename() {
-        TEST_DO(test_rename(spec(y(5), N()), spec(x(5), N()), {"x"}, {"y"}));
-        TEST_DO(test_rename(spec({x(5),z(5)}, N()), spec({y(5),z(5)}, N()), {"y"}, {"x"}));
-        TEST_DO(test_rename(spec({y(5),x(5)}, N()), spec({y(5),z(5)}, N()), {"z"}, {"x"}));
-        TEST_DO(test_rename(spec({z(5),y(5)}, N()), spec({x(5),y(5)}, N()), {"x"}, {"z"}));
-        TEST_DO(test_rename(spec({x(5),z(5)}, N()), spec({x(5),y(5)}, N()), {"y"}, {"z"}));
-        TEST_DO(test_rename(spec({y(5),x(5)}, N()), spec({x(5),y(5)}, N()), {"x","y"}, {"y","x"}));
+        TEST_DO(test_rename("rename(a,x,y)", spec(x(5), N()), {"x"}, {"y"}, spec(y(5), N())));
+        TEST_DO(test_rename("rename(a,y,x)", spec({y(5),z(5)}, N()), {"y"}, {"x"}, spec({x(5),z(5)}, N())));
+        TEST_DO(test_rename("rename(a,z,x)", spec({y(5),z(5)}, N()), {"z"}, {"x"}, spec({y(5),x(5)}, N())));
+        TEST_DO(test_rename("rename(a,x,z)", spec({x(5),y(5)}, N()), {"x"}, {"z"}, spec({z(5),y(5)}, N())));
+        TEST_DO(test_rename("rename(a,y,z)", spec({x(5),y(5)}, N()), {"y"}, {"z"}, spec({x(5),z(5)}, N())));
+        TEST_DO(test_rename("rename(a,(x,y),(y,x))", spec({x(5),y(5)}, N()), {"x","y"}, {"y","x"}, spec({y(5),x(5)}, N())));
     }
 
     //-------------------------------------------------------------------------
