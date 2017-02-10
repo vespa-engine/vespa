@@ -23,6 +23,7 @@ import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.readers.DocumentParseInfo;
+import com.yahoo.document.json.readers.VespaJsonDocumentReader;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
@@ -299,7 +300,7 @@ public class JsonWriterTestCase {
         DocumentParseInfo raw = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(raw.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, raw.documentId));
-        r.readPut(raw.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(raw.fieldsBuffer, put);
         return put.getDocument();
     }
 
