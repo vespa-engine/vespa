@@ -11,6 +11,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.json.document.DocumentParser;
@@ -40,6 +41,9 @@ public class DocumentUpdateJsonSerializerTest {
     final static String DEFAULT_DOCUMENT_ID = "id:test:doctype::1";
 
     static {
+        StructDataType myStruct = new StructDataType("my_struct");
+        myStruct.addField(new Field("my_string_field", DataType.STRING));
+        myStruct.addField(new Field("my_int_field", DataType.INT));
         types.registerDocumentType(refTargetDocType);
 
         docType.addField(new Field("string_field", DataType.STRING));
@@ -57,6 +61,8 @@ public class DocumentUpdateJsonSerializerTest {
         docType.addField(new Field("string_set", new WeightedSetDataType(DataType.STRING, true, true)));
         docType.addField(new Field("string_map", new MapDataType(DataType.STRING, DataType.STRING)));
         docType.addField(new Field("deep_map", new MapDataType(DataType.STRING, new MapDataType(DataType.STRING, DataType.STRING))));
+        docType.addField(new Field("map_array", new MapDataType(DataType.STRING, new ArrayDataType(DataType.STRING))));
+        docType.addField(new Field("map_struct", new MapDataType(DataType.STRING, myStruct)));
         docType.addField(new Field("singlepos_field", PositionDataType.INSTANCE));
         docType.addField(new Field("multipos_field", new ArrayDataType(PositionDataType.INSTANCE)));
         types.registerDocumentType(docType);
@@ -334,7 +340,7 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testAssignValueMap() {
+    public void testAssignFieldPathValue() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
@@ -347,8 +353,8 @@ public class DocumentUpdateJsonSerializerTest {
                 "        {",
                 "           'assign': {",
                 "               'int_field': {",
-                "                   'value': '1',",
-                "                   'createmissingpath': false,",
+                "                   'value': '($value + 3) / 2',",
+                "                   'createmissingpath': true,",
                 "                   'removeifzero': false",
                 "               },",
                 "               'where': 'int_field > 3'",
@@ -356,10 +362,45 @@ public class DocumentUpdateJsonSerializerTest {
                 "        },",
                 "        {",
                 "           'assign': {",
+                "               'deep_map{my_field}': {",
+                "                   'value': [",
+                "                       {",
+                "                           'key': 'my_key',",
+                "                           'value': 'my_value'",
+                "                       }",
+                "                   ],",
+                "                   'createmissingpath': true,",
+                "                   'removeifzero': true",
+                "               }",
+                "           }",
+                "        },",
+                "        {",
+                "           'assign': {",
+                "               'map_struct{my_key}': {",
+                "                   'value': {",
+                "                       'my_string_field': 'Some string',",
+                "                       'my_int_field': 5",
+                "                   },",
+                "                   'createmissingpath': false,",
+                "                   'removeifzero': false",
+                "               }",
+                "           }",
+                "        },",
+                "        {",
+                "           'assign': {",
+                "               'map_struct{my_key}.my_int_field': {",
+                "                   'value': '$value / 2',",
+                "                   'createmissingpath': false,",
+                "                   'removeifzero': false",
+                "               }",
+                "           }",
+                "        },",
+                "        {",
+                "           'assign': {",
                 "               'string_field': {",
                 "                   'value': 'test',",
                 "                   'createmissingpath': false,",
-                "                   'removeifzero': false",
+                "                   'removeifzero': true",
                 "               }",
                 "           }",
                 "        }",
@@ -369,14 +410,15 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testRemoveValueMap() {
+    public void testRemoveFieldPathValue() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fieldpaths': [",
                 "        {",
                 "           'remove': {",
-                "               'int_field': {}",
+                "               'int_array': {},",
+                "               'where': '$value == 5'",
                 "           }",
                 "        },",
                 "        {",
@@ -390,21 +432,28 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testAddValueMap() {
+    public void testAddFieldPathValue() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
                 "    'fieldpaths': [",
                 "        {",
                 "           'add': {",
-                "               'int_field': {",
+                "               'int_array': {",
                 "                   'items': [123, 456, 789]",
                 "               }",
                 "           }",
                 "        },",
                 "        {",
                 "           'add': {",
-                "               'string_field': {",
+                "               'map_array{my_value}': {",
+                "                   'items': ['some', 'fancy', 'strings']",
+                "               }",
+                "           }",
+                "        },",
+                "        {",
+                "           'add': {",
+                "               'string_array': {",
                 "                   'items': ['test', 'of', 'array', 'add']",
                 "               }",
                 "           }",

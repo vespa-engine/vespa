@@ -137,7 +137,7 @@ public class VespaJsonDocumentReader {
         while (localNesting <= buffer.nesting()) {
             switch (buffer.currentName()) {
                 case "items":
-                    DataType dt = new ArrayDataType(update.getFieldPath().getResultingDataType());
+                    DataType dt = update.getFieldPath().getResultingDataType();
                     FieldValue fv = CompositeReader.createComposite(buffer, dt);
                     update.setNewValues((Array) fv);
                     break;

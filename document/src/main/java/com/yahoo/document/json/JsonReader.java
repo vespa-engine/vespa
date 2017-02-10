@@ -137,6 +137,10 @@ public class JsonReader {
                     break;
                 case UPDATE:
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
+                    if (documentParseInfo.fieldsBuffer.size() == 0 && documentParseInfo.fieldpathsBuffer.size() == 0) {
+                        throw new IllegalArgumentException("Either 'fields' or 'fieldpaths' must be set");
+                    }
+
                     if (documentParseInfo.fieldsBuffer.size() > 0) {
                         readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
                         verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
