@@ -5,7 +5,6 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.serialization.DocumentUpdateReader;
 
 /**
@@ -43,6 +42,10 @@ public class RemoveFieldPathUpdate extends FieldPathUpdate {
         super(FieldPathUpdate.Type.REMOVE, type, reader);
         reader.read(this);
         handler = new IteratorHandler();
+    }
+
+    public RemoveFieldPathUpdate(DocumentType type) {
+        super(FieldPathUpdate.Type.REMOVE, type);
     }
 
     FieldPathIteratorHandler getIteratorHandler(Document doc) {
