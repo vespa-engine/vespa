@@ -137,5 +137,8 @@ Value::setArray(Memory) { return *NixValue::invalid(); }
 Cursor &
 Value::setObject(Memory) { return *NixValue::invalid(); }
 
+Symbol
+Value::insert(Memory) { return Symbol(); }
+
 } // namespace vespalib::slime
 } // namespace vespalib

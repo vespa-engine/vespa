@@ -78,6 +78,7 @@ public:
     virtual Cursor &setArray(Memory name);
     virtual Cursor &setObject(Memory name);
 
+    virtual Symbol insert(Memory symbol_name);
 };
 
 } // namespace vespalib::slime

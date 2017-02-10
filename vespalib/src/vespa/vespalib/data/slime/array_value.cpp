@@ -26,6 +26,8 @@ ArrayValue::addObject() {
     return addLeaf(ObjectValueFactory(_symbolTable));
 }
 
+Symbol
+ArrayValue::insert(Memory symbol_name) { return _symbolTable.insert(symbol_name); }
 
 } // namespace vespalib::slime
 } // namespace vespalib
