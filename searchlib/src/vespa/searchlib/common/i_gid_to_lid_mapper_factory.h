@@ -1,0 +1,19 @@
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+namespace search {
+
+class IGidToLidMapper;
+
+/*
+ * Interface to factory class for creating classes mapping from gid to lid.
+ */
+class IGidToLidMapperFactory
+{
+public:
+    virtual ~IGidToLidMapperFactory() { }
+    virtual std::unique_ptr<IGidToLidMapper> getMapper() const = 0;
+};
+
+} // namespace search
