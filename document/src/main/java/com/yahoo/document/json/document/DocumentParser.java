@@ -49,20 +49,20 @@ public class DocumentParser {
     }
 
     private void parseOneItem(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally) throws IOException {
-        // we should now be at the start of a feed operation or at the end of the feed
-        JsonToken currentToken = parser.nextValue();
-        processIndent(currentToken);
+        parser.nextValue();
+        processIndent();
         if (parser.getCurrentName() == null) {
             return;
         }
         if (indentLevel == 1L) {
-            handleIdentLevelOne(documentParseInfo, currentToken, docIdAndOperationIsSetExternally);
+            handleIdentLevelOne(documentParseInfo, docIdAndOperationIsSetExternally);
         } else if (indentLevel == 2L) {
-            handleIdentLevelTwo(documentParseInfo, currentToken);
+            handleIdentLevelTwo(documentParseInfo);
         }
     }
 
-    private void processIndent(JsonToken currentToken) throws IOException {
+    private void processIndent() throws IOException {
+        JsonToken currentToken = parser.currentToken();
         if (currentToken == null) {
             throw new IllegalArgumentException("Could not read document, no document?");
         }
@@ -82,9 +82,9 @@ public class DocumentParser {
         }
     }
 
-    private void handleIdentLevelOne(
-            DocumentParseInfo documentParseInfo, JsonToken currentToken, boolean docIdAndOperationIsSetExternally)
+    private void handleIdentLevelOne(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally)
             throws IOException {
+        JsonToken currentToken = parser.getCurrentToken();
         if (currentToken == JsonToken.VALUE_TRUE || currentToken == JsonToken.VALUE_FALSE) {
             try {
                 if (CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
@@ -110,12 +110,13 @@ public class DocumentParser {
         }
     }
 
-    private  void handleIdentLevelTwo(DocumentParseInfo documentParseInfo, JsonToken currentToken) {
+    private  void handleIdentLevelTwo(DocumentParseInfo documentParseInfo) {
         try {
+            JsonToken currentToken = parser.getCurrentToken();
             // "Fields" opens a dictionary and is therefore on level two which might be surprising.
             if (currentToken == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
                 documentParseInfo.fieldsBuffer.bufferObject(currentToken, parser);
-                indentLevel--;
+                processIndent();
             }
         } catch (IOException e) {
             throw new RuntimeException("Got IO exception while parsing document", e);

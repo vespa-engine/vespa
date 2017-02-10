@@ -107,9 +107,8 @@ public class JsonReader {
                 break;
         }
         Optional<DocumentParseInfo> documentParseInfo;
-        DocumentParser documentParser = new DocumentParser(parser);
         try {
-            documentParseInfo = documentParser.parse(Optional.empty());
+            documentParseInfo = parseDocument();
         } catch (IOException r) {
             // Jackson is not able to recover from structural parse errors
             state = END_OF_FEED;
