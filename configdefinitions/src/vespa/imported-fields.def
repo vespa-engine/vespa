@@ -1,0 +1,12 @@
+# Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search
+
+# The name of an imported attribute field in context of this document type.
+attribute[].name string
+
+# The name of the field (in this document type) that refers to a parent document type.
+attribute[].referencefield string
+
+# The name of the target attribute field in the parent document type that is imported into this document type.
+attribute[].targetfield string
+

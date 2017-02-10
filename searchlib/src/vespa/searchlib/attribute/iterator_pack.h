@@ -42,6 +42,11 @@ public:
         return _children[ref].getData();
     }
 
+    uint32_t next(uint16_t ref) {
+        ++_children[ref];
+        return get_docid(ref);
+    }
+
     size_t size() const { return _children.size(); }
     void initRange(uint32_t begin, uint32_t end) {
         (void) end;

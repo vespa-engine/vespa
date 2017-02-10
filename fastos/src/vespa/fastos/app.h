@@ -34,7 +34,7 @@ class FastOS_ProcessInterface;
  *
  * Example:
  * @code
- *    #include <vespa/fastos/fastos.h>
+ *    #include <vespa/fastos/app.h>
  *
  *    class MyApplication : public FastOS_Application
  *    {
@@ -59,7 +59,7 @@ class FastOS_ProcessInterface;
  * @ref Cleanup(). Most applications do not need to do this, but
  * an example of how to do it is included anyway:
  * @code
- *    #include <vespa/fastos/fastos.h>
+ *    #include <vespa/fastos/app.h>
  *
  *    class MyApplication : public FastOS_Application
  *    {

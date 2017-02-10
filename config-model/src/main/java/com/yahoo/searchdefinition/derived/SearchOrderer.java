@@ -107,7 +107,7 @@ public class SearchOrderer {
                 .orElseThrow(() -> new IllegalStateException("Missing document references. Should have been processed by now."));
         return documentReferences.stream()
                 .map(Map.Entry::getValue)
-                .map(DocumentReference::search)
+                .map(DocumentReference::targetSearch)
                 .allMatch(alreadyOrdered::contains);
     }
 

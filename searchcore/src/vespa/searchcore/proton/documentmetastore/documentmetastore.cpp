@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/fastos/file.h>
 
 
@@ -622,8 +623,7 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid)
 }
 
 void
-DocumentMetaStore::removeBatch(const std::vector<search::DocumentIdT> &lidsToRemove,
-                               const uint32_t docIdLimit)
+DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uint32_t docIdLimit)
 {
     for (const auto &lid : lidsToRemove) {
         assert(lid > 0 && lid < docIdLimit);
@@ -750,7 +750,7 @@ DocumentMetaStore::createBlackListBlueprint() const
 }
 
 AttributeVector::SearchContext::UP
-DocumentMetaStore::getSearch(search::QueryTermSimple::UP qTerm, const AttributeVector::SearchContext::Params &) const
+DocumentMetaStore::getSearch(std::unique_ptr<search::QueryTermSimple> qTerm, const AttributeVector::SearchContext::Params &) const
 {
     return AttributeVector::SearchContext::UP
             (new documentmetastore::SearchContext(std::move(qTerm), *this));

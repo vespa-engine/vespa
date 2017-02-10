@@ -33,7 +33,7 @@ public class DocumentGraphValidator {
                     .forEach(entry -> {
                         DocumentReference documentReference = entry.getValue();
                         if (!isSelfReference(documentReference, currentDocument)) {
-                            SDDocumentType referencedDocument = entry.getValue().search().getDocument();
+                            SDDocumentType referencedDocument = entry.getValue().targetSearch().getDocument();
                             validateDocument(root, referencedDocument);
                         }
                     });
@@ -60,7 +60,7 @@ public class DocumentGraphValidator {
     }
 
     private static boolean isSelfReference(DocumentReference documentReference, SDDocumentType document) {
-        return documentReference.search().getDocument().equals(document);
+        return documentReference.targetSearch().getDocument().equals(document);
     }
 
     public static class DocumentGraphException extends IllegalArgumentException {

@@ -63,9 +63,13 @@ public abstract class FieldPathUpdate {
     }
 
     public FieldPathUpdate(Type updType, DocumentType docType, DocumentUpdateReader reader) {
+        this(updType, docType);
+        reader.read(this);
+    }
+
+    public FieldPathUpdate(Type updType, DocumentType docType) {
         this.updType = updType;
         this.docType = docType;
-        reader.read(this);
     }
 
     public Type getUpdateType() {
@@ -128,7 +132,7 @@ public abstract class FieldPathUpdate {
         data.write(this);
     }
 
-    public static FieldPathUpdate create(Type type, DocumentType docType, DocumentUpdateReader reader) throws ParseException {
+    public static FieldPathUpdate create(Type type, DocumentType docType, DocumentUpdateReader reader) {
         switch (type) {
         case ASSIGN:
             return new AssignFieldPathUpdate(docType, reader);
@@ -136,6 +140,18 @@ public abstract class FieldPathUpdate {
             return new AddFieldPathUpdate(docType, reader);
         case REMOVE:
             return new RemoveFieldPathUpdate(docType, reader);
+        }
+        throw new IllegalArgumentException("Field path update type '" + type + "' not supported.");
+    }
+
+    public static FieldPathUpdate create(Type type, DocumentType docType) {
+        switch (type) {
+            case ASSIGN:
+                return new AssignFieldPathUpdate(docType);
+            case ADD:
+                return new AddFieldPathUpdate(docType);
+            case REMOVE:
+                return new RemoveFieldPathUpdate(docType);
         }
         throw new IllegalArgumentException("Field path update type '" + type + "' not supported.");
     }

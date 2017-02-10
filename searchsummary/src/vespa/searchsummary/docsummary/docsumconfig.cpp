@@ -1,16 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/searchsummary/docsummary/docsumconfig.h>
-#include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
-#include <vespa/searchsummary/docsummary/rankfeaturesdfw.h>
-#include <vespa/searchsummary/docsummary/textextractordfw.h>
-#include <vespa/searchsummary/docsummary/geoposdfw.h>
-#include <vespa/searchsummary/docsummary/positionsdfw.h>
-#include <vespa/searchsummary/docsummary/juniperdfw.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include "docsumconfig.h"
+#include "docsumwriter.h"
+#include "idocsumenvironment.h"
+#include "rankfeaturesdfw.h"
+#include "textextractordfw.h"
+#include "geoposdfw.h"
+#include "positionsdfw.h"
+#include "juniperdfw.h"
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace search {

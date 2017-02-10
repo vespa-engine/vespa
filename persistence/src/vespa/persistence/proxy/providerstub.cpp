@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "buildid.h"
 #include "providerstub.h"
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -13,18 +12,13 @@
 #include <persistence/spi/types.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <sstream>
 #include <vespa/document/fieldset/fieldsetrepo.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".providerstub");
 
 using document::BucketId;
 using document::ByteBuffer;
 using document::DocumentTypeRepo;
 using document::VespaDocumentDeserializer;
 using document::VespaDocumentSerializer;
-using std::map;
-using std::ostringstream;
 using std::vector;
 using vespalib::Closure;
 using vespalib::makeClosure;

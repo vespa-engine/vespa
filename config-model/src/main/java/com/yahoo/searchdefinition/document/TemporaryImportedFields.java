@@ -17,7 +17,7 @@ public class TemporaryImportedFields {
     private final Map<String, TemporaryImportedField> fields = new LinkedHashMap<>();
 
     public void add(TemporaryImportedField importedField) {
-        fields.put(importedField.aliasFieldName(), importedField);
+        fields.put(importedField.fieldName(), importedField);
     }
 
     public Map<String, TemporaryImportedField> fields() {

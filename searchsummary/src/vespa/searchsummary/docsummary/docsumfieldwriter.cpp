@@ -1,18 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/common/documentlocations.h>
-#include <vespa/searchlib/common/location.h>
 #include "docsumfieldwriter.h"
 #include "idocsumenvironment.h"
 #include "docsumformat.h"
 #include "docsumstate.h"
+#include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/common/documentlocations.h>
+#include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.docsumfieldwriter");
 
 namespace search {
@@ -29,14 +26,10 @@ const vespalib::string IDocsumFieldWriter::_empty("");
 
 //--------------------------------------------------------------------------
 
-EmptyDFW::EmptyDFW()
-{
-}
+EmptyDFW::EmptyDFW() { }
 
 
-EmptyDFW::~EmptyDFW()
-{
-}
+EmptyDFW::~EmptyDFW() { }
 
 void
 EmptyDFW::insertField(uint32_t /*docid*/,

@@ -10,28 +10,28 @@ import com.yahoo.searchdefinition.DocumentReference;
  */
 public class ImportedField {
 
-    private final String aliasFieldName;
-    private final DocumentReference documentReference;
-    private final SDField referencedField;
+    private final String fieldName;
+    private final DocumentReference reference;
+    private final SDField targetField;
 
-    public ImportedField(String aliasFieldName,
-                         DocumentReference documentReference,
-                         SDField referencedField) {
-        this.aliasFieldName = aliasFieldName;
-        this.documentReference = documentReference;
-        this.referencedField = referencedField;
+    public ImportedField(String fieldName,
+                         DocumentReference reference,
+                         SDField targetField) {
+        this.fieldName = fieldName;
+        this.reference = reference;
+        this.targetField = targetField;
     }
 
-    public String aliasFieldName() {
-        return aliasFieldName;
+    public String fieldName() {
+        return fieldName;
     }
 
-    public DocumentReference documentReference() {
-        return documentReference;
+    public DocumentReference reference() {
+        return reference;
     }
 
-    public SDField referencedField() {
-        return referencedField;
+    public SDField targetField() {
+        return targetField;
     }
 
 }

@@ -15,6 +15,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -57,6 +58,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Curator curator;
     private final LogServerLogGrabber logServerLogGrabber;
     private final ApplicationConvergenceChecker convergeChecker;
+    private final HttpProxy httpProxy;
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
 
@@ -64,12 +66,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  HostProvisionerProvider hostProvisionerProvider,
                                  Curator curator,
                                  LogServerLogGrabber logServerLogGrabber,
-                                 ApplicationConvergenceChecker applicationConvergenceChecker) {
+                                 ApplicationConvergenceChecker applicationConvergenceChecker,
+                                 HttpProxy httpProxy) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.curator = curator;
         this.logServerLogGrabber = logServerLogGrabber;
         this.convergeChecker = applicationConvergenceChecker;
+        this.httpProxy = httpProxy;
         this.clock = Clock.systemUTC();
     }
 
@@ -157,6 +161,22 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public HttpResponse serviceListToCheckForConfigConvergence(Tenant tenant, ApplicationId applicationId, URI uri) {
         Application application = getApplication(tenant, applicationId);
         return convergeChecker.serviceListToCheckForConfigConvergence(application, uri);
+    }
+
+    public HttpResponse clusterControllerStatusPage(
+            Tenant tenant,
+            ApplicationId applicationId,
+            String hostName,
+            String pathSuffix) {
+        Application application = getApplication(tenant, applicationId);
+
+        // WARNING: pathSuffix may be given by the external user. Make sure no security issues arise...
+        // We should be OK here, because at most, pathSuffix may change the parent path, but cannot otherwise
+        // change the hostname and port. Exposing other paths on the cluster controller should be fine.
+        // TODO: It would be nice to have a simple check to verify pathSuffix doesn't contain /../ components.
+        String relativePath = "clustercontroller-status/" + pathSuffix;
+
+        return httpProxy.get(application, hostName, "container-clustercontroller", relativePath);
     }
 
     public Long getApplicationGeneration(Tenant tenant, ApplicationId applicationId) {
@@ -307,5 +327,4 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return getLocalSession(tenant, applicationRepo.getSessionIdForApplication(applicationId));
     }
-
 }

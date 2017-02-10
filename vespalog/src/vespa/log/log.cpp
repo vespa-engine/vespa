@@ -1,19 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <sys/types.h>
-#include <cstring>
-#include <cstdlib>
-#include <stdarg.h>
-#include <cstdio>
-#include <sys/time.h>
-#include <unistd.h>
-#include <errno.h>
-#include <memory>
-
-#include <algorithm>
 
 #include "log.h"
 LOG_SETUP_INDIRECT(".log", "$Id$");
+
 #undef LOG
 #define LOG LOG_INDIRECT
 
@@ -21,6 +10,8 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include "log-target.h"
 #include "internal.h"
 #include "control-file.h"
+
+#include <vespa/fastos/thread.h>
 
 namespace ns_log {
 
@@ -384,7 +375,7 @@ Logger::doEventProgress(const char *name, double value, double total)
 void
 Logger::doEventCount(const char *name, uint64_t value)
 {
-    doLog(event, "", 0, "count/1 name=\"%s\" value=%" PRIu64, name, value);
+    doLog(event, "", 0, "count/1 name=\"%s\" value=%lu", name, value);
 }
 
 void
@@ -396,7 +387,7 @@ Logger::doEventValue(const char *name, double value)
 void
 Logger::doEventCollection(uint64_t collectionId, const char* name, const char* params)
 {
-  doLog(event, "", 0, "collection/1 collectionId=%" PRIu64 " name=\"%s\" %s",
+  doLog(event, "", 0, "collection/1 collectionId=%lu name=\"%s\" %s",
         collectionId, name, params);
 }
 

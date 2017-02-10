@@ -10,6 +10,7 @@
 #include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/data/lz4_input_decoder.h>
 
 LOG_SETUP(".vespalib.eval.value_cache.constant_tensor_loader");
 
@@ -42,6 +43,31 @@ struct AddressExtractor : ObjectTraverser {
     }
 };
 
+void decode_json(const vespalib::string &path, Input &input, Slime &slime) {
+    if (slime::JsonFormat::decode(input, slime) == 0) {
+        LOG(warning, "file contains invalid json: %s", path.c_str());
+    }
+}
+
+void decode_json(const vespalib::string &path, Slime &slime) {
+    MappedFileInput file(path);
+    if (!file.valid()) {
+        LOG(warning, "could not read file: %s", path.c_str());
+    } else {
+        if (ends_with(path, ".lz4")) {
+            size_t buffer_size = 64 * 1024;
+            Lz4InputDecoder lz4_decoder(file, buffer_size);            
+            decode_json(path, lz4_decoder, slime);
+            if (lz4_decoder.failed()) {
+                LOG(warning, "file contains lz4 errors (%s): %s",
+                    lz4_decoder.reason().c_str(), path.c_str());
+            }
+        } else {
+            decode_json(path, file, slime);            
+        }
+    }
+}
+
 } // namespace vespalib::eval::<unnamed>
 
 using ErrorConstant = SimpleConstantValue<ErrorValue>;
@@ -57,12 +83,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         return std::make_unique<TensorConstant>(_engine.type_of(*tensor), std::move(tensor));
     }
     Slime slime;
-    MappedFileInput file(path);
-    if (!file.valid()) {
-        LOG(warning, "could not read file: %s", path.c_str());
-    } else if (slime::JsonFormat::decode(file.get(), slime) == 0) {
-        LOG(warning, "file contains invalid json: %s", path.c_str());
-    }
+    decode_json(path, slime);
     std::set<vespalib::string> indexed;
     for (const auto &dimension: value_type.dimensions()) {
         if (dimension.is_indexed()) {

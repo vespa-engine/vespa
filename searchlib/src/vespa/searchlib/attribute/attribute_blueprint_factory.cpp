@@ -290,6 +290,7 @@ public:
           _terms(),
           _attr(attr)
     {
+        set_allow_termwise_eval(true);
         _weights.reserve(size_hint);
         _terms.reserve(size_hint);
     }

@@ -1,18 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include <time.h>
-#include <glob.h>
-#include <sys/stat.h>
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("");
-LOG_RCSID("$Id$");
 
 #include "errhandle.h"
 #include "sigterm.h"
@@ -22,6 +8,10 @@ LOG_RCSID("$Id$");
 #include "watch.h"
 #include "perform.h"
 #include "cmdbuf.h"
+#include <glob.h>
+
+LOG_SETUP("");
+LOG_RCSID("$Id$");
 
 namespace logdemon {
 namespace {

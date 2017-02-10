@@ -14,6 +14,7 @@
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/fastos/file.h>
 #include <iostream>
 #include <vespa/log/log.h>

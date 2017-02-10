@@ -35,6 +35,7 @@ public class DerivedConfiguration {
     private VsmFields streamingFields;
     private VsmSummary streamingSummary;
     private IndexSchema indexSchema;
+    private ImportedFields importedFields;
 
     /**
      * Creates a complete derived configuration from a search definition.
@@ -86,6 +87,7 @@ public class DerivedConfiguration {
             indexingScript = new IndexingScript(search);
             indexInfo = new IndexInfo(search);
             indexSchema = new IndexSchema(search);
+            importedFields = new ImportedFields(search);
         }
         Validation.validate(this, search);
     }
@@ -108,6 +110,7 @@ public class DerivedConfiguration {
             rankProfileList.export(toDirectory);
             indexingScript.export(toDirectory);
             indexInfo.export(toDirectory);
+            importedFields.export(toDirectory);
         }
     }
 
@@ -180,5 +183,9 @@ public class DerivedConfiguration {
     
     public SummaryMap getSummaryMap() {
         return summaryMap;
+    }
+
+    public ImportedFields getImportedFields() {
+        return importedFields;
     }
 }

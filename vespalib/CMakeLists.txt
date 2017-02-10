@@ -4,6 +4,9 @@ vespa_define_module(
     fastos
     vespalog
 
+    EXTERNAL_DEPENDS
+    lz4
+
     APPS
     src/apps/make_fixture_macros
 
@@ -21,6 +24,7 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/data/input_reader
+    src/tests/data/lz4_encode_decode
     src/tests/data/memory_input
     src/tests/data/output_writer
     src/tests/data/simple_buffer

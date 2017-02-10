@@ -38,7 +38,7 @@ public class ImportedFieldsTestCase {
     public void field_can_be_imported_from_self_reference() throws ParseException {
         Search search = buildAdSearch(joinLines("search ad {",
                 "  document ad {",
-                "    field title type string {}",
+                "    field title type string { indexing: attribute }",
                 "    field self_ref type reference<ad> {}",
                 "  }",
                 "  import field self_ref.title as my_title {}",
@@ -65,12 +65,12 @@ public class ImportedFieldsTestCase {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(joinLines("search campaign {",
                 "  document campaign {",
-                "    field budget type int {}",
+                "    field budget type int { indexing: attribute }",
                 "  }",
                 "}"));
         builder.importString(joinLines("search person {",
                 "  document person {",
-                "    field name type string {}",
+                "    field name type string { indexing: attribute }",
                 "  }",
                 "}"));
         builder.importString(sdContent);
@@ -78,16 +78,16 @@ public class ImportedFieldsTestCase {
         return builder.getSearch("ad");
     }
 
-    private static void assertSearchContainsImportedField(String aliasFieldName,
-                                                          String documentReferenceFieldName,
-                                                          String documentReferenceType,
-                                                          String foreignFieldName,
+    private static void assertSearchContainsImportedField(String fieldName,
+                                                          String referenceFieldName,
+                                                          String referenceDocType,
+                                                          String targetFieldName,
                                                           Search search) {
-        ImportedField importedField = search.importedFields().get().fields().get(aliasFieldName);
+        ImportedField importedField = search.importedFields().get().fields().get(fieldName);
         assertNotNull(importedField);
-        assertEquals(aliasFieldName, importedField.aliasFieldName());
-        assertEquals(documentReferenceFieldName, importedField.documentReference().documentReferenceField().getName());
-        assertEquals(documentReferenceType, importedField.documentReference().search().getName());
-        assertEquals(foreignFieldName, importedField.referencedField().getName());
+        assertEquals(fieldName, importedField.fieldName());
+        assertEquals(referenceFieldName, importedField.reference().referenceField().getName());
+        assertEquals(referenceDocType, importedField.reference().targetSearch().getName());
+        assertEquals(targetFieldName, importedField.targetField().getName());
     }
 }
