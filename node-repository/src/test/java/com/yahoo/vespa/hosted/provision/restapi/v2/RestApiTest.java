@@ -347,6 +347,11 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"flavor\": 1}"), Request.Method.PATCH),
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'flavor': Expected a STRING value, got a LONG\"}");
+
+        // Attempt to set unallocated node active
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/active/host2.yahoo.com",
+                                   new byte[0], Request.Method.PUT), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host2.yahoo.com active. It has no allocation.\"}");
     }
 
 
