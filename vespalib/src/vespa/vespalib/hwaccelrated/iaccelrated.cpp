@@ -1,6 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/hwaccelrated/generic.h>
@@ -8,7 +6,6 @@
 #include <vespa/vespalib/hwaccelrated/avx.h>
 #include <vespa/vespalib/hwaccelrated/avx2.h>
 #include <vespa/vespalib/hwaccelrated/avx512.h>
-#include <assert.h>
 
 namespace vespalib {
 
