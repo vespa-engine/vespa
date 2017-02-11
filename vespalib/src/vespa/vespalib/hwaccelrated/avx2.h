@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/hwaccelrated/avx.h>
+#include "avx.h"
 
 namespace vespalib {
 

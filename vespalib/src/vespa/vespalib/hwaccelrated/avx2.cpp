@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/hwaccelrated/avx2.h>
-#include <vespa/vespalib/hwaccelrated/avxprivate.hpp>
+#include "avx2.h"
+#include "avxprivate.hpp"
 
 namespace vespalib {
 
