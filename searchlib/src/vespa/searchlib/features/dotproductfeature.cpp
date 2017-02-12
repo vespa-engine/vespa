@@ -61,7 +61,8 @@ DotProductExecutor<A>::DotProductExecutor(const A * attribute, const V & vector)
     _attribute(attribute),
     _multiplier(IAccelrated::getAccelrator()),
     _vector(vector)
-{ }
+{
+}
 
 template <typename A>
 size_t
@@ -70,7 +71,6 @@ DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
     return _attribute->getRawValues(docId, values);
 }
 
-    constexpr size_t CACHE_LINE_SIZE = 64;
 template <typename A>
 void
 DotProductExecutor<A>::execute(uint32_t docId)
@@ -78,10 +78,6 @@ DotProductExecutor<A>::execute(uint32_t docId)
     const AT *values(NULL);
     size_t count = getAttributeValues(docId, values);
     size_t commonRange = std::min(count, _vector.size());
-    const size_t numPerCacheLine = CACHE_LINE_SIZE/sizeof(AT);
-    for (size_t i(0); i < _vector.size()/numPerCacheLine; i++) {
-        __builtin_prefetch(values+i*numPerCacheLine, 0, 0);
-    }
     outputs().set_number(0, _multiplier->dotProduct(&_vector[0], reinterpret_cast<const typename A::BaseType *>(values), commonRange));
 }
 

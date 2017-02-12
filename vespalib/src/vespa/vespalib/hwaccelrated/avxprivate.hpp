@@ -59,7 +59,7 @@ T computeDotProduct(const T * af, const T * bf, size_t sz)
 }
 
 template <typename T, size_t VLEN, size_t VectorsPerChunk=4>
-VESPA_DLL_LOCAL T dotProductSelectAlignment(const T * af, const T * bf, size_t sz);
+VESPA_DLL_LOCAL static T dotProductSelectAlignment(const T * af, const T * bf, size_t sz);
 
 template <typename T, size_t VLEN, size_t VectorsPerChunk>
 T dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
