@@ -333,6 +333,9 @@ protected:
     const SC & _sc;
     uint32_t   _docIdLimit;
 
+    void or_hits_into(BitVector &result, uint32_t begin_id) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
+
 public:
     FlagAttributeIteratorT(const SC &sc, fef::TermFieldMatchData * matchData)
         : FlagAttributeIterator(matchData),

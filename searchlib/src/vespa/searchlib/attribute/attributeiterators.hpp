@@ -231,6 +231,45 @@ FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
 
 template <typename SC>
 void
+FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    for (int i = sc._low; (i <= sc._high); ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL) {
+            result.orWith(*bv);
+        }
+    }
+}
+
+template <typename SC>
+std::unique_ptr<BitVector>
+FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    int i = sc._low;
+    BitVector::UP result;
+    for (;!result && i < sc._high; ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL) {
+            result = BitVector::create(*bv, begin_id, getEndId());
+        }
+    }
+
+    for (; i <= sc._high; ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL) {
+            result->orWith(*bv);
+        }
+    }
+    if (!result) {
+        result = BitVector::create(begin_id, getEndId());
+    }
+    return result;
+}
+
+template <typename SC>
+void
 AttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     if (__builtin_expect(docId >= _docIdLimit, false)) {
