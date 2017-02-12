@@ -55,7 +55,7 @@ public class RankProfile implements Serializable, Cloneable {
     private int minHitsPerThread = -1;
     private int numSearchPartitions = -1;
 
-    private double termwiseLimit = 1.0;
+    private Double termwiseLimit = null;
 
     /** The drop limit used to drop hits with rank score less than or equal to this value */
     private double rankScoreDropLimit = -Double.MAX_VALUE;
@@ -426,13 +426,15 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public int getRerankCount() {
-        if (rerankCount>=0) return rerankCount;
-        if (getInherited()!=null) return getInherited().getRerankCount();
-        return -1;
+        return (rerankCount < 0 && (getInherited() != null))
+                ?  getInherited().getRerankCount()
+                : rerankCount;
     }
 
     public int getNumThreadsPerSearch() {
-        return numThreadsPerSearch;
+        return (numThreadsPerSearch < 0 && (getInherited() != null))
+                ?  getInherited().getNumThreadsPerSearch()
+                : numThreadsPerSearch;
     }
 
     public void setNumThreadsPerSearch(int numThreads) {
@@ -440,7 +442,9 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public int getMinHitsPerThread() {
-        return minHitsPerThread;
+        return (minHitsPerThread < 0 && (getInherited() != null))
+                ?  getInherited().getMinHitsPerThread()
+                : minHitsPerThread;
     }
 
     public void setMinHitsPerThread(int minHits) {
@@ -451,9 +455,17 @@ public class RankProfile implements Serializable, Cloneable {
         this.numSearchPartitions = numSearchPartitions;
     }
 
-    public int getNumSearchPartitions() { return numSearchPartitions; }
+    public int getNumSearchPartitions() {
+        return (numSearchPartitions < 0 && (getInherited() != null))
+                ?  getInherited().getNumSearchPartitions()
+                : numSearchPartitions;
+    }
 
-    public double getTermwiseLimit() { return termwiseLimit; }
+    public double getTermwiseLimit() {
+        return ((termwiseLimit == null) && (getInherited() != null))
+                ?  getInherited().getTermwiseLimit()
+                : (termwiseLimit != null) ? termwiseLimit : 1.0;
+    }
     public void setTermwiseLimit(double termwiseLimit) { this.termwiseLimit = termwiseLimit; }
 
     /** Sets the rerank count. Set to -1 to use inherited */

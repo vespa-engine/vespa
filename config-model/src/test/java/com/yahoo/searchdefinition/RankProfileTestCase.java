@@ -58,7 +58,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void testTermwiseLimitAndSomeMore() throws ParseException {
+    public void testTermwiseLimitAndSomeMoreIncludingInheritance() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -75,16 +75,21 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
                         "        min-hits-per-thread:70\n" +
                         "        num-search-partitions:1200\n" +
                         "    }\n" +
+                        "    rank-profile child inherits parent { }" +
                         "\n" +
                         "}\n");
         builder.build();
         Search search = builder.getSearch();
-        RankProfile rankProfile = rankProfileRegistry.getRankProfile(search, "parent");
+        AttributeFields attributeFields = new AttributeFields(search);
+        verifyRankProfile(rankProfileRegistry.getRankProfile(search, "parent"), attributeFields);
+        verifyRankProfile(rankProfileRegistry.getRankProfile(search, "child"), attributeFields);
+    }
+
+    private void verifyRankProfile(RankProfile rankProfile, AttributeFields attributeFields) {
         assertEquals(0.78, rankProfile.getTermwiseLimit(), 0.000001);
         assertEquals(8, rankProfile.getNumThreadsPerSearch());
         assertEquals(70, rankProfile.getMinHitsPerThread());
         assertEquals(1200, rankProfile.getNumSearchPartitions());
-        AttributeFields attributeFields = new AttributeFields(search);
         RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, attributeFields);
         assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
         assertEquals("0.78", findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").get());
