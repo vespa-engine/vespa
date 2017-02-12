@@ -1,23 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.rankingexpression");
 
+#include "rankingexpressionfeature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
-#include <vespa/eval/eval/node_types.h>
-#include "rankingexpressionfeature.h"
-#include "utils.h"
-#include <stdexcept>
-#include <vespa/eval/eval/value_type.h>
-#include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.rankingexpression");
 
 using vespalib::eval::Function;
 using vespalib::eval::PassParams;
