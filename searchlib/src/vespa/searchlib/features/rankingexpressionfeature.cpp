@@ -5,9 +5,6 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
-#include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/llvm/compiled_function.h>
-#include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 
 #include <vespa/log/log.h>
@@ -80,13 +77,19 @@ public:
 CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function)
     : _ranking_function(compiled_function.get_function()),
       _params(compiled_function.num_params(), 0.0)
-{
-}
+{ }
 
 void
 CompiledRankingExpressionExecutor::execute(uint32_t)
 {
-    for (size_t i = 0; i < _params.size(); ++i) {
+    size_t i(0);
+    for (; (i + 4) < _params.size(); i += 4) {
+        _params[i+0] = inputs().get_number(i+0);
+        _params[i+1] = inputs().get_number(i+1);
+        _params[i+2] = inputs().get_number(i+2);
+        _params[i+3] = inputs().get_number(i+3);
+    }
+    for (; i < _params.size(); ++i) {
         _params[i] = inputs().get_number(i);
     }
     outputs().set_number(0, _ranking_function(&_params[0]));
@@ -99,8 +102,7 @@ InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const
     : _context(),
       _function(function),
       _input_is_object(input_is_object)
-{
-}
+{ }
 
 void
 InterpretedRankingExpressionExecutor::execute(uint32_t)
@@ -122,15 +124,12 @@ RankingExpressionBlueprint::RankingExpressionBlueprint()
     : fef::Blueprint("rankingExpression"),
       _interpreted_function(),
       _compile_token()
-{
-}
+{ }
 
 void
 RankingExpressionBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
                                               fef::IDumpFeatureVisitor &) const
-{
-    // empty
-}
+{ }
 
 bool
 RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,

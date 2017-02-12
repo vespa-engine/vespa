@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/util/priority_queue.h>
 
