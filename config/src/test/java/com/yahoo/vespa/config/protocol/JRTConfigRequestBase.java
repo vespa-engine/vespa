@@ -72,7 +72,9 @@ public abstract class JRTConfigRequestBase {
         return createReq(defName, defNamespace, defMd5, hostname, configId, ConfigUtils.getMd5(payload.getData()), currentGeneration, timeout, trace);
     }
 
-    protected abstract JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5, String hostname, String configId, String  configMd5, long currentGeneration, long timeout, Trace trace) throws IOException;
+    protected abstract JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5,
+                                                        String hostname, String configId, String configMd5,
+                                                        long currentGeneration, long timeout, Trace trace);
     protected abstract JRTServerConfigRequest createReq(Request request);
     protected abstract JRTClientConfigRequest createReq(JRTConfigSubscription<SimpletypesConfig> sub, Trace aNew);
     protected abstract JRTClientConfigRequest createFromRaw(RawConfig rawConfig, long serverTimeout, Trace aNew);
@@ -115,8 +117,8 @@ public abstract class JRTConfigRequestBase {
         assertThat(next.getConfigKey().getConfigId(), is(configId));
         assertThat(next.getDefContent().asStringArray(), is(expectedContent));
         assertFalse(next.noCache());
-        assertThat(next.getTimeout(), is(6l));
-        assertThat(next.getTimeout(), is(6l));
+        assertThat(next.getTimeout(), is(6L));
+        assertThat(next.getTimeout(), is(6L));
         return next;
     }
 
@@ -138,11 +140,11 @@ public abstract class JRTConfigRequestBase {
     public void ok_response_is_added() {
         Payload payload = createPayload("vale");
         String md5 = ConfigUtils.getMd5(payload.getData());
-        long generation = 4l;
+        long generation = 4L;
         serverReq.addOkResponse(payload, generation, md5);
         assertTrue(clientReq.validateResponse());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is(payload.getData().toString()));
-        assertThat(clientReq.getNewGeneration(), is(4l));
+        assertThat(clientReq.getNewGeneration(), is(4L));
         assertThat(clientReq.getNewConfigMd5(), is(md5));
         assertTrue(clientReq.hasUpdatedConfig());
         assertTrue(clientReq.hasUpdatedGeneration());
@@ -166,7 +168,7 @@ public abstract class JRTConfigRequestBase {
     @Test
     public void generation_only_is_updated() {
         Payload payload = createPayload();
-        serverReq.addOkResponse(payload, 4l, ConfigUtils.getMd5(payload.getData()));
+        serverReq.addOkResponse(payload, 4L, ConfigUtils.getMd5(payload.getData()));
         boolean value = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), value);
         assertFalse(clientReq.hasUpdatedConfig());

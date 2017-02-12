@@ -21,7 +21,6 @@ public class ConfigDefinitionClass {
 
     String getSimpleName() {
         return name;
-
     }
 
     String getName() {

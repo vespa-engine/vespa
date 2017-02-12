@@ -8,7 +8,6 @@ import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -22,7 +21,9 @@ import static org.junit.Assert.assertTrue;
 public class JRTConfigRequestV3Test extends JRTConfigRequestBase {
 
     @Override
-    protected JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5, String hostname, String configId, String configMd5, long currentGeneration, long timeout, Trace trace) throws IOException {
+    protected JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5,
+                                               String hostname, String configId, String configMd5,
+                                               long currentGeneration, long timeout, Trace trace) {
         return JRTClientConfigRequestV3.createWithParams(ConfigKey.createFull(defName, configId, defNamespace, defMd5),
                 DefContent.fromList(Arrays.asList("namespace=my.name.space", "myfield string")),
                 hostname,

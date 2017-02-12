@@ -115,7 +115,7 @@ public class ConfigInstanceSerializerTest {
         builder.enumarr(ArraytypesConfig.Enumarr.Enum.VAL1);
         builder.enumarr(ArraytypesConfig.Enumarr.Enum.VAL2);
         builder.intarr(3);
-        builder.longarr(4l);
+        builder.longarr(4L);
         builder.stringarr("foo");
 
         final ArraytypesConfig config = new ArraytypesConfig(builder);

@@ -28,7 +28,7 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         if (!set.contains(subKey)) {
             throw new IllegalArgumentException("The given ConfigSet "+set+" does not contain a config for "+subKey);
         }
-        setGeneration(0l);
+        setGeneration(0L);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
                 updateInstance(myInstance);
                 return true;
             }
-            sleep(10);
+            sleep();
         } while (System.currentTimeMillis() < end);
         // These shouldn't be checked anywhere since we return false now, but setting them still
         setGenerationChanged(false);
@@ -54,9 +54,9 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         return false;
     }
 
-    private void sleep(int milliSecondsToSleep) {
+    private void sleep() {
         try {
-            Thread.sleep(milliSecondsToSleep);
+            Thread.sleep(10);
         } catch (InterruptedException e) {
             throw new RuntimeException("nextConfig aborted", e);
         }

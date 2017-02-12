@@ -7,7 +7,6 @@ import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * To hide JRT implementations.
@@ -17,8 +16,7 @@ import java.util.logging.Logger;
  */
 public class JRTConfigRequestFactory {
 
-    public static final String VESPA_CONFIG_PROTOCOL_VERSION = "VESPA_CONFIG_PROTOCOL_VERSION";
-    private final static Logger log = Logger.getLogger(JRTConfigRequestFactory.class.getName());
+    public static final String VESPA_CONFIG_PROTOCOL_VERSION = "VESPA_CONFIG_PROTOCOL_VERSION"; // Unused, but should be used if we add a new version
     private static final CompressionType compressionType = getCompressionType();
     private static final String VESPA_CONFIG_PROTOCOL_COMPRESSION = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
     public static final String VESPA_VERSION = "VESPA_VERSION";
@@ -42,7 +40,7 @@ public class JRTConfigRequestFactory {
     }
 
     public static Set<Long> supportedProtocolVersions() {
-        return Collections.singleton(3l);
+        return Collections.singleton(3L);
     }
 
     public static CompressionType getCompressionType() {

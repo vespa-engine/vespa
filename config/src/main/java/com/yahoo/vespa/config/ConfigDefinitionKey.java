@@ -21,7 +21,7 @@ public class ConfigDefinitionKey {
      */
     public ConfigDefinitionKey(String name, String namespace) {
         require(name, "A config name cannot be null or empty");
-        require(namespace, "A config name cannot be null or empty");
+        require(namespace, "A config namespace cannot be null or empty");
         this.name = name;
         this.namespace = namespace;
     }

@@ -64,7 +64,7 @@ public class GenericConfigSubscriberTest {
     @Test(expected=UnsupportedOperationException.class)
     public void testOverriddenSubscribeInvalid2() {
         GenericConfigSubscriber sub = new GenericConfigSubscriber();
-        sub.subscribe(null, null, 0l);
+        sub.subscribe(null, null, 0L);
     }
 
     @Test(expected=UnsupportedOperationException.class)

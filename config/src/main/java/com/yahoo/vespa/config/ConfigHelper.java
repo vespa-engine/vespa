@@ -10,7 +10,7 @@ import com.yahoo.config.subscription.ConfigSourceSet;
  */
 public class ConfigHelper {
     private final JRTConnectionPool jrtConnectionPool;
-    private TimingValues timingValues;
+    private final TimingValues timingValues;
 
     /**
      * @param configSourceSet  The set of config sources for this helper.

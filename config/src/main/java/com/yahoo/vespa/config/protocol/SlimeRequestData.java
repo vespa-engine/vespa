@@ -54,7 +54,7 @@ class SlimeRequestData {
         return data;
     }
 
-    Inspector getRequestField(String requestField) {
+    private Inspector getRequestField(String requestField) {
         return getData().get().field(requestField);
     }
 
@@ -111,12 +111,10 @@ class SlimeRequestData {
         defSchema.serialize(request.setArray(REQUEST_DEF_CONTENT));
         request.setString(REQUEST_CONFIG_MD5, configMd5);
         request.setLong(REQUEST_CURRENT_GENERATION, generation);
-        request.setLong(REQUEST_WANTED_GENERATION, 0l);
+        request.setLong(REQUEST_WANTED_GENERATION, 0L);
         request.setLong(REQUEST_TIMEOUT, timeout);
         request.setString(REQUEST_COMPRESSION_TYPE, compressionType.name());
-        if (vespaVersion.isPresent()) {
-            request.setString(REQUEST_VESPA_VERSION, vespaVersion.get().toString());
-        }
+        vespaVersion.ifPresent(version -> request.setString(REQUEST_VESPA_VERSION, version.toString()));
         trace.serialize(request.setObject(REQUEST_TRACE));
         return data;
     }
@@ -132,7 +130,7 @@ class SlimeRequestData {
 
     public Optional<VespaVersion> getVespaVersion() {
         String versionString = getRequestField(REQUEST_VESPA_VERSION).asString(); // will be "" if not set, never null
-        return versionString.isEmpty() ? Optional.<VespaVersion>empty() : Optional.of(VespaVersion.fromString(versionString));
+        return versionString.isEmpty() ? Optional.empty() : Optional.of(VespaVersion.fromString(versionString));
     }
 
 }
