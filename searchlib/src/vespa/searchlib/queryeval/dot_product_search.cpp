@@ -120,7 +120,7 @@ public:
     { }
 private:
     void doSeek(uint32_t docid) override {
-        _child->doSeek(docid);
+        _child->seek(docid);
         setDocId(_child->getDocId());
     }
 
