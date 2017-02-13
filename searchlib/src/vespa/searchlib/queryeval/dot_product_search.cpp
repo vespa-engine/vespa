@@ -120,7 +120,7 @@ public:
     { }
 private:
     void doSeek(uint32_t docid) override {
-        _child->seek(docid);
+        _child->doSeek(docid);
         setDocId(_child->getDocId());
     }
 
@@ -131,6 +131,7 @@ private:
     void initRange(uint32_t beginId, uint32_t endId) override {
         SearchIterator::initRange(beginId, endId);
         _child->initRange(beginId, endId);
+        setDocId(_child->getDocId());
     }
     SearchIterator::UP        _child;
     const TermFieldMatchData &_childTmd;

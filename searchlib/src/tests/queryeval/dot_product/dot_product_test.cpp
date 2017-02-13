@@ -143,8 +143,6 @@ TEST_F("test Eager Empty Child", MockFixture(search::endDocId)) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
-    EXPECT_EQUAL(search.beginId(), search.getDocId());
-    EXPECT_TRUE(!search.seek(1));
     EXPECT_TRUE(search.isAtEnd());
     EXPECT_EQUAL(0, mock->seekCnt);
 }
@@ -153,7 +151,7 @@ TEST_F("test Eager Matching Child", MockFixture(5)) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
-    EXPECT_EQUAL(search.beginId(), search.getDocId());
+    EXPECT_EQUAL(5u, search.getDocId());
     EXPECT_TRUE(!search.seek(3));
     EXPECT_EQUAL(5u, search.getDocId());
     EXPECT_EQUAL(0, mock->seekCnt);
