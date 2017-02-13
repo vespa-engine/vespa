@@ -108,9 +108,9 @@ public:
     void visitMembers(vespalib::ObjectVisitor &) const override {}
 };
 
-class SingleQueryDotProductSearch : public SearchIterator {
+class SingleTermDotProductSearch : public SearchIterator {
 public:
-    SingleQueryDotProductSearch(TermFieldMatchData &tmd, SearchIterator::UP child,
+    SingleTermDotProductSearch(TermFieldMatchData &tmd, SearchIterator::UP child,
                                 const TermFieldMatchData &childTmd, feature_t weight, MatchData::UP md)
         : _child(std::move(child)),
           _childTmd(childTmd),
@@ -153,7 +153,7 @@ DotProductSearch::create(const std::vector<SearchIterator*> &children,
     typedef DotProductSearchImpl<vespalib::LeftHeap, SearchIteratorPack> HeapImpl;
 
     if (childMatch.size() == 1) {
-        return std::make_unique<SingleQueryDotProductSearch>(tmd, SearchIterator::UP(children[0]),
+        return std::make_unique<SingleTermDotProductSearch>(tmd, SearchIterator::UP(children[0]),
                                                              *childMatch[0], weights[0], std::move(md));
     }
     if (childMatch.size() < 128) {
