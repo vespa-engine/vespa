@@ -39,6 +39,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.6.1</version>
         <configuration>
           <compilerArgs>
             <arg>-Xlint:all</arg>
@@ -77,6 +78,7 @@
       <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
+        <version>${vespa_version}</version>
         <extensions>true</extensions>
       </plugin>
     </plugins>
