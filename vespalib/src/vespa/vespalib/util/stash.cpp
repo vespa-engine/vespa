@@ -8,12 +8,13 @@ namespace stash {
 
 namespace {
 
-void free_chunks(Chunk *chunk) {
-    while (chunk != nullptr) {
+Chunk *free_chunks(Chunk *chunk, Chunk *until = nullptr) {
+    while (chunk != until) {
         void *mem = chunk;
         chunk = chunk->next;
         free(mem);
     }
+    return until;
 }
 
 Chunk *keep_one(Chunk *chunk) {
@@ -31,12 +32,13 @@ Chunk *keep_one(Chunk *chunk) {
     return nullptr;
 }
 
-void run_cleanup(Cleanup *cleanup) {
-    while (cleanup != nullptr) {
+Cleanup *run_cleanup(Cleanup *cleanup, Cleanup *until = nullptr) {
+    while (cleanup != until) {
         Cleanup *tmp = cleanup;
         cleanup = tmp->next;
         tmp->cleanup();
     }
+    return until;
 }
 
 } // namespace vespalib::stash::<unnamed>
@@ -95,9 +97,18 @@ Stash::~Stash()
 void
 Stash::clear()
 {
-    stash::run_cleanup(_cleanup);
-    _cleanup = nullptr;
+    _cleanup = stash::run_cleanup(_cleanup);
     _chunks = stash::keep_one(_chunks);
+}
+
+void
+Stash::revert(const Mark &mark)
+{
+    _cleanup = stash::run_cleanup(_cleanup, mark._cleanup);
+    _chunks = stash::free_chunks(_chunks, mark._chunk);
+    if (_chunks != nullptr) {
+        _chunks->used = mark._used;
+    }
 }
 
 size_t

@@ -102,6 +102,26 @@ private:
     }
 
 public:
+    /**
+     * A mark denoting a specific stash state that can later be
+     * reverted to. Used with the 'mark' and 'revert' functions. Note
+     * that trying to revert to a mark that does not represent an
+     * earlier state of the appropriate stash yields undefined
+     * behavior. A default constructed mark can be used on any stash
+     * to revert it to its initial empty state.
+     **/
+    class Mark {
+    private:
+        friend class Stash;
+        stash::Cleanup *_cleanup;
+        stash::Chunk   *_chunk;
+        size_t          _used;
+        Mark(stash::Cleanup *cleanup, stash::Chunk *chunk)
+            : _cleanup(cleanup), _chunk(chunk), _used(chunk ? chunk->used : 0u) {}
+    public:
+        Mark() : Mark(nullptr, nullptr) {}
+    };
+
     typedef std::unique_ptr<Stash> UP;
     explicit Stash(size_t chunk_size);
     Stash() : Stash(4096) {}
@@ -113,6 +133,9 @@ public:
     Stash &operator=(Stash &&rhs);
 
     void clear();
+
+    Mark mark() const { return Mark(_cleanup, _chunks); }
+    void revert(const Mark &mark);
 
     size_t count_used() const;
     size_t get_chunk_size() const { return _chunk_size; }
