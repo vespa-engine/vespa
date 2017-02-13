@@ -243,6 +243,21 @@ FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
 }
 
 template <typename SC>
+void
+FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) {
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    if (sc._low == sc._high) {
+        const BitVector * bv = attr.getBitVector(sc._low);
+        if (bv != NULL) {
+            result.andWith(*bv);
+        }
+    } else {
+        FlagAttributeIterator::and_hits_into(result, begin_id);
+    }
+}
+
+template <typename SC>
 std::unique_ptr<BitVector>
 FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     const SC & sc(_sc);
