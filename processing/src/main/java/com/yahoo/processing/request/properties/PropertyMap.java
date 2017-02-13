@@ -1,19 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request.properties;
 
-import com.yahoo.collections.MethodCache;
-import com.yahoo.component.provider.FreezableClass;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.Properties;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  * A HashMap backing of Properties.
@@ -29,9 +22,6 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public class PropertyMap extends Properties {
-
-    private static Logger log = Logger.getLogger(PropertyMap.class.getName());
-    private static final MethodCache cloneMethodCache = new MethodCache("clone");
 
     /**
      * The properties of this
@@ -67,74 +57,6 @@ public class PropertyMap extends Properties {
         PropertyMap clone = (PropertyMap) super.clone();
         clone.properties = cloneMap(this.properties);
         return clone;
-    }
-
-    /**
-     * Clones a map by deep cloning each value which is cloneable and shallow copying all other values.
-     */
-    public static Map<CompoundName, Object> cloneMap(Map<CompoundName, Object> map) {
-        Map<CompoundName, Object> cloneMap = new HashMap<>();
-        for (Map.Entry<CompoundName, Object> entry : map.entrySet()) {
-            Object cloneValue = clone(entry.getValue());
-            if (cloneValue == null)
-                cloneValue = entry.getValue(); // Shallow copy objects which does not support cloning
-            cloneMap.put(entry.getKey(), cloneValue);
-        }
-        return cloneMap;
-    }
-
-    /**
-     * Clones this object if it is clonable, and the clone is public. Returns null if not
-     */
-    public static Object clone(Object object) {
-        if (object == null) return null;
-        if (!(object instanceof Cloneable)) return null;
-        if (object instanceof Object[])
-            return arrayClone((Object[]) object);
-        else
-            return objectClone(object);
-    }
-
-    private static Object arrayClone(Object[] object) {
-        Object[] arrayClone = Arrays.copyOf(object, object.length);
-        // deep clone
-        for (int i = 0; i < arrayClone.length; i++) {
-            Object elementClone = clone(arrayClone[i]);
-            if (elementClone != null)
-                arrayClone[i] = elementClone;
-        }
-        return arrayClone;
-    }
-
-    private static Object objectClone(Object object) {
-        // Fastpath for our own commonly used classes
-        if (object instanceof FreezableClass) {
-            // List common superclass of 'com.yahoo.search.result.Hit'
-            return ((FreezableClass) object).clone();
-        }
-        else if (object instanceof PublicCloneable) {
-            return ((PublicCloneable)object).clone();
-        }
-        else if (object instanceof LinkedList) { // TODO: Why? Somebody's infatuation with LinkedList knows no limits
-            return ((LinkedList) object).clone();
-        }
-        else if (object instanceof ArrayList) { // TODO: Why? Likewise
-            return ((ArrayList) object).clone();
-        }
-
-        try {
-            Method cloneMethod = cloneMethodCache.get(object);
-            if (cloneMethod == null) {
-                log.warning("'" + object + "' is Cloneable, but has no clone method - will use the same instance in all requests");
-                return null;
-            }
-            return cloneMethod.invoke(object);
-        } catch (IllegalAccessException e) {
-            log.warning("'" + object + "' is Cloneable, but clone method cannot be accessed - will use the same instance in all requests");
-            return null;
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Exception cloning '" + object + "'", e);
-        }
     }
 
     @Override

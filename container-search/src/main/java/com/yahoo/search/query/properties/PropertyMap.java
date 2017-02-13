@@ -1,17 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
-
-import com.yahoo.processing.request.CompoundName;
+import com.yahoo.processing.request.*;
 import com.yahoo.search.query.Properties;
-import com.yahoo.search.result.Hit;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -29,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class PropertyMap extends Properties {
 
-    private static Logger log=Logger.getLogger(PropertyMap.class.getName());
+    private final static CloneHelper cloneHelper = new CloneHelper();
 
     /** The properties of this */
     private Map<CompoundName, Object> properties = new LinkedHashMap<>();
@@ -64,56 +55,12 @@ public class PropertyMap extends Properties {
         PropertyMap clone = (PropertyMap)super.clone();
         clone.properties = new HashMap<>();
         for (Map.Entry<CompoundName, Object> entry : this.properties.entrySet()) {
-            Object cloneValue = clone(entry.getValue());
+            Object cloneValue = cloneHelper.clone(entry.getValue());
             if (cloneValue == null)
                 cloneValue = entry.getValue(); // Shallow copy objects which does not support cloning
             clone.properties.put(entry.getKey(), cloneValue);
         }
         return clone;
-    }
-
-    /** Clones this object if it is clonable, and the clone is public. Returns null if not */
-    public static Object clone(Object object) {
-        if (object==null) return null;
-        if (! ( object instanceof Cloneable) ) return null;
-        if (object  instanceof Object[])
-            return arrayClone((Object[])object);
-        else
-            return objectClone(object);
-    }
-
-    private static Object arrayClone(Object[] object) {
-        Object[] arrayClone= Arrays.copyOf(object, object.length);
-        // deep clone
-        for (int i=0; i<arrayClone.length; i++) {
-            Object elementClone=clone(arrayClone[i]);
-            if (elementClone!=null)
-                arrayClone[i]=elementClone;
-        }
-        return arrayClone;
-    }
-
-    private static Object objectClone(Object object) {
-        if (object instanceof Hit) {
-            return ((Hit) object).clone();
-        } else if (object instanceof LinkedList) {
-            return ((LinkedList) object).clone();
-        }
-        try {
-            Method cloneMethod=object.getClass().getMethod("clone");
-            return cloneMethod.invoke(object);
-        }
-        catch (NoSuchMethodException e) {
-            log.warning("'" + object + "' is Cloneable, but has no clone method - will use the same instance in all requests");
-            return null;
-        }
-        catch (IllegalAccessException e) {
-            log.warning("'" + object + "' is Cloneable, but clone method cannot be accessed - will use the same instance in all requests");
-            return null;
-        }
-        catch (InvocationTargetException e) {
-            throw new RuntimeException("Exception cloning '" + object + "'",e);
-        }
     }
 
     @Override
