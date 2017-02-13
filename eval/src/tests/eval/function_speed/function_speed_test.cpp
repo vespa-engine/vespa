@@ -21,7 +21,7 @@ double gcc_function(double p, double o, double q, double f, double w) {
     return (0.35*p + 0.15*o + 0.30*q + 0.20*f) * w;
 }
 
-InterpretedFunction::Context icontext;
+InterpretedFunction::Context icontext(interpreted_function);
 
 double interpret_function(double p, double o, double q, double f, double w) {
     icontext.clear_params();
@@ -52,7 +52,7 @@ double big_gcc_function(double p, double o, double q, double f, double w) {
         (0.35*p + 0.15*o + 0.30*q + 0.20*f) * w;
 }
 
-InterpretedFunction::Context big_icontext;
+InterpretedFunction::Context big_icontext(big_interpreted_function);
 
 double big_interpret_function(double p, double o, double q, double f, double w) {
     big_icontext.clear_params();

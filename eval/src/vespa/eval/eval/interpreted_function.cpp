@@ -124,6 +124,35 @@ void op_tensor_sum_dimension(State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
+void op_tensor_map(State &state, uint64_t param) {
+    const CompiledFunction &cfun = unwrap_param<CompiledFunction>(param);
+    state.replace(1, state.engine.map(state.peek(0), cfun.get_function<1>(), state.stash));
+}
+
+void op_tensor_join(State &state, uint64_t param) {
+    const CompiledFunction &cfun = unwrap_param<CompiledFunction>(param);
+    state.replace(2, state.engine.join(state.peek(1), state.peek(0), cfun.get_function<2>(), state.stash));
+}
+
+using ReduceParams = std::pair<Aggr,std::vector<vespalib::string>>;
+void op_tensor_reduce(State &state, uint64_t param) {
+    const ReduceParams &params = unwrap_param<ReduceParams>(param);
+    state.replace(1, state.engine.reduce(state.peek(0), params.first, params.second, state.stash));
+}
+
+using RenameParams = std::pair<std::vector<vespalib::string>,std::vector<vespalib::string>>;
+void op_tensor_rename(State &state, uint64_t param) {
+    const RenameParams &params = unwrap_param<RenameParams>(param);
+    state.replace(1, state.engine.rename(state.peek(0), params.first, params.second, state.stash));
+}
+
+void op_tensor_concat(State &state, uint64_t param) {
+    const vespalib::string &dimension = unwrap_param<vespalib::string>(param);
+    state.replace(2, state.engine.concat(state.peek(1), state.peek(0), dimension, state.stash));
+}
+
+//-----------------------------------------------------------------------------
+
 template <typename T>
 const T &undef_cref() {   
     const T *undef = nullptr;
@@ -281,21 +310,21 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
                                  wrap_param<vespalib::string>(stash.create<vespalib::string>(node.dimension())));
         }
     }
-    virtual void visit(const TensorMap &) {
-        // TODO(havardpe): add actual evaluation
-        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));
+    virtual void visit(const TensorMap &node) {
+        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
+        program.emplace_back(op_tensor_map, wrap_param<CompiledFunction>(token.get()->get()));
     }
-    virtual void visit(const TensorJoin &) {
-        // TODO(havardpe): add actual evaluation
-        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));        
+    virtual void visit(const TensorJoin &node) {
+        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
+        program.emplace_back(op_tensor_join, wrap_param<CompiledFunction>(token.get()->get()));
     }
-    virtual void visit(const TensorReduce &) {
-        // TODO(havardpe): add actual evaluation
-        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));        
+    virtual void visit(const TensorReduce &node) {
+        ReduceParams &params = stash.create<ReduceParams>(node.aggr(), node.dimensions());
+        program.emplace_back(op_tensor_reduce, wrap_param<ReduceParams>(params));
     }
-    virtual void visit(const TensorRename &) {
-        // TODO(havardpe): add actual evaluation
-        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));        
+    virtual void visit(const TensorRename &node) {
+        RenameParams &params = stash.create<RenameParams>(node.from(), node.to());
+        program.emplace_back(op_tensor_rename, wrap_param<RenameParams>(params));
     }
     virtual void visit(const TensorLambda &node) {
         const auto &type = node.type();
@@ -314,9 +343,9 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         auto tensor = tensor_engine.create(spec);
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<TensorValue>(std::move(tensor))));
     }
-    virtual void visit(const TensorConcat &) {
-        // TODO(havardpe): add actual evaluation
-        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));        
+    virtual void visit(const TensorConcat &node) {
+        vespalib::string &dimension = stash.create<vespalib::string>(node.dimension());
+        program.emplace_back(op_tensor_concat, wrap_param<vespalib::string>(dimension));
     }
     virtual void visit(const Add &) {
         program.emplace_back(op_binary<operation::Add>);
@@ -471,7 +500,26 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     }
 };
 
+const Function *get_lambda(const nodes::Node &node) {
+    if (auto ptr = as<nodes::TensorMap>(node)) {
+        return &ptr->lambda();
+    }
+    if (auto ptr = as<nodes::TensorJoin>(node)) {
+        return &ptr->lambda();
+    }
+    if (auto ptr = as<nodes::TensorLambda>(node)) {
+        return &ptr->lambda();
+    }
+    return nullptr;
+}
+
 } // namespace vespalib::<unnamed>
+
+InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
+    : _state(ifun._tensor_engine),
+      _param_stash()
+{
+}
 
 InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types)
     : _program(),
@@ -505,13 +553,9 @@ InterpretedFunction::detect_issues(const Function &function)
         std::vector<vespalib::string> issues;
         bool open(const nodes::Node &) override { return true; }
         void close(const nodes::Node &node) override {
-            if (nodes::check_type<nodes::TensorMap,
-                                  nodes::TensorJoin,
-                                  nodes::TensorReduce,
-                                  nodes::TensorRename,
-                                  nodes::TensorLambda,
-                                  nodes::TensorConcat>(node)) {
-                issues.push_back(make_string("unsupported node type: %s",
+            auto lambda = get_lambda(node);
+            if (lambda && CompiledFunction::detect_issues(*lambda)) {
+                issues.push_back(make_string("lambda function that cannot be compiled within %s",
                                 getClassName(node).c_str()));
             }
         }
