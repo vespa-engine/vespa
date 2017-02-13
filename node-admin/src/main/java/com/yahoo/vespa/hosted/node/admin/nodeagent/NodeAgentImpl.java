@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -81,7 +82,7 @@ public class NodeAgentImpl implements NodeAgent {
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
-    CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
+    CpuUsageReporter lastCpuMetric;
     Optional<String> vespaVersion = Optional.empty();
 
     public NodeAgentImpl(
@@ -91,7 +92,8 @@ public class NodeAgentImpl implements NodeAgent {
             final DockerOperations dockerOperations,
             final Optional<StorageMaintainer> storageMaintainer,
             final MetricReceiverWrapper metricReceiver,
-            final Environment environment) {
+            final Environment environment,
+            final Optional<Container> container) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
@@ -101,6 +103,17 @@ public class NodeAgentImpl implements NodeAgent {
                 NodeRepositoryImpl.containerNameFromHostName(hostName));
         this.metricReceiver = metricReceiver;
         this.environment = environment;
+
+        if (container.isPresent()) {
+            Instant createdAt = Instant.now();
+            try {
+                createdAt = container.get().getCreatedAsInstant();
+            } catch (ParseException e) {
+                logger.warning("Failed to parse created time stamp: " + container.get().created, e);
+                numberOfUnhandledException++;
+            }
+            lastCpuMetric = new CpuUsageReporter(createdAt);
+        }
     }
 
     @Override
@@ -234,8 +247,9 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (dockerOperations.startContainerIfNeeded(nodeSpec)) {
-            vespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
             metricReceiver.unsetMetricsForContainer(hostname);
+            lastCpuMetric = new CpuUsageReporter(Instant.now());
+            vespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
 
             configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
@@ -329,10 +343,9 @@ public class NodeAgentImpl implements NodeAgent {
                 dockerOperations.trySuspendNode(containerName);
                 stopServices(containerName);
             }
+            vespaVersion = Optional.empty();
             dockerOperations.removeContainer(nodeSpec, existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
-            lastCpuMetric = new CpuUsageReporter();
-            vespaVersion = Optional.empty();
             return true;
         }
         return false;
@@ -595,7 +608,11 @@ public class NodeAgentImpl implements NodeAgent {
     class CpuUsageReporter {
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
-        private final Instant created = Instant.now();
+        private final Instant created;
+
+        CpuUsageReporter(Instant created) {
+            this.created = created;
+        }
 
         double getCpuUsagePercentage(long currentContainerUsage, long currentSystemUsage) {
             long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
