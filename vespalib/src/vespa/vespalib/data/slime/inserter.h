@@ -29,7 +29,6 @@ struct Inserter {
     virtual Cursor &insertData(Memory value) const = 0;
     virtual Cursor &insertArray() const = 0;
     virtual Cursor &insertObject() const = 0;
-    virtual Symbol insert(Memory symbol_name) const = 0;
     virtual ~Inserter() {}
 };
 
@@ -47,7 +46,6 @@ struct SlimeInserter : Inserter {
     virtual Cursor &insertData(Memory value) const;
     virtual Cursor &insertArray() const;
     virtual Cursor &insertObject() const;
-    virtual Symbol insert(Memory symbol_name) const;
 };
 
 struct ArrayInserter : Inserter {
@@ -62,7 +60,6 @@ struct ArrayInserter : Inserter {
     virtual Cursor &insertData(Memory value) const;
     virtual Cursor &insertArray() const;
     virtual Cursor &insertObject() const;
-    virtual Symbol insert(Memory symbol_name) const;
 };
 
 struct ObjectSymbolInserter : Inserter {
@@ -78,7 +75,6 @@ struct ObjectSymbolInserter : Inserter {
     virtual Cursor &insertData(Memory value) const;
     virtual Cursor &insertArray() const;
     virtual Cursor &insertObject() const;
-    virtual Symbol insert(Memory symbol_name) const;
 };
 
 struct ObjectInserter : Inserter {
@@ -94,7 +90,6 @@ struct ObjectInserter : Inserter {
     virtual Cursor &insertData(Memory value) const;
     virtual Cursor &insertArray() const;
     virtual Cursor &insertObject() const;
-    virtual Symbol insert(Memory symbol_name) const;
 };
 
 } // namespace slime
