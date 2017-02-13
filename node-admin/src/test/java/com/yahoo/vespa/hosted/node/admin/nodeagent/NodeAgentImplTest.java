@@ -66,8 +66,10 @@ public class NodeAgentImplTest {
             .inetAddressResolver(new InetAddressResolver())
             .pathResolver(pathResolver).build();
 
+    private final Container container = new Container("host123.name.yahoo.com", new DockerImage("image-123"),
+            new ContainerName("host123"), Container.State.RUNNING, 1);
     private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-            Optional.of(storageMaintainer), metricReceiver, environment);
+            Optional.of(storageMaintainer), metricReceiver, environment, Optional.of(container));
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {

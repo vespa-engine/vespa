@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
@@ -31,9 +34,11 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private final Environment environment = new Environment.Builder().build();
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
+    private final Container container = new Container("host123.name.yahoo.com", new DockerImage("image-123"),
+            new ContainerName("host123"), Container.State.RUNNING, 1);
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
-                    dockerOperations, Optional.empty(), mr, environment);
+                    dockerOperations, Optional.empty(), mr, environment, Optional.of(container));
     private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100, mr, Optional.empty());
 
 
