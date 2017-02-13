@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
 
 /**
  * The properties of a request
@@ -12,6 +12,7 @@ import java.util.Map;
  */
 public class Properties implements Cloneable {
 
+    private final static CloneHelper cloneHelper = new CloneHelper();
     private Properties chained = null;
 
     /**
@@ -570,4 +571,14 @@ public class Properties implements Cloneable {
         }
     }
 
+    /**
+     * Clones a map by deep cloning each value which is cloneable and shallow copying all other values.
+     */
+    public static Map<CompoundName, Object> cloneMap(Map<CompoundName, Object> map) {
+        return cloneHelper.cloneMap(map);
+    }
+    /** Clones this object if it is clonable, and the clone is public. Returns null if not */
+    public static Object clone(Object object) {
+        return cloneHelper.clone(object);
+    }
 }
