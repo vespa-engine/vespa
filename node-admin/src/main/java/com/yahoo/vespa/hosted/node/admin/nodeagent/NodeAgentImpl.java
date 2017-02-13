@@ -608,7 +608,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         double getUptime() {
-            return Duration.between(created, Instant.now()).toMillis() * 1000;
+            return Duration.between(created, Instant.now()).toMillis() / 1000;
         }
     }
 
