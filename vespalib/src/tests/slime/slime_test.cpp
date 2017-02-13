@@ -362,4 +362,39 @@ TEST("require that slime objects can be compared") {
     EXPECT_NOT_EQUAL(Slime().setArray(), Slime().setObject());
 }
 
+TEST("require that we can resolve to symbol table from a cursor") {
+    Slime slime;
+    Cursor &c1 = slime.setObject();
+    Cursor &c2 = c1.setArray("foo");
+    Cursor &c3 = c1.setLong("bar", 5);
+    Cursor &c4 = c2.addObject();
+    const Memory A("a");
+    const Memory B("b");
+    const Memory C("c");
+    const Memory D("d");
+    EXPECT_TRUE(slime.lookup(A).undefined());
+    EXPECT_TRUE(slime.lookup(B).undefined());
+    EXPECT_TRUE(slime.lookup(C).undefined());
+    EXPECT_TRUE(slime.lookup(D).undefined());
+
+    Symbol sa = c1.resolve(A);
+    Symbol sb = c2.resolve(B);
+    Symbol sc = c3.resolve(C);
+    Symbol sd = c4.resolve(D);
+    EXPECT_FALSE(sa.undefined());
+    EXPECT_FALSE(sb.undefined());
+    EXPECT_TRUE(sc.undefined());
+    EXPECT_FALSE(sd.undefined());
+
+    EXPECT_FALSE(slime.lookup(A).undefined());
+    EXPECT_FALSE(slime.lookup(B).undefined());
+    EXPECT_TRUE(slime.lookup(C).undefined());
+    EXPECT_FALSE(slime.lookup(D).undefined());
+
+    EXPECT_TRUE(sa == slime.lookup(A));
+    EXPECT_TRUE(sb == slime.lookup(B));
+    EXPECT_TRUE(sc == slime.lookup(C));
+    EXPECT_TRUE(sd == slime.lookup(D));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
