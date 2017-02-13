@@ -181,7 +181,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
         params.setLibraryParameter("summarycount", String.valueOf(query.getOffset() + query.getHits()));
         params.setLibraryParameter("rankprofile", query.getRanking().getProfile());
-        params.setLibraryParameter("allowslimedocsums", "true");
         params.setLibraryParameter("queryflags", String.valueOf(getQueryFlags(query)));
 
         ByteBuffer buf = ByteBuffer.allocate(1024);

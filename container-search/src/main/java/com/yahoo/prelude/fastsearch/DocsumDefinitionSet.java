@@ -74,7 +74,6 @@ public final class DocsumDefinitionSet {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         long docsumClassId = buffer.getInt();
         if (docsumClassId != SLIME_MAGIC_ID) {
-            log.warning("Only expecting SchemaLess docsums");
             // TODO: Not used, remove   - bratseth 2017-01-016
             DocsumDefinition docsumDefinition = lookupDocsum(docsumClassId);
             Docsum docsum = new Docsum(docsumDefinition, data);
