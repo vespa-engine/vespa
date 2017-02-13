@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.component.AbstractComponent;
-import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.yolean.Exceptions;
@@ -39,6 +38,7 @@ public class LogServerLogGrabber extends AbstractComponent {
 
     public String grabLog(Application application) {
 
+        // TODO: Use model to get values (see how it's done in ApplicationConvergenceChecker)
         final ModelConfig config;
         try {
             config = application.getConfig(ModelConfig.class, "");

@@ -27,7 +27,7 @@ double
 Node::get_const_value() const {
     assert(is_const());
     InterpretedFunction function(SimpleTensorEngine::ref(), *this, 0, NodeTypes());
-    InterpretedFunction::Context ctx;
+    InterpretedFunction::Context ctx(function);
     return function.eval(ctx).as_double();
 }
 

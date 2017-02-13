@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP(".proton.docsummary.linguisticsannotation");
+LOG_SETUP(".searchsummary.docsummary.linguisticsannotation");
 
 #include "linguisticsannotation.h"
 #include <vespa/document/datatype/datatype.h>
@@ -13,8 +13,9 @@ using document::DataType;
 using document::PrimitiveDataType;
 using vespalib::string;
 
-namespace proton {
+namespace search {
 namespace linguistics {
+
 namespace {
 AnnotationType makeType(int id, string name, const DataType &type) {
     AnnotationType annotation_type(id, name);
@@ -29,5 +30,5 @@ AnnotationType TERM_OBJ(makeType(1, "term", STRING_OBJ));
 const string SPANTREE_NAME("linguistics");
 const AnnotationType *const TERM(&TERM_OBJ);
 
-}  // namespace linguistics
-}  // namespace proton
+}  // namespace search::linguistics
+}  // namespace search

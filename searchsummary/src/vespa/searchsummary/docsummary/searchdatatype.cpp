@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP(".proton.docsummary.searchdatatype");
+LOG_SETUP(".search.docsummary.searchdatatype");
 
 #include "searchdatatype.h"
 #include <vespa/document/base/field.h>
@@ -14,7 +14,8 @@ using document::Field;
 using document::PrimitiveDataType;
 using document::StructDataType;
 
-namespace proton {
+namespace search {
+namespace docsummary {
 
 namespace {
 
@@ -35,4 +36,5 @@ const StructDataType *setUpUriType() {
 
 const DataType *SearchDataType::URI(setUpUriType());
 
-}  // namespace proton
+}  // namespace search::docsummary
+}  // namespace search

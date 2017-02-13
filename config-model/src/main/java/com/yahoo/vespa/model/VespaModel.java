@@ -313,9 +313,16 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         }
     }
 
-    /** TODO: Remove once configserver has switched to using {@link VespaModel#getConfig(ConfigKey, ConfigDefinition, ConfigPayload)} instead. **/
-    public ConfigPayload getConfig(ConfigKey configKey, InnerCNode targetDef, ConfigPayload userOverride) {
-        return getConfig(configKey, targetDef == null ? null : new ConfigDefinition(targetDef), userOverride);
+    /**
+     * Resolve config for a given key and a def. Apply an override if given.
+     *
+     * @param configKey    The key to resolve.
+     * @param targetDef    The def file to use for the schema.
+     * @return The payload as a list of strings
+     */
+    @Override
+    public ConfigPayload getConfig(ConfigKey configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
+        return getConfig(configKey, targetDef, null);
     }
 
     /**

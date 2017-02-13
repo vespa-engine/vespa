@@ -34,9 +34,9 @@
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcore/proton/docsummary/summaryfieldconverter.h>
-#include <vespa/searchcore/proton/docsummary/linguisticsannotation.h>
-#include <vespa/searchcore/proton/docsummary/searchdatatype.h>
+#include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
+#include <vespa/searchsummary/docsummary/linguisticsannotation.h>
+#include <vespa/searchsummary/docsummary/searchdatatype.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/vespalib/geo/zcurve.h>
@@ -92,8 +92,9 @@ using search::index::Schema;
 using vespalib::Slime;
 using vespalib::slime::Cursor;
 using vespalib::string;
-using namespace proton;
-using namespace proton::linguistics;
+using search::linguistics::SPANTREE_NAME;
+using search::linguistics::TERM;
+using namespace search::docsummary;
 using vespalib::geo::ZCurve;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
@@ -649,11 +650,11 @@ void Test::requireThatSearchDataTypeUsesDefaultDataTypes() {
 }
 
 void Test::requireThatLinguisticsAnnotationUsesDefaultDataTypes() {
-    EXPECT_EQUAL(*AnnotationType::TERM, *linguistics::TERM);
+    EXPECT_EQUAL(*AnnotationType::TERM, *search::linguistics::TERM);
     ASSERT_TRUE(AnnotationType::TERM->getDataType());
-    ASSERT_TRUE(linguistics::TERM->getDataType());
+    ASSERT_TRUE(search::linguistics::TERM->getDataType());
     EXPECT_EQUAL(*AnnotationType::TERM->getDataType(),
-                 *linguistics::TERM->getDataType());
+                 *search::linguistics::TERM->getDataType());
 }
 
 void

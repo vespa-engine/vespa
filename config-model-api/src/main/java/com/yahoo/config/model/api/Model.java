@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Collection;
@@ -28,20 +26,16 @@ public interface Model {
      * @param targetDef The config definition to use for applying defaults.
      * @return override The global override to apply to the generated config.
      */
-    // TODO: Remove 'throws IOException' when 6.67 is deployed everywhere
-    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) throws IOException;
+    // TODO: Remove when 6.70 is deployed everywhere
+    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override);
 
     /**
-     * TODO: Remove this method once no fat bundles implementing it anymore.
-     * Use {@link Model#getConfig(ConfigKey, ConfigDefinition, ConfigPayload)} instead.
-     *
      * Resolves a config using a given def file, apply overrides and returns it.
      *
      * @param configKey The key of the config to retrieve.
      * @param targetDef The config definition to use for applying defaults.
-     * @return override The global override to apply to the generated config.
      */
-    ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) throws IOException;
+    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef);
 
     /**
      * Produces a set of the valid config keys for this model.

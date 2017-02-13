@@ -32,6 +32,7 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
+import com.yahoo.document.json.readers.VespaJsonDocumentReader;
 import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate.Operator;
@@ -216,7 +217,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         smokeTestDoc(put.getDocument());
     }
 
@@ -232,7 +233,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         smokeTestDoc(put.getDocument());
     }
 
@@ -246,7 +247,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         assertEquals("id:unittest:smoke::whee", parseInfo.documentId.toString());
     }
 
@@ -262,7 +263,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("skuggsjaa"));
         assertSame(Struct.class, f.getClass());
@@ -282,7 +283,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(parseInfo.fieldsBuffer, doc);
+        VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
         checkSimpleArrayAdd(doc);
     }
 
@@ -298,7 +299,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(parseInfo.fieldsBuffer, doc);
+        VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
         Map<String, Integer> weights = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
         for (ValueUpdate<?> v : x.getValueUpdates()) {
@@ -328,7 +329,7 @@ public class JsonReaderTestCase {
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
 
-        r.readUpdate(parseInfo.fieldsBuffer, doc);
+        VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
         Map<String, Tuple2<Number, String>> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
         for (ValueUpdate<?> v : x.getValueUpdates()) {
@@ -370,7 +371,7 @@ public class JsonReaderTestCase {
             DocumentType docType = r.readDocumentType(parseInfo.documentId);
             DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
 
-            r.readUpdate(parseInfo.fieldsBuffer, doc);
+            VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
             Map<String, Tuple2<Number, Operator>> matches = new HashMap<>();
             FieldUpdate x = doc.getFieldUpdate("actualset");
             for (ValueUpdate v : x.getValueUpdates()) {
@@ -404,7 +405,7 @@ public class JsonReaderTestCase {
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
 
-        r.readUpdate(parseInfo.fieldsBuffer, doc);
+        VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
         Map<Number, String> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualarray");
         for (ValueUpdate v : x.getValueUpdates()) {
@@ -441,7 +442,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualset"));
         assertSame(WeightedSet.class, f.getClass());
@@ -462,7 +463,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualarray"));
         assertSame(Array.class, f.getClass());
@@ -483,7 +484,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualmap"));
         assertSame(MapFieldValue.class, f.getClass());
@@ -502,7 +503,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
@@ -519,7 +520,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
@@ -540,7 +541,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualraw"));
         assertSame(Raw.class, f.getClass());
@@ -560,7 +561,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue("actualMapStringToArrayOfInt");
         assertSame(MapFieldValue.class, f.getClass());
@@ -582,7 +583,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(parseInfo.fieldsBuffer, doc);
+        VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         AssignValueUpdate a = (AssignValueUpdate) f.getValueUpdate(0);
@@ -601,7 +602,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(parseInfo.fieldsBuffer, doc);
+        VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
         FieldUpdate f = doc.getFieldUpdate("actualMapStringToArrayOfInt");
         assertEquals(1, f.size());
         AssignValueUpdate assign = (AssignValueUpdate) f.getValueUpdate(0);
@@ -625,7 +626,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        r.readUpdate(parseInfo.fieldsBuffer, doc);
+        VespaJsonDocumentReader.readUpdate(parseInfo.fieldsBuffer, doc);
         FieldUpdate x = doc.getFieldUpdate("actualset");
         assertEquals(1, x.size());
         AssignValueUpdate assign = (AssignValueUpdate) x.getValueUpdate(0);
@@ -828,7 +829,7 @@ public class JsonReaderTestCase {
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
         exception.expect(NullPointerException.class);
         exception.expectMessage("Could not get field \"smething\" in the structure of type \"smoke\".");
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
     }
 
     @Test
@@ -855,7 +856,7 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        r.readPut(parseInfo.fieldsBuffer, put);
+        VespaJsonDocumentReader.readPut(parseInfo.fieldsBuffer, put);
         smokeTestDoc(put.getDocument());
     }
 

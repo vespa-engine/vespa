@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
         fprintf(stderr, "expression error: %s\n", function.get_error().c_str());
         return 1;
     }
-    InterpretedFunction::Context ctx;
     InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
+    InterpretedFunction::Context ctx(interpreted);
     double result = interpreted.eval(ctx).as_double();
     fprintf(stdout, "%.32g\n", result);
     return 0;

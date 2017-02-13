@@ -407,6 +407,13 @@ public:
 constexpr size_t TensorSpec::Label::npos;
 constexpr size_t SimpleTensor::Label::npos;
 
+SimpleTensor::SimpleTensor()
+    : Tensor(SimpleTensorEngine::ref()),
+      _type(ValueType::error_type()),
+      _cells()
+{
+}
+
 SimpleTensor::SimpleTensor(double value)
     : Tensor(SimpleTensorEngine::ref()),
       _type(ValueType::double_type()),
@@ -441,6 +448,9 @@ std::unique_ptr<SimpleTensor>
 SimpleTensor::reduce(Aggregator &aggr, const std::vector<vespalib::string> &dimensions) const
 {
     ValueType result_type = _type.reduce(dimensions);
+    if (result_type.is_error()) {
+        return std::make_unique<SimpleTensor>();
+    }
     Builder builder(result_type);
     IndexList selector = TypeAnalyzer(_type, result_type).overlap_a;
     View view(*this, selector);
@@ -459,6 +469,9 @@ std::unique_ptr<SimpleTensor>
 SimpleTensor::rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const
 {
     ValueType result_type = _type.rename(from, to);
+    if (result_type.is_error()) {
+        return std::make_unique<SimpleTensor>();
+    }
     Builder builder(result_type);   
     IndexList selector;
     for (const auto &dim: result_type.dimensions()) {
@@ -511,6 +524,9 @@ std::unique_ptr<SimpleTensor>
 SimpleTensor::join(const SimpleTensor &a, const SimpleTensor &b, const std::function<double(double,double)> &function)
 {
     ValueType result_type = ValueType::join(a.type(), b.type());
+    if (result_type.is_error()) {
+        return std::make_unique<SimpleTensor>();
+    }
     Builder builder(result_type);
     TypeAnalyzer type_info(a.type(), b.type());
     View view_a(a, type_info.overlap_a);
@@ -530,6 +546,9 @@ std::unique_ptr<SimpleTensor>
 SimpleTensor::concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension)
 {
     ValueType result_type = ValueType::concat(a.type(), b.type(), dimension);
+    if (result_type.is_error()) {
+        return std::make_unique<SimpleTensor>();
+    }
     Builder builder(result_type);
     TypeAnalyzer type_info(a.type(), b.type(), dimension);
     View view_a(a, type_info.overlap_a);

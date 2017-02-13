@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
@@ -69,12 +68,12 @@ class MockModel implements Model {
     }
 
     @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
+    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, InnerCNode targetDef, ConfigPayload override) {
+    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
         throw new UnsupportedOperationException();
     }
 

@@ -38,6 +38,7 @@ vespa_define_module(
     src/vespa/searchcore/proton/matching
     src/vespa/searchcore/proton/metrics
     src/vespa/searchcore/proton/persistenceengine
+    src/vespa/searchcore/proton/reference
     src/vespa/searchcore/proton/reprocessing
     src/vespa/searchcore/proton/server
     src/vespa/searchcore/proton/summaryengine
@@ -116,6 +117,8 @@ vespa_define_module(
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
     src/tests/proton/proton
+    src/tests/proton/reference/gid_to_lid_mapper
+    src/tests/proton/reference/document_db_referent_registry
     src/tests/proton/reprocessing/attribute_reprocessing_initializer
     src/tests/proton/reprocessing/document_reprocessing_handler
     src/tests/proton/reprocessing/reprocessing_runner

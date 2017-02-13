@@ -71,9 +71,9 @@ public:
 class InterpretedRankingExpressionExecutor : public fef::FeatureExecutor
 {
 private:
-    InterpretedFunction::Context _context;
     const InterpretedFunction   &_function;
     const ConstArrayRef<char>    _input_is_object;
+    InterpretedFunction::Context _context;
 
 public:
     InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
@@ -102,9 +102,9 @@ CompiledRankingExpressionExecutor::execute(uint32_t)
 
 InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
         ConstArrayRef<char> input_is_object)
-    : _context(),
-      _function(function),
-      _input_is_object(input_is_object)
+    : _function(function),
+      _input_is_object(input_is_object),
+      _context(function)
 {
 }
 
