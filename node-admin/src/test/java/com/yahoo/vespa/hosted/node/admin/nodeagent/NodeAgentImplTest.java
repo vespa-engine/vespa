@@ -520,9 +520,16 @@ public class NodeAgentImplTest {
         nodeAgent.updateContainerNodeMetrics();
 
         Set<Map<String, Object>> actualMetrics = new HashSet<>();
-        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver) {
+        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver.getMetrics(MetricReceiverWrapper.APPLICATION_DOCKER)) {
             Map<String, Object> metrics = objectMapper.readValue(dimensionMetrics.toSecretAgentReport(), Map.class);
             metrics.remove("timestamp"); // Remove timestamp so we can test against expected map
+            actualMetrics.add(metrics);
+        }
+
+        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver.getMetrics(MetricReceiverWrapper.APPLICATION_HOST_LIFE)) {
+            Map<String, Object> metrics = objectMapper.readValue(dimensionMetrics.toSecretAgentReport(), Map.class);
+            metrics.remove("timestamp"); // Remove timestamp so we can test against expected map
+            ((Map)metrics.get("metrics")).remove("uptime"); // Remove uptime so we can test against expected map. Implicit test of field existing too
             actualMetrics.add(metrics);
         }
 

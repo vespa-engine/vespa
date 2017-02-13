@@ -15,15 +15,15 @@ import java.util.Map;
 public class SecretAgentScheduleMaker {
     private final String id;
     private final int interval;
-    private final Path checkExecuteable;
+    private final Path checkExecutable;
     private final String[] arguments;
     private String user = "nobody";
     private final Map<String, Object> tags = new LinkedHashMap<>();
 
-    public SecretAgentScheduleMaker(String id, int interval, Path checkExecuteable, String... arguments) {
+    public SecretAgentScheduleMaker(String id, int interval, Path checkExecutable, String... arguments) {
         this.id = id;
         this.interval = interval;
-        this.checkExecuteable = checkExecuteable;
+        this.checkExecutable = checkExecutable;
         this.arguments = arguments;
     }
 
@@ -49,7 +49,7 @@ public class SecretAgentScheduleMaker {
                 .append("- id: ").append(id).append("\n")
                 .append("  interval: ").append(interval).append("\n")
                 .append("  user: ").append(user).append("\n")
-                .append("  check: ").append(checkExecuteable.toFile()).append("\n");
+                .append("  check: ").append(checkExecutable.toFile()).append("\n");
 
         if (arguments.length > 0) {
             stringBuilder.append("  args: \n");

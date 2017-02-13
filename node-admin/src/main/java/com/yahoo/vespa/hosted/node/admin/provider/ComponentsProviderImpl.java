@@ -46,7 +46,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 30000;
     private static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
     // We only scan for new nodes within a host every 5 minutes. This is only if new nodes are added or removed
-    // which happens rarely. Changes of apps running etc it detected by the NodeAgent.
+    // which happens rarely. Changes of apps running etc. is detected by the NodeAgent.
     private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
 
     public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment,

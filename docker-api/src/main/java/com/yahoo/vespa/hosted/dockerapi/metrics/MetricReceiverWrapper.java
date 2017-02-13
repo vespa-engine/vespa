@@ -7,21 +7,27 @@ import com.google.inject.Inject;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Export metrics to both /state/v1/metrics and makes them available programatically.
+ * Export metrics to both /state/v1/metrics and makes them available programmatically.
+ * Each metric belongs to a yamas application
  *
  * @author valerijf
  */
-public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.DimensionMetrics> {
+public class MetricReceiverWrapper {
+    // Application names used
+    public static final String APPLICATION_DOCKER = "docker";
+    public static final String APPLICATION_HOST_LIFE = "host-life";
+
     private final static ObjectMapper objectMapper = new ObjectMapper();
     private final Object monitor = new Object();
-    private final Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = new HashMap<>();
+    private final Map<String, ApplicationMetrics> applicationMetrics = new HashMap<>(); // key is application name
     private final MetricReceiver metricReceiver;
 
     @Inject
@@ -32,8 +38,9 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
     /**
      *  Declaring the same dimensions and name results in the same CounterWrapper instance (idempotent).
      */
-    public CounterWrapper declareCounter(Dimensions dimensions, String name) {
+    public CounterWrapper declareCounter(String application, Dimensions dimensions, String name) {
         synchronized (monitor) {
+            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
             if (!metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new HashMap<>());
             if (!metricsByDimensions.get(dimensions).containsKey(name)) {
                 CounterWrapper counter = new CounterWrapper(metricReceiver.declareCounter(name, new Point(dimensions.dimensionsMap)));
@@ -47,8 +54,9 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
     /**
      *  Declaring the same dimensions and name results in the same GaugeWrapper instance (idempotent).
      */
-    public GaugeWrapper declareGauge(Dimensions dimensions, String name) {
+    public GaugeWrapper declareGauge(String application, Dimensions dimensions, String name) {
         synchronized (monitor) {
+            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
             if (!metricsByDimensions.containsKey(dimensions))
                 metricsByDimensions.put(dimensions, new HashMap<>());
             if (!metricsByDimensions.get(dimensions).containsKey(name)) {
@@ -62,38 +70,50 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
 
     public void unsetMetricsForContainer(String hostname) {
         synchronized (monitor) {
-            Iterator<Dimensions> dimensionsIterator = metricsByDimensions.keySet().iterator();
-            while (dimensionsIterator.hasNext()) {
-                Dimensions dimension = dimensionsIterator.next();
-                if (dimension.dimensionsMap.containsKey("host") && dimension.dimensionsMap.get("host").equals(hostname)) {
-                    dimensionsIterator.remove();
-                }
-            }
+            applicationMetrics.values()
+                              .forEach(m -> m.metricsByDimensions.keySet()
+                                                                 .removeIf(d -> d.dimensionsMap.containsKey("host") &&
+                                                                         d.dimensionsMap.get("host").equals(hostname)));
         }
     }
 
-
-    @Override
-    public Iterator<DimensionMetrics> iterator() {
+    public List<DimensionMetrics> getMetrics(String application) {
         synchronized (monitor) {
-            return metricsByDimensions.entrySet().stream().map(entry ->
-                    new DimensionMetrics(entry.getKey(), entry.getValue())).iterator();
+            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
+            return metricsByDimensions.entrySet()
+                                     .stream()
+                                     .map(entry -> new DimensionMetrics(application, entry.getKey(), entry.getValue()))
+                                     .collect(Collectors.toList());
+        }
+    }
+
+    public List<DimensionMetrics> getAllMetrics() {
+        synchronized (monitor) {
+            List<DimensionMetrics> dimensionMetrics = new ArrayList<>();
+            applicationMetrics.entrySet()
+                              .forEach(e -> e.getValue().metricsByDimensions().entrySet().stream()
+                                             .map(entry -> new DimensionMetrics(e.getKey(), entry.getKey(), entry.getValue()))
+                                             .map(dimensionMetrics::add));
+            return dimensionMetrics;
         }
     }
 
     // For testing
-    Map<String, Number> getMetricsForDimension(Dimensions dimensions) {
+    Map<String, Number> getMetricsForDimension(String application, Dimensions dimensions) {
         synchronized (monitor) {
+            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
             return metricsByDimensions.get(dimensions).entrySet().stream().collect(
                     Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
         }
     }
 
     public class DimensionMetrics {
+        private final String application;
         private final Dimensions dimensions;
         private final Map<String, Object> metrics;
 
-        DimensionMetrics(Dimensions dimensions, Map<String, MetricValue> metricValues) {
+        DimensionMetrics(String application, Dimensions dimensions, Map<String, MetricValue> metricValues) {
+            this.application = application;
             this.dimensions = dimensions;
             this.metrics = metricValues.entrySet().stream().collect(
                     Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
@@ -106,13 +126,30 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
             routingYamas.put("namespaces", new String[]{"Vespa"});
 
             Map<String, Object> report = new LinkedHashMap<>();
-            report.put("application", "docker");
+            report.put("application", application);
             report.put("timestamp", System.currentTimeMillis() / 1000);
             report.put("dimensions", dimensions.dimensionsMap);
             report.put("metrics", metrics);
             report.put("routing", routing);
 
             return objectMapper.writeValueAsString(report);
+        }
+    }
+
+    private Map<Dimensions, Map<String, MetricValue>> getOrCreateApplicationMetrics(String application) {
+        if (! applicationMetrics.containsKey(application)) {
+            ApplicationMetrics metrics = new ApplicationMetrics();
+            applicationMetrics.put(application, metrics);
+        }
+        return applicationMetrics.get(application).metricsByDimensions();
+    }
+
+    // Application is yamas application, not Vespa application
+    private static class ApplicationMetrics {
+        private final Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = new LinkedHashMap<>();
+
+        Map<Dimensions, Map<String, MetricValue>> metricsByDimensions() {
+            return metricsByDimensions;
         }
     }
 }
