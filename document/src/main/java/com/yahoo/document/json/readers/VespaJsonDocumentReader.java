@@ -71,7 +71,6 @@ public class VespaJsonDocumentReader {
                         verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
                     }
                     if (documentParseInfo.fieldpathsBuffer.size() > 0) {
-                        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(documentType, documentParseInfo);
                         parseFieldpathsBuffer((DocumentUpdate) documentOperation, documentParseInfo.fieldpathsBuffer);
                         verifyEndState(documentParseInfo.fieldpathsBuffer, JsonToken.END_ARRAY);
                     }
@@ -93,8 +92,18 @@ public class VespaJsonDocumentReader {
     }
 
     // Exposed for unit testing...
-    public static void readUpdate(TokenBuffer buffer, DocumentUpdate next) {
-        populateUpdateFromBuffer(buffer, next);
+    public static void readUpdate(TokenBuffer buffer, DocumentUpdate update) {
+        expectObjectStart(buffer.currentToken());
+        int localNesting = buffer.nesting();
+        JsonToken t = buffer.next();
+
+        while (localNesting <= buffer.nesting()) {
+            expectObjectStart(t);
+            String fieldName = buffer.currentName();
+            Field field = update.getType().getField(fieldName);
+            addFieldUpdates(buffer, update, field);
+            t = buffer.next();
+        }
     }
 
     // Exposed for unit testing...
@@ -112,20 +121,6 @@ public class VespaJsonDocumentReader {
         Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
         Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
-    }
-
-    private static void populateUpdateFromBuffer(TokenBuffer buffer, DocumentUpdate update) {
-        expectObjectStart(buffer.currentToken());
-        int localNesting = buffer.nesting();
-        JsonToken t = buffer.next();
-
-        while (localNesting <= buffer.nesting()) {
-            expectObjectStart(t);
-            String fieldName = buffer.currentName();
-            Field field = update.getType().getField(fieldName);
-            addFieldUpdates(buffer, update, field);
-            t = buffer.next();
-        }
     }
 
     private static void addFieldUpdates(TokenBuffer buffer, DocumentUpdate update, Field field) {

@@ -36,7 +36,6 @@ public class JsonReader {
         return documentParser.parse(Optional.empty());
     }
 
-
     private final JsonParser parser;
     private final DocumentTypeManager typeManager;
     private ReaderState state = ReaderState.AT_START;
@@ -57,7 +56,7 @@ public class JsonReader {
     }
 
     /**
-     * Reads a single operation. The operation is not expected to be part of an array. It only reads FIELDS.
+     * Reads a single operation. The operation is not expected to be part of an array.
      * @param operationType the type of operation (update or put)
      * @param docIdString document ID.
      * @return the document
