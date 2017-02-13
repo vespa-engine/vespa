@@ -8,8 +8,8 @@ import java.util.logging.Logger;
 
 
 /**
-* An immutable set of connection endpoints, where each endpoint points to either a
- * remote configserver or a configproxy.
+ * An immutable set of connection endpoints, where each endpoint points to either a
+ * remote config server or a config proxy.
  *
  * Two sets are said to be equal if they contain the same sources, independent of order,
  * upper/lower-casing and whitespaces.
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 public class ConfigSourceSet implements ConfigSource
 {
     private static final Logger log = Logger.getLogger(ConfigSourceSet.class.getName());
-    private final Set<String> sources = new LinkedHashSet<String>();
+    private final Set<String> sources = new LinkedHashSet<>();
 
     /**
      * Creates an empty ConfigSourceSet, mostly used for unit testing.

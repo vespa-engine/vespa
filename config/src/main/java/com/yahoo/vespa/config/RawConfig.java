@@ -37,7 +37,7 @@ public class RawConfig {
      * @param defMd5  The md5 sum of the .def-file.
      */
     public RawConfig(ConfigKey<?> key, String defMd5) {
-        this(key, defMd5, null, "", 0L, 0, Collections.<String>emptyList(), Optional.empty());
+        this(key, defMd5, null, "", 0L, 0, Collections.emptyList(), Optional.empty());
     }
 
     public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation, List<String> defContent, Optional<VespaVersion> vespaVersion) {

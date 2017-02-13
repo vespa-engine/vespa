@@ -15,7 +15,7 @@ import com.yahoo.config.subscription.impl.ConfigSubscription;
  */
 public class ConfigHandle<T extends ConfigInstance> {
 
-    private ConfigSubscription<T> sub;
+    private final ConfigSubscription<T> sub;
     private boolean changed = false;
 
     protected ConfigHandle(ConfigSubscription<T> sub) {

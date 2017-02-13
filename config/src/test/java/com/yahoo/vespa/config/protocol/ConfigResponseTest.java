@@ -35,7 +35,7 @@ public class ConfigResponseTest {
         assertNotNull(payload);
         assertThat(payload.size(), is(6));
         assertThat(payload.get(0), is("boolval false"));
-        assertThat(response.getGeneration(), is(3l));
+        assertThat(response.getGeneration(), is(3L));
         assertThat(response.getConfigMd5(), is("mymd5"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -56,7 +56,7 @@ public class ConfigResponseTest {
         assertNotNull(payload);
         assertThat(payload.size(), is(6));
         assertThat(payload.get(0), is("boolval false"));
-        assertThat(response.getGeneration(), is(3l));
+        assertThat(response.getGeneration(), is(3L));
         assertThat(response.getConfigMd5(), is("mymd5"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

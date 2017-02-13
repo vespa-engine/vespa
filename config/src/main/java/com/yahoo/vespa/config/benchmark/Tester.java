@@ -7,8 +7,8 @@ import java.util.Map;
  * Tester interface for loadable test runners.
  */
 public interface Tester {
-    public void subscribe();
-    public boolean fetch();
-    public boolean verify(Map<String, Map<String, String>> expected, long generation);
-    public void close();
+    void subscribe();
+    boolean fetch();
+    boolean verify(Map<String, Map<String, String>> expected, long generation);
+    void close();
 }

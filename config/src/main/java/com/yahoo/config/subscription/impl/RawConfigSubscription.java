@@ -35,7 +35,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
         if (payload==null) {
             payload = inputPayload;
-            setGeneration(0l);
+            setGeneration(0L);
             setGenerationChanged(true);
             setConfigChanged(true);
 

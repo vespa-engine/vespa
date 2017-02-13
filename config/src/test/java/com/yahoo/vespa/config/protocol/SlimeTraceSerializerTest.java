@@ -75,7 +75,7 @@ public class SlimeTraceSerializerTest {
 
     @Test
     public void test_long() throws IOException {
-        TraceNode root = new TraceNode(14l, 5);
+        TraceNode root = new TraceNode(14L, 5);
         assertThat(toJson(root), is("{\"timestamp\":5,\"payload\":14}"));
         assertSerialize(root);
     }

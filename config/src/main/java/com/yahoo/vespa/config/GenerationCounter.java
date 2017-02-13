@@ -13,10 +13,10 @@ public interface GenerationCounter {
      *
      * @return incremented counter value.
      */
-    public long increment();
+    long increment();
 
     /**
      * @return current counter value.
      */
-    public long get();
+    long get();
 }

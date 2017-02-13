@@ -28,7 +28,7 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
 
     FileConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, File f) {
         super(key, subscriber);
-        setGeneration(0l);
+        setGeneration(0L);
         file=f;
         if (!file.exists() && !file.isFile())
             throw new IllegalArgumentException("Not a file: "+file);
@@ -38,12 +38,11 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     public boolean nextConfig(long timeout) {
         if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: "+file);
         if (checkReloaded()) {
-            // TODO: Temporary log messages for debugging.
-            log.log(LogLevel.INFO, "User forced config reload at " + System.currentTimeMillis());
+            log.log(LogLevel.DEBUG, "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
             updateConfig();
-            log.log(LogLevel.INFO, "Config updated at " + System.currentTimeMillis() + ", changed: " + isConfigChanged());
-            log.log(LogLevel.INFO, "Config: " + config.toString());
+            log.log(LogLevel.DEBUG, "Config updated at " + System.currentTimeMillis() + ", changed: " + isConfigChanged());
+            log.log(LogLevel.DEBUG, "Config: " + config.toString());
             return true;
         }
         if (file.lastModified()!=ts) {

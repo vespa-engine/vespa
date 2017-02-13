@@ -457,7 +457,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
      * A class that holds a builder and a stack of names
      */
     private static class NamedBuilder {
-        private ConfigBuilder builder;
+        private final ConfigBuilder builder;
         private final Stack<String> names = new Stack<>(); // if empty, the builder is the root builder
 
         NamedBuilder(ConfigBuilder builder) {

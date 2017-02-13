@@ -35,7 +35,6 @@ public class ConfigGetter<T extends ConfigInstance> {
      * @param source a {@link ConfigSource}
      * @param clazz  a config class
      */
-    // TODO This is the order of arguments in com.yahoo.config.ConfigGetter and kept here, I would like to switch the order
     public ConfigGetter(ConfigSource source, Class<T> clazz) {
         this.clazz = clazz;
         this.source = source;

@@ -418,8 +418,8 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      * A Default specification where instances _may_ have a default value
      * @author vegardh
      */
-    public static interface DefaultValued<T> {
-        public T getDefVal();
+    public interface DefaultValued<T> {
+        T getDefVal();
     }
 
     public static class EnumDef implements DefaultValued<String>{

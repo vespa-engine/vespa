@@ -127,15 +127,7 @@ public class ConfigDefinitionBuilderTest {
         assertEquals(def.getStructMapDefs().get("myStructMap").getIntDefs().get("myIntDef").getDefVal(), (Integer)56);
         assertEquals(def.getStructMapDefs().get("myStructMap").getStringDefs().get("myStringDef").getDefVal(), "g");
 
+        // Ranges
     }
 
-    @Test
-    public void testCreateConfigDefinitionOverrideNamespace() throws IOException, InterruptedException {
-        File defFile = new File(DEF_NAME);
-        DefParser defParser = new DefParser(defFile.getName(), new FileReader(defFile));
-        CNode root = defParser.getTree();
-
-        ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(root, "foo");
-        assertThat(def.getNamespace(), is("foo"));
-    }
 }

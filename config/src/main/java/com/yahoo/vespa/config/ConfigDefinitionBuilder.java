@@ -21,21 +21,7 @@ public class ConfigDefinitionBuilder {
      * @return a ConfigDefinition object
      */
     public static ConfigDefinition createConfigDefinition(CNode root) {
-        return createConfigDefinition(root, root.getNamespace());
-    }
-
-    // TODO This method should be removed when we have full namespace support
-    /**
-     * Creates a ConfigDefinition based on a tree generated from parsing a config
-     * definition file. The <code>namespace</code> argument overrides the namespace
-     * defined in the config definition file.
-     *
-     * @param root the root node in a tree generated from parsing a config definition file.
-     * @param namespace Override namespace in root with this namespace
-     * @return a ConfigDefinition object
-     */
-    public static ConfigDefinition createConfigDefinition(CNode root, String namespace) {
-        ConfigDefinition def = new ConfigDefinition(root.getName(), root.getVersion(), namespace);
+        ConfigDefinition def = new ConfigDefinition(root.getName(), root.getVersion(), root.getNamespace());
 
         for (CNode node : root.getChildren()) {
             addNode(def, node);

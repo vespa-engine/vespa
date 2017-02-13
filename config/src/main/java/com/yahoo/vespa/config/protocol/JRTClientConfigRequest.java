@@ -54,14 +54,6 @@ public interface JRTClientConfigRequest extends JRTConfigRequest {
     String getNewConfigMd5();
 
     /**
-     * For protocols that perform an optimization when no new config has been given, this method will provide the
-     * payload and hasUpdatedConfig state of the previous request.
-     * @param payload a config payload of the previous request.
-     * @param hasUpdatedConfig the hasUpdatedConfig flag of the previous request.
-     */
-    void updateRequestPayload(Payload payload, boolean hasUpdatedConfig);
-
-    /**
      * Test whether or not the payload is contained in this response or not. Should return false for error responses as well.
      * @return true if empty, false if not.
      */

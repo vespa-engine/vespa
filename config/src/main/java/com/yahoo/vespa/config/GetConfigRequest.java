@@ -18,22 +18,22 @@ public interface GetConfigRequest {
      *
      * @return the ConfigKey for this config request
      */
-    public ConfigKey<?> getConfigKey();
+    ConfigKey<?> getConfigKey();
 
     /**
      * The def file contents in the request, or empty array if not sent/not supported
      * @return the contents (payload) of the def schema
      */
-    public DefContent getDefContent();
+    DefContent getDefContent();
 
     /**
      * Get Vespa version for this GetConfigRequest
      */
-    public Optional<com.yahoo.vespa.config.protocol.VespaVersion> getVespaVersion();
+    Optional<com.yahoo.vespa.config.protocol.VespaVersion> getVespaVersion();
 
     /**
      * Whether or not the config can be retrieved from or stored in a cache.
      * @return true if content should _not_ be cached, false if it should.
      */
-    public boolean noCache();
+    boolean noCache();
 }

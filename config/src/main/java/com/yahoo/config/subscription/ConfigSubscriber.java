@@ -252,7 +252,7 @@ public class ConfigSubscriber {
             }
             reconfigDue = (anyConfigChanged || !requireChange) && allGenerationsChanged && allGenerationsTheSame;
             if (!reconfigDue && timeLeftMillis > 0) {
-                sleep(10);
+                sleep();
             }
         } while (!reconfigDue && timeLeftMillis > 0);
         if (reconfigDue) {
@@ -264,9 +264,9 @@ public class ConfigSubscriber {
         return reconfigDue;
     }
 
-    private void sleep(long i) {
+    private void sleep() {
         try {
-            Thread.sleep(i);
+            Thread.sleep(10);
         } catch (InterruptedException e) {
             throw new ConfigInterruptedException(e);
         }
@@ -428,7 +428,7 @@ public class ConfigSubscriber {
      * @author vegardh
      */
     public interface SingleSubscriber<T extends ConfigInstance> {
-        public void configure(T config);
+        void configure(T config);
     }
 
     /**

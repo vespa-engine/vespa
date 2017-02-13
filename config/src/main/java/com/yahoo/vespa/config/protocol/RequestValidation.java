@@ -77,7 +77,7 @@ public class RequestValidation {
         return (timeout > 0);
     }
 
-    public static boolean verifyGeneration(Long generation) {
+    private static boolean verifyGeneration(Long generation) {
         return (generation >= 0);
     }
 

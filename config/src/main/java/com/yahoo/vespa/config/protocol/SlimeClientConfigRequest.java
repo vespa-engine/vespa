@@ -151,11 +151,6 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
     }
 
     @Override
-    public void updateRequestPayload(Payload payload, boolean hasUpdatedConfig) {
-        // This protocol sends payload in all cases, so ignore this.
-    }
-
-    @Override
     public boolean containsPayload() {
         return false;
     }
