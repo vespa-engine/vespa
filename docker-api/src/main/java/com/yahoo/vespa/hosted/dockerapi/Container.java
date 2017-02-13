@@ -1,16 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 /**
  * @author stiankri
  */
 public class Container {
-    private static final SimpleDateFormat DOCKER_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSX");
+    private static final DateTimeFormatter DOCKER_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSX");
     public final String hostname;
     public final DockerImage image;
     public final ContainerName name;
@@ -43,8 +44,8 @@ public class Container {
         this(hostname, image, containerName, state, pid, "2017-02-13T13:45:12.133713371Z");
     }
 
-    public Instant getCreatedAsInstant() throws ParseException {
-        return DOCKER_DATE_FORMAT.parse(created).toInstant();
+    public Instant getCreatedAsInstant() {
+        return LocalDateTime.parse(created, DOCKER_DATE_FORMAT).toInstant(ZoneOffset.UTC);
     }
 
     @Override

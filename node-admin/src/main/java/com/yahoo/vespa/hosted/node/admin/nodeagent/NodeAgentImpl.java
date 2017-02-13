@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -104,16 +103,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.metricReceiver = metricReceiver;
         this.environment = environment;
 
-        if (container.isPresent()) {
-            Instant createdAt = Instant.now();
-            try {
-                createdAt = container.get().getCreatedAsInstant();
-            } catch (ParseException e) {
-                logger.warning("Failed to parse created time stamp: " + container.get().created, e);
-                numberOfUnhandledException++;
-            }
-            lastCpuMetric = new CpuUsageReporter(createdAt);
-        }
+        container.map(Container::getCreatedAsInstant).ifPresent(created -> lastCpuMetric = new CpuUsageReporter(created));
     }
 
     @Override
