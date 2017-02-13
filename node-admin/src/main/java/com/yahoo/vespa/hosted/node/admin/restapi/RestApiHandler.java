@@ -68,7 +68,7 @@ public class RestApiHandler extends LoggingRequestHandler{
                 @Override
                 public void render(OutputStream outputStream) throws IOException {
                     try (PrintStream printStream = new PrintStream(outputStream)) {
-                        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiverWrapper) {
+                        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiverWrapper.getAllMetrics()) {
                             String secretAgentJsonReport = dimensionMetrics.toSecretAgentReport() + "\n";
                             printStream.write(secretAgentJsonReport.getBytes(StandardCharsets.UTF_8.name()));
                         }

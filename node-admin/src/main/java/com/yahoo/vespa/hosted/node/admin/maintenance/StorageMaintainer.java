@@ -59,7 +59,7 @@ public class StorageMaintainer {
                 .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
-        numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(dimensions, "nodes.maintenance.fails");
+        numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
     }
 
     public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {

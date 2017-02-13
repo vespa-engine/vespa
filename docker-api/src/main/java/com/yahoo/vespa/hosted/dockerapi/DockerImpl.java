@@ -506,6 +506,6 @@ public class DockerImpl implements Docker {
                 .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
-        numberOfDockerDaemonFails = metricReceiver.declareCounter(dimensions, "daemon.api_fails");
+        numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
     }
 }

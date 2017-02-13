@@ -351,7 +351,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
-        numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
+        numberOfRunningContainersGauge = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "containers.running");
 
         // Some containers could already be running, count them and initialize to that value
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());

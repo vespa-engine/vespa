@@ -505,7 +505,7 @@ public class NodeAgentImpl implements NodeAgent {
         long currentCpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
 
         double cpuPercentage = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
-        metricReceiver.declareGauge(dimensions, "node.cpu.busy.pct").sample(cpuPercentage);
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.cpu.busy.pct").sample(cpuPercentage);
 
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
         addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
@@ -518,10 +518,14 @@ public class NodeAgentImpl implements NodeAgent {
             addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
         });
 
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "uptime").sample(lastCpuMetric.getUptime());
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "alive").sample(1);
+
+
         storageMaintainer.ifPresent(maintainer -> maintainer
                 .updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName)
                 .forEach((metricName, metricValue) ->
-                        metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue())));
+                        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, metricName).sample(metricValue.doubleValue())));
     }
 
     @SuppressWarnings("unchecked")
@@ -529,7 +533,8 @@ public class NodeAgentImpl implements NodeAgent {
         Map<String, Object> metricsMap = (Map<String, Object>) metrics;
         if (metricsMap == null || !metricsMap.containsKey(metricName)) return;
         try {
-            metricReceiver.declareGauge(dimensions, yamasName).sample(((Number) metricsMap.get(metricName)).doubleValue());
+            metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, yamasName)
+                          .sample(((Number) metricsMap.get(metricName)).doubleValue());
         } catch (Throwable e) {
             logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
         }
@@ -590,6 +595,7 @@ public class NodeAgentImpl implements NodeAgent {
     class CpuUsageReporter {
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
+        private final Instant created = Instant.now();
 
         double getCpuUsagePercentage(long currentContainerUsage, long currentSystemUsage) {
             long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
@@ -599,6 +605,10 @@ public class NodeAgentImpl implements NodeAgent {
             totalContainerUsage = currentContainerUsage;
             totalSystemUsage = currentSystemUsage;
             return cpuUsagePct;
+        }
+
+        double getUptime() {
+            return Duration.between(created, Instant.now()).toMillis() / 1000;
         }
     }
 
