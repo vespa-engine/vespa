@@ -123,19 +123,13 @@ public class Application implements ModelResult {
             throw new UnknownConfigDefinitionException("Unable to find config definition for '" + configKey.getNamespace() + "." + configKey.getName());
         }
         configKey = new ConfigKey<>(configDefinitionWrapper.getDefKey().getName(), configKey.getConfigId(), configDefinitionWrapper.getDefKey().getNamespace());
-        ConfigPayload payload;
-        try {
-            if (logDebug()) {
-                debug("Resolving " + configKey + " with targetDef=" + def);
-            }
-
-            payload = model.getConfig(
-                    configKey,
-                    def,
-                    null); // TODO Remove this argument when possible
-        } catch (IOException e) {
+        if (logDebug()) {
+            debug("Resolving " + configKey + " with targetDef=" + def);
+        }
+        ConfigPayload payload = model.getConfig(configKey,def,null); // TODO Remove last argument when possible
+        if (payload == null) {
             metricUpdater.incrementFailedRequests();
-            throw new ConfigurationRuntimeException("Unable to resolve config", e);
+            throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
         }
 
         ConfigResponse configResponse = responseFactory.createResponse(payload, def.getCNode(), appGeneration);
@@ -183,6 +177,7 @@ public class Application implements ModelResult {
         return resolveConfig(req, new UncompressedConfigResponseFactory());
     }
 
+    // TODO: Remove 'throws IOException'
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, String configId) throws IOException {
         ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
         ConfigPayload payload = model.getConfig(key, (ConfigDefinition)null, null);
