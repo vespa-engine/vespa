@@ -354,21 +354,20 @@ DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
                         static_cast<const document::LiteralFieldValueB *>(converted.get());
                     vespalib::stringref s = lfv->getValueRef();
                     packer.AddLongString(s.c_str(), s.size());
-                    return;
                 } else {
                     vespalib::string s = converted->getAsString();
                     packer.AddLongString(s.c_str(), s.size());
-                    return;
                 }
             } else {
-                LOG(warning, "writeSlimeField: Could not convert value for field '%d'", fieldId.getId());
+                LOG(debug, "writeSlimeField: Could not convert value for field '%d'", fieldId.getId());
+                packer.AddEmpty();
             }
         } else {
-            LOG(warning, "writeSlimeField: Field value not set for field '%d'", fieldId.getId());
+            LOG(debug, "writeSlimeField: Field value not set for field '%d'", fieldId.getId());
             packer.AddEmpty();
         }
     } else {
-        LOG(warning, "writeSlimeField: Cannot handle this command");
+        LOG(debug, "writeSlimeField: Cannot handle this command");
         packer.AddEmpty();
     }
 }
