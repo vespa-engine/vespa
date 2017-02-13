@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include "iaccelrated.h"
 
 namespace vespalib {
 

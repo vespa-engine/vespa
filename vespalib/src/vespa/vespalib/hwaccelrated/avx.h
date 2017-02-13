@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/hwaccelrated/sse2.h>
+#include "sse2.h"
 
 namespace vespalib {
 
