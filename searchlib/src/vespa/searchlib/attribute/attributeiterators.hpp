@@ -251,9 +251,13 @@ FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) 
         const BitVector * bv = attr.getBitVector(sc._low);
         if (bv != NULL) {
             result.andWith(*bv);
+        } else {
+            // I would expect us never to end up in this case as we are probably
+            // replaced by an EmptySearch, but I keep the code here to be functionally complete.
+            result.clear();
         }
     } else {
-        FlagAttributeIterator::and_hits_into(result, begin_id);
+        SearchIterator::and_hits_into(result, begin_id);
     }
 }
 
