@@ -14,6 +14,16 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
+ * Helps to deep clone complex objects
+ * The following classes and their subclasses does have a fastpath
+ * - com.yahoo.component.provider.FreezableClass
+ *  - com.yahoo.processing.request.properties.PublicCloneable BTW, this is the one you should implement too
+ *    if you want the fastpath.
+ *  - java.util.LinkedList
+ *  - java.util.ArrayList
+ * The rest has the slow path with reflection,
+ * though using a fast thread safe method cache for speedup.
+ *
  * @author : baldersheim
  */
 public class CloneHelper {
