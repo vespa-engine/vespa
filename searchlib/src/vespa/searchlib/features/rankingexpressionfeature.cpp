@@ -77,7 +77,8 @@ public:
 CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function)
     : _ranking_function(compiled_function.get_function()),
       _params(compiled_function.num_params(), 0.0)
-{ }
+{
+}
 
 void
 CompiledRankingExpressionExecutor::execute(uint32_t)
@@ -102,7 +103,8 @@ InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const
     : _function(function),
       _input_is_object(input_is_object),
       _context(function)
-{ }
+{
+}
 
 void
 InterpretedRankingExpressionExecutor::execute(uint32_t)
@@ -124,12 +126,14 @@ RankingExpressionBlueprint::RankingExpressionBlueprint()
     : fef::Blueprint("rankingExpression"),
       _interpreted_function(),
       _compile_token()
-{ }
+{
+}
 
 void
 RankingExpressionBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
                                               fef::IDumpFeatureVisitor &) const
-{ }
+{
+}
 
 bool
 RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
