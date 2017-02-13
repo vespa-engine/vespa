@@ -6,7 +6,6 @@ import com.yahoo.processing.request.Properties;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Arrays;
 
 /**
  * A HashMap backing of Properties.

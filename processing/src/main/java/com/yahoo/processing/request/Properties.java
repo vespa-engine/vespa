@@ -577,4 +577,8 @@ public class Properties implements Cloneable {
     public static Map<CompoundName, Object> cloneMap(Map<CompoundName, Object> map) {
         return cloneHelper.cloneMap(map);
     }
+    /** Clones this object if it is clonable, and the clone is public. Returns null if not */
+    public static Object clone(Object object) {
+        return cloneHelper.clone(object);
+    }
 }

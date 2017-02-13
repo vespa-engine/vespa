@@ -2,8 +2,9 @@
 package com.yahoo.search.query.properties;
 import com.yahoo.processing.request.*;
 import com.yahoo.search.query.Properties;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.HashMap;
 
 /**
  * A Map backing of Properties.
@@ -74,6 +75,11 @@ public class PropertyMap extends Properties {
             map.put(propertyName.toString(), entry.getValue());
         }
         return map;
+    }
+
+    /** Clones this object if it is clonable, and the clone is public. Returns null if not */
+    public static Object clone(Object object) {
+        return cloneHelper.clone(object);
     }
 
 }
