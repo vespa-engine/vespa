@@ -74,7 +74,7 @@ ObjectValue::setObject(Memory name) {
 }
 
 Symbol
-ObjectValue::insert(Memory symbol_name) { return _symbolTable.insert(symbol_name); }
+ObjectValue::resolve(Memory symbol_name) { return _symbolTable.insert(symbol_name); }
 
 } // namespace vespalib::slime
 } // namespace vespalib

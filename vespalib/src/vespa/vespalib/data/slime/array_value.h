@@ -49,7 +49,7 @@ public:
 
     virtual Cursor &addArray();
     virtual Cursor &addObject();
-    virtual Symbol insert(Memory symbol_name);
+    virtual Symbol resolve(Memory symbol_name);
 
     virtual ~ArrayValue() { }
 };
