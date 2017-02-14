@@ -102,6 +102,8 @@ public class NodeAgentImpl implements NodeAgent {
                 NodeRepositoryImpl.containerNameFromHostName(hostName));
         this.metricReceiver = metricReceiver;
         this.environment = environment;
+
+        container.map(Container::getCreatedAsInstant).ifPresent(created -> lastCpuMetric = new CpuUsageReporter(created));
     }
 
     @Override
@@ -160,13 +162,10 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
 
-        // If the container is already running, initialize vespaVersion and lastCpuMetric
-        dockerOperations.getContainer(hostname)
+        // If the container is already running, initialize vespaVersion
+        vespaVersion = dockerOperations.getContainer(hostname)
                 .filter(container -> container.state.isRunning())
-                .ifPresent(container -> {
-                    vespaVersion = dockerOperations.getVespaVersion(container.name);
-                    lastCpuMetric = new CpuUsageReporter(container.getCreatedAsInstant());
-                });
+                .flatMap(container -> dockerOperations.getVespaVersion(container.name));
 
         loopThread = new Thread(this::loop);
         loopThread.setName("loop-" + hostname);
