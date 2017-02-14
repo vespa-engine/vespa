@@ -147,7 +147,7 @@ TEST("test Multi") {
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
 }
 
-TEST_F("test Eager Single Empty Child", MockFixture(search::endDocId, {})) {
+TEST_F("test Eager Empty Child", MockFixture(search::endDocId, {})) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
@@ -155,7 +155,7 @@ TEST_F("test Eager Single Empty Child", MockFixture(search::endDocId, {})) {
     EXPECT_EQUAL(0, mock->seekCnt);
 }
 
-TEST_F("test Multiple Eager Empty Children", MockFixture(search::endDocId)) {
+TEST_F("test Eager Empty Children", MockFixture(search::endDocId)) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
@@ -177,7 +177,7 @@ void verifyEagerMatching(SearchIterator & search, MockSearch * mock) {
     EXPECT_EQUAL(1, mock->seekCnt);
 }
 
-TEST_F("test Eager Single Matching Child", MockFixture(5, {})) {
+TEST_F("test Eager Matching Child", MockFixture(5, {})) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
