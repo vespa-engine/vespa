@@ -284,7 +284,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             packetWrapper = cacheLookupTwoPhase(cacheKey, result,summaryClass);
         }
 
-        FS4Channel channel = dispatchBackend.openChannel();
+        FS4Channel channel = chooseBackend(query).openChannel();
         channel.setQuery(query);
         Packet[] receivedPackets;
         try {
