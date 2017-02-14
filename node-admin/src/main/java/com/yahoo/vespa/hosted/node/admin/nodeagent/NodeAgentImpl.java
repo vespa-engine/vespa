@@ -81,7 +81,7 @@ public class NodeAgentImpl implements NodeAgent {
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
-    CpuUsageReporter lastCpuMetric;
+    CpuUsageReporter lastCpuMetric = new CpuUsageReporter(Instant.now());
     Optional<String> vespaVersion = Optional.empty();
 
     public NodeAgentImpl(
@@ -91,8 +91,7 @@ public class NodeAgentImpl implements NodeAgent {
             final DockerOperations dockerOperations,
             final Optional<StorageMaintainer> storageMaintainer,
             final MetricReceiverWrapper metricReceiver,
-            final Environment environment,
-            final Optional<Container> container) {
+            final Environment environment) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
@@ -102,8 +101,6 @@ public class NodeAgentImpl implements NodeAgent {
                 NodeRepositoryImpl.containerNameFromHostName(hostName));
         this.metricReceiver = metricReceiver;
         this.environment = environment;
-
-        container.map(Container::getCreatedAsInstant).ifPresent(created -> lastCpuMetric = new CpuUsageReporter(created));
     }
 
     @Override
@@ -162,10 +159,13 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
 
-        // If the container is already running, initialize vespaVersion
-        vespaVersion = dockerOperations.getContainer(hostname)
+        // If the container is already running, initialize vespaVersion and lastCpuMetric
+        dockerOperations.getContainer(hostname)
                 .filter(container -> container.state.isRunning())
-                .flatMap(container -> dockerOperations.getVespaVersion(container.name));
+                .ifPresent(container -> {
+                    vespaVersion = dockerOperations.getVespaVersion(container.name);
+                    lastCpuMetric = new CpuUsageReporter(container.getCreatedAsInstant());
+                });
 
         loopThread = new Thread(this::loop);
         loopThread.setName("loop-" + hostname);
