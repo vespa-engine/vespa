@@ -68,9 +68,9 @@ public class NodeAdminImpl implements NodeAdmin {
                 .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
-        this.numberOfContainersInActiveState = metricReceiver.declareGauge(dimensions, "nodes.state.active");
-        this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(dimensions, "nodes.image.loading");
-        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(dimensions, "nodes.unhandled_exceptions");
+        this.numberOfContainersInActiveState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.state.active");
+        this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
+        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
 
         scheduler.scheduleWithFixedDelay(() -> {
             try {

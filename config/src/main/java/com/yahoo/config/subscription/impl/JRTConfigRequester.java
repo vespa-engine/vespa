@@ -31,7 +31,6 @@ import com.yahoo.vespa.config.protocol.Trace;
  * @author vegardh
  * @since 5.1
  */
-// Note: this is similar to old JRTSource
 public class JRTConfigRequester implements RequestWaiter {
     private static final Logger log = Logger.getLogger(JRTConfigRequester.class.getName());
     public static final ConfigSourceSet defaultSourceSet = ConfigSourceSet.createDefault();
@@ -120,7 +119,7 @@ public class JRTConfigRequester implements RequestWaiter {
         }
     }
 
-    protected void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
+    private void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
         if (sub.getState() == ConfigSubscription.State.CLOSED) return; // Avoid error messages etc. after closing
         boolean validResponse = jrtReq.validateResponse();
         Trace trace = jrtReq.getResponseTrace();
@@ -246,7 +245,6 @@ public class JRTConfigRequester implements RequestWaiter {
         sub.setLastCallBackOKTS(System.currentTimeMillis());
         if (jrtReq.hasUpdatedGeneration()) {
             // We only want this latest generation to be in the queue, we do not preserve history in this system
-            handleEmptyPayload(jrtReq, sub);
             sub.getReqQueue().clear();
             boolean putOK = sub.getReqQueue().offer(jrtReq);
             if (!putOK) {
@@ -267,24 +265,6 @@ public class JRTConfigRequester implements RequestWaiter {
         return timingValues.getPlusMinusFractionRandom(timingValues.getFixedDelay(), randomFraction);
     }
 
-    /**
-     * This works around an optimization in the protocol: the payload is not set if it is not changed (seen from the server).
-     * So, if the sub's queue has a still _unprocessed_ req with payload, and the current one has no payload,
-     * i.e. it wasn't changed, save the one in the earlier req before clearing the queue.
-     *
-     * @param jrtReq a JRT config request
-     * @param sub    a config subscription
-     */
-    private void handleEmptyPayload(JRTClientConfigRequest jrtReq,
-                                    JRTConfigSubscription<ConfigInstance> sub) {
-        if (jrtReq.containsPayload()) {
-            JRTClientConfigRequest reqInQueue = sub.getReqQueue().poll(); // Just take it out, we were about to clear the queue anyway
-            if (reqInQueue != null) {
-                jrtReq.updateRequestPayload(reqInQueue.getNewPayload(), reqInQueue.hasUpdatedConfig());
-            }
-        }
-    }
-
     private void scheduleNextRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<?> sub, long delay, long timeout) {
         if (delay < 0) delay = 0;
         JRTClientConfigRequest jrtReqNew = jrtReq.nextRequest(timeout);
@@ -302,8 +282,7 @@ public class JRTConfigRequester implements RequestWaiter {
         private final JRTClientConfigRequest jrtReq;
         private final JRTConfigSubscription<?> sub;
 
-        public GetConfigTask(JRTClientConfigRequest jrtReq,
-                             JRTConfigSubscription<?> sub) {
+        GetConfigTask(JRTClientConfigRequest jrtReq, JRTConfigSubscription<?> sub) {
             this.jrtReq = jrtReq;
             this.sub = sub;
         }
@@ -352,7 +331,7 @@ public class JRTConfigRequester implements RequestWaiter {
         return fatalFailures;
     }
 
-    // TODO: Should be package private
+    // TODO: Should be package private, used in integrationtest.rb in system tests
     public ConnectionPool getConnectionPool() {
         return connectionPool;
     }

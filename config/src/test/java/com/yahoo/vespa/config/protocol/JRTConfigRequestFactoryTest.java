@@ -10,8 +10,6 @@ import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import org.junit.Test;
 
-import java.util.Optional;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

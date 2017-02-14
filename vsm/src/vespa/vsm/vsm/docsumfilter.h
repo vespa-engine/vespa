@@ -53,6 +53,7 @@ private:
                                                const Document & docsum, bool & modified);
     void writeField(const document::FieldValue & fv, const FieldPath & path, ResType type, ResultPacker & packer);
     void writeJSONField(const DocsumFieldSpec & fieldSpec, const Document & docsum, ResultPacker & packer);
+    void writeSlimeField(const DocsumFieldSpec & fieldSpec, const Document & docsum, ResultPacker & packer);
     void writeFlattenField(const DocsumFieldSpec & fieldSpec, const Document & docsum, ResultPacker & packer);
     void writeEmpty(ResType type, ResultPacker & packer);
 

@@ -110,7 +110,7 @@ public class ConfigDefinitionTest {
         def.addIntDef("myint");
         def.addIntDef("myintdef", 1);
         def.addLongDef("mylong");
-        def.addLongDef("mylongdef", 11l);
+        def.addLongDef("mylongdef", 11L);
         def.addDoubleDef("mydouble");
         def.addDoubleDef("mydoubledef", 2d);
         EnumDef ed = new EnumDef(new ArrayList<String>(){{add("a1"); add("a2");}}, null);

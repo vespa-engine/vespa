@@ -6,12 +6,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Each metric reported to secret agent has dimmensions.
+ * Each metric reported to secret agent has dimensions.
  *
  * @author valerijf
  */
 public class Dimensions {
-    public final Map<String, Object> dimensionsMap;
+    final Map<String, Object> dimensionsMap;
 
     private Dimensions(Map<String, Object> dimensionsMap) {
         this.dimensionsMap = dimensionsMap;

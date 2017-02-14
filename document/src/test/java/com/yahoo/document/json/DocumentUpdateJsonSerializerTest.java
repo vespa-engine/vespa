@@ -340,7 +340,7 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testAssignFieldPathValue() {
+    public void testSimultaneousFieldsAndFieldPathsUpdate() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "    'update': 'DOCUMENT_ID',",
@@ -349,6 +349,60 @@ public class DocumentUpdateJsonSerializerTest {
                 "            'assign': 'N60.222333;E10.12'",
                 "        }",
                 "    },",
+                "    'fieldpaths': [",
+                "        {",
+                "           'assign': {",
+                "               'int_field': {",
+                "                   'value': '($value + 3) / 2',",
+                "                   'createmissingpath': true,",
+                "                   'removeifzero': false",
+                "               },",
+                "               'where': 'int_field > 3'",
+                "           }",
+                "        }",
+                "   ]",
+                "}"
+        ));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testDoubleFieldPathOperationFails() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fieldpaths': [",
+                "        {",
+                "           'assign': {",
+                "               'deep_map{my_field}': {",
+                "                   'value': [",
+                "                       {",
+                "                           'key': 'my_key',",
+                "                           'value': 'my_value'",
+                "                       }",
+                "                   ],",
+                "                   'createmissingpath': true,",
+                "                   'removeifzero': true",
+                "               },",
+                "               'map_struct{my_key}': {",
+                "                   'value': {",
+                "                       'my_string_field': 'Some string',",
+                "                       'my_int_field': 5",
+                "                   },",
+                "                   'createmissingpath': false,",
+                "                   'removeifzero': false",
+                "               }",
+                "           }",
+                "        }",
+                "    ]",
+                "}"
+        ));
+    }
+
+    @Test
+    public void testAssignFieldPathValue() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
                 "    'fieldpaths': [",
                 "        {",
                 "           'assign': {",

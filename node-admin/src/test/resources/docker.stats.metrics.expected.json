@@ -1,5 +1,31 @@
 [
   {
+    "application": "host-life",
+    "dimensions": {
+      "flavor": "docker",
+      "app": "testapp.testinstance",
+      "clustertype": "clustType",
+      "role": "tenants",
+      "tenantName": "tester",
+      "zone": "dev.us-east-1",
+      "host": "hostname",
+      "vespaVersion": "1.2.3",
+      "state": "active",
+      "clusterid": "clustId",
+      "parentHostname": "parent.host.name.yahoo.com"
+    },
+    "metrics": {
+      "alive": 1.0
+    },
+    "routing": {
+      "yamas": {
+        "namespaces": [
+          "Vespa"
+        ]
+      }
+    }
+  },
+  {
     "application":"docker",
     "dimensions":{
       "flavor":"docker",

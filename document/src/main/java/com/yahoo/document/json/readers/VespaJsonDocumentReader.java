@@ -186,6 +186,10 @@ public class VespaJsonDocumentReader {
                 }
             } else {
                 expectObjectStart(t); // Start of fieldpath object
+                if (update.getFieldPath() != null) {
+                    throw new IllegalArgumentException("Cannot set fieldpath to " + buffer.currentName() + ", is " +
+                            "already set to " + update.getOriginalFieldPath());
+                }
                 update.setFieldPath(buffer.currentName());
                 if (update instanceof AssignFieldPathUpdate) {
                     readAssignFieldPath((AssignFieldPathUpdate) update, buffer);

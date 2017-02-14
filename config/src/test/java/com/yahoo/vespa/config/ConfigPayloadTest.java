@@ -88,15 +88,15 @@ public class ConfigPayloadTest {
     @Test
     public void test_long_leaf() throws Exception {
         SimpletypesConfig config = createSimpletypesConfig("longval", "0");
-        assertThat(config.longval(), is(0l));
+        assertThat(config.longval(), is(0L));
         config = createSimpletypesConfig("longval", String.valueOf(Long.MIN_VALUE));
         assertThat(config.longval(), is(Long.MIN_VALUE));
         config = createSimpletypesConfig("longval", String.valueOf(Long.MAX_VALUE));
         assertThat(config.longval(), is(Long.MAX_VALUE));
         config = createSimpletypesConfig("longval", String.valueOf(10));
-        assertThat(config.longval(), is(10l));
+        assertThat(config.longval(), is(10L));
         config = createSimpletypesConfig("longval", String.valueOf(-10));
-        assertThat(config.longval(), is(-10l));
+        assertThat(config.longval(), is(- 10L));
     }
 
     @Test(expected = RuntimeException.class)
@@ -210,11 +210,11 @@ public class ConfigPayloadTest {
         // Normal behavior
         ArraytypesConfig config = createArraytypesConfig("longarr", new String[] { "2", "3", "1", "-2", "5"});
         assertThat(config.longarr().size(),  is(5));
-        assertThat(config.longarr(0), is(2l));
-        assertThat(config.longarr(1), is(3l));
-        assertThat(config.longarr(2), is(1l));
-        assertThat(config.longarr(3), is(-2l));
-        assertThat(config.longarr(4), is(5l));
+        assertThat(config.longarr(0), is(2L));
+        assertThat(config.longarr(1), is(3L));
+        assertThat(config.longarr(2), is(1L));
+        assertThat(config.longarr(3), is(- 2L));
+        assertThat(config.longarr(4), is(5L));
 
         final int size = 100;
         String [] largeArray = new String[size];

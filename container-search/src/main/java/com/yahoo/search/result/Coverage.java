@@ -25,7 +25,7 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
 
     /**
      * Will set number of documents present in ideal state
-     * @param soonActive
+     * @param soonActive Number of documents active in ideal state
      * @return self for chaining
      */
     @Beta
@@ -33,7 +33,7 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
 
     /**
      * Will set the reasons for degraded coverage as reported by vespa backend.
-     * @param degradedReason
+     * @param degradedReason Reason for degradation
      * @return self for chaining
      */
     public Coverage setDegradedReason(int degradedReason) { this.degradedReason = degradedReason; return this; }

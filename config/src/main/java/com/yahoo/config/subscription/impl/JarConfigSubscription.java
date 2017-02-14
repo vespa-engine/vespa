@@ -61,14 +61,13 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             } catch (IOException e) {
                 throw new ConfigurationRuntimeException(e);
             }
-            setGeneration(0l);
+            setGeneration(0L);
             setGenerationChanged(true);
             setConfigChanged(true);
             try {
                 jarFile.close();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                throw new ConfigurationRuntimeException(e);
             }
             return true;
         }

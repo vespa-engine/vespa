@@ -239,7 +239,7 @@ public class TimingValues {
      * @return a number
      */
     public long getPlusMinusFractionRandom(long val, float fraction) {
-        return Math.round(val - (val * fraction) + (rand.nextFloat() * 2l * val * fraction));
+        return Math.round(val - (val * fraction) + (rand.nextFloat() * 2L * val * fraction));
     }
 
     Random getRandom() {

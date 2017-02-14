@@ -66,8 +66,10 @@ public class NodeAgentImplTest {
             .inetAddressResolver(new InetAddressResolver())
             .pathResolver(pathResolver).build();
 
+    private final Container container = new Container("host123.name.yahoo.com", new DockerImage("image-123"),
+            new ContainerName("host123"), Container.State.RUNNING, 1);
     private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-            Optional.of(storageMaintainer), metricReceiver, environment);
+            Optional.of(storageMaintainer), metricReceiver, environment, Optional.of(container));
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -520,9 +522,16 @@ public class NodeAgentImplTest {
         nodeAgent.updateContainerNodeMetrics();
 
         Set<Map<String, Object>> actualMetrics = new HashSet<>();
-        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver) {
+        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver.getMetrics(MetricReceiverWrapper.APPLICATION_DOCKER)) {
             Map<String, Object> metrics = objectMapper.readValue(dimensionMetrics.toSecretAgentReport(), Map.class);
             metrics.remove("timestamp"); // Remove timestamp so we can test against expected map
+            actualMetrics.add(metrics);
+        }
+
+        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver.getMetrics(MetricReceiverWrapper.APPLICATION_HOST_LIFE)) {
+            Map<String, Object> metrics = objectMapper.readValue(dimensionMetrics.toSecretAgentReport(), Map.class);
+            metrics.remove("timestamp"); // Remove timestamp so we can test against expected map
+            ((Map)metrics.get("metrics")).remove("uptime"); // Remove uptime so we can test against expected map. Implicit test of field existing too
             actualMetrics.add(metrics);
         }
 
