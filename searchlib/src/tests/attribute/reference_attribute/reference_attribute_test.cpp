@@ -8,6 +8,8 @@ LOG_SETUP("reference_attribute_test");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/document/base/documentid.h>
 
 using search::MemoryUsage;
@@ -29,9 +31,44 @@ GlobalId toGid(vespalib::stringref docId) {
 
 vespalib::string doc1("id:test:music::1");
 vespalib::string doc2("id:test:music::2");
+vespalib::string doc3("id:test:music::3");
 
 }
 
+using MockGidToLidMap = std::map<GlobalId, uint32_t>;
+
+struct MyGidToLidMapper : public search::IGidToLidMapper
+{
+    const MockGidToLidMap &_map;
+    MyGidToLidMapper(const MockGidToLidMap &map)
+        : _map(map)
+    {
+    }
+    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override {
+        auto itr = _map.find(gid);
+        if (itr != _map.end()) {
+            return itr->second;
+        } else {
+            return 0u;
+        }
+    }
+};
+
+struct MyGidToLidMapperFactory : public search::IGidToLidMapperFactory
+{
+    MockGidToLidMap _map;
+
+    MyGidToLidMapperFactory()
+        : _map()
+    {
+        _map.insert({toGid(doc1), 10});
+        _map.insert({toGid(doc2), 17});
+    }
+
+    virtual std::unique_ptr<search::IGidToLidMapper> getMapper() const {
+        return std::make_unique<MyGidToLidMapper>(_map);
+    }
+};
 
 struct Fixture
 {
@@ -122,6 +159,11 @@ struct Fixture
         LOG(info,
             "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
             iter, oldStatus.getUsed(), newStatus.getUsed());
+    }
+
+    void assertReferencedLid(uint32_t doc, uint32_t expReferencedDoc) {
+        uint32_t referencedDoc = _attr->getReferencedLid(doc);
+        EXPECT_EQUAL(expReferencedDoc, referencedDoc);
     }
 };
 
@@ -215,6 +257,24 @@ TEST_F("require that we can save and load attribute", Fixture)
     TEST_DO(f.assertRef(doc1, 4));
     EXPECT_TRUE(vespalib::unlink("test.dat"));
     EXPECT_TRUE(vespalib::unlink("test.udat"));
+}
+
+TEST_F("require that we can use gid mapper", Fixture)
+{
+    f.ensureDocIdLimit(6);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    f.set(4, toGid(doc1));
+    f.set(5, toGid(doc3));
+    f.commit();
+    std::shared_ptr<search::IGidToLidMapperFactory> factory =
+        std::make_shared<MyGidToLidMapperFactory>();
+    f._attr->setGidToLidMapperFactory(factory);
+    TEST_DO(f.assertReferencedLid(1, 10));
+    TEST_DO(f.assertReferencedLid(2, 17));
+    TEST_DO(f.assertReferencedLid(3, 0));
+    TEST_DO(f.assertReferencedLid(4, 10));
+    TEST_DO(f.assertReferencedLid(5, 0));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
