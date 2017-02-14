@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
@@ -94,14 +95,21 @@ struct MockFixture {
     MockSearch *mock;
     TermFieldMatchData tfmd;
     std::unique_ptr<SearchIterator> search;
-    MockFixture(uint32_t initial) : mock(0), tfmd(), search() {
-        std::vector<SearchIterator*> children;
+    MockFixture(uint32_t initial) :
+            MockFixture(initial, {new EmptySearch()})
+    { }
+    MockFixture(uint32_t initial, std::vector<SearchIterator *> children) : mock(0), tfmd(), search() {
         std::vector<TermFieldMatchData*> childMatch;
         std::vector<int32_t> weights;
-        MatchData::UP md(MatchData::makeTestInstance(1, 1));
+        const size_t numChildren(children.size()+1);
+        MatchData::UP md(MatchData::makeTestInstance(numChildren, numChildren));
+        for (size_t i(0); i < children.size(); i++) {
+            childMatch.push_back(md->resolveTermField(i));
+            weights.push_back(1);
+        }
         mock = new MockSearch(initial);
+        childMatch.push_back(md->resolveTermField(children.size()));
         children.push_back(mock);
-        childMatch.push_back(md->resolveTermField(0));
         weights.push_back(1);
         search = DotProductSearch::create(children, tfmd, childMatch, weights, std::move(md));
     }
@@ -139,7 +147,7 @@ TEST("test Multi") {
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
 }
 
-TEST_F("test Eager Empty Child", MockFixture(search::endDocId)) {
+TEST_F("test Eager Single Empty Child", MockFixture(search::endDocId, {})) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
@@ -147,11 +155,37 @@ TEST_F("test Eager Empty Child", MockFixture(search::endDocId)) {
     EXPECT_EQUAL(0, mock->seekCnt);
 }
 
-TEST_F("test Eager Matching Child", MockFixture(5)) {
+TEST_F("test Multiple Eager Empty Children", MockFixture(search::endDocId)) {
+    MockSearch *mock = f1.mock;
+    SearchIterator &search = *f1.search;
+    search.initFullRange();
+    EXPECT_EQUAL(search.beginId(), search.getDocId());
+    EXPECT_TRUE(!search.seek(1));
+    EXPECT_TRUE(search.isAtEnd());
+    EXPECT_EQUAL(0, mock->seekCnt);
+}
+
+TEST_F("test Eager Single Matching Child", MockFixture(5, {})) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
     EXPECT_EQUAL(5u, search.getDocId());
+    EXPECT_TRUE(!search.seek(3));
+    EXPECT_EQUAL(5u, search.getDocId());
+    EXPECT_EQUAL(0, mock->seekCnt);
+    EXPECT_TRUE(search.seek(5));
+    EXPECT_EQUAL(5u, search.getDocId());
+    EXPECT_EQUAL(0, mock->seekCnt);
+    EXPECT_TRUE(!search.seek(7));
+    EXPECT_TRUE(search.isAtEnd());
+    EXPECT_EQUAL(1, mock->seekCnt);
+}
+
+TEST_F("test Eager Matching Children", MockFixture(5)) {
+    MockSearch *mock = f1.mock;
+    SearchIterator &search = *f1.search;
+    search.initFullRange();
+    EXPECT_EQUAL(search.beginId(), search.getDocId());
     EXPECT_TRUE(!search.seek(3));
     EXPECT_EQUAL(5u, search.getDocId());
     EXPECT_EQUAL(0, mock->seekCnt);
