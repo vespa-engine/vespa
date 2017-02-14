@@ -91,9 +91,9 @@ public class MetricReceiverWrapper {
         synchronized (monitor) {
             List<DimensionMetrics> dimensionMetrics = new ArrayList<>();
             applicationMetrics.entrySet()
-                    .forEach(e -> e.getValue().metricsByDimensions().entrySet().stream()
-                            .map(entry -> new DimensionMetrics(e.getKey(), entry.getKey(), entry.getValue()))
-                            .forEach(dimensionMetrics::add));
+                              .forEach(e -> e.getValue().metricsByDimensions().entrySet().stream()
+                                             .map(entry -> new DimensionMetrics(e.getKey(), entry.getKey(), entry.getValue()))
+                                             .map(dimensionMetrics::add));
             return dimensionMetrics;
         }
     }
