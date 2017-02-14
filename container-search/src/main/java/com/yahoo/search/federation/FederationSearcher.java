@@ -2,6 +2,7 @@
 package com.yahoo.search.federation;
 
 import com.google.inject.Inject;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Chain;
@@ -391,7 +392,6 @@ public class FederationSearcher extends ForkingSearcher {
 
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
-        List<FutureResult> filledResults = new ArrayList<>();
         UniqueExecutionsToResults uniqueExecutionsToResults = new UniqueExecutionsToResults();
         addResultsToFill(result.hits(), result, summaryClass, uniqueExecutionsToResults);
         Set<Entry<Chain<Searcher>, Map<Query, Result>>> resultsForAllChains = 
@@ -402,6 +402,7 @@ public class FederationSearcher extends ForkingSearcher {
             numberOfCallsToFillNeeded += resultsToFillForAChain.getValue().size();
         }
 
+        List<Pair<Result, FutureResult>> futureFilledResults = new ArrayList<>();
         for (Entry<Chain<Searcher>, Map<Query, Result>> resultsToFillForAChain : resultsForAllChains) {
             Chain<Searcher> chain = resultsToFillForAChain.getKey();
             Execution chainExecution = (chain == null) ? execution : new Execution(chain, execution.context());
@@ -413,12 +414,24 @@ public class FederationSearcher extends ForkingSearcher {
                     propagateErrors(resultToFill, result);
                 } else {
                     AsyncExecution asyncFill = new AsyncExecution(chainExecution);
-                    filledResults.add(asyncFill.fill(resultToFill, summaryClass));
+                    futureFilledResults.add(new Pair<>(resultToFill, asyncFill.fill(resultToFill, summaryClass)));
                 }
             }
         }
-        for (FutureResult filledResult : filledResults) {
-            propagateErrors(filledResult.get(result.getQuery().getTimeLeft(), TimeUnit.MILLISECONDS), result);
+        for (Pair<Result, FutureResult> futureFilledResult : futureFilledResults) {
+            // futureFilledResult is a pair of a result to be filled and the future in which that same result is filled
+            Optional<Result> filledResult = futureFilledResult.getSecond().getIfAvailable(result.getQuery().getTimeLeft(), TimeUnit.MILLISECONDS);
+            if (filledResult.isPresent()) { // fill completed
+                propagateErrors(filledResult.get(), result);
+            }
+            else { // fill timed out: Remove these hits as they are incomplete and may cause a race when accessed later
+                result.hits().addError(futureFilledResult.getSecond().createTimeoutError());
+                for (Iterator<Hit> i = futureFilledResult.getFirst().hits().unorderedDeepIterator(); i.hasNext(); ) {
+                    // Note that some of these hits may be filled, but as the fill thread may still be working on them
+                    // and we do not synchronize with it we need to discard all
+                    Hit removed = result.hits().remove(i.next().getId());
+                }
+            }
         }
     }
 
@@ -435,7 +448,7 @@ public class FederationSearcher extends ForkingSearcher {
                 addResultsToFill((HitGroup) hit, result, summaryClass, uniqueExecutionsToResults);
             } else {
                 if ( ! hit.isFilled(summaryClass))
-                    getSearchChainGroup(hit,result,uniqueExecutionsToResults).hits().add(hit);
+                    getSearchChainGroup(hit, result, uniqueExecutionsToResults).hits().add(hit);
             }
         }
     }
@@ -445,7 +458,7 @@ public class FederationSearcher extends ForkingSearcher {
         Chain<Searcher> chain = (Chain<Searcher>) hit.getSearcherSpecificMetaData(this);
         Query query = hit.getQuery() !=null ? hit.getQuery() : result.getQuery();
 
-        return uniqueExecutionsToResults.get(chain,query);
+        return uniqueExecutionsToResults.get(chain, query);
     }
 
     /**
@@ -633,7 +646,7 @@ public class FederationSearcher extends ForkingSearcher {
             Result resultsToFillForAChainAndQuery = resultsToFillForAChain.get(query);
             if (resultsToFillForAChainAndQuery == null) {
                 resultsToFillForAChainAndQuery = new Result(query);
-                resultsToFillForAChain.put(query,resultsToFillForAChainAndQuery);
+                resultsToFillForAChain.put(query, resultsToFillForAChainAndQuery);
             }
 
             return resultsToFillForAChainAndQuery;
