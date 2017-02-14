@@ -8,6 +8,8 @@
 #include <vespa/searchlib/datastore/unique_store_builder.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/datastore/unique_store.hpp>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include "reference_attribute_saver.h"
 
 namespace search {
@@ -32,7 +34,9 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
                                        const Config & cfg)
     : NotImplementedAttribute(baseFileName, cfg),
       _store(),
-      _indices(getGenerationHolder())
+      _indices(getGenerationHolder()),
+      _cachedUniqueStoreMemoryUsage(),
+      _gidToLidMapperFactory()
 {
     setEnum(true);
     enableEnumeratedSave(true);
@@ -227,6 +231,25 @@ ReferenceAttribute::getIndicesCopy(uint32_t size) const
     assert(size <= _indices.size());
     return IndicesCopyVector(&_indices[0], &_indices[0] + size);
 }
+
+void
+ReferenceAttribute::setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory)
+{
+    _gidToLidMapperFactory = std::move(gidToLidMapperFactory);
+}
+
+ReferenceAttribute::DocId
+ReferenceAttribute::getReferencedLid(DocId doc) const
+{
+    assert(doc < _indices.size());
+    EntryRef oldRef = _indices[doc];
+    if (!oldRef.valid() || !_gidToLidMapperFactory) {
+        return 0;
+    }
+    std::unique_ptr<IGidToLidMapper> mapper = _gidToLidMapperFactory->getMapper();
+    return mapper->mapGidToLid(_store.get(oldRef).gid());
+}
+
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 

@@ -8,6 +8,9 @@
 #include <vespa/searchlib/common/rcuvector.h>
 
 namespace search {
+
+class IGidToLidMapperFactory;
+
 namespace attribute {
 
 /*
@@ -45,6 +48,7 @@ private:
     Store _store;
     RcuVectorBase<EntryRef> _indices;
     MemoryUsage _cachedUniqueStoreMemoryUsage;
+    std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
 
     virtual void onAddDocs(DocId docIdLimit) override;
     virtual void removeOldGenerations(generation_t firstUsed) override;
@@ -68,6 +72,8 @@ public:
     virtual uint32_t clearDoc(DocId doc) override;
     void update(DocId doc, const GlobalId &gid);
     const Reference *getReference(DocId doc);
+    void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
+    DocId getReferencedLid(DocId doc) const;
 };
 
 }
