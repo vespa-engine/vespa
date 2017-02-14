@@ -11,20 +11,20 @@ import java.util.Date;
 import java.util.logging.Logger;
 
 /**
- * The run method of this class is executed periodically to
- * return requests that are about to time out.
+ * The run method of this class is executed periodically to return delayed responses
+ * (long polling requests that are about to time out and needs to be returned).
  *
  * @author hmusum
  */
-public class CheckDelayedResponses implements Runnable {
+public class DelayedResponseHandler implements Runnable {
 
-    final static Logger log = Logger.getLogger(CheckDelayedResponses.class.getName());
+    private final static Logger log = Logger.getLogger(DelayedResponseHandler.class.getName());
 
     private final DelayedResponses delayedResponses;
     private final MemoryCache memoryCache;
     private final RpcServer rpcServer;
 
-    public CheckDelayedResponses(DelayedResponses delayedResponses, MemoryCache memoryCache, RpcServer rpcServer) {
+    DelayedResponseHandler(DelayedResponses delayedResponses, MemoryCache memoryCache, RpcServer rpcServer) {
         this.delayedResponses = delayedResponses;
         this.memoryCache = memoryCache;
         this.rpcServer = rpcServer;
@@ -39,7 +39,7 @@ public class CheckDelayedResponses implements Runnable {
         try {
             long start = System.currentTimeMillis();
             if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Running CheckDelayedResponses. There are " + delayedResponses.size() + " delayed responses. First one is " + delayedResponses.responses().peek());
+                log.log(LogLevel.SPAM, "Running DelayedResponseHandler. There are " + delayedResponses.size() + " delayed responses. First one is " + delayedResponses.responses().peek());
             }
             DelayedResponse response;
             int i = 0;
@@ -59,13 +59,13 @@ public class CheckDelayedResponses implements Runnable {
                 }
             }
             if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Finished running CheckDelayedResponses. " + i + " delayed responses sent in " +
+                log.log(LogLevel.SPAM, "Finished running DelayedResponseHandler. " + i + " delayed responses sent in " +
                         (System.currentTimeMillis() - start) + " ms");
             }
         } catch (Exception e) {  // To avoid thread throwing exception and executor never running this again
-            log.log(LogLevel.WARNING, "Got exception in CheckDelayedResponses: " + Exceptions.toMessageString(e));
+            log.log(LogLevel.WARNING, "Got exception in DelayedResponseHandler: " + Exceptions.toMessageString(e));
         } catch (Throwable e) {
-            com.yahoo.protect.Process.logAndDie("Got error in CheckDelayedResponses, exiting: " + Exceptions.toMessageString(e));
+            com.yahoo.protect.Process.logAndDie("Got error in DelayedResponseHandler, exiting: " + Exceptions.toMessageString(e));
         }
     }
 }

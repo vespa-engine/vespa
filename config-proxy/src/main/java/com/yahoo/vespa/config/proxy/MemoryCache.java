@@ -27,30 +27,31 @@ public class MemoryCache {
     // Separator in file names between different fields of config key
     private final static String separator = ":";
     private static final String DEFAULT_DUMP_DIR = Defaults.getDefaults().vespaHome() + "var/vespa/cache/config";
-    private final String dumpDir;
 
     private final ConcurrentHashMap<ConfigCacheKey, RawConfig> cache = new ConcurrentHashMap<>(500, 0.75f);
-
-    public MemoryCache() {
-        dumpDir = DEFAULT_DUMP_DIR;
-    }
 
     public RawConfig get(ConfigCacheKey key) {
         return cache.get(key);
     }
 
-    public RawConfig put(RawConfig config) {
+    /**
+     * Put in cache, except when config has an error
+     * @param config config to put in cache
+     */
+    public void put(RawConfig config) {
+        if (config.isError()) return;
+
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Putting '" + config + "' into memory cache");
         }
-        return cache.put(new ConfigCacheKey(config.getKey(), config.getDefMd5()), config);
+        cache.put(new ConfigCacheKey(config.getKey(), config.getDefMd5()), config);
     }
 
     boolean containsKey(ConfigCacheKey key) {
         return cache.containsKey(key);
     }
 
-    public Collection<RawConfig> values() {
+    Collection<RawConfig> values() {
         return cache.values();
     }
 
@@ -69,7 +70,7 @@ public class MemoryCache {
 
     String dumpCacheToDisk(String path, MemoryCache cache) {
         if (path == null || path.isEmpty()) {
-            path = dumpDir;
+            path = DEFAULT_DUMP_DIR;
             log.log(LogLevel.DEBUG, "dumpCache. No path or empty path. Using dir '" + path + "'");
         }
         if (path.endsWith("/")) {
@@ -83,19 +84,19 @@ public class MemoryCache {
             return "Not a dir or not able to write to '" + dir + "'";
         }
         for (RawConfig config : cache.values()) {
-            put(config, path);
+            writeConfigToFile(config, path);
         }
         return "success";
     }
 
-    void put(RawConfig config, String path) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Putting '" + config.getKey() + "' into disk cache");
-        }
+    private void writeConfigToFile(RawConfig config, String path) {
         String filename = null;
         Writer writer = null;
         try {
             filename = path + File.separator + createCacheFileName(config);
+            if (log.isLoggable(LogLevel.DEBUG)) {
+                log.log(LogLevel.DEBUG, "Writing '" + config.getKey() + "' to '" + filename + "'");
+            }
             final Payload payload = config.getPayload();
             long protocolVersion = 3;
             log.log(LogLevel.DEBUG, "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
@@ -127,7 +128,7 @@ public class MemoryCache {
         return createCacheFileName(new ConfigCacheKey(config.getKey(), config.getDefMd5()));
     }
 
-    static String createCacheFileName(ConfigCacheKey key) {
+    private static String createCacheFileName(ConfigCacheKey key) {
         final ConfigKey<?> configKey = key.getKey();
         return configKey.getNamespace() + "." + configKey.getName() + separator + configKey.getConfigId().replaceAll("/", "_") +
                 separator + key.getDefMd5();

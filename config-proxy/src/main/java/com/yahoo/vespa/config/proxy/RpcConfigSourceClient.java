@@ -43,12 +43,12 @@ public class RpcConfigSourceClient extends ConfigSourceClient {
 
     RpcConfigSourceClient(ConfigSourceSet configSourceSet,
                           ClientUpdater clientUpdater,
-                          CacheManager cacheManager,
+                          MemoryCache memoryCache,
                           TimingValues timingValues,
                           DelayedResponses delayedResponses) {
         this.configSourceSet = configSourceSet;
         this.clientUpdater = clientUpdater;
-        this.memoryCache = cacheManager.getMemoryCache();
+        this.memoryCache = memoryCache;
         this.delayedResponses = delayedResponses;
         this.timingValues = timingValues;
         checkConfigSources();

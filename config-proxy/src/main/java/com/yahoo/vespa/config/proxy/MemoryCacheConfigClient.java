@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  * @author hmusum
  * @since 5.1.10
  */
-public class MemoryCacheConfigClient extends ConfigSourceClient {
+class MemoryCacheConfigClient extends ConfigSourceClient {
 
     private final static Logger log = Logger.getLogger(MemoryCacheConfigClient.class.getName());
     private final MemoryCache cache;
@@ -22,13 +22,13 @@ public class MemoryCacheConfigClient extends ConfigSourceClient {
         this.cache = cache;
     }
 
-    @Override
     /**
-     * Retrieves the requested config from the cache. Used when in 'memorycache' mode</p>
+     * Retrieves the requested config from the cache. Used when in 'memorycache' mode.
      *
      * @param request The config to retrieve - can be empty (no payload), or have a valid payload.
      * @return A Config with a payload.
      */
+    @Override
     RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
         log.log(LogLevel.DEBUG, "Getting config from cache");
         ConfigKey<?> key = input.getKey();

@@ -59,11 +59,11 @@ class ConfigProxyStatistics implements Runnable {
         Event.value("delayed_responses", delayedResponses());
     }
 
-    public void stop() {
+    void stop() {
         stopped = true;
     }
 
-    public Long getEventInterval() {
+    Long getEventInterval() {
         return eventInterval;
     }
 
