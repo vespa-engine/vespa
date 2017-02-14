@@ -415,4 +415,38 @@ TEST("require that copied arrays are destructed (or not) correctly") {
     EXPECT_EQUAL(collateral_destruct_nodelete + 7, destruct_nodelete);
 }
 
+TEST("require that mark/revert works as expected") {
+    Stash stash;
+    EXPECT_EQUAL(stash.count_used(), 0u);
+    size_t destruct_small = 0;
+    size_t destruct_large = 0;
+    size_t used_between = 0;
+    Stash::Mark between;
+    stash.create<Large>(destruct_large);
+    for (size_t i = 0; i < 100; ++i) {
+        if (i == 58) {
+            used_between = stash.count_used();
+            between = stash.mark();
+        }
+        stash.alloc(512);
+        stash.create<Small>(destruct_small);
+    }
+    stash.create<Large>(destruct_large);
+    size_t used_after = stash.count_used();
+    Stash::Mark after = stash.mark();
+    stash.revert(after);
+    EXPECT_EQUAL(stash.count_used(), used_after);
+    EXPECT_EQUAL(destruct_small, 0u);
+    EXPECT_EQUAL(destruct_large, 0u);
+    stash.revert(between);
+    EXPECT_EQUAL(stash.count_used(), used_between);
+    EXPECT_EQUAL(destruct_small, 42u);
+    EXPECT_EQUAL(destruct_large, 1u);
+    Stash::Mark empty;
+    stash.revert(empty);
+    EXPECT_EQUAL(destruct_small, 100u);
+    EXPECT_EQUAL(destruct_large, 2u);
+    EXPECT_EQUAL(stash.count_used(), 0u);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
