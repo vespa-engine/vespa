@@ -23,6 +23,10 @@ class AttributeIteratorBase : public queryeval::SearchIterator
 protected:
     template <typename SC>
     void and_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const;
+    template <typename SC>
+    void or_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const;
+    template <typename SC>
+    std::unique_ptr<BitVector> get_hits(const SC & sc, uint32_t begin_id) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     fef::TermFieldMatchData * _matchData;
     fef::TermFieldMatchDataPosition * _matchPosition;
@@ -74,6 +78,8 @@ private:
     void doSeek(uint32_t docId) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void and_hits_into(BitVector & result, uint32_t begin_id) override;
+    void or_hits_into(BitVector & result, uint32_t begin_id) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
     const SC & _searchContext;
@@ -91,6 +97,8 @@ private:
     void doSeek(uint32_t docId) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void and_hits_into(BitVector & result, uint32_t begin_id) override;
+    void or_hits_into(BitVector & result, uint32_t begin_id) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
     const SC & _searchContext;
@@ -324,6 +332,10 @@ private:
 protected:
     const SC & _sc;
     uint32_t   _docIdLimit;
+
+    void or_hits_into(BitVector &result, uint32_t begin_id) override;
+    void and_hits_into(BitVector &result, uint32_t begin_id) override;
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 public:
     FlagAttributeIteratorT(const SC &sc, fef::TermFieldMatchData * matchData)

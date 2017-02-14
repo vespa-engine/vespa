@@ -19,6 +19,24 @@ AttributeIteratorBase::and_hits_into(const SC & sc, BitVector & result, uint32_t
     result.foreach_truebit([&](uint32_t key) { if ( ! sc.cmp(key)) { result.clearBit(key); }}, begin_id);
 }
 
+template <typename SC>
+void
+AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
+    result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
+}
+
+template <typename SC>
+std::unique_ptr<BitVector>
+AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
+    BitVector::UP result = BitVector::create(begin_id, getEndId());
+    for (uint32_t docId(begin_id); docId < getEndId(); docId++) {
+        if (sc.cmp(docId)) {
+            result->setBit(docId);
+        }
+    }
+    return result;
+}
+
 template <typename PL>
 AttributePostingListIteratorT<PL>::
 AttributePostingListIteratorT(PL &iterator, bool hasWeight, fef::TermFieldMatchData *matchData)
@@ -213,6 +231,64 @@ FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
 
 template <typename SC>
 void
+FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    for (int i = sc._low; (i <= sc._high); ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL) {
+            result.orWith(*bv);
+        }
+    }
+}
+
+template <typename SC>
+void
+FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) {
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    if (sc._low == sc._high) {
+        const BitVector * bv = attr.getBitVector(sc._low);
+        if (bv != NULL) {
+            result.andWith(*bv);
+        } else {
+            // I would expect us never to end up in this case as we are probably
+            // replaced by an EmptySearch, but I keep the code here to be functionally complete.
+            result.clear();
+        }
+    } else {
+        SearchIterator::and_hits_into(result, begin_id);
+    }
+}
+
+template <typename SC>
+std::unique_ptr<BitVector>
+FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    int i = sc._low;
+    BitVector::UP result;
+    for (;!result && i < sc._high; ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL) {
+            result = BitVector::create(*bv, begin_id, getEndId());
+        }
+    }
+
+    for (; i <= sc._high; ++i) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL) {
+            result->orWith(*bv);
+        }
+    }
+    if (!result) {
+        result = BitVector::create(begin_id, getEndId());
+    }
+    return result;
+}
+
+template <typename SC>
+void
 AttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     if (__builtin_expect(docId >= _docIdLimit, false)) {
@@ -257,6 +333,32 @@ FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
         }
     }
     setAtEnd();
+}
+
+template <typename SC>
+void
+AttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
+}
+
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
+}
+
+template <typename SC>
+BitVector::UP
+AttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
+    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
+}
+
+
+template <typename SC>
+BitVector::UP
+FilterAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
+    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
 }
 
 template <typename SC>

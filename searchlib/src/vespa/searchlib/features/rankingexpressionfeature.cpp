@@ -1,23 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.rankingexpression");
 
+#include "rankingexpressionfeature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/eval/eval/function.h>
-#include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/llvm/compiled_function.h>
-#include <vespa/eval/eval/llvm/compile_cache.h>
-#include <vespa/eval/eval/node_types.h>
-#include "rankingexpressionfeature.h"
-#include "utils.h"
-#include <stdexcept>
-#include <vespa/eval/eval/value_type.h>
-#include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.rankingexpression");
 
 using vespalib::eval::Function;
 using vespalib::eval::PassParams;
@@ -92,7 +83,14 @@ CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const Compi
 void
 CompiledRankingExpressionExecutor::execute(uint32_t)
 {
-    for (size_t i = 0; i < _params.size(); ++i) {
+    size_t i(0);
+    for (; (i + 4) < _params.size(); i += 4) {
+        _params[i+0] = inputs().get_number(i+0);
+        _params[i+1] = inputs().get_number(i+1);
+        _params[i+2] = inputs().get_number(i+2);
+        _params[i+3] = inputs().get_number(i+3);
+    }
+    for (; i < _params.size(); ++i) {
         _params[i] = inputs().get_number(i);
     }
     outputs().set_number(0, _ranking_function(&_params[0]));
@@ -101,7 +99,7 @@ CompiledRankingExpressionExecutor::execute(uint32_t)
 //-----------------------------------------------------------------------------
 
 InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
-        ConstArrayRef<char> input_is_object)
+                                                                           ConstArrayRef<char> input_is_object)
     : _function(function),
       _input_is_object(input_is_object),
       _context(function)
@@ -135,7 +133,6 @@ void
 RankingExpressionBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
                                               fef::IDumpFeatureVisitor &) const
 {
-    // empty
 }
 
 bool
