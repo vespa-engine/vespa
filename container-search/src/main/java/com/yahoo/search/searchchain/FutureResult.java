@@ -97,7 +97,7 @@ public class FutureResult extends FutureTask<Result> {
                                                         e.getCause());
     }
 
-    ErrorMessage createTimeoutError() {
+    public ErrorMessage createTimeoutError() {
         return ErrorMessage.createTimeout("Error executing '" + execution + "': " + " Chain timed out.");
     }
 

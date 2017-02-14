@@ -70,6 +70,29 @@ public class FederationSearcherTest {
 
     }
 
+    private static class TimeoutInFillSearcher extends Searcher {
+
+        private Hit createHit(String id) {
+            Hit hit = new Hit(id);
+            hit.setFillable();
+            return hit;
+        }
+
+        @Override
+        public Result search(Query query, Execution execution) {
+            Result result = execution.search(query);
+            result.hits().add(createHit("timeout1"));
+            result.hits().add(createHit("timeout2"));
+            return result;
+        }
+
+        @Override
+        public void fill(Result result, String summaryClass, Execution execution) {
+            try { Thread.sleep(500); } catch (InterruptedException e) {}
+        }
+
+    }
+
     private static class ModifyQueryAndAddHitSearcher extends AddHitSearcher {
 
         private final String marker;
@@ -138,13 +161,26 @@ public class FederationSearcherTest {
 
         Result result = tester.search();
         tester.fill(result);
-        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();) {
-            Hit h = i.next();
-            assertFilled(h);
-        }
         assertEquals(3, result.hits().getConcreteSize());
+        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();)
+            assertFilled(i.next());
     }
 
+    @Test
+    public void require_that_hits_that_time_out_in_fill_are_removed() {
+        FederationTester tester = new FederationTester();
+        tester.addSearchChain("chain1", new AddHitSearcher());
+        tester.addSearchChain("chain2", new TimeoutInFillSearcher());
+
+        Query query = new Query();
+        query.setTimeout(2);
+        Result result = tester.search(query);
+        tester.fill(result);
+        assertEquals(1, result.hits().getConcreteSize());
+        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();)
+            assertFilled(i.next());
+        assertEquals("Timed out", result.hits().getError().getMessage());
+    }
 
     @Test
     public void require_that_optional_search_chains_does_not_delay_federation() {
@@ -191,6 +227,7 @@ public class FederationSearcherTest {
         return nonErrorHits;
     }
     private static void assertFilled(Hit hit) {
+        if (hit.isMeta()) return;
         assertTrue((Boolean)hit.getField(hasBeenFilled));
     }
 

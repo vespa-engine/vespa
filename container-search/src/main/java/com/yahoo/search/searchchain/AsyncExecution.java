@@ -117,11 +117,11 @@ public class AsyncExecution {
      *
      * @see com.yahoo.search.searchchain.Execution
      */
-    public FutureResult search(final Query query) {
+    public FutureResult search(Query query) {
         return getFutureResult(() -> execution.search(query), query);
     }
 
-    public FutureResult searchAndFill(final Query query) {
+    public FutureResult searchAndFill(Query query) {
         return getFutureResult(() -> {
             Result result = execution.search(query);
             execution.fill(result, query.getPresentation().getSummary());
@@ -138,7 +138,7 @@ public class AsyncExecution {
      *
      * @see com.yahoo.search.searchchain.Execution
      */
-    public FutureResult fill(final Result result, final String summaryClass) {
+    public FutureResult fill(Result result, String summaryClass) {
         return getFutureResult(() -> {
             execution.fill(result, summaryClass);
             return result;
