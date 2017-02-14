@@ -165,11 +165,7 @@ TEST_F("test Multiple Eager Empty Children", MockFixture(search::endDocId)) {
     EXPECT_EQUAL(0, mock->seekCnt);
 }
 
-TEST_F("test Eager Single Matching Child", MockFixture(5, {})) {
-    MockSearch *mock = f1.mock;
-    SearchIterator &search = *f1.search;
-    search.initFullRange();
-    EXPECT_EQUAL(5u, search.getDocId());
+void verifyEagerMatching(SearchIterator & search, MockSearch * mock) {
     EXPECT_TRUE(!search.seek(3));
     EXPECT_EQUAL(5u, search.getDocId());
     EXPECT_EQUAL(0, mock->seekCnt);
@@ -181,20 +177,20 @@ TEST_F("test Eager Single Matching Child", MockFixture(5, {})) {
     EXPECT_EQUAL(1, mock->seekCnt);
 }
 
+TEST_F("test Eager Single Matching Child", MockFixture(5, {})) {
+    MockSearch *mock = f1.mock;
+    SearchIterator &search = *f1.search;
+    search.initFullRange();
+    EXPECT_EQUAL(5u, search.getDocId());
+    verifyEagerMatching(search, mock);
+}
+
 TEST_F("test Eager Matching Children", MockFixture(5)) {
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
     EXPECT_EQUAL(search.beginId(), search.getDocId());
-    EXPECT_TRUE(!search.seek(3));
-    EXPECT_EQUAL(5u, search.getDocId());
-    EXPECT_EQUAL(0, mock->seekCnt);
-    EXPECT_TRUE(search.seek(5));
-    EXPECT_EQUAL(5u, search.getDocId());
-    EXPECT_EQUAL(0, mock->seekCnt);
-    EXPECT_TRUE(!search.seek(7));
-    EXPECT_TRUE(search.isAtEnd());
-    EXPECT_EQUAL(1, mock->seekCnt);
+    verifyEagerMatching(search, mock);
 }
 
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
