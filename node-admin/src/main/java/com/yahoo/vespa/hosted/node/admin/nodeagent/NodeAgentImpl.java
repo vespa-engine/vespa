@@ -412,6 +412,10 @@ public class NodeAgentImpl implements NodeAgent {
             if (!nodeSpec.equals(lastNodeSpec)) {
                 addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
+
+                // Every time the node spec changes, we should clear the metrics for this container as the dimensions
+                // will change and we will be reporting duplicate metrics.
+                metricReceiver.unsetMetricsForContainer(hostname);
             }
         }
 
