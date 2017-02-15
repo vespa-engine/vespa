@@ -471,10 +471,9 @@ public class FastSearcher extends VespaBackEndSearcher {
             docsumsPacket.setCompressionType(result.getQuery().properties().getString(PACKET_COMPRESSION_TYPE, "lz4"));
         }
 
-        if (isLoggingFine())
-            getLogger().finest("Sending " + docsumsPacket + " on " + channel);
-
         boolean couldSend = channel.sendPacket(docsumsPacket);
+        if (isLoggingFine())
+            getLogger().finest("Sent " + docsumsPacket + " on " + channel);
         if ( ! couldSend) throw new IOException("Could not successfully send GetDocSumsPacket.");
         receivedPackets = channel.receivePackets(Math.max(50, result.getQuery().getTimeLeft()), docsumsPacket.getNumDocsums() + 1);
 
