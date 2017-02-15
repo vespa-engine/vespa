@@ -14,6 +14,8 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/reference/document_db_referent_registry.h>
+#include <vespa/searchcore/proton/reference/i_document_db_referent.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
@@ -52,9 +54,22 @@ public:
     }
 };
 
+struct MyDBOwner : public DummyDBOwner
+{
+    std::shared_ptr<DocumentDBReferentRegistry> _registry;
+    MyDBOwner()
+        : DummyDBOwner(),
+          _registry(std::make_shared<DocumentDBReferentRegistry>())
+    {
+    }
+    std::shared_ptr<IDocumentDBReferentRegistry> getDocumentDBReferentRegistry() const override {
+        return _registry;
+    }
+};
+
 struct Fixture {
     DummyWireService _dummy;
-    DummyDBOwner _dummyDBOwner;
+    MyDBOwner _myDBOwner;
     vespalib::ThreadStackExecutor _summaryExecutor;
     HwInfo _hwInfo;
     DocumentDB::SP _db;
@@ -68,7 +83,7 @@ struct Fixture {
 
 Fixture::Fixture()
     : _dummy(),
-      _dummyDBOwner(),
+      _myDBOwner(),
       _summaryExecutor(8, 128*1024),
       _hwInfo(),
       _db(),
@@ -95,7 +110,7 @@ Fixture::Fixture()
     _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014",
                              _queryLimiter, _clock, DocTypeName("typea"),
                              ProtonConfig(),
-                             _dummyDBOwner, _summaryExecutor, _summaryExecutor, NULL, _dummy, _fileHeaderContext,
+                             _myDBOwner, _summaryExecutor, _summaryExecutor, NULL, _dummy, _fileHeaderContext,
                              ConfigStore::UP(new MemoryConfigStore),
                              std::make_shared<vespalib::ThreadStackExecutor>
                              (16, 128 * 1024),
@@ -217,6 +232,16 @@ TEST_F("requireThatStateIsReported", Fixture)
 TEST_F("require that session manager can be explored", Fixture)
 {
     EXPECT_TRUE(DocumentDBExplorer(f._db).get_child("session").get() != nullptr);    
+}
+
+TEST_F("require that document db registers referent", Fixture)
+{
+    auto &registry = f._myDBOwner._registry;
+    auto referent = registry->get("typea");
+    EXPECT_TRUE(referent.get() != nullptr);
+    auto attr = referent->getAttribute("attr1");
+    EXPECT_TRUE(attr.get() != nullptr);
+    EXPECT_EQUAL(search::attribute::BasicType::INT32, attr->getBasicType());
 }
 
 }  // namespace

@@ -95,7 +95,9 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     matching::MatchingStats getMatcherStats(const vespalib::string &) const override {
         return matching::MatchingStats();
     }
-
+    virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent() override {
+        return std::shared_ptr<IDocumentDBReferent>();
+    }
 };
 
 } // namespace test

@@ -32,6 +32,8 @@
 #include <vespa/vespalib/util/random.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
+#include <vespa/searchcore/proton/reference/document_db_referent_registry.h>
+#include <vespa/searchcore/proton/reference/i_document_db_referent.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton");
@@ -211,8 +213,10 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initComplete(false),
       _initDocumentDbsInSequence(false),
       _hwInfo(),
-      _hwInfoSampler()
+      _hwInfoSampler(),
+      _documentDBReferentRegistry()
 {
+    _documentDBReferentRegistry = std::make_shared<DocumentDBReferentRegistry>();
 }
 
 BootstrapConfig::SP
@@ -1129,5 +1133,12 @@ Proton::get_child(vespalib::stringref name) const
     }
     return Explorer_UP(nullptr);
 }
+
+std::shared_ptr<IDocumentDBReferentRegistry>
+Proton::getDocumentDBReferentRegistry() const
+{
+    return _documentDBReferentRegistry;
+}
+
 
 } // namespace proton

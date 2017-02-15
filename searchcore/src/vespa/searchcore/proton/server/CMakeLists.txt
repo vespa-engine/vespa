@@ -111,6 +111,7 @@ vespa_add_library(searchcore_server STATIC
     searchcore_reprocessing
     searchcore_summaryengine
     searchcore_fconfig
+    searchcore_reference
     configdefinitions
     stdc++fs
 )
