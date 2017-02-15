@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
      RunSystemTests runSystemTests = new RunSystemTests(vespaDockerBase, pathToSystemtestsInHost);
 
      ContainerName systemtestsHost = new ContainerName("stest-1");
-     // Rebuild run maven install on new updated modules (and the modules that depend on them), this
+     // Run maven install on newly updated modules (and the modules that depend on them), this
      // is optional and can be run from command line if you know specifically which modules need to be rebuilt
      runSystemTests.mavenInstallModules("docproc");
      // Update maven local repository and /home/y/lib/jars with the current version of these modules inside container
@@ -129,9 +129,10 @@ public class RunSystemTests {
      * @param modules list of modules to install in order
      */
     void mavenInstallModules(String... modules) throws InterruptedException, IOException, ExecutionException {
+        logger.info("mvn install " + String.join(" ", modules));
         String projects = String.join(",", modules);
-        Process process = new ProcessBuilder("mvn", "install", "-DskipTests", "-Dmaven.javadoc.skip=true", "--errors",
-                "--projects=" + projects)
+        Process process = new ProcessBuilder("mvn", "install", "-DskipTests", "-Dmaven.javadoc.skip=true",
+                "--errors", "--projects=" + projects)
                 .directory(pathToVespaRepoInHost.toFile())
                 .inheritIO()
                 .start();
@@ -149,7 +150,7 @@ public class RunSystemTests {
             Files.delete(outputFile);
         }
 
-        String[] command = new String[]{"mvn", "dependency:tree", "-Dincludes=com.yahoo.vespa",
+        String[] command = new String[]{"mvn", "dependency:tree", "--quiet", "-Dincludes=com.yahoo.vespa",
                 "-DoutputFile=" + outputFile, "-DoutputType=dot", "-DappendOutput=true"};
         ProcessExecuter processExecuter = new ProcessExecuter();
         Pair<Integer, String> result = processExecuter.exec(command);
@@ -192,7 +193,6 @@ public class RunSystemTests {
     }
 
     private void startSystemTestNodeIfNeeded(ContainerName containerName) throws IOException, InterruptedException, ExecutionException {
-        logger.info("Building " + SYSTEMTESTS_DOCKER_IMAGE.asString());
         buildVespaSystestDockerImage(docker, vespaBaseImage);
 
         Optional<Container> container = docker.getContainer(containerName.asString());
@@ -244,6 +244,7 @@ public class RunSystemTests {
                 .replaceAll("\\$VESPA_BASE_IMAGE", vespaBaseImage.asString());
         Files.write(systestDockerfile, dockerfileTemplate.getBytes());
 
+        logger.info("Building " + SYSTEMTESTS_DOCKER_IMAGE.asString());
         docker.buildImage(systestDockerfile.toFile(), SYSTEMTESTS_DOCKER_IMAGE);
     }
 
