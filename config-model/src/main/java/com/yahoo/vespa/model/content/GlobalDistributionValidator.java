@@ -25,6 +25,7 @@ public class GlobalDistributionValidator {
                          Redundancy redundancy) {
 
         verifyGlobalDocumentsHaveRequiredRedundancy(globallyDistributedDocuments, redundancy);
+        verifySearchableCopiesIsSameAsRedundancy(globallyDistributedDocuments, redundancy);
         verifyReferredDocumentsArePresent(documentDefinitions);
         verifyReferredDocumentsAreGlobal(documentDefinitions, globallyDistributedDocuments);
     }
@@ -40,6 +41,20 @@ public class GlobalDistributionValidator {
                             asPrintableString(toDocumentNameStream(globallyDistributedDocuments)),
                             redundancy.effectiveFinalRedundancy(),
                             redundancy.totalNodes()));
+        }
+    }
+
+    private static void verifySearchableCopiesIsSameAsRedundancy(Set<NewDocumentType> globallyDistributedDocuments,
+                                                                 Redundancy redundancy) {
+        if (!globallyDistributedDocuments.isEmpty() &&
+                redundancy.effectiveReadyCopies() != redundancy.effectiveFinalRedundancy()) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The following document types have the number of searchable copies less than redundancy: %s. " +
+                                    "Searchable copies is %d, while redundancy is %d.",
+                            asPrintableString(toDocumentNameStream(globallyDistributedDocuments)),
+                            redundancy.effectiveReadyCopies(),
+                            redundancy.effectiveFinalRedundancy()));
         }
     }
 
