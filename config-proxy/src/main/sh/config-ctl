@@ -107,19 +107,15 @@ case $1 in
         if [ "$userargs" == "" ]; then
             userargs=$services__jvmargs_configproxy
         fi
-        proxymode=$services__configproxy_mode
         jvmopts="-Xms32M -Xmx256M -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=-1"
 
         VESPA_SERVICE_NAME=configproxy
         export VESPA_SERVICE_NAME
-        if [ "$proxymode" ]; then
-            echo "Will start config proxy in mode $proxymode"
-        fi
         echo "Starting config proxy using $configsources as config source(s)"
         vespa-runserver -r 10 -s configproxy -p $P_CONFIG_PROXY -- \
             java ${jvmopts} \
                  -XX:OnOutOfMemoryError="kill -9 %p" $(getJavaOptionsIPV46) \
-                 -Dproxyconfigsources="${configsources}" -Dmode="${proxymode}" ${userargs} \
+                 -Dproxyconfigsources="${configsources}" ${userargs} \
                  -cp $cp com.yahoo.vespa.config.proxy.ProxyServer 19090
 
         echo "Waiting for config proxy to start"

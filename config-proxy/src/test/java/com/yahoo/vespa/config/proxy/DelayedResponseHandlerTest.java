@@ -12,7 +12,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author hmusum
  */
-public class CheckDelayedResponsesTest {
+public class DelayedResponseHandlerTest {
 
     private final MapBackedConfigSource source = new MapBackedConfigSource(UpstreamConfigSubscriberTest.MockClientUpdater.create());
 
@@ -33,11 +33,11 @@ public class CheckDelayedResponsesTest {
         final MockRpcServer mockRpcServer = new MockRpcServer();
         final MemoryCache memoryCache = new MemoryCache();
         memoryCache.put(ProxyServerTest.fooConfig);
-        final CheckDelayedResponses checkDelayedResponses = new CheckDelayedResponses(delayedResponses, memoryCache, mockRpcServer);
+        final DelayedResponseHandler delayedResponseHandler = new DelayedResponseHandler(delayedResponses, memoryCache, mockRpcServer);
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.fooConfig, 0)));
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.fooConfig, 1200000))); // should not be returned yet
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.errorConfig, 0)));  // will not give a config when resolving
-        checkDelayedResponses.checkDelayedResponses();
+        delayedResponseHandler.checkDelayedResponses();
 
         assertThat(mockRpcServer.responses, is(1L));
     }

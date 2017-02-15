@@ -22,7 +22,11 @@ class Mode {
     }
 
     public Mode() {
-        this(ModeName.DEFAULT.name());
+        this(ModeName.DEFAULT);
+    }
+
+    public Mode(ModeName modeName) {
+        mode = modeName;
     }
 
     public Mode(String modeString) {

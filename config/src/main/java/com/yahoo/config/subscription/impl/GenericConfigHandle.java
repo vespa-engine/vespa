@@ -5,7 +5,7 @@ import com.yahoo.config.subscription.ConfigHandle;
 import com.yahoo.vespa.config.RawConfig;
 
 /**
- * A config handle which does not use the config class, but payload instead. To be used in proxy?
+ * A config handle which does not use the config class, but payload instead. Used in config proxy.
  *
  * @author vegardh
  */

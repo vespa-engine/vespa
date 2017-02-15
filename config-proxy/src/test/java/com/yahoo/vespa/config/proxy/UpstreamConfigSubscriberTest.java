@@ -30,12 +30,12 @@ public class UpstreamConfigSubscriberTest {
     private MapBackedConfigSource sourceResponses;
     private MockClientUpdater clientUpdater;
     private MockConnection mockConnection;
-    static RawConfig fooConfig;
-    static RawConfig errorConfig;
-    static ConfigKey<?> errorConfigKey;
-    static Payload fooPayload;
-    static Payload errorPayload;
-    long generation = 1;
+    private static RawConfig fooConfig;
+    private static RawConfig errorConfig;
+    private static ConfigKey<?> errorConfigKey;
+    private static Payload fooPayload;
+    private static Payload errorPayload;
+    private long generation = 1;
 
 
     @Rule
@@ -148,11 +148,7 @@ public class UpstreamConfigSubscriberTest {
         private RawConfig lastConfig;
 
         private MockClientUpdater(ConfigProxyStatistics statistics, Mode mode) {
-            super(CacheManager.createTestCacheManager(),
-                    new MockRpcServer(),
-                    statistics,
-                    new DelayedResponses(statistics),
-                    mode);
+            super(new MemoryCache(), new MockRpcServer(), statistics, new DelayedResponses(statistics), mode);
         }
 
         public static MockClientUpdater create() {

@@ -14,21 +14,21 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-public class ClientUpdater {
-    final static Logger log = Logger.getLogger(ClientUpdater.class.getName());
+class ClientUpdater {
+    private final static Logger log = Logger.getLogger(ClientUpdater.class.getName());
 
-    private final CacheManager cacheManager;
+    private final MemoryCache memoryCache;
     private final ConfigProxyStatistics statistics;
     private final RpcServer rpcServer;
     private final DelayedResponses delayedResponses;
     private final Mode mode;
 
-    public ClientUpdater(CacheManager cacheManager,
-                         RpcServer rpcServer,
-                         ConfigProxyStatistics statistics,
-                         DelayedResponses delayedResponses,
-                         Mode mode) {
-        this.cacheManager = cacheManager;
+    ClientUpdater(MemoryCache memoryCache,
+                  RpcServer rpcServer,
+                  ConfigProxyStatistics statistics,
+                  DelayedResponses delayedResponses,
+                  Mode mode) {
+        this.memoryCache = memoryCache;
         this.rpcServer = rpcServer;
         this.statistics = statistics;
         this.delayedResponses = delayedResponses;
@@ -54,11 +54,11 @@ public class ClientUpdater {
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Config updated for " + config.getKey() + "," + config.getGeneration());
         }
-        cacheManager.putInCache(config);
+        memoryCache.put(config);
         sendResponse(config);
     }
 
-    void sendResponse(RawConfig config) {
+    private void sendResponse(RawConfig config) {
         if (config.isError()) { statistics.incErrorCount(); }
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Sending response for " + config.getKey() + "," + config.getGeneration());

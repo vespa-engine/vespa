@@ -25,13 +25,13 @@ import java.util.logging.Logger;
 public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer {
 
     private final static Logger log = Logger.getLogger(ConfigProxyRpcServer.class.getName());
-    static final int TRACELEVEL = 6;
+    private static final int TRACELEVEL = 6;
 
     private final Spec spec;
     private final Supervisor supervisor = new Supervisor(new Transport());
     private final ProxyServer proxyServer;
 
-    public ConfigProxyRpcServer(ProxyServer proxyServer, Spec spec) {
+    ConfigProxyRpcServer(ProxyServer proxyServer, Spec spec) {
         this.proxyServer = proxyServer;
         this.spec = spec;
         setUp();
@@ -53,11 +53,11 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         supervisor.transport().shutdown();
     }
 
-    public Spec getSpec() {
+    Spec getSpec() {
         return spec;
     }
 
-    void setUp() {
+    private void setUp() {
         // The getConfig method in this class will handle RPC calls for getting config
         supervisor.addMethod(JRTMethods.createConfigV3GetConfigMethod(this, "getConfigV3"));
         supervisor.addMethod(new Method("ping", "", "i",
@@ -157,13 +157,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
             RawConfig config = proxyServer.resolveConfig(request);
             if (config == null) {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "No config received yet for " + request.getShortDescription() + ",not sending response");
+                    log.log(LogLevel.DEBUG, "No config received yet for " + request.getShortDescription() + ", not sending response");
                 }
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 returnOkResponse(request, config);
             } else {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "No new config for " + request.getShortDescription() + ",not sending response");
+                    log.log(LogLevel.DEBUG, "No new config for " + request.getShortDescription() + ", not sending response");
                 }
             }
         } catch (Exception e) {
@@ -236,7 +236,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     }
 
     public final void invalidateCache(Request req) {
-        proxyServer.getCacheManager().getMemoryCache().clear();
+        proxyServer.getMemoryCache().clear();
         String[] s = new String[2];
         s[0] = "0";
         s[1] = "success";
@@ -265,13 +265,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void dumpCache(Request req) {
-        final CacheManager cacheManager = proxyServer.getCacheManager();
-        req.returnValues().add(new StringValue(cacheManager.getMemoryCache().dumpCacheToDisk(req.parameters().get(0).asString(), cacheManager.getMemoryCache())));
+        final MemoryCache memoryCache = proxyServer.getMemoryCache();
+        req.returnValues().add(new StringValue(memoryCache.dumpCacheToDisk(req.parameters().get(0).asString(), memoryCache)));
     }
 
     final void listCachedConfig(Request req, boolean full) {
         String[] ret;
-        MemoryCache cache = proxyServer.getCacheManager().getMemoryCache();
+        MemoryCache cache = proxyServer.getMemoryCache();
         ret = new String[cache.size()];
         int i = 0;
         for (RawConfig config : cache.values()) {

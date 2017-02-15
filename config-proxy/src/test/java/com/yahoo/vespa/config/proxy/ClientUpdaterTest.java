@@ -37,11 +37,7 @@ public class ClientUpdaterTest {
         delayedResponses = new DelayedResponses(statistics);
         mode = new Mode();
         memoryCache = new MemoryCache();
-        clientUpdater = new ClientUpdater(CacheManager.createTestCacheManager(memoryCache),
-                rpcServer,
-                statistics,
-                delayedResponses,
-                mode);
+        clientUpdater = new ClientUpdater(memoryCache, rpcServer, statistics, delayedResponses, mode);
     }
 
     @Test
@@ -64,7 +60,7 @@ public class ClientUpdaterTest {
         assertResponseAndCache(rpcServer, memoryCache, barConfig, 1, 2);
 
 
-        mode = new Mode(Mode.ModeName.MEMORYCACHE.name());
+        mode = new Mode(Mode.ModeName.MEMORYCACHE);
         // Nothing should be returned, so still 1 response
         assertResponseAndCache(rpcServer, memoryCache, fooConfig, 1, 2);
         assertThat(statistics.errors(), is(0L));
@@ -73,12 +69,8 @@ public class ClientUpdaterTest {
     @Test
     public void memoryCacheMode() {
         final RawConfig fooConfig = ProxyServerTest.fooConfig;
-        mode = new Mode(Mode.ModeName.MEMORYCACHE.name());
-        clientUpdater = new ClientUpdater(CacheManager.createTestCacheManager(memoryCache),
-                rpcServer,
-                statistics,
-                delayedResponses,
-                mode);
+        mode = new Mode(Mode.ModeName.MEMORYCACHE);
+        clientUpdater = new ClientUpdater(memoryCache, rpcServer, statistics,delayedResponses, mode);
         memoryCache.clear();
         assertThat(rpcServer.responses, is(0L));
 

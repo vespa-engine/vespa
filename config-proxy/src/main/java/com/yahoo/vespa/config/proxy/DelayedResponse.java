@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  * delayed responses and returning requests that are about to time out, in cases where no new
  * config has been returned from upstream)
  *
- * @see com.yahoo.vespa.config.proxy.CheckDelayedResponses
+ * @see DelayedResponseHandler
  */
 public class DelayedResponse implements Delayed {
     private final JRTServerConfigRequest request;

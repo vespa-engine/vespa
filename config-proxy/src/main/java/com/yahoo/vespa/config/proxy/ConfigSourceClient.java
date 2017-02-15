@@ -19,12 +19,11 @@ import java.util.List;
 public abstract class ConfigSourceClient {
     static ConfigSourceClient createClient(ConfigSource source,
                                            ClientUpdater clientUpdater,
-                                           CacheManager cacheManager,
+                                           MemoryCache memoryCache,
                                            TimingValues timingValues,
-                                           ConfigProxyStatistics statistics,
                                            DelayedResponses delayedResponses) {
         if (source instanceof ConfigSourceSet) {
-            return new RpcConfigSourceClient((ConfigSourceSet) source, clientUpdater, cacheManager, timingValues, delayedResponses);
+            return new RpcConfigSourceClient((ConfigSourceSet) source, clientUpdater, memoryCache, timingValues, delayedResponses);
         } else if (source instanceof MapBackedConfigSource) {
             return (ConfigSourceClient) source;
         } else {

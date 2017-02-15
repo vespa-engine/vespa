@@ -28,7 +28,7 @@ public class ProxyServerTest {
     static final RawConfig fooConfig = Helper.fooConfigV2;
 
     // errorConfig based on fooConfig
-    static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
+    private static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
     static final RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(),
             fooConfig.getPayload(), fooConfig.getConfigMd5(),
             fooConfig.getGeneration(), ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
@@ -52,7 +52,7 @@ public class ProxyServerTest {
     @Test
     public void basic() {
         assertTrue(proxy.getMode().isDefault());
-        assertThat(proxy.getCacheManager().getMemoryCache().size(), is(0));
+        assertThat(proxy.getMemoryCache().size(), is(0));
         assertThat(proxy.getTimingValues(), is(ProxyServer.defaultTimingValues()));
     }
 
@@ -109,19 +109,19 @@ public class ProxyServerTest {
     @Test
     public void testGetConfigAndCaching() {
         ConfigTester tester = new ConfigTester();
-        final CacheManager cacheManager = proxy.getCacheManager();
-        assertEquals(0, cacheManager.getCacheSize());
+        final MemoryCache memoryCache = proxy.getMemoryCache();
+        assertEquals(0, memoryCache.size());
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
         assertThat(res.getPayload().toString(), is(Helper.fooConfigPayload.toString()));
-        assertEquals(1, cacheManager.getCacheSize());
-        assertThat(cacheManager.getMemoryCache().get(new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5())), is(res));
+        assertEquals(1, memoryCache.size());
+        assertThat(memoryCache.get(new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5())), is(res));
 
         // Trying same config again
         JRTServerConfigRequest newRequestBasedOnResponse = tester.createRequest(res);
         RawConfig res2 = proxy.resolveConfig(newRequestBasedOnResponse);
         assertFalse(ProxyServer.configOrGenerationHasChanged(res2, newRequestBasedOnResponse));
-        assertEquals(1, cacheManager.getCacheSize());
+        assertEquals(1, memoryCache.size());
     }
 
     /**
@@ -134,14 +134,14 @@ public class ProxyServerTest {
         // Simulate an error response
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, ErrorCode.INTERNAL_ERROR));
 
-        final CacheManager cacheManager = proxy.getCacheManager();
-        assertEquals(0, cacheManager.getCacheSize());
+        final MemoryCache cacheManager = proxy.getMemoryCache();
+        assertEquals(0, cacheManager.size());
 
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
         assertNotNull(res.getPayload());
         assertTrue(res.isError());
-        assertEquals(0, cacheManager.getCacheSize());
+        assertEquals(0, cacheManager.size());
 
         // Put a version of the same config into backend without error and see that it now works (i.e. we are
         // not getting a cached response (of the error in the previous request)
@@ -152,19 +152,18 @@ public class ProxyServerTest {
         assertNotNull(res);
         assertNotNull(res.getPayload().getData());
         assertThat(res.getPayload().toString(), is(Helper.fooConfigPayload.toString()));
-        assertEquals(1, cacheManager.getCacheSize());
+        assertEquals(1, cacheManager.size());
 
         JRTServerConfigRequest newRequestBasedOnResponse = tester.createRequest(res);
         RawConfig res2 = proxy.resolveConfig(newRequestBasedOnResponse);
         assertFalse(ProxyServer.configOrGenerationHasChanged(res2, newRequestBasedOnResponse));
-        assertEquals(1, cacheManager.getCacheSize());
+        assertEquals(1, cacheManager.size());
     }
 
     @Test
     public void testReadingSystemProperties() {
-        ProxyServer.Properties properties =  ProxyServer.getSystemProperties();
+        ProxyServer.Properties properties = ProxyServer.getSystemProperties();
         assertThat(properties.eventInterval, is(ConfigProxyStatistics.defaultEventInterval));
-        assertThat(properties.mode, is(Mode.ModeName.DEFAULT.name()));
         assertThat(properties.configSources.length, is(1));
         assertThat(properties.configSources[0], is(ProxyServer.DEFAULT_PROXY_CONFIG_SOURCES));
     }

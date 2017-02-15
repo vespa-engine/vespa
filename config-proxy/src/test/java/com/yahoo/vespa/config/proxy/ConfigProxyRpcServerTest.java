@@ -72,7 +72,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        proxyServer.getCacheManager().putInCache(config);
+        proxyServer.getMemoryCache().put(config);
         req = new Request("listCachedConfig");
         rpcServer.listCachedConfig(req);
         assertFalse(req.errorMessage(), req.isError());
@@ -99,7 +99,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        proxyServer.getCacheManager().putInCache(config);
+        proxyServer.getMemoryCache().put(config);
         req = new Request("listCachedConfigFull");
         rpcServer.listCachedConfigFull(req);
         assertFalse(req.errorMessage(), req.isError());
