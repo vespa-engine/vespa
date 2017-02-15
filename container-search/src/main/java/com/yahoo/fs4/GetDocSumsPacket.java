@@ -204,7 +204,7 @@ public class GetDocSumsPacket extends Packet {
     }
 
     public String toString() {
-        return "Get docsums x packet";
+        return "Get docsums x packet fetching " + getNumDocsums() + " docsums and packet length of " + getLength() + " bytes.";
     }
 
     public int getNumDocsums() {
