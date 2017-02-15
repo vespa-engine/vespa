@@ -204,6 +204,12 @@ public final class Node {
         return new Node(openStackId, ipAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
+    /** Returns a copy of this node with the IP addresses set to the given value. */
+    public Node withIpAddresses(Set<String> ipAddresses) {
+        return new Node(openStackId, ipAddresses, hostname, parentHostname, flavor, status, state,
+                allocation, history, type);
+    }
+
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node withParentHostname(String parentHostname) {
         return new Node(openStackId, ipAddresses, hostname, Optional.of(parentHostname), flavor, status, state,

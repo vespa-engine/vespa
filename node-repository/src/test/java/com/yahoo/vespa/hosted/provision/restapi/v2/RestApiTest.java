@@ -154,6 +154,9 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"parentHostname\": \"parent.yahoo.com\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"ipAddresses\": [\"127.0.0.1\",\"::1\"]}"), Request.Method.PATCH),
+                "{\"message\":\"Updated host4.yahoo.com\"}");
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
     }
