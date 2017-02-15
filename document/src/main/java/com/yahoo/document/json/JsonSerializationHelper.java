@@ -35,9 +35,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import static com.yahoo.document.json.readers.MapReader.MAP_KEY;
-import static com.yahoo.document.json.readers.MapReader.MAP_VALUE;
-
 /**
  * @author Steinar Knutsen
  * @author Vegard Sjonfjell
@@ -186,18 +183,14 @@ public class JsonSerializationHelper {
     public static <K extends FieldValue, V extends FieldValue> void serializeMapField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, MapFieldValue<K, V> map) {
         fieldNameIfNotNull(generator, field);
         wrapIOException(() -> {
-            generator.writeStartArray();
+            generator.writeStartObject();
 
             for (Map.Entry<K, V> entry : map.entrySet()) {
-                generator.writeStartObject();
-                generator.writeFieldName(MAP_KEY);
-                entry.getKey().serialize(null, fieldWriter);
-                generator.writeFieldName(MAP_VALUE);
+                generator.writeFieldName(entry.getKey().toString());
                 entry.getValue().serialize(null, fieldWriter);
-                generator.writeEndObject();
             }
 
-            generator.writeEndArray();
+            generator.writeEndObject();
         });
     }
 

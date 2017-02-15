@@ -477,9 +477,8 @@ public class JsonReaderTestCase {
     public final void testMap() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testmap::whee\","
-                        + " \"fields\": { \"actualmap\": ["
-                        + " { \"key\": \"nalle\", \"value\": \"kalle\"},"
-                        + " { \"key\": \"tralle\", \"value\": \"skalle\"} ]}}"));
+                        + " \"fields\": { \"actualmap\": {"
+                        + " \"nalle\": \"kalle\", \"tralle\": \"skalle\"}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
@@ -554,9 +553,7 @@ public class JsonReaderTestCase {
     public final void testMapStringToArrayOfInt() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testMapStringToArrayOfInt::whee\","
-                        + " \"fields\": { \"actualMapStringToArrayOfInt\": ["
-                        + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }"
-                        + "]}}"));
+                        + " \"fields\": { \"actualMapStringToArrayOfInt\": { \"bamse\": [1, 2, 3] }}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
@@ -595,9 +592,7 @@ public class JsonReaderTestCase {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": {"
-                        + " \"assign\": ["
-                        + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }"
-                        + "]}}}"));
+                        + " \"assign\": { \"bamse\": [1, 2, 3] }}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
