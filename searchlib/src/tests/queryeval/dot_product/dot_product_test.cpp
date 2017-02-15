@@ -115,21 +115,33 @@ struct MockFixture {
     }
 };
 
+    void verifySimple(const FakeResult & expect, DP & ws) {
+        FakeSearchable index;
+        setupFakeSearchable(index);
+        EXPECT_EQUAL(expect, ws.search(index, "field", true));
+        EXPECT_EQUAL(expect, ws.search(index, "field", false));
+        EXPECT_EQUAL(expect, ws.search(index, "multi-field", true));
+        EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
+    }
+
 } // namespace <unnamed>
 
 TEST("test Simple") {
-    FakeSearchable index;
-    setupFakeSearchable(index);
     FakeResult expect = FakeResult()
                         .doc(3).score(30 * 3)
                         .doc(5).score(50 * 5)
                         .doc(7).score(70 * 7);
     DP ws = DP().add("7", 70).add("5", 50).add("3", 30).add("100", 1000);
 
-    EXPECT_EQUAL(expect, ws.search(index, "field", true));
-    EXPECT_EQUAL(expect, ws.search(index, "field", false));
-    EXPECT_EQUAL(expect, ws.search(index, "multi-field", true));
-    EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
+    TEST_DO(verifySimple(expect, ws));
+}
+
+TEST("test Simple Single") {
+    FakeResult expect = FakeResult()
+            .doc(7).score(70 * 7);
+    DP ws = DP().add("7", 70);
+
+    TEST_DO(verifySimple(expect, ws));
 }
 
 TEST("test Multi") {
