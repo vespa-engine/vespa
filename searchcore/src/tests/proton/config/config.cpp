@@ -1,20 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <map>
-#include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summary.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
+#include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/protonconfigurer.h>
-#include <vespa/vespalib/util/varholder.h>
-#include <vespa/fileacquirer/config-filedistributorrpc.h>
-#include <vespa/config-summarymap.h>
-#include <vespa/config-summary.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-indexschema.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/linkedptr.h>
+#include <vespa/vespalib/util/varholder.h>
 
 using namespace config;
 using namespace proton;
@@ -41,6 +42,7 @@ struct DoctypeFixture {
     SummaryConfigBuilder summaryBuilder;
     SummarymapConfigBuilder summarymapBuilder;
     JuniperrcConfigBuilder juniperrcBuilder;
+    ImportedFieldsConfigBuilder importedFieldsBuilder;
 };
 
 struct ConfigTestFixture {
@@ -92,6 +94,7 @@ struct ConfigTestFixture {
         set.addBuilder(db.configid, &fixture->summaryBuilder);
         set.addBuilder(db.configid, &fixture->summarymapBuilder);
         set.addBuilder(db.configid, &fixture->juniperrcBuilder);
+        set.addBuilder(db.configid, &fixture->importedFieldsBuilder);
         dbConfig[name] = fixture;
     }
 
@@ -208,7 +211,7 @@ TEST_FF("require_that_documentdb_config_manager_subscribes_for_config",
         DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
     f1.addDocType("typea");
     const ConfigKeySet keySet(f2.createConfigKeySet());
-    ASSERT_EQUAL(7u, keySet.size());
+    ASSERT_EQUAL(8u, keySet.size());
     ConfigRetriever retriever(keySet, f1.context);
     f2.forwardConfig(f1.getBootstrapConfig(1));
     f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs

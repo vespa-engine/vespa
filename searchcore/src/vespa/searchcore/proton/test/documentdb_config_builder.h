@@ -22,6 +22,7 @@ private:
     DocumentDBConfig::JuniperrcConfigSP _juniperrc;
     DocumentDBConfig::DocumenttypesConfigSP _documenttypes;
     document::DocumentTypeRepo::SP _repo;
+    DocumentDBConfig::ImportedFieldsConfigSP _importedFields;
     search::TuneFileDocumentDB::SP _tuneFileDocumentDB;
     search::index::Schema::SP _schema;
     DocumentDBConfig::MaintenanceConfigSP _maintenance;
