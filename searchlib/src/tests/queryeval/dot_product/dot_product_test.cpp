@@ -132,6 +132,19 @@ TEST("test Simple") {
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
 }
 
+TEST("test Simple Single") {
+    FakeSearchable index;
+    setupFakeSearchable(index);
+    FakeResult expect = FakeResult()
+            .doc(7).score(70 * 7);
+    DP ws = DP().add("7", 70);
+
+    EXPECT_EQUAL(expect, ws.search(index, "field", true));
+    EXPECT_EQUAL(expect, ws.search(index, "field", false));
+    EXPECT_EQUAL(expect, ws.search(index, "multi-field", true));
+    EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
+}
+
 TEST("test Multi") {
     FakeSearchable index;
     setupFakeSearchable(index);

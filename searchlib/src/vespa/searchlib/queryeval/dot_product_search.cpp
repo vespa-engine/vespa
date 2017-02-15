@@ -108,7 +108,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &) const override {}
 };
 
-class SingleTermDotProductSearch : public SearchIterator {
+class SingleTermDotProductSearch : public DotProductSearch {
 public:
     SingleTermDotProductSearch(TermFieldMatchData &tmd, SearchIterator::UP child,
                                 const TermFieldMatchData &childTmd, feature_t weight, MatchData::UP md)
