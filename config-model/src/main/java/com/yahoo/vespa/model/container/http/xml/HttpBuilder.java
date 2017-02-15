@@ -2,10 +2,11 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.application.Xml;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -44,7 +45,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
-                accessControl = buildAccessControl(accessControlElem);
+                accessControl = buildAccessControl(ancestor, accessControlElem);
                 bindings.addAll(getAccessControlBindings(ancestor, accessControl));
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
@@ -60,9 +61,11 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return http;
     }
 
-    private AccessControl buildAccessControl(Element accessControlElem) {
-        String applicationId = XML.getValue(XML.getChild(accessControlElem, "application"));
-        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), applicationId);
+    private AccessControl buildAccessControl(AbstractConfigProducer ancestor, Element accessControlElem) {
+        String application = XmlHelper.getOptionalChildValue(accessControlElem, "application")
+                .orElse(getDeployedApplicationId(ancestor).value());
+
+        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application);
 
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
@@ -77,6 +80,15 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         }
         XmlHelper.getOptionalChildValue(accessControlElem, "vespa-domain").ifPresent(builder::vespaDomain);
         return builder.build();
+    }
+
+    /**
+     * Returns the id of the deployed application, or the default value if not explicitly set (self-hosted).
+     */
+    private static ApplicationName getDeployedApplicationId(AbstractConfigProducer ancestor) {
+        return getContainerCluster(ancestor)
+                .map(cluster -> cluster.getRoot().getDeployState().getProperties().applicationId().application())
+                .orElse(ApplicationId.defaultId().application());
     }
 
     private static List<Binding> getAccessControlBindings(AbstractConfigProducer ancestor, AccessControl accessControl) {
