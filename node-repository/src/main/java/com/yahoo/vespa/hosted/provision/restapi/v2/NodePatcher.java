@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A class which can take a partial JSON node/v2 node JSON structure and apply it to a node object.
@@ -81,11 +83,28 @@ public class NodePatcher {
                 return node.with(node.status().withHardwareFailure(toHardwareFailureType(asString(value))));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
+            case "ipAddresses" :
+                return node.withIpAddresses(asStringSet(value));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
     }
 
+    private Set<String> asStringSet(Inspector field) {
+        if ( ! field.type().equals(Type.ARRAY))
+            throw new IllegalArgumentException("Expected an ARRAY value, got a " + field.type());
+
+        TreeSet<String> strings = new TreeSet<>();
+        for (int i = 0; i < field.entries(); i++) {
+            Inspector entry = field.entry(i);
+            if ( ! entry.type().equals(Type.STRING))
+                throw new IllegalArgumentException("Expected a STRING value, got a " + entry.type());
+            strings.add(entry.asString());
+        }
+
+        return strings;
+    }
+    
     private Node patchCurrentRestartGeneration(Long value) {
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent())
