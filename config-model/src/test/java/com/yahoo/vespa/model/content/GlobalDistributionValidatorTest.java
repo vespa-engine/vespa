@@ -1,6 +1,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -14,8 +15,6 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author bjorncs
@@ -30,24 +29,37 @@ public class GlobalDistributionValidatorTest {
         Fixture fixture = new Fixture()
                 .addGlobalDocument(createDocumentType("foo"))
                 .addGlobalDocument(createDocumentType("bar"));
-        Redundancy redundancy = createRedundancyWithGlobalDistributionValue(false);
-        when(redundancy.effectiveFinalRedundancy()).thenReturn(1);
-        when(redundancy.totalNodes()).thenReturn(2);
+        Redundancy redundancy = createRedundancyWithoutGlobalDistribution();
 
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "The following document types are marked as global, " +
                         "but do not have high enough redundancy to make the documents globally distributed: " +
-                        "'bar', 'foo'. Redundancy is 1, expected 2.");
+                        "'bar', 'foo'. Redundancy is 2, expected 3.");
         new GlobalDistributionValidator()
                 .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
     @Test
-    public void validation_succeeds_when_globally_distributed() {
+    public void throws_exception_if_searchable_copies_too_low() {
+        Fixture fixture = new Fixture()
+                .addGlobalDocument(createDocumentType("foo"))
+                .addGlobalDocument(createDocumentType("bar"));
+        Redundancy redundancy = createRedundancyWithTooFewSearchableCopies();
+
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(
+                "The following document types have the number of searchable copies less than redundancy: " +
+                "'bar', 'foo'. Searchable copies is 1, while redundancy is 2.");
+        new GlobalDistributionValidator()
+                .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
+    }
+
+    @Test
+    public void validation_succeeds_when_globally_distributed_and_enough_searchable_copies() {
         Fixture fixture = new Fixture()
                 .addGlobalDocument(createDocumentType("foo"));
-        Redundancy redundancy = createRedundancyWithGlobalDistributionValue(true);
+        Redundancy redundancy = createRedundancyWithGlobalDistribution();
         new GlobalDistributionValidator()
                 .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
@@ -55,14 +67,14 @@ public class GlobalDistributionValidatorTest {
     @Test
     public void validation_succeeds_on_no_documents() {
         new GlobalDistributionValidator()
-                .validate(emptyMap(), emptySet(), createRedundancyWithGlobalDistributionValue(false));
+                .validate(emptyMap(), emptySet(), createRedundancyWithoutGlobalDistribution());
     }
 
     @Test
     public void validation_succeeds_on_no_global_documents() {
         Fixture fixture = new Fixture()
                 .addNonGlobalDocument(createDocumentType("foo"));
-        Redundancy redundancy = createRedundancyWithGlobalDistributionValue(false);
+        Redundancy redundancy = createRedundancyWithoutGlobalDistribution();
         new GlobalDistributionValidator()
                 .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
@@ -73,7 +85,7 @@ public class GlobalDistributionValidatorTest {
         Fixture fixture = new Fixture()
                 .addNonGlobalDocument(parent)
                 .addNonGlobalDocument(createDocumentType("child", parent));
-        Redundancy redundancy = createRedundancyWithGlobalDistributionValue(false);
+        Redundancy redundancy = createRedundancyWithoutGlobalDistribution();
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "The following document types are referenced from other documents, but are not globally distributed: 'parent'");
@@ -87,7 +99,7 @@ public class GlobalDistributionValidatorTest {
         Fixture fixture = new Fixture()
                 .addGlobalDocument(parent)
                 .addNonGlobalDocument(createDocumentType("child", parent));
-        Redundancy redundancy = createRedundancyWithGlobalDistributionValue(true);
+        Redundancy redundancy = createRedundancyWithGlobalDistribution();
         new GlobalDistributionValidator()
                 .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
@@ -98,7 +110,7 @@ public class GlobalDistributionValidatorTest {
         NewDocumentType child = createDocumentType("child", unknown);
         Fixture fixture = new Fixture()
                 .addNonGlobalDocument(child);
-        Redundancy redundancy = createRedundancyWithGlobalDistributionValue(true);
+        Redundancy redundancy = createRedundancyWithGlobalDistribution();
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "The following document types are referenced from other documents, but are not listed in services.xml: 'unknown'");
@@ -106,9 +118,29 @@ public class GlobalDistributionValidatorTest {
                 .validate(fixture.getDocumentTypes(), fixture.getGloballyDistributedDocuments(), redundancy);
     }
 
-    private static Redundancy createRedundancyWithGlobalDistributionValue(boolean isGloballyDistributed) {
-        Redundancy redundancy = mock(Redundancy.class);
-        when(redundancy.isEffectivelyGloballyDistributed()).thenReturn(isGloballyDistributed);
+    @Test
+    public void throws_exception_if_referenced_document_not_global_end_to_end() {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(
+                "The following document types are referenced from other documents, but are not globally distributed: 'parent'");
+        new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/global_distribution_validation/").create();
+    }
+
+    private static Redundancy createRedundancyWithGlobalDistribution() {
+        Redundancy redundancy = new Redundancy(2, 2, 2);
+        redundancy.setTotalNodes(2);
+        return redundancy;
+    }
+
+    private static Redundancy createRedundancyWithoutGlobalDistribution() {
+        Redundancy redundancy = new Redundancy(2, 2, 2);
+        redundancy.setTotalNodes(3);
+        return redundancy;
+    }
+
+    private static Redundancy createRedundancyWithTooFewSearchableCopies() {
+        Redundancy redundancy = new Redundancy(2, 2, 1);
+        redundancy.setTotalNodes(2);
         return redundancy;
     }
 
