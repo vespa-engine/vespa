@@ -1,10 +1,8 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -59,10 +57,8 @@ public class DockerTester implements AutoCloseable {
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
-        Container container = new Container("host123.name.yahoo.com", new DockerImage("image-123"),
-                new ContainerName("host123"), Container.State.RUNNING, 1);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
-                orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment, Optional.of(container));
+                orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.of(storageMaintainer), 100, mr, Optional.empty());
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }
