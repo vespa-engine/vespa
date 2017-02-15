@@ -223,8 +223,6 @@ public class JsonWriterTestCase {
         String fields = "{ \"actualmap\": { \"nalle\": \"kalle\", \"tralle\": \"skalle\" }}";
         String docId = "id:unittest:testmap::whee";
         Document doc = readDocumentFromJson(docId, fields);
-        // we have to do everything by hand to check, as maps are unordered, but
-        // are serialized as an ordered structure
 
         ObjectMapper m = new ObjectMapper();
         Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
@@ -259,8 +257,6 @@ public class JsonWriterTestCase {
         String docId = "id:unittest:testMapStringToArrayOfInt::whee";
         String fields = "{ \"actualMapStringToArrayOfInt\": { \"bamse\": [1, 2, 3] }}";
         Document doc = readDocumentFromJson(docId, fields);
-        // we have to do everything by hand to check, as maps are unordered, but
-        // are serialized as an ordered structure
 
         ObjectMapper m = new ObjectMapper();
         Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
