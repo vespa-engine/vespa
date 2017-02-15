@@ -17,6 +17,9 @@ struct DummyDBOwner : IDocumentDBOwner {
         return searchcorespi::IIndexManagerFactory::SP();
     }
     uint32_t getDistributionKey() const override { return -1; }
+    std::shared_ptr<IDocumentDBReferentRegistry> getDocumentDBReferentRegistry() const override {
+        return std::shared_ptr<IDocumentDBReferentRegistry>();
+    }
 };
 
 } // namespace proton

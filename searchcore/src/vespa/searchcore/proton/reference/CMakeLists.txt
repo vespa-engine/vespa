@@ -6,4 +6,5 @@ vespa_add_library(searchcore_reference STATIC
     gid_to_lid_mapper.cpp
     gid_to_lid_mapper_factory.cpp
     DEPENDS
+    searchcore_documentmetastore
 )

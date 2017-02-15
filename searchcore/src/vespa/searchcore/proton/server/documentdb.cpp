@@ -20,6 +20,7 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/docsumreply.h>
+#include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
 
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
@@ -203,9 +204,23 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     }
 }
 
+void DocumentDB::registerReferent()
+{
+    if (_state.getAllowReconfig()) {
+        auto registry = _owner.getDocumentDBReferentRegistry();
+        if (registry) {
+            auto referent = _subDBs.getReadySubDB()->getDocumentDBReferent();
+            if (referent) {
+                registry->add(_docTypeName.getName(), referent);
+            }
+        }
+    }
+}
+
 void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
                                  SerialNum serialNum) {
     vespalib::LockGuard guard(_configLock);
+    registerReferent();
     _activeConfigSnapshot = config;
     if (_activeConfigSnapshotGeneration < config->getGeneration()) {
         _activeConfigSnapshotGeneration = config->getGeneration();
@@ -359,6 +374,7 @@ DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
         _docTypeName.toString().c_str(),
         (cs == DDBState::ConfigState::NEED_RESTART ? "need restart" : "feed disabled"));
     // Use generation from rejected config (white lie ?)
+    registerReferent();
     _activeConfigSnapshotGeneration = configSnapshot->getGeneration();
     DocumentDBConfig::SP oaconfig = _activeConfigSnapshot->
                                     getOriginalConfig();
@@ -389,6 +405,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         if (_activeConfigSnapshot.get() == configSnapshot.get() ||
             *_activeConfigSnapshot == *configSnapshot) {
             // generation might have changed but config is unchanged.
+            registerReferent();
             _activeConfigSnapshot = configSnapshot;
             _activeConfigSnapshotGeneration = configSnapshot->getGeneration();
             if (_state.getRejectedConfig()) {

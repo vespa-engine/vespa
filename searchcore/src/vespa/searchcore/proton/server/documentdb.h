@@ -150,6 +150,7 @@ private:
     search::CacheStats            _lastDocStoreCacheStats;
     IBucketStateCalculator::SP    _calc;
 
+    void registerReferent();
     void setActiveConfig(const DocumentDBConfig::SP &config, SerialNum serialNum);
     DocumentDBConfig::SP getActiveConfig() const;
     void internalInit();

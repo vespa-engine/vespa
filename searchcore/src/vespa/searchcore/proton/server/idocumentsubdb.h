@@ -40,6 +40,7 @@ class ISummaryAdapter;
 class IDocumentMetaStoreContext;
 class IDocumentRetriever;
 class IAttributeManager;
+class IDocumentDBReferent;
 
 /**
  * Interface for a document sub database that handles a subset of the documents that belong to a
@@ -124,6 +125,7 @@ public:
 
     virtual matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const = 0;
     virtual void close() = 0;
+    virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent() = 0;
 };
 
 } // namespace proton
