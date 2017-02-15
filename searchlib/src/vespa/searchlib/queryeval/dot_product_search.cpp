@@ -125,6 +125,7 @@ private:
     }
 
     void doUnpack(uint32_t docid) override {
+        _child->doUnpack(docid);
         _tmd.setRawScore(docid, _weight*_childTmd.getWeight());
     }
 
