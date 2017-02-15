@@ -50,6 +50,8 @@ public class AclProvisioningTest {
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
+        List<Node> dockerHost = tester.makeReadyNodes(1, "default", NodeType.host);
+        tester.makeReadyDockerNodes(1, "default", dockerHost.get(0).id());
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes
@@ -61,7 +63,7 @@ public class AclProvisioningTest {
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is active nodes in same application, proxy nodes and config servers
-        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers), nodeAcls);
+        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost), nodeAcls);
     }
 
     @Test

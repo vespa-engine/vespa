@@ -158,6 +158,9 @@ public class NodeRepository extends AbstractComponent {
         switch (node.type()) {
             case tenant:
                 // Tenant nodes trust nodes in same application and all infrastructure nodes
+                // They also trust all traffic from Docker hosts of trusted nodes,
+                // as it may be NATed traffic from trusted Docker containers
+                trustedNodes.addAll(getDockerHosts(trustedNodes)); // TODO: Remove when we no longer have IPv4-only nodes
                 trustedNodes.addAll(getNodes(NodeType.proxy));
                 trustedNodes.addAll(getConfigNodes());
                 break;
@@ -462,6 +465,17 @@ public class NodeRepository extends AbstractComponent {
                 .map(host -> createNode(host, host, Optional.empty(),
                         flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
                         NodeType.config))
+                .collect(Collectors.toList());
+    }
+
+    private List<Node> getDockerHosts(List<Node> nodes) {
+        return nodes.stream()
+                .map(Node::parentHostname)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(hostName -> getNode(hostName, Node.State.ready))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
