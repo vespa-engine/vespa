@@ -1,6 +1,6 @@
 [
   {
-    "application": "host-life",
+    "application": "host_life",
     "dimensions": {
       "flavor": "docker",
       "app": "testapp.testinstance",
