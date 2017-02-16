@@ -72,6 +72,17 @@ public class ImportedFieldsResolverTestCase {
         new SearchModel().add(new TemporaryImportedField("my_not_attribute", "campaign_ref", "not_attribute")).resolve();
     }
 
+    @Test
+    public void resolver_fails_is_referenced_fields_is_indexing() {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(
+                "For search 'ad', import field 'my_attribute_and_index': " +
+                        "Field 'attribute_and_index' via reference field 'campaign_ref': Index not allowed");
+        new SearchModel()
+                .add(new TemporaryImportedField("my_attribute_and_index", "campaign_ref", "attribute_and_index"))
+                .resolve();
+    }
+
     private static class SearchModel {
         public final Search campaignSearch;
         public final Search adSearch;
@@ -83,7 +94,10 @@ public class ImportedFieldsResolverTestCase {
             campaignSearch.addDocument(new SDDocumentType("campaign"));
             TemporarySDField budgetField = new TemporarySDField("budget", DataType.INT);
             budgetField.parseIndexingScript("{ attribute }");
+            TemporarySDField attributeAndIndexField = new TemporarySDField("attribute_and_index", DataType.INT);
+            attributeAndIndexField.parseIndexingScript("{ attribute | index }");
             campaignSearch.getDocument().addField(budgetField);
+            campaignSearch.getDocument().addField(attributeAndIndexField);
             campaignSearch.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
 
             adSearch = new Search("ad", app);
