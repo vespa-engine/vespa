@@ -36,6 +36,8 @@ public:
                             const vespalib::string &configId,
                             const vespalib::string &docTypeName);
 
+    DocumentDBConfigBuilder(const DocumentDBConfig &cfg);
+
     DocumentDBConfigBuilder &repo(const document::DocumentTypeRepo::SP &repo_in) {
         _repo = repo_in;
         return *this;

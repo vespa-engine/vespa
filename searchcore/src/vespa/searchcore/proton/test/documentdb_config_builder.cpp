@@ -45,7 +45,30 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _configId(configId),
       _docTypeName(docTypeName),
       _extraConfig()
-{ }
+{
+}
+
+
+DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
+     : _generation(cfg.getGeneration()),
+      _rankProfiles(cfg.getRankProfilesConfigSP()),
+      _rankingConstants(cfg.getRankingConstantsSP()),
+      _indexschema(cfg.getIndexschemaConfigSP()),
+      _attributes(cfg.getAttributesConfigSP()),
+      _summary(cfg.getSummaryConfigSP()),
+      _summarymap(cfg.getSummarymapConfigSP()),
+      _juniperrc(cfg.getJuniperrcConfigSP()),
+      _documenttypes(cfg.getDocumenttypesConfigSP()),
+      _repo(cfg.getDocumentTypeRepoSP()),
+      _importedFields(cfg.getImportedFieldsConfigSP()),
+      _tuneFileDocumentDB(cfg.getTuneFileDocumentDBSP()),
+      _schema(cfg.getSchemaSP()),
+      _maintenance(cfg.getMaintenanceConfigSP()),
+      _configId(cfg.getConfigId()),
+      _docTypeName(cfg.getDocTypeName()),
+      _extraConfig(cfg.getExtraConfigs())
+{
+}
 
 DocumentDBConfig::SP
 DocumentDBConfigBuilder::build()

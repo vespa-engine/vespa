@@ -37,6 +37,7 @@ public:
     RankingConstants(const Vector &constants);
     bool operator==(const RankingConstants &rhs) const;
     const Constant *getConstant(const vespalib::string &name) const;
+    size_t size() const { return _constants.size(); }
 };
 
 }
