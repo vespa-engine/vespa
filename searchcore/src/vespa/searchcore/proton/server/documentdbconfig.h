@@ -20,6 +20,7 @@ namespace vespa {
                 class InternalRankProfilesType;
                 class InternalAttributesType;
                 class InternalIndexschemaType;
+                class InternalImportedFieldsType;
             }
             namespace summary { namespace internal { class InternalJuniperrcType; } }
         }
@@ -45,6 +46,7 @@ public:
         bool juniperrcChanged;
         bool _documenttypesChanged;
         bool _documentTypeRepoChanged;
+        bool _importedFieldsChanged;
         bool _tuneFileDocumentDBChanged;
         bool _schemaChanged;
         bool _maintenanceChanged;
@@ -69,6 +71,8 @@ public:
     using DocumenttypesConfig = const document::internal::InternalDocumenttypesType;
     using DocumenttypesConfigSP = std::shared_ptr<DocumenttypesConfig>;
     using MaintenanceConfigSP = DocumentDBMaintenanceConfig::SP;
+    using ImportedFieldsConfig = const vespa::config::search::internal::InternalImportedFieldsType;
+    using ImportedFieldsConfigSP = std::shared_ptr<ImportedFieldsConfig>;
 
 private:
     vespalib::string               _configId;
@@ -83,6 +87,7 @@ private:
     JuniperrcConfigSP              _juniperrc;
     DocumenttypesConfigSP          _documenttypes;
     document::DocumentTypeRepo::SP _repo;
+    ImportedFieldsConfigSP         _importedFields;
     search::TuneFileDocumentDB::SP _tuneFileDocumentDB;
     search::index::Schema::SP      _schema;
     MaintenanceConfigSP            _maintenance;
@@ -93,8 +98,9 @@ private:
     template <typename T>
     bool equals(const T * lhs, const T * rhs) const
     {
-        if (lhs == NULL)
+        if (lhs == NULL) {
             return rhs == NULL;
+        }
         return rhs != NULL && *lhs == *rhs;
     }
 public:
@@ -108,17 +114,18 @@ public:
                      const JuniperrcConfigSP &juniperrc,
                      const DocumenttypesConfigSP &documenttypesConfig,
                      const document::DocumentTypeRepo::SP &repo,
-                     const search::TuneFileDocumentDB::SP & tuneFileDocumentDB,
+                     const ImportedFieldsConfigSP &importedFields,
+                     const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
                      const search::index::Schema::SP &schema,
                      const DocumentDBMaintenanceConfig::SP &maintenance,
                      const vespalib::string &configId,
                      const vespalib::string &docTypeName,
-                     const config::ConfigSnapshot & extraConfig = config::ConfigSnapshot());
+                     const config::ConfigSnapshot &extraConfig = config::ConfigSnapshot());
 
     DocumentDBConfig(const DocumentDBConfig &cfg);
     ~DocumentDBConfig();
 
-    const vespalib::string & getConfigId() const { return _configId; }
+    const vespalib::string &getConfigId() const { return _configId; }
     void setConfigId(const vespalib::string &configId) { _configId = configId; }
 
     const vespalib::string &getDocTypeName() const { return _docTypeName; }
@@ -143,6 +150,8 @@ public:
     const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }
     const document::DocumentTypeRepo::SP &getDocumentTypeRepoSP() const { return _repo; }
     const document::DocumentType *getDocumentType() const { return _repo->getDocumentType(getDocTypeName()); }
+    const ImportedFieldsConfig &getImportedFieldsConfig() const { return *_importedFields; }
+    const ImportedFieldsConfigSP &getImportedFieldsConfigSP() const { return _importedFields; }
     const search::index::Schema::SP &getSchemaSP() const { return _schema; }
     const MaintenanceConfigSP &getMaintenanceConfigSP() const { return _maintenance; }
     const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
@@ -153,15 +162,15 @@ public:
       */
     ComparisonResult compare(const DocumentDBConfig &rhs) const;
 
-    bool valid(void) const;
+    bool valid() const;
 
-    const config::ConfigSnapshot & getExtraConfigs() const { return _extraConfigs; }
+    const config::ConfigSnapshot &getExtraConfigs() const { return _extraConfigs; }
     void setExtraConfigs(const config::ConfigSnapshot &extraConfigs) { _extraConfigs = extraConfigs; }
 
     /**
      * Only keep configs needed for replay of transaction log.
      */
-    static SP makeReplayConfig(const SP & orig);
+    static SP makeReplayConfig(const SP &orig);
 
     /**
      * Return original config if this is a replay config, otherwise return
@@ -173,7 +182,7 @@ public:
      * Return original config if cfg is a replay config, otherwise return
      * cfg.
      */
-    static SP preferOriginalConfig(const SP & cfg);
+    static SP preferOriginalConfig(const SP &cfg);
 
     /**
      * Create modified attributes config.

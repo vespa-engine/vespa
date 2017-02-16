@@ -2,15 +2,16 @@
 
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/config/file_acquirer/file_acquirer.h>
+#include <vespa/config/helper/legacy.h>
+#include <vespa/log/log.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/config/helper/legacy.h>
-#include <vespa/config/file_acquirer/file_acquirer.h>
-#include <vespa/vespalib/time/time_box.h>
-#include <vespa/config-summarymap.h>
-#include <vespa/config-rank-profiles.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/log/log.h>
+#include <vespa/vespalib/time/time_box.h>
 
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 
@@ -38,7 +39,8 @@ DocumentDBConfigManager::createConfigKeySet() const
             AttributesConfig,
             SummaryConfig,
             SummarymapConfig,
-            JuniperrcConfig>(_configId);
+            JuniperrcConfig,
+            ImportedFieldsConfig>(_configId);
     set.add(_extraConfigKeys);
     return set;
 }
@@ -129,7 +131,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
 
 
 void
-DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
+DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 {
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
@@ -138,6 +140,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
     using SummaryConfigSP = DocumentDBConfig::SummaryConfigSP;
     using SummarymapConfigSP = DocumentDBConfig::SummarymapConfigSP;
     using JuniperrcConfigSP = DocumentDBConfig::JuniperrcConfigSP;
+    using ImportedFieldsConfigSP = DocumentDBConfig::ImportedFieldsConfigSP;
     using MaintenanceConfigSP = DocumentDBConfig::MaintenanceConfigSP;
 
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
@@ -148,6 +151,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
     SummaryConfigSP newSummaryConfig;
     SummarymapConfigSP newSummarymapConfig;
     JuniperrcConfigSP newJuniperrcConfig;
+    ImportedFieldsConfigSP newImportedFieldsConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;
 
@@ -155,18 +159,21 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
         if (_bootstrapConfig->getDocumenttypesConfigSP().get() == NULL ||
             _bootstrapConfig->getDocumentTypeRepoSP().get() == NULL ||
             _bootstrapConfig->getProtonConfigSP().get() == NULL ||
-            _bootstrapConfig->getTuneFileDocumentDBSP().get() == NULL)
+            _bootstrapConfig->getTuneFileDocumentDBSP().get() == NULL) {
             return;
+        }
     }
-
 
     int64_t generation = snapshot.getGeneration();
     LOG(debug,
-        "Forwarded generation %" PRId64 ", generation %" PRId64,
+        "Forwarded generation %"
+                PRId64
+                ", generation %"
+                PRId64,
         _bootstrapConfig->getGeneration(), generation);
-    if (!_ignoreForwardedConfig &&
-        _bootstrapConfig->getGeneration() != generation)
-            return;
+    if (!_ignoreForwardedConfig && _bootstrapConfig->getGeneration() != generation) {
+        return;
+    }
 
     int64_t currentGeneration = -1;
     if (current.get() != NULL) {
@@ -177,6 +184,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
         newSummaryConfig = current->getSummaryConfigSP();
         newSummarymapConfig = current->getSummarymapConfigSP();
         newJuniperrcConfig = current->getJuniperrcConfigSP();
+        newImportedFieldsConfig = current->getImportedFieldsConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
         currentGeneration = current->getGeneration();
     }
@@ -222,25 +230,23 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
                 "Cannot use bad index schema, validation failed");
             abort();
         }
-        newIndexschemaConfig =
-            IndexschemaConfigSP(indexschemaConfig.release());
+        newIndexschemaConfig = IndexschemaConfigSP(indexschemaConfig.release());
     }
-    if (snapshot.isChanged<AttributesConfig>(_configId, currentGeneration))
-        newAttributesConfig =
-            AttributesConfigSP(snapshot.getConfig<AttributesConfig>(_configId).
-                               release());
-    if (snapshot.isChanged<SummaryConfig>(_configId, currentGeneration))
-        newSummaryConfig =
-            SummaryConfigSP(snapshot.getConfig<SummaryConfig>(_configId).
-                            release());
-    if (snapshot.isChanged<SummarymapConfig>(_configId, currentGeneration))
-        newSummarymapConfig =
-            SummarymapConfigSP(snapshot.getConfig<SummarymapConfig>(_configId).
-                               release());
-    if (snapshot.isChanged<JuniperrcConfig>(_configId, currentGeneration))
-        newJuniperrcConfig =
-            JuniperrcConfigSP(
-                    snapshot.getConfig<JuniperrcConfig>(_configId).release());
+    if (snapshot.isChanged<AttributesConfig>(_configId, currentGeneration)) {
+        newAttributesConfig = AttributesConfigSP(snapshot.getConfig<AttributesConfig>(_configId).release());
+    }
+    if (snapshot.isChanged<SummaryConfig>(_configId, currentGeneration)) {
+        newSummaryConfig = SummaryConfigSP(snapshot.getConfig<SummaryConfig>(_configId).release());
+    }
+    if (snapshot.isChanged<SummarymapConfig>(_configId, currentGeneration)) {
+        newSummarymapConfig = SummarymapConfigSP(snapshot.getConfig<SummarymapConfig>(_configId).release());
+    }
+    if (snapshot.isChanged<JuniperrcConfig>(_configId, currentGeneration)) {
+        newJuniperrcConfig = JuniperrcConfigSP(snapshot.getConfig<JuniperrcConfig>(_configId).release());
+    }
+    if (snapshot.isChanged<ImportedFieldsConfig>(_configId, currentGeneration)) {
+        newImportedFieldsConfig = ImportedFieldsConfigSP(snapshot.getConfig<ImportedFieldsConfig>(_configId).release());
+    }
 
     Schema::SP schema(buildSchema(*newAttributesConfig,
                                   *newSummaryConfig,
@@ -264,6 +270,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
                                  newJuniperrcConfig,
                                  _bootstrapConfig->getDocumenttypesConfigSP(),
                                  _bootstrapConfig->getDocumentTypeRepoSP(),
+                                 newImportedFieldsConfig,
                                  _bootstrapConfig->getTuneFileDocumentDBSP(),
                                  schema,
                                  newMaintenanceConfig,

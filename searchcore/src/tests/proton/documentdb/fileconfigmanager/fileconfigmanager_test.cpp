@@ -1,20 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config-mycfg.h"
-#include <vespa/searchcore/proton/server/fileconfigmanager.h>
-#include <vespa/searchcore/proton/server/bootstrapconfig.h>
-#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchcore/proton/common/schemautil.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/helper/configgetter.hpp>
-
+#include <vespa/searchcore/proton/common/schemautil.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
+#include <vespa/searchcore/proton/server/fileconfigmanager.h>
+#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace config;
 using namespace document;
@@ -24,6 +24,7 @@ using namespace search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
+using proton::matching::RankingConstants;
 
 typedef DocumentDBConfigHelper DBCM;
 typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
@@ -120,11 +121,15 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
 {
     EXPECT_TRUE(exp.getRankProfilesConfig() == act.getRankProfilesConfig());
     EXPECT_TRUE(exp.getRankingConstants() == act.getRankingConstants());
+    EXPECT_EQUAL(0u, exp.getRankingConstants().size());
     EXPECT_TRUE(exp.getIndexschemaConfig() == act.getIndexschemaConfig());
     EXPECT_TRUE(exp.getAttributesConfig() == act.getAttributesConfig());
     EXPECT_TRUE(exp.getSummaryConfig() == act.getSummaryConfig());
     EXPECT_TRUE(exp.getSummarymapConfig() == act.getSummarymapConfig());
     EXPECT_TRUE(exp.getJuniperrcConfig() == act.getJuniperrcConfig());
+    EXPECT_TRUE(exp.getImportedFieldsConfig() == act.getImportedFieldsConfig());
+    EXPECT_EQUAL(0u, exp.getImportedFieldsConfig().attribute.size());
+
     int expTypeCount = 0;
     int actTypeCount = 0;
     exp.getDocumentTypeRepoSP()->forEachDocumentType(
@@ -138,10 +143,26 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
     assertEqualExtraConfigs(exp, act);
 }
 
+DocumentDBConfig::SP
+addConfigsThatAreNotSavedToDisk(const DocumentDBConfig &cfg)
+{
+    test::DocumentDBConfigBuilder builder(cfg);
+    RankingConstants::Vector constants = {{"my_name", "my_type", "my_path"}};
+    builder.rankingConstants(std::make_shared<RankingConstants>(constants));
+
+    ImportedFieldsConfigBuilder importedFields;
+    importedFields.attribute.resize(1);
+    importedFields.attribute.back().name = "my_name";
+    builder.importedFields(std::make_shared<ImportedFieldsConfig>(importedFields));
+    return builder.build();
+}
+
 TEST_FF("requireThatConfigCanBeSavedAndLoaded", DocumentDBConfig::SP(makeBaseConfigSnapshot()),
                                                 Schema(makeHistorySchema()))
 {
-    saveBaseConfigSnapshot(*f1, f2, 20);
+
+    DocumentDBConfig::SP fullCfg = addConfigsThatAreNotSavedToDisk(*f1);
+    saveBaseConfigSnapshot(*fullCfg, f2, 20);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
     Schema::SP ehs;
     {

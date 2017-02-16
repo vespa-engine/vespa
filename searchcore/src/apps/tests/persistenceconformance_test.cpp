@@ -4,6 +4,7 @@
 LOG_SETUP("persistenceconformance_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/config-imported-fields.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
@@ -121,6 +122,7 @@ public:
                         std::make_shared<JuniperrcConfig>(),
                         _typeCfg,
                         _repo,
+                        std::make_shared<ImportedFieldsConfig>(),
                         std::make_shared<TuneFileDocumentDB>(),
                         schema,
                         std::make_shared<DocumentDBMaintenanceConfig>(),

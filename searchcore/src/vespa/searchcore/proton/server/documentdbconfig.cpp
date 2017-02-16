@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdbconfig.h"
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-indexschema.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>
 
@@ -32,6 +33,7 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       juniperrcChanged(false),
       _documenttypesChanged(false),
       _documentTypeRepoChanged(false),
+      _importedFieldsChanged(false),
       _tuneFileDocumentDBChanged(false),
       _schemaChanged(false),
       _maintenanceChanged(false)
@@ -48,6 +50,7 @@ DocumentDBConfig::DocumentDBConfig(
                const JuniperrcConfigSP &juniperrc,
                const DocumenttypesConfigSP &documenttypes,
                const DocumentTypeRepo::SP &repo,
+               const ImportedFieldsConfigSP &importedFields,
                const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
                const Schema::SP &schema,
                const DocumentDBMaintenanceConfig::SP &maintenance,
@@ -66,6 +69,7 @@ DocumentDBConfig::DocumentDBConfig(
       _juniperrc(juniperrc),
       _documenttypes(documenttypes),
       _repo(repo),
+      _importedFields(importedFields),
       _tuneFileDocumentDB(tuneFileDocumentDB),
       _schema(schema),
       _maintenance(maintenance),
@@ -88,6 +92,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _juniperrc(cfg._juniperrc),
       _documenttypes(cfg._documenttypes),
       _repo(cfg._repo),
+      _importedFields(cfg._importedFields),
       _tuneFileDocumentDB(cfg._tuneFileDocumentDB),
       _schema(cfg._schema),
       _maintenance(cfg._maintenance),
@@ -117,6 +122,8 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
            equals<DocumenttypesConfig>(_documenttypes.get(),
                                        rhs._documenttypes.get()) &&
            _repo.get() == rhs._repo.get() &&
+           equals<ImportedFieldsConfig >(_importedFields.get(),
+                                         rhs._importedFields.get()) &&
            equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(),
                                       rhs._tuneFileDocumentDB.get()) &&
            equals<Schema>(_schema.get(),
@@ -148,6 +155,8 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
         !equals<DocumenttypesConfig>(_documenttypes.get(),
                 rhs._documenttypes.get());
     retval._documentTypeRepoChanged = _repo.get() != rhs._repo.get();
+    retval._importedFieldsChanged =
+            !equals<ImportedFieldsConfig >(_importedFields.get(), rhs._importedFields.get());
     retval._tuneFileDocumentDBChanged =
         !equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(),
                 rhs._tuneFileDocumentDB.get());
@@ -172,6 +181,7 @@ DocumentDBConfig::valid() const
            (_juniperrc.get() != NULL) &&
            (_documenttypes.get() != NULL) &&
            (_repo.get() != NULL) &&
+           (_importedFields.get() != NULL) &&
            (_tuneFileDocumentDB.get() != NULL) &&
            (_schema.get() != NULL) &&
            (_maintenance.get() != NULL);
@@ -211,6 +221,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._juniperrc,
                 o._documenttypes,
                 o._repo,
+                std::make_shared<ImportedFieldsConfig>(),
                 o._tuneFileDocumentDB,
                 o._schema,
                 o._maintenance,
@@ -250,6 +261,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _juniperrc,
             _documenttypes,
             _repo,
+            _importedFields,
             _tuneFileDocumentDB,
             _schema,
             _maintenance,

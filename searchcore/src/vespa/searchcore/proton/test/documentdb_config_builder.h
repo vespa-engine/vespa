@@ -22,6 +22,7 @@ private:
     DocumentDBConfig::JuniperrcConfigSP _juniperrc;
     DocumentDBConfig::DocumenttypesConfigSP _documenttypes;
     document::DocumentTypeRepo::SP _repo;
+    DocumentDBConfig::ImportedFieldsConfigSP _importedFields;
     search::TuneFileDocumentDB::SP _tuneFileDocumentDB;
     search::index::Schema::SP _schema;
     DocumentDBConfig::MaintenanceConfigSP _maintenance;
@@ -35,6 +36,8 @@ public:
                             const vespalib::string &configId,
                             const vespalib::string &docTypeName);
 
+    DocumentDBConfigBuilder(const DocumentDBConfig &cfg);
+
     DocumentDBConfigBuilder &repo(const document::DocumentTypeRepo::SP &repo_in) {
         _repo = repo_in;
         return *this;
@@ -45,6 +48,14 @@ public:
     }
     DocumentDBConfigBuilder &attributes(const DocumentDBConfig::AttributesConfigSP &attributes_in) {
         _attributes = attributes_in;
+        return *this;
+    }
+    DocumentDBConfigBuilder &rankingConstants(const DocumentDBConfig::RankingConstants::SP &rankingConstants_in) {
+        _rankingConstants = rankingConstants_in;
+        return *this;
+    }
+    DocumentDBConfigBuilder &importedFields(const DocumentDBConfig::ImportedFieldsConfigSP &importedFields_in) {
+        _importedFields = importedFields_in;
         return *this;
     }
     DocumentDBConfig::SP build();
