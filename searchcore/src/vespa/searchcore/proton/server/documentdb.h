@@ -151,7 +151,7 @@ private:
     IBucketStateCalculator::SP    _calc;
 
     void registerReferent();
-    void setActiveConfig(const DocumentDBConfig::SP &config, SerialNum serialNum);
+    void setActiveConfig(const DocumentDBConfig::SP &config, SerialNum serialNum, int64_t generation);
     DocumentDBConfig::SP getActiveConfig() const;
     void internalInit();
     void initManagers();
@@ -159,7 +159,7 @@ private:
     void performReconfig(DocumentDBConfig::SP configSnapshot);
     void closeSubDBs();
 
-    bool
+    void
     handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
                          const ConfigValidator::Result &cvr,
                          const DDBState::ConfigState &cs);

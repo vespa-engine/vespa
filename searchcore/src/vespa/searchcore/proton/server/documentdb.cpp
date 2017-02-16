@@ -218,12 +218,13 @@ void DocumentDB::registerReferent()
 }
 
 void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
-                                 SerialNum serialNum) {
+                                 SerialNum serialNum, int64_t generation) {
     vespalib::LockGuard guard(_configLock);
     registerReferent();
     _activeConfigSnapshot = config;
-    if (_activeConfigSnapshotGeneration < config->getGeneration()) {
-        _activeConfigSnapshotGeneration = config->getGeneration();
+    assert(generation >= config->getGeneration());
+    if (_activeConfigSnapshotGeneration < generation) {
+        _activeConfigSnapshotGeneration = generation;
     }
     _activeConfigSnapshotSerialNum = serialNum;
 }
@@ -275,7 +276,7 @@ DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
     syncFeedView();
     // Check that feed view has been activated.
     assert(_feedView.get().get() != NULL);
-    setActiveConfig(configSnapshot, _initConfigSerialNum);
+    setActiveConfig(configSnapshot, _initConfigSerialNum, configSnapshot->getGeneration());
     startTransactionLogReplay();
 }
 
@@ -354,7 +355,7 @@ DocumentDB::performReconfig(DocumentDBConfig::SP configSnapshot)
 }
 
 
-bool
+void
 DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
                                  const ConfigValidator::Result &cvr,
                                  const DDBState::ConfigState &cs)
@@ -373,17 +374,14 @@ DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
     LOG(info, "DocumentDB(%s): Config from config server rejected: %s",
         _docTypeName.toString().c_str(),
         (cs == DDBState::ConfigState::NEED_RESTART ? "need restart" : "feed disabled"));
-    // Use generation from rejected config (white lie ?)
-    registerReferent();
-    _activeConfigSnapshotGeneration = configSnapshot->getGeneration();
     DocumentDBConfig::SP oaconfig = _activeConfigSnapshot->
                                     getOriginalConfig();
     if (!oaconfig ||
         _state.getState() != DDBState::State::APPLY_LIVE_CONFIG) {
-        return false;
+        configSnapshot = _activeConfigSnapshot;
+    } else {
+        configSnapshot = oaconfig;
     }
-    configSnapshot = oaconfig;
-    return true;
 }
 
 
@@ -399,15 +397,13 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     ConfigComparisonResult cmpres;
     Schema::SP oldSchema;
     bool fallbackConfig = false;
+    int64_t generation = configSnapshot->getGeneration();
     {
         vespalib::LockGuard guard(_configLock);
         assert(_activeConfigSnapshot.get());
         if (_activeConfigSnapshot.get() == configSnapshot.get() ||
             *_activeConfigSnapshot == *configSnapshot) {
             // generation might have changed but config is unchanged.
-            registerReferent();
-            _activeConfigSnapshot = configSnapshot;
-            _activeConfigSnapshotGeneration = configSnapshot->getGeneration();
             if (_state.getRejectedConfig()) {
                 // Illegal reconfig has been reverted.
                 _state.clearRejectedConfig();
@@ -415,38 +411,35 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
                     "DocumentDB(%s): Config from config server accepted (reverted config)",
                     _docTypeName.toString().c_str());
             }
-            return;
-        }
-
-        oldSchema = _activeConfigSnapshot->getSchemaSP();
-        ConfigValidator::Result cvr =
-            ConfigValidator::validate(ConfigValidator::Config
-                    (*configSnapshot->getSchemaSP(),
-                            configSnapshot->getAttributesConfig()),
-                            ConfigValidator::Config
-                            (*oldSchema, _activeConfigSnapshot->getAttributesConfig()),
-                            *_historySchema);
-        DDBState::ConfigState cs = _state.calcConfigState(cvr.type());
-        if (DDBState::getRejectedConfig(cs))
-        {
-            fallbackConfig = handleRejectedConfig(configSnapshot, cvr, cs);
-            if (!fallbackConfig) {
-                return;
+        } else {
+            oldSchema = _activeConfigSnapshot->getSchemaSP();
+            ConfigValidator::Result cvr =
+                ConfigValidator::validate(ConfigValidator::Config
+                                          (*configSnapshot->getSchemaSP(),
+                                           configSnapshot->getAttributesConfig()),
+                                          ConfigValidator::Config
+                                          (*oldSchema, _activeConfigSnapshot->getAttributesConfig()),
+                                          *_historySchema);
+            DDBState::ConfigState cs = _state.calcConfigState(cvr.type());
+            if (DDBState::getRejectedConfig(cs))
+            {
+                handleRejectedConfig(configSnapshot, cvr, cs);
+                fallbackConfig = true;
             }
+            cmpres = _activeConfigSnapshot->compare(*configSnapshot);
         }
-        cmpres = _activeConfigSnapshot->compare(*configSnapshot);
     }
     const ReconfigParams params(cmpres);
     if (params.shouldSchemaChange()) {
         reconfigureSchema(*configSnapshot, *_activeConfigSnapshot);
     }
     // Save config via config manager if replay is done.
-    bool equalConfig =
-        *DocumentDBConfig::preferOriginalConfig(configSnapshot) ==
-        *DocumentDBConfig::preferOriginalConfig(_activeConfigSnapshot);
-    assert(!fallbackConfig || equalConfig);
+    bool equalReplayConfig =
+        *DocumentDBConfig::makeReplayConfig(configSnapshot) ==
+        *DocumentDBConfig::makeReplayConfig(_activeConfigSnapshot);
+    assert(!fallbackConfig || equalReplayConfig);
     bool tlsReplayDone = _feedHandler.getTransactionLogReplayDone();
-    if (!equalConfig && tlsReplayDone) {
+    if (!equalReplayConfig && tlsReplayDone) {
         sync(_feedHandler.getSerialNum());
         serialNum = _feedHandler.incSerialNum();
         _config_store->saveConfig(*configSnapshot, *_historySchema, serialNum);
@@ -457,7 +450,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     }
     bool hasVisibilityDelayChanged = false;
     {
-        bool elidedConfigSave = equalConfig && tlsReplayDone;
+        bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
         _feedView.get()->forceCommit(elidedConfigSave ? serialNum :
                                      serialNum - 1);
@@ -493,7 +486,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         }
         _state.clearRejectedConfig();
     }
-    setActiveConfig(configSnapshot, serialNum);
+    setActiveConfig(configSnapshot, serialNum, generation);
     forwardMaintenanceConfig();
     _writeFilter.setConfig(configSnapshot->getMaintenanceConfigSP()->
                            getAttributeUsageFilterConfig());
