@@ -26,10 +26,13 @@ const SimpleTensor &to_simple(const Tensor &tensor) {
 }
 
 const SimpleTensor &to_simple(const Value &value, Stash &stash) {
+    if (value.is_double()) {
+        return stash.create<SimpleTensor>(value.as_double());
+    }
     if (auto tensor = value.as_tensor()) {
         return to_simple(*tensor);
     }
-    return stash.create<SimpleTensor>(value.as_double());
+    return stash.create<SimpleTensor>(); // error
 }
 
 const Value &to_value(std::unique_ptr<SimpleTensor> tensor, Stash &stash) {

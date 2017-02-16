@@ -145,7 +145,7 @@ DenseTensorView::operator==(const DenseTensorView &rhs) const
     return (_typeRef == rhs._typeRef) && sameCells(_cellsRef, rhs._cellsRef);
 }
 
-eval::ValueType
+const eval::ValueType &
 DenseTensorView::getType() const
 {
     return _typeRef;

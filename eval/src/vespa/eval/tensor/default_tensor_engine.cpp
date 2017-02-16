@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/operation_visitor.h>
+#include <vespa/eval/eval/simple_tensor_engine.h>
 #include "tensor.h"
 #include "dense/dense_tensor_builder.h"
 #include "dense/dense_tensor_function_compiler.h"
@@ -17,6 +18,7 @@ using Value = eval::Value;
 using ErrorValue = eval::ErrorValue;
 using DoubleValue = eval::DoubleValue;
 using TensorValue = eval::TensorValue;
+using TensorSpec = eval::TensorSpec;
 
 const DefaultTensorEngine DefaultTensorEngine::_engine;
 
@@ -49,7 +51,7 @@ DefaultTensorEngine::to_string(const Tensor &tensor) const
     return my_tensor.toString();
 }
 
-eval::TensorSpec
+TensorSpec
 DefaultTensorEngine::to_spec(const Tensor &tensor) const
 {
     assert(&tensor.engine() == this);
@@ -163,7 +165,11 @@ DefaultTensorEngine::map(const UnaryOperation &op, const Tensor &a, Stash &stash
     assert(&a.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
     CellFunctionAdapter cell_function(op);
-    return stash.create<TensorValue>(my_a.apply(cell_function));
+    auto result = my_a.apply(cell_function);
+    if (result->getType().is_double()) {
+        return stash.create<DoubleValue>(result->sum());
+    }
+    return stash.create<TensorValue>(std::move(result));
 }
 
 struct TensorOperationOverride : eval::DefaultOperationVisitor {
@@ -215,6 +221,9 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
     TensorOperationOverride tensor_override(my_a, my_b);
     op.accept(tensor_override);
     if (tensor_override.result) {
+        if (tensor_override.result->getType().is_double()) {
+            return stash.create<DoubleValue>(tensor_override.result->sum());
+        }
         return stash.create<TensorValue>(std::move(tensor_override.result));
     } else {
         return stash.create<ErrorValue>();
@@ -223,48 +232,61 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
 
 //-----------------------------------------------------------------------------
 
+namespace {
+
+const eval::TensorEngine &simple_engine() { return eval::SimpleTensorEngine::ref(); }
+const eval::TensorEngine &default_engine() { return DefaultTensorEngine::ref(); }
+
+// map tensors to simple tensors before fall-back evaluation
+const Value &to_simple(const Value &value, Stash &stash) {
+    if (auto tensor = value.as_tensor()) {
+        TensorSpec spec = tensor->engine().to_spec(*tensor);
+        return stash.create<TensorValue>(simple_engine().create(spec));
+    }
+    return value;
+}
+
+// map tensors to default tensors after fall-back evaluation
+const Value &to_default(const Value &value, Stash &stash) {
+    if (auto tensor = value.as_tensor()) {
+        TensorSpec spec = tensor->engine().to_spec(*tensor);
+        return stash.create<TensorValue>(default_engine().create(spec));
+    }
+    return value;
+}
+
+} // namespace vespalib::tensor::<unnamed>
+
+//-----------------------------------------------------------------------------
+
 const Value &
 DefaultTensorEngine::map(const Value &a, const std::function<double(double)> &function, Stash &stash) const
 {
-    (void) a;
-    (void) function;
-    return stash.create<ErrorValue>();
+    return to_default(simple_engine().map(to_simple(a, stash), function, stash), stash);
 }
 
 const Value &
 DefaultTensorEngine::join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const
 {
-    (void) a;
-    (void) b;
-    (void) function;
-    return stash.create<ErrorValue>();
+    return to_default(simple_engine().join(to_simple(a, stash), to_simple(b, stash), function, stash), stash);
 }
 
 const Value &
 DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
-    (void) a;
-    (void) aggr;
-    (void) dimensions;
-    return stash.create<ErrorValue>();
+    return to_default(simple_engine().reduce(to_simple(a, stash), aggr, dimensions, stash), stash);
 }
 
 const Value &
 DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
 {
-    (void) a;
-    (void) b;
-    (void) dimension;
-    return stash.create<ErrorValue>();
+    return to_default(simple_engine().concat(to_simple(a, stash), to_simple(b, stash), dimension, stash), stash);
 }
 
 const Value &
 DefaultTensorEngine::rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const
 {
-    (void) a;
-    (void) from;
-    (void) to;
-    return stash.create<ErrorValue>();
+    return to_default(simple_engine().rename(to_simple(a, stash), from, to, stash), stash);
 }
 
 //-----------------------------------------------------------------------------

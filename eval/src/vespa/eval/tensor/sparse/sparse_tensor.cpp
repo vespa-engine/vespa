@@ -97,7 +97,7 @@ SparseTensor::combineDimensionsWith(const SparseTensor &rhs) const
             eval::ValueType::tensor_type(std::move(result)));
 }
 
-eval::ValueType
+const eval::ValueType &
 SparseTensor::getType() const
 {
     return _type;
