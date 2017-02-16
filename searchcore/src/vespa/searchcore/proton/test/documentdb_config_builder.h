@@ -48,6 +48,14 @@ public:
         _attributes = attributes_in;
         return *this;
     }
+    DocumentDBConfigBuilder &rankingConstants(const DocumentDBConfig::RankingConstants::SP &rankingConstants_in) {
+        _rankingConstants = rankingConstants_in;
+        return *this;
+    }
+    DocumentDBConfigBuilder &importedFields(const DocumentDBConfig::ImportedFieldsConfigSP &importedFields_in) {
+        _importedFields = importedFields_in;
+        return *this;
+    }
     DocumentDBConfig::SP build();
 };
 
