@@ -165,7 +165,11 @@ DefaultTensorEngine::map(const UnaryOperation &op, const Tensor &a, Stash &stash
     assert(&a.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
     CellFunctionAdapter cell_function(op);
-    return stash.create<TensorValue>(my_a.apply(cell_function));
+    auto result = my_a.apply(cell_function);
+    if (result->getType().is_double()) {
+        return stash.create<DoubleValue>(result->sum());
+    }
+    return stash.create<TensorValue>(std::move(result));
 }
 
 struct TensorOperationOverride : eval::DefaultOperationVisitor {
@@ -217,6 +221,9 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
     TensorOperationOverride tensor_override(my_a, my_b);
     op.accept(tensor_override);
     if (tensor_override.result) {
+        if (tensor_override.result->getType().is_double()) {
+            return stash.create<DoubleValue>(tensor_override.result->sum());
+        }
         return stash.create<TensorValue>(std::move(tensor_override.result));
     } else {
         return stash.create<ErrorValue>();
