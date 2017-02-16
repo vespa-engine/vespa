@@ -62,7 +62,6 @@ public class CuratorDatabase {
         CuratorMutex lock = locks.computeIfAbsent(path, (pathArg) -> new CuratorMutex(pathArg.getAbsolute(), curator.framework()));
         lock.acquire(timeout);
         return lock;
-
     }
 
     // --------- Write operations ------------------------------------------------------------------------------

@@ -2,12 +2,14 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -301,14 +303,33 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         String message = "No nodes available";
         SessionThrowingException session = new SessionThrowingException(new OutOfCapacityException(message));
         localRepo.addSession(session);
-        HttpResponse response = createHandler(addTestTenant()).handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        HttpResponse response = createHandler(addTestTenant())
+                .handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertEquals(400, response.getStatus());
+        Slime data = getData(response);
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.OUT_OF_CAPACITY.name()));
+        assertThat(data.get().field("message").asString(), is(message));
+    }
+
+    @Test
+    public void test_application_lock_failure() throws InterruptedException, IOException {
+        String message = "Exception acquiring lock '/provision/v1/locks/foo/bar/default': Timed out after waiting PT1M";
+        SessionThrowingException session = new SessionThrowingException(new ApplicationLockException(new UncheckedTimeoutException(message)));
+        localRepo.addSession(session);
+        HttpResponse response = createHandler(addTestTenant())
+                .handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        assertEquals(500, response.getStatus());
+        Slime data = getData(response);
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.APPLICATION_LOCK_FAILURE.name()));
+        assertThat(data.get().field("message").asString(), is(message));
+    }
+
+    private Slime getData(HttpResponse response) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
         Slime data = new Slime();
         new JsonDecoder().decode(data, baos.toByteArray());
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.OUT_OF_CAPACITY.name()));
-        assertThat(data.get().field("message").asString(), is(message));
+        return data;
     }
 
     private static void assertResponse(HttpResponse response, String activateString) throws IOException {
