@@ -398,7 +398,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     Schema::SP oldSchema;
     bool fallbackConfig = false;
     int64_t generation = configSnapshot->getGeneration();
-    do {
+    {
         vespalib::LockGuard guard(_configLock);
         assert(_activeConfigSnapshot.get());
         if (_activeConfigSnapshot.get() == configSnapshot.get() ||
@@ -411,25 +411,24 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
                     "DocumentDB(%s): Config from config server accepted (reverted config)",
                     _docTypeName.toString().c_str());
             }
-            break;
+        } else {
+            oldSchema = _activeConfigSnapshot->getSchemaSP();
+            ConfigValidator::Result cvr =
+                ConfigValidator::validate(ConfigValidator::Config
+                                          (*configSnapshot->getSchemaSP(),
+                                           configSnapshot->getAttributesConfig()),
+                                          ConfigValidator::Config
+                                          (*oldSchema, _activeConfigSnapshot->getAttributesConfig()),
+                                          *_historySchema);
+            DDBState::ConfigState cs = _state.calcConfigState(cvr.type());
+            if (DDBState::getRejectedConfig(cs))
+            {
+                handleRejectedConfig(configSnapshot, cvr, cs);
+                fallbackConfig = true;
+            }
+            cmpres = _activeConfigSnapshot->compare(*configSnapshot);
         }
-
-        oldSchema = _activeConfigSnapshot->getSchemaSP();
-        ConfigValidator::Result cvr =
-            ConfigValidator::validate(ConfigValidator::Config
-                    (*configSnapshot->getSchemaSP(),
-                            configSnapshot->getAttributesConfig()),
-                            ConfigValidator::Config
-                            (*oldSchema, _activeConfigSnapshot->getAttributesConfig()),
-                            *_historySchema);
-        DDBState::ConfigState cs = _state.calcConfigState(cvr.type());
-        if (DDBState::getRejectedConfig(cs))
-        {
-            handleRejectedConfig(configSnapshot, cvr, cs);
-            fallbackConfig = true;
-        }
-        cmpres = _activeConfigSnapshot->compare(*configSnapshot);
-    } while (0);
+    }
     const ReconfigParams params(cmpres);
     if (params.shouldSchemaChange()) {
         reconfigureSchema(*configSnapshot, *_activeConfigSnapshot);
