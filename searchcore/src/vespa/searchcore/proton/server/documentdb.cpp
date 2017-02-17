@@ -93,6 +93,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       IClusterStateChangedHandler(),
       IWipeOldRemovedFieldsHandler(),
       search::transactionlog::SyncProxy(),
+      MonitoredRefCount(),
       _docTypeName(docTypeName),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
@@ -120,8 +121,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _metricsWireService(metricsWireService),
       _metricsHook(*this, _docTypeName.getName(), protonCfg.numthreadspersearch),
       _feedView(),
-      _refCountMonitor(),
-      _refCount(0u),
       _syncFeedViewEnabled(false),
       _owner(owner),
       _state(),
@@ -544,18 +543,6 @@ DocumentDB::performDropFeedView2(IFeedView::SP feedView)
 }
 
 
-namespace {
-void
-waitForRefCountZero(uint32_t &ref_count, vespalib::Monitor &monitor)
-{
-    vespalib::MonitorGuard guard(monitor);
-    while (ref_count != 0) {
-        guard.wait();
-    }
-}
-}  // namespace
-
-
 void
 DocumentDB::close()
 {
@@ -566,7 +553,7 @@ DocumentDB::close()
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
-    waitForRefCountZero(_refCount, _refCountMonitor);
+    waitForZeroRefCount();
     // Abort any ongoing maintenance
     stopMaintenance();
 
@@ -859,24 +846,6 @@ DocumentDB::enterApplyLiveConfigState()
     _writeService.master().execute(makeTask(makeClosure(this,
                                            &DocumentDB::performReconfig,
                                            _pendingConfigSnapshot.get())));
-}
-
-
-void
-DocumentDB::retain()
-{
-    vespalib::MonitorGuard guard(_refCountMonitor);
-    ++_refCount;
-}
-
-
-void
-DocumentDB::release()
-{
-    vespalib::MonitorGuard guard(_refCountMonitor);
-    --_refCount;
-    if (_refCount == 0)
-        guard.broadcast();
 }
 
 

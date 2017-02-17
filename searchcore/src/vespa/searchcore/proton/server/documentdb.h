@@ -24,6 +24,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
@@ -70,7 +71,8 @@ class DocumentDB : public IDocumentDBConfigOwner,
                    public IDocumentSubDB::IOwner,
                    public IClusterStateChangedHandler,
                    public IWipeOldRemovedFieldsHandler,
-                   public search::transactionlog::SyncProxy
+                   public search::transactionlog::SyncProxy,
+                   public MonitoredRefCount
 {
 private:
     class MetricsUpdateHook : public metrics::UpdateHook {
@@ -124,8 +126,6 @@ private:
     MetricsWireService             &_metricsWireService;
     MetricsUpdateHook             _metricsHook;
     vespalib::VarHolder<IFeedView::SP>      _feedView;
-    vespalib::Monitor             _refCountMonitor;
-    uint32_t                      _refCount;
     bool                          _syncFeedViewEnabled;
     IDocumentDBOwner             &_owner;
     DDBState                      _state;
@@ -409,12 +409,6 @@ public:
     }
 
     StatusReport::UP reportStatus() const;
-
-    /**
-     * Reference counting
-     */
-    void retain();
-    void release();
 
     bool getRejectedConfig() const { return _state.getRejectedConfig(); }
     void wipeHistory(void);
