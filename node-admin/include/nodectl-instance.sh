@@ -124,7 +124,8 @@ Start() {
 # Stop all services, can be seen as a shutdown of a non-Docker node
 Stop() {
     echo "Stopping services and other yinst packages running"
-    yinst stop
+    # Stop yinst the way it is done when a non-Docker node is shutdown.
+    /etc/rc.d/init.d/yinst stop
     echo "Stopping crond service"
     service crond stop
     echo "Stopping rsyslog service"
