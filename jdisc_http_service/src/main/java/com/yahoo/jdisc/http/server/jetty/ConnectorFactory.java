@@ -185,7 +185,7 @@ public class ConnectorFactory {
             factory.setTrustStorePassword(password.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
         }
 
-        factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
+        factory.setSslKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
         factory.setProtocol(sslConfig.protocol());
         return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
     }
