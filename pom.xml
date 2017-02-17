@@ -1128,6 +1128,7 @@
         <module>filedistribution</module>
         <module>filedistribution_test</module>
         <module>fsa</module>
+        <module>hadoop</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
