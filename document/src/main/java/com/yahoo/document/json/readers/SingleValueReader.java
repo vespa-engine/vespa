@@ -11,12 +11,34 @@ import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.ValueUpdate;
 import org.apache.commons.codec.binary.Base64;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 public class SingleValueReader {
     public static final String UPDATE_ASSIGN = "assign";
     public static final String UPDATE_INCREMENT = "increment";
     public static final String UPDATE_DECREMENT = "decrement";
     public static final String UPDATE_MULTIPLY = "multiply";
     public static final String UPDATE_DIVIDE = "divide";
+
+    public static final Map<String, String> UPDATE_OPERATION_TO_ARITHMETIC_SIGN = new HashMap<>();
+    public static final Map<String, String> ARITHMETIC_SIGN_TO_UPDATE_OPERATION;
+    private static final Pattern arithmeticExpressionPattern;
+
+    static {
+        UPDATE_OPERATION_TO_ARITHMETIC_SIGN.put(UPDATE_INCREMENT, "+");
+        UPDATE_OPERATION_TO_ARITHMETIC_SIGN.put(UPDATE_DECREMENT, "-");
+        UPDATE_OPERATION_TO_ARITHMETIC_SIGN.put(UPDATE_MULTIPLY, "*");
+        UPDATE_OPERATION_TO_ARITHMETIC_SIGN.put(UPDATE_DIVIDE, "/");
+        ARITHMETIC_SIGN_TO_UPDATE_OPERATION = UPDATE_OPERATION_TO_ARITHMETIC_SIGN.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
+        String validSigns = Pattern.quote(String.join("", UPDATE_OPERATION_TO_ARITHMETIC_SIGN.values()));
+        arithmeticExpressionPattern = Pattern.compile("^\\$\\w+\\s*([" + validSigns + "])\\s*(\\d+(.\\d+)?)$");
+    }
 
     public static FieldValue readSingleValue(TokenBuffer buffer, DataType expectedType) {
         if (buffer.currentToken().isScalarValue()) {
@@ -55,6 +77,10 @@ public class SingleValueReader {
                 throw new IllegalArgumentException("Operation \"" + buffer.currentName() + "\" not implemented.");
         }
         return update;
+    }
+
+    public static Matcher matchArithmeticOperation(String expression) {
+        return arithmeticExpressionPattern.matcher(expression.trim());
     }
 
     public static FieldValue readAtomic(String field, DataType expectedType) {

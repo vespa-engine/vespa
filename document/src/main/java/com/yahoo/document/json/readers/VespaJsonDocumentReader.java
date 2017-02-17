@@ -10,7 +10,6 @@ import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
-import com.yahoo.document.NumericDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
@@ -19,7 +18,6 @@ import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.json.JsonReaderException;
 import com.yahoo.document.json.TokenBuffer;
-import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.update.FieldUpdate;
 
 import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
@@ -29,6 +27,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
 import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
+import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_ASSIGN;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate;
 
 /**
@@ -132,31 +131,38 @@ public class VespaJsonDocumentReader {
 
         buffer.next();
         while (localNesting <= buffer.nesting()) {
-            FieldPathUpdate.Type fieldPathUpdateType = FieldPathUpdate.Type.valueOf(buffer.currentName().toUpperCase());
-            FieldPathUpdate fieldPathUpdate = FieldPathUpdate.create(fieldPathUpdateType, update.getType());
+            String fieldPathOperation = buffer.currentName().toLowerCase();
+            FieldPathUpdate fieldPathUpdate;
+            if (fieldPathOperation.equals(UPDATE_ASSIGN)) {
+                fieldPathUpdate = new AssignFieldPathUpdate(update.getType(), fieldPath);
+                FieldValue fv = SingleValueReader.readSingleValue(
+                        buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+                ((AssignFieldPathUpdate) fieldPathUpdate).setNewValue(fv);
 
-            fieldPathUpdate.setFieldPath(fieldPath);
-            DataType dt = fieldPathUpdate.getFieldPath().getResultingDataType();
-            if (fieldPathUpdate instanceof AssignFieldPathUpdate) {
-                if (dt instanceof NumericDataType) {
-                    ((AssignFieldPathUpdate) fieldPathUpdate).setExpression(buffer.currentText());
-                } else {
-                    FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
-                    ((AssignFieldPathUpdate) fieldPathUpdate).setNewValue(fv);
-                }
-
-            } else if (fieldPathUpdate instanceof AddFieldPathUpdate) {
-                FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
+            } else if (fieldPathOperation.equals(UPDATE_ADD)) {
+                fieldPathUpdate = new AddFieldPathUpdate(update.getType(), fieldPath);
+                FieldValue fv = SingleValueReader.readSingleValue(
+                        buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
                 ((AddFieldPathUpdate) fieldPathUpdate).setNewValues((Array) fv);
 
-            } else if (fieldPathUpdate instanceof RemoveFieldPathUpdate) {
+            } else if (fieldPathOperation.equals(UPDATE_REMOVE)) {
+                fieldPathUpdate = new RemoveFieldPathUpdate(update.getType(), fieldPath);
                 buffer.next();
+
+            } else if (SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.containsKey(fieldPathOperation)) {
+                fieldPathUpdate = new AssignFieldPathUpdate(update.getType(), fieldPath);
+                double value = Double.valueOf(buffer.currentText());
+                String expression = String.format("$value %s %s",
+                        SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.get(fieldPathOperation), value);
+                ((AssignFieldPathUpdate) fieldPathUpdate).setExpression(expression);
+
+            } else {
+                throw new IllegalArgumentException("Field path update type '" + fieldPathOperation + "' not supported.");
             }
             update.addFieldPathUpdate(fieldPathUpdate);
             buffer.next();
         }
     }
-
 
 
     private static boolean isFieldPath(String field) {

@@ -79,8 +79,8 @@ public class AddFieldPathUpdate extends FieldPathUpdate {
         reader.read(this);
     }
 
-    public AddFieldPathUpdate(DocumentType type) {
-        super(FieldPathUpdate.Type.ADD, type);
+    public AddFieldPathUpdate(DocumentType type, String fieldPath) {
+        super(FieldPathUpdate.Type.ADD, type, fieldPath, null);
     }
 
     public void setNewValues(Array value) {
