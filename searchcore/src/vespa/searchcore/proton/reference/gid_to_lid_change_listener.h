@@ -11,7 +11,8 @@
 namespace proton {
 
 /*
- * Class for listening to changes in mapping from gid to lid.
+ * Class for listening to changes in mapping from gid to lid and updating
+ * reference attribute appropriately.
  */
 class GidToLidChangeListener
 {
