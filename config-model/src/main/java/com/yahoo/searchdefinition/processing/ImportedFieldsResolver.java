@@ -59,11 +59,13 @@ public class ImportedFieldsResolver extends Processor {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
         } else if (!targetField.doesAttributing()) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute");
+        } else if (targetField.doesIndexing()) {
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Index not allowed");
         }
         return targetField;
     }
 
-    private String targetFieldAsString(String targetFieldName, DocumentReference reference) {
+    private static String targetFieldAsString(String targetFieldName, DocumentReference reference) {
         return "Field '" + targetFieldName + "' via reference field '" + reference.referenceField().getName() + "'";
     }
 
