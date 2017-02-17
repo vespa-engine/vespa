@@ -313,7 +313,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void test_application_lock_failure() throws InterruptedException, IOException {
-        String message = "Exception acquiring lock '/provision/v1/locks/foo/bar/default': Timed out after waiting PT1M";
+        String message = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
         SessionThrowingException session = new SessionThrowingException(new ApplicationLockException(new UncheckedTimeoutException(message)));
         localRepo.addSession(session);
         HttpResponse response = createHandler(addTestTenant())
