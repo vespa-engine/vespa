@@ -24,7 +24,6 @@ public class DocumentParser {
     private static final String CONDITION = "condition";
     public static final String CREATE_IF_NON_EXISTENT = "create";
     public static final String FIELDS = "fields";
-    public static final String FIELDPATHS = "fieldpaths";
     public static final String REMOVE = "remove";
     private final JsonParser parser;
     private  long indentLevel;
@@ -55,8 +54,8 @@ public class DocumentParser {
         }
         if (indentLevel == 1L) {
             handleIdentLevelOne(documentParseInfo, docIdAndOperationIsSetExternally);
-        } else if (indentLevel > 1L) {
-            handleIdentLevelOnePlus(documentParseInfo);
+        } else if (indentLevel == 2L) {
+            handleIdentLevelTwo(documentParseInfo);
         }
     }
 
@@ -109,17 +108,12 @@ public class DocumentParser {
         }
     }
 
-    private  void handleIdentLevelOnePlus(DocumentParseInfo documentParseInfo) {
+    private  void handleIdentLevelTwo(DocumentParseInfo documentParseInfo) {
         try {
             JsonToken currentToken = parser.getCurrentToken();
             // "fields" opens a dictionary and is therefore on level two which might be surprising.
-            if (indentLevel == 2 && currentToken == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
+            if (currentToken == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
                 documentParseInfo.fieldsBuffer.bufferObject(currentToken, parser);
-                processIndent();
-
-            // "fieldpaths" opens an array and is therefore on level 10001 which might be surprising
-            } else if (indentLevel == 10001 && currentToken == JsonToken.START_ARRAY && FIELDPATHS.equals(parser.getCurrentName())) {
-                documentParseInfo.fieldpathsBuffer.bufferArray(currentToken, parser);
                 processIndent();
             }
         } catch (IOException e) {

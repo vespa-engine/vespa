@@ -72,9 +72,9 @@ public class JsonReader {
             throw new RuntimeException(e);
         }
         documentParseInfo.operationType = operationType;
-        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(
+        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader();
+        DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
                 getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
-        DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation();
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
         return operation;
     }
@@ -103,10 +103,10 @@ public class JsonReader {
             state = END_OF_FEED;
             return null;
         }
-        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(
+        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader();
+        DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
                 getDocumentTypeFromString(documentParseInfo.get().documentId.getDocType(), typeManager),
                 documentParseInfo.get());
-        DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation();
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.get().condition));
         return operation;
     }

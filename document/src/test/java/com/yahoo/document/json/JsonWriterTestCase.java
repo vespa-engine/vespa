@@ -277,7 +277,7 @@ public class JsonWriterTestCase {
         DocumentParseInfo raw = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(raw.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, raw.documentId));
-        VespaJsonDocumentReader.readPut(raw.fieldsBuffer, put);
+        new VespaJsonDocumentReader().readPut(raw.fieldsBuffer, put);
         return put.getDocument();
     }
 
