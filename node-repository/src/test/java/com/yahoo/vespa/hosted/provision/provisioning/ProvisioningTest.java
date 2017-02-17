@@ -572,6 +572,35 @@ public class ProvisioningTest {
             assertTrue("Nodes are retired by system", retired.asList().stream().allMatch(retiredBySystem));
         }
     }
+
+    @Test
+    public void application_deployment_does_not_use_unallocated_nodes_having_retired_flavor() {
+        String flavorToRetire = "default";
+        String replacementFlavor = "new-default";
+
+        FlavorConfigBuilder b = new FlavorConfigBuilder();
+        b.addFlavor(flavorToRetire, 1., 1., 10, Flavor.Type.BARE_METAL).cost(2).retired(true);
+        FlavorsConfig.Flavor.Builder newDefault = b.addFlavor(replacementFlavor, 2., 2., 20,
+                                                              Flavor.Type.BARE_METAL).cost(2);
+        b.addReplaces(flavorToRetire, newDefault);
+
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")),
+                                                           b.build());
+        ApplicationId application = tester.makeApplicationId();
+
+        // Add nodes
+        tester.makeReadyNodes(4, flavorToRetire);
+        tester.makeReadyNodes(4, replacementFlavor);
+
+        SystemState state = prepare(application, 2, 0, 2, 0,
+                                    flavorToRetire, tester);
+
+        tester.activate(application, state.allHosts);
+
+        List<Node> nodes = tester.getNodes(application).asList();
+        assertTrue("Allocated nodes have flavor " + replacementFlavor,
+                   nodes.stream().allMatch(n -> n.flavor().name().equals(replacementFlavor)));
+    }
     
     private void assertCorrectFlavorPreferences(boolean largeIsStock) {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
