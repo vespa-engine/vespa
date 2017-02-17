@@ -17,15 +17,13 @@ import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 
-import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+import static com.yahoo.document.json.readers.SingleValueReader.readAtomic;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class MapReader {
-    public static final String MAP_KEY = "key";
-    public static final String MAP_VALUE = "value";
     public static final String UPDATE_ELEMENT = "element";
     public static final String UPDATE_MATCH = "match";
 
@@ -33,29 +31,19 @@ public class MapReader {
     public static void fillMap(TokenBuffer buffer, MapFieldValue parent) {
         JsonToken token = buffer.currentToken();
         int initNesting = buffer.nesting();
-        expectArrayStart(token);
+        expectObjectStart(token);
         token = buffer.next();
         DataType keyType = parent.getDataType().getKeyType();
         DataType valueType = parent.getDataType().getValueType();
         while (buffer.nesting() >= initNesting) {
-            FieldValue key = null;
-            FieldValue value = null;
-            expectObjectStart(token);
-            token = buffer.next();
-            for (int i = 0; i < 2; ++i) {
-                if (MAP_KEY.equals(buffer.currentName())) {
-                    key = readSingleValue(buffer, token, keyType);
-                } else if (MAP_VALUE.equals(buffer.currentName())) {
-                    value = readSingleValue(buffer, token, valueType);
-                }
-                token = buffer.next();
-            }
+            FieldValue key = readAtomic(buffer.currentName(), keyType);
+            FieldValue value = readSingleValue(buffer, valueType);
+
             Preconditions.checkState(key != null && value != null, "Missing key or value for map entry.");
             parent.put(key, value);
-
-            expectObjectEnd(token);
-            token = buffer.next(); // array end or next entry
+            token = buffer.next();
         }
+        expectObjectEnd(token);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

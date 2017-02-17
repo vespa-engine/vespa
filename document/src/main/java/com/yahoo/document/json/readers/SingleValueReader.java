@@ -18,11 +18,13 @@ public class SingleValueReader {
     public static final String UPDATE_MULTIPLY = "multiply";
     public static final String UPDATE_DIVIDE = "divide";
 
-    public static FieldValue readSingleValue(TokenBuffer buffer, JsonToken t, DataType expectedType) {
-        if (t.isScalarValue()) {
-            return readAtomic(buffer, expectedType);
+    public static FieldValue readSingleValue(TokenBuffer buffer, DataType expectedType) {
+        if (buffer.currentToken().isScalarValue()) {
+            return readAtomic(buffer.currentText(), expectedType);
         } else {
-            return CompositeReader.createComposite(buffer, expectedType);
+            FieldValue fieldValue = expectedType.createFieldValue();
+            CompositeReader.populateComposite(buffer, fieldValue);
+            return fieldValue;
         }
     }
 
@@ -34,7 +36,7 @@ public class SingleValueReader {
             case UPDATE_ASSIGN:
                 update = (buffer.currentToken() == JsonToken.VALUE_NULL)
                         ? ValueUpdate.createClear()
-                        : ValueUpdate.createAssign(readSingleValue(buffer, buffer.currentToken(), expectedType));
+                        : ValueUpdate.createAssign(readSingleValue(buffer, expectedType));
                 break;
             // double is silly, but it's what is used internally anyway
             case UPDATE_INCREMENT:
@@ -55,23 +57,22 @@ public class SingleValueReader {
         return update;
     }
 
-    public static FieldValue readAtomic(TokenBuffer buffer, DataType expectedType) {
+    public static FieldValue readAtomic(String field, DataType expectedType) {
         if (expectedType.equals(DataType.RAW)) {
-            return expectedType.createFieldValue(new Base64().decode(buffer.currentText()));
+            return expectedType.createFieldValue(new Base64().decode(field));
         } else if (expectedType.equals(PositionDataType.INSTANCE)) {
-            return PositionDataType.fromString(buffer.currentText());
+            return PositionDataType.fromString(field);
         } else if (expectedType instanceof ReferenceDataType) {
-            return readReferenceFieldValue(buffer, expectedType);
+            return readReferenceFieldValue(field, expectedType);
         } else {
-            return expectedType.createFieldValue(buffer.currentText());
+            return expectedType.createFieldValue(field);
         }
     }
 
-    private static FieldValue readReferenceFieldValue(TokenBuffer buffer, DataType expectedType) {
+    private static FieldValue readReferenceFieldValue(final String refText, DataType expectedType) {
         final FieldValue value = expectedType.createFieldValue();
-        final String refText = buffer.currentText();
         if (!refText.isEmpty()) {
-            value.assign(new DocumentId(buffer.currentText()));
+            value.assign(new DocumentId(refText));
         }
         return value;
     }

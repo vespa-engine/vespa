@@ -229,7 +229,7 @@ public class VespaJsonDocumentReader {
                     if (dt instanceof NumericDataType) {
                         update.setExpression(buffer.currentText());
                     } else {
-                        FieldValue fv = CompositeReader.createComposite(buffer, dt);
+                        FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
                         update.setNewValue(fv);
                     }
                     break;
@@ -253,7 +253,7 @@ public class VespaJsonDocumentReader {
             switch (buffer.currentName()) {
                 case "items":
                     DataType dt = update.getFieldPath().getResultingDataType();
-                    FieldValue fv = CompositeReader.createComposite(buffer, dt);
+                    FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
                     update.setNewValues((Array) fv);
                     break;
 

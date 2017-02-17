@@ -40,11 +40,10 @@ public class AddRemoveCreator {
         FieldValue container = field.getDataType().createFieldValue();
         FieldUpdate singleUpdate;
         int initNesting = buffer.nesting();
-        JsonToken token;
 
         Preconditions.checkState(buffer.currentToken().isStructStart(), "Expected start of composite, got %s", buffer.currentToken());
         if (container instanceof CollectionFieldValue) {
-            token = buffer.next();
+            buffer.next();
             DataType valueType = ((CollectionFieldValue) container).getDataType().getNestedType();
             if (container instanceof WeightedSet) {
                 // these are objects with string keys (which are the nested
@@ -59,9 +58,9 @@ public class AddRemoveCreator {
                 }
             } else {
                 List<FieldValue> arrayContents = new ArrayList<>();
-                token = ArrayReader.fillArrayUpdate(buffer, initNesting, token, valueType, arrayContents);
-                if (token != JsonToken.END_ARRAY) {
-                    throw new IllegalStateException("Expected END_ARRAY. Got '" + token + "'.");
+                ArrayReader.fillArrayUpdate(buffer, initNesting, valueType, arrayContents);
+                if (buffer.currentToken() != JsonToken.END_ARRAY) {
+                    throw new IllegalStateException("Expected END_ARRAY. Got '" + buffer.currentToken() + "'.");
                 }
                 if (isRemove) {
                     singleUpdate = FieldUpdate.createRemoveAll(field, arrayContents);

@@ -20,19 +20,6 @@ public class CompositeReader {
     // TODO createComposite is extremely similar to add/remove, refactor
     // yes, this suppresswarnings ugliness is by intention, the code relies on the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes" })
-    public static FieldValue createComposite(TokenBuffer buffer, DataType expectedType) {
-        FieldValue fieldValue = expectedType.createFieldValue();
-        if (buffer.currentToken().isStructStart()) {
-            populateComposite(buffer, fieldValue);
-        } else {
-            fieldValue.assign(buffer.currentText());
-        }
-        return fieldValue;
-    }
-
-    // TODO createComposite is extremely similar to add/remove, refactor
-    // yes, this suppresswarnings ugliness is by intention, the code relies on the contracts in the builders
-    @SuppressWarnings({ "cast", "rawtypes" })
     public static void populateComposite(TokenBuffer buffer, FieldValue fieldValue) {
         JsonToken token = buffer.currentToken();
         if ((token != JsonToken.START_OBJECT) && (token != JsonToken.START_ARRAY)) {
