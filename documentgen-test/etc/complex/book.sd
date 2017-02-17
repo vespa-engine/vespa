@@ -67,7 +67,7 @@ search book {
 
         }
         field ref type reference<parent> {
-
+            indexing: attribute
         }
     }
     field sw1 type float {
