@@ -238,6 +238,9 @@ class GroupPreparer {
                         ++rejectedWithClashingParentHost;
                         continue;
                     }
+                    if (offered.flavor().isRetired()) {
+                        continue;
+                    }
                     Node alloc = offered.allocate(application, ClusterMembership.from(cluster, highestIndex.add(1)), clock.instant());
                     accepted.add(acceptNode(alloc, wantToRetireNode));
                 }
