@@ -8,7 +8,7 @@ namespace vespalib {
 namespace eval {
 
 class Function;
-enum class PassParams;
+enum class PassParams : uint8_t;
 
 /**
  * Function used to generate a binary key that may be used to query

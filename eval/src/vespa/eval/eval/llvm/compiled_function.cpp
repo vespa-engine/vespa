@@ -25,7 +25,7 @@ CompiledFunction::CompiledFunction(const Function &function_in, PassParams pass_
       _pass_params(pass_params_in)
 {
     _address = _llvm_wrapper.compile_function(function_in.num_params(),
-                                              (_pass_params == PassParams::ARRAY),
+                                              _pass_params,
                                               function_in.root(),
                                               forest_optimizers);
 }
