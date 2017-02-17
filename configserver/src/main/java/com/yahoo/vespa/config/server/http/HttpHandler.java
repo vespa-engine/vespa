@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -46,9 +47,7 @@ public class HttpHandler extends LoggingRequestHandler {
             }
         } catch (NotFoundException | com.yahoo.vespa.config.server.NotFoundException e) {
             return HttpErrorResponse.notFoundError(getMessage(e, request));
-        } catch (BadRequestException e) {
-            return HttpErrorResponse.badRequest(getMessage(e, request));
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (BadRequestException | IllegalArgumentException | IllegalStateException e) {
             return HttpErrorResponse.badRequest(getMessage(e, request));
         } catch (InvalidApplicationException e) {
             return HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
@@ -60,6 +59,8 @@ public class HttpHandler extends LoggingRequestHandler {
             return HttpErrorResponse.unknownVespaVersion(getMessage(e, request));
         } catch (RequestTimeoutException e) {
             return HttpErrorResponse.requestTimeout(getMessage(e, request));
+        } catch (ApplicationLockException e) {
+            return HttpErrorResponse.applicationLockFailure(getMessage(e, request));
         } catch (Exception e) {
             e.printStackTrace();
             return HttpErrorResponse.internalServerError(getMessage(e, request));

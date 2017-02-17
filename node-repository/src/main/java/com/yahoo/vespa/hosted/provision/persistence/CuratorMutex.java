@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.transaction.Mutex;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * A cluster-wide reentrant mutex which is released on (the last symmetric) close
@@ -26,15 +26,16 @@ public class CuratorMutex implements Mutex {
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
     public void acquire(Duration timeout) {
+        boolean acquired;
         try {
-            boolean acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            if ( ! acquired) {
-                throw new TimeoutException("Timed out after waiting " + timeout.toString());
-            }
+            acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
         }
         catch (Exception e) {
             throw new RuntimeException("Exception acquiring lock '" + lockPath + "'", e);
         }
+
+        if (! acquired) throw new UncheckedTimeoutException("Timed out after waiting " + timeout.toString() +
+                                                                    " to acquire lock + '" + lockPath + "'");
     }
 
     @Override

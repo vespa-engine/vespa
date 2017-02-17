@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
@@ -269,12 +271,17 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
     public CuratorMutex lock(ApplicationId application) {
-        return lock(lockPath(application), defaultLockTimeout);
+        return lock(application, defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
     public CuratorMutex lock(ApplicationId application, Duration timeout) {
-        return lock(lockPath(application), timeout);
+        try {
+            return lock(lockPath(application), timeout);
+        }
+        catch (UncheckedTimeoutException e) {
+            throw new ApplicationLockException(e);
+        }
     }
 
     private CuratorMutex lock(Path path, Duration timeout) {

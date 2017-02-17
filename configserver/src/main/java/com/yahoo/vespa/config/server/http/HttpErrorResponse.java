@@ -18,7 +18,7 @@ import static com.yahoo.jdisc.Response.Status.*;
  * @since 5.1
  */
 public class HttpErrorResponse extends HttpResponse {
-    Logger log = Logger.getLogger(HttpErrorResponse.class.getName());
+    private static final Logger log = Logger.getLogger(HttpErrorResponse.class.getName());
     private final Slime slime = new Slime();
 
     public HttpErrorResponse(int code, final String errorType, final String msg) {
@@ -32,14 +32,15 @@ public class HttpErrorResponse extends HttpResponse {
     }
 
     public enum errorCodes {
-        NOT_FOUND,
+        APPLICATION_LOCK_FAILURE,
         BAD_REQUEST,
-        METHOD_NOT_ALLOWED,
         INTERNAL_SERVER_ERROR,
         INVALID_APPLICATION_PACKAGE,
-        UNKNOWN_VESPA_VERSION,
+        METHOD_NOT_ALLOWED,
+        NOT_FOUND,
         OUT_OF_CAPACITY,
-        REQUEST_TIMEOUT
+        REQUEST_TIMEOUT,
+        UNKNOWN_VESPA_VERSION
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -72,6 +73,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpResponse requestTimeout(String message) {
         return new HttpErrorResponse(REQUEST_TIMEOUT, errorCodes.REQUEST_TIMEOUT.name(), message);
+    }
+
+    public static HttpErrorResponse applicationLockFailure(String msg) {
+        return new HttpErrorResponse(INTERNAL_SERVER_ERROR, errorCodes.APPLICATION_LOCK_FAILURE.name(), msg);
     }
 
     @Override
