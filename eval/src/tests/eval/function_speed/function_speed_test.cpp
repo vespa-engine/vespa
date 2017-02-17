@@ -4,33 +4,19 @@
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 
 using namespace vespalib::eval;
+using vespalib::BenchmarkTimer;
 
-std::vector<vespalib::string> params_5({"p", "o", "q", "f", "w"});
+double budget = 0.25;
 
-double sum_sum = 0.0;
+//-----------------------------------------------------------------------------
 
 const char *function_str = "(0.35*p + 0.15*o + 0.30*q + 0.20*f) * w";
-Function function_ast = Function::parse(params_5, function_str);
-InterpretedFunction interpreted_function(SimpleTensorEngine::ref(), function_ast, NodeTypes());
-CompiledFunction compiled_function(function_ast, PassParams::SEPARATE);
-auto jit_function = compiled_function.get_function<5>();
 
 double gcc_function(double p, double o, double q, double f, double w) {
     return (0.35*p + 0.15*o + 0.30*q + 0.20*f) * w;
-}
-
-InterpretedFunction::Context icontext(interpreted_function);
-
-double interpret_function(double p, double o, double q, double f, double w) {
-    icontext.clear_params();
-    icontext.add_param(p);
-    icontext.add_param(o);
-    icontext.add_param(q);
-    icontext.add_param(f);
-    icontext.add_param(w);
-    return interpreted_function.eval(icontext).as_double();
 }
 
 //-----------------------------------------------------------------------------
@@ -40,11 +26,6 @@ const char *big_function_str = "(0.35*p + 0.15*o + 0.30*q + 0.20*f) * w + "
     "(0.35*p + 0.15*o + 0.30*q + 0.20*f) * w + "
     "(0.35*p + 0.15*o + 0.30*q + 0.20*f) * w";
 
-Function big_function_ast = Function::parse(params_5, big_function_str);
-InterpretedFunction big_interpreted_function(SimpleTensorEngine::ref(), big_function_ast, NodeTypes());
-CompiledFunction big_compiled_function(big_function_ast, PassParams::SEPARATE);
-auto big_jit_function = big_compiled_function.get_function<5>();
-
 double big_gcc_function(double p, double o, double q, double f, double w) {
     return (0.35*p + 0.15*o + 0.30*q + 0.20*f) * w +
         (0.35*p + 0.15*o + 0.30*q + 0.20*f) * w +
@@ -52,81 +33,96 @@ double big_gcc_function(double p, double o, double q, double f, double w) {
         (0.35*p + 0.15*o + 0.30*q + 0.20*f) * w;
 }
 
-InterpretedFunction::Context big_icontext(big_interpreted_function);
+//-----------------------------------------------------------------------------
 
-double big_interpret_function(double p, double o, double q, double f, double w) {
-    big_icontext.clear_params();
-    big_icontext.add_param(p);
-    big_icontext.add_param(o);
-    big_icontext.add_param(q);
-    big_icontext.add_param(f);
-    big_icontext.add_param(w);
-    return big_interpreted_function.eval(big_icontext).as_double();
-}
+struct Fixture {
+    Function function;
+    InterpretedFunction interpreted;
+    CompiledFunction separate;
+    CompiledFunction array;
+    CompiledFunction lazy;
+    Fixture(const vespalib::string &expr)
+        : function(Function::parse(expr)),
+          interpreted(SimpleTensorEngine::ref(), function, NodeTypes()),
+          separate(function, PassParams::SEPARATE),
+          array(function, PassParams::ARRAY),
+          lazy(function, PassParams::LAZY) {}
+};
 
 //-----------------------------------------------------------------------------
 
-double measure_best(CompiledFunction::expand<5>::type function) {
-    double sum = 0.0;
-    vespalib::BenchmarkTimer timer(1.0);
-    while (timer.has_budget()) {
-        timer.before();
-        for (int p = 0; p < 10; ++p) {
-            for (int o = 0; o < 10; ++o) {
-                for (int q = 0; q < 10; ++q) {
-                    for (int f = 0; f < 10; ++f) {
-                        for (int w = 0; w < 10; ++w) {
-                            sum += function(p, o, q, f, w);
-                        }
-                    }
-                }
-            }
-        }
-        timer.after();
-    }
-    return (timer.min_time() * 1000.0);
-}
+Fixture small(function_str);
+Fixture big(big_function_str);
+std::vector<double> test_params = {1.0, 2.0, 3.0, 4.0, 5.0};
 
 //-----------------------------------------------------------------------------
 
-TEST("require that small functions return the same result") {
-    EXPECT_EQUAL(interpret_function(1,2,3,4,5), jit_function(1,2,3,4,5));
-    EXPECT_EQUAL(interpret_function(1,2,3,4,5), gcc_function(1,2,3,4,5));
-    EXPECT_EQUAL(interpret_function(5,4,3,2,1), jit_function(5,4,3,2,1));
-    EXPECT_EQUAL(interpret_function(5,4,3,2,1), gcc_function(5,4,3,2,1));
-}
-
-TEST("require that big functions return the same result") {
-    EXPECT_EQUAL(big_interpret_function(1,2,3,4,5), big_jit_function(1,2,3,4,5));
-    EXPECT_EQUAL(big_interpret_function(1,2,3,4,5), big_gcc_function(1,2,3,4,5));
-    EXPECT_EQUAL(big_interpret_function(5,4,3,2,1), big_jit_function(5,4,3,2,1));
-    EXPECT_EQUAL(big_interpret_function(5,4,3,2,1), big_gcc_function(5,4,3,2,1));
+double empty_function_5(double, double, double, double, double) { return 0.0; }
+double estimate_cost_us(const std::vector<double> &params, CompiledFunction::expand<5>::type function) {
+    CompiledFunction::expand<5>::type empty = empty_function_5;
+    auto actual = [&](){function(params[0], params[1], params[2], params[3], params[4]);};
+    auto baseline = [&](){empty(params[0], params[1], params[2], params[3], params[4]);};
+    return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
 }
 
 TEST("measure small function eval/jit/gcc speed") {
-    double interpret_time = measure_best(interpret_function);
-    double jit_time = measure_best(jit_function);
-    double gcc_time = measure_best(gcc_function);
+    Fixture &fixture = small;
+    CompiledFunction::expand<5>::type fun = gcc_function;
+
+    EXPECT_EQUAL(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
+    EXPECT_EQUAL(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
+
+    double interpret_time = fixture.interpreted.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "interpret: %g us\n", interpret_time);
+    double jit_time = estimate_cost_us(test_params, fixture.separate.get_function<5>());
+    fprintf(stderr, "jit compiled: %g us\n", jit_time);
+    double gcc_time = estimate_cost_us(test_params, fun);
+    fprintf(stderr, "gcc compiled: %g us\n", gcc_time);
     double jit_vs_interpret_speed = (1.0/jit_time)/(1.0/interpret_time);
     double gcc_vs_jit_speed = (1.0/gcc_time)/(1.0/jit_time);
-    fprintf(stderr, "interpret: %g ms\n", interpret_time);
-    fprintf(stderr, "jit compiled: %g ms\n", jit_time);
-    fprintf(stderr, "gcc compiled: %g ms\n", gcc_time);
     fprintf(stderr, "jit speed compared to interpret: %g\n", jit_vs_interpret_speed);
     fprintf(stderr, "gcc speed compared to jit: %g\n", gcc_vs_jit_speed);
+
+    double jit_time_separate = fixture.separate.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "jit compiled: %g (separate) us\n", jit_time_separate);
+    double jit_time_array = fixture.array.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "jit compiled: %g (array) us\n", jit_time_array);
+    double jit_time_lazy = fixture.lazy.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "jit compiled: %g (lazy) us\n", jit_time_lazy);
+    double separate_vs_array_speed = (1.0/jit_time_separate)/(1.0/jit_time_array);
+    double array_vs_lazy_speed = (1.0/jit_time_array)/(1.0/jit_time_lazy);
+    fprintf(stderr, "seperate params speed compared to array params: %g\n", separate_vs_array_speed);
+    fprintf(stderr, "array params speed compared to lazy params: %g\n", array_vs_lazy_speed);
 }
 
 TEST("measure big function eval/jit/gcc speed") {
-    double interpret_time = measure_best(big_interpret_function);
-    double jit_time = measure_best(big_jit_function);
-    double gcc_time = measure_best(big_gcc_function);
+    Fixture &fixture = big;
+    CompiledFunction::expand<5>::type fun = big_gcc_function;
+
+    EXPECT_EQUAL(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
+    EXPECT_EQUAL(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
+
+    double interpret_time = fixture.interpreted.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "interpret: %g us\n", interpret_time);
+    double jit_time = estimate_cost_us(test_params, fixture.separate.get_function<5>());
+    fprintf(stderr, "jit compiled: %g us\n", jit_time);
+    double gcc_time = estimate_cost_us(test_params, fun);
+    fprintf(stderr, "gcc compiled: %g us\n", gcc_time);
     double jit_vs_interpret_speed = (1.0/jit_time)/(1.0/interpret_time);
     double gcc_vs_jit_speed = (1.0/gcc_time)/(1.0/jit_time);
-    fprintf(stderr, "interpret: %g ms\n", interpret_time);
-    fprintf(stderr, "jit compiled: %g ms\n", jit_time);
-    fprintf(stderr, "gcc compiled: %g ms\n", gcc_time);
     fprintf(stderr, "jit speed compared to interpret: %g\n", jit_vs_interpret_speed);
     fprintf(stderr, "gcc speed compared to jit: %g\n", gcc_vs_jit_speed);
+
+    double jit_time_separate = fixture.separate.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "jit compiled: %g (separate) us\n", jit_time_separate);
+    double jit_time_array = fixture.array.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "jit compiled: %g (array) us\n", jit_time_array);
+    double jit_time_lazy = fixture.lazy.estimate_cost_us(test_params, budget);
+    fprintf(stderr, "jit compiled: %g (lazy) us\n", jit_time_lazy);
+    double separate_vs_array_speed = (1.0/jit_time_separate)/(1.0/jit_time_array);
+    double array_vs_lazy_speed = (1.0/jit_time_array)/(1.0/jit_time_lazy);
+    fprintf(stderr, "seperate params speed compared to array params: %g\n", separate_vs_array_speed);
+    fprintf(stderr, "array params speed compared to lazy params: %g\n", array_vs_lazy_speed);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
