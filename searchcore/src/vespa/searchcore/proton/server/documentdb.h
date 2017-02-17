@@ -24,6 +24,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
@@ -124,8 +125,7 @@ private:
     MetricsWireService             &_metricsWireService;
     MetricsUpdateHook             _metricsHook;
     vespalib::VarHolder<IFeedView::SP>      _feedView;
-    vespalib::Monitor             _refCountMonitor;
-    uint32_t                      _refCount;
+    MonitoredRefCount             _refCount;
     bool                          _syncFeedViewEnabled;
     IDocumentDBOwner             &_owner;
     DDBState                      _state;
@@ -413,8 +413,8 @@ public:
     /**
      * Reference counting
      */
-    void retain();
-    void release();
+    void retain() { _refCount.retain(); }
+    void release() { _refCount.release(); }
 
     bool getRejectedConfig() const { return _state.getRejectedConfig(); }
     void wipeHistory(void);

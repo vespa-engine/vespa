@@ -1,0 +1,44 @@
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "monitored_refcount.h"
+#include <assert.h>
+
+namespace proton {
+
+MonitoredRefCount::MonitoredRefCount()
+    : _lock(),
+      _cv(),
+      _refCount(0u)
+{
+}
+
+MonitoredRefCount::~MonitoredRefCount()
+{
+    assert(_refCount == 0u);
+}
+
+void
+MonitoredRefCount::retain()
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    ++_refCount;
+}
+
+void
+MonitoredRefCount::release()
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    --_refCount;
+    if (_refCount == 0u) {
+        _cv.notify_all();
+    }
+}
+
+void
+MonitoredRefCount::waitForZeroRefCount()
+{
+    std::unique_lock<std::mutex> guard(_lock);
+    _cv.wait(guard, [this] { return (_refCount == 0u); });
+}
+
+} // namespace proton

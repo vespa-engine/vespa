@@ -23,4 +23,4 @@ public:
     virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override;
 };
 
-} // namespace search
+} // namespace proton

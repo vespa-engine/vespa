@@ -91,6 +91,7 @@ public:
     ~UniqueStore();
     EntryRef move(EntryRef ref);
     AddResult add(const EntryType &value);
+    EntryRef find(const EntryType &value);
     const EntryType &get(EntryRef ref) const
     {
         RefType iRef(ref);

@@ -112,6 +112,10 @@ struct Fixture
         }
     }
 
+    const ReferenceAttribute::Reference *getRef(uint32_t doc) {
+        return _attr->getReference(doc);
+    }
+
     void set(uint32_t doc, const GlobalId &gid) {
         _attr->update(doc, gid);
     }
@@ -131,6 +135,12 @@ struct Fixture
         const GlobalId *gid = get(doc);
         EXPECT_TRUE(gid != nullptr);
         EXPECT_EQUAL(toGid(str), *gid);
+    }
+
+    void assertRefLid(uint32_t expLid, uint32_t doc) {
+        auto ref = getRef(doc);
+        EXPECT_TRUE(ref != nullptr);
+        EXPECT_EQUAL(expLid, ref->lid());
     }
 
     void save() {
@@ -164,6 +174,10 @@ struct Fixture
     void assertReferencedLid(uint32_t doc, uint32_t expReferencedDoc) {
         uint32_t referencedDoc = _attr->getReferencedLid(doc);
         EXPECT_EQUAL(expReferencedDoc, referencedDoc);
+    }
+
+    void notifyGidToLidChange(const GlobalId &gid, uint32_t referencedDoc) {
+        _attr->notifyGidToLidChange(gid, referencedDoc);
     }
 };
 
@@ -275,6 +289,24 @@ TEST_F("require that we can use gid mapper", Fixture)
     TEST_DO(f.assertReferencedLid(3, 0));
     TEST_DO(f.assertReferencedLid(4, 10));
     TEST_DO(f.assertReferencedLid(5, 0));
+}
+
+TEST_F("require that notifyGidToLidChange works", Fixture)
+{
+    f.ensureDocIdLimit(4);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    f.set(3, toGid(doc1));
+    f.commit();
+    TEST_DO(f.assertRefLid(0, 1));
+    TEST_DO(f.assertRefLid(0, 2));
+    TEST_DO(f.assertRefLid(0, 3));
+    f.notifyGidToLidChange(toGid(doc1), 10);
+    f.notifyGidToLidChange(toGid(doc2), 20);
+    f.notifyGidToLidChange(toGid(doc3), 30);
+    TEST_DO(f.assertRefLid(10, 1));
+    TEST_DO(f.assertRefLid(20, 2));
+    TEST_DO(f.assertRefLid(10, 3));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -13,6 +13,7 @@ vespa_add_library(searchcore_pcommon STATIC
     feeddebugger.cpp
     feedtoken.cpp
     hw_info_sampler.cpp
+    monitored_refcount.cpp
     schemautil.cpp
     selectpruner.cpp
     selectcontext.cpp
