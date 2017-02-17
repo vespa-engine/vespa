@@ -41,8 +41,8 @@ public class ReferenceFieldTestCase {
         String adSdContent =
                 "search ad {\n" +
                 "  document ad {\n" +
-                "    field campaign_ref type reference<campaign> {}\n" +
-                "    field salesperson_ref type reference<salesperson> {}\n" +
+                "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
+                "    field salesperson_ref type reference<salesperson> { indexing: attribute }\n" +
                 "  }\n" +
                 "}";
         builder.importString(campaignSdContent);
@@ -60,13 +60,13 @@ public class ReferenceFieldTestCase {
         String campaignSdContent =
                 "search campaign {\n" +
                         "  document campaign {\n" +
-                        "    field ad_ref type reference<ad> {}\n" +
+                        "    field ad_ref type reference<ad> { indexing: attribute }\n" +
                         "  }\n" +
                         "}";
         String adSdContent =
                 "search ad {\n" +
                         "  document ad {\n" +
-                        "    field campaign_ref type reference<campaign> {}\n" +
+                        "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
                         "  }\n" +
                         "}";
         builder.importString(campaignSdContent);
