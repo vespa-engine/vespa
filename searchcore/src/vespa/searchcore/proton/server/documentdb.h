@@ -71,8 +71,7 @@ class DocumentDB : public IDocumentDBConfigOwner,
                    public IDocumentSubDB::IOwner,
                    public IClusterStateChangedHandler,
                    public IWipeOldRemovedFieldsHandler,
-                   public search::transactionlog::SyncProxy,
-                   public MonitoredRefCount
+                   public search::transactionlog::SyncProxy
 {
 private:
     class MetricsUpdateHook : public metrics::UpdateHook {
@@ -126,6 +125,7 @@ private:
     MetricsWireService             &_metricsWireService;
     MetricsUpdateHook             _metricsHook;
     vespalib::VarHolder<IFeedView::SP>      _feedView;
+    MonitoredRefCount             _refCount;
     bool                          _syncFeedViewEnabled;
     IDocumentDBOwner             &_owner;
     DDBState                      _state;
@@ -409,6 +409,12 @@ public:
     }
 
     StatusReport::UP reportStatus() const;
+
+    /**
+     * Reference counting
+     */
+    void retain() { _refCount.retain(); }
+    void release() { _refCount.release(); }
 
     bool getRejectedConfig() const { return _state.getRejectedConfig(); }
     void wipeHistory(void);

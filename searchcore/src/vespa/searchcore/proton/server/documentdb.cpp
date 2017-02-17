@@ -93,7 +93,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       IClusterStateChangedHandler(),
       IWipeOldRemovedFieldsHandler(),
       search::transactionlog::SyncProxy(),
-      MonitoredRefCount(),
       _docTypeName(docTypeName),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
@@ -121,6 +120,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _metricsWireService(metricsWireService),
       _metricsHook(*this, _docTypeName.getName(), protonCfg.numthreadspersearch),
       _feedView(),
+      _refCount(),
       _syncFeedViewEnabled(false),
       _owner(owner),
       _state(),
@@ -553,7 +553,7 @@ DocumentDB::close()
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
-    waitForZeroRefCount();
+    _refCount.waitForZeroRefCount();
     // Abort any ongoing maintenance
     stopMaintenance();
 
