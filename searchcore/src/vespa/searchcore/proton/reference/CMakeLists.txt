@@ -3,8 +3,10 @@ vespa_add_library(searchcore_reference STATIC
     SOURCES
     document_db_referent.cpp
     document_db_referent_registry.cpp
+    gid_to_lid_change_listener.cpp
     gid_to_lid_mapper.cpp
     gid_to_lid_mapper_factory.cpp
     DEPENDS
     searchcore_documentmetastore
+    searchcore_pcommon
 )
