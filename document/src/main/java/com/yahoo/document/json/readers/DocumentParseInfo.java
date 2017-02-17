@@ -13,5 +13,4 @@ public class DocumentParseInfo {
     public Optional<String> condition = Optional.empty();
     public DocumentParser.SupportedOperation operationType = null;
     public TokenBuffer fieldsBuffer = new TokenBuffer();
-    public TokenBuffer fieldpathsBuffer = new TokenBuffer();
 }

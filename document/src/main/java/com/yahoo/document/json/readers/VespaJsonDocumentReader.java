@@ -27,28 +27,18 @@ import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
 import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
-import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayEnd;
-import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
 import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
 import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class VespaJsonDocumentReader {
-    private final DocumentType documentType;
-    private final DocumentParseInfo documentParseInfo;
-
     private static final String UPDATE_REMOVE = "remove";
     private static final String UPDATE_ADD = "add";
 
-    public VespaJsonDocumentReader(DocumentType documentType, DocumentParseInfo documentParseInfo) {
-        this.documentType = documentType;
-        this.documentParseInfo = documentParseInfo;
-    }
-
-    public DocumentOperation createDocumentOperation() {
+    public DocumentOperation createDocumentOperation(DocumentType documentType, DocumentParseInfo documentParseInfo) {
         final DocumentOperation documentOperation;
         try {
             switch (documentParseInfo.operationType) {
@@ -62,18 +52,8 @@ public class VespaJsonDocumentReader {
                     break;
                 case UPDATE:
                     documentOperation = new DocumentUpdate(documentType, documentParseInfo.documentId);
-                    if (documentParseInfo.fieldsBuffer.size() == 0 && documentParseInfo.fieldpathsBuffer.size() == 0) {
-                        throw new IllegalArgumentException("Either 'fields' or 'fieldpaths' must be set");
-                    }
-
-                    if (documentParseInfo.fieldsBuffer.size() > 0) {
-                        readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
-                        verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
-                    }
-                    if (documentParseInfo.fieldpathsBuffer.size() > 0) {
-                        parseFieldpathsBuffer((DocumentUpdate) documentOperation, documentParseInfo.fieldpathsBuffer);
-                        verifyEndState(documentParseInfo.fieldpathsBuffer, JsonToken.END_ARRAY);
-                    }
+                    readUpdate(documentParseInfo.fieldsBuffer, (DocumentUpdate) documentOperation);
+                    verifyEndState(documentParseInfo.fieldsBuffer, JsonToken.END_OBJECT);
                     break;
                 default:
                     throw new IllegalStateException("Implementation out of sync with itself. This is a bug.");
@@ -92,22 +72,7 @@ public class VespaJsonDocumentReader {
     }
 
     // Exposed for unit testing...
-    public static void readUpdate(TokenBuffer buffer, DocumentUpdate update) {
-        expectObjectStart(buffer.currentToken());
-        int localNesting = buffer.nesting();
-        JsonToken t = buffer.next();
-
-        while (localNesting <= buffer.nesting()) {
-            expectObjectStart(t);
-            String fieldName = buffer.currentName();
-            Field field = update.getType().getField(fieldName);
-            addFieldUpdates(buffer, update, field);
-            t = buffer.next();
-        }
-    }
-
-    // Exposed for unit testing...
-    public static void readPut(TokenBuffer buffer, DocumentPut put) {
+    public void readPut(TokenBuffer buffer, DocumentPut put) {
         try {
             populateComposite(buffer, put.getDocument());
         } catch (JsonReaderException e) {
@@ -115,15 +80,29 @@ public class VespaJsonDocumentReader {
         }
     }
 
-    private static void verifyEndState(TokenBuffer buffer, JsonToken expectedFinalToken) {
-        Preconditions.checkState(buffer.currentToken() == expectedFinalToken,
-                "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.currentToken());
-        Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
-        Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
-        Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
+    // Exposed for unit testing...
+    public void readUpdate(TokenBuffer buffer, DocumentUpdate update) {
+        expectObjectStart(buffer.currentToken());
+        int localNesting = buffer.nesting();
+
+        buffer.next();
+        while (localNesting <= buffer.nesting()) {
+            expectObjectStart(buffer.currentToken());
+
+            String fieldName = buffer.currentName();
+            if (isFieldPath(fieldName)) {
+                addFieldPathUpdates(update, buffer, fieldName);
+            } else {
+                addFieldUpdates(update, buffer, fieldName);
+            }
+
+            expectObjectEnd(buffer.currentToken());
+            buffer.next();
+        }
     }
 
-    private static void addFieldUpdates(TokenBuffer buffer, DocumentUpdate update, Field field) {
+    private void addFieldUpdates(DocumentUpdate update, TokenBuffer buffer, String fieldName) {
+        Field field = update.getType().getField(fieldName);
         int localNesting = buffer.nesting();
         FieldUpdate fieldUpdate = FieldUpdate.create(field);
 
@@ -148,127 +127,47 @@ public class VespaJsonDocumentReader {
         update.addFieldUpdate(fieldUpdate);
     }
 
-    private void parseFieldpathsBuffer(DocumentUpdate update, TokenBuffer buffer) {
-        expectArrayStart(buffer.currentToken()); // Start of fieldpath operations array
+    private void addFieldPathUpdates(DocumentUpdate update, TokenBuffer buffer, String fieldPath) {
         int localNesting = buffer.nesting();
-        JsonToken t = buffer.next();
 
+        buffer.next();
         while (localNesting <= buffer.nesting()) {
-            expectObjectStart(t); // Start of the object inside the array of 'fieldpaths'
-            t = buffer.next();
-            expectObjectStart(t); // Start of the operation object
+            FieldPathUpdate.Type fieldPathUpdateType = FieldPathUpdate.Type.valueOf(buffer.currentName().toUpperCase());
+            FieldPathUpdate fieldPathUpdate = FieldPathUpdate.create(fieldPathUpdateType, update.getType());
 
-            FieldPathUpdate.Type fieldpathType = FieldPathUpdate.Type.valueOf(buffer.currentName().toUpperCase());
-            FieldPathUpdate fieldPathUpdate = FieldPathUpdate.create(fieldpathType, documentType);
-            readFieldPathUpdate(fieldPathUpdate, buffer);
-            update.addFieldPathUpdate(fieldPathUpdate);
-
-            expectObjectEnd(buffer.currentToken()); // End of the operation object
-            t = buffer.next();
-            expectObjectEnd(t); // End of the object inside the array of 'fieldpaths'
-            t = buffer.next();
-        }
-
-        expectArrayEnd(t);
-    }
-
-    private void readFieldPathUpdate(FieldPathUpdate update, TokenBuffer buffer) {
-        expectObjectStart(buffer.currentToken()); // Start of operation object
-        int localNesting = buffer.nesting();
-        JsonToken t = buffer.next();
-
-        while (localNesting <= buffer.nesting()) {
-            if (buffer.currentName().equals("where")) {
-                try {
-                    update.setWhereClause(buffer.currentText());
-                } catch (ParseException e) {
-                    throw new RuntimeException("Failed to parse where clause: " + buffer.currentName());
-                }
-            } else {
-                expectObjectStart(t); // Start of fieldpath object
-                if (update.getFieldPath() != null) {
-                    throw new IllegalArgumentException("Cannot set fieldpath to " + buffer.currentName() + ", is " +
-                            "already set to " + update.getOriginalFieldPath());
-                }
-                update.setFieldPath(buffer.currentName());
-                if (update instanceof AssignFieldPathUpdate) {
-                    readAssignFieldPath((AssignFieldPathUpdate) update, buffer);
-
-                } else if (update instanceof AddFieldPathUpdate) {
-                    readAddFieldPath((AddFieldPathUpdate) update, buffer);
-
-                } else if (update instanceof RemoveFieldPathUpdate) {
-                    readRemoveFieldPath((RemoveFieldPathUpdate) update, buffer);
-                }
-                expectObjectEnd(buffer.currentToken()); // End of fieldpath object
-            }
-            t = buffer.next();
-        }
-
-        expectObjectEnd(t); // End of operation object
-    }
-
-    private void readAssignFieldPath(AssignFieldPathUpdate update, TokenBuffer buffer) {
-        expectObjectStart(buffer.currentToken()); // Start of fieldpath object
-        int localNesting = buffer.nesting();
-        JsonToken t = buffer.next();
-
-        while (localNesting <= buffer.nesting()) {
-            switch (buffer.currentName()) {
-                case "removeifzero":
-                    update.setRemoveIfZero(Boolean.parseBoolean(buffer.currentText()));
-                    break;
-
-                case "createmissingpath":
-                    update.setCreateMissingPath(Boolean.parseBoolean(buffer.currentText()));
-                    break;
-
-                case "value":
-                    DataType dt = update.getFieldPath().getResultingDataType();
-
-                    if (dt instanceof NumericDataType) {
-                        update.setExpression(buffer.currentText());
-                    } else {
-                        FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
-                        update.setNewValue(fv);
-                    }
-                    break;
-
-                default:
-                    throw new RuntimeException("Unknown attribute for assign fieldpath update: " + buffer.currentName());
-            }
-
-            t = buffer.next();
-        }
-
-        expectObjectEnd(t); // End of fieldpath object
-    }
-
-    private void readAddFieldPath(AddFieldPathUpdate update, TokenBuffer buffer) {
-        expectObjectStart(buffer.currentToken()); // Start of fieldpath object
-        int localNesting = buffer.nesting();
-        JsonToken t = buffer.next();
-
-        while (localNesting <= buffer.nesting()) {
-            switch (buffer.currentName()) {
-                case "items":
-                    DataType dt = update.getFieldPath().getResultingDataType();
+            fieldPathUpdate.setFieldPath(fieldPath);
+            DataType dt = fieldPathUpdate.getFieldPath().getResultingDataType();
+            if (fieldPathUpdate instanceof AssignFieldPathUpdate) {
+                if (dt instanceof NumericDataType) {
+                    ((AssignFieldPathUpdate) fieldPathUpdate).setExpression(buffer.currentText());
+                } else {
                     FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
-                    update.setNewValues((Array) fv);
-                    break;
+                    ((AssignFieldPathUpdate) fieldPathUpdate).setNewValue(fv);
+                }
 
-                default:
-                    throw new RuntimeException("Unknown attribute for add fieldpath update: " + buffer.currentName());
+            } else if (fieldPathUpdate instanceof AddFieldPathUpdate) {
+                FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
+                ((AddFieldPathUpdate) fieldPathUpdate).setNewValues((Array) fv);
+
+            } else if (fieldPathUpdate instanceof RemoveFieldPathUpdate) {
+                buffer.next();
             }
-
-            t = buffer.next();
+            update.addFieldPathUpdate(fieldPathUpdate);
+            buffer.next();
         }
-
-        expectObjectEnd(t); // End of fieldpath object
     }
 
-    private void readRemoveFieldPath(RemoveFieldPathUpdate update, TokenBuffer buffer) {
-        expectObjectStart(buffer.currentToken()); // Start of fieldpath object
-        expectObjectEnd(buffer.next()); // End of fieldpath object
+
+
+    private static boolean isFieldPath(String field) {
+        return field.matches("^.*?[.\\[\\{].*$");
+    }
+
+    private static void verifyEndState(TokenBuffer buffer, JsonToken expectedFinalToken) {
+        Preconditions.checkState(buffer.currentToken() == expectedFinalToken,
+                "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.currentToken());
+        Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
+        Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
+        Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");
     }
 }

@@ -87,6 +87,21 @@ public class FieldPath implements Iterable<FieldPathEntry> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FieldPath that = (FieldPath) o;
+
+        return list.equals(that.list);
+    }
+
+    @Override
+    public int hashCode() {
+        return list.hashCode();
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         DataType prevType = null;
@@ -105,6 +120,7 @@ public class FieldPath implements Iterable<FieldPathEntry> {
                 out.append("[").append(entry.getLookupIndex()).append("]");
                 break;
             case MAP_KEY:
+                out.append("{").append(entry.getLookupKey()).append("}");
                 break;
             case MAP_ALL_KEYS:
                 out.append(".key");
