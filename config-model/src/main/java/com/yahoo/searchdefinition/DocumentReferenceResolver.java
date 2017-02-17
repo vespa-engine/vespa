@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
+import com.yahoo.searchdefinition.document.SDField;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,12 @@ public class DocumentReferenceResolver {
     }
 
     private DocumentReference createDocumentReference(Field field) {
+        if (!isAttribute(field)) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The field '%s' is an invalid document reference. The field must be an attribute.",
+                            field.getName()));
+        }
         ReferenceDataType reference = (ReferenceDataType) field.getDataType();
         String targetDocumentName = getTargetDocumentName(reference);
         Search search = searchMapping.get(targetDocumentName);
@@ -49,6 +56,11 @@ public class DocumentReferenceResolver {
                             "Could not find document with '%s' in any search definitions", field.getName(), targetDocumentName));
         }
         return new DocumentReference(field, search);
+    }
+
+    private static boolean isAttribute(Field field) {
+        SDField sdField = (SDField) field; // Ugly, but SDDocumentType only expose the fields as the super class Field
+        return sdField.doesAttributing();
     }
 
     private static Map<String, Search> createDocumentNameToSearchMapping(List<Search> searchDefintions) {

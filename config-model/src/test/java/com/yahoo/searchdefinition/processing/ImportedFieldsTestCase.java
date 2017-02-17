@@ -23,8 +23,8 @@ public class ImportedFieldsTestCase {
        Search search = buildAdSearch(joinLines(
                "search ad {",
                "  document ad {",
-               "    field campaign_ref type reference<campaign> {}",
-               "    field person_ref type reference<person> {}",
+               "    field campaign_ref type reference<campaign> { indexing: attribute }",
+               "    field person_ref type reference<person> { indexing: attribute }",
                "  }",
                "  import field campaign_ref.budget as my_budget {}",
                "  import field person_ref.name as my_name {}",
@@ -39,7 +39,7 @@ public class ImportedFieldsTestCase {
         Search search = buildAdSearch(joinLines("search ad {",
                 "  document ad {",
                 "    field title type string { indexing: attribute }",
-                "    field self_ref type reference<ad> {}",
+                "    field self_ref type reference<ad> { indexing: attribute }",
                 "  }",
                 "  import field self_ref.title as my_title {}",
                 "}"));
