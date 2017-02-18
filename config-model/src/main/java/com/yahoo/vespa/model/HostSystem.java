@@ -136,6 +136,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     private HostResource addNewHost(HostSpec hostSpec) {
         Host host = new Host(this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host);
+        hostResource.setFlavor(hostSpec.flavor());
         hostname2host.put(host.getHostName(), hostResource);
         Set<ClusterMembership> hostMemberships = new LinkedHashSet<>();
         if (hostSpec.membership().isPresent())
@@ -159,7 +160,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
             HostResource hostResource = getExistingHost(host).orElseGet(() -> addNewHost(host));
             retAllocatedHosts.put(hostResource, host.membership().orElse(null));
-            hostResource.setFlavor(host.flavor());
+            if (! hostResource.getFlavor().isPresent())
+                hostResource.setFlavor(host.flavor());
         }
         return retAllocatedHosts;
     }
