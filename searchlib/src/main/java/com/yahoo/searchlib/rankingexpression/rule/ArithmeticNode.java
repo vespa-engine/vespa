@@ -63,7 +63,13 @@ public final class ArithmeticNode extends CompositeNode {
         if ( parent==null) return false;
         if ( ! (parent instanceof ArithmeticNode)) return false;
 
-        return ((ArithmeticNode)parent).operators.get(0).hasPrecedenceOver(this.operators.get(0));
+        ArithmeticNode arithParent = (ArithmeticNode) parent;
+        // The line below can only be correct in both only have one operator.
+        // Getting this correct is impossible without more work.
+        // So for now now we only handle the simple case correctly, and use a safe approach by adding
+        // extra parenthesis just in case....
+        return arithParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
+                || ((arithParent.operators.size() > 1) || (operators.size() > 1));
     }
 
     @Override
