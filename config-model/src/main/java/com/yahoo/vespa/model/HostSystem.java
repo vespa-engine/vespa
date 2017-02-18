@@ -156,12 +156,12 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, groups, new ProvisionDeployLogger(logger));
         // TODO: Let hostresource own a set of memberships, but we still need the map here because the caller needs the current membership.
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();
-        for (HostSpec host : allocatedHosts) {
+        for (HostSpec spec : allocatedHosts) {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
-            HostResource hostResource = getExistingHost(host).orElseGet(() -> addNewHost(host));
-            retAllocatedHosts.put(hostResource, host.membership().orElse(null));
-            if (! hostResource.getFlavor().isPresent())
-                hostResource.setFlavor(host.flavor());
+            HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
+            retAllocatedHosts.put(host, spec.membership().orElse(null));
+            if (! host.getFlavor().isPresent())
+                host.setFlavor(spec.flavor());
         }
         return retAllocatedHosts;
     }
