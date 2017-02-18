@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.net.HostName;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -154,17 +153,13 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, int groups, DeployLogger logger) {
         List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, groups, new ProvisionDeployLogger(logger));
-        // TODO: Let hostresource own a membership rather than using a map
+        // TODO: Let hostresource own a set of memberships, but we still need the map here because the caller needs the current membership.
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();
         for (HostSpec host : allocatedHosts) {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
-            Optional<HostResource> existingHost = getExistingHost(host);
-            if (existingHost.isPresent()) {
-                retAllocatedHosts.put(existingHost.get(), host.membership().orElse(null));
-            } else {
-                retAllocatedHosts.put(addNewHost(host), host.membership().orElse(null));
-            }
-            getExistingHost(host).get().setFlavor(host.flavor());
+            HostResource hostResource = getExistingHost(host).orElseGet(() -> addNewHost(host));
+            retAllocatedHosts.put(hostResource, host.membership().orElse(null));
+            hostResource.setFlavor(host.flavor());
         }
         return retAllocatedHosts;
     }
