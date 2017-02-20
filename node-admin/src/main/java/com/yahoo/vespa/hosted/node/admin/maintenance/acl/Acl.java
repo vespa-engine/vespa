@@ -31,20 +31,32 @@ public class Acl {
     public List<Command> toCommands() {
         final ImmutableList.Builder<Command> commands = ImmutableList.builder();
         commands.add(
+                // Default policies
                 new PolicyCommand(Chain.INPUT, Action.DROP),
                 new PolicyCommand(Chain.FORWARD, Action.DROP),
                 new PolicyCommand(Chain.OUTPUT, Action.ACCEPT),
+
+                // Allow packets belonging to established connections
                 new FilterCommand(Chain.INPUT, Action.ACCEPT)
                         .withOption("-m", "state")
                         .withOption("--state", "RELATED,ESTABLISHED"),
+
+                // Allow any loopback traffic
+                new FilterCommand(Chain.INPUT, Action.ACCEPT)
+                         .withOption("-i", "lo"),
+
+                // Allow IPv6 ICMP packets. This is required for IPv6 routing (e.g. path MTU) to work correctly.
                 new FilterCommand(Chain.INPUT, Action.ACCEPT)
                         .withOption("-p", "ipv6-icmp"));
+
+        // Allow traffic from trusted containers
         containerAclSpecs.stream()
                 .map(ContainerAclSpec::ipAddress)
                 .filter(Acl::isIpv6)
                 .map(ipAddress -> new FilterCommand(Chain.INPUT, Action.ACCEPT)
                         .withOption("-s", String.format("%s/128", ipAddress)))
                 .forEach(commands::add);
+
         return commands.build();
     }
 
