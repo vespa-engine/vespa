@@ -1,18 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/result.h>
-#include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchcore/proton/common/attrupdate.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcore/proton/common/attrupdate.h>
+#include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
+#include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DocumentType;
 using document::Field;
@@ -35,6 +36,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeContext;
+using search::attribute::test::MockAttributeManager;
 using namespace search::index;
 using storage::spi::Timestamp;
 using storage::spi::Bucket;
@@ -168,56 +170,9 @@ struct VisitRecordingUnitDR : UnitDR {
     }
 };
 
-class MyAttributeManager : public search::IAttributeManager
-{
-public:
-    typedef std::map<string, AttributeVector::SP> AttributeMap;
-
-    AttributeMap _attributes;
-
-    AttributeVector::SP
-    findAttribute(const vespalib::string &name) const {
-        AttributeMap::const_iterator itr = _attributes.find(name);
-        if (itr != _attributes.end()) {
-            return itr->second;
-        }
-        return AttributeVector::SP();
-    }
-
-    AttributeGuard::UP getAttribute(const string &name) const override {
-        AttributeVector::SP attr = findAttribute(name);
-        return AttributeGuard::UP(new AttributeGuard(attr));
-    }
-
-    AttributeGuard::UP getAttributeStableEnum(const string & name) const override {
-        AttributeVector::SP attr = findAttribute(name);
-        return AttributeGuard::UP(new AttributeEnumGuard(attr));
-    }
-
-    void getAttributeList(std::vector<AttributeGuard> & list) const override {
-        list.reserve(_attributes.size());
-        for (AttributeMap::const_iterator itr = _attributes.begin();
-             itr != _attributes.end();
-             ++itr) {
-            list.push_back(AttributeGuard(itr->second));
-        }
-    }
-
-    IAttributeContext::UP createContext() const override {
-        return IAttributeContext::UP(new AttributeContext(*this));
-    }
-
-    MyAttributeManager() : _attributes() { }
-
-    void addAttribute(const string &name, const AttributeVector::SP &av) {
-        av->addReservedDoc();
-        _attributes[name] = av;
-    }
-};
-
 struct AttrUnitDR : public UnitDR
 {
-    MyAttributeManager _amgr;
+    MockAttributeManager _amgr;
     Schema _schema;
     AttributeVector::SP _aa;
     AttributeVector::SP _dd;

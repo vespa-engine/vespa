@@ -15,6 +15,7 @@
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/base/documentid.h>
@@ -58,6 +59,7 @@ using search::SingleValueNumericPostingAttribute;
 using search::IntegerAttribute;
 using search::IntegerAttributeTemplate;
 using search::attribute::IAttributeContext;
+using search::attribute::test::MockAttributeManager;
 using namespace search::index;
 
 typedef Node::UP NodeUP;
@@ -206,69 +208,18 @@ public:
 };
 
 
-
-class MyAttributeManager : public search::IAttributeManager
+class MyAttributeManager : public MockAttributeManager
 {
 public:
-    typedef std::map<string, AttributeVector::SP> AttributeMap;
-
-    AttributeMap _attributes;
-
-    AttributeVector::SP
-    findAttribute(const vespalib::string &name) const
-    {
-        AttributeMap::const_iterator itr = _attributes.find(name);
-        if (itr != _attributes.end()) {
-            return itr->second;
-        }
-        return AttributeVector::SP();
-    }
-
-    virtual
-    AttributeGuard::UP
-    getAttribute(const string &name) const
-    {
-        AttributeVector::SP attr = findAttribute(name);
-        return AttributeGuard::UP(new AttributeGuard(attr));
-    }
-
-    virtual AttributeGuard::UP
-    getAttributeStableEnum(const string & name) const
-    {
-        AttributeVector::SP attr = findAttribute(name);
-        return AttributeGuard::UP(new AttributeEnumGuard(attr));
-    }
-
-    virtual void
-    getAttributeList(std::vector<AttributeGuard> & list) const
-    {
-        list.reserve(_attributes.size());
-        for (AttributeMap::const_iterator itr = _attributes.begin();
-             itr != _attributes.end();
-             ++itr) {
-            list.push_back(AttributeGuard(itr->second));
-        }
-    }
-
-    virtual IAttributeContext::UP
-    createContext() const
-    {
-        return IAttributeContext::UP(new AttributeContext(*this));
-    }
-
-    MyAttributeManager()
-        : _attributes()
-    {
-    }
-
-    void
-    addAttribute(const string &name)
-    {
-        if (findAttribute(name).get() != NULL)
+    void addAttribute(const vespalib::string &name) {
+        if (findAttribute(name).get() != NULL) {
             return;
+        }
         AttributeVector::SP av(new MyIntAv(name));
-        av->addReservedDoc();
-        _attributes[name] = av;
+        MockAttributeManager::addAttribute(name, av);
+    }
+    MyIntAv *getAsMyIntAttribute(const vespalib::string &name) const {
+        return (dynamic_cast<MyIntAv *>(findAttribute(name).get()));
     }
 };
 
@@ -320,7 +271,8 @@ MyDB::addDoc(uint32_t lid,
 
     _docIdToLid[docId] = lid;
     _lidToDocSP[lid] = Document::SP(doc.release());
-    AttributeVector &av(*_amgr.findAttribute("aa"));
+    AttributeGuard::UP guard = _amgr.getAttribute("aa");
+    AttributeVector &av = guard->get();
     if (lid >= av.getNumDocs()) {
         AttributeVector::DocId checkDocId(0u);
         ASSERT_TRUE(av.addDoc(checkDocId));
@@ -645,7 +597,7 @@ TEST_F("Test that basic select works", TestFixture)
     TEST_DO(checkSelect(cs, 3u, Result::Invalid));
     TEST_DO(checkSelect(cs, 4u, Result::Invalid));
 
-    MyIntAv *v(dynamic_cast<MyIntAv *>(f._amgr.findAttribute("aa").get()));
+    MyIntAv *v = f._amgr.getAsMyIntAttribute("aa");
     EXPECT_TRUE(v != NULL);
     EXPECT_EQUAL(6u, v->getGets());
 }
