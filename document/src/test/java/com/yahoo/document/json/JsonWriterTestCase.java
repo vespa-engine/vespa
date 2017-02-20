@@ -34,8 +34,12 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.document.json.readers.MapReader.MAP_KEY;
+import static com.yahoo.document.json.readers.MapReader.MAP_VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -236,6 +240,39 @@ public class JsonWriterTestCase {
     }
 
     @Test
+    public void oldMapTest() throws IOException {
+        String fields = "{ \"actualmap\": ["
+                + " { \"key\": \"nalle\", \"value\": \"kalle\"},"
+                + " { \"key\": \"tralle\", \"value\": \"skalle\"} ]}";
+        String docId = "id:unittest:testmap::whee";
+        Document doc = readDocumentFromJson(docId, fields);
+        // we have to do everything by hand to check, as maps are unordered, but
+        // are serialized as an ordered structure
+
+        ObjectMapper m = new ObjectMapper();
+        Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
+        assertEquals(docId, generated.get("id"));
+        // and from here on down there will be lots of unchecked casting and
+        // other fun. This is OK here, because if the casts fail, the should and
+        // will fail anyway
+        List<?> inputMap = (List<?>) m.readValue(Utf8.toBytes(fields), Map.class).get("actualmap");
+        Map<?, ?> generatedMap = (Map<?, ?>) ((Map<?, ?>) generated.get("fields")).get("actualmap");
+        assertEquals(populateMap(inputMap), generatedMap);
+    }
+
+    // should very much blow up if the assumptions are incorrect
+    @SuppressWarnings("rawtypes")
+    private Map<Object, Object> populateMap(List<?> actualMap) {
+        Map<Object, Object> m = new HashMap<>();
+        for (Object o : actualMap) {
+            Object key = ((Map) o).get(MAP_KEY);
+            Object value = ((Map) o).get(MAP_VALUE);
+            m.put(key, value);
+        }
+        return m;
+    }
+
+    @Test
     public final void rawTest() throws IOException {
         String payload = new String(
                 new JsonStringEncoder().quoteAsString(new Base64()
@@ -267,6 +304,26 @@ public class JsonWriterTestCase {
         Map<?, ?> inputMap = (Map<?, ?>) m.readValue(Utf8.toBytes(fields), Map.class).get("actualMapStringToArrayOfInt");
         Map<?, ?>  generatedMap = (Map<?, ?> ) ((Map<?, ?>) generated.get("fields")).get("actualMapStringToArrayOfInt");
         assertEquals(inputMap, generatedMap);
+    }
+
+    @Test
+    public final void oldStringToArrayOfIntMapTest() throws IOException {
+        String docId = "id:unittest:testMapStringToArrayOfInt::whee";
+        String fields = "{ \"actualMapStringToArrayOfInt\": ["
+                + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }" + "]}";
+        Document doc = readDocumentFromJson(docId, fields);
+        // we have to do everything by hand to check, as maps are unordered, but
+        // are serialized as an ordered structure
+
+        ObjectMapper m = new ObjectMapper();
+        Map<?, ?> generated = m.readValue(JsonWriter.toByteArray(doc), Map.class);
+        assertEquals(docId, generated.get("id"));
+        // and from here on down there will be lots of unchecked casting and
+        // other fun. This is OK here, because if the casts fail, the should and
+        // will fail anyway
+        List<?> inputMap = (List<?>) m.readValue(Utf8.toBytes(fields), Map.class).get("actualMapStringToArrayOfInt");
+        Map<?, ?>  generatedMap = (Map<?, ?> ) ((Map<?, ?>) generated.get("fields")).get("actualMapStringToArrayOfInt");
+        assertEquals(populateMap(inputMap), generatedMap);
     }
 
     private Document readDocumentFromJson(String docId, String fields) throws IOException {
