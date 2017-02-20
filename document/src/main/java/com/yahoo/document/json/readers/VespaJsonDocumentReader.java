@@ -134,27 +134,16 @@ public class VespaJsonDocumentReader {
             String fieldPathOperation = buffer.currentName().toLowerCase();
             FieldPathUpdate fieldPathUpdate;
             if (fieldPathOperation.equals(UPDATE_ASSIGN)) {
-                fieldPathUpdate = new AssignFieldPathUpdate(update.getType(), fieldPath);
-                FieldValue fv = SingleValueReader.readSingleValue(
-                        buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
-                ((AssignFieldPathUpdate) fieldPathUpdate).setNewValue(fv);
+                fieldPathUpdate = readAssignFieldPathUpdate(update.getType(), fieldPath, buffer);
 
             } else if (fieldPathOperation.equals(UPDATE_ADD)) {
-                fieldPathUpdate = new AddFieldPathUpdate(update.getType(), fieldPath);
-                FieldValue fv = SingleValueReader.readSingleValue(
-                        buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
-                ((AddFieldPathUpdate) fieldPathUpdate).setNewValues((Array) fv);
+                fieldPathUpdate = readAddFieldPathUpdate(update.getType(), fieldPath, buffer);
 
             } else if (fieldPathOperation.equals(UPDATE_REMOVE)) {
-                fieldPathUpdate = new RemoveFieldPathUpdate(update.getType(), fieldPath);
-                buffer.next();
+                fieldPathUpdate = readRemoveFieldPathUpdate(update.getType(), fieldPath, buffer);
 
             } else if (SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.containsKey(fieldPathOperation)) {
-                fieldPathUpdate = new AssignFieldPathUpdate(update.getType(), fieldPath);
-                double value = Double.valueOf(buffer.currentText());
-                String expression = String.format("$value %s %s",
-                        SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.get(fieldPathOperation), value);
-                ((AssignFieldPathUpdate) fieldPathUpdate).setExpression(expression);
+                fieldPathUpdate = readArithmeticFieldPathUpdate(update.getType(), fieldPath, buffer, fieldPathOperation);
 
             } else {
                 throw new IllegalArgumentException("Field path update type '" + fieldPathOperation + "' not supported.");
@@ -162,6 +151,38 @@ public class VespaJsonDocumentReader {
             update.addFieldPathUpdate(fieldPathUpdate);
             buffer.next();
         }
+    }
+
+    private AssignFieldPathUpdate readAssignFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
+        AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
+        FieldValue fv = SingleValueReader.readSingleValue(
+                buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        fieldPathUpdate.setNewValue(fv);
+        return fieldPathUpdate;
+    }
+
+    private AddFieldPathUpdate readAddFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
+        AddFieldPathUpdate fieldPathUpdate = new AddFieldPathUpdate(documentType, fieldPath);
+        FieldValue fv = SingleValueReader.readSingleValue(
+                buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        fieldPathUpdate.setNewValues((Array) fv);
+        return fieldPathUpdate;
+    }
+
+    private RemoveFieldPathUpdate readRemoveFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
+        expectObjectStart(buffer.currentToken());
+        expectObjectEnd(buffer.next());
+        return new RemoveFieldPathUpdate(documentType, fieldPath);
+    }
+
+    private AssignFieldPathUpdate readArithmeticFieldPathUpdate(
+            DocumentType documentType, String fieldPath, TokenBuffer buffer, String fieldPathOperation) {
+        AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
+        String arithmeticSign = SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.get(fieldPathOperation);
+        double value = Double.valueOf(buffer.currentText());
+        String expression = String.format("$value %s %s", arithmeticSign, value);
+        fieldPathUpdate.setExpression(expression);
+        return fieldPathUpdate;
     }
 
 
