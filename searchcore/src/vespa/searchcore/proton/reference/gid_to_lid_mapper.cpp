@@ -27,4 +27,4 @@ GidToLidMapper::mapGidToLid(const document::GlobalId &gid) const
     }
 }
 
-} // namespace search
+} // namespace proton

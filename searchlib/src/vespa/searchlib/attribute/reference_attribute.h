@@ -24,7 +24,7 @@ public:
     using GlobalId = document::GlobalId;
     class Reference {
         GlobalId _gid;
-        uint32_t _lid;
+        mutable uint32_t _lid;
     public:
         Reference()
             : _gid(),
@@ -41,6 +41,7 @@ public:
         }
         const GlobalId &gid() const { return _gid; }
         uint32_t lid() const { return _lid; }
+        void setLid(uint32_t referencedLid) const { _lid = referencedLid; }
     };
     using Store = datastore::UniqueStore<Reference>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
@@ -74,6 +75,7 @@ public:
     const Reference *getReference(DocId doc);
     void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
     DocId getReferencedLid(DocId doc) const;
+    void notifyGidToLidChange(const GlobalId &gid, DocId referencedLid);
 };
 
 }

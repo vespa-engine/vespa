@@ -26,8 +26,8 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
         assertDocumentConfigs(new TestDocumentModelBuilder().addCampaign().addPerson().build(joinLines(
                 "search ad {",
                 "  document ad {",
-                "    field campaign_ref type reference<campaign> {}",
-                "    field person_ref type reference<person> {}",
+                "    field campaign_ref type reference<campaign> { indexing: attribute }",
+                "    field person_ref type reference<person> { indexing: attribute }",
                 "  }",
                 "}")),
                 "refs_to_other_types");
@@ -38,8 +38,8 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
         assertDocumentConfigs(new TestDocumentModelBuilder().addCampaign().build(joinLines(
                 "search ad {",
                 "  document ad {",
-                "    field campaign_ref type reference<campaign> {}",
-                "    field other_campaign_ref type reference<campaign> {}",
+                "    field campaign_ref type reference<campaign> { indexing: attribute }",
+                "    field other_campaign_ref type reference<campaign> { indexing: attribute }",
                 "  }",
                 "}")),
                 "refs_to_same_type");
@@ -50,7 +50,7 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
         assertDocumentConfigs(new TestDocumentModelBuilder().build(joinLines(
                 "search ad {",
                 "  document ad {",
-                "    field self_ref type reference<ad> {}",
+                "    field self_ref type reference<ad> { indexing: attribute }",
                 "  }",
                 "}")),
                 "ref_to_self_type");
@@ -61,7 +61,7 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
         DocumentModel model = new TestDocumentModelBuilder().addCampaign().build(joinLines(
                 "search ad {",
                 "  document ad {",
-                "    field campaign_ref type reference<campaign> {}",
+                "    field campaign_ref type reference<campaign> { indexing: attribute }",
                 "  }",
                 "}"));
         NewDocumentType campaignType = model.getDocumentManager().getDocumentType("campaign");

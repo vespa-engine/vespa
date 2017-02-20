@@ -2,15 +2,12 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -19,6 +16,54 @@ import static org.junit.Assert.assertEquals;
  */
 public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase {
 
+    @Test
+    public void testMacroInliningPreserveArithemticOrdering() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        builder.importString(
+                "search test {\n" +
+                        "    document test { \n" +
+                        "        field a type double { \n" +
+                        "            indexing: attribute \n" +
+                        "        }\n" +
+                        "        field b type double { \n" +
+                        "            indexing: attribute \n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    rank-profile parent {\n" +
+                        "        constants {\n" +
+                        "            p1: 7 \n" +
+                        "            p2: 0 \n" +
+                        "        }\n" +
+                        "        first-phase {\n" +
+                        "            expression: p1 * add\n" +
+                        "        }\n" +
+                        "        macro inline add() {\n" +
+                        "            expression: 3 + attribute(a) + attribute(b) * mul3\n" +
+                        "        }\n" +
+                        "        macro inline mul3() {\n" +
+                        "            expression: attribute(a) * 3 + singleif\n" +
+                        "        }\n" +
+                        "        macro inline singleif() {\n" +
+                        "            expression: if (p1 < attribute(a), 1, 2) == 0\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "    rank-profile child inherits parent {\n" +
+                        "        macro inline add() {\n" +
+                        "            expression: 9 + attribute(a)\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "\n" +
+                        "}\n");
+        builder.build();
+        Search s = builder.getSearch();
+
+        RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile();
+        assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))", parent.getFirstPhaseRanking().getRoot().toString());
+        RankProfile child = rankProfileRegistry.getRankProfile(s, "child").compile();
+        assertEquals("7.0 * (9 + attribute(a))", child.getFirstPhaseRanking().getRoot().toString());
+    }
     @Test
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();

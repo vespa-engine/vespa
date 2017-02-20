@@ -250,6 +250,14 @@ ReferenceAttribute::getReferencedLid(DocId doc) const
     return mapper->mapGidToLid(_store.get(oldRef).gid());
 }
 
+void
+ReferenceAttribute::notifyGidToLidChange(const GlobalId &gid, DocId referencedLid)
+{
+    EntryRef ref = _store.find(gid);
+    if (ref.valid()) {
+        _store.get(ref).setLid(referencedLid);
+    }
+}
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 

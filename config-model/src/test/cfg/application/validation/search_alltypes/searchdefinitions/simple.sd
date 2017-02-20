@@ -12,6 +12,6 @@ search simple {
         field my_byte type byte           { indexing: summary }
         field my_predicate type predicate { indexing: summary }
         field my_tensor type tensor(x{})  { indexing: summary }
-        field my_reference type reference<parent> { indexing: summary }
+        field my_reference type reference<parent> { indexing: summary | attribute }
     }
 }

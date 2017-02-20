@@ -494,6 +494,27 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public final void testOldMap() throws IOException {
+        InputStream rawDoc = new ByteArrayInputStream(
+                Utf8.toBytes("{\"put\": \"id:unittest:testmap::whee\","
+                        + " \"fields\": { \"actualmap\": ["
+                        + " { \"key\": \"nalle\", \"value\": \"kalle\"},"
+                        + " { \"key\": \"tralle\", \"value\": \"skalle\"} ]}}"));
+        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
+        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
+        Document doc = put.getDocument();
+        FieldValue f = doc.getFieldValue(doc.getField("actualmap"));
+        assertSame(MapFieldValue.class, f.getClass());
+        MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
+        assertEquals(2, m.size());
+        assertEquals(new StringFieldValue("kalle"), m.get(new StringFieldValue("nalle")));
+        assertEquals(new StringFieldValue("skalle"), m.get(new StringFieldValue("tralle")));
+    }
+
+    @Test
     public final void testPositionPositive() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"put\": \"id:unittest:testsinglepos::bamf\","
@@ -571,6 +592,29 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public final void testOldMapStringToArrayOfInt() throws IOException {
+        InputStream rawDoc = new ByteArrayInputStream(
+                Utf8.toBytes("{\"put\": \"id:unittest:testMapStringToArrayOfInt::whee\","
+                        + " \"fields\": { \"actualMapStringToArrayOfInt\": ["
+                        + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }"
+                        + "]}}"));
+        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
+        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
+        Document doc = put.getDocument();
+        FieldValue f = doc.getFieldValue("actualMapStringToArrayOfInt");
+        assertSame(MapFieldValue.class, f.getClass());
+        MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
+        Array<?> a = (Array<?>) m.get(new StringFieldValue("bamse"));
+        assertEquals(3, a.size());
+        assertEquals(new IntegerFieldValue(1), a.get(0));
+        assertEquals(new IntegerFieldValue(2), a.get(1));
+        assertEquals(new IntegerFieldValue(3), a.get(2));
+    }
+
+    @Test
     public final void testAssignToString() throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(
                 Utf8.toBytes("{\"update\": \"id:unittest:smoke::whee\","
@@ -593,6 +637,30 @@ public class JsonReaderTestCase {
                 Utf8.toBytes("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": {"
                         + " \"assign\": { \"bamse\": [1, 2, 3] }}}}"));
+        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
+        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
+        FieldUpdate f = doc.getFieldUpdate("actualMapStringToArrayOfInt");
+        assertEquals(1, f.size());
+        AssignValueUpdate assign = (AssignValueUpdate) f.getValueUpdate(0);
+        MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) assign.getValue();
+        Array<?> a = (Array<?>) m.get(new StringFieldValue("bamse"));
+        assertEquals(3, a.size());
+        assertEquals(new IntegerFieldValue(1), a.get(0));
+        assertEquals(new IntegerFieldValue(2), a.get(1));
+        assertEquals(new IntegerFieldValue(3), a.get(2));
+    }
+
+    @Test
+    public final void testOldAssignToArray() throws IOException {
+        InputStream rawDoc = new ByteArrayInputStream(
+                Utf8.toBytes("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
+                        + " \"fields\": { \"actualMapStringToArrayOfInt\": {"
+                        + " \"assign\": ["
+                        + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }"
+                        + "]}}}"));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);

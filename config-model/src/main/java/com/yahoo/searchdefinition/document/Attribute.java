@@ -1,12 +1,31 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
-import com.yahoo.document.*;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.TemporaryStructuredDataType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
 
 import java.io.Serializable;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -37,9 +56,12 @@ public final class Attribute implements Cloneable, Serializable {
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
     private double densePostingListThreshold = BooleanIndexDefinition.DEFAULT_DENSE_POSTING_LIST_THRESHOLD;
-    
+
     /** This is set if the type of this is TENSOR */
     private Optional<TensorType> tensorType = Optional.empty();
+
+    /** This is set if the type of this is REFERENCE */
+    private final Optional<StructuredDataType> referenceDocumentType;
 
     private boolean isPosition = false;
     private final Sorting sorting = new Sorting();
@@ -63,7 +85,8 @@ public final class Attribute implements Cloneable, Serializable {
         DOUBLE("double", "DOUBLE"),
         STRING("string", "STRING"),
         PREDICATE("predicate", "PREDICATE"),
-        TENSOR("tensor", "TENSOR");
+        TENSOR("tensor", "TENSOR"),
+        REFERENCE("reference", "REFERENCE");
 
         private final String myName;  // different from what name() returns.
         private final String exportAttributeTypeName;
@@ -103,20 +126,25 @@ public final class Attribute implements Cloneable, Serializable {
 
     /** Creates an attribute with default settings */
     public Attribute(String name, DataType fieldType) {
-        this(name, convertDataType(fieldType), convertCollectionType(fieldType), convertTensorType(fieldType));
+        this(name, convertDataType(fieldType), convertCollectionType(fieldType), convertTensorType(fieldType), convertTargetType(fieldType));
         setRemoveIfZero(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).removeIfZero() : false);
         setCreateIfNonExistent(fieldType instanceof WeightedSetDataType ? ((WeightedSetDataType)fieldType).createIfNonExistent() : false);
     }
 
     public Attribute(String name, Type type, CollectionType collectionType) {
-        this(name, type, collectionType, Optional.empty());
+        this(name, type, collectionType, Optional.empty(), Optional.empty());
     }
 
-    public Attribute(String name, Type type, CollectionType collectionType, Optional<TensorType> tensorType) {
+    public Attribute(String name,
+                     Type type,
+                     CollectionType collectionType,
+                     Optional<TensorType> tensorType,
+                     Optional<StructuredDataType> referenceDocumentType) {
         this.name=name;
         setType(type);
         setCollectionType(collectionType);
         this.tensorType = tensorType;
+        this.referenceDocumentType = referenceDocumentType;
     }
 
     /**
@@ -207,6 +235,8 @@ public final class Attribute implements Cloneable, Serializable {
             return Type.TENSOR;
         } else if (fieldType instanceof CollectionDataType) {
             return convertDataType(((CollectionDataType) fieldType).getNestedType());
+        } else if (fieldType instanceof ReferenceDataType) {
+            return Type.REFERENCE;
         } else {
             throw new IllegalArgumentException("Don't know which attribute type to " +
                                                "convert " + fieldType + " to");
@@ -223,6 +253,8 @@ public final class Attribute implements Cloneable, Serializable {
             return CollectionType.SINGLE;
         } else if (fieldType instanceof PrimitiveDataType) {
             return CollectionType.SINGLE;
+        } else if (fieldType instanceof ReferenceDataType) {
+            return CollectionType.SINGLE;
         } else {
             throw new IllegalArgumentException("Field " + fieldType + " not supported in convertCollectionType");
         }
@@ -231,6 +263,13 @@ public final class Attribute implements Cloneable, Serializable {
     private static Optional<TensorType> convertTensorType(DataType fieldType) {
         if ( ! ( fieldType instanceof TensorDataType)) return Optional.empty();
         return Optional.of(((TensorDataType)fieldType).getTensorType());
+    }
+
+    private static Optional<StructuredDataType> convertTargetType(DataType fieldType) {
+        return Optional.of(fieldType)
+                .filter(ReferenceDataType.class::isInstance)
+                .map(ReferenceDataType.class::cast)
+                .map(ReferenceDataType::getTargetType);
     }
 
     /** Converts to the right field type from an attribute type */
@@ -244,7 +283,20 @@ public final class Attribute implements Cloneable, Serializable {
             case BYTE: return DataType.BYTE;
             case PREDICATE: return DataType.PREDICATE;
             case TENSOR: return DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
+            case REFERENCE: return createReferenceDataType();
             default: throw new IllegalArgumentException("Unknown attribute type " + attributeType);
+        }
+    }
+
+    private DataType createReferenceDataType() {
+        if (!referenceDocumentType.isPresent()) {
+            throw new IllegalStateException("Referenced document type is not set!");
+        }
+        StructuredDataType type = referenceDocumentType.get();
+        if (type instanceof DocumentType) {
+            return ReferenceDataType.createWithInferredId((DocumentType) type);
+        } else {
+            return ReferenceDataType.createWithInferredId((TemporaryStructuredDataType) type);
         }
     }
 
@@ -259,22 +311,14 @@ public final class Attribute implements Cloneable, Serializable {
         }
     }
 
+    @Override
     public int hashCode() {
-        return name.hashCode() +
-                type.hashCode() +
-                collectionType.hashCode() +
-                sorting.hashCode() +
-                (isPrefetch() ? 13 : 0) +
-                (fastSearch ? 17 : 0) +
-                (removeIfZero ? 47 : 0) +
-                (createIfNonExistent ? 53 : 0) +
-                (isPosition ? 61 : 0) +
-                (huge ? 67 : 0) +
-                (enableBitVectors ? 71 : 0) +
-                (enableOnlyBitVector ? 73 : 0) +
-                tensorType.hashCode();
+        return Objects.hash(
+                name, type, collectionType, sorting, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
+                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType);
     }
 
+    @Override
     public boolean equals(Object object) {
         if (! (object instanceof Attribute)) return false;
 
@@ -297,11 +341,13 @@ public final class Attribute implements Cloneable, Serializable {
         if (this.huge != other.huge) return false;
         if ( ! this.sorting.equals(other.sorting)) return false;
         if (!this.tensorType.equals(other.tensorType)) return false;
+        if (!this.referenceDocumentType.equals(other.referenceDocumentType)) return false;
 
         return true;
     }
 
-    public @Override Attribute clone() {
+    @Override
+    public Attribute clone() {
         try {
             return (Attribute)super.clone();
         }
