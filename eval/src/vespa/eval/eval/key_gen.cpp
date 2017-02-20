@@ -22,7 +22,6 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void add_int(int value) { key.append(&value, sizeof(value)); }
     void add_hash(uint32_t value) { key.append(&value, sizeof(value)); }
     void add_byte(uint8_t value) { key.append(&value, sizeof(value)); }
-    void add_bool(bool value) { key.push_back(value ? '1' : '0'); }
 
     // visit
     virtual void visit(const Number   &node) { add_byte( 1); add_double(node.value()); }
@@ -92,7 +91,7 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
 vespalib::string gen_key(const Function &function, PassParams pass_params)
 {
     KeyGen key_gen;
-    key_gen.add_bool(pass_params == PassParams::ARRAY);
+    key_gen.add_byte(uint8_t(pass_params));
     key_gen.add_size(function.num_params());
     function.root().traverse(key_gen);
     return key_gen.key;

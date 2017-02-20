@@ -26,6 +26,9 @@ public:
 
     using array_function = double (*)(const double *);
 
+    using resolve_function = double (*)(void *ctx, size_t idx);
+    using lazy_function = double (*)(resolve_function, void *ctx);
+
 private:
     LLVMWrapper _llvm_wrapper;
     void       *_address;
@@ -51,11 +54,15 @@ public:
         assert(_pass_params == PassParams::ARRAY);
         return ((array_function)_address);
     }
+    lazy_function get_lazy_function() const {
+        assert(_pass_params == PassParams::LAZY);
+        return ((lazy_function)_address);
+    }
     const std::vector<gbdt::Forest::UP> &get_forests() const {
         return _llvm_wrapper.get_forests();
     }
     void dump() const { _llvm_wrapper.dump(); }
-    double estimate_cost_us(const std::vector<double> &params) const;
+    double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
 };
 

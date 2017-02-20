@@ -97,6 +97,7 @@ public:
     size_t program_size() const { return _program.size(); }
     size_t num_params() const { return _num_params; }
     const Value &eval(Context &ctx) const;
+    double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
 };
 

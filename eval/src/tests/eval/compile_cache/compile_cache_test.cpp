@@ -72,7 +72,8 @@ struct CheckKeys : test::EvalSpec::EvalTest {
         Function function = Function::parse(param_names, expression);
         if (!CompiledFunction::detect_issues(function)) {
             if (check_key(gen_key(function, PassParams::ARRAY)) ||
-                check_key(gen_key(function, PassParams::SEPARATE)))
+                check_key(gen_key(function, PassParams::SEPARATE)) ||
+                check_key(gen_key(function, PassParams::LAZY)))
             {
                 failed = true;
                 fprintf(stderr, "key collision for: %s\n", expression.c_str());

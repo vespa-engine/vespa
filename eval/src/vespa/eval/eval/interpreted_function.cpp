@@ -13,6 +13,7 @@
 #include "simple_tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 
 namespace vespalib {
 namespace eval {
@@ -544,6 +545,17 @@ InterpretedFunction::eval(Context &ctx) const
         state.stack.push_back(state.stash.create<ErrorValue>());
     }
     return state.stack.back();
+}
+
+double
+InterpretedFunction::estimate_cost_us(const std::vector<double> &params, double budget) const
+{
+    Context ctx(*this);
+    for (double param: params) {
+        ctx.add_param(param);
+    }
+    auto actual = [&](){eval(ctx);};
+    return BenchmarkTimer::benchmark(actual, budget) * 1000.0 * 1000.0;
 }
 
 Function::Issues
