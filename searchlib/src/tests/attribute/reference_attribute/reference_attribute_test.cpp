@@ -10,6 +10,7 @@ LOG_SETUP("reference_attribute_test");
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/document/base/documentid.h>
 
 using search::MemoryUsage;
@@ -35,38 +36,11 @@ vespalib::string doc3("id:test:music::3");
 
 }
 
-using MockGidToLidMap = std::map<GlobalId, uint32_t>;
-
-struct MyGidToLidMapper : public search::IGidToLidMapper
+struct MyGidToLidMapperFactory : public search::attribute::MockGidToLidMapperFactory
 {
-    const MockGidToLidMap &_map;
-    MyGidToLidMapper(const MockGidToLidMap &map)
-        : _map(map)
-    {
-    }
-    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override {
-        auto itr = _map.find(gid);
-        if (itr != _map.end()) {
-            return itr->second;
-        } else {
-            return 0u;
-        }
-    }
-};
-
-struct MyGidToLidMapperFactory : public search::IGidToLidMapperFactory
-{
-    MockGidToLidMap _map;
-
-    MyGidToLidMapperFactory()
-        : _map()
-    {
+    MyGidToLidMapperFactory() {
         _map.insert({toGid(doc1), 10});
         _map.insert({toGid(doc2), 17});
-    }
-
-    virtual std::unique_ptr<search::IGidToLidMapper> getMapper() const {
-        return std::make_unique<MyGidToLidMapper>(_map);
     }
 };
 
