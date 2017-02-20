@@ -36,8 +36,6 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
     String cluster = null;
     String session = null;
     private String pattern = null;
-    private AtomicLong count = new AtomicLong(0);
-    volatile Mirror.Entry [] lastLookup;
 
     LoadBalancer.Metrics metrics;
     LoadBalancer loadBalancer;
@@ -89,10 +87,7 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
        @return Returns a hop representing the TCP address of the target, or null if none could be found.
     */
     LoadBalancer.Node getRecipient(RoutingContext context) {
-        long c = count.getAndIncrement();
-        if ((c%1024 == 0) || (lastLookup == null) || (lastLookup.length == 0)) {
-            lastLookup = lookup(context, pattern);
-        }
+        Mirror.Entry [] lastLookup = lookup(context, pattern);
         return loadBalancer.getRecipient(lastLookup);
     }
 
