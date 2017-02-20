@@ -226,7 +226,7 @@ public class HostResource implements Comparable<HostResource> {
 
     public HostInfo getHostInfo() {
         return new HostInfo(getHostName(), services.values().stream()
-                .map(service -> service.getServiceInfo())
+                .map(Service::getServiceInfo)
                 .collect(Collectors.toSet()));
     }
 
