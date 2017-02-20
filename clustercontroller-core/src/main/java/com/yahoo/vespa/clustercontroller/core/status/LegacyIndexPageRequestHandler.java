@@ -67,8 +67,8 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                     stateVersionTracker.getVersionedClusterState(),
                     data.getOptions().storageDistribution,
                     data.getOptions(),
-                    eventLog,
-                    request.getPathPrefix());
+                    eventLog
+            );
             // Overview of current config
             data.getOptions().writeHtmlState(content, request);
             // Current cluster state and cluster state history

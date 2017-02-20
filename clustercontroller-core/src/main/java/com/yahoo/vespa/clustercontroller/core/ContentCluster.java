@@ -48,11 +48,7 @@ public class ContentCluster {
             final ClusterState state,
             final Distribution distribution,
             final FleetControllerOptions options,
-            final EventLog eventLog,
-            String pathPrefix) {
-        if (!pathPrefix.isEmpty()) {
-            pathPrefix += "/" + clusterName;
-        }
+            final EventLog eventLog) {
 
         final VdsClusterHtmlRendrer.Table table =
                 vdsClusterHtmlRendrer.createNewClusterHtmlTable(clusterName, slobrokGenerationCount);
@@ -77,7 +73,7 @@ public class ContentCluster {
                     state,
                     options.maxPrematureCrashes,
                     eventLog,
-                    pathPrefix,
+                    clusterName,
                     localName);
         }
         table.addTable(sb, options.stableStateTimePeriod);

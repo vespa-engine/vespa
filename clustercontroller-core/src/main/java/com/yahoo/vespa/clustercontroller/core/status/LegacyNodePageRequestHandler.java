@@ -45,11 +45,7 @@ public class LegacyNodePageRequestHandler implements StatusPageServer.RequestHan
         content.append("<!-- Answer to request " + request + " -->\n");
         response.writeHtmlHeader(content, "Cluster Controller Status Page - Node status for " + node);
         content.append("<p>UTC time when creating this page: ").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</p>");
-        String prefix = request.getPathPrefix();
-        if (!prefix.isEmpty()) {
-            prefix += "/" + cluster.getName();
-        }
-        content.append("[ <a href=\"" + prefix + "\">Back to cluster overview</a> ] <br><br>");
+        content.append("[ <a href=\"..\">Back to cluster overview</a> ] <br><br>");
         eventLog.writeHtmlState(content, node);
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
         content.append("<h2>Host info</h2>\n");
