@@ -29,6 +29,7 @@ import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
+import com.yahoo.document.json.readers.SingleValueReader;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.update.AddValueUpdate;
@@ -48,6 +49,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static com.yahoo.document.json.JsonSerializationHelper.*;
@@ -122,12 +124,13 @@ public class DocumentUpdateJsonSerializer
             generator.writeObjectFieldStart(fieldPath.toString());
 
             for (FieldPathUpdate update : fieldPathUpdates) {
+                if (writeArithmeticFieldPathUpdate(update, generator)) continue;
                 generator.writeFieldName(update.getUpdateType().name().toLowerCase());
 
                 if (update instanceof AssignFieldPathUpdate) {
                     AssignFieldPathUpdate assignUp = (AssignFieldPathUpdate) update;
                     if (assignUp.getExpression() != null) {
-                        generator.writeString(assignUp.getExpression());
+                        throw new RuntimeException("Unable to parse expression: " + assignUp.getExpression());
                     } else {
                         assignUp.getNewValue().serialize(null, this);
                     }
@@ -141,6 +144,24 @@ public class DocumentUpdateJsonSerializer
                 }
             }
             generator.writeEndObject();
+        }
+
+        // Returns true if fieldpath update was an arithmetic operation after writing it to the generator
+        private boolean writeArithmeticFieldPathUpdate(FieldPathUpdate fieldPathUpdate, JsonGenerator generator) throws IOException {
+            if (! (fieldPathUpdate instanceof AssignFieldPathUpdate)) return false;
+            String expression = ((AssignFieldPathUpdate) fieldPathUpdate).getExpression();
+            if (expression == null) return false;
+
+            Matcher matcher = SingleValueReader.matchArithmeticOperation(expression);
+            if (matcher.find()) {
+                String updateOperation = SingleValueReader.ARITHMETIC_SIGN_TO_UPDATE_OPERATION.get(matcher.group(1));
+                double value = Double.valueOf(matcher.group(2));
+
+                generator.writeNumberField(updateOperation, value);
+                return true;
+            }
+
+            return false;
         }
 
         @Override

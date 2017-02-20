@@ -144,18 +144,6 @@ public abstract class FieldPathUpdate {
         throw new IllegalArgumentException("Field path update type '" + type + "' not supported.");
     }
 
-    public static FieldPathUpdate create(Type type, DocumentType docType) {
-        switch (type) {
-            case ASSIGN:
-                return new AssignFieldPathUpdate(docType);
-            case ADD:
-                return new AddFieldPathUpdate(docType);
-            case REMOVE:
-                return new RemoveFieldPathUpdate(docType);
-        }
-        throw new IllegalArgumentException("Field path update type '" + type + "' not supported.");
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

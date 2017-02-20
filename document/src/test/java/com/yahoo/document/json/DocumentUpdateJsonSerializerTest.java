@@ -360,7 +360,7 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testAssignFieldPathValue() {
+    public void testAssignFieldPathUpdate() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
@@ -378,7 +378,7 @@ public class DocumentUpdateJsonSerializerTest {
                 "           }",
                 "       },",
                 "       'map_struct{my_key}.my_int_field': {",
-                "           'assign': '10'",
+                "           'assign': 10",
                 "       }",
                 "   }",
                 "}"
@@ -386,7 +386,7 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testRemoveFieldPathValue() {
+    public void testRemoveFieldPathUpdate() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
@@ -400,13 +400,30 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testAddFieldPathValue() {
+    public void testAddFieldPathUpdate() {
         deSerializeAndSerializeJsonAndMatch(inputJson(
                 "{",
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
                 "       'map_array{my_value}': {",
                 "           'add': ['some', 'fancy', 'strings']",
+                "       }",
+                "   }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void testArithmeticFieldPathUpdate() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "   'update': 'DOCUMENT_ID',",
+                "   'fields': {",
+                "       'map_struct{my_key}.my_int_field': {",
+                "           'increment': 5.0",
+                "       },",
+                "       'int_array[10]': {",
+                "           'divide': 3.0",
                 "       }",
                 "   }",
                 "}"

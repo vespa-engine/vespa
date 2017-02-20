@@ -44,10 +44,6 @@ public class RemoveFieldPathUpdate extends FieldPathUpdate {
         handler = new IteratorHandler();
     }
 
-    public RemoveFieldPathUpdate(DocumentType type) {
-        super(FieldPathUpdate.Type.REMOVE, type);
-    }
-
     FieldPathIteratorHandler getIteratorHandler(Document doc) {
         return handler;
     }
