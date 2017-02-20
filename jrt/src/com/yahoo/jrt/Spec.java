@@ -4,8 +4,8 @@ package com.yahoo.jrt;
 
 import com.yahoo.net.HostName;
 
-import java.net.SocketAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 
 /**
@@ -70,6 +70,15 @@ public class Spec {
     }
 
     /**
+     * Creates a Spec with the hostname of the current/local host and given port
+     *
+     * @param port port number
+     */
+    public static Spec fromLocalHostName(int port) {
+      return new Spec(HostName.getLocalhost(), port);
+    }
+
+    /**
      * Obtain the host name of this address
      *
      * @return host name
@@ -98,25 +107,44 @@ public class Spec {
     }
 
     /**
-     * Resolve the socket address for this Spec. If this Spec is
+     * Resolve the listening socket address for this Spec. If this Spec is
      * malformed, this method will return null.
      *
-     * @return socket address
+     * @return listening socket address
      */
-    SocketAddress address() {
+    SocketAddress listenAddress() {
+        return address(host);
+    }
+
+    /**
+     * Resolve the connect socket address for this Spec. If this Spec is
+     * malformed, this method will return null.
+     *
+     * Why is this different than listenAddress()? If no host is given, a SocketAddress will be bound
+     * to the wildcard address (INADDR_ANY or 0.0.0.0 assuming IPv4) by InetSocketAddress. A wildcard
+     * address used to connect (at least SocketChannel::open) is interpreted as InetAddress::getLocalHost,
+     * which is wrong for the reasons stated in HostName::getLocalhost.
+     *
+     * @return connect socket address
+     */
+    SocketAddress connectAddress() {
+        return address(HostName.getLocalhost());
+    }
+
+    private SocketAddress address(String hostOverride) {
         if (malformed) {
             return null;
         }
         if (address == null) {
-            if (host == null) {
+            if (hostOverride == null) {
                 address = new InetSocketAddress(port);
             } else {
-                address = new InetSocketAddress(host, port);
+                address = new InetSocketAddress(hostOverride, port);
             }
         }
         return address;
     }
-    
+
     /**
      * Obtain a string representation of this address. The return
      * value from this method may be used to create a new Spec.

@@ -163,7 +163,7 @@ class Connection extends Target {
             return this;
         }
         try {
-            channel = SocketChannel.open(spec.address());
+            channel = SocketChannel.open(spec.connectAddress());
         } catch (Exception e) {
             setLostReason(e);
         }

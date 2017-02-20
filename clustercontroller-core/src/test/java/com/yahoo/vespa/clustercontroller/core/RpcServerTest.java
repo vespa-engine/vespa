@@ -1,25 +1,40 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.slobrok.server.Slobrok;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
+import com.yahoo.vdslib.distribution.Distribution;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.jrt.*;
-import com.yahoo.jrt.StringValue;
-import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vdslib.distribution.Distribution;
-import com.yahoo.vdslib.state.*;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
-import java.net.InetAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author humbe
@@ -42,7 +57,7 @@ public class RpcServerTest extends FleetControllerTest {
         startingTest("RpcServerTest::testRebinding");
         Slobrok slobrok = new Slobrok();
         String slobrokConnectionSpecs[] = new String[1];
-        slobrokConnectionSpecs[0] = "tcp/"+ InetAddress.getLocalHost().getHostName()+":" + slobrok.port();
+        slobrokConnectionSpecs[0] = Spec.fromLocalHostName(slobrok.port()).toString();
         RpcServer server = new RpcServer(timer, new Object(), "mycluster", 0, new BackOff());
         server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 0);
         int portUsed = server.getPort();
@@ -112,7 +127,7 @@ public class RpcServerTest extends FleetControllerTest {
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(Spec.fromLocalHostName(rpcPort));
         assertTrue(connection.isValid());
 
         Request req = new Request("getSystemState");
@@ -130,7 +145,7 @@ public class RpcServerTest extends FleetControllerTest {
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());
         }
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(Spec.fromLocalHostName(rpcPort));
         assertTrue(connection.isValid());
 
         Node node = new Node(nodeType, nodeIndex);

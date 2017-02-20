@@ -30,11 +30,9 @@ public class HostName {
     private static String cachedHostName = null;
 
     /**
-     * Return a fully qualified hostname that resolves to an IP address on a network interface.
-     * Normally this is the same as the 'hostname' command, but if that's not reachable a hostname
-     * for a reachable IP address is returned which is reachable , but on dev machines on WiFi,
-     * that IP isn't configured so we prefer a WiFi network interface IP address which is both reachable and
-     * has a DNS entry.
+     * Return a public and fully qualified hostname for localhost that resolves to an IP address on
+     * a network interface.  Normally this is the same as the 'hostname' command, but on dev machines on WiFi
+     * that IP isn't configured, so we find the DNS entry corresponding to the WiFi IP address.
      *
      * @return the preferred name of localhost
      * @throws RuntimeException if accessing the network or the 'hostname' command fails
@@ -93,7 +91,7 @@ public class HostName {
             return reachableNonLocalIp6Addresses.get(0).getHostName();
         }
 
-        // Fall back to localhost.
+        // Fall back to InetAddress' localhost.
 
         return InetAddress.getLocalHost().getCanonicalHostName();
     }
@@ -116,8 +114,10 @@ public class HostName {
         return Optional.empty();
     }
 
-    // public for testing purposes (all testing machines should have a hostname
-    public static String getSystemHostName() throws Exception {
+    /**
+     * DO NOT USE: Package-private for testing purposes (all testing machines should have a hostname)
+     */
+    static String getSystemHostName() throws Exception {
         Process process = Runtime.getRuntime().exec("hostname");
         BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String hostname = in.readLine();

@@ -47,7 +47,7 @@ public class Acceptor {
             if (spec.port() != 0) {
                 serverChannel.socket().setReuseAddress(true);
             }
-            serverChannel.socket().bind(spec.address(), 500);
+            serverChannel.socket().bind(spec.listenAddress(), 500);
         } catch (Exception e) {
             if (serverChannel != null) {
                 try { serverChannel.socket().close(); } catch (Exception x) {}

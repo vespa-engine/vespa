@@ -37,3 +37,4 @@ Testing
 /build.ninja
 /rules.ninja
 *_test_app
+/hadoop/dependency-reduced-pom.xml
