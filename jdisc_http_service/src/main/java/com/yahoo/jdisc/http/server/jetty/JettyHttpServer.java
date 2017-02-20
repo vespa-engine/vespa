@@ -15,7 +15,12 @@ import com.yahoo.jdisc.http.server.FilterBindings;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpField;
-import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.RequestLog;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnectionStatistics;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
@@ -25,6 +30,8 @@ import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.log.JavaUtilLog;
+import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
@@ -35,7 +42,12 @@ import java.net.BindException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -126,6 +138,8 @@ public class JettyHttpServer extends AbstractServerProvider {
             throw new IllegalArgumentException("No connectors configured.");
         this.metric = metric;
 
+        initializeJettyLogging();
+
         server = new Server();
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
@@ -171,6 +185,15 @@ public class JettyHttpServer extends AbstractServerProvider {
                         .build()
         );
         metricReporterExecutor.scheduleAtFixedRate(new MetricTask(), 0, 2, TimeUnit.SECONDS);
+    }
+
+    private static void initializeJettyLogging() {
+        // Note: Jetty is logging stderr if no logger is explicitly configured.
+        try {
+            Log.setLog(new JavaUtilLog());
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to initialize logging framework for Jetty");
+        }
     }
 
     private HandlerCollection getHandlerCollection(
