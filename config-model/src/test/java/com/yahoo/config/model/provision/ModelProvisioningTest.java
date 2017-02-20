@@ -13,8 +13,10 @@ import java.util.stream.Collectors;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Slobrok;
@@ -177,6 +179,29 @@ public class ModelProvisioningTest {
         assertEquals("Heap size is lowered with combined clusters",
                      33, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
     }
+
+    @Test
+    public void testClusterMembership() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+
+        assertEquals(1, model.getHostSystem().getHosts().size());
+        HostResource host = model.getHostSystem().getHosts().iterator().next();
+
+        assertEquals(1, host.clusterMemberships().size());
+        ClusterMembership membership = host.clusterMemberships().iterator().next();
+        assertEquals("container", membership.cluster().type().name());
+        assertEquals("container1", membership.cluster().id().value());
+    }
+
     @Test
     public void testCombinedCluster() {
         String xmlWithNodes =

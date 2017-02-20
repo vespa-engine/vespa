@@ -35,6 +35,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
+
+    // TODO: this map can probably be removed since the HostResource owns a set of memberships.
     private final Map<HostResource, Set<ClusterMembership>> mapping = new LinkedHashMap<>();
 
     public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner) {
@@ -127,6 +129,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             HostResource resource = entrySet.getKey();
             if (resource.getHostName().equals(hostSpec.hostname())) {
                 entrySet.getValue().add(hostSpec.membership().orElse(null));
+                hostSpec.membership().ifPresent(resource::addClusterMembership);
                 return resource;
             }
         }
@@ -137,6 +140,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         Host host = new Host(this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host);
         hostResource.setFlavor(hostSpec.flavor());
+        hostSpec.membership().ifPresent(hostResource::addClusterMembership);
         hostname2host.put(host.getHostName(), hostResource);
         Set<ClusterMembership> hostMemberships = new LinkedHashSet<>();
         if (hostSpec.membership().isPresent())
@@ -154,7 +158,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, int groups, DeployLogger logger) {
         List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, groups, new ProvisionDeployLogger(logger));
-        // TODO: Let hostresource own a set of memberships, but we still need the map here because the caller needs the current membership.
+        // TODO: Even if HostResource owns a set of memberships, we need to return a map because the caller needs the current membership.
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();
         for (HostSpec spec : allocatedHosts) {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
