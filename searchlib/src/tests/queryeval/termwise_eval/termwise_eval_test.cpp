@@ -31,14 +31,11 @@ struct MyTerm : public SearchIterator {
     MyTerm(const std::vector<uint32_t> &hits_in, bool is_strict_in)
         : pos(0), is_strict(is_strict_in), hits(hits_in) {}
     void initRange(uint32_t beginid, uint32_t endid) override {
+        pos = 0;
         SearchIterator::initRange(beginid, endid);
         if (is_strict) {
             doSeek(beginid);
         }
-    }
-    void resetRange() override {
-        SearchIterator::resetRange();
-        pos = 0;
     }
     void doSeek(uint32_t docid) override {
         while ((pos < hits.size()) && (hits[pos] < docid)) {
@@ -267,14 +264,12 @@ TEST("require that termwise ANDNOT with single term works") {
 TEST("require that pseudo term is rewindable") {
     auto search = UP(TERM({1,2,3,4,5}, true));
     TEST_DO(verify({3,4,5}, *search, 3, 6));
-    search->resetRange();
     TEST_DO(verify({1,2,3,4}, *search, 1, 5));
 }
 
 TEST("require that termwise wrapper is rewindable") {
     auto search = make_termwise(make_search(true), true);
     TEST_DO(verify(make_expect(3, 7), *search, 3, 7));
-    search->resetRange();
     TEST_DO(verify(make_expect(1, 5), *search, 1, 5));
 }
 

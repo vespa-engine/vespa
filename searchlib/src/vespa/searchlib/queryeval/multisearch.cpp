@@ -76,15 +76,6 @@ MultiSearch::initRange(uint32_t beginid, uint32_t endid)
 }
 
 void
-MultiSearch::resetRange()
-{
-    SearchIterator::resetRange();
-    for (SearchIterator * child : _children) {
-        child->resetRange();
-    }
-}
-
-void
 MultiSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "children", _children);

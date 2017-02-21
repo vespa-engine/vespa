@@ -33,10 +33,6 @@ protected:
         _search->initRange(beginid, endid);
         SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
     }
-    void resetRange() override {
-        _search->resetRange();
-        SearchIterator::resetRange();
-    }
 
 public:
     /**

@@ -84,7 +84,6 @@ seekNoReset(SearchIterator & s, uint32_t start, uint32_t docIdLimit)
 H
 seek(SearchIterator & s, uint32_t docIdLimit)
 {
-    s.resetRange();
     s.initFullRange();
     return seekNoReset(s, 1, docIdLimit);
 }
@@ -222,7 +221,6 @@ Test::testThatOptimizePreservesUnpack()
     tfmd[1].resetOnlyDocId(0);
     tfmd[2].resetOnlyDocId(0);
     s = MultiBitVectorIteratorBase::optimize(std::move(s));
-    s->resetRange();
     s->initFullRange();
     ms = dynamic_cast<const MultiSearch *>(s.get());
     EXPECT_TRUE(ms != NULL);

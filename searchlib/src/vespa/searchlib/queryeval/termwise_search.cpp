@@ -23,11 +23,6 @@ struct TermwiseSearch : public SearchIterator {
         setDocId(std::max(getDocId(), search->getDocId()));
         result = search->get_hits(beginid);
     }
-    void resetRange() override {
-        SearchIterator::resetRange();
-        search->resetRange();
-        result.reset();
-    }
     void doSeek(uint32_t docid) override {
         if (__builtin_expect(isAtEnd(docid), false)) {
             setAtEnd();

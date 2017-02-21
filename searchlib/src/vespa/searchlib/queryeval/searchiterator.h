@@ -110,11 +110,6 @@ public:
     void initFullRange() { initRange(1, search::endDocId); }
 
     /**
-     * Temporary to explicitt rewind iterator.
-     */
-    virtual void resetRange();
-
-    /**
      * Find all hits in the currently searched range (specified by
      * initRange) and return them as a bitvector. This function will
      * perform term-at-a-time evaluation and should only be used for

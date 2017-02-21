@@ -135,15 +135,6 @@ SourceBlenderSearch::initRange(uint32_t beginid, uint32_t endid)
 }
 
 void
-SourceBlenderSearch::resetRange()
-{
-    SearchIterator::resetRange();
-    for (auto & child : _children) {
-        getSearch(child)->resetRange();
-    }
-}
-
-void
 SourceBlenderSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "children", _children);
