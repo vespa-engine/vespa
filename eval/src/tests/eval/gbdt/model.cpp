@@ -27,7 +27,7 @@ private:
 
     std::string make_feature_name() {
         size_t max_feature = 2;
-        while ((max_feature < 1024) && (get_int(0, 99) < 50)) {
+        while ((max_feature < 1024) && (get_int(0, 99) < 55)) {
             max_feature *= 2;
         }
         return make_string("feature_%zu", get_int(1, max_feature));

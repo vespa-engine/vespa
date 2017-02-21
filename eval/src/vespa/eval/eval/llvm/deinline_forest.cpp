@@ -17,7 +17,8 @@ DeinlineForest::DeinlineForest(const std::vector<const nodes::Node *> &trees)
             fragment_size += TreeStats(*trees[idx]).size;
             fragment.push_back(trees[idx++]);
         }
-        void *address = _llvm_wrapper.compile_forest_fragment(fragment);
+        ForestStats stats(fragment);
+        void *address = _llvm_wrapper.compile_forest_fragment(stats.num_params, fragment);
         _fragments.push_back((array_function)address);
     }
 }

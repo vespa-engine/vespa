@@ -44,7 +44,8 @@ TreeStats::TreeStats(const nodes::Node &tree)
       num_tuned_checks(0),
       max_set_size(0),
       expected_path_length(0.0),
-      average_path_length(0.0)
+      average_path_length(0.0),
+      num_params(0)
 {
     size_t sum_path = 0.0;
     expected_path_length = traverse(tree, 0, sum_path);
@@ -53,8 +54,7 @@ TreeStats::TreeStats(const nodes::Node &tree)
 
 double
 TreeStats::traverse(const nodes::Node &node, size_t depth, size_t &sum_path) {
-    auto if_node = nodes::as<nodes::If>(node);
-    if (if_node) {
+    if (auto if_node = nodes::as<nodes::If>(node)) {
         double p_true = if_node->p_true();
         if (p_true != 0.5) {
             ++num_tuned_checks;
@@ -64,9 +64,15 @@ TreeStats::traverse(const nodes::Node &node, size_t depth, size_t &sum_path) {
         auto less = nodes::as<nodes::Less>(if_node->cond());
         auto in = nodes::as<nodes::In>(if_node->cond());
         if (less) {
+            auto symbol = nodes::as<nodes::Symbol>(less->lhs());
+            assert(symbol && (symbol->id() >= 0));
+            num_params = std::max(num_params, size_t(symbol->id() + 1));
             ++num_less_checks;
         } else {
             assert(in);
+            auto symbol = nodes::as<nodes::Symbol>(in->lhs());
+            assert(symbol && (symbol->id() >= 0));
+            num_params = std::max(num_params, size_t(symbol->id() + 1));
             ++num_in_checks;
             auto array = nodes::as<nodes::Array>(in->rhs());
             size_t array_size = (array) ? array->size() : 1;
@@ -89,11 +95,13 @@ ForestStats::ForestStats(const std::vector<const nodes::Node *> &trees)
       total_tuned_checks(0),
       max_set_size(0),
       total_expected_path_length(0.0),
-      total_average_path_length(0.0)
+      total_average_path_length(0.0),
+      num_params(0)
 {
     std::map<size_t,size_t> size_map;
     for (const nodes::Node *tree: trees) {
         TreeStats stats(*tree);
+        num_params = std::max(num_params, stats.num_params);
         total_size += stats.size;
         ++size_map[stats.size];
         total_less_checks += stats.num_less_checks;

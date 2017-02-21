@@ -13,12 +13,15 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
 using namespace vespalib::eval::gbdt;
 
+double budget = 2.0;
+
 //-----------------------------------------------------------------------------
 
 struct CompileStrategy {
     virtual const char *name() const = 0;
     virtual const char *code_name() const = 0;
     virtual CompiledFunction compile(const Function &function) const = 0;
+    virtual CompiledFunction compile_lazy(const Function &function) const = 0;
     bool is_same(const CompileStrategy &rhs) const {
         return (this == &rhs);
     }
@@ -26,40 +29,49 @@ struct CompileStrategy {
 };
 
 struct NullStrategy : CompileStrategy {
-    virtual const char *name() const {
+    const char *name() const override {
         return "none";
     }
-    virtual const char *code_name() const {
+    const char *code_name() const override {
         return "Optimize::none";
     }
-    virtual CompiledFunction compile(const Function &function) const {
+    CompiledFunction compile(const Function &function) const override {
         return CompiledFunction(function, PassParams::ARRAY, Optimize::none);
+    }
+    CompiledFunction compile_lazy(const Function &function) const override {
+        return CompiledFunction(function, PassParams::LAZY, Optimize::none);
     }
 };
 NullStrategy none;
 
 struct VMForestStrategy : CompileStrategy {
-    virtual const char *name() const {
+    const char *name() const override {
         return "vm-forest";
     }
-    virtual const char *code_name() const {
+    const char *code_name() const override {
         return "VMForest::optimize_chain";
     }
-    virtual CompiledFunction compile(const Function &function) const {
+    CompiledFunction compile(const Function &function) const override {
         return CompiledFunction(function, PassParams::ARRAY, VMForest::optimize_chain);
+    }
+    CompiledFunction compile_lazy(const Function &function) const override {
+        return CompiledFunction(function, PassParams::LAZY, VMForest::optimize_chain);
     }
 };
 VMForestStrategy vm_forest;
 
 struct DeinlineForestStrategy : CompileStrategy {
-    virtual const char *name() const {
+    const char *name() const override {
         return "deinline-forest";
     }
-    virtual const char *code_name() const {
+    const char *code_name() const override {
         return "DeinlineForest::optimize_chain";
     }
-    virtual CompiledFunction compile(const Function &function) const {
+    CompiledFunction compile(const Function &function) const override {
         return CompiledFunction(function, PassParams::ARRAY, DeinlineForest::optimize_chain);
+    }
+    CompiledFunction compile_lazy(const Function &function) const override {
+        return CompiledFunction(function, PassParams::LAZY, DeinlineForest::optimize_chain);
     }
 };
 DeinlineForestStrategy deinline_forest;
@@ -72,6 +84,7 @@ struct Option {
     bool is_same(const Option &rhs) const { return strategy.is_same(rhs.strategy); }
     const char *name() const { return strategy.name(); }
     CompiledFunction compile(const Function &function) const { return strategy.compile(function); }
+    CompiledFunction compile_lazy(const Function &function) const { return strategy.compile_lazy(function); }
     const char *code_name() const { return strategy.code_name(); }
 };
 
@@ -153,11 +166,14 @@ std::vector<Option> find_order(const ForestParams &params,
     Function forest = make_forest(params, num_trees);
     for (size_t i = 0; i < options.size(); ++i) {
         CompiledFunction compiled_function = options[i].compile(forest);
+        CompiledFunction compiled_function_lazy = options[i].compile_lazy(forest);
         std::vector<double> inputs(compiled_function.num_params(), 0.5);
-        results.push_back({compiled_function.estimate_cost_us(inputs), i});
-        fprintf(stderr, "  %20s@%6zu: %16g us (inputs: %zu)\n",
+        results.push_back({compiled_function.estimate_cost_us(inputs, budget), i});
+        double lazy_time = compiled_function_lazy.estimate_cost_us(inputs, budget);
+        double lazy_factor = lazy_time / results.back().us;
+        fprintf(stderr, "  %20s@%6zu: %16g us (inputs: %zu) [lazy: %g us, factor: %g]\n",
                 options[i].name(), num_trees, results.back().us,
-                inputs.size());
+                inputs.size(), lazy_time, lazy_factor);
     }
     std::sort(results.begin(), results.end());
     std::vector<Option> ret;

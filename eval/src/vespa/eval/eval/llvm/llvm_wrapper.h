@@ -57,7 +57,7 @@ public:
     LLVMWrapper(LLVMWrapper &&rhs);
     void *compile_function(size_t num_params, PassParams pass_params, const nodes::Node &root,
                            const gbdt::Optimize::Chain &forest_optimizers);
-    void *compile_forest_fragment(const std::vector<const nodes::Node *> &fragment);
+    void *compile_forest_fragment(size_t num_params, const std::vector<const nodes::Node *> &fragment);
     const std::vector<gbdt::Forest::UP> &get_forests() const { return _forests; }
     void dump() const { _module->dump(); }
     ~LLVMWrapper();

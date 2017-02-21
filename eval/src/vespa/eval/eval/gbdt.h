@@ -29,6 +29,7 @@ struct TreeStats {
     size_t max_set_size;
     double expected_path_length;
     double average_path_length;
+    size_t num_params;
     explicit TreeStats(const nodes::Node &tree);
 private:
     double traverse(const nodes::Node &tree, size_t depth, size_t &sum_path);
@@ -51,6 +52,7 @@ struct ForestStats {
     size_t max_set_size;
     double total_expected_path_length;
     double total_average_path_length;
+    size_t num_params;
     explicit ForestStats(const std::vector<const nodes::Node *> &trees);
 };
 

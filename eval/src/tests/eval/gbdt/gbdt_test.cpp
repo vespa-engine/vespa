@@ -24,6 +24,8 @@ double eval_double(const Function &function, const std::vector<double> &params) 
     return ifun.eval(ctx).as_double();
 }
 
+double my_resolve(void *ctx, size_t idx) { return ((double*)ctx)[idx]; }
+
 //-----------------------------------------------------------------------------
 
 TEST("require that tree stats can be calculated") {
@@ -32,12 +34,14 @@ TEST("require that tree stats can be calculated") {
     }
 
     TreeStats stats1(Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))").root());
+    EXPECT_EQUAL(3u, stats1.num_params);
     EXPECT_EQUAL(4u, stats1.size);
     EXPECT_EQUAL(1u, stats1.num_less_checks);
     EXPECT_EQUAL(2u, stats1.num_in_checks);
     EXPECT_EQUAL(3u, stats1.max_set_size);
 
     TreeStats stats2(Function::parse("if((d in 1),10.0,if((e<1),20.0,30.0))").root());
+    EXPECT_EQUAL(2u, stats2.num_params);
     EXPECT_EQUAL(3u, stats2.size);
     EXPECT_EQUAL(1u, stats2.num_less_checks);
     EXPECT_EQUAL(1u, stats2.num_in_checks);
@@ -64,6 +68,7 @@ TEST("require that forest stats can be calculated") {
                                         "if((d in 1),10.0,if((e<1),20.0,30.0))");
     std::vector<const Node *> trees = extract_trees(function.root());
     ForestStats stats(trees);
+    EXPECT_EQUAL(5u, stats.num_params);
     EXPECT_EQUAL(3u, stats.num_trees);
     EXPECT_EQUAL(10u, stats.total_size);
     ASSERT_EQUAL(2u, stats.tree_sizes.size());
@@ -125,6 +130,15 @@ TEST("require that tuned checks are counted correctly") {
 
 //-----------------------------------------------------------------------------
 
+struct DummyForest0 : public Forest {
+    static double eval(const Forest *, const double *) { return 1234.0; }
+    static Optimize::Result optimize(const ForestStats &, const std::vector<const nodes::Node *> &) {
+        return Optimize::Result(Forest::UP(new DummyForest0()), eval);
+    }
+};
+
+//-----------------------------------------------------------------------------
+
 struct DummyForest1 : public Forest {
     size_t num_trees;
     explicit DummyForest1(size_t num_trees_in) : num_trees(num_trees_in) {}
@@ -161,7 +175,26 @@ struct DummyForest2 : public Forest {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that trees can be optimized by a forest optimizer") {
+TEST("require that trees cannot be optimized by a forest optimizer when using SEPARATE params") {
+    Optimize::Chain chain({DummyForest0::optimize});
+    Function function = Function::parse("if((a<1),1.0,if((b<1),if((c<1),2.0,3.0),4.0))+"
+                                        "if((d<1),10.0,if((e<1),if((f<1),20.0,30.0),40.0))");
+    CompiledFunction compiled_function(function, PassParams::SEPARATE, chain);
+    CompiledFunction compiled_function_array(function, PassParams::ARRAY, chain);
+    CompiledFunction compiled_function_lazy(function, PassParams::LAZY, chain);
+    EXPECT_EQUAL(0u, compiled_function.get_forests().size());
+    EXPECT_EQUAL(1u, compiled_function_array.get_forests().size());
+    EXPECT_EQUAL(1u, compiled_function_lazy.get_forests().size());
+    auto f = compiled_function.get_function<6>();
+    auto f_array = compiled_function_array.get_function();
+    auto f_lazy = compiled_function_lazy.get_lazy_function();
+    std::vector<double> params = {1.5, 0.5, 0.5, 1.5, 0.5, 0.5};
+    EXPECT_EQUAL(22.0, f(params[0], params[1], params[2], params[3], params[4], params[5]));
+    EXPECT_EQUAL(1234.0, f_array(&params[0]));
+    EXPECT_EQUAL(1234.0, f_lazy(my_resolve, &params[0]));
+}
+
+TEST("require that trees can be optimized by a forest optimizer when using ARRAY params") {
     Optimize::Chain chain({DummyForest1::optimize, DummyForest2::optimize});
     size_t tree_size = 20;
     for (size_t forest_size = 10; forest_size <= 100; forest_size += 10) {
@@ -170,11 +203,35 @@ TEST("require that trees can be optimized by a forest optimizer") {
         CompiledFunction compiled_function(function, PassParams::ARRAY, chain);
         std::vector<double> inputs(function.num_params(), 0.5);
         if (forest_size < 25) {
+            EXPECT_EQUAL(0u, compiled_function.get_forests().size());
             EXPECT_EQUAL(eval_double(function, inputs), compiled_function.get_function()(&inputs[0]));
         } else if (forest_size < 50) {
+            EXPECT_EQUAL(1u, compiled_function.get_forests().size());
             EXPECT_EQUAL(double(forest_size), compiled_function.get_function()(&inputs[0]));
         } else {
+            EXPECT_EQUAL(1u, compiled_function.get_forests().size());
             EXPECT_EQUAL(double(2 * forest_size), compiled_function.get_function()(&inputs[0]));
+        }
+    }
+}
+
+TEST("require that trees can be optimized by a forest optimizer when using LAZY params") {
+    Optimize::Chain chain({DummyForest1::optimize, DummyForest2::optimize});
+    size_t tree_size = 20;
+    for (size_t forest_size = 10; forest_size <= 100; forest_size += 10) {
+        vespalib::string expression = Model().make_forest(forest_size, tree_size);
+        Function function = Function::parse(expression);
+        CompiledFunction compiled_function(function, PassParams::LAZY, chain);
+        std::vector<double> inputs(function.num_params(), 0.5);
+        if (forest_size < 25) {
+            EXPECT_EQUAL(0u, compiled_function.get_forests().size());
+            EXPECT_EQUAL(eval_double(function, inputs), compiled_function.get_lazy_function()(my_resolve, &inputs[0]));
+        } else if (forest_size < 50) {
+            EXPECT_EQUAL(1u, compiled_function.get_forests().size());
+            EXPECT_EQUAL(double(forest_size), compiled_function.get_lazy_function()(my_resolve, &inputs[0]));
+        } else {
+            EXPECT_EQUAL(1u, compiled_function.get_forests().size());
+            EXPECT_EQUAL(double(2 * forest_size), compiled_function.get_lazy_function()(my_resolve, &inputs[0]));
         }
     }
 }
@@ -187,12 +244,13 @@ Optimize::Chain general_vm_chain({VMForest::general_optimize});
 TEST("require that less only VM tree optimizer works") {
     Function function = Function::parse("if((a<1),1.0,if((b<1),if((c<1),2.0,3.0),4.0))+"
                                         "if((d<1),10.0,if((e<1),if((f<1),20.0,30.0),40.0))");
-    CompiledFunction compiled_function(function, PassParams::SEPARATE, less_only_vm_chain);
-    auto f = compiled_function.get_function<6>();
-    EXPECT_EQUAL(11.0, f(0.5, 0.0, 0.0, 0.5, 0.0, 0.0));
-    EXPECT_EQUAL(22.0, f(1.5, 0.5, 0.5, 1.5, 0.5, 0.5));
-    EXPECT_EQUAL(33.0, f(1.5, 0.5, 1.5, 1.5, 0.5, 1.5));
-    EXPECT_EQUAL(44.0, f(1.5, 1.5, 0.0, 1.5, 1.5, 0.0));
+    CompiledFunction compiled_function(function, PassParams::ARRAY, less_only_vm_chain);
+    EXPECT_EQUAL(1u, compiled_function.get_forests().size());
+    auto f = compiled_function.get_function();
+    EXPECT_EQUAL(11.0, f(&std::vector<double>({0.5, 0.0, 0.0, 0.5, 0.0, 0.0})[0]));
+    EXPECT_EQUAL(22.0, f(&std::vector<double>({1.5, 0.5, 0.5, 1.5, 0.5, 0.5})[0]));
+    EXPECT_EQUAL(33.0, f(&std::vector<double>({1.5, 0.5, 1.5, 1.5, 0.5, 1.5})[0]));
+    EXPECT_EQUAL(44.0, f(&std::vector<double>({1.5, 1.5, 0.0, 1.5, 1.5, 0.0})[0]));
 }
 
 TEST("require that models with in checks are rejected by less only vm optimizer") {
@@ -207,12 +265,13 @@ TEST("require that models with in checks are rejected by less only vm optimizer"
 TEST("require that general VM tree optimizer works") {
     Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
                                         "if((d in 1),10.0,if((e<1),if((f<1),20.0,30.0),40.0))");
-    CompiledFunction compiled_function(function, PassParams::SEPARATE, general_vm_chain);
-    auto f = compiled_function.get_function<6>();
-    EXPECT_EQUAL(11.0, f(0.5, 0.0, 0.0, 1.0, 0.0, 0.0));
-    EXPECT_EQUAL(22.0, f(1.5, 2.0, 1.0, 2.0, 0.5, 0.5));
-    EXPECT_EQUAL(33.0, f(1.5, 2.0, 2.0, 2.0, 0.5, 1.5));
-    EXPECT_EQUAL(44.0, f(1.5, 5.0, 0.0, 2.0, 1.5, 0.0));
+    CompiledFunction compiled_function(function, PassParams::ARRAY, general_vm_chain);
+    EXPECT_EQUAL(1u, compiled_function.get_forests().size());
+    auto f = compiled_function.get_function();
+    EXPECT_EQUAL(11.0, f(&std::vector<double>({0.5, 0.0, 0.0, 1.0, 0.0, 0.0})[0]));
+    EXPECT_EQUAL(22.0, f(&std::vector<double>({1.5, 2.0, 1.0, 2.0, 0.5, 0.5})[0]));
+    EXPECT_EQUAL(33.0, f(&std::vector<double>({1.5, 2.0, 2.0, 2.0, 0.5, 1.5})[0]));
+    EXPECT_EQUAL(44.0, f(&std::vector<double>({1.5, 5.0, 0.0, 2.0, 1.5, 0.0})[0]));
 }
 
 TEST("require that models with too large sets are rejected by general vm optimizer") {
@@ -227,25 +286,38 @@ TEST("require that models with too large sets are rejected by general vm optimiz
 
 //-----------------------------------------------------------------------------
 
+double eval_compiled(const CompiledFunction &cfun, std::vector<double> &params) {
+    ASSERT_EQUAL(params.size(), cfun.num_params());
+    if (cfun.pass_params() == PassParams::ARRAY) {
+        return cfun.get_function()(&params[0]);
+    }
+    if (cfun.pass_params() == PassParams::LAZY) {
+        return cfun.get_lazy_function()(my_resolve, &params[0]);
+    }
+    return 31212.0;
+}
+
 TEST("require that forests evaluate to approximately the same for all evaluation options") {
-    for (size_t tree_size: std::vector<size_t>({20})) {
-        for (size_t num_trees: std::vector<size_t>({50})) {
-            for (size_t less_percent: std::vector<size_t>({100, 80})) {
-                vespalib::string expression = Model().less_percent(less_percent).make_forest(num_trees, tree_size);
-                Function function = Function::parse(expression);
-                CompiledFunction none(function, PassParams::ARRAY, Optimize::none);
-                CompiledFunction deinline(function, PassParams::ARRAY, DeinlineForest::optimize_chain);
-                CompiledFunction vm_forest(function, PassParams::ARRAY, VMForest::optimize_chain);
-                EXPECT_EQUAL(0u, none.get_forests().size());
-                ASSERT_EQUAL(1u, deinline.get_forests().size());
-                EXPECT_TRUE(dynamic_cast<DeinlineForest*>(deinline.get_forests()[0].get()) != nullptr);
-                ASSERT_EQUAL(1u, vm_forest.get_forests().size());
-                EXPECT_TRUE(dynamic_cast<VMForest*>(vm_forest.get_forests()[0].get()) != nullptr);
-                std::vector<double> inputs(function.num_params(), 0.5);
-                double expected = eval_double(function, inputs);
-                EXPECT_APPROX(expected, none.get_function()(&inputs[0]), 1e-6);
-                EXPECT_APPROX(expected, deinline.get_function()(&inputs[0]), 1e-6);
-                EXPECT_APPROX(expected, vm_forest.get_function()(&inputs[0]), 1e-6);
+    for (PassParams pass_params: {PassParams::ARRAY, PassParams::LAZY}) {
+        for (size_t tree_size: std::vector<size_t>({20})) {
+            for (size_t num_trees: std::vector<size_t>({10, 60})) {
+                for (size_t less_percent: std::vector<size_t>({100, 80})) {
+                    vespalib::string expression = Model().less_percent(less_percent).make_forest(num_trees, tree_size);
+                    Function function = Function::parse(expression);
+                    CompiledFunction none(function, pass_params, Optimize::none);
+                    CompiledFunction deinline(function, pass_params, DeinlineForest::optimize_chain);
+                    CompiledFunction vm_forest(function, pass_params, VMForest::optimize_chain);
+                    EXPECT_EQUAL(0u, none.get_forests().size());
+                    ASSERT_EQUAL(1u, deinline.get_forests().size());
+                    EXPECT_TRUE(dynamic_cast<DeinlineForest*>(deinline.get_forests()[0].get()) != nullptr);
+                    ASSERT_EQUAL(1u, vm_forest.get_forests().size());
+                    EXPECT_TRUE(dynamic_cast<VMForest*>(vm_forest.get_forests()[0].get()) != nullptr);
+                    std::vector<double> inputs(function.num_params(), 0.5);
+                    double expected = eval_double(function, inputs);
+                    EXPECT_APPROX(expected, eval_compiled(none, inputs), 1e-6);
+                    EXPECT_APPROX(expected, eval_compiled(deinline, inputs), 1e-6);
+                    EXPECT_APPROX(expected, eval_compiled(vm_forest, inputs), 1e-6);
+                }
             }
         }
     }
