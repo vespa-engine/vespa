@@ -20,6 +20,7 @@ namespace proton {
 class IDocumentDBReferent
 {
 public:
+    using SP = std::shared_ptr<IDocumentDBReferent>;
     virtual ~IDocumentDBReferent() { }
     virtual std::shared_ptr<search::AttributeVector> getAttribute(vespalib::stringref name) = 0;
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() = 0;

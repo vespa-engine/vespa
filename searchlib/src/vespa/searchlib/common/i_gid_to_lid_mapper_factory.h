@@ -12,6 +12,7 @@ class IGidToLidMapper;
 class IGidToLidMapperFactory
 {
 public:
+    using SP = std::shared_ptr<IGidToLidMapperFactory>;
     virtual ~IGidToLidMapperFactory() { }
     virtual std::unique_ptr<IGidToLidMapper> getMapper() const = 0;
 };
