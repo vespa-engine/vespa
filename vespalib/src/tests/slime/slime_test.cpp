@@ -381,15 +381,15 @@ TEST("require that we can resolve to symbol table from a cursor") {
     Symbol sb = c2.resolve(B);
     Symbol sc = c3.resolve(C);
     Symbol sd = c4.resolve(D);
-    EXPECT_FALSE(sa.undefined());
-    EXPECT_FALSE(sb.undefined());
+    EXPECT_TRUE(!sa.undefined());
+    EXPECT_TRUE(!sb.undefined());
     EXPECT_TRUE(sc.undefined());
-    EXPECT_FALSE(sd.undefined());
+    EXPECT_TRUE(!sd.undefined());
 
-    EXPECT_FALSE(slime.lookup(A).undefined());
-    EXPECT_FALSE(slime.lookup(B).undefined());
+    EXPECT_TRUE(!slime.lookup(A).undefined());
+    EXPECT_TRUE(!slime.lookup(B).undefined());
     EXPECT_TRUE(slime.lookup(C).undefined());
-    EXPECT_FALSE(slime.lookup(D).undefined());
+    EXPECT_TRUE(!slime.lookup(D).undefined());
 
     EXPECT_TRUE(sa == slime.lookup(A));
     EXPECT_TRUE(sb == slime.lookup(B));
