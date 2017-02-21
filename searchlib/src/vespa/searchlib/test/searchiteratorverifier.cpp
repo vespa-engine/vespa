@@ -121,13 +121,12 @@ SearchIteratorVerifier::verifyTermwise() const {
     TEST_DO(verify(true));
 }
 
-    void
-    SearchIteratorVerifier::verifyInitRange() const {
-        InitRangeVerifier initRangeTest;
-        TEST_DO(initRangeTest.verify(*create(false)));
-        TEST_DO(initRangeTest.verify(*create(true)));
-    }
-
+void
+SearchIteratorVerifier::verifyInitRange() const {
+    InitRangeVerifier initRangeTest;
+    TEST_DO(initRangeTest.verify(*create(false)));
+    TEST_DO(initRangeTest.verify(*create(true)));
+}
 
 void
 SearchIteratorVerifier::verify(bool strict) const {
