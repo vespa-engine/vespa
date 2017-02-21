@@ -2,8 +2,18 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.provision.ClusterMembership;
 
-import java.util.*;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -26,6 +36,8 @@ public class HostResource implements Comparable<HostResource> {
     private final Map<Integer, Service> portDB = new LinkedHashMap<>();
 
     private int allocatedPorts = 0;
+
+    private Set<ClusterMembership> clusterMemberships = new LinkedHashSet<>();
 
     // Empty for self-hosted Vespa.
     private Optional<String> flavor = Optional.empty();
@@ -209,7 +221,7 @@ public class HostResource implements Comparable<HostResource> {
 
     public HostInfo getHostInfo() {
         return new HostInfo(getHostName(), services.values().stream()
-                .map(service -> service.getServiceInfo())
+                .map(Service::getServiceInfo)
                 .collect(Collectors.toSet()));
     }
 
@@ -217,6 +229,15 @@ public class HostResource implements Comparable<HostResource> {
 
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
     public Optional<String> getFlavor() { return flavor; }
+
+    public void addClusterMembership(@Nullable ClusterMembership clusterMembership) {
+        if (clusterMembership != null)
+            clusterMemberships.add(clusterMembership);
+    }
+
+    public Set<ClusterMembership> clusterMemberships() {
+        return Collections.unmodifiableSet(clusterMemberships);
+    }
 
     @Override
     public String toString() {
