@@ -5,20 +5,21 @@
 LOG_SETUP(".proton.metrics.job_tracker");
 #include "job_tracker.h"
 #include <vespa/fastos/timestamp.h>
+#include <chrono>
 
 using fastos::TimeStamp;
 using fastos::ClockSystem;
 
 namespace proton {
 
-JobTracker::JobTracker(double now, vespalib::Lock &lock)
+JobTracker::JobTracker(time_point now, std::mutex &lock)
     : _sampler(now),
       _lock(lock)
 {
 }
 
 double
-JobTracker::sampleLoad(double now, const vespalib::LockGuard &guard)
+JobTracker::sampleLoad(time_point now, const std::lock_guard<std::mutex> &guard)
 {
     (void) guard;
     return _sampler.sampleLoad(now);
@@ -27,15 +28,15 @@ JobTracker::sampleLoad(double now, const vespalib::LockGuard &guard)
 void
 JobTracker::start()
 {
-    vespalib::LockGuard guard(_lock);
-    _sampler.startJob(TimeStamp(ClockSystem::now()).sec());
+    std::unique_lock<std::mutex> guard(_lock);
+    _sampler.startJob(std::chrono::steady_clock::now());
 }
 
 void
 JobTracker::end()
 {
-    vespalib::LockGuard guard(_lock);
-    _sampler.endJob(TimeStamp(ClockSystem::now()).sec());
+    std::unique_lock<std::mutex> guard(_lock);
+    _sampler.endJob(std::chrono::steady_clock::now());
 }
 
 } // namespace proton

@@ -8,14 +8,15 @@ LOG_SETUP(".proton.metrics.job_load_sampler");
 namespace proton {
 
 void
-JobLoadSampler::updateIntegral(double now, uint32_t jobCnt)
+JobLoadSampler::updateIntegral(time_point now, uint32_t jobCnt)
 {
     assert(now >= _lastUpdateTime);
-    _loadIntegral += (now - _lastUpdateTime) * jobCnt;
+    std::chrono::duration<double> duration = now - _lastUpdateTime;
+    _loadIntegral += duration.count() * jobCnt;
     _lastUpdateTime = now;
 }
 
-JobLoadSampler::JobLoadSampler(double now)
+JobLoadSampler::JobLoadSampler(time_point now)
     : _lastSampleTime(now),
       _lastUpdateTime(now),
       _currJobCnt(0),
@@ -24,23 +25,24 @@ JobLoadSampler::JobLoadSampler(double now)
 }
 
 void
-JobLoadSampler::startJob(double now)
+JobLoadSampler::startJob(time_point now)
 {
     updateIntegral(now, _currJobCnt++);
 }
 
 void
-JobLoadSampler::endJob(double now)
+JobLoadSampler::endJob(time_point now)
 {
     updateIntegral(now, _currJobCnt--);
 }
 
 double
-JobLoadSampler::sampleLoad(double now)
+JobLoadSampler::sampleLoad(time_point now)
 {
     assert(now >= _lastSampleTime);
     updateIntegral(now, _currJobCnt);
-    double load = (now - _lastSampleTime > 0) ? (_loadIntegral / (now - _lastSampleTime)) : 0;
+    std::chrono::duration<double> duration = now - _lastSampleTime;
+    double load = (duration.count() > 0) ? (_loadIntegral / duration.count()) : 0;
     _lastSampleTime = now;
     _loadIntegral = 0;
     return load;

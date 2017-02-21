@@ -10,19 +10,21 @@ using searchcorespi::IFlushTarget;
 typedef IFlushTarget::Type FTT;
 typedef IFlushTarget::Component FTC;
 
+using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+
 namespace proton {
 
 DocumentDBJobTrackers::DocumentDBJobTrackers()
     : _lock(),
-      _now(fastos::ClockSystem::now()),
-      _attributeFlush(new JobTracker(_now.sec(), _lock)),
-      _memoryIndexFlush(new JobTracker(_now.sec(), _lock)),
-      _diskIndexFusion(new JobTracker(_now.sec(), _lock)),
-      _documentStoreFlush(new JobTracker(_now.sec(), _lock)),
-      _documentStoreCompact(new JobTracker(_now.sec(), _lock)),
-      _bucketMove(new JobTracker(_now.sec(), _lock)),
-      _lidSpaceCompact(new JobTracker(_now.sec(), _lock)),
-      _removedDocumentsPrune(new JobTracker(_now.sec(), _lock))
+      _now(std::chrono::steady_clock::now()),
+      _attributeFlush(new JobTracker(_now, _lock)),
+      _memoryIndexFlush(new JobTracker(_now, _lock)),
+      _diskIndexFusion(new JobTracker(_now, _lock)),
+      _documentStoreFlush(new JobTracker(_now, _lock)),
+      _documentStoreCompact(new JobTracker(_now, _lock)),
+      _bucketMove(new JobTracker(_now, _lock)),
+      _lidSpaceCompact(new JobTracker(_now, _lock)),
+      _removedDocumentsPrune(new JobTracker(_now, _lock))
 {
 }
 
@@ -68,10 +70,10 @@ namespace {
 double
 updateMetric(metrics::DoubleAverageMetric &metric,
              JobTracker &tracker,
-             double nowInSec,
-             const vespalib::LockGuard &guard)
+             time_point now,
+             const std::lock_guard<std::mutex> &guard)
 {
-    double load = tracker.sampleLoad(nowInSec, guard);
+    double load = tracker.sampleLoad(now, guard);
     metric.addValue(load);
     return load;
 }
@@ -81,18 +83,17 @@ updateMetric(metrics::DoubleAverageMetric &metric,
 void
 DocumentDBJobTrackers::updateMetrics(DocumentDBTaggedMetrics::JobMetrics &metrics)
 {
-    vespalib::LockGuard guard(_lock);
-    _now = fastos::ClockSystem::now();
-    double nowInSec = _now.sec();
+    std::lock_guard<std::mutex> guard(_lock);
+    _now = std::chrono::steady_clock::now();
     double load = 0.0;
-    load += updateMetric(metrics.attributeFlush, *_attributeFlush, nowInSec, guard);
-    load += updateMetric(metrics.memoryIndexFlush, *_memoryIndexFlush, nowInSec, guard);
-    load += updateMetric(metrics.diskIndexFusion, *_diskIndexFusion, nowInSec, guard);
-    load += updateMetric(metrics.documentStoreFlush, *_documentStoreFlush, nowInSec, guard);
-    load += updateMetric(metrics.documentStoreCompact, *_documentStoreCompact, nowInSec, guard);
-    load += updateMetric(metrics.bucketMove, *_bucketMove, nowInSec, guard);
-    load += updateMetric(metrics.lidSpaceCompact, *_lidSpaceCompact, nowInSec, guard);
-    load += updateMetric(metrics.removedDocumentsPrune, *_removedDocumentsPrune, nowInSec, guard);
+    load += updateMetric(metrics.attributeFlush, *_attributeFlush, _now, guard);
+    load += updateMetric(metrics.memoryIndexFlush, *_memoryIndexFlush, _now, guard);
+    load += updateMetric(metrics.diskIndexFusion, *_diskIndexFusion, _now, guard);
+    load += updateMetric(metrics.documentStoreFlush, *_documentStoreFlush, _now, guard);
+    load += updateMetric(metrics.documentStoreCompact, *_documentStoreCompact, _now, guard);
+    load += updateMetric(metrics.bucketMove, *_bucketMove, _now, guard);
+    load += updateMetric(metrics.lidSpaceCompact, *_lidSpaceCompact, _now, guard);
+    load += updateMetric(metrics.removedDocumentsPrune, *_removedDocumentsPrune, _now, guard);
     metrics.total.addValue(load);
 }
 

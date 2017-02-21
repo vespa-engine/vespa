@@ -4,7 +4,7 @@
 
 #include "job_load_sampler.h"
 #include "i_job_tracker.h"
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace proton {
 
@@ -14,19 +14,20 @@ namespace proton {
 class JobTracker : public IJobTracker
 {
 private:
+    using time_point = std::chrono::time_point<std::chrono::steady_clock>;
     JobLoadSampler  _sampler;
-    vespalib::Lock &_lock;
+    std::mutex     &_lock;
 
 public:
     typedef std::shared_ptr<JobTracker> SP;
 
-    JobTracker(double now, vespalib::Lock &lock);
+    JobTracker(time_point now, std::mutex &lock);
 
     /**
      * Samples the average job load from previous sample time to now (in seconds).
      * The caller of this function must take the guard on the lock referenced by this class.
      */
-    double sampleLoad(double now, const vespalib::LockGuard &guard);
+    double sampleLoad(time_point now, const std::lock_guard<std::mutex> &guard);
 
     // Implements IJobTracker
     virtual void start();
