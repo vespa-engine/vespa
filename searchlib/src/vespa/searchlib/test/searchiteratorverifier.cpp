@@ -130,7 +130,7 @@ SearchIteratorVerifier::verifyInitRange() const {
 
 void
 SearchIteratorVerifier::verify_get_hits(bool strict) const {
-    constexpr const size_t FIRST_LEGAL = 64;
+    constexpr const size_t FIRST_LEGAL = 61;
     SearchIterator::UP iterator = create(strict);
     iterator->initFullRange();
     EXPECT_TRUE(iterator->seek(FIRST_LEGAL));
