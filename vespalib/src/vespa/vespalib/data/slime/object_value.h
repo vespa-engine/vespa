@@ -79,6 +79,7 @@ public:
 
     virtual Cursor &setArray(Memory name);
     virtual Cursor &setObject(Memory name);
+    virtual Symbol resolve(Memory symbol_name);
 
     virtual ~ObjectValue() { }
 };

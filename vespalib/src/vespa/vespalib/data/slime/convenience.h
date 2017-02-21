@@ -32,6 +32,7 @@ using ::vespalib::slime::Inserter;
 using ::vespalib::slime::SlimeInserter;
 using ::vespalib::slime::ArrayInserter;
 using ::vespalib::slime::ObjectInserter;
+using ::vespalib::slime::ObjectSymbolInserter;
 using ::vespalib::slime::inject;
 
 } // namespace vespalib::slime::convenience

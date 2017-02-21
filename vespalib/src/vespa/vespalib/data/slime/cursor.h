@@ -38,6 +38,8 @@ struct Cursor : public Inspector {
     virtual Cursor &setData(Memory name, Memory str) = 0;
     virtual Cursor &setArray(Memory name) = 0;
     virtual Cursor &setObject(Memory name) = 0;
+
+    virtual Symbol resolve(Memory symbol_name) = 0;
 };
 
 } // namespace vespalib::slime

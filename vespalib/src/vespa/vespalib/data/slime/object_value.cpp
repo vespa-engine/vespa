@@ -73,7 +73,8 @@ ObjectValue::setObject(Memory name) {
     return setLeaf(name, ObjectValueFactory(_symbolTable));
 }
 
-
+Symbol
+ObjectValue::resolve(Memory symbol_name) { return _symbolTable.insert(symbol_name); }
 
 } // namespace vespalib::slime
 } // namespace vespalib
