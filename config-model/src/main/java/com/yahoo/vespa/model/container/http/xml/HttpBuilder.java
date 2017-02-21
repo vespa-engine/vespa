@@ -22,7 +22,6 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 
@@ -46,7 +45,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
                 accessControl = buildAccessControl(ancestor, accessControlElem);
-                bindings.addAll(getAccessControlBindings(ancestor, accessControl));
+                bindings.addAll(accessControl.bindingsForCluster(getContainerCluster(ancestor)));
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
@@ -91,17 +90,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 .orElse(ApplicationId.defaultId().application());
     }
 
-    private static List<Binding> getAccessControlBindings(AbstractConfigProducer ancestor, AccessControl accessControl) {
-        return getContainerCluster(ancestor)
-                .map(cluster -> cluster.getHandlers().stream()
-                        .filter(accessControl::shouldHandlerBeProtected)
-                        .flatMap(handler -> handler.getServerBindings().stream())
-                        .map(AccessControl::accessControlBinding)
-                        .collect(Collectors.toList()))
-                .orElse(new ArrayList<>());
-    }
-
-    private static Optional<ContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
+    static Optional<ContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
         AbstractConfigProducer currentProducer = configProducer;
         while (currentProducer.getClass() != ContainerCluster.class) {
             currentProducer = currentProducer.getParent();

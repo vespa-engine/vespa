@@ -9,11 +9,13 @@ import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Helper class for http access control.
@@ -91,13 +93,22 @@ public final class AccessControl {
         this.vespaDomain = vespaDomain;
     }
 
-    public boolean shouldHandlerBeProtected(Handler<?> handler) {
+    public List<Binding> bindingsForCluster(Optional<ContainerCluster> containerCluster) {
+        return containerCluster
+                .map(cluster -> cluster.getHandlers().stream()
+                        .filter(this::shouldHandlerBeProtected)
+                        .flatMap(handler -> handler.getServerBindings().stream())
+                        .map(AccessControl::accessControlBinding)
+                        .collect(Collectors.toList()))
+                .orElse(new ArrayList<>());
+    }
+
+    private boolean shouldHandlerBeProtected(Handler<?> handler) {
         return ! UNPROTECTED_HANDLERS.contains(handler.getClassId().getName())
                 && handler.getServerBindings().stream().noneMatch(excludedBindings::contains);
     }
 
-    public static Binding accessControlBinding(String binding) {
+    private static Binding accessControlBinding(String binding) {
         return new Binding(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding);
     }
-
 }
