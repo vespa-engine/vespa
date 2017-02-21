@@ -108,8 +108,7 @@ public class HostResource implements Comparable<HostResource> {
         return ports;
     }
 
-    // TODO: make private when LocalApplication and all model services has stopped reallocating ports _after_ allocateServices has been called
-    List<Integer> allocatePorts(AbstractService service, int wantedPort) {
+    private List<Integer> allocatePorts(AbstractService service, int wantedPort) {
         List<Integer> ports = new ArrayList<>();
         if (service.getPortCount() < 1)
             return ports;
@@ -136,17 +135,6 @@ public class HostResource implements Comparable<HostResource> {
             ports.add(port);
         }
         return ports;
-    }
-
-    // TODO: this is a hack to allow calling AbstractService.setBasePort _after_ the services has been initialized,
-    //       i.e. modifying the baseport. Done by e.g. LocalApplication. Try to remove usage of this method!
-    void deallocatePorts(AbstractService service) {
-        for (Iterator<Map.Entry<Integer,Service>> i=portDB.entrySet().iterator(); i.hasNext();) {
-            Map.Entry<Integer, Service> e = i.next();
-            Service s = e.getValue();
-            if (s.equals(service))
-                i.remove();
-        }
     }
 
     private boolean canUseWantedPort(AbstractService service, int wantedPort, int serviceBasePort) {

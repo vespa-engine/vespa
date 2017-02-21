@@ -467,17 +467,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * WARNING: should only be called before initService(), otherwise call at own risk!
      */
     public void setBasePort(int wantedPort) {
-        if (initialized && getPortCount() > 0) {
-            // This means initServices has been called already, so you are being nasty, trying to change ports!
-            // Try to allocate the new ports if they are available.
-            if (!hostResource.isPortRangeAvailable(wantedPort, 1) ||
-                    (requiresConsecutivePorts() && ! hostResource.isPortRangeAvailable(wantedPort, getPortCount())))
-                throw new IllegalStateException("For service with id " + getConfigId() + ": setBasePort is called after initService, and ports are not available.");
-
-            hostResource.deallocatePorts(this);
-            ports = hostResource.allocatePorts(this, getInstanceWantedPort(wantedPort));
-        }
-
         this.basePort = wantedPort;
     }
 

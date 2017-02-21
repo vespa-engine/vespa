@@ -173,7 +173,7 @@ public class FederationSearcherTest {
         tester.addSearchChain("chain2", new TimeoutInFillSearcher());
 
         Query query = new Query();
-        query.setTimeout(2);
+        query.setTimeout(50);
         Result result = tester.search(query);
         tester.fill(result);
         assertEquals(1, result.hits().getConcreteSize());
@@ -204,7 +204,7 @@ public class FederationSearcherTest {
                               new BlockingSearcher() );
 
         Query query = new Query();
-        query.setTimeout(2); // make the test run faster
+        query.setTimeout(50); // make the test run faster
         Result result = tester.search(query);
         assertThat(getNonErrorHits(result).size(), is(0));
         assertNotNull(result.hits().getError());

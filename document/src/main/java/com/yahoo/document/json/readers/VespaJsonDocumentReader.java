@@ -10,7 +10,6 @@ import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
-import com.yahoo.document.NumericDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
@@ -19,7 +18,6 @@ import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.json.JsonReaderException;
 import com.yahoo.document.json.TokenBuffer;
-import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.update.FieldUpdate;
 
 import static com.yahoo.document.json.readers.AddRemoveCreator.createAdds;
@@ -29,6 +27,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
 import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
 import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
+import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_ASSIGN;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate;
 
 /**
@@ -132,31 +131,59 @@ public class VespaJsonDocumentReader {
 
         buffer.next();
         while (localNesting <= buffer.nesting()) {
-            FieldPathUpdate.Type fieldPathUpdateType = FieldPathUpdate.Type.valueOf(buffer.currentName().toUpperCase());
-            FieldPathUpdate fieldPathUpdate = FieldPathUpdate.create(fieldPathUpdateType, update.getType());
+            String fieldPathOperation = buffer.currentName().toLowerCase();
+            FieldPathUpdate fieldPathUpdate;
+            if (fieldPathOperation.equals(UPDATE_ASSIGN)) {
+                fieldPathUpdate = readAssignFieldPathUpdate(update.getType(), fieldPath, buffer);
 
-            fieldPathUpdate.setFieldPath(fieldPath);
-            DataType dt = fieldPathUpdate.getFieldPath().getResultingDataType();
-            if (fieldPathUpdate instanceof AssignFieldPathUpdate) {
-                if (dt instanceof NumericDataType) {
-                    ((AssignFieldPathUpdate) fieldPathUpdate).setExpression(buffer.currentText());
-                } else {
-                    FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
-                    ((AssignFieldPathUpdate) fieldPathUpdate).setNewValue(fv);
-                }
+            } else if (fieldPathOperation.equals(UPDATE_ADD)) {
+                fieldPathUpdate = readAddFieldPathUpdate(update.getType(), fieldPath, buffer);
 
-            } else if (fieldPathUpdate instanceof AddFieldPathUpdate) {
-                FieldValue fv = SingleValueReader.readSingleValue(buffer, dt);
-                ((AddFieldPathUpdate) fieldPathUpdate).setNewValues((Array) fv);
+            } else if (fieldPathOperation.equals(UPDATE_REMOVE)) {
+                fieldPathUpdate = readRemoveFieldPathUpdate(update.getType(), fieldPath, buffer);
 
-            } else if (fieldPathUpdate instanceof RemoveFieldPathUpdate) {
-                buffer.next();
+            } else if (SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.containsKey(fieldPathOperation)) {
+                fieldPathUpdate = readArithmeticFieldPathUpdate(update.getType(), fieldPath, buffer, fieldPathOperation);
+
+            } else {
+                throw new IllegalArgumentException("Field path update type '" + fieldPathOperation + "' not supported.");
             }
             update.addFieldPathUpdate(fieldPathUpdate);
             buffer.next();
         }
     }
 
+    private AssignFieldPathUpdate readAssignFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
+        AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
+        FieldValue fv = SingleValueReader.readSingleValue(
+                buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        fieldPathUpdate.setNewValue(fv);
+        return fieldPathUpdate;
+    }
+
+    private AddFieldPathUpdate readAddFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
+        AddFieldPathUpdate fieldPathUpdate = new AddFieldPathUpdate(documentType, fieldPath);
+        FieldValue fv = SingleValueReader.readSingleValue(
+                buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        fieldPathUpdate.setNewValues((Array) fv);
+        return fieldPathUpdate;
+    }
+
+    private RemoveFieldPathUpdate readRemoveFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
+        expectObjectStart(buffer.currentToken());
+        expectObjectEnd(buffer.next());
+        return new RemoveFieldPathUpdate(documentType, fieldPath);
+    }
+
+    private AssignFieldPathUpdate readArithmeticFieldPathUpdate(
+            DocumentType documentType, String fieldPath, TokenBuffer buffer, String fieldPathOperation) {
+        AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
+        String arithmeticSign = SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.get(fieldPathOperation);
+        double value = Double.valueOf(buffer.currentText());
+        String expression = String.format("$value %s %s", arithmeticSign, value);
+        fieldPathUpdate.setExpression(expression);
+        return fieldPathUpdate;
+    }
 
 
     private static boolean isFieldPath(String field) {

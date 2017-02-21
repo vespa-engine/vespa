@@ -13,7 +13,16 @@ namespace eval {
 
 namespace {
 
-double empty_function(const double *) { return 0.0; }
+double empty_function_0() { return 0.0; }
+double empty_function_1(double) { return 0.0; }
+double empty_function_2(double, double) { return 0.0; }
+double empty_function_3(double, double, double) { return 0.0; }
+double empty_function_4(double, double, double, double) { return 0.0; }
+double empty_function_5(double, double, double, double, double) { return 0.0; }
+double empty_array_function(const double *) { return 0.0; }
+double empty_lazy_function(CompiledFunction::resolve_function, void *) { return 0.0; }
+
+double my_resolve(void *ctx, size_t idx) { return ((double *)ctx)[idx]; }
 
 } // namespace vespalib::eval::<unnamed>
 
@@ -25,7 +34,7 @@ CompiledFunction::CompiledFunction(const Function &function_in, PassParams pass_
       _pass_params(pass_params_in)
 {
     _address = _llvm_wrapper.compile_function(function_in.num_params(),
-                                              (_pass_params == PassParams::ARRAY),
+                                              _pass_params,
                                               function_in.root(),
                                               forest_optimizers);
 }
@@ -40,14 +49,67 @@ CompiledFunction::CompiledFunction(CompiledFunction &&rhs)
 }
 
 double
-CompiledFunction::estimate_cost_us(const std::vector<double> &params) const
+CompiledFunction::estimate_cost_us(const std::vector<double> &params, double budget) const
 {
-    assert(_pass_params == PassParams::ARRAY);
     assert(params.size() == _num_params);
-    auto function = get_function();
-    auto actual = [&](){function(&params[0]);};
-    auto baseline = [&](){empty_function(&params[0]);};
-    return BenchmarkTimer::benchmark(actual, baseline, 4.0) * 1000.0 * 1000.0;
+    if (_pass_params == PassParams::ARRAY) {
+        auto function = get_function();
+        auto empty = empty_array_function;
+        auto actual = [&](){function(&params[0]);};
+        auto baseline = [&](){empty(&params[0]);};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    if (_pass_params == PassParams::LAZY) {
+        auto function = get_lazy_function();
+        auto empty = empty_lazy_function;
+        auto actual = [&](){function(my_resolve, const_cast<double*>(&params[0]));};
+        auto baseline = [&](){empty(my_resolve, const_cast<double*>(&params[0]));};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    assert(_pass_params == PassParams::SEPARATE);
+    if (params.size() == 0) {
+        auto function = get_function<0>();
+        auto empty = empty_function_0;
+        auto actual = [&](){function();};
+        auto baseline = [&](){empty();};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    if (params.size() == 1) {
+        auto function = get_function<1>();
+        auto empty = empty_function_1;
+        auto actual = [&](){function(params[0]);};
+        auto baseline = [&](){empty(params[0]);};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    if (params.size() == 2) {
+        auto function = get_function<2>();
+        auto empty = empty_function_2;        
+        auto actual = [&](){function(params[0], params[1]);};
+        auto baseline = [&](){empty(params[0], params[1]);};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    if (params.size() == 3) {
+        auto function = get_function<3>();
+        auto empty = empty_function_3;
+        auto actual = [&](){function(params[0], params[1], params[2]);};
+        auto baseline = [&](){empty(params[0], params[1], params[2]);};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    if (params.size() == 4) {
+        auto function = get_function<4>();
+        auto empty = empty_function_4;
+        auto actual = [&](){function(params[0], params[1], params[2], params[3]);};
+        auto baseline = [&](){empty(params[0], params[1], params[2], params[3]);};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    if (params.size() == 5) {
+        auto function = get_function<5>();
+        auto empty = empty_function_5;
+        auto actual = [&](){function(params[0], params[1], params[2], params[3], params[4]);};
+        auto baseline = [&](){empty(params[0], params[1], params[2], params[3], params[4]);};
+        return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
+    }
+    abort();
 }
 
 Function::Issues

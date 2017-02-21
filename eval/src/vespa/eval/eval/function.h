@@ -14,7 +14,7 @@
 namespace vespalib {
 namespace eval {
 
-enum class PassParams { SEPARATE, ARRAY };
+enum class PassParams : uint8_t { SEPARATE, ARRAY, LAZY };
 
 /**
  * Interface used to perform custom symbol extraction. This is

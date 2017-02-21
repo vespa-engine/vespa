@@ -55,7 +55,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     std::vector<llvm::Value*> values;
     std::vector<llvm::Value*> let_values;
     llvm::Function           *function;
-    bool                      use_array;
+    PassParams                pass_params;
     bool                      inside_forest;
     const Node               *forest_end;
     const gbdt::Optimize::Chain &forest_optimizers;
@@ -67,7 +67,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
                     llvm::Module &module_in,
                     const vespalib::string &name_in,
                     size_t num_params_in,
-                    bool use_array_in,
+                    PassParams pass_params_in,
                     const gbdt::Optimize::Chain &forest_optimizers_in,
                     std::vector<gbdt::Forest::UP> &forests_out,
                     std::vector<PluginState::UP> &plugin_state_out)
@@ -79,7 +79,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
           values(),
           let_values(),
           function(nullptr),
-          use_array(use_array_in),
+          pass_params(pass_params_in),
           inside_forest(false),
           forest_end(nullptr),
           forest_optimizers(forest_optimizers_in),
@@ -87,10 +87,19 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
           plugin_state(plugin_state_out)
     {
         std::vector<llvm::Type*> param_types;
-        if (use_array_in) {
+        if (pass_params == PassParams::SEPARATE) {
+            param_types.resize(num_params_in, builder.getDoubleTy());
+        } else if (pass_params == PassParams::ARRAY) {
             param_types.push_back(builder.getDoubleTy()->getPointerTo());
         } else {
-            param_types.resize(num_params_in, builder.getDoubleTy());
+            assert(pass_params == PassParams::LAZY);
+            std::vector<llvm::Type*> callback_param_types;
+            callback_param_types.push_back(builder.getVoidTy()->getPointerTo());
+            callback_param_types.push_back(builder.getInt64Ty());
+            llvm::FunctionType *callback_function_type = llvm::FunctionType::get(builder.getDoubleTy(), callback_param_types, false);
+            llvm::PointerType *callback_function_pointer_type = llvm::PointerType::get(callback_function_type, 0);
+            param_types.push_back(callback_function_pointer_type);
+            param_types.push_back(builder.getVoidTy()->getPointerTo());
         }
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         function = llvm::Function::Create(function_type, llvm::Function::ExternalLinkage, name_in.c_str(), &module);
@@ -105,14 +114,18 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     //-------------------------------------------------------------------------
 
     llvm::Value *get_param(size_t idx) {
-        if (!use_array) {
+        if (pass_params == PassParams::SEPARATE) {
             assert(idx < params.size());
             return params[idx];
+        } else if (pass_params == PassParams::ARRAY) {
+            assert(params.size() == 1);
+            llvm::Value *param_array = params[0];
+            llvm::Value *addr = builder.CreateGEP(param_array, builder.getInt64(idx));
+            return builder.CreateLoad(addr);
         }
-        assert(params.size() == 1);
-        llvm::Value *param_array = params[0];
-        llvm::Value *addr = builder.CreateGEP(param_array, builder.getInt64(idx));
-        return builder.CreateLoad(addr);
+        assert(pass_params == PassParams::LAZY);
+        assert(params.size() == 2);
+        return builder.CreateCall2(params[0], params[1], builder.getInt64(idx), "resolve_param");
     }
 
     //-------------------------------------------------------------------------
@@ -167,7 +180,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::PointerType *function_pointer_type = llvm::PointerType::get(function_type, 0);
         llvm::Value *eval_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)eval_ptr), function_pointer_type, "inject_eval");
         llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getVoidTy()->getPointerTo(), "inject_ctx");
-        push(builder.CreateCall2(eval_fun, ctx, function->arg_begin(), "call_eval"));
+        assert(pass_params == PassParams::ARRAY);
+        push(builder.CreateCall2(eval_fun, ctx, params[0], "call_eval"));
         return true;
     }
 
@@ -178,7 +192,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             push_double(node.get_const_value());
             return false;
         }
-        if (!inside_forest && use_array && node.is_forest()) {
+        if (!inside_forest && (pass_params == PassParams::ARRAY) && node.is_forest()) {
             if (try_optimize_forest(node)) {
                 return false;
             }
@@ -591,13 +605,13 @@ LLVMWrapper::LLVMWrapper(LLVMWrapper &&rhs)
 }
 
 void *
-LLVMWrapper::compile_function(size_t num_params, bool use_array, const Node &root,
+LLVMWrapper::compile_function(size_t num_params, PassParams pass_params, const Node &root,
                               const gbdt::Optimize::Chain &forest_optimizers)
 {
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     FunctionBuilder builder(*_engine, *_context, *_module,
                             vespalib::make_string("f%zu", ++_num_functions),
-                            num_params, use_array,
+                            num_params, pass_params,
                             forest_optimizers, _forests, _plugin_state);
     builder.build_root(root);
     return builder.compile();
@@ -609,7 +623,7 @@ LLVMWrapper::compile_forest_fragment(const std::vector<const Node *> &fragment)
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     FunctionBuilder builder(*_engine, *_context, *_module,
                             vespalib::make_string("f%zu", ++_num_functions),
-                            0, true,
+                            0, PassParams::ARRAY,
                             gbdt::Optimize::none, _forests, _plugin_state);
     builder.build_forest_fragment(fragment);
     return builder.compile();

@@ -160,8 +160,8 @@ public class AssignFieldPathUpdate extends FieldPathUpdate {
         reader.read(this);
     }
 
-    public AssignFieldPathUpdate(DocumentType type) {
-        super(FieldPathUpdate.Type.ASSIGN, type);
+    public AssignFieldPathUpdate(DocumentType type, String fieldPath) {
+        super(FieldPathUpdate.Type.ASSIGN, type, fieldPath, null);
     }
 
     /**

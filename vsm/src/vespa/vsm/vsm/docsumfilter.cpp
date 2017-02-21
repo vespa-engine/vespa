@@ -2,6 +2,7 @@
 
 #include "docsumfilter.h"
 #include "jsondocsumwriter.h"
+#include "slimefieldwriter.h"
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/vespalib/util/jsonwriter.h>
@@ -154,12 +155,20 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
         FieldIdT field = fieldMap.fieldNo(name);
         if (field != FieldMap::npos) {
             if (field < fieldPathMap.size()) {
+                LOG(debug, "field %u < map size %zu", field, fieldPathMap.size());
                 if (!fieldPathMap[field].empty()) {
+                    FieldPath relPath(fieldPathMap[field].begin() + 1,
+                                      fieldPathMap[field].end());
+                    LOG(debug, "map[%u] -> %zu elements", field, fieldPathMap[field].end() - fieldPathMap[field].begin());
+                    for (document::FieldPathEntry entry : fieldPathMap[field]) {
+                        LOG(debug, "entry: %s", entry.getName().c_str());
+                    }
                     // skip the element that correspond to the start field value
                     spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier
                                                     (field, FieldPath(fieldPathMap[field].begin() + 1,
                                                                       fieldPathMap[field].end())));
                 } else {
+                    LOG(debug, "map[%u] empty", field);
                     spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
                 }
             } else {
@@ -346,22 +355,13 @@ DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
         if (fv != NULL) {
             LOG(debug, "writeSlimeField: About to write field '%d' as Slime: field value = '%s'",
                 fieldId.getId(), fv->toString().c_str());
-            const document::FieldValue::UP converted =
-                SummaryFieldConverter::convertSummaryField(false, *fv, true);
-            if (converted.get() != NULL) {
-                if (converted->getClass().inherits(document::LiteralFieldValueB::classId)) {
-                    const document::LiteralFieldValueB *lfv =
-                        static_cast<const document::LiteralFieldValueB *>(converted.get());
-                    vespalib::stringref s = lfv->getValueRef();
-                    packer.AddLongString(s.c_str(), s.size());
-                } else {
-                    vespalib::string s = converted->getAsString();
-                    packer.AddLongString(s.c_str(), s.size());
-                }
-            } else {
-                LOG(debug, "writeSlimeField: Could not convert value for field '%d'", fieldId.getId());
-                packer.AddEmpty();
+            SlimeFieldWriter writer;
+            if (! fieldSpec.hasIdentityMapping()) {
+                writer.setInputFields(fieldSpec.getInputFields());
             }
+            writer.convert(*fv);
+            const vespalib::stringref out = writer.out();
+            packer.AddLongString(out.data(), out.size());
         } else {
             LOG(debug, "writeSlimeField: Field value not set for field '%d'", fieldId.getId());
             packer.AddEmpty();

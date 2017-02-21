@@ -12,8 +12,14 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Test;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -22,11 +28,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Logger;
-import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class StatusPagesTest extends FleetControllerTest {
 
@@ -122,9 +128,9 @@ public class StatusPagesTest extends FleetControllerTest {
             assertTrue(result.toString(true), result.getContent().toString().contains(
                     "mycluster Cluster Controller 0 Status Page"));
             assertTrue(result.toString(true), result.getContent().toString().contains(
-                    "href=\"/clustercontroller-status/v1/mycluster/node=distributor.0\""));
+                    "href=\"mycluster/node=distributor.0\""));
             assertTrue(result.toString(true), result.getContent().toString().contains(
-                    "href=\"/clustercontroller-status/v1/mycluster/node=storage.0\""));
+                    "href=\"mycluster/node=storage.0\""));
         }
         {
             HttpRequest request = new HttpRequest().setPath("/clustercontroller-status/v1/mycluster/node=storage.0");
@@ -133,7 +139,7 @@ public class StatusPagesTest extends FleetControllerTest {
             assertTrue(result.toString(true), result.getContent().toString().contains(
                     "Node status for storage.0"));
             assertTrue(result.toString(true), result.getContent().toString().contains(
-                    "href=\"/clustercontroller-status/v1/mycluster\""));
+                    "href=\"..\""));
         }
         {
             HttpRequest request = new HttpRequest().setPath("/clustercontroller-status/v1/foo");
