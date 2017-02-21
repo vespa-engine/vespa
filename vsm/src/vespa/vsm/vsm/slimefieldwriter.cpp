@@ -54,12 +54,12 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
             Cursor &a = inserter.insertArray();
             Memory imem("item");
             Memory wmem("weight");
-            for (document::WeightedSetFieldValue::const_iterator itr = wsfv.begin(); itr != wsfv.end(); ++itr) {
+            for (const auto &entry : wsfv) {
                 Cursor &o = a.addObject();
-                const document::FieldValue & nfv = *itr->first;
+                const document::FieldValue & nfv = *entry.first;
                 ObjectInserter oi(o, imem);
                 traverseRecursive(nfv, oi);
-                int weight = static_cast<const document::IntFieldValue &>(*itr->second).getValue();
+                int weight = static_cast<const document::IntFieldValue &>(*entry.second).getValue();
                 o.setLong(wmem, weight);
             }
         } else {
@@ -69,33 +69,33 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
 
     } else if (fv.getClass().inherits(document::MapFieldValue::classId)) {
         const document::MapFieldValue & mfv = static_cast<const document::MapFieldValue &>(fv);
+        const document::MapDataType& mapType = static_cast<const document::MapDataType &>(*mfv.getDataType());
         Cursor &a = inserter.insertArray();
         Memory keymem("key");
         Memory valmem("value");
-        for (document::MapFieldValue::const_iterator itr = mfv.begin(); itr != mfv.end(); ++itr) {
+        for (const auto &entry : mfv) {
             Cursor &o = a.addObject();
             ObjectInserter ki(o, keymem);
-            traverseRecursive(*itr->first, ki);
-            const document::MapDataType& mapType = static_cast<const document::MapDataType &>(*mfv.getDataType());
+            traverseRecursive(*entry.first, ki);
             document::FieldPathEntry valueEntry(
                     mapType, mapType.getKeyType(), mapType.getValueType(),
                     false, true);
             _currPath.push_back(valueEntry);
             ObjectInserter vi(o, valmem);
-            traverseRecursive(*itr->second, vi);
+            traverseRecursive(*entry.second, vi);
             _currPath.pop_back();
         }
     } else if (fv.getClass().inherits(document::StructuredFieldValue::classId)) {
         const document::StructuredFieldValue & sfv = static_cast<const document::StructuredFieldValue &>(fv);
         Cursor &o = inserter.insertObject();
-        for (document::StructuredFieldValue::const_iterator itr = sfv.begin(); itr != sfv.end(); ++itr) {
+        for (const document::Field & entry : sfv) {
             // TODO: Why do we have to iterate like this?
-            document::FieldPathEntry fi(sfv.getField(itr.field().getName()));
+            document::FieldPathEntry fi(sfv.getField(entry.getName()));
             _currPath.push_back(fi);
             if (explorePath()) {
-                Memory keymem(itr.field().getName());
+                Memory keymem(entry.getName());
                 ObjectInserter oi(o, keymem);
-                document::FieldValue::UP fval(sfv.getValue(itr.field()));
+                document::FieldValue::UP fval(sfv.getValue(entry));
                 traverseRecursive(*fval, oi);
             }
             _currPath.pop_back();
