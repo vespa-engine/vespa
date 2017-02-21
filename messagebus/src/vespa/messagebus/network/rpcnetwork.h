@@ -60,6 +60,7 @@ private:
     RPCTargetPool             _targetPool;
     TargetPoolTask            _targetPoolTask;
     RPCServicePool            _servicePool;
+    slobrok::ConfiguratorFactory                _slobrokCfgFactory;
     std::unique_ptr<slobrok::api::IMirrorAPI>   _mirror;
     std::unique_ptr<slobrok::api::RegisterAPI>  _regAPI;
     OOSManager                _oosManager;
