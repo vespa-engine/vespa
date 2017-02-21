@@ -132,7 +132,7 @@ void
 SearchIteratorVerifier::verify_get_hits(bool strict) const {
     constexpr const size_t FIRST_LEGAL = 61;
     SearchIterator::UP iterator = create(strict);
-    iterator->initFullRange();
+    iterator->initRange(1, getDocIdLimit());
     EXPECT_TRUE(iterator->seek(FIRST_LEGAL));
     EXPECT_EQUAL(FIRST_LEGAL, iterator->getDocId());
     BitVector::UP hits = iterator->get_hits(1);
