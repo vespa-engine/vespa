@@ -129,12 +129,27 @@ SearchIteratorVerifier::verifyInitRange() const {
 }
 
 void
+SearchIteratorVerifier::verify_get_hits(bool strict) const {
+    constexpr const size_t FIRST_LEGAL = 64;
+    SearchIterator::UP iterator = create(strict);
+    iterator->initFullRange();
+    EXPECT_TRUE(iterator->seek(FIRST_LEGAL));
+    EXPECT_EQUAL(FIRST_LEGAL, iterator->getDocId());
+    BitVector::UP hits = iterator->get_hits(1);
+    for (size_t i(0); i < FIRST_LEGAL; i++) {
+        EXPECT_FALSE(hits->testBit(i));
+    }
+    EXPECT_TRUE(hits->testBit(FIRST_LEGAL));
+}
+
+void
 SearchIteratorVerifier::verify(bool strict) const {
     SearchIterator::UP iterator = create(strict);
     TEST_DO(verify(*iterator, strict, _docIds));
     TEST_DO(verifyTermwise(std::move(iterator), strict, _docIds));
     TEST_DO(verifyAnd(strict));
     TEST_DO(verifyOr(strict));
+    TEST_DO(verify_get_hits(strict));
 }
 
 void
