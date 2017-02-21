@@ -10,6 +10,8 @@ using searchcorespi::IFlushTarget;
 typedef IFlushTarget::Type FTT;
 typedef IFlushTarget::Component FTC;
 
+using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+
 namespace proton {
 
 DocumentDBJobTrackers::DocumentDBJobTrackers()
@@ -68,7 +70,7 @@ namespace {
 double
 updateMetric(metrics::DoubleAverageMetric &metric,
              JobTracker &tracker,
-             std::chrono::time_point<std::chrono::steady_clock> now,
+             time_point now,
              const std::lock_guard<std::mutex> &guard)
 {
     double load = tracker.sampleLoad(now, guard);

@@ -19,7 +19,8 @@ class DocumentDBJobTrackers
 {
 private:
     std::mutex        _lock;
-    std::chrono::time_point<std::chrono::steady_clock> _now;
+    using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+    time_point        _now;
     JobTracker::SP    _attributeFlush;
     JobTracker::SP    _memoryIndexFlush;
     JobTracker::SP    _diskIndexFusion;

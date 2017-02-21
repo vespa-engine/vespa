@@ -8,7 +8,7 @@ LOG_SETUP(".proton.metrics.job_load_sampler");
 namespace proton {
 
 void
-JobLoadSampler::updateIntegral(std::chrono::time_point<std::chrono::steady_clock> now, uint32_t jobCnt)
+JobLoadSampler::updateIntegral(time_point now, uint32_t jobCnt)
 {
     assert(now >= _lastUpdateTime);
     std::chrono::duration<double> duration = now - _lastUpdateTime;
@@ -16,7 +16,7 @@ JobLoadSampler::updateIntegral(std::chrono::time_point<std::chrono::steady_clock
     _lastUpdateTime = now;
 }
 
-JobLoadSampler::JobLoadSampler(std::chrono::time_point<std::chrono::steady_clock> now)
+JobLoadSampler::JobLoadSampler(time_point now)
     : _lastSampleTime(now),
       _lastUpdateTime(now),
       _currJobCnt(0),
@@ -25,19 +25,19 @@ JobLoadSampler::JobLoadSampler(std::chrono::time_point<std::chrono::steady_clock
 }
 
 void
-JobLoadSampler::startJob(std::chrono::time_point<std::chrono::steady_clock> now)
+JobLoadSampler::startJob(time_point now)
 {
     updateIntegral(now, _currJobCnt++);
 }
 
 void
-JobLoadSampler::endJob(std::chrono::time_point<std::chrono::steady_clock> now)
+JobLoadSampler::endJob(time_point now)
 {
     updateIntegral(now, _currJobCnt--);
 }
 
 double
-JobLoadSampler::sampleLoad(std::chrono::time_point<std::chrono::steady_clock> now)
+JobLoadSampler::sampleLoad(time_point now)
 {
     assert(now >= _lastSampleTime);
     updateIntegral(now, _currJobCnt);

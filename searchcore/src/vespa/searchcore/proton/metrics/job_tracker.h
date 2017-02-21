@@ -14,19 +14,20 @@ namespace proton {
 class JobTracker : public IJobTracker
 {
 private:
+    using time_point = std::chrono::time_point<std::chrono::steady_clock>;
     JobLoadSampler  _sampler;
     std::mutex     &_lock;
 
 public:
     typedef std::shared_ptr<JobTracker> SP;
 
-    JobTracker(std::chrono::time_point<std::chrono::steady_clock> now, std::mutex &lock);
+    JobTracker(time_point now, std::mutex &lock);
 
     /**
      * Samples the average job load from previous sample time to now (in seconds).
      * The caller of this function must take the guard on the lock referenced by this class.
      */
-    double sampleLoad(std::chrono::time_point<std::chrono::steady_clock> now, const std::lock_guard<std::mutex> &guard);
+    double sampleLoad(time_point now, const std::lock_guard<std::mutex> &guard);
 
     // Implements IJobTracker
     virtual void start();

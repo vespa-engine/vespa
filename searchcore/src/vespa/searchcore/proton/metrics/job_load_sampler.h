@@ -15,33 +15,34 @@ namespace proton {
 class JobLoadSampler
 {
 private:
-    std::chrono::time_point<std::chrono::steady_clock> _lastSampleTime;
-    std::chrono::time_point<std::chrono::steady_clock> _lastUpdateTime;
+    using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+    time_point _lastSampleTime;
+    time_point _lastUpdateTime;
     uint32_t _currJobCnt;
     double _loadIntegral;
 
-    void updateIntegral(std::chrono::time_point<std::chrono::steady_clock> now, uint32_t jobCnt);
+    void updateIntegral(time_point now, uint32_t jobCnt);
 
 public:
     /**
      * Start the sampler with now (in seconds).
      */
-    JobLoadSampler(std::chrono::time_point<std::chrono::steady_clock> now);
+    JobLoadSampler(time_point now);
 
     /**
      * Signal that a job starts now (in seconds).
      */
-    void startJob(std::chrono::time_point<std::chrono::steady_clock> now);
+    void startJob(time_point now);
 
     /**
      * Signal that a job ends now (in seconds).
      */
-    void endJob(std::chrono::time_point<std::chrono::steady_clock> now);
+    void endJob(time_point now);
 
     /**
      * Samples the average load from previous sample time to now (in seconds).
      */
-    double sampleLoad(std::chrono::time_point<std::chrono::steady_clock> now);
+    double sampleLoad(time_point now);
 };
 
 } // namespace proton

@@ -12,14 +12,14 @@ using fastos::ClockSystem;
 
 namespace proton {
 
-JobTracker::JobTracker(std::chrono::time_point<std::chrono::steady_clock> now, std::mutex &lock)
+JobTracker::JobTracker(time_point now, std::mutex &lock)
     : _sampler(now),
       _lock(lock)
 {
 }
 
 double
-JobTracker::sampleLoad(std::chrono::time_point<std::chrono::steady_clock> now, const std::lock_guard<std::mutex> &guard)
+JobTracker::sampleLoad(time_point now, const std::lock_guard<std::mutex> &guard)
 {
     (void) guard;
     return _sampler.sampleLoad(now);

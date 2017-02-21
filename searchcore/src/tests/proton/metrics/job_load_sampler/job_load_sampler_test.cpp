@@ -11,9 +11,14 @@ using namespace proton;
 
 constexpr double EPS = 0.000001;
 
-std::chrono::time_point<std::chrono::steady_clock> fakeTime(double now)
+using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+using std::chrono::duration;
+using std::chrono::duration_cast;
+using std::chrono::steady_clock;
+
+time_point fakeTime(double now)
 {
-    return std::chrono::time_point<std::chrono::steady_clock>(std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(now)));
+    return time_point(duration_cast<steady_clock::duration>(duration<double>(now)));
 }
 
 struct Fixture
