@@ -119,6 +119,7 @@ vespa_define_module(
     src/tests/proton/proton
     src/tests/proton/reference/gid_to_lid_change_listener
     src/tests/proton/reference/gid_to_lid_mapper
+    src/tests/proton/reference/document_db_reference_resolver
     src/tests/proton/reference/document_db_referent_registry
     src/tests/proton/reprocessing/attribute_reprocessing_initializer
     src/tests/proton/reprocessing/document_reprocessing_handler

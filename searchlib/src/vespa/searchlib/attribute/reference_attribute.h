@@ -74,6 +74,7 @@ public:
     void update(DocId doc, const GlobalId &gid);
     const Reference *getReference(DocId doc);
     void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
+    std::shared_ptr<IGidToLidMapperFactory> getGidToLidMapperFactory() const { return _gidToLidMapperFactory; }
     DocId getReferencedLid(DocId doc) const;
     void notifyGidToLidChange(const GlobalId &gid, DocId referencedLid);
 };
