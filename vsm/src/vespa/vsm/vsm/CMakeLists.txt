@@ -6,6 +6,7 @@ vespa_add_library(vsm_vsmbase OBJECT
     fieldsearchspec.cpp
     flattendocsumwriter.cpp
     jsondocsumwriter.cpp
+    slimefieldwriter.cpp
     snippetmodifier.cpp
     vsm-adapter.cpp
     docsumconfig.cpp
