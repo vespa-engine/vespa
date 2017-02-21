@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <chrono>
+
 namespace proton {
 
 /**
@@ -13,33 +15,33 @@ namespace proton {
 class JobLoadSampler
 {
 private:
-    double _lastSampleTime;
-    double _lastUpdateTime;
+    std::chrono::time_point<std::chrono::steady_clock> _lastSampleTime;
+    std::chrono::time_point<std::chrono::steady_clock> _lastUpdateTime;
     uint32_t _currJobCnt;
     double _loadIntegral;
 
-    void updateIntegral(double now, uint32_t jobCnt);
+    void updateIntegral(std::chrono::time_point<std::chrono::steady_clock> now, uint32_t jobCnt);
 
 public:
     /**
      * Start the sampler with now (in seconds).
      */
-    JobLoadSampler(double now);
+    JobLoadSampler(std::chrono::time_point<std::chrono::steady_clock> now);
 
     /**
      * Signal that a job starts now (in seconds).
      */
-    void startJob(double now);
+    void startJob(std::chrono::time_point<std::chrono::steady_clock> now);
 
     /**
      * Signal that a job ends now (in seconds).
      */
-    void endJob(double now);
+    void endJob(std::chrono::time_point<std::chrono::steady_clock> now);
 
     /**
      * Samples the average load from previous sample time to now (in seconds).
      */
-    double sampleLoad(double now);
+    double sampleLoad(std::chrono::time_point<std::chrono::steady_clock> now);
 };
 
 } // namespace proton

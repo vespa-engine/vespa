@@ -6,6 +6,8 @@
 #include <vespa/fastos/timestamp.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/vespalib/util/sync.h>
+#include <chrono>
+#include <mutex>
 
 namespace proton {
 
@@ -16,8 +18,8 @@ namespace proton {
 class DocumentDBJobTrackers
 {
 private:
-    vespalib::Lock    _lock;
-    fastos::TimeStamp _now;
+    std::mutex        _lock;
+    std::chrono::time_point<std::chrono::steady_clock> _now;
     JobTracker::SP    _attributeFlush;
     JobTracker::SP    _memoryIndexFlush;
     JobTracker::SP    _diskIndexFusion;

@@ -5,28 +5,34 @@ LOG_SETUP("job_load_sampler_test");
 
 #include <vespa/searchcore/proton/metrics/job_load_sampler.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <chrono>
 
 using namespace proton;
 
 constexpr double EPS = 0.000001;
 
+std::chrono::time_point<std::chrono::steady_clock> fakeTime(double now)
+{
+    return std::chrono::time_point<std::chrono::steady_clock>(std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(now)));
+}
+
 struct Fixture
 {
     JobLoadSampler _sampler;
     Fixture()
-        : _sampler(10)
+        : _sampler(fakeTime(10))
     {
     }
     Fixture &start(double now) {
-        _sampler.startJob(now);
+        _sampler.startJob(fakeTime(now));
         return *this;
     }
     Fixture &end(double now) {
-        _sampler.endJob(now);
+        _sampler.endJob(fakeTime(now));
         return *this;
     }
     double sample(double now) {
-        return _sampler.sampleLoad(now);
+        return _sampler.sampleLoad(fakeTime(now));
     }
 };
 
