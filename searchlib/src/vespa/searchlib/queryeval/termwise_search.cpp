@@ -20,7 +20,8 @@ struct TermwiseSearch : public SearchIterator {
     void initRange(uint32_t beginid, uint32_t endid) override {
         SearchIterator::initRange(beginid, endid);
         search->initRange(beginid, endid);
-        result = search->get_hits(beginid);
+        result = search->get_hits(std::max(beginid, search->getDocId()));
+        setDocId(search->getDocId());
     }
     void resetRange() override {
         SearchIterator::resetRange();
