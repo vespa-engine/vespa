@@ -27,9 +27,9 @@ AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t 
 
 template <typename SC>
 std::unique_ptr<BitVector>
-AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
-    BitVector::UP result = BitVector::create(begin_id, getEndId());
-    for (uint32_t docId(begin_id); docId < getEndId(); docId++) {
+AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id, uint32_t end_id) const {
+    BitVector::UP result = BitVector::create(begin_id, end_id);
+    for (uint32_t docId(std::max(begin_id, getDocId())); docId < end_id; docId++) {
         if (sc.cmp(docId)) {
             result->setBit(docId);
         }
@@ -283,7 +283,10 @@ FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     }
     if (!result) {
         result = BitVector::create(begin_id, getEndId());
+    } else if (begin_id < getDocId()) {
+        result->clearInterval(begin_id, std::min(getDocId(), getEndId()));
     }
+
     return result;
 }
 
@@ -351,14 +354,14 @@ FilterAttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id
 template <typename SC>
 BitVector::UP
 AttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
-    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
+    return AttributeIteratorBase::get_hits(_searchContext, begin_id, std::min(_docIdLimit, getEndId()));
 }
 
 
 template <typename SC>
 BitVector::UP
 FilterAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
-    return AttributeIteratorBase::get_hits(_searchContext, begin_id);
+    return AttributeIteratorBase::get_hits(_searchContext, begin_id, std::min(_docIdLimit, getEndId()));
 }
 
 template <typename SC>

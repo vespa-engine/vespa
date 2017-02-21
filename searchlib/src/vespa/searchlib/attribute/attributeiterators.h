@@ -26,7 +26,7 @@ protected:
     template <typename SC>
     void or_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const;
     template <typename SC>
-    std::unique_ptr<BitVector> get_hits(const SC & sc, uint32_t begin_id) const;
+    std::unique_ptr<BitVector> get_hits(const SC & sc, uint32_t begin_id, uint32_t end_id) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     fef::TermFieldMatchData * _matchData;
     fef::TermFieldMatchDataPosition * _matchPosition;
