@@ -106,8 +106,9 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _targetPool(params.getConnectionExpireSecs()),
     _targetPoolTask(_scheduler, _targetPool),
     _servicePool(*this, 4096),
-    _mirror(std::make_unique<slobrok::api::MirrorAPI>(_orb, slobrok::ConfiguratorFactory(params.getSlobrokConfig()))),
-    _regAPI(std::make_unique<slobrok::api::RegisterAPI>(_orb, slobrok::ConfiguratorFactory(params.getSlobrokConfig()))),
+    _slobrokCfgFactory(params.getSlobrokConfig()),
+    _mirror(std::make_unique<slobrok::api::MirrorAPI>(_orb, _slobrokCfgFactory)),
+    _regAPI(std::make_unique<slobrok::api::RegisterAPI>(_orb, _slobrokCfgFactory)),
     _oosManager(_orb, *_mirror, params.getOOSServerPattern()),
     _requestedPort(params.getListenPort()),
     _sendV1(),
@@ -215,14 +216,31 @@ RPCNetwork::start()
     return true;
 }
 
+
+
 bool
 RPCNetwork::waitUntilReady(double seconds) const
 {
+    slobrok::api::SlobrokList brokerList;
+    slobrok::Configurator::UP configurator = _slobrokCfgFactory.create(brokerList);
+    bool hasConfig = false;
     for (uint32_t i = 0; i < seconds * 100; ++i) {
+        if (configurator->poll()) {
+            hasConfig = true;
+        }
         if (_mirror->ready() && _oosManager.isReady()) {
             return true;
         }
         FastOS_Thread::Sleep(10);
+    }
+    if (! hasConfig) {
+        LOG(error, "failed to get config for slobroks in %d seconds", (int)seconds);
+    } else if (! _mirror->ready()) {
+        std::string brokers = brokerList.logString();
+        LOG(error, "mirror (of %s) failed to become ready in %d seconds",
+            brokers.c_str(), (int)seconds);
+    } else if (! _oosManager.isReady()) {
+        LOG(error, "OOS manager failed to become ready in %d seconds", (int)seconds);
     }
     return false;
 }
