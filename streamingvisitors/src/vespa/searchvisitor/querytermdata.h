@@ -17,8 +17,6 @@ private:
     search::fef::SimpleTermData   _termData;
 public:
     QueryTermData * clone() const override { return new QueryTermData(); }
-    bool evaluate() const override { return true; }
-    void reset() override { }
     search::fef::SimpleTermData &getTermData() { return _termData; }
 };
 

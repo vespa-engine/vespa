@@ -13,8 +13,6 @@ namespace search {
 class QueryNodeResultBase : public vespalib::Cloneable
 {
 public:
-    virtual bool evaluate() const = 0;
-    virtual void reset() = 0;
 };
 
 class QueryNodeResultFactory {
