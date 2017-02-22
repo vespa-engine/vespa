@@ -270,11 +270,11 @@ Query::Query() :
   _root()
 { }
 
-Query::Query(const QueryNodeResultBase & org, const QueryPacketT & queryRep) :
+Query::Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep) :
   Identifiable(),
   _root()
 {
-  build(org, queryRep);
+  build(factory, queryRep);
 }
 
 void Query::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -288,11 +288,11 @@ bool Query::evaluate() const
   return ok;
 }
 
-bool Query::build(const QueryNodeResultBase & org, const QueryPacketT & queryRep)
+bool Query::build(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep)
 {
     search::SimpleQueryStackDumpIterator stack(queryRep);
     if (stack.next()) {
-        _root.reset(QueryNode::Build(NULL, org, stack, true).release());
+        _root.reset(QueryNode::Build(NULL, factory, stack, true).release());
     }
     return valid();
 }

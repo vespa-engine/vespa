@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "query.h"
-#include "querynoderesultbase.h"
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.querynode");
 
@@ -32,7 +32,7 @@ namespace {
 }
 
 #define CASE(c, q) case c: { qn.reset(new q()); } break;
-QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultBase & org, search::SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
+QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factory, search::SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
 {
     unsigned int arity = queryRep.getArity();
     search::ParseItem::ItemType type = queryRep.getType();
@@ -69,9 +69,7 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultBa
                 if (qc->isFlattenable(queryRep.getType())) {
                     arity += queryRep.getArity();
                 } else {
-                    LP child(Build(qc,
-                                   org,
-                                   queryRep,
+                    LP child(Build(qc, factory, queryRep,
                                    allowRewrite && ((dynamic_cast<NearQueryNode *> (qn.get()) == NULL) && (dynamic_cast<PhraseQueryNode *> (qn.get()) == NULL))).release());
                     qc->push_back(child);
                 }
@@ -125,16 +123,16 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultBa
             // But it will do for now as only correct sddocname queries are sent down.
             qn.reset(new TrueNode());
         } else {
-            std::unique_ptr<QueryTerm> qt(new QueryTerm(org, ssTerm, ssIndex, sTerm));
+            std::unique_ptr<QueryTerm> qt(new QueryTerm(factory.create(), ssTerm, ssIndex, sTerm));
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
-            if ( qt->encoding().isBase10Integer() || ! qt->encoding().isFloat() || ! org.getRewriteFloatTerms() || !allowRewrite || (ssTerm.find('.') == vespalib::string::npos)) {
+            if ( qt->encoding().isBase10Integer() || ! qt->encoding().isFloat() || ! factory.getRewriteFloatTerms() || !allowRewrite || (ssTerm.find('.') == vespalib::string::npos)) {
                 qn.reset(qt.release());
             } else {
                 std::unique_ptr<PhraseQueryNode> phrase(new PhraseQueryNode());
 
-                phrase->push_back(LP(new QueryTerm(org, ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
-                phrase->push_back(LP(new QueryTerm(org, ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
+                phrase->push_back(LP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
+                phrase->push_back(LP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
                 std::unique_ptr<EquivQueryNode> orqn(new EquivQueryNode());
                 orqn->push_back(LP(qt.release()));
                 orqn->push_back(LP(phrase.release()));
@@ -147,7 +145,7 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultBa
     {
         if (arity >= 1) {
             queryRep.next();
-            qn = Build(parent, org, queryRep, false);
+            qn = Build(parent, factory, queryRep, false);
             for (uint32_t skipCount = arity-1; (skipCount > 0) && queryRep.next(); skipCount--) {
                 skipCount += queryRep.getArity();
             }

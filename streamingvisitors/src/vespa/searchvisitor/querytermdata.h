@@ -15,16 +15,21 @@ class QueryTermData : public search::QueryNodeResultBase
 {
 private:
     search::fef::SimpleTermData   _termData;
-
 public:
-    DUPLICATE(QueryTermData); // create duplicate function
-
-    virtual bool evaluate() const { return true; }
-    virtual void reset() {}
-    virtual bool getRewriteFloatTerms() const { return true; }
-
+    QueryTermData * clone() const override { return new QueryTermData(); }
+    bool evaluate() const override { return true; }
+    void reset() override { }
     search::fef::SimpleTermData &getTermData() { return _termData; }
 };
+
+class QueryTermDataFactory final : public search::QueryNodeResultFactory {
+public:
+    std::unique_ptr<search::QueryNodeResultBase> create() const override {
+        return std::make_unique<QueryTermData>();
+    }
+    bool getRewriteFloatTerms() const override { return true; }
+};
+
 
 } // namespace storage
 

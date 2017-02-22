@@ -2,6 +2,7 @@
 #pragma once
 
 #include "queryterm.h"
+#include "base.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 
 namespace search
@@ -186,10 +187,10 @@ class Query : public vespalib::Identifiable
 public:
     DECLARE_IDENTIFIABLE_NS(search, Query);
     Query();
-    Query(const QueryNodeResultBase & org, const QueryPacketT & queryRep);
+    Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep);
     virtual ~Query() { }
     /// Will build the query tree
-    bool build(const QueryNodeResultBase & org, const QueryPacketT & queryRep);
+    bool build(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep);
     /// Will clear the results from the querytree.
     void reset();
     /// Will get all leafnodes.

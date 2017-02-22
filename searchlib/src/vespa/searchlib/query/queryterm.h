@@ -156,7 +156,7 @@ public:
     };
     DECLARE_IDENTIFIABLE_NS(search, QueryTerm);
     QueryTerm();
-    QueryTerm(const QueryNodeResultBase & org, const string & term, const string & index, SearchTerm type);
+    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, SearchTerm type);
     QueryTerm(const QueryTerm &) = default;
     QueryTerm & operator = (const QueryTerm &) = default;
     QueryTerm(QueryTerm &&) = default;
@@ -184,13 +184,13 @@ public:
     const FieldInfo   & getFieldInfo(size_t fid)   const { return _fieldInfo[fid]; }
     FieldInfo         & getFieldInfo(size_t fid)         { return _fieldInfo[fid]; }
     size_t              getFieldInfoSize()         const { return _fieldInfo.size(); }
-    const QueryNodeResultBase & getQueryItem() const { return *_result; }
     QueryNodeResultBase & getQueryItem() { return *_result; }
     const HitList &     getHitList() const { return _hitList; }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     virtual void setIndex(const string & index_) { _index = index_; }
     virtual const string & getIndex() const { return _index; }
 protected:
+    using QueryNodeResultBaseContainer = vespalib::CloneablePtr<QueryNodeResultBase>;
     string                       _index;
     EncodingBitMap               _encoding;
     QueryNodeResultBaseContainer _result;

@@ -573,8 +573,8 @@ QueryTermSimple::UP
 AttributeVector::SearchContext::decodeQuery(QueryPacketT searchSpec)
 {
     QueryTermSimple::UP qt;
-    EmptyQueryNodeResult qnb;
-    Query q(qnb, searchSpec);
+    QueryNodeResultFactory factory;
+    Query q(factory, searchSpec);
     if (q.valid() && (dynamic_cast<QueryTerm *>(q.getRoot().get()))) {
         qt.reset(static_cast<QueryTerm *>(q.getRoot().release()));
     } else {

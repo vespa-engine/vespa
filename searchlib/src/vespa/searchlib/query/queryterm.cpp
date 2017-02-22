@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "queryterm.h"
+#include "base.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/classname.h>
 #include <cmath>
-#include <limits>
 
 namespace {
 
@@ -261,11 +261,11 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
 }
 
 
-QueryTerm::QueryTerm(const QueryNodeResultBase & org, const string & termS, const string & indexS, SearchTerm type) :
+QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & termS, const string & indexS, SearchTerm type) :
     QueryTermBase(termS, type),
     _index(indexS),
     _encoding(0x01),
-    _result(org),
+    _result(org.release()),
     _hitList(),
     _weight(100),
     _uniqueId(0),
@@ -286,7 +286,7 @@ void QueryTerm::getLeafs(QueryTermList & tl)                 { tl.push_back(this
 void QueryTerm::getLeafs(ConstQueryTermList & tl)      const { tl.push_back(this); }
 bool QueryTerm::evaluate()                             const { return !_hitList.empty() && _result->evaluate(); }
 void QueryTerm::reset()                                      { _hitList.clear(); _result->reset(); }
-const HitList & QueryTerm::evaluateHits(HitList & UNUSED_PARAM(hl)) const { return _hitList; }
+const HitList & QueryTerm::evaluateHits(HitList &) const { return _hitList; }
 
 void QueryTerm::resizeFieldId(size_t fieldNo)
 {

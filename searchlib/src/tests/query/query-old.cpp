@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/searchlib/query/query.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -18,11 +18,11 @@ void assertHit(const Hit & h, size_t expWordpos, size_t expContext, int32_t weig
 }
 
 TEST("testQueryLanguage") {
-    EmptyQueryNodeResult eqnr;
+    QueryNodeResultFactory factory;
     int64_t ia(0), ib(0);
     double da(0), db(0);
 
-    QueryTerm q(eqnr, "7", "index", QueryTerm::WORD);
+    QueryTerm q(factory.create(), "7", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, 7);
     EXPECT_EQUAL(ib, 7);
@@ -30,7 +30,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, 7);
     EXPECT_EQUAL(db, 7);
 
-    q = QueryTerm(eqnr, "-7", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "-7", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -7);
     EXPECT_EQUAL(ib, -7);
@@ -38,19 +38,19 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -7);
     EXPECT_EQUAL(db, -7);
 
-    q = QueryTerm(eqnr, "7.5", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "7.5", "index", QueryTerm::WORD);
     EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
     EXPECT_TRUE(q.getAsDoubleTerm(da, db));
     EXPECT_EQUAL(da, 7.5);
     EXPECT_EQUAL(db, 7.5);
 
-    q = QueryTerm(eqnr, "-7.5", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "-7.5", "index", QueryTerm::WORD);
     EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
     EXPECT_TRUE(q.getAsDoubleTerm(da, db));
     EXPECT_EQUAL(da, -7.5);
     EXPECT_EQUAL(db, -7.5);
 
-    q = QueryTerm(eqnr, "<7", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "<7", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
     EXPECT_EQUAL(ib, 6);
@@ -59,7 +59,7 @@ TEST("testQueryLanguage") {
     EXPECT_LESS(db, 7);
     EXPECT_GREATER(db, 6.99);
 
-    q = QueryTerm(eqnr, "[;7]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[;7]", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
     EXPECT_EQUAL(ib, 7);
@@ -67,7 +67,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
     EXPECT_EQUAL(db, 7);
 
-    q = QueryTerm(eqnr, ">7", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), ">7", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, 8);
     EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
@@ -76,7 +76,7 @@ TEST("testQueryLanguage") {
     EXPECT_LESS(da, 7.01);
     EXPECT_EQUAL(db, std::numeric_limits<double>::max());
 
-    q = QueryTerm(eqnr, "[7;]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[7;]", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, 7);
     EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
@@ -84,7 +84,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, 7);
     EXPECT_EQUAL(db, std::numeric_limits<double>::max());
 
-    q = QueryTerm(eqnr, "[-7;7]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[-7;7]", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -7);
     EXPECT_EQUAL(ib, 7);
@@ -92,7 +92,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -7);
     EXPECT_EQUAL(db, 7);
 
-    q = QueryTerm(eqnr, "[-7.1;7.1]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[-7.1;7.1]", "index", QueryTerm::WORD);
     EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
     EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
     EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
@@ -100,7 +100,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -7.1);
     EXPECT_EQUAL(db, 7.1);
 
-    q = QueryTerm(eqnr, "[500.0;1.7976931348623157E308]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[500.0;1.7976931348623157E308]", "index", QueryTerm::WORD);
     EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
     EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
     EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
@@ -109,7 +109,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(db, std::numeric_limits<double>::max());
 
     const double minusSeven(-7), seven(7);
-    q = QueryTerm(eqnr, "<-7;7]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "<-7;7]", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -6);
     EXPECT_EQUAL(ib, 7);
@@ -117,7 +117,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
     EXPECT_EQUAL(db, seven);
 
-    q = QueryTerm(eqnr, "<-7;7>", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "<-7;7>", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -6);
     EXPECT_EQUAL(ib, 6);
@@ -125,12 +125,12 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
     EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
 
-    q = QueryTerm(eqnr, "<1;2>", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "<1;2>", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, 2);
     EXPECT_EQUAL(ib, 1);
 
-    q = QueryTerm(eqnr, "[-7;7>", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[-7;7>", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -7);
     EXPECT_EQUAL(ib, 6);
@@ -138,7 +138,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, minusSeven);
     EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
 
-    q = QueryTerm(eqnr, "<-7", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "<-7", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
     EXPECT_EQUAL(ib, -8);
@@ -147,7 +147,7 @@ TEST("testQueryLanguage") {
     EXPECT_LESS(db, -7);
     EXPECT_GREATER(db, -7.01);
 
-    q = QueryTerm(eqnr, "[;-7]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[;-7]", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
     EXPECT_EQUAL(ib, -7);
@@ -155,7 +155,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
     EXPECT_EQUAL(db, -7);
 
-    q = QueryTerm(eqnr, "<;-7]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "<;-7]", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
     EXPECT_EQUAL(ib, -7);
@@ -163,7 +163,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
     EXPECT_EQUAL(db, -7);
 
-    q = QueryTerm(eqnr, ">-7", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), ">-7", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -6);
     EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
@@ -172,7 +172,7 @@ TEST("testQueryLanguage") {
     EXPECT_LESS(da, -6.99);
     EXPECT_EQUAL(db, std::numeric_limits<double>::max());
 
-    q = QueryTerm(eqnr, "[-7;]", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[-7;]", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -7);
     EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
@@ -180,7 +180,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -7);
     EXPECT_EQUAL(db, std::numeric_limits<double>::max());
 
-    q = QueryTerm(eqnr, "[-7;>", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "[-7;>", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
     EXPECT_EQUAL(ia, -7);
     EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
@@ -188,46 +188,42 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(da, -7);
     EXPECT_EQUAL(db, std::numeric_limits<double>::max());
 
-    q = QueryTerm(eqnr, "a", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "a", "index", QueryTerm::WORD);
     EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
     EXPECT_TRUE(!q.getAsDoubleTerm(da, db));
 
-    q = QueryTerm(eqnr, "word", "index", QueryTerm::WORD);
+    q = QueryTerm(factory.create(), "word", "index", QueryTerm::WORD);
     EXPECT_TRUE(!q.isPrefix());
     EXPECT_TRUE(!q.isSubstring());
     EXPECT_TRUE(!q.isSuffix());
 
-    q = QueryTerm(eqnr, "prefix", "index", QueryTerm::PREFIXTERM);
+    q = QueryTerm(factory.create(), "prefix", "index", QueryTerm::PREFIXTERM);
     EXPECT_TRUE(q.isPrefix());
     EXPECT_TRUE(!q.isSubstring());
     EXPECT_TRUE(!q.isSuffix());
 
-    q = QueryTerm(eqnr, "substring", "index", QueryTerm::SUBSTRINGTERM);
+    q = QueryTerm(factory.create(), "substring", "index", QueryTerm::SUBSTRINGTERM);
     EXPECT_TRUE(!q.isPrefix());
     EXPECT_TRUE(q.isSubstring());
     EXPECT_TRUE(!q.isSuffix());
 
-    q = QueryTerm(eqnr, "suffix", "index", QueryTerm::SUFFIXTERM);
+    q = QueryTerm(factory.create(), "suffix", "index", QueryTerm::SUFFIXTERM);
     EXPECT_TRUE(!q.isPrefix());
     EXPECT_TRUE(!q.isSubstring());
     EXPECT_TRUE(q.isSuffix());
 
-    q = QueryTerm(eqnr, "regexp", "index", QueryTerm::REGEXP);
+    q = QueryTerm(factory.create(), "regexp", "index", QueryTerm::REGEXP);
     EXPECT_TRUE(!q.isPrefix());
     EXPECT_TRUE(!q.isSubstring());
     EXPECT_TRUE(!q.isSuffix());
     EXPECT_TRUE(q.isRegex());
 }
 
-class AllowRewrite : public EmptyQueryNodeResult
+class AllowRewrite : public QueryNodeResultFactory
 {
 public:
-    DUPLICATE(AllowRewrite); // create duplicate function
-
     virtual bool getRewriteFloatTerms() const { return true; }
 };
-
-IMPLEMENT_DUPLICATE(AllowRewrite);
 
 const char TERM_UNIQ = ParseItem::ITEM_TERM | ParseItem::IF_UNIQUEID;
 
@@ -235,8 +231,8 @@ TEST("e is not rewritten even if allowed") {
     const char term[6] = {TERM_UNIQ, 3, 1, 'c', 1, 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQUAL(6u, stackDump.size());
-    AllowRewrite empty;
-    Query q(empty, stackDump);
+    AllowRewrite allowRewrite;
+    Query q(allowRewrite, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode::LP & root = q.getRoot();
     EXPECT_EQUAL(QueryTerm::classId, root->getClass().id());
@@ -250,7 +246,7 @@ TEST("1.0e is not rewritten by default") {
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQUAL(9u, stackDump.size());
-    EmptyQueryNodeResult empty;
+    QueryNodeResultFactory empty;
     Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
     const QueryNode::LP & root = q.getRoot();
@@ -321,7 +317,7 @@ TEST("testGetQueryParts") {
     Node::UP node = builder.build();
     vespalib::string stackDump = StackDumpCreator::create(*node);
 
-    EmptyQueryNodeResult empty;
+    QueryNodeResultFactory empty;
     Query q(empty, stackDump);
     QueryTermList terms;
     QueryNodeRefList phrases;
@@ -357,7 +353,7 @@ TEST("testPhraseEvaluate") {
     }
     Node::UP node = builder.build();
     vespalib::string stackDump = StackDumpCreator::create(*node);
-    EmptyQueryNodeResult empty;
+    QueryNodeResultFactory empty;
     Query q(empty, stackDump);
     QueryNodeRefList phrases;
     q.getPhrases(phrases);
@@ -546,8 +542,8 @@ TEST("require that ascending range can be specified with limit only") {
     double low_double = 0.0;
     double high_double = 0.0;
 
-    EmptyQueryNodeResult eqnr;
-    QueryTerm ascending_query(eqnr, "[;;500]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm ascending_query(eqnr.create(), "[;;500]", "index", QueryTerm::WORD);
 
     EXPECT_TRUE(ascending_query.getAsIntegerTerm(low_integer, high_integer));
     EXPECT_TRUE(ascending_query.getAsDoubleTerm(low_double, high_double));
@@ -564,8 +560,8 @@ TEST("require that descending range can be specified with limit only") {
     double low_double = 0.0;
     double high_double = 0.0;
 
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500]", "index", QueryTerm::WORD);
 
     EXPECT_TRUE(descending_query.getAsIntegerTerm(low_integer, high_integer));
     EXPECT_TRUE(descending_query.getAsDoubleTerm(low_double, high_double));
@@ -577,8 +573,8 @@ TEST("require that descending range can be specified with limit only") {
 }
 
 TEST("require that correctly specified diversity can be parsed") {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500;ab56;78]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500;ab56;78]", "index", QueryTerm::WORD);
     EXPECT_TRUE(descending_query.isValid());
     EXPECT_EQUAL(-500, descending_query.getRangeLimit());
     EXPECT_EQUAL("ab56", descending_query.getDiversityAttribute());
@@ -588,8 +584,8 @@ TEST("require that correctly specified diversity can be parsed") {
 }
 
 TEST("require that correctly specified diversity with cutoff groups can be parsed") {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500;ab56;78;93]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500;ab56;78;93]", "index", QueryTerm::WORD);
     EXPECT_TRUE(descending_query.isValid());
     EXPECT_EQUAL(-500, descending_query.getRangeLimit());
     EXPECT_EQUAL("ab56", descending_query.getDiversityAttribute());
@@ -599,8 +595,8 @@ TEST("require that correctly specified diversity with cutoff groups can be parse
 }
 
 TEST("require that correctly specified diversity with cutoff groups can be parsed") {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500;ab56;78;13]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500;ab56;78;13]", "index", QueryTerm::WORD);
     EXPECT_TRUE(descending_query.isValid());
     EXPECT_EQUAL(-500, descending_query.getRangeLimit());
     EXPECT_EQUAL("ab56", descending_query.getDiversityAttribute());
@@ -610,8 +606,8 @@ TEST("require that correctly specified diversity with cutoff groups can be parse
 }
 
 TEST("require that correctly specified diversity with incorrect cutoff groups can be parsed") {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500;ab56;78;a13.9]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500;ab56;78;a13.9]", "index", QueryTerm::WORD);
     EXPECT_TRUE(descending_query.isValid());
     EXPECT_EQUAL(-500, descending_query.getRangeLimit());
     EXPECT_EQUAL("ab56", descending_query.getDiversityAttribute());
@@ -621,8 +617,8 @@ TEST("require that correctly specified diversity with incorrect cutoff groups ca
 }
 
 TEST("require that correctly specified diversity with cutoff strategy can be parsed") {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500;ab56;78;93;anything but strict]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500;ab56;78;93;anything but strict]", "index", QueryTerm::WORD);
     EXPECT_TRUE(descending_query.isValid());
     EXPECT_EQUAL(-500, descending_query.getRangeLimit());
     EXPECT_EQUAL("ab56", descending_query.getDiversityAttribute());
@@ -632,8 +628,8 @@ TEST("require that correctly specified diversity with cutoff strategy can be par
 }
 
 TEST("require that correctly specified diversity with strict cutoff strategy can be parsed") {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500;ab56;78;93;strict]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500;ab56;78;93;strict]", "index", QueryTerm::WORD);
     EXPECT_TRUE(descending_query.isValid());
     EXPECT_EQUAL(-500, descending_query.getRangeLimit());
     EXPECT_EQUAL("ab56", descending_query.getDiversityAttribute());
@@ -643,8 +639,8 @@ TEST("require that correctly specified diversity with strict cutoff strategy can
 }
 
 TEST("require that incorrectly specified diversity can be parsed") {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm descending_query(eqnr, "[;;-500;ab56]", "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm descending_query(eqnr.create(), "[;;-500;ab56]", "index", QueryTerm::WORD);
     EXPECT_FALSE(descending_query.isValid());
 }
 

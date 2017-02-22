@@ -286,8 +286,8 @@ void SearchVisitor::init(const Parameters & params)
         Parameters::ValueRef queryBlob;
         if ( params.get("query", queryBlob) ) {
             LOG(spam, "Received query blob of %zd bytes", queryBlob.size());
-            QueryTermData resultAddOn;
-            _query = search::Query(resultAddOn, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
+            QueryTermDataFactory addOnFactory;
+            _query = search::Query(addOnFactory, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
             LOG(debug, "Query tree: '%s'", _query.asString().c_str());
             _searchBuffer->reserve(0x10000);
 

@@ -1,35 +1,27 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "base.h"
+#include <vespa/vespalib/objects/cloneable.h>
 
-namespace search
-{
+namespace search {
 
 /**
   This is the base of any item that can be attached to the leafs in a querytree.
   The intention is to put stuff here that are search specific. Fx to differentiate
   between streamed and indexed variants.
 */
-class QueryNodeResultBase : public Object
+class QueryNodeResultBase : public vespalib::Cloneable
 {
- public:
-  virtual bool evaluate() const = 0;
-  virtual void reset() = 0;
-  virtual bool getRewriteFloatTerms() const { return false; }
+public:
+    virtual bool evaluate() const = 0;
+    virtual void reset() = 0;
 };
 
-class EmptyQueryNodeResult : public QueryNodeResultBase
-{
- public:
-  DUPLICATE(EmptyQueryNodeResult);
-  virtual ~EmptyQueryNodeResult() { }
-  virtual bool evaluate()        const { return true; }
-  virtual void reset()                 { }
- private:
+class QueryNodeResultFactory {
+public:
+    virtual ~QueryNodeResultFactory() { }
+    virtual bool getRewriteFloatTerms() const { return false; }
+    virtual std::unique_ptr<QueryNodeResultBase> create() const { return std::unique_ptr<QueryNodeResultBase>(); }
 };
-
-
-typedef ObjectContainer<QueryNodeResultBase> QueryNodeResultBaseContainer;
 }
 
