@@ -4,12 +4,14 @@ package com.yahoo.vespa.model.container.xml;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.test.ConfigModelTestUtil;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
+import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -154,10 +156,91 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         final String excludedBinding = "http://*/excluded/*";
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
+                httpWithExcludedBinding(excludedBinding),
                 "  <handler id='custom.Handler'>",
                 "    <binding>" + notExcludedBinding + "</binding>",
                 "    <binding>" + excludedBinding + "</binding>",
                 "  </handler>",
+                "</jdisc>");
+
+        Http http = getHttp(clusterElem);
+        assertFalse("Excluded binding was not removed.",
+                    containsBinding(http.getBindings(), excludedBinding));
+        assertFalse("Not all bindings of an excluded handler were removed.",
+                    containsBinding(http.getBindings(), notExcludedBinding));
+
+    }
+
+    @Test
+    public void access_control_filter_chain_has_all_servlet_bindings() throws Exception {
+        final String servletPath = "servlet/path";
+        final String restApiPath = "api/v0";
+        final Set<String> requiredBindings = ImmutableSet.of(servletPath, restApiPath);
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc version='1.0'>",
+                "  <servlet id='foo' class='bar' bundle='baz'>",
+                "    <path>" + servletPath + "</path>",
+                "  </servlet>",
+                "  <rest-api jersey2='true' path='" + restApiPath + "' />",
+                "  <http>",
+                "    <filtering>",
+                "      <access-control domain='foo' />",
+                "    </filtering>",
+                "  </http>",
+                "</jdisc>");
+
+        Http http = getHttp(clusterElem);
+
+        Set<String> missingRequiredBindings = requiredBindings.stream()
+                .filter(requiredBinding -> ! containsBinding(http.getBindings(), requiredBinding))
+                .collect(Collectors.toSet());
+
+        assertTrue("Access control chain was not bound to: " + CollectionUtil.mkString(missingRequiredBindings, ", "),
+                   missingRequiredBindings.isEmpty());
+    }
+
+    @Test
+    public void servlet_can_be_excluded_by_excluding_one_of_its_bindings() throws Exception {
+        final String servletPath = "servlet/path";
+        final String notExcludedBinding = "https://*/" + servletPath;
+        final String excludedBinding = "http://*/" + servletPath;
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc version='1.0'>",
+                httpWithExcludedBinding(excludedBinding),
+                "  <servlet id='foo' class='bar' bundle='baz'>",
+                "    <path>" + servletPath + "</path>",
+                "  </servlet>",
+                "</jdisc>");
+
+        Http http = getHttp(clusterElem);
+        assertFalse("Excluded binding was not removed.",
+                    containsBinding(http.getBindings(), excludedBinding));
+        assertFalse("Not all bindings of an excluded servlet were removed.",
+                    containsBinding(http.getBindings(), notExcludedBinding));
+
+    }
+
+    @Test
+    public void rest_api_can_be_excluded_by_excluding_one_of_its_bindings() throws Exception {
+        final String restApiPath = "api/v0";
+        final String notExcludedBinding = "http://*/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX;;
+        final String excludedBinding = "https://*/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX;;
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc version='1.0'>",
+                httpWithExcludedBinding(excludedBinding),
+                "  <rest-api jersey2='true' path='" + restApiPath + "' />",
+                "</jdisc>");
+
+        Http http = getHttp(clusterElem);
+        assertFalse("Excluded binding was not removed.",
+                    containsBinding(http.getBindings(), excludedBinding));
+        assertFalse("Not all bindings of an excluded rest-api were removed.",
+                    containsBinding(http.getBindings(), notExcludedBinding));
+
+    }
+
+    private String httpWithExcludedBinding(String excludedBinding) {
+        return ConfigModelTestUtil.joinLines(
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='foo'>",
@@ -166,15 +249,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "        </exclude>",
                 "      </access-control>",
                 "    </filtering>",
-                "  </http>",
-                "</jdisc>");
-
-        Http http = getHttp(clusterElem);
-        assertFalse("Excluded binding was not removed.",
-                    containsBinding(http.getBindings(), excludedBinding));
-        assertFalse("Not all bindings of an excluded handler was removed.",
-                    containsBinding(http.getBindings(), notExcludedBinding));
-
+                "  </http>");
     }
 
     private Http getHttp(Element clusterElem) throws SAXException, IOException {
@@ -192,5 +267,4 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         }
         return false;
     }
-
 }

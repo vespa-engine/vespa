@@ -33,8 +33,11 @@ public class ConfigModelTestUtil {
         }
     }
 
+    public static String joinLines(CharSequence... lines) {
+        return String.join("\n", lines);
+    }
+
     private static InputSource inputSource(String str) {
         return new InputSource(new StringReader(str));
     }
-
 }

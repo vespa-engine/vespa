@@ -9,7 +9,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
  * @author stiankri
  */
 public class Servlet extends SimpleComponent {
-    private final String bindingPath;
+    public final String bindingPath;
 
     public Servlet(ComponentModel componentModel, String bindingPath) {
         super(componentModel);

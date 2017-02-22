@@ -7,8 +7,10 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Helper class for http access control.
@@ -42,6 +45,7 @@ public final class AccessControl {
         private boolean writeEnabled = true;
         private final Set<String> excludeBindings = new LinkedHashSet<>();
         private Collection<Handler<?>> handlers = Collections.emptyList();
+        private Collection<Servlet> servlets = Collections.emptyList();
 
         public Builder(String domain, String applicationId) {
             this.domain = domain;
@@ -73,9 +77,14 @@ public final class AccessControl {
             return this;
         }
 
+        public Builder setServlets(Collection<Servlet> servlets) {
+            this.servlets = servlets;
+            return this;
+        }
+
         public AccessControl build() {
             return new AccessControl(domain, applicationId, writeEnabled, readEnabled,
-                                     excludeBindings, vespaDomain, handlers);
+                                     excludeBindings, vespaDomain, servlets, handlers);
         }
     }
 
@@ -86,6 +95,7 @@ public final class AccessControl {
     public final Optional<String> vespaDomain;
     private final Set<String> excludedBindings;
     private final Collection<Handler<?>> handlers;
+    private final Collection<Servlet> servlets;
 
     private AccessControl(String domain,
                           String applicationId,
@@ -93,6 +103,7 @@ public final class AccessControl {
                           boolean readEnabled,
                           Set<String> excludedBindings,
                           Optional<String> vespaDomain,
+                          Collection<Servlet> servlets,
                           Collection<Handler<?>> handlers) {
         this.domain = domain;
         this.applicationId = applicationId;
@@ -101,14 +112,26 @@ public final class AccessControl {
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
         this.vespaDomain = vespaDomain;
         this.handlers = handlers;
+        this.servlets = servlets;
     }
 
     public List<Binding> getBindings() {
+        return Stream.concat(getHandlerBindings(), getServletBindings())
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private Stream<Binding> getHandlerBindings() {
         return handlers.stream()
                         .filter(this::shouldHandlerBeProtected)
                         .flatMap(handler -> handler.getServerBindings().stream())
-                        .map(AccessControl::accessControlBinding)
-                        .collect(Collectors.toList());
+                        .map(AccessControl::accessControlBinding);
+    }
+
+    private Stream<Binding> getServletBindings() {
+        return servlets.stream()
+                .filter(this::shouldServletBeProtected)
+                .flatMap(AccessControl::servletBindings)
+                .map(AccessControl::accessControlBinding);
     }
 
     private boolean shouldHandlerBeProtected(Handler<?> handler) {
@@ -116,7 +139,15 @@ public final class AccessControl {
                 && handler.getServerBindings().stream().noneMatch(excludedBindings::contains);
     }
 
+    private boolean shouldServletBeProtected(Servlet servlet) {
+        return servletBindings(servlet).noneMatch(excludedBindings::contains);
+    }
+
     private static Binding accessControlBinding(String binding) {
         return new Binding(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding);
+    }
+
+    private static Stream<String> servletBindings(Servlet servlet) {
+        return Stream.of("http://*/", "https://*/").map(protocol -> protocol + servlet.bindingPath);
     }
 }

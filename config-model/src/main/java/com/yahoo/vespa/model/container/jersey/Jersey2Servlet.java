@@ -15,6 +15,7 @@ public class Jersey2Servlet extends Servlet {
 
     public static final String BUNDLE = "container-jersey2";
     public static final String CLASS = "com.yahoo.container.servlet.jersey.JerseyServletProvider";
+    public static final String BINDING_SUFFIX = "/*";
 
     private static final ComponentId REST_API_NAMESPACE = ComponentId.fromString("rest-api");
 
@@ -23,7 +24,7 @@ public class Jersey2Servlet extends Servlet {
                 new BundleInstantiationSpecification(idSpecFromPath(bindingPath),
                                                      ComponentSpecification.fromString(CLASS),
                                                      ComponentSpecification.fromString(BUNDLE))),
-              bindingPath + "/*");
+              bindingPath + BINDING_SUFFIX);
     }
 
     private static ComponentSpecification idSpecFromPath(String path) {

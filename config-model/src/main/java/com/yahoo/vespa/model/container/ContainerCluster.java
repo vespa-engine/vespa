@@ -511,6 +511,11 @@ public final class ContainerCluster
         return (Collection<Handler<?>>)(Collection)componentGroup.getComponents(Handler.class);
     }
 
+    // Returns all servlets, including rest-api/jersey servlets.
+    public Collection<Servlet> getAllServlets() {
+        return allServlets().collect(Collectors.toCollection(ArrayList::new));
+    }
+
     public Map<ComponentId, Component<?, ?>> getComponentsMap() {
         return componentGroup.getComponentMap();
     }
