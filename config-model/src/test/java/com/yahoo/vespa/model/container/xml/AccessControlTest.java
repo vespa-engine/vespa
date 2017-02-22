@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.test.ConfigModelTestUtil;
+import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
@@ -240,7 +240,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     private String httpWithExcludedBinding(String excludedBinding) {
-        return ConfigModelTestUtil.joinLines(
+        return TestUtil.joinLines(
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='foo'>",
