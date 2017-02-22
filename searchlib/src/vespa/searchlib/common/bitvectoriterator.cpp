@@ -108,8 +108,7 @@ queryeval::SearchIterator::UP BitVectorIterator::create(const BitVector *const b
 }
 
 BitVector::UP BitVectorIterator::get_hits(uint32_t begin_id) {
-    uint32_t end_id = std::min(getEndId(), _docIdLimit);
-    BitVector::UP result = BitVector::create(_bv, begin_id, end_id);
+    BitVector::UP result = BitVector::create(_bv, begin_id, getEndId());
     if (begin_id < getDocId()) {
         result->clearInterval(begin_id, getDocId());
     }
