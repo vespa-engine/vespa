@@ -4,12 +4,12 @@ package com.yahoo.docprocs.indexing;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
+import com.yahoo.document.FieldPathEntry;
 import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
@@ -54,13 +54,29 @@ public class DocumentScript {
                 removeAnyLinguisticsSpanTree(valueUpdate);
             }
         }
-        for (FieldPathUpdate fieldUpdate : update.getFieldPathUpdates()) {
-            requireThatFieldIsDeclaredInDocument(fieldUpdate.getFieldPath().get(0).getFieldRef());
-            if (fieldUpdate instanceof AssignFieldPathUpdate) {
-                removeAnyLinguisticsSpanTree(((AssignFieldPathUpdate)fieldUpdate).getFieldValue());
+
+        List<FieldPathUpdate> fieldPathStructUpdates = new ArrayList<>();
+        for (Iterator<FieldPathUpdate> iterator = update.iterator(); iterator.hasNext(); ) {
+            FieldPathUpdate fieldPathUpdate = iterator.next();
+            requireThatFieldIsDeclaredInDocument(fieldPathUpdate.getFieldPath().get(0).getFieldRef());
+            if (fieldPathUpdate instanceof AssignFieldPathUpdate) {
+                AssignFieldPathUpdate assignFieldPathUpdate = (AssignFieldPathUpdate) fieldPathUpdate;
+                removeAnyLinguisticsSpanTree(assignFieldPathUpdate.getFieldValue());
+                if (isTryingToUpdateStruct(assignFieldPathUpdate)) {
+                    fieldPathStructUpdates.add(assignFieldPathUpdate);
+                    iterator.remove();
+                }
             }
         }
-        return Expression.execute(expression, adapterFactory, update);
+
+        if (! update.isEmpty()) update = Expression.execute(expression, adapterFactory, update);
+        fieldPathStructUpdates.forEach(update::addFieldPathUpdate);
+        return update;
+    }
+
+    private boolean isTryingToUpdateStruct(AssignFieldPathUpdate assignFieldPathUpdate) {
+        return assignFieldPathUpdate.getFieldPath().getList().stream()
+                .anyMatch(fpe -> fpe.getType() == FieldPathEntry.Type.STRUCT_FIELD);
     }
 
     private void requireThatFieldIsDeclaredInDocument(Field field) {
