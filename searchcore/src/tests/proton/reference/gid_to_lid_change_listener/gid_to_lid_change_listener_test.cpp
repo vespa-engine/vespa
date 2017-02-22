@@ -5,6 +5,9 @@
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <map>
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_listener_test");
 
@@ -27,6 +30,41 @@ GlobalId toGid(vespalib::stringref docId) {
 vespalib::string doc1("id:test:music::1");
 vespalib::string doc2("id:test:music::2");
 vespalib::string doc3("id:test:music::3");
+
+using MockGidToLidMap = std::map<GlobalId, uint32_t>;
+
+struct MyGidToLidMapper : public search::IGidToLidMapper
+{
+    const MockGidToLidMap &_map;
+    MyGidToLidMapper(const MockGidToLidMap &map)
+        : _map(map)
+    {
+    }
+    virtual uint32_t mapGidToLid(const document::GlobalId &gid) const override {
+        auto itr = _map.find(gid);
+        if (itr != _map.end()) {
+            return itr->second;
+        } else {
+            return 0u;
+        }
+    }
+};
+
+struct MyGidToLidMapperFactory : public search::IGidToLidMapperFactory
+{
+    MockGidToLidMap _map;
+
+    MyGidToLidMapperFactory()
+        : _map()
+    {
+        _map.insert({toGid(doc1), 10});
+        _map.insert({toGid(doc2), 17});
+    }
+
+    virtual std::unique_ptr<search::IGidToLidMapper> getMapper() const {
+        return std::make_unique<MyGidToLidMapper>(_map);
+    }
+};
 
 }
 
@@ -69,12 +107,21 @@ struct Fixture
         EXPECT_EQUAL(expLid, ref->lid());
     }
 
+    void assertNoRefLid(uint32_t doc) {
+        auto ref = getRef(doc);
+        EXPECT_TRUE(ref == nullptr);
+    }
+
     void allocListener() {
-        _listener = std::make_unique<GidToLidChangeListener>(_writer, _attr, _refCount);
+        _listener = std::make_unique<GidToLidChangeListener>(_writer, _attr, _refCount, "test", "testdoc");
     }
 
     void notifyGidToLidChange(const GlobalId &gid, uint32_t referencedDoc) {
         _listener->notifyGidToLidChange(gid, referencedDoc);
+    }
+
+    void notifyListenerRegistered() {
+        _listener->notifyRegistered();
     }
 };
 
@@ -95,6 +142,31 @@ TEST_F("Test that we can use gid to lid change listener", Fixture)
     TEST_DO(f.assertRefLid(10, 1));
     TEST_DO(f.assertRefLid(20, 2));
     TEST_DO(f.assertRefLid(10, 3));
+}
+
+TEST_F("Test that notifyRegistered method in gid to lid change listener works", Fixture)
+{
+    f.ensureDocIdLimit(6);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    f.set(3, toGid(doc1));
+    f.set(4, toGid(doc3));
+    f.commit();
+    TEST_DO(f.assertRefLid(0, 1));
+    TEST_DO(f.assertRefLid(0, 2));
+    TEST_DO(f.assertRefLid(0, 3));
+    TEST_DO(f.assertRefLid(0, 4));
+    TEST_DO(f.assertNoRefLid(5));
+    std::shared_ptr<search::IGidToLidMapperFactory> factory =
+        std::make_shared<MyGidToLidMapperFactory>();
+    f._attr->setGidToLidMapperFactory(factory);
+    f.allocListener();
+    f.notifyListenerRegistered();
+    TEST_DO(f.assertRefLid(10, 1));
+    TEST_DO(f.assertRefLid(17, 2));
+    TEST_DO(f.assertRefLid(10, 3));
+    TEST_DO(f.assertRefLid(0, 4));
+    TEST_DO(f.assertNoRefLid(5));
 }
 
 }

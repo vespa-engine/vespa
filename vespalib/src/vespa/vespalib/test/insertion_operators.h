@@ -59,5 +59,17 @@ operator<<(std::ostream &os, const std::map<K, V> &map)
     return os;
 }
 
+template <typename T, typename U>
+std::ostream &
+operator<<(std::ostream &os, const std::pair<T,U> &pair)
+{
+    os << "{";
+    os << pair.first;
+    os << ",";
+    os << pair.second;
+    os << "}";
+    return os;
+}
+
 } // namespace std
 

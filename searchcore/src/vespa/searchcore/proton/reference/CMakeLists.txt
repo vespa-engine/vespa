@@ -4,7 +4,9 @@ vespa_add_library(searchcore_reference STATIC
     document_db_reference_resolver.cpp
     document_db_referent.cpp
     document_db_referent_registry.cpp
+    gid_to_lid_change_handler.cpp
     gid_to_lid_change_listener.cpp
+    gid_to_lid_change_registrator.cpp
     gid_to_lid_mapper.cpp
     gid_to_lid_mapper_factory.cpp
     DEPENDS

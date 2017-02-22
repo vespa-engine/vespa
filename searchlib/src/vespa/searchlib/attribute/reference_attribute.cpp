@@ -259,6 +259,18 @@ ReferenceAttribute::notifyGidToLidChange(const GlobalId &gid, DocId referencedLi
     }
 }
 
+void
+ReferenceAttribute::notifyGidToLidChangeListenerRegistered()
+{
+    if (_gidToLidMapperFactory) {
+        std::unique_ptr<IGidToLidMapper> mapperUP = _gidToLidMapperFactory->getMapper();
+        const IGidToLidMapper &mapper = *mapperUP;
+        const auto &store = _store;
+        const auto saver = _store.getSaver();
+        saver.foreach_key([&store,&mapper](EntryRef ref) { const Reference &entry = store.get(ref); entry.setLid(mapper.mapGidToLid(entry.gid())); });
+    }
+}
+
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 
 }
