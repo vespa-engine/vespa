@@ -59,14 +59,11 @@ public class Spec {
     }
 
     /**
-     * Create a Spec that will produce a wildcard address with address, and the
-     * hostname of the localhost with connectAddress.
+     * Create a Spec with a wildcard address.
      *
-     * WARNING: Do not use omit host if connecting (to localhost) - use Spec("localhost", port) instead.
-     * Why? Because the SocketAddress obtained from spec is independent on whether to use the address
-     * for listening socket or connecting socket.  A listening socket without host means the wildcard address
-     * is used. But when using the wildcard address for connecting, Java ends up getting the canonical
-     * hostname for localhost, which may not be reachable if on WiFi-only, see HostName.getLocalhost for details.
+     * WARNING: Do not use this constructor to connect to localhost - use e.g. Spec("localhost", port) instead.
+     * Why? Because Java may end up picking the wrong localhost hostname to connect to (for reasons
+     * detailed in HostName.getLocalhost).
      *
      * @param port
      */
@@ -103,7 +100,7 @@ public class Spec {
     }
 
     /**
-     * Resolve the listening socket address for this Spec. If this Spec is
+     * Resolve the socket address for this Spec. If this Spec is
      * malformed, this method will return null.
      *
      * @return listening socket address
@@ -114,9 +111,9 @@ public class Spec {
         }
         if (address == null) {
             if (host == null) {
-                return new InetSocketAddress(port);
+                address = new InetSocketAddress(port);
             } else {
-                return new InetSocketAddress(host, port);
+                address = new InetSocketAddress(host, port);
             }
         }
         return address;
