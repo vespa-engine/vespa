@@ -95,7 +95,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 .orElse(ApplicationId.defaultId().application());
     }
 
-    static Optional<ContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
+    private static Optional<ContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
         AbstractConfigProducer currentProducer = configProducer;
         while (currentProducer.getClass() != ContainerCluster.class) {
             currentProducer = currentProducer.getParent();
