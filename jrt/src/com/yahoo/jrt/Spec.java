@@ -103,7 +103,7 @@ public class Spec {
      * Resolve the socket address for this Spec. If this Spec is
      * malformed, this method will return null.
      *
-     * @return listening socket address
+     * @return socket address
      */
     SocketAddress address() {
         if (malformed) {
