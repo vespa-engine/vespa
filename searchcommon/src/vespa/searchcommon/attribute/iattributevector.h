@@ -45,14 +45,15 @@ public:
 class IAttributeVector
 {
 public:
-    typedef uint32_t DocId;
-    typedef uint32_t EnumHandle;
-    typedef int64_t  largeint_t;
-    typedef WeightedType<double>       WeightedFloat;
-    typedef WeightedType<largeint_t>   WeightedInt;
-    typedef WeightedType<EnumHandle>   WeightedEnum;
-    typedef WeightedType<const char *> WeightedConstChar;
-    typedef WeightedType<vespalib::string>  WeightedString;
+    using SP = std::shared_ptr<IAttributeVector>;
+    using DocId = uint32_t;
+    using EnumHandle = uint32_t;
+    using largeint_t = int64_t;
+    using WeightedFloat = WeightedType<double>;
+    using WeightedInt = WeightedType<largeint_t>;
+    using WeightedEnum = WeightedType<EnumHandle>;
+    using WeightedConstChar = WeightedType<const char *>;
+    using WeightedString = WeightedType<vespalib::string>;
 
     /**
      * Returns the name of this attribute vector.
