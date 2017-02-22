@@ -5,7 +5,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/vsm/flattendocsumwriter.h>
-#include <vespa/vsm/vsm/jsondocsumwriter.h>
+#include <vespa/vsm/vsm/slimefieldwriter.h>
 
 using namespace document;
 
@@ -56,15 +56,15 @@ private:
         assertFlattenDocsumWriter(fdw, fv, exp);
     }
     void assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValue & fv, const std::string & exp);
-    void assertJSONDocsumWriter(const FieldValue & fv, const std::string & exp) {
-        JSONDocsumWriter jdw;
-        assertJSONDocsumWriter(jdw, fv, exp);
+    void assertSlimeFieldWriter(const FieldValue & fv, const std::string & exp) {
+        SlimeFieldWriter jdw;
+        assertSlimeFieldWriter(jdw, fv, exp);
     }
-    void assertJSONDocsumWriter(JSONDocsumWriter & jdw, const FieldValue & fv, const std::string & exp);
+    void assertSlimeFieldWriter(SlimeFieldWriter & jdw, const FieldValue & fv, const std::string & exp);
 
     void testFlattenDocsumWriter();
-    void testJSONDocsumWriter();
-    void requireThatJSONDocsumWriterHandlesMap();
+    void testSlimeFieldWriter();
+    void requireThatSlimeFieldWriterHandlesMap();
     void testDocSumCache();
 
 public:
@@ -104,10 +104,25 @@ DocsumTest::assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValu
 }
 
 void
-DocsumTest::assertJSONDocsumWriter(JSONDocsumWriter & jdw, const FieldValue & fv, const std::string & exp)
+DocsumTest::assertSlimeFieldWriter(SlimeFieldWriter & jdw, const FieldValue & fv, const std::string & exp)
 {
-    jdw.write(fv);
-    EXPECT_EQUAL(jdw.getResult(), exp);
+    jdw.convert(fv);
+
+    vespalib::Slime gotSlime;
+    vespalib::Memory serialized(jdw.out());
+    size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized, gotSlime);
+    ASSERT_EQUAL(decodeRes, serialized.size);
+
+    vespalib::Slime expSlime;
+    size_t used = vespalib::slime::JsonFormat::decode(exp, expSlime);
+    EXPECT_EQUAL(exp.size(), used);
+    if (!(expSlime == gotSlime)) {
+        fprintf(stderr, "exp type: %u\n", expSlime.get().type().getId());
+        fprintf(stderr, "got type: %u\n", gotSlime.get().type().getId());
+        fprintf(stderr, "exp double: %.17g\n", expSlime.get().asDouble());
+        fprintf(stderr, "got double: %.17g\n", gotSlime.get().asDouble());
+    }
+    EXPECT_EQUAL(expSlime, gotSlime);
 }
 
 void
@@ -147,20 +162,20 @@ DocsumTest::testFlattenDocsumWriter()
 }
 
 void
-DocsumTest::testJSONDocsumWriter()
+DocsumTest::testSlimeFieldWriter()
 {
     { // basic types
-        assertJSONDocsumWriter(LongFieldValue(123456789), "123456789");
-        assertJSONDocsumWriter(FloatFieldValue(12.34), "12.34");
-        assertJSONDocsumWriter(StringFieldValue("foo bar"), "\"foo bar\"");
+        assertSlimeFieldWriter(LongFieldValue(123456789), "123456789");
+        assertSlimeFieldWriter(DoubleFieldValue(12.34), "12.34");
+        assertSlimeFieldWriter(StringFieldValue("foo bar"), "\"foo bar\"");
     }
     { // collection field values
-        assertJSONDocsumWriter(createFieldValue(StringList().add("foo").add("bar").add("baz")),
+        assertSlimeFieldWriter(createFieldValue(StringList().add("foo").add("bar").add("baz")),
                                "[\"foo\",\"bar\",\"baz\"]");
-        assertJSONDocsumWriter(createFieldValue(WeightedStringList().add(std::make_pair("bar", 20)).
+        assertSlimeFieldWriter(createFieldValue(WeightedStringList().add(std::make_pair("bar", 20)).
                                                                      add(std::make_pair("baz", 30)).
                                                                      add(std::make_pair("foo", 10))),
-                               "[[\"bar\",20],[\"baz\",30],[\"foo\",10]]");
+                               "[{item:\"bar\",weight:20},{item:\"baz\",weight:30},{item:\"foo\",weight:10}]");
     }
     { // struct field value
         StructDataType subType("substruct");
@@ -186,36 +201,39 @@ DocsumTest::testJSONDocsumWriter()
 
 
         { // select a subset and then all
-            JSONDocsumWriter jdw;
+            SlimeFieldWriter jdw;
             DocsumFieldSpec::FieldIdentifierVector fields;
             fields.push_back(DocsumFieldSpec::FieldIdentifier(
                             0, *type.buildFieldPath("a")));
             fields.push_back(DocsumFieldSpec::FieldIdentifier(
                             0, *type.buildFieldPath("c.e")));
             jdw.setInputFields(fields);
-            assertJSONDocsumWriter(jdw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}");
+            assertSlimeFieldWriter(jdw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}");
             jdw.clear();
-            assertJSONDocsumWriter(jdw, value, "{\"a\":\"foo\",\"b\":\"bar\",\"c\":{\"d\":\"baz\",\"e\":\"qux\"}}");
+            assertSlimeFieldWriter(jdw, value, "{\"a\":\"foo\",\"b\":\"bar\",\"c\":{\"d\":\"baz\",\"e\":\"qux\"}}");
         }
-    }
+
     { // multiple invocations
-        JSONDocsumWriter jdw;
-        assertJSONDocsumWriter(jdw, StringFieldValue("foo"), "\"foo\"");
-        assertJSONDocsumWriter(jdw, StringFieldValue("bar"), "\"foo\"\"bar\"");
+        SlimeFieldWriter jdw;
+        assertSlimeFieldWriter(jdw, StringFieldValue("foo"), "\"foo\"");
         jdw.clear();
-        assertJSONDocsumWriter(jdw, StringFieldValue("baz"), "\"baz\"");
+        assertSlimeFieldWriter(jdw, StringFieldValue("bar"), "\"bar\"");
+        jdw.clear();
+        assertSlimeFieldWriter(jdw, StringFieldValue("baz"), "\"baz\"");
+    }
+
     }
 }
 
 void
-DocsumTest::requireThatJSONDocsumWriterHandlesMap()
+DocsumTest::requireThatSlimeFieldWriterHandlesMap()
 {
     { // map<string, string>
         MapDataType mapType(*DataType::STRING, *DataType::STRING);
         MapFieldValue mapfv(mapType);
         EXPECT_TRUE(mapfv.put(StringFieldValue("k1"), StringFieldValue("v1")));
         EXPECT_TRUE(mapfv.put(StringFieldValue("k2"), StringFieldValue("v2")));
-        assertJSONDocsumWriter(mapfv, "[{\"key\":\"k1\",\"value\":\"v1\"},{\"key\":\"k2\",\"value\":\"v2\"}]");
+        assertSlimeFieldWriter(mapfv, "[{\"key\":\"k1\",\"value\":\"v1\"},{\"key\":\"k2\",\"value\":\"v2\"}]");
     }
     { // map<string, struct>
         StructDataType structType("struct");
@@ -230,17 +248,17 @@ DocsumTest::requireThatJSONDocsumWriterHandlesMap()
         MapFieldValue mapfv(mapType);
         EXPECT_TRUE(mapfv.put(StringFieldValue("k1"), structValue));
         { // select a subset and then all
-            JSONDocsumWriter jdw;
+            SlimeFieldWriter jdw;
             DocsumFieldSpec::FieldIdentifierVector fields;
             fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("value.b")));
             jdw.setInputFields(fields);
-            assertJSONDocsumWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]");
+            assertSlimeFieldWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]");
             fields[0] = DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("{k1}.a"));
             jdw.clear();
             jdw.setInputFields(fields);
-            assertJSONDocsumWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]");
+            assertSlimeFieldWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]");
             jdw.clear(); // all fields implicit
-            assertJSONDocsumWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\",\"b\":\"bar\"}}]");
+            assertSlimeFieldWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\",\"b\":\"bar\"}}]");
         }
     }
 }
@@ -251,8 +269,8 @@ DocsumTest::Main()
     TEST_INIT("docsum_test");
 
     testFlattenDocsumWriter();
-    testJSONDocsumWriter();
-    requireThatJSONDocsumWriterHandlesMap();
+    testSlimeFieldWriter();
+    requireThatSlimeFieldWriterHandlesMap();
 
     TEST_DONE();
 }
