@@ -25,7 +25,7 @@ acceptQueueSize                     int      default=0
 # Whether the server socket reuses addresses.
 reuseAddress                        bool     default=true
 
-# The linger time. Use -1 to disable.
+# The linger time in milliseconds. Use -1 to disable.
 soLingerTime                        int      default=-1
 
 # The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
