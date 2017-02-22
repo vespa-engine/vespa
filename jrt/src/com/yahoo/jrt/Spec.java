@@ -65,7 +65,7 @@ public class Spec {
      * Why? Because Java may end up picking the wrong localhost hostname to connect to (for reasons
      * detailed in HostName.getLocalhost).
      *
-     * @param port
+     * @param port port number
      */
     public Spec(int port) {
         this.port = port;
