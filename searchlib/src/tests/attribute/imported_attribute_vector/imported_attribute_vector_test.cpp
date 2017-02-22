@@ -422,9 +422,9 @@ TEST_F("Multi-valued string attribute values can be retrieved via reference", Mu
 }
 
 TEST_F("Multi-valued enum attribute values can be retrieved via reference", MultiStringAttrFixture) {
-    AttributeContent<EnumHandle> actual;
-    actual.fill(*f.target_attr, DocId(3));
-    assert_multi_value_matches<EnumHandle>(f, DocId(2), as_vector(actual));
+    AttributeContent<EnumHandle> expected;
+    expected.fill(*f.target_attr, DocId(3));
+    assert_multi_value_matches<EnumHandle>(f, DocId(2), as_vector(expected));
 }
 
 TEST_F("getValueCount() is equal to stored values for mapped multi value attribute", MultiStringAttrFixture) {
@@ -457,9 +457,9 @@ TEST_F("Weighted string attribute values can be retrieved via reference", Weight
 }
 
 TEST_F("Weighted enum attribute values can be retrieved via reference", WeightedMultiStringAttrFixture) {
-    AttributeContent<WeightedEnum> actual;
-    actual.fill(*f.target_attr, DocId(7));
-    assert_multi_value_matches<WeightedEnum>(f, DocId(3), as_vector(actual));
+    AttributeContent<WeightedEnum> expected;
+    expected.fill(*f.target_attr, DocId(7));
+    assert_multi_value_matches<WeightedEnum>(f, DocId(3), as_vector(expected));
 }
 
 bool weighted_string_eq(const WeightedConstChar& lhs, const WeightedConstChar& rhs) noexcept {
@@ -470,10 +470,10 @@ bool weighted_string_eq(const WeightedConstChar& lhs, const WeightedConstChar& r
 };
 
 TEST_F("Weighted const char attribute values can be retrieved via reference", WeightedMultiStringAttrFixture) {
-    AttributeContent<WeightedConstChar> actual;
-    actual.fill(*f.target_attr, DocId(7));
+    AttributeContent<WeightedConstChar> expected;
+    expected.fill(*f.target_attr, DocId(7));
 
-    assert_multi_value_matches<WeightedConstChar>(f, DocId(3), as_vector(actual), weighted_string_eq);
+    assert_multi_value_matches<WeightedConstChar>(f, DocId(3), as_vector(expected), weighted_string_eq);
 }
 
 // Poor man's function call mock matching
