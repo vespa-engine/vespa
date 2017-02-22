@@ -4,16 +4,12 @@
 #include "posocc.h"
 #include "querynode.h"
 #include "querynoderesultbase.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/array.h>
-#include <vespa/fastlib/text/unicodeutil.h>
-
 #include "weight.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/fastlib/text/unicodeutil.h>
 
 namespace search {
 
-/// An stl based ucs4 string identical to a char string.
-typedef vespalib::Array<ucs4_t> UCS4StringT;
 
 class QueryTermSimple
 {
@@ -70,6 +66,8 @@ public:
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     vespalib::string getClassName() const;
     bool isValid() const { return _valid; }
+protected:
+    const string & getTermString() const { return _term; }
 private:
     bool getRangeInternal(int64_t & low, int64_t & high) const;
     template <typename N>
@@ -77,13 +75,13 @@ private:
     template <typename N>
     RangeResult<N>    getFloatRange() const;
     SearchTerm  _type;
-    string      _term;
-    stringref   _diversityAttribute;
     int         _rangeLimit;
     uint32_t    _maxPerGroup;
     uint32_t    _diversityCutoffGroups;
     bool        _diversityCutoffStrict;
     bool        _valid;
+    string      _term;
+    stringref   _diversityAttribute;
     template <typename T, typename D>
     bool    getAsNumericTerm(T & lower, T & upper, D d) const;
 };
@@ -91,6 +89,7 @@ private:
 class QueryTermBase : public QueryTermSimple
 {
 public:
+    typedef std::vector<ucs4_t> UCS4StringT;
     typedef std::unique_ptr<QueryTermBase> UP;
     QueryTermBase(const QueryTermBase &) = default;
     QueryTermBase & operator = (const QueryTermBase &) = default;
@@ -101,8 +100,15 @@ public:
     ~QueryTermBase();
     size_t getTermLen() const { return _cachedTermLen; }
     size_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
-    size_t term(const ucs4_t * & t)   const { t = _termUCS4.begin(); return _cachedTermLen; }
+    UCS4StringT getUCS4Term() const;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    size_t term(const ucs4_t * & t) {
+        if (_termUCS4.empty()) {
+            _termUCS4 = getUCS4Term();
+        }
+        t = &_termUCS4[0];
+        return _cachedTermLen;
+    }
 private:
     size_t                       _cachedTermLen;
     UCS4StringT                  _termUCS4;
