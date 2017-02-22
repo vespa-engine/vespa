@@ -16,13 +16,6 @@ SearchIterator::SearchIterator() :
 { }
 
 void
-SearchIterator::resetRange()
-{
-    _docid = 0;
-    _endid = 0;
-}
-
-void
 SearchIterator::initRange(uint32_t beginid, uint32_t endid)
 {
     _docid = beginid - 1;

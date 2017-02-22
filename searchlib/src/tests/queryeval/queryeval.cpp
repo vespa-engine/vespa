@@ -641,7 +641,6 @@ TEST("testTrueSearch") {
     EXPECT_TRUE(t.seek(10));
     EXPECT_EQUAL(10u, t.getDocId());
     EXPECT_TRUE(t.isAtEnd());
-    t.resetRange();
     t.initRange(4, 14);
     EXPECT_EQUAL(3u, t.getDocId());
     EXPECT_EQUAL(14u, t.getEndId());

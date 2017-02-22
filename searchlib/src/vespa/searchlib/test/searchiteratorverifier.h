@@ -31,6 +31,7 @@ private:
     void verify(bool strict) const;
     void verifyAnd(bool strict) const;
     void verifyOr(bool strict) const;
+    void verify_get_hits(bool strict) const;
     static void verifyTermwise(SearchIterator::UP iterator, bool strict, const DocIds & docIds);
     static void verify(SearchIterator & iterator, const DocIds & docIds);
     static void verify(SearchIterator & iterator, bool strict, const DocIds & docIds);

@@ -114,10 +114,6 @@ public:
         _search->initRange(beginid, endid);
         SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
     }
-    void resetRange() override {
-        _search->resetRange();
-        SearchIterator::resetRange();
-    }
     Trinary is_strict() const override { return _search->is_strict(); }
     virtual const PostingInfo *getPostingInfo() const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

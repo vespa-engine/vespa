@@ -80,7 +80,6 @@ public:
     }
     void setChild(size_t index, SearchIterator::UP child);
     void initRange(uint32_t beginId, uint32_t endId) override;
-    void resetRange() override;
 };
 
 } // namespace queryeval

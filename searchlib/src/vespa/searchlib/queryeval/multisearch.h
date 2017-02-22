@@ -36,7 +36,6 @@ public:
     SearchIterator::UP remove(size_t index);
     virtual bool needUnpack(size_t index) const { (void) index; return true; }
     void initRange(uint32_t beginId, uint32_t endId) override;
-    void resetRange() override;
 protected:
     void doUnpack(uint32_t docid) override;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;

@@ -29,7 +29,7 @@ template <typename SC>
 std::unique_ptr<BitVector>
 AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
     BitVector::UP result = BitVector::create(begin_id, getEndId());
-    for (uint32_t docId(begin_id); docId < getEndId(); docId++) {
+    for (uint32_t docId(std::max(begin_id, getDocId())); docId < getEndId(); docId++) {
         if (sc.cmp(docId)) {
             result->setBit(docId);
         }
@@ -283,7 +283,10 @@ FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     }
     if (!result) {
         result = BitVector::create(begin_id, getEndId());
+    } else if (begin_id < getDocId()) {
+        result->clearInterval(begin_id, std::min(getDocId(), getEndId()));
     }
+
     return result;
 }
 
