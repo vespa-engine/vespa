@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -240,7 +241,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     private String httpWithExcludedBinding(String excludedBinding) {
-        return TestUtil.joinLines(
+        return joinLines(
                 "  <http>",
                 "    <filtering>",
                 "      <access-control domain='foo'>",
