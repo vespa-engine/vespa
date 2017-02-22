@@ -410,15 +410,26 @@ Test::assertString(const std::string & exp, const std::string & fieldName,
 void
 Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
                    const DocsumReply & reply,
-                   uint32_t id, uint32_t resultClassID)
+                   uint32_t id, uint32_t)
 {
-    GeneralResultPtr res = getResult(reply, id, resultClassID);
-    const void *data = res->GetEntry(fieldName.c_str())->_stringval;
-    size_t len = res->GetEntry(fieldName.c_str())->_stringlen;
-    EXPECT_EQUAL(exp.get() == nullptr, len == 0u);
+    const DocsumReply::Docsum & docsum = reply.docsums[id];
+    uint32_t classId;
+    ASSERT_LESS_EQUAL(sizeof(classId), docsum.data.size());
+    memcpy(&classId, docsum.data.c_str(), sizeof(classId));
+    ASSERT_EQUAL(::search::fs4transport::SLIME_MAGIC_ID, classId);
+    vespalib::Slime slime;
+    vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
+                                       docsum.data.size() - sizeof(classId));
+    size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized,
+                                                             slime);
+    ASSERT_EQUAL(decodeRes, serialized.size);
+
+    EXPECT_EQUAL(exp.get() != nullptr, slime.get()[fieldName].valid());
+    vespalib::Memory data = slime.get()[fieldName].asData();
+    EXPECT_EQUAL(exp.get() == nullptr, data.size == 0u);
     if (exp) {
-        vespalib::nbostream serialized(data, len);
-        Tensor::UP tensor = vespalib::tensor::TypedBinaryFormat::deserialize(serialized);
+        vespalib::nbostream x(data.data, data.size);
+        Tensor::UP tensor = vespalib::tensor::TypedBinaryFormat::deserialize(x);
         EXPECT_TRUE(tensor.get() != nullptr);
         EXPECT_EQUAL(*exp, *tensor);
     }
@@ -623,17 +634,19 @@ Test::requireThatDocsumRequestIsProcessed()
 
     DocsumRequest req;
     req.resultClassName = "class1";
+    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid2));
     req.hits.push_back(DocsumRequest::Hit(gid4));
     req.hits.push_back(DocsumRequest::Hit(gid9));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
+
     EXPECT_EQUAL(3u, rep->docsums.size());
     EXPECT_EQUAL(2u, rep->docsums[0].docid);
     EXPECT_EQUAL(gid2, rep->docsums[0].gid);
-    EXPECT_EQUAL(20u, getResult(*rep, 0, 1)->GetEntry("a")->_intval);
+    EXPECT_TRUE(assertSlime("{a:20}", *rep, 0, true));
     EXPECT_EQUAL(4u, rep->docsums[1].docid);
     EXPECT_EQUAL(gid4, rep->docsums[1].gid);
-    EXPECT_EQUAL(40u, getResult(*rep, 1, 1)->GetEntry("a")->_intval);
+    EXPECT_TRUE(assertSlime("{a:40}", *rep, 1, true));
     EXPECT_EQUAL(search::endDocId, rep->docsums[2].docid);
     EXPECT_EQUAL(gid9, rep->docsums[2].gid);
     EXPECT_TRUE(rep->docsums[2].data.get() == NULL);
@@ -661,11 +674,11 @@ Test::requireThatRewritersAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class2";
+    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_EQUAL(1u, rep->docsums.size());
-    EXPECT_EQUAL(20u, getResult(*rep, 0, 2)->GetEntry("aa")->_intval);
-    EXPECT_EQUAL(0u,  getResult(*rep, 0, 2)->GetEntry("ab")->_intval);
+    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, true));
 }
 
 
@@ -769,40 +782,33 @@ Test::requireThatAttributesAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class3";
+    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid2));
     req.hits.push_back(DocsumRequest::Hit(gid3));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     uint32_t rclass = 3;
 
     EXPECT_EQUAL(2u, rep->docsums.size());
-    EXPECT_EQUAL(10u, getResult(*rep, 0, rclass)->GetEntry("ba")->_intval);
-    EXPECT_APPROX(10.1, getResult(*rep, 0, rclass)->GetEntry("bb")->_doubleval,
-                10e-5);
-    EXPECT_TRUE(assertString("foo", "bc", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[\"20\",\"30\"]",     "bd", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[\"20.2\",\"30.3\"]", "be", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[\"bar\",\"baz\"]",   "bf", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[[\"40\",2],[\"50\",3]]",     "bg",
-                            *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[[\"40.4\",4],[\"50.5\",5]]", "bh",
-                            *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[[\"quux\",7],[\"qux\",6]]",  "bi",
-                            *rep, 0, rclass));
+
+    EXPECT_TRUE(assertSlime("{ba:10,bb:10.1,"
+                            "bc:'foo',"
+                            "bd:[20,30],"
+                            "be:[20.2,30.3],"
+                            "bf:['bar','baz'],"
+                            "bg:[{item:40,weight:2},{item:50,weight:3}],"
+                            "bh:[{item:40.4,weight:4},{item:50.5,weight:5}],"
+                            "bi:[{item:'quux',weight:7},{item:'qux',weight:6}],"
+                            "bj:'0x01020178017901016601674008000000000000'}", *rep, 0, true));
     TEST_DO(assertTensor(createTensor({ {{{"x","f"},{"y","g"}}, 3} }, { "x", "y"}),
                          "bj", *rep, 0, rclass));
 
     // empty doc
-    EXPECT_TRUE(search::attribute::isUndefined<int32_t>
-               (getResult(*rep, 1, rclass)->GetEntry("ba")->_intval));
-    EXPECT_TRUE(search::attribute::isUndefined<float>
-               (getResult(*rep, 1, rclass)->GetEntry("bb")->_doubleval));
-    EXPECT_TRUE(assertString("", "bc", *rep, 1, rclass));
-    EXPECT_TRUE(assertString("[]", "bd", *rep, 1, rclass));
-    EXPECT_TRUE(assertString("[]", "be", *rep, 1, rclass));
-    EXPECT_TRUE(assertString("[]", "bf", *rep, 1, rclass));
-    EXPECT_TRUE(assertString("[]", "bg", *rep, 1, rclass));
-    EXPECT_TRUE(assertString("[]", "bh", *rep, 1, rclass));
-    EXPECT_TRUE(assertString("[]", "bi", *rep, 1, rclass));
+    EXPECT_TRUE(assertSlime("{bd:[],"
+                             "be:[],"
+                             "bf:[],"
+                             "bg:[],"
+                             "bh:[],"
+                             "bi:[]}", *rep, 1, true));
     TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager =
@@ -1121,27 +1127,22 @@ Test::requireThatPositionsAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class5";
+    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
-    uint32_t rclass = 5;
+    // uint32_t rclass = 5;
 
     EXPECT_EQUAL(1u, rep->docsums.size());
     EXPECT_EQUAL(1u, rep->docsums[0].docid);
     EXPECT_EQUAL(gid1, rep->docsums[0].gid);
-    EXPECT_TRUE(assertString("1047758",
-                            "sp2", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("<position x=\"1002\" y=\"1003\" latlong=\"N0.001003;E0.001002\" />",
-                            "sp2x", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[1047806,1048322]",
-                             "ap2", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("<position x=\"1006\" y=\"1007\" latlong=\"N0.001007;E0.001006\" />"
-                            "<position x=\"1008\" y=\"1009\" latlong=\"N0.001009;E0.001008\" />",
-                            "ap2x", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("[{\"item\":1048370,\"weight\":43},{\"item\":1048382,\"weight\":44}]",
-                            "wp2", *rep, 0, rclass));
-    EXPECT_TRUE(assertString("<position x=\"1012\" y=\"1013\" latlong=\"N0.001013;E0.001012\" />"
-                            "<position x=\"1014\" y=\"1015\" latlong=\"N0.001015;E0.001014\" />",
-                            "wp2x", *rep, 0, rclass));
+    EXPECT_TRUE(assertSlime("{sp2:'1047758'"
+                            ",sp2x:'<position x=\"1002\" y=\"1003\" latlong=\"N0.001003;E0.001002\" />'"
+                            ",ap2:[1047806,1048322]"
+                            ",ap2x:'<position x=\"1006\" y=\"1007\" latlong=\"N0.001007;E0.001006\" />"
+                                   "<position x=\"1008\" y=\"1009\" latlong=\"N0.001009;E0.001008\" />'"
+                            ",wp2:[{item:1048370,weight:43},{item:1048382,weight:44}]"
+                            ",wp2x:'<position x=\"1012\" y=\"1013\" latlong=\"N0.001013;E0.001012\" />"
+                                   "<position x=\"1014\" y=\"1015\" latlong=\"N0.001015;E0.001014\" />'}", *rep, 0, true));
 }
 
 
