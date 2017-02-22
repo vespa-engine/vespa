@@ -99,7 +99,7 @@ struct Fixture {
         registry(),
         attrMgr(),
         docModel(),
-        resolver(registry, attrMgr, docModel.childDocType)
+        resolver(registry, docModel.childDocType)
     {
         registry.add("parent", parentReferent);
         populateAttributeManager();
@@ -110,7 +110,7 @@ struct Fixture {
         attrMgr.addIntAttribute("int_attr");
     }
     void resolve() {
-        resolver.resolve();
+        resolver.resolve(attrMgr);
     }
     const IGidToLidMapperFactory *getMapperFactoryPtr(const vespalib::string &attrName) {
         return attrMgr.getReferenceAttribute(attrName)->getGidToLidMapperFactory().get();

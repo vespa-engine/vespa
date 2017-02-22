@@ -46,10 +46,10 @@ asReferenceAttribute(AttributeVector &attr)
 }
 
 void
-DocumentDBReferenceResolver::connectReferenceAttributesToGidMapper()
+DocumentDBReferenceResolver::connectReferenceAttributesToGidMapper(const IAttributeManager &attrMgr)
 {
     std::vector<AttributeGuard> attributeList;
-    _attrMgr.getAttributeList(attributeList);
+    attrMgr.getAttributeList(attributeList);
     for (auto &guard : attributeList) {
         AttributeVector &attr = guard.get();
         if (attr.getBasicType() == BasicType::REFERENCE) {
@@ -61,18 +61,16 @@ DocumentDBReferenceResolver::connectReferenceAttributesToGidMapper()
 }
 
 DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBReferentRegistry &registry,
-                                                         const IAttributeManager &attrMgr,
                                                          const DocumentType &thisDocType)
     : _registry(registry),
-      _attrMgr(attrMgr),
       _thisDocType(thisDocType)
 {
 }
 
 void
-DocumentDBReferenceResolver::resolve()
+DocumentDBReferenceResolver::resolve(const IAttributeManager &attrMgr)
 {
-    connectReferenceAttributesToGidMapper();
+    connectReferenceAttributesToGidMapper(attrMgr);
 }
 
 }
