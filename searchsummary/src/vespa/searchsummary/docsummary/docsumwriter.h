@@ -25,13 +25,12 @@ public:
     struct ResolveClassInfo {
         bool mustSkip;
         bool allGenerated;
-        bool mustRepack;
         uint32_t outputClassId;
         const ResultClass *outputClass;
         const ResultClass::DynamicInfo *outputClassInfo;
         const ResultClass *inputClass;
         ResolveClassInfo()
-            : mustSkip(false), allGenerated(false), mustRepack(true),
+            : mustSkip(false), allGenerated(false),
               outputClassId(ResultConfig::NoClassID()),
               outputClass(NULL), outputClassInfo(NULL), inputClass(NULL)
         { }
@@ -85,12 +84,8 @@ private:
                           search::RawBuf *target);
 
     void resolveInputClass(ResolveClassInfo &rci, uint32_t id) const;
-    void resolveInputClass(ResolveClassInfo &rci, DocsumStoreValue blob) const;
-    ResolveClassInfo resolveOutputClass(vespalib::stringref outputClassName) const;
 
-    uint32_t oldWriteDocsum(uint32_t docid, GetDocsumsState *state,
-                            IDocsumStore *docinfos,
-                            search::RawBuf *target);
+    ResolveClassInfo resolveOutputClass(vespalib::stringref outputClassName) const;
 
 public:
     DynamicDocsumWriter(ResultConfig *config, KeywordExtractor *extractor);
