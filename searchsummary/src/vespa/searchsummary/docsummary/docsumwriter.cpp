@@ -121,9 +121,7 @@ static void convertEntry(GetDocsumsState *state,
     case RES_JSONSTRING:
         entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
         if (len != 0) {
-            // note: 'JSONSTRING' really means 'structured data',
-            // and in this code path we depend on calling the
-            // getMappedDocsum api with flag useSlimeInsideFields=true
+            // note: 'JSONSTRING' really means 'structured data'
             size_t d = BinaryFormat::decode_into(Memory(ptr, len), slime, inserter);
             if (d != len) {
                 LOG(warning, "could not decode %u bytes: %zu bytes decoded", len, d);
@@ -157,7 +155,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
         }
     } else {
         // look up docsum entry
-        DocsumStoreValue value = docinfos->getMappedDocsum(docid, true);
+        DocsumStoreValue value = docinfos->getMappedDocsum(docid);
         // re-pack docsum blob
         GeneralResult gres(rci.inputClass, 0, docid, 0);
         if (! gres.inplaceUnpack(value)) {

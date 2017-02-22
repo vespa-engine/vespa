@@ -377,7 +377,7 @@ public:
 GeneralResultPtr
 Test::getResult(DocumentStoreAdapter & dsa, uint32_t docId)
 {
-    DocsumStoreValue docsum = dsa.getMappedDocsum(docId, true);
+    DocsumStoreValue docsum = dsa.getMappedDocsum(docId);
     ASSERT_TRUE(docsum.pt() != NULL);
     GeneralResultPtr retval(new GeneralResult(dsa.getResultClass(),
                                               0, 0, 0));
@@ -573,7 +573,7 @@ Test::requireThatAdapterHandlesMultipleDocuments()
         EXPECT_EQUAL(2000u, res->GetEntry("a")->_intval);
     }
     { // doc 2
-        DocsumStoreValue docsum = dsa.getMappedDocsum(2, true);
+        DocsumStoreValue docsum = dsa.getMappedDocsum(2);
         EXPECT_TRUE(docsum.pt() == NULL);
     }
     { // doc 0 (again)
@@ -663,10 +663,10 @@ Test::requireThatDocsumRequestIsProcessed()
     EXPECT_EQUAL(3u, rep->docsums.size());
     EXPECT_EQUAL(2u, rep->docsums[0].docid);
     EXPECT_EQUAL(gid2, rep->docsums[0].gid);
-    EXPECT_TRUE(assertSlime("{a:20}", *rep, 0, true));
+    EXPECT_TRUE(assertSlime("{a:20}", *rep, 0, false));
     EXPECT_EQUAL(4u, rep->docsums[1].docid);
     EXPECT_EQUAL(gid4, rep->docsums[1].gid);
-    EXPECT_TRUE(assertSlime("{a:40}", *rep, 1, true));
+    EXPECT_TRUE(assertSlime("{a:40}", *rep, 1, false));
     EXPECT_EQUAL(search::endDocId, rep->docsums[2].docid);
     EXPECT_EQUAL(gid9, rep->docsums[2].gid);
     EXPECT_TRUE(rep->docsums[2].data.get() == NULL);
@@ -698,7 +698,7 @@ Test::requireThatRewritersAreUsed()
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_EQUAL(1u, rep->docsums.size());
-    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, true));
+    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, false));
 }
 
 
@@ -828,7 +828,7 @@ Test::requireThatAttributesAreUsed()
                              "bf:[],"
                              "bg:[],"
                              "bh:[],"
-                             "bi:[]}", *rep, 1, true));
+                             "bi:[]}", *rep, 1, false));
     TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager =
@@ -1173,7 +1173,8 @@ Test::requireThatPositionsAreUsed()
                                    "<position x=\"1008\" y=\"1009\" latlong=\"N0.001009;E0.001008\" />'"
                             ",wp2:[{item:1048370,weight:43},{item:1048382,weight:44}]"
                             ",wp2x:'<position x=\"1012\" y=\"1013\" latlong=\"N0.001013;E0.001012\" />"
-                                   "<position x=\"1014\" y=\"1015\" latlong=\"N0.001015;E0.001014\" />'}", *rep, 0, true));
+                                   "<position x=\"1014\" y=\"1015\" latlong=\"N0.001015;E0.001014\" />'}",
+                            *rep, 0, false));
 }
 
 

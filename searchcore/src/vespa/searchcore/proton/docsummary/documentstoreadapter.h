@@ -32,8 +32,7 @@ private:
                search::docsummary::ResType type);
 
     void
-    convertFromSearchDoc(document::Document &doc, uint32_t docId,
-                         bool useSlimeInsideFields);
+    convertFromSearchDoc(document::Document &doc, uint32_t docId);
 
 public:
     DocumentStoreAdapter(const search::IDocumentStore &docStore,
@@ -48,7 +47,7 @@ public:
     }
 
     uint32_t getNumDocs() const override { return _docStore.nextId(); }
-    search::docsummary::DocsumStoreValue getMappedDocsum(uint32_t docId, bool useSlimeInsideFields) override;
+    search::docsummary::DocsumStoreValue getMappedDocsum(uint32_t docId) override;
     uint32_t getSummaryClassId() const override { return _resultClass->GetClassID(); }
 
 };

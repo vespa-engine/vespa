@@ -104,7 +104,7 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
 
 
 void
-DocumentStoreAdapter::convertFromSearchDoc(Document &doc, uint32_t docId, bool useSlimeInsideFields)
+DocumentStoreAdapter::convertFromSearchDoc(Document &doc, uint32_t docId)
 {
     for (size_t i = 0; i < _resultClass->GetNumEntries(); ++i) {
         const ResConfigEntry * entry = _resultClass->GetEntry(i);
@@ -141,7 +141,7 @@ DocumentStoreAdapter::convertFromSearchDoc(Document &doc, uint32_t docId, bool u
             fieldName.c_str(), fieldValue->toString().c_str(),
             entry->_type);
         FieldValue::UP convertedFieldValue =
-            SummaryFieldConverter::convertSummaryField(markup, *fieldValue, useSlimeInsideFields);
+            SummaryFieldConverter::convertSummaryField(markup, *fieldValue);
         if (convertedFieldValue.get() != NULL) {
             if (!writeField(*convertedFieldValue, entry->_type)) {
                 LOG(warning,
@@ -181,7 +181,7 @@ DocumentStoreAdapter(const search::IDocumentStore & docStore,
 }
 
 DocsumStoreValue
-DocumentStoreAdapter::getMappedDocsum(uint32_t docId, bool useSlimeInsideFields)
+DocumentStoreAdapter::getMappedDocsum(uint32_t docId)
 {
     if (!_resultPacker.Init(getSummaryClassId())) {
         LOG(warning,
@@ -201,7 +201,7 @@ DocumentStoreAdapter::getMappedDocsum(uint32_t docId, bool useSlimeInsideFields)
         "getMappedDocSum(%u): document={\n%s\n}",
         docId,
         document->toString(true).c_str());
-    convertFromSearchDoc(*document, docId, useSlimeInsideFields);
+    convertFromSearchDoc(*document, docId);
     const char * buf;
     uint32_t buflen;
     if (!_resultPacker.GetDocsumBlob(&buf, &buflen)) {

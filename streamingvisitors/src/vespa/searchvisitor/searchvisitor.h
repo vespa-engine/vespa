@@ -25,6 +25,7 @@
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/sortspec.h>
 #include <vespa/storage/visiting/visitor.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
 
 using namespace search::aggregation;
