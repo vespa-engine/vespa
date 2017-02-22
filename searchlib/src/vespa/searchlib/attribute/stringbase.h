@@ -163,7 +163,7 @@ private:
         bool isPrefix() const { return _isPrefix; }
         bool  isRegex() const { return _isRegex; }
         QueryTermSimpleUP         _queryTerm;
-        const ucs4_t              * _termUCS4;
+        std::vector<ucs4_t>       _termUCS4;
         const vespalib::Regexp * getRegex() const { return _regex.get(); }
     private:
         WeightedConstChar * getBuffer() const {

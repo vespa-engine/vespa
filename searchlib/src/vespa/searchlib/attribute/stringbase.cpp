@@ -218,10 +218,10 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     _isPrefix(qTerm->isPrefix()),
     _isRegex(qTerm->isRegex()),
     _queryTerm(std::move(qTerm)),
+    _termUCS4(queryTerm().getUCS4Term()),
     _bufferLen(toBeSearched.getMaxValueCount()),
     _buffer()
 {
-    queryTerm().term(_termUCS4);
     if (isRegex()) {
         _regex.reset(new Regexp(_queryTerm->getTerm(), Regexp::Flags().enableICASE()));
     }

@@ -46,10 +46,23 @@ bool isValidInteger(int64_t value)
 
 }
 
-namespace search
-{
+namespace search {
 
 IMPLEMENT_IDENTIFIABLE_NS(search, QueryTerm, QueryNode);
+
+QueryTermBase::UCS4StringT
+QueryTermBase::getUCS4Term() const {
+    UCS4StringT ucs4;
+    const string & term = getTermString();
+    ucs4.reserve(term.size() + 1);
+    vespalib::Utf8Reader r(term);
+    while (r.hasMore()) {
+        ucs4_t u = r.getChar();
+        ucs4.push_back(u);
+    }
+    ucs4.push_back(0);
+    return ucs4;
+}
 
 QueryTermBase::QueryTermBase() :
     QueryTermSimple(),
@@ -66,14 +79,12 @@ QueryTermBase::QueryTermBase(const string & termS, SearchTerm type) :
     _cachedTermLen(0),
     _termUCS4()
 {
-    _termUCS4.reserve(termS.size() + 1);
     vespalib::Utf8Reader r(termS);
     while (r.hasMore()) {
         ucs4_t u = r.getChar();
-        _termUCS4.push_back(u);
+        (void) u;
+        _cachedTermLen++;
     }
-    _termUCS4.push_back(0);
-    _cachedTermLen = _termUCS4.size() - 1;
 }
 
 QueryTerm::QueryTerm() :
@@ -318,13 +329,13 @@ bool QueryTermSimple::getAsDoubleTerm(double & lower, double & upper) const
 
 QueryTermSimple::QueryTermSimple() :
     _type(WORD),
-    _term(),
-    _diversityAttribute(),
     _rangeLimit(0),
     _maxPerGroup(0),
     _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
     _diversityCutoffStrict(false),
-    _valid(true)
+    _valid(true),
+    _term(),
+    _diversityAttribute()
 { }
 
 QueryTermSimple::~QueryTermSimple() { }
@@ -342,48 +353,48 @@ bool isFullRange(const vespalib::stringref & s) {
 
 QueryTermSimple::QueryTermSimple(const string & term_, SearchTerm type) :
     _type(type),
-    _term(term_),
-    _diversityAttribute(),
     _rangeLimit(0),
     _maxPerGroup(0),
     _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
     _diversityCutoffStrict(false),
-    _valid(true)
+    _valid(true),
+    _term(term_),
+    _diversityAttribute()
 {
     if (isFullRange(_term)) {
         stringref rest(_term.c_str() + 1, _term.size() - 2);
-        std::vector<stringref> parts;
-        parts.reserve(5);
-        while (! rest.empty() ) {
+        stringref parts[8];
+        size_t numParts(0);
+        while (! rest.empty() && (numParts < NELEMS(parts))) {
             size_t pos(rest.find(';'));
             if (pos != vespalib::string::npos) {
-                parts.push_back(rest.substr(0, pos));
+                parts[numParts++] = rest.substr(0, pos);
                 rest = rest.substr(pos + 1);
                 if (rest.empty()) {
-                    parts.push_back(rest);
+                    parts[numParts++] = rest;
                 }
             } else {
-                parts.push_back(rest);
+                parts[numParts++] = rest;
                 rest = stringref();
             }
         }
-        _valid = parts.size() >= 2;
-        if (parts.size() >= 3) {
+        _valid = (numParts >= 2);
+        if (numParts > 2) {
             _rangeLimit = strtol(parts[2].c_str(), NULL, 0);
-            if (parts.size() > 3) {
-                _valid = parts.size() >= 5;
+            if (numParts > 3) {
+                _valid = (numParts >= 5);
                 if (_valid) {
                     _diversityAttribute = parts[3];
                     _maxPerGroup = strtoul(parts[4].c_str(), NULL, 0);
-                    if ((_maxPerGroup > 0) && (parts.size() > 5)) {
+                    if ((_maxPerGroup > 0) && (numParts > 5)) {
                         char *err = nullptr;
                         size_t cutoffGroups = strtoul(parts[5].c_str(), &err, 0);
                         if ((err == nullptr) || (size_t(err - parts[5].c_str()) == parts[5].size())) {
                             _diversityCutoffGroups = cutoffGroups;
                         }
-                        if (parts.size() > 6) {
+                        if (numParts > 6) {
                             _diversityCutoffStrict = (parts[6] == "strict");
-                            _valid = (parts.size() == 7);
+                            _valid = (numParts == 7);
                         }
                     }
                 }
