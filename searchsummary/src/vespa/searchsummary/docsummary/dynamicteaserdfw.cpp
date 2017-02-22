@@ -449,23 +449,6 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid,
     }
 }
 
-uint32_t
-DynamicTeaserDFW::WriteField(uint32_t docid,
-           GeneralResult *gres,
-           GetDocsumsState *state,
-           ResType type,
-           search::RawBuf *target)
-{
-    vespalib::string teaser = makeDynamicTeaser(docid, gres, state);
-
-    bool isLong = IsBinaryCompatible(type, RES_LONG_STRING);
-    if (isLong) {
-        return DocsumFormat::addLongData(*target, teaser.c_str(), teaser.size());
-    } else {
-        return DocsumFormat::addShortData(*target, teaser.c_str(), teaser.size());
-    }
-}
-
 void
 DynamicTeaserDFW::insertField(uint32_t docid,
                               GeneralResult *gres,

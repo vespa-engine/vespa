@@ -78,11 +78,6 @@ public:
     SingleAttrDFW(const vespalib::string & attrName) :
         AttrDFW(attrName)
     { }
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult *gres,
-                                GetDocsumsState *state,
-                                ResType type,
-                                RawBuf *target);
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
@@ -90,92 +85,6 @@ public:
                              vespalib::slime::Inserter &target);
    virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const;
 };
-
-uint32_t
-SingleAttrDFW::WriteField(uint32_t docid,
-                          GeneralResult *,
-                          GetDocsumsState * state,
-                          ResType type,
-                          RawBuf *target)
-{
-    const char *s="";
-    const IAttributeVector & v = vec(*state);
-    switch (type) {
-    case RES_INT: {
-        uint32_t val = v.getInt(docid);
-        target->append(&val, sizeof(val));
-        return sizeof(val);
-        break; }
-    case RES_SHORT: {
-        uint16_t val = v.getInt(docid);
-        target->append(&val, sizeof(val));
-        return sizeof(val);
-        break; }
-    case RES_BYTE: {
-        uint8_t val = v.getInt(docid);
-        target->append(&val, sizeof(val));
-        return sizeof(val);
-        break; }
-    case RES_FLOAT: {
-        float val = v.getFloat(docid);
-        target->append(&val, sizeof(val));
-        return sizeof(val);
-        break; }
-    case RES_DOUBLE: {
-        double val = v.getFloat(docid);
-        target->append(&val, sizeof(val));
-        return sizeof(val);
-        break; }
-    case RES_INT64: {
-        uint64_t val = v.getInt(docid);
-        target->append(&val, sizeof(val));
-        return sizeof(val);
-        break; }
-    case RES_STRING:
-    case RES_DATA: {
-        s = v.getString(docid, NULL, 0); // no need to pass in a buffer, this attribute has a string storage.
-        uint32_t len = strlen(s);
-        uint16_t slen = (len < 0xffff) ? len : 0xffff;
-        target->append(&slen, sizeof(slen));
-        target->append(s, slen);
-        return (sizeof(slen) + slen);
-        break; }
-    case RES_TENSOR: {
-        vespalib::nbostream str;
-        BasicType::Type t = v.getBasicType();
-        switch (t) {
-        case BasicType::TENSOR: {
-            const tensor::TensorAttribute &tv =
-                static_cast<const tensor::TensorAttribute &>(v);
-            const auto tensor = tv.getTensor(docid);
-            if (tensor) {
-                vespalib::tensor::TypedBinaryFormat::serialize(str, *tensor);
-            }
-        }
-        default:
-            break;
-        }
-        uint32_t slen = str.size();
-        target->append(&slen, sizeof(slen));
-        target->append(str.peek(), slen);
-        return (sizeof(slen) + slen);
-    }
-    case RES_JSONSTRING:
-    case RES_XMLSTRING:
-    case RES_FEATUREDATA:
-    case RES_LONG_STRING:
-    case RES_LONG_DATA: {
-        s = v.getString(docid, NULL, 0); // no need to pass in a buffer, this attribute has a string storage.
-        uint32_t slen = strlen(s);
-        target->append(&slen, sizeof(slen));
-        target->append(s, slen);
-        return (sizeof(slen) + slen);
-        break; }
-    default:
-        return 0;
-    }
-    return 0;
-}
 
 bool SingleAttrDFW::isDefaultValue(uint32_t docid, const GetDocsumsState * state) const
 {
@@ -268,11 +177,6 @@ class MultiAttrDFW : public AttrDFW
 {
 public:
     MultiAttrDFW(const vespalib::string & attrName) : AttrDFW(attrName) {}
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult *gres,
-                                GetDocsumsState *state,
-                                ResType type,
-                                RawBuf *target);
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
@@ -280,72 +184,6 @@ public:
                              vespalib::slime::Inserter &target);
 
 };
-
-uint32_t
-MultiAttrDFW::WriteField(uint32_t docid,
-                         GeneralResult *,
-                         GetDocsumsState * state,
-                         ResType type,
-                         RawBuf *target)
-{
-    bool isLong = IsBinaryCompatible(type, RES_LONG_STRING);
-    uint32_t written     = 0;
-    uint16_t str_len_16  = 0;
-    uint32_t str_len_32  = 0;
-    int      str_len_ofs = target->GetUsedLen();
-    vespalib::JSONStringer & jsonStr = state->_jsonStringer;
-
-    if (isLong) {
-        target->append(&str_len_32, sizeof(str_len_32));
-    } else {
-        target->append(&str_len_16, sizeof(str_len_16));
-    }
-    const IAttributeVector & v = vec(*state);
-    uint32_t entries = v.getValueCount(docid);
-    {
-        std::vector<IAttributeVector::WeightedString> elements(entries);
-        entries = std::min(entries, v.get(docid, &elements[0], entries));
-        jsonStr.clear();
-        jsonStr.beginArray();
-        for (uint32_t i = 0; i < entries; ++i) {
-            if (v.hasWeightedSetType()) {
-                jsonStr.beginArray();
-                jsonStr.appendString(elements[i].getValue());
-                jsonStr.appendInt64(elements[i].getWeight());
-                jsonStr.endArray();
-            } else {
-                jsonStr.appendString(elements[i].getValue());
-            }
-        }
-        jsonStr.endArray();
-        (*target) += jsonStr.toString().c_str();
-        jsonStr.clear();
-    }
-
-    // calculate number of bytes written
-    written = target->GetUsedLen() - str_len_ofs;
-
-    // patch in correct field length
-    if (isLong) {
-        str_len_32 = written - sizeof(str_len_32);
-        memcpy(target->GetWritableDrainPos(str_len_ofs),
-               &str_len_32, sizeof(str_len_32));
-    } else {
-        str_len_16 = written - sizeof(str_len_16);
-        if (str_len_16 != written - sizeof(str_len_16)) {
-            target->truncate(str_len_ofs);
-            str_len_16 = 0;
-            target->append(&str_len_16, sizeof(uint16_t));
-            *target += "***OVERFLOW***";
-            written = target->GetUsedLen() - str_len_ofs;
-            str_len_16 = written - sizeof(uint16_t);
-            assert(str_len_16 == written - sizeof(uint16_t));
-        }
-        memcpy(target->GetWritableDrainPos(str_len_ofs),
-               &str_len_16, sizeof(str_len_16));
-    }
-    return written;
-}
 
 void
 MultiAttrDFW::insertField(uint32_t docid,

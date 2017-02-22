@@ -36,61 +36,6 @@ void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target)
     }
 }
 
-void fmtZcurve(int64_t zval, vespalib::JSONWriter json)
-{
-    int32_t docx = 0;
-    int32_t docy = 0;
-    vespalib::geo::ZCurve::decode(zval, &docx, &docy);
-    json.beginObject();
-    json.appendKey("y"); json.appendInt64(docy);
-    json.appendKey("x"); json.appendInt64(docx);
-    json.endObject();
-}
-
-vespalib::asciistream
-formatField(const IAttributeVector & attribute, uint32_t docid)
-{
-    vespalib::asciistream target;
-    vespalib::JSONWriter json(target);
-
-    if (attribute.hasMultiValue()) {
-        uint32_t entries = attribute.getValueCount(docid);
-        LOG(debug, "docid=%d, entries=%d", docid, entries);
-        json.beginArray();
-        if (attribute.hasWeightedSetType()) {
-            std::vector<IAttributeVector::WeightedInt> elements(entries);
-            entries = attribute.get(docid, &elements[0], entries);
-            for (uint32_t i = 0; i < entries; ++i) {
-                json.beginObject();
-                int64_t pos = elements[i].getValue();
-                json.appendKey("item");
-                fmtZcurve(pos, json);
-                json.appendKey("weight");
-                json.appendInt64(elements[i].getWeight());
-                json.endObject();
-            }
-        } else {
-            std::vector<IAttributeVector::largeint_t> elements(16);
-            uint32_t numValues = attribute.get(docid, &elements[0], elements.size());
-            if (numValues > elements.size()) {
-                elements.resize(numValues);
-                numValues = attribute.get(docid, &elements[0], elements.size());
-                assert(numValues <= elements.size());
-            }
-            LOG(debug, "docid=%d, numValues=%d", docid, numValues);
-            for (uint32_t i = 0; i < numValues; i++) {
-                int64_t pos = elements[i];
-                fmtZcurve(pos, json);
-            }
-        }
-    } else {
-        int64_t pos = attribute.getInt(docid);
-        LOG(debug, "docid=%d, pos=%ld", docid, pos);
-        fmtZcurve(pos, json);
-    }
-    return target;
-}
-
 }
 
 void
@@ -133,32 +78,6 @@ GeoPositionDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * d
         int64_t pos = attribute.getInt(docid);
         fmtZcurve(pos, target);
     }
-}
-
-uint32_t
-GeoPositionDFW::WriteField(uint32_t docid,
-                           GeneralResult *,
-                           GetDocsumsState * dsState,
-                           ResType type,
-                           search::RawBuf * target)
-{
-    int str_len_ofs = target->GetUsedLen();
-
-    vespalib::asciistream val(formatField(vec(*dsState), docid));
-
-    bool isLong = IsBinaryCompatible(type, RES_LONG_STRING);
-    if (isLong) {
-        uint32_t str_len_32 = val.size();
-        target->append(&str_len_32, sizeof(str_len_32));
-        target->append(val.c_str(), str_len_32);
-    } else {
-        uint16_t str_len_16 = val.size();
-        target->append(&str_len_16, sizeof(str_len_16));
-        target->append(val.c_str(), str_len_16);
-    }
-    // calculate number of bytes written
-    uint32_t written = target->GetUsedLen() - str_len_ofs;
-    return written;
 }
 
 GeoPositionDFW::UP

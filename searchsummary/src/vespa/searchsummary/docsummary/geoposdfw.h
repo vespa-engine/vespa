@@ -15,8 +15,6 @@ class GeoPositionDFW : public AttrDFW
 public:
     typedef std::unique_ptr<GeoPositionDFW> UP;
     GeoPositionDFW(const vespalib::string & attrName);
-    uint32_t WriteField(uint32_t docid, GeneralResult * gres, GetDocsumsState * state,
-                        ResType type, search::RawBuf * target) override;
     void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;
     static UP create(const char *attribute_name, IAttributeManager *attribute_manager);

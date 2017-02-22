@@ -22,11 +22,6 @@ public:
     virtual ~RankFeaturesDFW();
     void init(IDocsumEnvironment * env);
     virtual bool IsGenerated() const { return true; }
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult * gres,
-                                GetDocsumsState * state,
-                                ResType type,
-                                search::RawBuf * target);
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
