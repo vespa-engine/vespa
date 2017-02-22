@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
-import static com.yahoo.searchdefinition.TestUtils.joinLines;
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 

@@ -13,7 +13,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static com.yahoo.searchdefinition.TestUtils.joinLines;
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static junit.framework.TestCase.assertSame;
 
 /**
