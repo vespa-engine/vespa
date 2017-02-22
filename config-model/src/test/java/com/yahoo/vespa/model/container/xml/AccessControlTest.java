@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class AccessControlTest extends ContainerModelBuilderTestBase {
 
-    private static final Set<String> REQUIRED_BINDINGS = ImmutableSet.of(
+    private static final Set<String> REQUIRED_HANDLER_BINDINGS = ImmutableSet.of(
             "/custom-handler/",
             "/search/",
             "/feed/",
@@ -42,7 +42,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             "/feedstatus/",
             ContainerCluster.RESERVED_URI_PREFIX);
 
-    private static final Set<String> FORBIDDEN_BINDINGS = ImmutableSet.of(
+    private static final Set<String> FORBIDDEN_HANDLER_BINDINGS = ImmutableSet.of(
             "/ApplicationStatus",
             "/status.html",
             "/statistics/",
@@ -135,15 +135,15 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
         Http http = getHttp(clusterElem);
 
-        Set<String> foundRequiredBindings = REQUIRED_BINDINGS.stream()
+        Set<String> foundRequiredBindings = REQUIRED_HANDLER_BINDINGS.stream()
                 .filter(requiredBinding -> containsBinding(http.getBindings(), requiredBinding))
                 .collect(Collectors.toSet());
-        Set<String> missingRequiredBindings = new HashSet<>(REQUIRED_BINDINGS);
+        Set<String> missingRequiredBindings = new HashSet<>(REQUIRED_HANDLER_BINDINGS);
         missingRequiredBindings.removeAll(foundRequiredBindings);
         assertTrue("Access control chain was not bound to: " + CollectionUtil.mkString(missingRequiredBindings, ", "),
                    missingRequiredBindings.isEmpty());
 
-        FORBIDDEN_BINDINGS.forEach(forbiddenBinding -> http.getBindings().forEach(
+        FORBIDDEN_HANDLER_BINDINGS.forEach(forbiddenBinding -> http.getBindings().forEach(
                 binding -> assertFalse("Access control chain was bound to: " + binding.binding,
                                        binding.binding.contains(forbiddenBinding))));
     }
