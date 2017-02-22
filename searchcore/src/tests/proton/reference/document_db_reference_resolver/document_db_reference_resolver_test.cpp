@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
+#include <vespa/searchcore/proton/test/mock_document_db_referent.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
@@ -19,6 +20,8 @@ using namespace document;
 using namespace proton;
 using namespace search::attribute;
 using namespace search;
+using proton::test::MockDocumentDBReferent;
+using search::attribute::test::MockAttributeManager;
 
 struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     using SP = std::shared_ptr<MyGidToLidMapperFactory>;
@@ -27,12 +30,9 @@ struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     }
 };
 
-struct MyDocumentDBReferent : public IDocumentDBReferent {
+struct MyDocumentDBReferent : public MockDocumentDBReferent {
     MyGidToLidMapperFactory::SP factory;
     MyDocumentDBReferent(MyGidToLidMapperFactory::SP factory_) : factory(factory_) {}
-    virtual AttributeVector::SP getAttribute(vespalib::stringref) override {
-        return AttributeVector::SP();
-    }
     virtual IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
         return factory;
     }
@@ -54,7 +54,7 @@ struct MyReferentRegistry : public IDocumentDBReferentRegistry {
     virtual void remove(vespalib::stringref) override {}
 };
 
-struct MyAttributeManager : public test::MockAttributeManager {
+struct MyAttributeManager : public MockAttributeManager {
     void addIntAttribute(const vespalib::string &name) {
         addAttribute(name, AttributeFactory::createAttribute(name, Config(BasicType::INT32)));
     }

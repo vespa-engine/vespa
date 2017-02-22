@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchcore/proton/reference/document_db_referent_registry.h>
-#include <vespa/searchcore/proton/reference/i_document_db_referent.h>
+#include <vespa/searchcore/proton/test/mock_document_db_referent.h>
 #include <thread>
 #include <vespa/log/log.h>
 LOG_SETUP("document_db_reference_registry_test");
@@ -32,21 +32,6 @@ std::shared_ptr<IDocumentDBReferent> checkFooResult()
 
 }
 
-struct MyDocumentDBReferent : public IDocumentDBReferent
-{
-    MyDocumentDBReferent()
-    {
-    }
-    virtual ~MyDocumentDBReferent() { }
-    virtual std::shared_ptr<search::AttributeVector> getAttribute(vespalib::stringref name) override {
-        (void) name;
-        return std::shared_ptr<search::AttributeVector>();
-    }
-    virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override {
-        return std::shared_ptr<search::IGidToLidMapperFactory>();
-    }
-};
-
 struct Fixture
 {
 
@@ -57,9 +42,9 @@ struct Fixture
     {
     }
 
-    std::shared_ptr<MyDocumentDBReferent>
+    test::MockDocumentDBReferent::SP
     add(vespalib::string name) {
-        auto referent = std::make_shared<MyDocumentDBReferent>();
+        auto referent = std::make_shared<test::MockDocumentDBReferent>();
         _registry.add(name, referent);
         return referent;
     }
