@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.container.http.Http.Binding;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +46,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
                 accessControl = buildAccessControl(ancestor, accessControlElem);
-                bindings.addAll(accessControl.bindingsForCluster(getContainerCluster(ancestor)));
+                bindings.addAll(accessControl.getBindings());
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
@@ -65,6 +66,10 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 .orElse(getDeployedApplicationId(ancestor).value());
 
         AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application);
+
+        builder.setHandlers(getContainerCluster(ancestor)
+                                    .map(ContainerCluster::getHandlers)
+                                    .orElse(Collections.emptyList()));
 
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));

@@ -9,7 +9,7 @@ import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.http.Http.Binding;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,6 +41,7 @@ public final class AccessControl {
         private boolean readEnabled = false;
         private boolean writeEnabled = true;
         private final Set<String> excludeBindings = new LinkedHashSet<>();
+        private Collection<Handler<?>> handlers = Collections.emptyList();
 
         public Builder(String domain, String applicationId) {
             this.domain = domain;
@@ -67,8 +68,14 @@ public final class AccessControl {
             return this;
         }
 
+        public Builder setHandlers(Collection<Handler<?>> handlers) {
+            this.handlers = handlers;
+            return this;
+        }
+
         public AccessControl build() {
-            return new AccessControl(domain, applicationId, writeEnabled, readEnabled, excludeBindings, vespaDomain);
+            return new AccessControl(domain, applicationId, writeEnabled, readEnabled,
+                                     excludeBindings, vespaDomain, handlers);
         }
     }
 
@@ -76,31 +83,32 @@ public final class AccessControl {
     public final String applicationId;
     public final boolean readEnabled;
     public final boolean writeEnabled;
-    public final Set<String> excludedBindings;
     public final Optional<String> vespaDomain;
+    private final Set<String> excludedBindings;
+    private final Collection<Handler<?>> handlers;
 
     private AccessControl(String domain,
                           String applicationId,
                           boolean writeEnabled,
                           boolean readEnabled,
                           Set<String> excludedBindings,
-                          Optional<String> vespaDomain) {
+                          Optional<String> vespaDomain,
+                          Collection<Handler<?>> handlers) {
         this.domain = domain;
         this.applicationId = applicationId;
         this.readEnabled = readEnabled;
         this.writeEnabled = writeEnabled;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
         this.vespaDomain = vespaDomain;
+        this.handlers = handlers;
     }
 
-    public List<Binding> bindingsForCluster(Optional<ContainerCluster> containerCluster) {
-        return containerCluster
-                .map(cluster -> cluster.getHandlers().stream()
+    public List<Binding> getBindings() {
+        return handlers.stream()
                         .filter(this::shouldHandlerBeProtected)
                         .flatMap(handler -> handler.getServerBindings().stream())
                         .map(AccessControl::accessControlBinding)
-                        .collect(Collectors.toList()))
-                .orElse(new ArrayList<>());
+                        .collect(Collectors.toList());
     }
 
     private boolean shouldHandlerBeProtected(Handler<?> handler) {
