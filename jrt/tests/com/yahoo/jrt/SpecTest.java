@@ -17,7 +17,7 @@ public class SpecTest extends junit.framework.TestCase {
         assertFalse(spec.malformed());
         assertEquals(457, spec.port());
         assertNull(spec.host());
-        assertTrue(addr.equals(spec.listenAddress()));
+        assertTrue(addr.equals(spec.address()));
     }
 
     public void testHostPort() {
@@ -29,7 +29,7 @@ public class SpecTest extends junit.framework.TestCase {
         assertFalse(spec.malformed());
         assertEquals(457, spec.port());
         assertEquals(host, spec.host());
-        assertTrue(addr.equals(spec.listenAddress()));
+        assertTrue(addr.equals(spec.address()));
     }
 
     public void testBogusHostPort() {
@@ -41,7 +41,7 @@ public class SpecTest extends junit.framework.TestCase {
         assertFalse(spec.malformed());
         assertEquals(457, spec.port());
         assertEquals(host, spec.host());
-        assertTrue(addr.equals(spec.listenAddress()));
+        assertTrue(addr.equals(spec.address()));
     }
 
     public void testSpec1() {
@@ -52,7 +52,7 @@ public class SpecTest extends junit.framework.TestCase {
         assertFalse(spec.malformed());
         assertEquals(8080, spec.port());
         assertEquals("localhost", spec.host());
-        assertTrue(addr.equals(spec.listenAddress()));
+        assertTrue(addr.equals(spec.address()));
     }
 
     public void testSpec2() {
@@ -63,7 +63,7 @@ public class SpecTest extends junit.framework.TestCase {
         assertFalse(spec.malformed());
         assertEquals(8080, spec.port());
         assertNull(spec.host());
-        assertTrue(addr.equals(spec.listenAddress()));
+        assertTrue(addr.equals(spec.address()));
     }
 
     public void testBogusSpec1() {
@@ -73,7 +73,7 @@ public class SpecTest extends junit.framework.TestCase {
         assertTrue(spec.malformed());
         assertEquals(0, spec.port());
         assertNull(spec.host());
-        assertNull(spec.listenAddress());
+        assertNull(spec.address());
     }
 
     public void testBogusSpec2() {
@@ -83,7 +83,7 @@ public class SpecTest extends junit.framework.TestCase {
         assertTrue(spec.malformed());
         assertEquals(0, spec.port());
         assertNull(spec.host());
-        assertNull(spec.listenAddress());
+        assertNull(spec.address());
     }
 
     public void testBogusSpec3() {
@@ -93,6 +93,6 @@ public class SpecTest extends junit.framework.TestCase {
         assertTrue(spec.malformed());
         assertEquals(0, spec.port());
         assertNull(spec.host());
-        assertNull(spec.listenAddress());
+        assertNull(spec.address());
     }
 }

@@ -1,8 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -10,12 +15,13 @@ import com.yahoo.vdslib.state.State;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DatabaseTest extends FleetControllerTest {
 
@@ -36,7 +42,7 @@ public class DatabaseTest extends FleetControllerTest {
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());
         }
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         Request req = new Request("setNodeState");

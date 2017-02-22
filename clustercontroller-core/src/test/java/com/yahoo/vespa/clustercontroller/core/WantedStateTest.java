@@ -32,7 +32,7 @@ public class WantedStateTest extends FleetControllerTest {
     public void setWantedState(DummyVdsNode node, State state, String reason) {
         NodeState ns = new NodeState(node.getType(), state);
         if (reason != null) ns.setDescription(reason);
-        Target connection = supervisor.connect(new Spec(fleetController.getRpcPort()));
+        Target connection = supervisor.connect(new Spec("localhost", fleetController.getRpcPort()));
         Request req = new Request("setNodeState");
         req.parameters().add(new StringValue(node.getSlobrokName()));
         req.parameters().add(new StringValue(ns.serialize()));

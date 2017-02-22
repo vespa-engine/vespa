@@ -2,8 +2,6 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.net.HostName;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
@@ -61,21 +59,19 @@ public class Spec {
     }
 
     /**
-     * Create a Spec from a port number.
+     * Create a Spec that will produce a wildcard address with address, and the
+     * hostname of the localhost with connectAddress.
      *
-     * @param port port number
+     * WARNING: Do not use omit host if connecting (to localhost) - use Spec("localhost", port) instead.
+     * Why? Because the SocketAddress obtained from spec is independent on whether to use the address
+     * for listening socket or connecting socket.  A listening socket without host means the wildcard address
+     * is used. But when using the wildcard address for connecting, Java ends up getting the canonical
+     * hostname for localhost, which may not be reachable if on WiFi-only, see HostName.getLocalhost for details.
+     *
+     * @param port
      */
     public Spec(int port) {
         this.port = port;
-    }
-
-    /**
-     * Creates a Spec with the hostname of the current/local host and given port
-     *
-     * @param port port number
-     */
-    public static Spec fromLocalHostName(int port) {
-      return new Spec(HostName.getLocalhost(), port);
     }
 
     /**
@@ -112,34 +108,15 @@ public class Spec {
      *
      * @return listening socket address
      */
-    SocketAddress listenAddress() {
-        return address(host);
-    }
-
-    /**
-     * Resolve the connect socket address for this Spec. If this Spec is
-     * malformed, this method will return null.
-     *
-     * Why is this different than listenAddress()? If no host is given, a SocketAddress will be bound
-     * to the wildcard address (INADDR_ANY or 0.0.0.0 assuming IPv4) by InetSocketAddress. A wildcard
-     * address used to connect (at least SocketChannel::open) is interpreted as InetAddress::getLocalHost,
-     * which is wrong for the reasons stated in HostName::getLocalhost.
-     *
-     * @return connect socket address
-     */
-    SocketAddress connectAddress() {
-        return address(HostName.getLocalhost());
-    }
-
-    private SocketAddress address(String hostOverride) {
+    SocketAddress address() {
         if (malformed) {
             return null;
         }
         if (address == null) {
-            if (hostOverride == null) {
-                address = new InetSocketAddress(port);
+            if (host == null) {
+                return new InetSocketAddress(port);
             } else {
-                address = new InetSocketAddress(hostOverride, port);
+                return new InetSocketAddress(host, port);
             }
         }
         return address;

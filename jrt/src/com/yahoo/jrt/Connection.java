@@ -162,8 +162,9 @@ class Connection extends Target {
             setLostReason(new IllegalArgumentException("jrt: malformed or missing spec"));
             return this;
         }
+
         try {
-            channel = SocketChannel.open(spec.connectAddress());
+            channel = SocketChannel.open(spec.address());
         } catch (Exception e) {
             setLostReason(e);
         }

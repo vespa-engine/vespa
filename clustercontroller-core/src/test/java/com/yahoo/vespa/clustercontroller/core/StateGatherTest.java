@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.Spec;
 import com.yahoo.log.LogLevel;
 import org.junit.Test;
 
@@ -35,7 +34,7 @@ public class StateGatherTest extends FleetControllerTest {
         options.nodeStateRequestTimeoutLatestPercentage = 80;
         setUpFleetController(true, options);
         String connectionSpecs[] = new String[1];
-        connectionSpecs[0] = Spec.fromLocalHostName(slobrok.port()).toString();
+        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
         DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, true, 0);
         DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, false, 0);

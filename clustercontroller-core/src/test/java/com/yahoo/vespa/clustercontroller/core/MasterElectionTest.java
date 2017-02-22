@@ -44,7 +44,7 @@ public class MasterElectionTest extends FleetControllerTest {
         this.options.zooKeeperSessionTimeout = 10 * timeoutMS;
         this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         this.options.slobrokConnectionSpecs = new String[1];
-        this.options.slobrokConnectionSpecs[0] = Spec.fromLocalHostName(slobrok.port()).toString();
+        this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         this.options.fleetControllerCount = count;
         for (int i=0; i<count; ++i) {
             FleetControllerOptions nodeOptions = options.clone();
@@ -60,7 +60,7 @@ public class MasterElectionTest extends FleetControllerTest {
         options.zooKeeperSessionTimeout = 10 * timeoutMS;
         options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         options.slobrokConnectionSpecs = new String[1];
-        options.slobrokConnectionSpecs[0] = Spec.fromLocalHostName(slobrok.port()).toString();
+        options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port(); // Spec.fromLocalHostName(slobrok.port()).toString();
         options.fleetControllerIndex = fleetControllerIndex;
         options.fleetControllerCount = fleetControllerCount;
         return options;
@@ -353,7 +353,7 @@ public class MasterElectionTest extends FleetControllerTest {
         List<Target> connections = new ArrayList<Target>();
         for (FleetController fleetController : fleetControllers) {
             int rpcPort = fleetController.getRpcPort();
-            Target connection = supervisor.connect(new Spec(rpcPort));
+            Target connection = supervisor.connect(new Spec("localhost", rpcPort));
             assertTrue(connection.isValid());
             connections.add(connection);
         }

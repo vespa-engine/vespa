@@ -57,7 +57,7 @@ public class RpcServerTest extends FleetControllerTest {
         startingTest("RpcServerTest::testRebinding");
         Slobrok slobrok = new Slobrok();
         String slobrokConnectionSpecs[] = new String[1];
-        slobrokConnectionSpecs[0] = Spec.fromLocalHostName(slobrok.port()).toString();
+        slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         RpcServer server = new RpcServer(timer, new Object(), "mycluster", 0, new BackOff());
         server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 0);
         int portUsed = server.getPort();
@@ -127,7 +127,7 @@ public class RpcServerTest extends FleetControllerTest {
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
-        Target connection = supervisor.connect(Spec.fromLocalHostName(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         Request req = new Request("getSystemState");
@@ -145,7 +145,7 @@ public class RpcServerTest extends FleetControllerTest {
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());
         }
-        Target connection = supervisor.connect(Spec.fromLocalHostName(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         Node node = new Node(nodeType, nodeIndex);
@@ -193,7 +193,7 @@ public class RpcServerTest extends FleetControllerTest {
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         Request req = new Request("getNodeState");
@@ -498,7 +498,7 @@ public class RpcServerTest extends FleetControllerTest {
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         Request req = new Request("setNodeState");
@@ -543,7 +543,7 @@ public class RpcServerTest extends FleetControllerTest {
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         Request req = new Request("setNodeState");
@@ -580,7 +580,7 @@ public class RpcServerTest extends FleetControllerTest {
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         Request req = new Request("getMaster");
@@ -604,7 +604,7 @@ public class RpcServerTest extends FleetControllerTest {
 
         int rpcPort = fleetController.getRpcPort();
         supervisor = new Supervisor(new Transport());
-        Target connection = supervisor.connect(new Spec(rpcPort));
+        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
         assertTrue(connection.isValid());
 
         // Possibly do request multiple times if we haven't lost slobrok contact first times yet.
