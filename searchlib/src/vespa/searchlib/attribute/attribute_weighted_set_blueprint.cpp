@@ -4,6 +4,7 @@
 #include "isearchcontext.h"
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/common/bitvector.h>
 
 namespace search {
 
@@ -70,7 +71,7 @@ public:
 //-----------------------------------------------------------------------------
 
 template <typename T>
-class AttributeFilter : public queryeval::SearchIterator
+class AttributeFilter final : public queryeval::SearchIterator
 {
 private:
     typedef vespalib::hash_map<int64_t, int32_t> Map;
@@ -95,6 +96,11 @@ public:
             }
         }
     }
+    void and_hits_into(BitVector & result,uint32_t begin_id) override {
+        Map::iterator end = _map.end();
+        result.foreach_truebit([&, end](uint32_t key) { if ( _map.find(_attr.getToken(key)) == end) { result.clearBit(key); }}, begin_id);
+    }
+
     virtual void doSeek(uint32_t docId) {
         Map::const_iterator pos = _map.find(_attr.getToken(docId));
         if (pos != _map.end()) {
