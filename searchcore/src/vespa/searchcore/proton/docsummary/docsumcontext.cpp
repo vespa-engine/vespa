@@ -67,19 +67,14 @@ DocsumContext::createReply()
         uint32_t docId = _docsumState._docsumbuf[i];
         reply->docsums[i].docid = docId;
         if (docId != search::endDocId && !rci.mustSkip) {
-            if ((_docsumState._args.getFlags() & ::search::fs4transport::GDFLAG_ALLOW_SLIME) != 0) {
-                Slime slime(Slime::Params(std::move(symbols)));
-                vespalib::slime::SlimeInserter inserter(slime);
-                _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
-                uint32_t docsumLen = (slime.get().type().getId() != NIX::ID)
+            Slime slime(Slime::Params(std::move(symbols)));
+            vespalib::slime::SlimeInserter inserter(slime);
+            _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
+            uint32_t docsumLen = (slime.get().type().getId() != NIX::ID)
                                    ? IDocsumWriter::slime2RawBuf(slime, buf)
                                    : 0;
-                reply->docsums[i].setData(buf.GetDrainPos(), docsumLen);
-                symbols = Slime::reclaimSymbols(std::move(slime));
-            } else {
-                uint32_t docsumLen = _docsumWriter.WriteDocsum(docId, &_docsumState, &_docsumStore, &buf);
-                reply->docsums[i].setData(buf.GetDrainPos(), docsumLen);
-            }
+            reply->docsums[i].setData(buf.GetDrainPos(), docsumLen);
+            symbols = Slime::reclaimSymbols(std::move(slime));
         }
     }
     return reply;
