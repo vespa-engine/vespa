@@ -604,11 +604,8 @@ class SlimeFiller : public ConstFieldValueVisitor {
     virtual void
     visit(const RawFieldValue &value)
     {
-        // Use base64 coding to represent raw values
         std::pair<const char *, size_t> buf = value.getAsRaw();
-        vespalib::string rawVal(buf.first, buf.first + buf.second);
-        vespalib::string encVal(vespalib::Base64::encode(rawVal));
-        _inserter.insertString(Memory(encVal.c_str()));
+        _inserter.insertData(Memory(buf.first, buf.second));
     }
 
     virtual void visit(const StructFieldValue &value) {
