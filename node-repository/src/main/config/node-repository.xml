@@ -10,10 +10,6 @@
     <components bundle="node-repository" />
 </rest-api>
 
-<handler id="com.yahoo.vespa.hosted.provision.restapi.v1.NodesApiHandler" bundle="node-repository">
-    <binding>http://*/nodes/v1/</binding>
-</handler>
-
 <handler id="com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler" bundle="node-repository">
     <binding>http://*/nodes/v2/*</binding>
 </handler>
