@@ -1,16 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "iattributeadapterfactory.h"
+#include "i_attribute_writer_factory.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 
 namespace proton {
 
-struct AttributeAdapterFactory : public IAttributeAdapterFactory
+/**
+ * Factory for creating new IAttributeWriter instances during reconfig.
+ */
+struct AttributeWriterFactory : public IAttributeWriterFactory
 {
-    AttributeAdapterFactory()
-    { }
+    AttributeWriterFactory() {}
     virtual IAttributeWriter::SP create(const IAttributeWriter::SP &old,
                                         const AttributeCollectionSpec &attrSpec) const
     {

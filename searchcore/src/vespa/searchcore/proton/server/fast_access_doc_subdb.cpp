@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributeadapterfactory.h"
+#include "attribute_writer_factory.h"
 #include "emptysearchview.h"
 #include "fast_access_doc_subdb.h"
 #include "fast_access_document_retriever.h"
@@ -264,7 +264,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
     if (params.shouldAttributeManagerChange() ||
         newConfigSnapshot.getDocumentTypeRepoSP().get() != oldConfigSnapshot.getDocumentTypeRepoSP().get()) {
         FastAccessDocSubDBConfigurer configurer(_fastUpdateFeedView,
-                IAttributeAdapterFactory::UP(new AttributeAdapterFactory), getSubDbName());
+                std::make_unique<AttributeWriterFactory>(), getSubDbName());
         proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastUpdateFeedView.get());
         AttributeCollectionSpec::UP attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);

@@ -12,7 +12,7 @@
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
-#include <vespa/searchcore/proton/server/attributeadapterfactory.h>
+#include <vespa/searchcore/proton/server/attribute_writer_factory.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
@@ -291,7 +291,7 @@ struct FastAccessFixture
         : _writeService(),
           _view(_writeService),
           _configurer(_view._feedView,
-                  IAttributeAdapterFactory::UP(new AttributeAdapterFactory), "test")
+                  IAttributeWriterFactory::UP(new AttributeWriterFactory), "test")
     {
         vespalib::rmdir(BASE_DIR, true);
         vespalib::mkdir(BASE_DIR);

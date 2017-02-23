@@ -3,7 +3,7 @@
 
 #include "searchable_doc_subdb_configurer.h"
 #include "fast_access_feed_view.h"
-#include "iattributeadapterfactory.h"
+#include "i_attribute_writer_factory.h"
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
 
 namespace proton {
@@ -19,7 +19,7 @@ public:
 
 private:
     FeedViewVarHolder           &_feedView;
-    IAttributeAdapterFactory::UP _factory;
+    IAttributeWriterFactory::UP _factory;
     vespalib::string             _subDbName;
 
     void reconfigureFeedView(const FastAccessFeedView::SP &curr,
@@ -29,7 +29,7 @@ private:
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
-                                 IAttributeAdapterFactory::UP factory,
+                                 IAttributeWriterFactory::UP factory,
                                  const vespalib::string &subDbName);
 
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig &newConfig,
