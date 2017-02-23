@@ -97,10 +97,10 @@ TEST_F("test decorator - transitive override", Fixture)
 
     FeatureExecutor *fe2 = &stash.create<DoubleExecutor>(3);
     fe2 = &stash.create<FeatureOverrider>(*fe2, 2, 10.0);
-    auto inputs = stash.create_array<const NumberOrObject *>(3);
-    inputs[0] = fe->outputs().get_raw(0);
-    inputs[1] = fe->outputs().get_raw(1);
-    inputs[2] = fe->outputs().get_raw(2);
+    auto inputs = stash.create_array<LazyValue>(3, nullptr);
+    inputs[0] = LazyValue(fe->outputs().get_raw(0), fe);
+    inputs[1] = LazyValue(fe->outputs().get_raw(1), fe);
+    inputs[2] = LazyValue(fe->outputs().get_raw(2), fe);
     fe2->bind_inputs(inputs);
     f.add(fe2, 3).run();
     EXPECT_EQUAL(fe2->outputs().size(), 3u);
@@ -143,9 +143,8 @@ TEST("test overrides")
     overrides.add("bogus(feature)", "10.0");
 
     rankProgram->setup(mdl, queryEnv, overrides);
-    rankProgram->run(2);
 
-    std::map<vespalib::string, feature_t> res = Utils::getAllFeatures(*rankProgram);
+    std::map<vespalib::string, feature_t> res = Utils::getAllFeatures(*rankProgram, 2);
 
     EXPECT_EQUAL(res.size(), 20u);
     EXPECT_APPROX(res["value(1)"],                               1.0, 1e-6);

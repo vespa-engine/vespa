@@ -91,11 +91,10 @@ struct Fixture {
         Properties overrides;
         RankProgram program(resolver);
         program.setup(mdl, queryEnv, overrides);        
-        program.run(1);
         auto result = program.get_seeds();
         EXPECT_EQUAL(1u, result.num_features());
         EXPECT_TRUE(!result.is_object(0)); // verifies auto-unboxing
-        return *result.resolve_number(0);
+        return result.resolve(0).as_number(1);
     }
 
     bool verify(const vespalib::string &feature) {

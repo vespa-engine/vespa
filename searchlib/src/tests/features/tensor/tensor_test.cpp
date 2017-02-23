@@ -154,15 +154,13 @@ struct ExecFixture
                        { "x", "y" });
         setQueryTensorType("null", "tensor(q{})");
     }
-    const Tensor &extractTensor() {
-        const Value::CREF *value = test.resolveObjectFeature();
-        ASSERT_TRUE(value != nullptr);
-        ASSERT_TRUE(value->get().is_tensor());
-        return static_cast<const Tensor &>(*value->get().as_tensor());
+    const Tensor &extractTensor(uint32_t docid) {
+        Value::CREF value = test.resolveObjectFeature(docid);
+        ASSERT_TRUE(value.get().is_tensor());
+        return static_cast<const Tensor &>(*value.get().as_tensor());
     }
     const Tensor &execute(uint32_t docId = 1) {
-        test.executeOnly(docId);
-        return extractTensor();
+        return extractTensor(docId);
     }
 };
 

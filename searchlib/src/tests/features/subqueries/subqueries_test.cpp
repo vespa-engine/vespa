@@ -70,8 +70,7 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
         return handles;
     }
     feature_t getSubqueries(uint32_t docId) {
-        rankProgram->run(docId);
-        return *Utils::getScoreFeature(*rankProgram);
+        return Utils::getScoreFeature(*rankProgram, docId);
     }
     void setSubqueries(TermFieldHandle handle, uint32_t docId,
                        uint64_t subqueries) {

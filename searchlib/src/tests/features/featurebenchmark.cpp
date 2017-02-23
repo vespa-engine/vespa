@@ -236,7 +236,7 @@ Benchmark::runFieldMatch(Config & cfg)
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
     for (uint32_t i = 0; i < numRuns; ++i) {
-        ft.executeOnly(0);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }
@@ -261,7 +261,7 @@ Benchmark::runRankingExpression(Config & cfg)
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
     for (uint32_t i = 0; i < numRuns; ++i) {
-        ft.executeOnly(0);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }
@@ -374,7 +374,7 @@ Benchmark::runAttributeMatch(Config & cfg)
             pos.setElementWeight(i % numDocs);
             amd->appendPosition(pos);
         }
-        ft.executeOnly(i % numDocs);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }
@@ -405,7 +405,7 @@ Benchmark::runAttribute(Config & cfg)
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
     for (uint32_t i = 0; i < numRuns; ++i) {
-        ft.executeOnly(i % numDocs);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }
@@ -457,7 +457,7 @@ Benchmark::runDotProduct(Config & cfg)
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
     for (uint32_t i = 0; i < numRuns; ++i) {
-        ft.executeOnly(i % numDocs);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }
@@ -499,7 +499,7 @@ Benchmark::runNativeAttributeMatch(Config & cfg)
             pos.setElementWeight(docId);
             amd->appendPosition(pos);
         }
-        ft.executeOnly(docId);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }
@@ -538,7 +538,7 @@ Benchmark::runNativeFieldMatch(Config & cfg)
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
     for (uint32_t i = 0; i < numRuns; ++i) {
-        ft.executeOnly(0);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }
@@ -580,7 +580,7 @@ Benchmark::runNativeProximity(Config & cfg)
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
     for (uint32_t i = 0; i < numRuns; ++i) {
-        ft.executeOnly(0);
+        // rank evaluation is now lazy, please re-write benchmark if needed
     }
     sample();
 }

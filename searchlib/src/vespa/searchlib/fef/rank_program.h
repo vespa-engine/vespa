@@ -12,15 +12,21 @@
 #include <vector>
 #include <memory.h>
 #include <vespa/vespalib/util/array.h>
+#include <set>
 
 namespace search {
 namespace fef {
 
 /**
- * A rank program runs multiple feature executors in a predefined
- * order to produce a set of feature values. The rank program owns the
- * MatchData used to store unpacked term-field match information and
- * feature values used during evaluation.
+ * A rank program is able to lazily calculate a set of feature
+ * values. In order to access (and thereby calculate) output features
+ * you typically use the get_seeds function to resolve the predefined
+ * set of output features. Each feature value will be wrapped in a
+ * LazyValue object that can be realized for a specific docid. The
+ * rank program also owns the MatchData used to store unpacked
+ * term-field match information. Note that you need unpack any
+ * relevant posting information into the MatchData object before
+ * trying to resolve lazy values.
  **/
 class RankProgram
 {
@@ -28,15 +34,22 @@ private:
     RankProgram(const RankProgram &) = delete;
     RankProgram &operator=(const RankProgram &) = delete;
 
-    using MappedValues = std::map<const NumberOrObject *, const NumberOrObject *>;
+    using MappedValues = std::map<const NumberOrObject *, LazyValue>;
+    using ValueSet = std::set<const NumberOrObject *>;
 
-    BlueprintResolver::SP                 _resolver;
-    MatchData::UP                         _match_data;
-    vespalib::Stash                       _hot_stash;
-    vespalib::Stash                       _cold_stash;
-    vespalib::ArrayRef<FeatureExecutor *> _program;
-    std::vector<FeatureExecutor *>        _executors;
-    MappedValues                          _unboxed_seeds;
+    BlueprintResolver::SP            _resolver;
+    MatchData::UP                    _match_data;
+    vespalib::Stash                  _hot_stash;
+    vespalib::Stash                  _cold_stash;
+    std::vector<FeatureExecutor *>   _executors;
+    MappedValues                     _unboxed_seeds;
+    ValueSet                         _is_const;
+
+    bool check_const(const NumberOrObject *value) const { return (_is_const.count(value) == 1); }
+    bool check_const(FeatureExecutor *executor, const std::vector<BlueprintResolver::FeatureRef> &inputs) const;
+    void run_const(FeatureExecutor *executor);
+    void unbox(BlueprintResolver::FeatureRef seed);
+    FeatureResolver resolve(const BlueprintResolver::FeatureMap &features, bool unbox_seeds) const;
 
 public:
     typedef std::unique_ptr<RankProgram> UP;
@@ -48,7 +61,6 @@ public:
      **/
     RankProgram(BlueprintResolver::SP resolver);
 
-    size_t program_size() const { return _program.size(); }
     size_t num_executors() const { return _executors.size(); }
 
     /**
@@ -62,9 +74,8 @@ public:
                const Properties &featureOverrides = Properties());
 
     /**
-     * Expose the MatchData containing all calculated features. This
-     * is also used when creating search iterators as it is where all
-     * iterators should unpack their match information.
+     * Expose the MatchData used when creating search iterators as it
+     * is where all iterators should unpack their match information.
      **/
     MatchData &match_data() { return *_match_data; }
     const MatchData &match_data() const { return *_match_data; }
@@ -87,24 +98,6 @@ public:
      * @params unbox_seeds make sure seeds values are numbers
      **/
     FeatureResolver get_all_features(bool unbox_seeds = true) const;
-
-    /**
-     * Run this rank program on the current state of the internal
-     * match data for the given docid. Typically, match data for a
-     * specific result will be unpacked before calling run. After run
-     * is called, the wanted results can be extracted using the
-     * appropriate feature handles. The given docid will be used to
-     * tag the internal match data container before execution. Match
-     * data for individual term/field combinations are only considered
-     * valid if their docid matches that of the match data container.
-     *
-     * @param docid the document we are ranking
-     **/
-    void run(uint32_t docid) {
-        for (FeatureExecutor *executor: _program) {
-            executor->execute(docid);
-        }
-    }
 };
 
 } // namespace fef

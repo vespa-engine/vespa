@@ -56,25 +56,21 @@ struct ExecFixture
         setup_search_features(factory);
     }
     bool setup() { return test.setup(); }
-    const Tensor &extractTensor() {
-        const Value::CREF *value = test.resolveObjectFeature();
-        ASSERT_TRUE(value != nullptr);
-        ASSERT_TRUE(value->get().is_tensor());
-        return static_cast<const Tensor &>(*value->get().as_tensor());
+    const Tensor &extractTensor(uint32_t docid) {
+        Value::CREF value = test.resolveObjectFeature(docid);
+        ASSERT_TRUE(value.get().is_tensor());
+        return static_cast<const Tensor &>(*value.get().as_tensor());
     }
     const Tensor &executeTensor(uint32_t docId = 1) {
-        test.executeOnly(docId);
-        return extractTensor();
+        return extractTensor(docId);
     }
-    double extractDouble() {
-        const Value::CREF *value = test.resolveObjectFeature();
-        ASSERT_TRUE(value != nullptr);
-        ASSERT_TRUE(value->get().is_double());
-        return value->get().as_double();
+    double extractDouble(uint32_t docid) {
+        Value::CREF value = test.resolveObjectFeature(docid);
+        ASSERT_TRUE(value.get().is_double());
+        return value.get().as_double();
     }
     double executeDouble(uint32_t docId = 1) {
-        test.executeOnly(docId);
-        return extractDouble();
+        return extractDouble(docId);
     }
     void addTensor(const vespalib::string &name,
                    const TensorCells &cells,

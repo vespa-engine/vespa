@@ -6,6 +6,7 @@ LOG_SETUP(".fef.featuretest");
 #include <sstream>
 #include "featuretest.h"
 #include <vespa/searchlib/fef/utils.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 namespace search {
 namespace fef {
@@ -113,37 +114,23 @@ FeatureTest::execute(feature_t expected, double epsilon, uint32_t docId)
 }
 
 bool
-FeatureTest::executeOnly(uint32_t docId)
+FeatureTest::executeOnly(RankResult & result, uint32_t docId)
 {
     if (!_doneSetup) {
         LOG(error, "Setup not done.");
         return false;
     }
-    // Note: match data object is reset as part of run
-    _rankProgram->run(docId);
-
-    return true;
-}
-
-bool
-FeatureTest::executeOnly(RankResult & result, uint32_t docId)
-{
-    if (!executeOnly(docId)) {
-        return false;
-    }
-
-    std::map<vespalib::string, feature_t> all = Utils::getAllFeatures(*_rankProgram);
+    std::map<vespalib::string, feature_t> all = Utils::getAllFeatures(*_rankProgram, docId);
     for (auto itr = all.begin(); itr != all.end(); ++itr) {
         result.addScore(itr->first, itr->second);
     }
-
     return true;
 }
 
-const vespalib::eval::Value::CREF *
-FeatureTest::resolveObjectFeature()
+vespalib::eval::Value::CREF
+FeatureTest::resolveObjectFeature(uint32_t docid)
 {
-    return Utils::getObjectFeature(*_rankProgram);
+    return Utils::getObjectFeature(*_rankProgram, docid);
 }
 
 void

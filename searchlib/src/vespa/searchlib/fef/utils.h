@@ -14,22 +14,22 @@ struct Utils
     /**
      * Extract a single score feature from the given rank program.
      */
-    static const feature_t *getScoreFeature(const RankProgram &rankProgram);
+    static feature_t getScoreFeature(const RankProgram &rankProgram, uint32_t docid);
 
     /**
      * Extract a single object feature from the given rank program.
      */
-    static const vespalib::eval::Value::CREF *getObjectFeature(const RankProgram &rankProgram);
+    static vespalib::eval::Value::CREF getObjectFeature(const RankProgram &rankProgram, uint32_t docid);
 
     /**
      * Extract all seed feature values from the given rank program.
      **/
-    static std::map<vespalib::string, feature_t> getSeedFeatures(const RankProgram &rankProgram);
+    static std::map<vespalib::string, feature_t> getSeedFeatures(const RankProgram &rankProgram, uint32_t docid);
 
     /**
      * Extract all feature values from the given rank program.
      **/
-    static std::map<vespalib::string, feature_t> getAllFeatures(const RankProgram &rankProgram);
+    static std::map<vespalib::string, feature_t> getAllFeatures(const RankProgram &rankProgram, uint32_t docid);
 
 };
 
