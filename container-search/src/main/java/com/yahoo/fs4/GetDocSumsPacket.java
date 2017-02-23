@@ -69,7 +69,9 @@ public class GetDocSumsPacket extends Packet {
      * definition of enum getdocsums_flags
      */
     public static final int GDFLAG_IGNORE_ROW  = 0x00000001;
-    public static final int GDFLAG_ALLOW_SLIME = 0x00000002; // now always assumed true; remove in Vespa 7
+
+    // TODO: now always assumed true; remove in Vespa 7
+    public static final int GDFLAG_ALLOW_SLIME_NOTUSED = 0x00000002;
 
     public void encodeBody(ByteBuffer buffer) {
         setFieldsFromHits();

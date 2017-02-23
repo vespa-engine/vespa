@@ -57,10 +57,10 @@ private:
     }
     void assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValue & fv, const std::string & exp);
     void assertSlimeFieldWriter(const FieldValue & fv, const std::string & exp) {
-        SlimeFieldWriter jdw;
-        assertSlimeFieldWriter(jdw, fv, exp);
+        SlimeFieldWriter sfw;
+        assertSlimeFieldWriter(sfw, fv, exp);
     }
-    void assertSlimeFieldWriter(SlimeFieldWriter & jdw, const FieldValue & fv, const std::string & exp);
+    void assertSlimeFieldWriter(SlimeFieldWriter & sfw, const FieldValue & fv, const std::string & exp);
 
     void testFlattenDocsumWriter();
     void testSlimeFieldWriter();
@@ -104,24 +104,18 @@ DocsumTest::assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValu
 }
 
 void
-DocsumTest::assertSlimeFieldWriter(SlimeFieldWriter & jdw, const FieldValue & fv, const std::string & exp)
+DocsumTest::assertSlimeFieldWriter(SlimeFieldWriter & sfw, const FieldValue & fv, const std::string & exp)
 {
-    jdw.convert(fv);
+    sfw.convert(fv);
 
     vespalib::Slime gotSlime;
-    vespalib::Memory serialized(jdw.out());
+    vespalib::Memory serialized(sfw.out());
     size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized, gotSlime);
     ASSERT_EQUAL(decodeRes, serialized.size);
 
     vespalib::Slime expSlime;
     size_t used = vespalib::slime::JsonFormat::decode(exp, expSlime);
     EXPECT_EQUAL(exp.size(), used);
-    if (!(expSlime == gotSlime)) {
-        fprintf(stderr, "exp type: %u\n", expSlime.get().type().getId());
-        fprintf(stderr, "got type: %u\n", gotSlime.get().type().getId());
-        fprintf(stderr, "exp double: %.17g\n", expSlime.get().asDouble());
-        fprintf(stderr, "got double: %.17g\n", gotSlime.get().asDouble());
-    }
     EXPECT_EQUAL(expSlime, gotSlime);
 }
 
@@ -201,25 +195,25 @@ DocsumTest::testSlimeFieldWriter()
 
 
         { // select a subset and then all
-            SlimeFieldWriter jdw;
+            SlimeFieldWriter sfw;
             DocsumFieldSpec::FieldIdentifierVector fields;
             fields.push_back(DocsumFieldSpec::FieldIdentifier(
                             0, *type.buildFieldPath("a")));
             fields.push_back(DocsumFieldSpec::FieldIdentifier(
                             0, *type.buildFieldPath("c.e")));
-            jdw.setInputFields(fields);
-            assertSlimeFieldWriter(jdw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}");
-            jdw.clear();
-            assertSlimeFieldWriter(jdw, value, "{\"a\":\"foo\",\"b\":\"bar\",\"c\":{\"d\":\"baz\",\"e\":\"qux\"}}");
+            sfw.setInputFields(fields);
+            assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}");
+            sfw.clear();
+            assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"b\":\"bar\",\"c\":{\"d\":\"baz\",\"e\":\"qux\"}}");
         }
 
     { // multiple invocations
-        SlimeFieldWriter jdw;
-        assertSlimeFieldWriter(jdw, StringFieldValue("foo"), "\"foo\"");
-        jdw.clear();
-        assertSlimeFieldWriter(jdw, StringFieldValue("bar"), "\"bar\"");
-        jdw.clear();
-        assertSlimeFieldWriter(jdw, StringFieldValue("baz"), "\"baz\"");
+        SlimeFieldWriter sfw;
+        assertSlimeFieldWriter(sfw, StringFieldValue("foo"), "\"foo\"");
+        sfw.clear();
+        assertSlimeFieldWriter(sfw, StringFieldValue("bar"), "\"bar\"");
+        sfw.clear();
+        assertSlimeFieldWriter(sfw, StringFieldValue("baz"), "\"baz\"");
     }
 
     }
@@ -248,17 +242,17 @@ DocsumTest::requireThatSlimeFieldWriterHandlesMap()
         MapFieldValue mapfv(mapType);
         EXPECT_TRUE(mapfv.put(StringFieldValue("k1"), structValue));
         { // select a subset and then all
-            SlimeFieldWriter jdw;
+            SlimeFieldWriter sfw;
             DocsumFieldSpec::FieldIdentifierVector fields;
             fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("value.b")));
-            jdw.setInputFields(fields);
-            assertSlimeFieldWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]");
+            sfw.setInputFields(fields);
+            assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]");
             fields[0] = DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("{k1}.a"));
-            jdw.clear();
-            jdw.setInputFields(fields);
-            assertSlimeFieldWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]");
-            jdw.clear(); // all fields implicit
-            assertSlimeFieldWriter(jdw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\",\"b\":\"bar\"}}]");
+            sfw.clear();
+            sfw.setInputFields(fields);
+            assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]");
+            sfw.clear(); // all fields implicit
+            assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\",\"b\":\"bar\"}}]");
         }
     }
 }
