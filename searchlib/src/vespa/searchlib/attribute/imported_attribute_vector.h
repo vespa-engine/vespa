@@ -24,7 +24,7 @@ class ImportedAttributeVector : public IAttributeVector {
 public:
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<IAttributeVector> target_attribute);
+                            std::shared_ptr<AttributeVector> target_attribute);
     ~ImportedAttributeVector();
 
     const vespalib::string & getName() const override;
@@ -53,7 +53,7 @@ public:
     const std::shared_ptr<ReferenceAttribute>& getReferenceAttribute() const noexcept {
         return _reference_attribute;
     }
-    const std::shared_ptr<IAttributeVector>& getTargetAttribute() const noexcept {
+    const std::shared_ptr<AttributeVector>& getTargetAttribute() const noexcept {
         return _target_attribute;
     }
 
@@ -66,7 +66,7 @@ private:
 
     vespalib::string                    _name;
     std::shared_ptr<ReferenceAttribute> _reference_attribute;
-    std::shared_ptr<IAttributeVector>   _target_attribute;
+    std::shared_ptr<AttributeVector>   _target_attribute;
 };
 
 } // attribute

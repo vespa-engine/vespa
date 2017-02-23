@@ -9,7 +9,7 @@ namespace attribute {
 ImportedAttributeVector::ImportedAttributeVector(
             vespalib::stringref name,
             std::shared_ptr<ReferenceAttribute> reference_attribute,
-            std::shared_ptr<IAttributeVector> target_attribute)
+            std::shared_ptr<AttributeVector> target_attribute)
     : _name(name),
       _reference_attribute(std::move(reference_attribute)),
       _target_attribute(std::move(target_attribute))
