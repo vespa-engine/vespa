@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include "i_gid_to_lid_change_listener.h"
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
@@ -14,18 +14,25 @@ namespace proton {
  * Class for listening to changes in mapping from gid to lid and updating
  * reference attribute appropriately.
  */
-class GidToLidChangeListener
+class GidToLidChangeListener : public IGidToLidChangeListener
 {
     search::ISequencedTaskExecutor &_attributeFieldWriter;
     std::shared_ptr<search::attribute::ReferenceAttribute> _attr;
     MonitoredRefCount              &_refCount;
+    vespalib::string               _name;
+    vespalib::string               _docTypeName;
 
 public:
     GidToLidChangeListener(search::ISequencedTaskExecutor &attributeFieldWriter,
                            std::shared_ptr<search::attribute::ReferenceAttribute> attr,
-                           MonitoredRefCount &refCount);
+                           MonitoredRefCount &refCount,
+                           const vespalib::string &name,
+                           const vespalib::string &docTypeName);
     virtual ~GidToLidChangeListener();
-    void notifyGidToLidChange(document::GlobalId gid, uint32_t lid);
+    virtual void notifyGidToLidChange(document::GlobalId gid, uint32_t lid) override;
+    virtual void notifyRegistered() override;
+    virtual const vespalib::string &getName() const override;
+    virtual const vespalib::string &getDocTypeName() const override;
 };
 
 } // namespace proton

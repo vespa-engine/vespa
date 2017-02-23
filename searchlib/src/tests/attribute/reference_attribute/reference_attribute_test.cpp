@@ -143,6 +143,11 @@ struct Fixture
         EXPECT_EQUAL(expLid, ref->lid());
     }
 
+    void assertNoRefLid(uint32_t doc) {
+        auto ref = getRef(doc);
+        EXPECT_TRUE(ref == nullptr);
+    }
+
     void save() {
         attr().save();
     }
@@ -178,6 +183,9 @@ struct Fixture
 
     void notifyGidToLidChange(const GlobalId &gid, uint32_t referencedDoc) {
         _attr->notifyGidToLidChange(gid, referencedDoc);
+    }
+    void populateReferencedLids() {
+        _attr->populateReferencedLids();
     }
 };
 
@@ -307,6 +315,30 @@ TEST_F("require that notifyGidToLidChange works", Fixture)
     TEST_DO(f.assertRefLid(10, 1));
     TEST_DO(f.assertRefLid(20, 2));
     TEST_DO(f.assertRefLid(10, 3));
+}
+
+TEST_F("require that populateReferencedLids works", Fixture)
+{
+    f.ensureDocIdLimit(6);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    f.set(3, toGid(doc1));
+    f.set(4, toGid(doc3));
+    f.commit();
+    TEST_DO(f.assertRefLid(0, 1));
+    TEST_DO(f.assertRefLid(0, 2));
+    TEST_DO(f.assertRefLid(0, 3));
+    TEST_DO(f.assertRefLid(0, 4));
+    TEST_DO(f.assertNoRefLid(5));
+    std::shared_ptr<search::IGidToLidMapperFactory> factory =
+        std::make_shared<MyGidToLidMapperFactory>();
+    f._attr->setGidToLidMapperFactory(factory);
+    f.populateReferencedLids();
+    TEST_DO(f.assertRefLid(10, 1));
+    TEST_DO(f.assertRefLid(17, 2));
+    TEST_DO(f.assertRefLid(10, 3));
+    TEST_DO(f.assertRefLid(0, 4));
+    TEST_DO(f.assertNoRefLid(5));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
