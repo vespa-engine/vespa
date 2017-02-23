@@ -46,17 +46,27 @@ SearchIterator::andWith(UP filter, uint32_t estimate)
 void
 SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP tmp = get_hits(begin_id);
-    const BitVector &rhs = *tmp;
-    result.orWith(rhs);
+    uint32_t docid = std::max(begin_id, getDocId());
+    while (!isAtEnd(docid)) {
+        docid = result.getNextFalseBit(docid);
+        if (!isAtEnd() && seek(docid)) {
+            result.setBit(docid);
+        }
+        docid = std::max(docid + 1, getDocId());
+    }
 }
 
 void
 SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP tmp = get_hits(begin_id);
-    const BitVector &rhs = *tmp;
-    result.andWith(rhs);
+    uint32_t docid = std::max(begin_id, getDocId());
+    while (!isAtEnd(docid)) {
+        docid = result.getNextTrueBit(docid);
+        if (!isAtEnd() && !seek(docid)) {
+            result.clearBit(docid);
+        }
+        docid = std::max(docid + 1, getDocId());
+    }
 }
 
 vespalib::string

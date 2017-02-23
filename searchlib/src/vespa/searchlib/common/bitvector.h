@@ -65,19 +65,10 @@ public:
      * @return next bit set in the bitvector.
      */
     Index getNextTrueBit(Index start) const {
-        Index index(wordNum(start));
-        const Word *words(_words);
-        Word t(words[index] & checkTab(start));
-
-        // In order to avoid a test an extra guard bit is added
-        // after the bitvector as a termination.
-        // Also bitvector will normally at least 1 bit set per 32 bits.
-        // So that is what we should expect.
-        while (__builtin_expect(t == 0, false)) {
-           t = words[++index];
-        }
-
-        return (index << numWordBits()) + vespalib::Optimized::lsbIdx(t);
+        return getNextBit([](Word w) { return w; }, start);
+    }
+    Index getNextFalseBit(Index start) const {
+        return getNextBit([](Word w) { return ~w; }, start);
     }
 
     /**
@@ -89,9 +80,8 @@ public:
      */
     template <typename FunctionType>
     void
-    foreach_truebit(FunctionType func, Index start=0, Index end=std::numeric_limits<Index>::max()) const
-    {
-        foreach(func, [&](Word w) { return w; }, start, end);
+    foreach_truebit(FunctionType func, Index start=0, Index end=std::numeric_limits<Index>::max()) const {
+        foreach(func, [](Word w) { return w; }, start, end);
     }
 
     /**
@@ -103,13 +93,15 @@ public:
      */
     template <typename FunctionType>
     void
-    foreach_falsebit(FunctionType func, Index start=0, Index end=std::numeric_limits<Index>::max()) const
-    {
-        foreach(func, [&](Word w) { return ~w; }, start, end);
+    foreach_falsebit(FunctionType func, Index start=0, Index end=std::numeric_limits<Index>::max()) const {
+        foreach(func, [](Word w) { return ~w; }, start, end);
     }
 
     Index getFirstTrueBit(Index start=0) const {
         return getNextTrueBit(std::max(start, getStartIndex()));
+    }
+    Index getFirstFalseBit(Index start=0) const {
+        return getNextFalseBit(std::max(start, getStartIndex()));
     }
 
     Index getPrevTrueBit(Index start) const {
@@ -300,6 +292,22 @@ private:
             foreach_bit(func, word, index << numWordBits());
         }
         foreach_bit(func, word & ~endBits(last), lastIndex << numWordBits());
+    }
+    template<typename WordConverter>
+    Index getNextBit(WordConverter conv, Index start) const {
+        Index index(wordNum(start));
+        const Word *words(_words);
+        Word t(conv(words[index]) & checkTab(start));
+
+        // In order to avoid a test an extra guard bit is added
+        // after the bitvector as a termination.
+        // Also bitvector will normally at least 1 bit set per 32 bits.
+        // So that is what we should expect.
+        while (__builtin_expect(t == 0, false)) {
+            t = conv(words[++index]);
+        }
+
+        return (index << numWordBits()) + vespalib::Optimized::lsbIdx(t);
     }
     template <typename FunctionType>
     static void
