@@ -56,7 +56,6 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         config->CreateEnumMaps();
         writer.reset(new DynamicDocsumWriter(config, 0));
         packer.reset(new ResultPacker(writer->GetResultConfig()));
-        state._args.setFlags(search::fs4transport::GDFLAG_ALLOW_SLIME);
     }
     void getDocsum(Slime &slime) {
         uint32_t classId;

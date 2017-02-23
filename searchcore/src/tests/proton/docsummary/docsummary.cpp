@@ -654,7 +654,6 @@ Test::requireThatDocsumRequestIsProcessed()
 
     DocsumRequest req;
     req.resultClassName = "class1";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid2));
     req.hits.push_back(DocsumRequest::Hit(gid4));
     req.hits.push_back(DocsumRequest::Hit(gid9));
@@ -694,7 +693,6 @@ Test::requireThatRewritersAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class2";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_EQUAL(1u, rep->docsums.size());
@@ -802,7 +800,6 @@ Test::requireThatAttributesAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class3";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid2));
     req.hits.push_back(DocsumRequest::Hit(gid3));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
@@ -853,7 +850,6 @@ Test::requireThatAttributesAreUsed()
 
     DocsumRequest req3;
     req3.resultClassName = "class3";
-    req3._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req3.hits.push_back(DocsumRequest::Hit(gid3));
     DocsumReply::UP rep3 = dc._ddb->getDocsums(req3);
 
@@ -1158,7 +1154,6 @@ Test::requireThatPositionsAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class5";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     // uint32_t rclass = 5;
