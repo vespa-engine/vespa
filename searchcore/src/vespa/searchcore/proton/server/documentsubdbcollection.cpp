@@ -262,13 +262,14 @@ void
 DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                      const DocumentDBConfig &oldConfigSnapshot,
                                      SerialNum serialNum,
-                                     const ReconfigParams & params)
+                                     const ReconfigParams &params,
+                                     IDocumentDBReferenceResolver &resolver)
 {
     _reprocessingRunner.reset();
     for (auto subDb : _subDBs) {
         IReprocessingTask::List tasks;
         tasks = subDb->applyConfig(newConfigSnapshot, oldConfigSnapshot,
-                                   serialNum, params);
+                                   serialNum, params, resolver);
         _reprocessingRunner.addTasks(tasks);
     }
 }

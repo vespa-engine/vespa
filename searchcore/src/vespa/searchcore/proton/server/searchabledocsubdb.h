@@ -1,35 +1,35 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "searchable_doc_subdb_configurer.h"
 #include "executorthreadingservice.h"
 #include "fast_access_doc_subdb.h"
 #include "feedhandler.h"
+#include "searchable_doc_subdb_configurer.h"
 #include "searchable_feed_view.h"
 #include "searchview.h"
 #include "summaryadapter.h"
-#include <memory>
-#include <vector>
+#include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
+#include <vespa/eval/eval/value_cache/constant_value_cache.h>
+#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
-#include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/matching/constant_value_repo.h>
-#include <vespa/searchcore/config/config-proton.h>
-#include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
-#include <vespa/eval/eval/value_cache/constant_value_cache.h>
+#include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/varholder.h>
-
+#include <memory>
+#include <vector>
 
 namespace proton {
 
-class MetricsWireService;
-class DocumentDBMetrics;
 class DocumentDBConfig;
+class DocumentDBMetrics;
+class IDocumentDBReferenceResolver;
+class MetricsWireService;
 
 /**
  * The searchable sub database supports searching and keeps all attribute fields in memory and
@@ -130,7 +130,8 @@ public:
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum,
-                const ReconfigParams & params) override;
+                const ReconfigParams &params,
+                IDocumentDBReferenceResolver &resolver) override;
 
     void clearViews() override
     {

@@ -248,8 +248,10 @@ IReprocessingTask::List
 FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                 const DocumentDBConfig &oldConfigSnapshot,
                                 SerialNum serialNum,
-                                const ReconfigParams & params)
+                                const ReconfigParams &params,
+                                IDocumentDBReferenceResolver &resolver)
 {
+    (void) resolver;
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     /*

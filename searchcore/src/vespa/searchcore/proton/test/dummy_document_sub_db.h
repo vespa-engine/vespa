@@ -15,8 +15,6 @@
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 
-
-
 namespace proton {
 
 namespace test {
@@ -61,7 +59,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     void initViews(const DocumentDBConfig &,
                    const proton::matching::SessionManager::SP &) override {}
     IReprocessingTask::List applyConfig(const DocumentDBConfig &, const DocumentDBConfig &,
-                                        SerialNum, const ReconfigParams &) override
+                                        SerialNum, const ReconfigParams &, IDocumentDBReferenceResolver &) override
     {
         return IReprocessingTask::List();
     }

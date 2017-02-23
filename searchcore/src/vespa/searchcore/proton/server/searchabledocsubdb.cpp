@@ -168,8 +168,10 @@ IReprocessingTask::List
 SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                 const DocumentDBConfig &oldConfigSnapshot,
                                 SerialNum serialNum,
-                                const ReconfigParams & params)
+                                const ReconfigParams &params,
+                                IDocumentDBReferenceResolver &resolver)
 {
+    (void) resolver;
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     if (params.shouldMatchersChange() && _addMetrics) {

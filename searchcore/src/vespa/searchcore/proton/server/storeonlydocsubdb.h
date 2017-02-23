@@ -247,7 +247,8 @@ public:
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum,
-                const ReconfigParams & params) override;
+                const ReconfigParams &params,
+                IDocumentDBReferenceResolver &resolver) override;
 
     ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }
     IFeedView::SP getFeedView() const override { return _iFeedView.get(); }

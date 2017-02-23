@@ -24,23 +24,24 @@ namespace searchcorespi {
 namespace proton {
     namespace matching { class SessionManager; }
 
-class FeedHandler;
 class DocumentDBConfig;
-class FileConfigManager;
-class IReplayConfig;
-class IIndexWriter;
-class IDcoumentRetriever;
 class DocumentSubDbInitializer;
 class DocumentSubDbInitializerResult;
-class ReconfigParams;
-class IFeedView;
-class ISearchHandler;
-class ISummaryManager;
-class ISummaryAdapter;
+class FeedHandler;
+class FileConfigManager;
+class IAttributeManager;
+class IDcoumentRetriever;
+class IDocumentDBReferenceResolver;
+class IDocumentDBReferent;
 class IDocumentMetaStoreContext;
 class IDocumentRetriever;
-class IAttributeManager;
-class IDocumentDBReferent;
+class IFeedView;
+class IIndexWriter;
+class IReplayConfig;
+class ISearchHandler;
+class ISummaryAdapter;
+class ISummaryManager;
+class ReconfigParams;
 
 /**
  * Interface for a document sub database that handles a subset of the documents that belong to a
@@ -85,8 +86,11 @@ public:
     virtual void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) = 0;
 
     virtual IReprocessingTask::List
-    applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams & params) = 0;
+    applyConfig(const DocumentDBConfig &newConfigSnapshot,
+                const DocumentDBConfig &oldConfigSnapshot,
+                SerialNum serialNum,
+                const ReconfigParams &params,
+                IDocumentDBReferenceResolver &resolver) = 0;
 
     virtual std::shared_ptr<ISearchHandler> getSearchView() const = 0;
     virtual std::shared_ptr<IFeedView> getFeedView() const = 0;
