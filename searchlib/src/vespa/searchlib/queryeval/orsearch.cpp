@@ -74,26 +74,13 @@ private:
     UnpackInfo _unpackInfo;
 };
 
-void handleBitVectors(BitVector::UP & result, const MultiSearch::Children & children, uint32_t begin_id, bool onlyBitVector) {
-    for (SearchIterator * child : children) {
-        if (child->isBitVector() == onlyBitVector) {
-            if ( ! result ) {
-                result = child->get_hits(begin_id);
-            } else {
-                child->or_hits_into(*result, begin_id);
-            }
-        }
-    }
-}
-
 }
 
 BitVector::UP
 OrSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
     BitVector::UP result;
-    handleBitVectors(result, children, begin_id, true);
-    handleBitVectors(result, children, begin_id, false);
+    orChildren(result, children, begin_id);
     return result;
 }
 

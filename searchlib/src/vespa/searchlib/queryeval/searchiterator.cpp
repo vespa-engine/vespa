@@ -80,6 +80,57 @@ SearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "endid", _endid);
 }
 
+namespace {
+
+using Children = SearchIterator::Children;
+
+void
+andChildren(BitVector::UP &result, const Children &children, uint32_t begin_id, bool onlyBitVector) {
+    for (SearchIterator *child : children) {
+        if (child->isBitVector() == onlyBitVector) {
+            if (!result) {
+                result = child->get_hits(begin_id);
+            } else {
+                child->and_hits_into(*result, begin_id);
+            }
+        }
+    }
+}
+
+template<typename Children>
+void
+orChildren(BitVector::UP &result, const Children &children, uint32_t begin_id, bool onlyBitVector) {
+    for (auto & child : children) {
+        if (child->isBitVector() == onlyBitVector) {
+            if (!result) {
+                result = child->get_hits(begin_id);
+            } else {
+                child->or_hits_into(*result, begin_id);
+            }
+        }
+    }
+}
+
+}
+
+void
+SearchIterator::andChildren(BitVector::UP &result, const Children &children, uint32_t begin_id) {
+    andChildren(result, children, begin_id, true);
+    andChildren(result, children, begin_id, false);
+}
+
+void
+SearchIterator::orChildren(BitVector::UP &result, const Children &children, uint32_t begin_id) {
+    orChildren(result, children, begin_id, true);
+    orChildren(result, children, begin_id, false);
+}
+
+void
+SearchIterator::orChildren(BitVector::UP &result, const OwnedChildren &children, uint32_t begin_id) {
+    orChildren(result, children, begin_id, true);
+    orChildren(result, children, begin_id, false);
+}
+
 } // namespace queryeval
 } // namespace search
 
