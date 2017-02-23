@@ -56,7 +56,6 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         config->CreateEnumMaps();
         writer.reset(new DynamicDocsumWriter(config, 0));
         packer.reset(new ResultPacker(writer->GetResultConfig()));
-        state._args.setFlags(search::fs4transport::GDFLAG_ALLOW_SLIME);
     }
     void getDocsum(Slime &slime) {
         uint32_t classId;
@@ -70,8 +69,7 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
                        ::decode(Memory(buf.GetDrainPos(), buf.GetUsedLen()), slime), 0u);
     }
     uint32_t getNumDocs() const override { return 2; }
-    DocsumStoreValue getMappedDocsum(uint32_t docid, bool useSlimeInsideFields) override {
-        EXPECT_EQUAL(true, useSlimeInsideFields);
+    DocsumStoreValue getMappedDocsum(uint32_t docid) override {
         EXPECT_EQUAL(1u, docid);
         EXPECT_TRUE(packer->Init(0));
         EXPECT_TRUE(packer->AddInteger(4));

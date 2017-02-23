@@ -9,7 +9,6 @@
 #include <vespa/vsm/vsm/docsumfieldspec.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <vespa/vsm/vsm/flattendocsumwriter.h>
-#include <vespa/vsm/vsm/jsondocsumwriter.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/searchsummary/docsummary/docsumstore.h>
@@ -38,7 +37,6 @@ private:
     FieldSpecList         _fields;        // list of summary fields to generate
     size_t                _highestFieldNo;
     ResultPacker          _packer;
-    JSONDocsumWriter      _jsonWriter;
     FlattenDocsumWriter   _flattenWriter;
     const FieldModifierMap * _snippetModifiers;
     document::FieldValue::UP _cachedValue;
@@ -52,7 +50,6 @@ private:
                                                VsmsummaryConfig::Fieldmap::Command command,
                                                const Document & docsum, bool & modified);
     void writeField(const document::FieldValue & fv, const FieldPath & path, ResType type, ResultPacker & packer);
-    void writeJSONField(const DocsumFieldSpec & fieldSpec, const Document & docsum, ResultPacker & packer);
     void writeSlimeField(const DocsumFieldSpec & fieldSpec, const Document & docsum, ResultPacker & packer);
     void writeFlattenField(const DocsumFieldSpec & fieldSpec, const Document & docsum, ResultPacker & packer);
     void writeEmpty(ResType type, ResultPacker & packer);
@@ -86,7 +83,7 @@ public:
     void setDocSumStore(const IDocSumCache & docsumCache) { _docsumCache = &docsumCache; }
 
     // Inherit doc from IDocsumStore
-    DocsumStoreValue getMappedDocsum(uint32_t id, bool useSlimeInsideFields) override;
+    DocsumStoreValue getMappedDocsum(uint32_t id) override;
     uint32_t getNumDocs() const override;
     uint32_t getSummaryClassId() const override;
 };

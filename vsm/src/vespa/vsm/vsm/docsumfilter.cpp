@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumfilter.h"
-#include "jsondocsumwriter.h"
 #include "slimefieldwriter.h"
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
-#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/log/log.h>
@@ -216,7 +214,6 @@ DocsumFilter::DocsumFilter(const DocsumToolsPtr &tools, const IDocSumCache & doc
     _fields(),
     _highestFieldNo(0),
     _packer(tools.get() ? tools->getResultConfig() : NULL),
-    _jsonWriter(),
     _flattenWriter(),
     _snippetModifiers(NULL),
     _cachedValue(),
@@ -316,33 +313,6 @@ DocsumFilter::writeField(const document::FieldValue & fv, const FieldPath & path
     }
 }
 
-void
-DocsumFilter::writeJSONField(const DocsumFieldSpec & fieldSpec,
-                             const Document & docsum,
-                             ResultPacker & packer)
-{
-    if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
-        const DocsumFieldSpec::FieldIdentifier & fieldId = fieldSpec.getOutputField();
-        const document::FieldValue * fv = docsum.getField(fieldId.getId());
-        if (fv != NULL) {
-            LOG(debug, "writeJSONField: About to write field '%d' as JSONSTRING: field value = '%s'",
-                fieldId.getId(), fv->toString().c_str());
-            if (!fieldSpec.hasIdentityMapping()) {
-                _jsonWriter.setInputFields(fieldSpec.getInputFields());
-            }
-            _jsonWriter.write(*fv);
-            vespalib::string s = _jsonWriter.getResult();
-            packer.AddLongString(s.c_str(), s.size());
-            _jsonWriter.clear();
-        } else {
-            LOG(debug, "writeJSONField: Field value not set for field '%d'", fieldId.getId());
-            packer.AddEmpty();
-        }
-    } else {
-        LOG(debug, "writeJSONField: Cannot handle this command");
-        packer.AddEmpty();
-    }
-}
 
 void
 DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
@@ -467,7 +437,7 @@ DocsumFilter::getSummaryClassId() const
 }
 
 DocsumStoreValue
-DocsumFilter::getMappedDocsum(uint32_t id, bool useSlimeInsideFields)
+DocsumFilter::getMappedDocsum(uint32_t id)
 {
     const ResultClass *resClass = _tools->getResultClass();
     if (resClass == NULL) {
@@ -476,17 +446,12 @@ DocsumFilter::getMappedDocsum(uint32_t id, bool useSlimeInsideFields)
 
     const Document & doc = _docsumCache->getDocSum(id);
 
-    LOG(spam, "getMappedDocsum %u [useSlimeInsideFields=%s]", id, useSlimeInsideFields ? "true" : "false");
-
     _packer.Init(resClass->GetClassID());
     for (FieldSpecList::iterator it(_fields.begin()), end = _fields.end(); it != end; ++it) {
         ResType type = it->getResultType();
         if (type == RES_JSONSTRING || type == RES_XMLSTRING) {
-            if (useSlimeInsideFields) {
-                writeSlimeField(*it, doc, _packer);
-            } else {
-                writeJSONField(*it, doc, _packer);
-            }
+            // this really means 'structured data'
+            writeSlimeField(*it, doc, _packer);
         } else {
             if (it->getInputFields().size() == 1 && it->getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
                 const DocsumFieldSpec::FieldIdentifier & fieldId = it->getInputFields()[0];

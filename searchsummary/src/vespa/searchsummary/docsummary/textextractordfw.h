@@ -25,11 +25,6 @@ public:
     // Inherit doc
     virtual bool IsGenerated() const { return false; }
     // Inherit doc
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult * gres,
-                                GetDocsumsState * state,
-                                ResType type,
-                                search::RawBuf * target);
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,

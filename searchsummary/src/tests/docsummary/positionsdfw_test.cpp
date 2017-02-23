@@ -13,6 +13,7 @@ LOG_SETUP("positionsdfw_test");
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/juniper/rpinterface.h>
 
 using search::RawBuf;
@@ -116,16 +117,17 @@ void checkWritePositionField(Test &test, AttrType &attr,
         createPositionsDFW(attr.getName().c_str(), &attribute_man);
     ASSERT_TRUE(writer.get());
     ResType res_type = RES_LONG_STRING;
-    RawBuf target(1024);
     MyGetDocsumsStateCallback callback;
     GetDocsumsState state(callback);
     state._attributes.push_back(&attr);
 
-    writer->WriteField(doc_id, 0, &state, res_type, &target);
+    vespalib::Slime target;
+    vespalib::slime::SlimeInserter inserter(target);
+    writer->insertField(doc_id, nullptr, &state, res_type, inserter);
 
-    test.EXPECT_EQUAL(expected.size(), *(const uint32_t *)(target.GetDrainPos()));
-    const char *p = target.GetDrainPos() + 4;
-    test.EXPECT_EQUAL(expected, string(p, p + expected.size()));
+    vespalib::Memory got = target.get().asString();
+    test.EXPECT_EQUAL(expected.size(), got.size);
+    test.EXPECT_EQUAL(expected, string(got.data, got.size));
 }
 
 void Test::requireThat2DPositionFieldIsWritten() {

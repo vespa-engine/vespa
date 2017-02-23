@@ -60,7 +60,6 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
 {
     DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>(true));
 
-    docsumRequest->_flags = search::fs4transport::GDFLAG_ALLOW_SLIME;
     docsumRequest->resultClassName = request[SUMMARYCLASS].asString().make_string();
     Inspector & gids = request[GIDS];
     docsumRequest->hits.reserve(gids.entries());

@@ -432,7 +432,7 @@ T
 Test::cvtSummaryAs(bool markup, const FieldValue::UP &fv)
 {
     ASSERT_TRUE(fv.get() != NULL);
-    FieldValue::UP r = SFC::convertSummaryField(markup, *fv, false);
+    FieldValue::UP r = SFC::convertSummaryField(markup, *fv);
     return cvtValueAs<T>(r);
 }
 
@@ -487,8 +487,7 @@ void Test::requireThatSummaryIsAnUnmodifiedString() {
     setSummaryField("string");
     Document summary = makeDocument();
     checkString("Foo Bar Baz", SFC::convertSummaryField(false,
-                                                        *summary.getValue("string"),
-                                                        false).get());
+                                                        *summary.getValue("string")).get());
 }
 
 void Test::requireThatAttributeIsAnUnmodifiedString() {
@@ -502,28 +501,18 @@ void Test::requireThatArrayIsFlattenedInSummaryField() {
     setSummaryField("string_array");
     Document summary = makeDocument();
     FieldBlock expect("[\"\\\"foO\\\"\",\"ba\\\\R\"]");
-    checkString(expect.json,
-                SFC::convertSummaryField(false,
-                                         *summary.getValue("string_array"),
-                                         false).get());
     checkData(expect.binary,
               SFC::convertSummaryField(false,
-                                       *summary.getValue("string_array"),
-                                       true).get());
+                                       *summary.getValue("string_array")).get());
 }
 
 void Test::requireThatWeightedSetIsFlattenedInSummaryField() {
     setSummaryField("string_wset");
     Document summary = makeDocument();
     FieldBlock expect("[{\"item\":\"\\\"foo\\\"\",\"weight\":2},{\"item\":\"ba\\\\r\",\"weight\":4}]");
-    checkString(expect.json,
-                SFC::convertSummaryField(false,
-                                         *summary.getValue("string_wset"),
-                                         false).get());
     checkData(expect.binary,
               SFC::convertSummaryField(false,
-                                       *summary.getValue("string_wset"),
-                                       true).get());
+                                       *summary.getValue("string_wset")).get());
 }
 
 void Test::requireThatPositionsAreTransformedInSummary() {
@@ -672,7 +661,7 @@ Test::requireThatPredicateIsPrinted()
     doc.setValue("predicate", PredicateFieldValue(std::move(input)));
 
     checkString("'foo' in ['bar']\n",
-                SFC::convertSummaryField(false, *doc.getValue("predicate"), false).get());
+                SFC::convertSummaryField(false, *doc.getValue("predicate")).get());
 }
 
 
@@ -695,21 +684,17 @@ Test::requireThatTensorIsNotConverted()
     TEST_CALL(checkTensor(createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
                                        {"x", "y"}),
                           SFC::convertSummaryField(false,
-                                                   *doc.getValue("tensor"),
-                                                   true).get()));
+                                                   *doc.getValue("tensor")).get()));
     doc.setValue("tensor", TensorFieldValue());
 
     TEST_CALL(checkTensor(Tensor::UP(),
                           SFC::convertSummaryField(false,
-                                                   *doc.getValue("tensor"),
-                                                   true).get()));
+                                                   *doc.getValue("tensor")).get()));
 }
 
 void Test::checkStringForAllConversions(const string& expected, const FieldValue* fv) {
     ASSERT_TRUE(fv != nullptr);
-    for (bool use_slime : {true, false}) {
-        checkString(expected, SFC::convertSummaryField(false, *fv, use_slime).get());
-    }
+    checkString(expected, SFC::convertSummaryField(false, *fv).get());
 }
 
 const ReferenceDataType& Test::getAsRefType(const string& name) const {
@@ -751,7 +736,7 @@ void Test::requireThatReferenceInCompositeTypeEmitsSlimeData() {
 
     FieldBlock expect(R"({"inner_ref":"id:ns:target_dummy_document::foo"})");
     checkData(expect.binary,
-              SFC::convertSummaryField(false, *doc.getValue("nested"), true).get());
+              SFC::convertSummaryField(false, *doc.getValue("nested")).get());
 }
 
 }  // namespace

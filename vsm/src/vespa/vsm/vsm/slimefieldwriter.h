@@ -44,6 +44,12 @@ public:
     vespalib::stringref out() const {
         return vespalib::stringref(_rbuf.GetDrainPos(), _rbuf.GetUsedLen());
     }
+
+    void clear() {
+        _rbuf.Reuse();
+        _inputFields = NULL;
+        _currPath.clear();
+    }
 };
 
 }

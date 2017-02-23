@@ -105,84 +105,6 @@ AbsDistanceDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *st
     }
 }
 
-
-uint32_t
-AbsDistanceDFW::WriteField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
-                           ResType type, search::RawBuf *target)
-{
-    (void) gres;
-
-    bool forceEmpty = true;
-
-    const vespalib::string &locationStr = state->_args.getLocation();
-    if (locationStr.size() > 0) {
-        if (state->_parsedLocation.get() == NULL) {
-            state->_callback.ParseLocation(state);
-        }
-        assert(state->_parsedLocation.get() != NULL);
-        if (state->_parsedLocation->getParseError() == NULL) {
-            forceEmpty = false;
-        }
-    }
-
-    uint32_t written = 0;
-    if (!forceEmpty) {
-        uint64_t absdist = findMinDistance(docid, state);
-
-        if (type != RES_INT) {
-            bool isLong   = IsBinaryCompatible(type, RES_LONG_STRING);
-            uint16_t str_len_16  = 0;
-            uint32_t str_len_32  = 0;
-            int      str_len_ofs = target->GetUsedLen();
-
-            if (isLong)
-                target->append(&str_len_32, sizeof(str_len_32));
-            else
-                target->append(&str_len_16, sizeof(str_len_16));
-
-            target->addNum64(absdist, 1, ' ');
-
-            // calculate number of bytes written
-            written = target->GetUsedLen() - str_len_ofs;
-
-            // patch in correct field length
-            if (isLong) {
-                str_len_32 = written - sizeof(str_len_32);
-                memcpy(target->GetWritableDrainPos(str_len_ofs), &str_len_32,
-                       sizeof(str_len_32));
-            } else {
-                str_len_16 = written - sizeof(str_len_16);
-                memcpy(target->GetWritableDrainPos(str_len_ofs), &str_len_16,
-                       sizeof(str_len_16));
-            }
-        } else {
-            uint32_t val32 = (uint32_t) absdist;
-            target->append(&val32, sizeof(val32));
-            written = sizeof(val32);
-        }
-    } else {
-        if (type != RES_INT) {
-            bool isLong   = IsBinaryCompatible(type, RES_LONG_STRING);
-            uint16_t str_len_16  = 0;
-            uint32_t str_len_32  = 0;
-            int      str_len_ofs = target->GetUsedLen();
-
-            if (isLong)
-                target->append(&str_len_32, sizeof(str_len_32));
-            else
-                target->append(&str_len_16, sizeof(str_len_16));
-
-            // calculate number of bytes written
-            written = target->GetUsedLen() - str_len_ofs;
-        } else {
-            uint32_t val32 = 0u;
-            target->append(&val32, sizeof(val32));
-            written = sizeof(val32);
-        }
-    }
-    return written;
-}
-
 //--------------------------------------------------------------------------
 
 PositionsDFW::PositionsDFW(const vespalib::string & attrName) :
@@ -242,30 +164,6 @@ formatField(const attribute::IAttributeVector &attribute, uint32_t docid, ResTyp
     return target;
 }
 }
-
-uint32_t
-PositionsDFW::WriteField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,
-                         ResType type, search::RawBuf *target)
-{
-    int str_len_ofs = target->GetUsedLen();
-
-    vespalib::asciistream val(formatField(vec(*dsState), docid, type));
-
-    bool isLong = IsBinaryCompatible(type, RES_LONG_STRING);
-    if (isLong) {
-        uint32_t str_len_32 = val.size();
-        target->append(&str_len_32, sizeof(str_len_32));
-        target->append(val.c_str(), str_len_32);
-    } else {
-        uint16_t str_len_16 = val.size();
-        target->append(&str_len_16, sizeof(str_len_16));
-        target->append(val.c_str(), str_len_16);
-    }
-    // calculate number of bytes written
-    uint32_t written = target->GetUsedLen() - str_len_ofs;
-    return written;
-}
-
 
 void
 PositionsDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,

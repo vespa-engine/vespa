@@ -29,11 +29,6 @@ public:
     { return ResultConfig::IsRuntimeCompatible(a, b); }
 
     virtual bool IsGenerated() const = 0;
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult *gres,
-                                GetDocsumsState *state,
-                                ResType type,
-                                search::RawBuf *target) = 0;
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
@@ -61,11 +56,6 @@ public:
     virtual ~EmptyDFW();
 
     virtual bool IsGenerated() const { return true; }
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult *gres,
-                                GetDocsumsState *state,
-                                ResType type,
-                                search::RawBuf *target);
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
@@ -87,11 +77,6 @@ public:
     bool Init(const ResultConfig & config, const char *inputField);
 
     virtual bool IsGenerated() const { return false; }
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult *gres,
-                                GetDocsumsState *state,
-                                ResType type,
-                                search::RawBuf *target);
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,

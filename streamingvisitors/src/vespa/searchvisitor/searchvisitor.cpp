@@ -198,10 +198,6 @@ void SearchVisitor::init(const Parameters & params)
                                     static_cast<unsigned>(valueRef.size()));
         LOG(debug, "Received summary class: %s", _summaryClass.c_str());
     }
-    if (params.get("allowslimedocsums", valueRef)) {
-        _summaryGenerator.getDocsumState()._args.setFlags(search::fs4transport::GDFLAG_ALLOW_SLIME);
-        LOG(debug, "Set flag: GDFLAG_ALLOW_SLIME");
-    }
 
     size_t wantedSummaryCount(10);
     if (params.get("summarycount", valueRef) ) {

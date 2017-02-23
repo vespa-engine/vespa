@@ -37,13 +37,13 @@ public class GetDocSumsPacketTestCase {
         hit.setIgnoreRowBits(true);
         assertPacket(true, hit, new byte[] { 0, 0, 0, 57, 0, 0, 0, -37, 0, 0, 40, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
                 IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7,
-                100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 3 });
+                100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 1 });
 
         hit = new FastHit();
         hit.setIgnoreRowBits(false);
-        assertPacket(true, hit, new byte[] {0, 0, 0, 57, 0, 0, 0, -37, 0, 0, 40, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
+        assertPacket(true, hit, new byte[] {0, 0, 0, 53, 0, 0, 0, -37, 0, 0, 8, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
                 IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7,
-                100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 2});
+                100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111});
     }
 
     @Test
@@ -52,13 +52,13 @@ public class GetDocSumsPacketTestCase {
         hit.setIgnoreRowBits(true);
         assertPacket(false, hit, new byte[] { 0, 0, 0, 43, 0, 0, 0, -37, 0, 0, 40, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
                      IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7,
-                     100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 3
+                     100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1
         });
 
         hit = new FastHit();
         hit.setIgnoreRowBits(false);
-        assertPacket(false, hit, new byte[] { 0, 0, 0, 43, 0, 0, 0, -37, 0, 0, 40, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 2
+        assertPacket(false, hit, new byte[] { 0, 0, 0, 39, 0, 0, 0, -37, 0, 0, 8, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
+                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7, 100, 101, 102, 97, 117, 108, 116
         });
     }
 
@@ -68,6 +68,7 @@ public class GetDocSumsPacketTestCase {
         result.getQuery().getSessionId(true);  // create session id.
         result.getQuery().getRanking().setQueryCache(true);
         FastHit hit = new FastHit();
+        hit.setIgnoreRowBits(true);
         result.hits().add(hit);
         assertPacket(false, result, new byte[] { 0, 0, 0, -123, 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
                 // query timeout
@@ -84,7 +85,7 @@ public class GetDocSumsPacketTestCase {
                 // caches: features => true
                 0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
                 // flags
-                0, 0, 0, 2
+                0, 0, 0, 1
         });
     }
 

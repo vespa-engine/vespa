@@ -14,7 +14,7 @@ class SummaryFieldConverter
 {
 public:
     static document::FieldValue::UP
-    convertSummaryField(bool markup, const document::FieldValue &value, bool useSlimeInsideFields);
+    convertSummaryField(bool markup, const document::FieldValue &value);
 };
 
 }  // namespace search::docsummary

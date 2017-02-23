@@ -44,19 +44,6 @@ EmptyDFW::insertField(uint32_t /*docid*/,
     return;
 }
 
-uint32_t
-EmptyDFW::WriteField(uint32_t docid,
-                     GeneralResult *gres,
-                     GetDocsumsState *state,
-                     ResType type,
-                     search::RawBuf *target)
-{
-    (void) docid;
-    (void) gres;
-    (void) state;
-    return DocsumFormat::addEmpty(type, *target);
-}
-
 //--------------------------------------------------------------------------
 
 CopyDFW::CopyDFW()
@@ -170,109 +157,6 @@ CopyDFW::insertField(uint32_t /*docid*/,
             break; }
         }
     }
-}
-
-uint32_t
-CopyDFW::WriteField(uint32_t docid,
-                    GeneralResult *gres,
-                    GetDocsumsState *state,
-                    ResType type,
-                    search::RawBuf *target)
-{
-    (void) docid;
-
-    uint32_t written = 0;
-
-    int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
-    ResEntry *entry = gres->GetEntry(idx);
-
-    DocsumFormat::Appender appender(*target);
-
-    if (entry != NULL &&
-        IsRuntimeCompatible(entry->_type, type)) {
-
-        // copy field
-
-        switch (type) {
-
-        case RES_INT: {
-            written += appender.addInt32(entry->_intval);
-            break; }
-
-        case RES_SHORT: {
-            written += appender.addShort(entry->_intval);
-            break; }
-
-        case RES_BYTE: {
-            written += appender.addByte(entry->_intval);
-            break; }
-
-        case RES_FLOAT: {
-            written += appender.addFloat(entry->_doubleval);
-            break; }
-
-        case RES_DOUBLE: {
-            written += appender.addDouble(entry->_doubleval);
-            break; }
-
-        case RES_INT64: {
-            written += appender.addInt64(entry->_int64val);
-            break; }
-
-        case RES_STRING: {
-            uint32_t    len;
-            const char *spt;
-            // resolve field
-            entry->_resolve_field(&spt, &len,
-                                  &state->_docSumFieldSpace);
-            written += appender.addShortData(spt, len);
-            break; }
-
-        case RES_DATA: {
-            uint32_t    len;
-            const char *dpt;
-            // resolve field
-            entry->_resolve_field(&dpt, &len,
-                                  &state->_docSumFieldSpace);
-            written += appender.addShortData(dpt, len);
-            break; }
-
-        case RES_XMLSTRING:
-        case RES_JSONSTRING:
-        case RES_FEATUREDATA:
-        case RES_LONG_STRING: {
-
-            uint32_t flen = entry->_len;
-            uint32_t slen = entry->_get_length();
-
-            // preserve compression flag
-            target->append(&flen, sizeof(flen));
-            written += sizeof(flen);
-            target->append(entry->_stringval, slen);
-            written += slen;
-
-            break; }
-
-        case RES_TENSOR:
-        case RES_LONG_DATA: {
-
-            uint32_t flen = entry->_len;
-            uint32_t dlen = entry->_get_length();
-
-            // preserve compression flag
-            target->append(&flen, sizeof(flen));
-            written += sizeof(flen);
-            target->append(entry->_dataval, dlen);
-            written += dlen;
-
-            break; }
-        }
-    } else {
-        // insert empty field
-        written += appender.addEmpty(type);
-    }
-
-    return written;
 }
 
 //--------------------------------------------------------------------------

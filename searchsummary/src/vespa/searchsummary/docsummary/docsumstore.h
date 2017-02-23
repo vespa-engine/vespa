@@ -39,9 +39,8 @@ public:
      *
      * @return docsum blob location and size
      * @param docid local document id
-     * @param useSlimeInsideFields use serialized slime instead of json for structured fields
      **/
-    virtual DocsumStoreValue getMappedDocsum(uint32_t docid, bool useSlimeInsideFields) = 0;
+    virtual DocsumStoreValue getMappedDocsum(uint32_t docid) = 0;
 
     /**
      * Will return default input class used.

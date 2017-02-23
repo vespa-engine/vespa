@@ -128,6 +128,26 @@ Tensor::UP createTensor(const TensorCells &cells,
     return TensorFactory::create(cells, dimensions, builder);
 }
 
+vespalib::string asVstring(vespalib::Memory str) {
+    return vespalib::string(str.data, str.size);
+}
+vespalib::string asVstring(const vespalib::slime::Inspector &value) {
+    return asVstring(value.asString());
+}
+
+void decode(const ResEntry *entry, vespalib::Slime &slime) {
+    vespalib::Memory mem(entry->_dataval,
+                         entry->_datalen);
+    size_t decodeRes = vespalib::slime::BinaryFormat::decode(mem, slime);
+    ASSERT_EQUAL(decodeRes, mem.size);
+}
+
+std::string b64encode(const vespalib::slime::Inspector &value) {
+    vespalib::Memory mem = value.asData();
+    std::string str(mem.data, mem.size);
+    return vespalib::Base64::encode(str);
+}
+
 }  // namespace
 
 
@@ -357,7 +377,7 @@ public:
 GeneralResultPtr
 Test::getResult(DocumentStoreAdapter & dsa, uint32_t docId)
 {
-    DocsumStoreValue docsum = dsa.getMappedDocsum(docId, false);
+    DocsumStoreValue docsum = dsa.getMappedDocsum(docId);
     ASSERT_TRUE(docsum.pt() != NULL);
     GeneralResultPtr retval(new GeneralResult(dsa.getResultClass(),
                                               0, 0, 0));
@@ -419,7 +439,7 @@ Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
     ASSERT_EQUAL(::search::fs4transport::SLIME_MAGIC_ID, classId);
     vespalib::Slime slime;
     vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
-                                       docsum.data.size() - sizeof(classId));
+                                docsum.data.size() - sizeof(classId));
     size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized,
                                                              slime);
     ASSERT_EQUAL(decodeRes, serialized.size);
@@ -553,7 +573,7 @@ Test::requireThatAdapterHandlesMultipleDocuments()
         EXPECT_EQUAL(2000u, res->GetEntry("a")->_intval);
     }
     { // doc 2
-        DocsumStoreValue docsum = dsa.getMappedDocsum(2, false);
+        DocsumStoreValue docsum = dsa.getMappedDocsum(2);
         EXPECT_TRUE(docsum.pt() == NULL);
     }
     { // doc 0 (again)
@@ -634,7 +654,6 @@ Test::requireThatDocsumRequestIsProcessed()
 
     DocsumRequest req;
     req.resultClassName = "class1";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid2));
     req.hits.push_back(DocsumRequest::Hit(gid4));
     req.hits.push_back(DocsumRequest::Hit(gid9));
@@ -643,10 +662,10 @@ Test::requireThatDocsumRequestIsProcessed()
     EXPECT_EQUAL(3u, rep->docsums.size());
     EXPECT_EQUAL(2u, rep->docsums[0].docid);
     EXPECT_EQUAL(gid2, rep->docsums[0].gid);
-    EXPECT_TRUE(assertSlime("{a:20}", *rep, 0, true));
+    EXPECT_TRUE(assertSlime("{a:20}", *rep, 0, false));
     EXPECT_EQUAL(4u, rep->docsums[1].docid);
     EXPECT_EQUAL(gid4, rep->docsums[1].gid);
-    EXPECT_TRUE(assertSlime("{a:40}", *rep, 1, true));
+    EXPECT_TRUE(assertSlime("{a:40}", *rep, 1, false));
     EXPECT_EQUAL(search::endDocId, rep->docsums[2].docid);
     EXPECT_EQUAL(gid9, rep->docsums[2].gid);
     EXPECT_TRUE(rep->docsums[2].data.get() == NULL);
@@ -674,11 +693,10 @@ Test::requireThatRewritersAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class2";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_EQUAL(1u, rep->docsums.size());
-    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, true));
+    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, false));
 }
 
 
@@ -782,7 +800,6 @@ Test::requireThatAttributesAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class3";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid2));
     req.hits.push_back(DocsumRequest::Hit(gid3));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
@@ -808,7 +825,7 @@ Test::requireThatAttributesAreUsed()
                              "bf:[],"
                              "bg:[],"
                              "bh:[],"
-                             "bi:[]}", *rep, 1, true));
+                             "bi:[]}", *rep, 1, false));
     TEST_DO(assertTensor(Tensor::UP(), "bj", *rep, 1, rclass));
 
     proton::IAttributeManager::SP attributeManager =
@@ -833,7 +850,6 @@ Test::requireThatAttributesAreUsed()
 
     DocsumRequest req3;
     req3.resultClassName = "class3";
-    req3._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req3.hits.push_back(DocsumRequest::Hit(gid3));
     DocsumReply::UP rep3 = dc._ddb->getDocsums(req3);
 
@@ -1080,17 +1096,28 @@ Test::requireThatUrisAreUsed()
     DocumentStoreAdapter dsa(store, *bc._repo, getResultConfig(), "class0",
                              bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
                              getMarkupFields());
+
     EXPECT_TRUE(assertString("http://www.yahoo.com:81/fluke?ab=2#4",
                             "urisingle", dsa, 1));
-    EXPECT_TRUE(assertString("[\"http://www.yahoo.com:82/fluke?ab=2#8\","
-                            "\"http://www.flickr.com:82/fluke?ab=2#9\"]",
-                            "uriarray", dsa, 1));
-    EXPECT_TRUE(assertString("["
-                               "{\"item\":\"http://www.yahoo.com:83/fluke?ab=2#12\",\"weight\":4}"
-                               ","
-                               "{\"item\":\"http://www.flickr.com:85/fluke?ab=2#13\",\"weight\":7}"
-                            "]",
-                            "uriwset", dsa, 1));
+    GeneralResultPtr res = getResult(dsa, 1);
+    {
+        vespalib::Slime slime;
+        decode(res->GetEntry("uriarray"), slime);
+        EXPECT_TRUE(slime.get().valid());
+        EXPECT_EQUAL("http://www.yahoo.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
+        EXPECT_EQUAL("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
+    }
+    {
+        vespalib::Slime slime;
+        decode(res->GetEntry("uriwset"), slime);
+        EXPECT_TRUE(slime.get().valid());
+        EXPECT_EQUAL(4L, slime.get()[0]["weight"].asLong());
+        EXPECT_EQUAL(7L, slime.get()[1]["weight"].asLong());
+        vespalib::string arr0s = asVstring(slime.get()[0]["item"]);
+        vespalib::string arr1s = asVstring(slime.get()[1]["item"]);
+        EXPECT_EQUAL("http://www.yahoo.com:83/fluke?ab=2#12", arr0s);
+        EXPECT_EQUAL("http://www.flickr.com:85/fluke?ab=2#13", arr1s);
+    }
 }
 
 
@@ -1127,7 +1154,6 @@ Test::requireThatPositionsAreUsed()
 
     DocsumRequest req;
     req.resultClassName = "class5";
-    req._flags = ::search::fs4transport::GDFLAG_ALLOW_SLIME;
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     // uint32_t rclass = 5;
@@ -1142,7 +1168,8 @@ Test::requireThatPositionsAreUsed()
                                    "<position x=\"1008\" y=\"1009\" latlong=\"N0.001009;E0.001008\" />'"
                             ",wp2:[{item:1048370,weight:43},{item:1048382,weight:44}]"
                             ",wp2x:'<position x=\"1012\" y=\"1013\" latlong=\"N0.001013;E0.001012\" />"
-                                   "<position x=\"1014\" y=\"1015\" latlong=\"N0.001015;E0.001014\" />'}", *rep, 0, true));
+                                   "<position x=\"1014\" y=\"1015\" latlong=\"N0.001015;E0.001014\" />'}",
+                            *rep, 0, false));
 }
 
 
@@ -1211,18 +1238,26 @@ Test::requireThatRawFieldsWorks()
 
     ASSERT_TRUE(assertString(raw1s,
                             "i", dsa, 1));
-    ASSERT_TRUE(assertString(empty + "[\"" +
-                             vespalib::Base64::encode(raw1a0) +
-                             "\",\"" +
-                             vespalib::Base64::encode(raw1a1) +
-                             "\"]",
-                             "araw", dsa, 1));
-    ASSERT_TRUE(assertString(empty + "[{\"item\":\"" +
-                             vespalib::Base64::encode(raw1w1) +
-                             "\",\"weight\":46},{\"item\":\"" +
-                             vespalib::Base64::encode(raw1w0) +
-                             "\",\"weight\":45}]",
-                             "wraw", dsa, 1));
+
+    GeneralResultPtr res = getResult(dsa, 1);
+    {
+        vespalib::Slime slime;
+        decode(res->GetEntry("araw"), slime);
+        EXPECT_TRUE(slime.get().valid());
+        EXPECT_EQUAL(vespalib::Base64::encode(raw1a0), b64encode(slime.get()[0]));
+        EXPECT_EQUAL(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
+    }
+    {
+        vespalib::Slime slime;
+        decode(res->GetEntry("wraw"), slime);
+        EXPECT_TRUE(slime.get().valid());
+        EXPECT_EQUAL(46L, slime.get()[0]["weight"].asLong());
+        EXPECT_EQUAL(45L, slime.get()[1]["weight"].asLong());
+        std::string arr0s = b64encode(slime.get()[0]["item"]);
+        std::string arr1s = b64encode(slime.get()[1]["item"]);
+        EXPECT_EQUAL(vespalib::Base64::encode(raw1w1), arr0s);
+        EXPECT_EQUAL(vespalib::Base64::encode(raw1w0), arr1s);
+    }
 }
 
 

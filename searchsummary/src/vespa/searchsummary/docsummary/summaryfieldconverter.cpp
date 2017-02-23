@@ -36,12 +36,10 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/convenience.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
-#include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/eval/tensor/serialization/slime_binary_format.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -86,7 +84,6 @@ using search::util::URL;
 using std::make_pair;
 using std::pair;
 using std::vector;
-using vespalib::JSONWriter;
 using vespalib::asciistream;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
@@ -235,178 +232,6 @@ struct SummaryHandler {
     }
 };
 
-
-
-class JsonFiller : public ConstFieldValueVisitor {
-    JSONWriter           &_json;
-    bool                  _tokenize;
-
-    virtual void visit(const AnnotationReferenceFieldValue & v ) {
-        (void)v;
-        _json.beginObject();
-        _json.appendKey("error");
-        _json.appendString("cannot convert from annotation reference field");
-        _json.endObject();
-    }
-    virtual void visit(const Document & v) {
-        (void)v;
-        _json.beginObject();
-        _json.appendKey("error");
-        _json.appendString("cannot convert from field of type document");
-        _json.endObject();
-    }
-
-    virtual void visit(const MapFieldValue & v) {
-        _json.beginArray();
-        for (const auto & entry : v) {
-            _json.beginObject();
-
-            _json.appendKey("key");
-            const FieldValue &key = *(entry.first);
-            key.accept(*this);
-
-            const FieldValue &val = *(entry.second);
-            _json.appendKey("value");
-            val.accept(*this);
-
-            _json.endObject();
-        }
-        _json.endArray();
-    }
-
-    virtual void visit(const ArrayFieldValue &value) {
-        _json.beginArray();
-        if (value.size() > 0) {
-            for (const FieldValue &fv : value) {
-                fv.accept(*this);
-            }
-        }
-        _json.endArray();
-    }
-
-    virtual void visit(const StringFieldValue &value) {
-        if (_tokenize) {
-            asciistream tmp;
-            SummaryHandler handler(value.getValue(), tmp);
-            handleIndexingTerms(handler, value);
-            _json.appendString(tmp.str());
-        } else {
-            _json.appendString(value.getValue());
-        }
-    }
-
-    virtual void visit(const IntFieldValue &value) {
-        int32_t v = value.getValue(); _json.appendInt64(v);
-    }
-    virtual void visit(const LongFieldValue &value) {
-        int64_t v = value.getValue(); _json.appendInt64(v);
-    }
-    virtual void visit(const ShortFieldValue &value) {
-        int16_t v = value.getValue(); _json.appendInt64(v);
-    }
-    virtual void visit(const ByteFieldValue &value) {
-        int8_t v = value.getAsByte(); _json.appendInt64(v);
-    }
-    virtual void visit(const DoubleFieldValue &value) {
-        double v = value.getValue(); _json.appendDouble(v);
-    }
-    virtual void visit(const FloatFieldValue &value) {
-        float v = value.getValue(); _json.appendFloat(v);
-    }
-
-    virtual void
-    visit(const PredicateFieldValue &value)
-    {
-        _json.appendJSON(value.toString());
-    }
-
-    virtual void
-    visit(const RawFieldValue &value)
-    {
-        // Use base64 coding to represent raw values in json strings.
-        std::pair<const char *, size_t> buf = value.getAsRaw();
-        vespalib::string rawVal(buf.first, buf.first + buf.second);
-        _json.appendString(vespalib::Base64::encode(rawVal));
-    }
-
-    virtual void visit(const StructFieldValue &value) {
-        // stringref type_name = value.getDataType()->getName();
-        if (*value.getDataType() == *SearchDataType::URI) {
-            FieldValue::UP uriAllValue = value.getValue("all");
-            if (uriAllValue.get() != NULL &&
-                uriAllValue->inherits(IDENTIFIABLE_CLASSID(StringFieldValue)))
-            {
-                uriAllValue->accept(*this);
-                return;
-            }
-        }
-        _json.beginObject();
-        for (StructFieldValue::const_iterator itr = value.begin(); itr != value.end(); ++itr) {
-            _json.appendKey(itr.field().getName());
-            FieldValue::UP nextValue(value.getValue(itr.field()));
-            (*nextValue).accept(*this);
-        }
-        _json.endObject();
-    }
-
-    virtual void visit(const WeightedSetFieldValue &value) {
-        _json.beginArray();
-        if ( value.size() > 0) {
-            for (const auto & entry : value) {
-                _json.beginObject();
-                _json.appendKey("item");
-                entry.first->accept(*this);
-                _json.appendKey("weight");
-                int weight = static_cast<const IntFieldValue &>(*entry.second).getValue();
-                _json.appendInt64(weight);
-                _json.endObject();
-            }
-        }
-        _json.endArray();
-    }
-
-    virtual void visit(const TensorFieldValue &value) override {
-        const auto &tensor = value.getAsTensorPtr();
-        if (tensor) {
-            auto slime =
-                vespalib::tensor::SlimeBinaryFormat::serialize(*tensor);
-            vespalib::SimpleBuffer buf;
-            vespalib::slime::JsonFormat::encode(*slime, buf, true);
-            _json.appendJSON(buf.get().make_string());
-        } else {
-            // No tensor value => empty object
-            _json.beginObject();
-            _json.endObject();
-        }
-    }
-
-    void visit(const ReferenceFieldValue& value) override {
-        _json.appendString(value.hasValidDocumentId()
-                ? value.getDocumentId().toString()
-                : string());
-    }
-
-public:
-    JsonFiller(bool markup, JSONWriter &json)
-        : _json(json), _tokenize(markup) {}
-};
-
-class JsonConverter : public FieldValueConverter {
-    bool                  _tokenize;
-public:
-    JsonConverter(bool tokenize)
-        : _tokenize(tokenize)
-    {}
-
-    FieldValue::UP convert(const FieldValue &input) {
-        asciistream target;
-        JSONWriter json(target);
-        JsonFiller visitor(_tokenize, json);
-        input.accept(visitor);
-        return FieldValue::UP(new StringFieldValue(target.str()));
-    }
-
-};
 
 class SummaryFieldValueConverter : protected ConstFieldValueVisitor
 {
@@ -604,11 +429,8 @@ class SlimeFiller : public ConstFieldValueVisitor {
     virtual void
     visit(const RawFieldValue &value)
     {
-        // Use base64 coding to represent raw values
         std::pair<const char *, size_t> buf = value.getAsRaw();
-        vespalib::string rawVal(buf.first, buf.first + buf.second);
-        vespalib::string encVal(vespalib::Base64::encode(rawVal));
-        _inserter.insertString(Memory(encVal.c_str()));
+        _inserter.insertData(Memory(buf.first, buf.second));
     }
 
     virtual void visit(const StructFieldValue &value) {
@@ -691,16 +513,10 @@ public:
 
 FieldValue::UP
 SummaryFieldConverter::convertSummaryField(bool markup,
-                                           const FieldValue &value,
-                                           bool useSlimeInsideFields)
+                                           const FieldValue &value)
 {
-    if (useSlimeInsideFields) {
-        SlimeConverter subConv(markup);
-        return SummaryFieldValueConverter(markup, subConv).convert(value);
-    } else {
-        JsonConverter subConv(markup);
-        return SummaryFieldValueConverter(markup, subConv).convert(value);
-    }
+    SlimeConverter subConv(markup);
+    return SummaryFieldValueConverter(markup, subConv).convert(value);
 }
 
 

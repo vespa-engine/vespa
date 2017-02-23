@@ -87,50 +87,6 @@ SummaryFeaturesDFW::insertField(uint32_t docid,
     }
 }
 
-uint32_t
-SummaryFeaturesDFW::WriteField(uint32_t docid,
-                               GeneralResult * gres,
-                               GetDocsumsState * state,
-                               ResType type,
-                               search::RawBuf * target)
-{
-    (void) gres;
-
-    if (state->_summaryFeatures.get() == 0) {
-        state->_callback.FillSummaryFeatures(state, _env);
-        if (state->_summaryFeatures.get() == 0) { // still no summary features to write
-            return DocsumFormat::addEmpty(type, *target);
-        }
-    }
-
-    uint32_t written = 0;
-
-    const FeatureSet::StringVector &names = state->_summaryFeatures->getNames();
-    vespalib::JSONStringer & json(state->_jsonStringer);
-    const feature_t *values = state->_summaryFeatures->getFeaturesByDocId(docid);
-    if (values != NULL) {
-        json.clear();
-        json.beginObject();
-        for (uint32_t i = 0; i < names.size(); ++i) {
-            featureDump(json, names[i], values[i]);
-        }
-        json.appendKey(_G_cached);
-        if (state->_summaryFeaturesCached) {
-            json.appendDouble(1.0);
-        } else {
-            json.appendDouble(0.0);
-        }
-        json.endObject();
-
-        written += writeString(json.toString(), type, target);
-        json.clear();
-    } else {
-        written += DocsumFormat::addEmpty(type, *target);
-    }
-
-    return written;
-}
-
 void FeaturesDFW::featureDump(vespalib::JSONStringer & json, const vespalib::stringref & name, double feature)
 {
     json.appendKey(name);
