@@ -235,8 +235,8 @@ public:
   
     FeatureResolver get_resolver() {
         FeatureResolver resolver(2);
-        resolver.add("foo", &_fooValue, false);
-        resolver.add("bar", &_barValue, false);
+        resolver.add("foo", LazyValue(&_fooValue), false);
+        resolver.add("bar", LazyValue(&_barValue), false);
         return resolver;
     }
 };

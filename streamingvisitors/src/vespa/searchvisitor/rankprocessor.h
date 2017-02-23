@@ -33,7 +33,8 @@ private:
     uint32_t                             _docId;
     double                               _score;
     search::fef::RankProgram::UP         _summaryProgram;
-    const search::feature_t             *_rankScorePtr;
+    search::fef::NumberOrObject          _zeroScore;
+    search::fef::LazyValue               _rankScore;
     HitCollector::UP                     _hitCollector;
 
     void initQueryEnvironment();

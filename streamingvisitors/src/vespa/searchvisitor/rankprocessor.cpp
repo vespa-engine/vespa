@@ -40,11 +40,11 @@ getIndexName(const vespalib::string & indexName, const vespalib::string & expand
     return indexName + "(" + expandedIndexName + ")";
 }
 
-const search::feature_t *
-getFeaturePtr(const RankProgram &rankProgram) {
+search::fef::LazyValue
+getFeature(const RankProgram &rankProgram) {
     search::fef::FeatureResolver resolver(rankProgram.get_seeds());
     assert(resolver.num_features() == 1u);
-    return resolver.resolve_number(0);
+    return resolver.resolve(0);
 }
 
 }
@@ -115,7 +115,7 @@ RankProcessor::init(bool forRanking, size_t wantedHitCount)
             _rankProgram = _rankSetup.create_second_phase_program();
         }
         setupRankProgram(*_rankProgram);
-        _rankScorePtr = getFeaturePtr(*_rankProgram);
+        _rankScore = getFeature(*_rankProgram);
         _summaryProgram = _rankSetup.create_summary_program();
         setupRankProgram(*_summaryProgram);
     } else {
@@ -141,7 +141,8 @@ RankProcessor::RankProcessor(RankManager::Snapshot::SP snapshot,
     _docId(TermFieldMatchData::invalidId()),
     _score(0.0),
     _summaryProgram(),
-    _rankScorePtr(nullptr),
+    _zeroScore(),
+    _rankScore(&_zeroScore),
     _hitCollector()
 {
 }
@@ -161,12 +162,9 @@ RankProcessor::initForDumping(size_t wantedHitCount)
 void
 RankProcessor::runRankProgram(uint32_t docId)
 {
-    _rankProgram->run(docId);
-    if (_rankScorePtr != nullptr) {
-        _score = *_rankScorePtr;
-        if (std::isnan(_score) || std::isinf(_score)) {
-            _score = -HUGE_VAL;
-        }
+    _score = _rankScore.as_number(docId);
+    if (std::isnan(_score) || std::isinf(_score)) {
+        _score = -HUGE_VAL;
     }
 }
 
@@ -191,7 +189,7 @@ public:
     virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
         // Prepare the match data object used by the rank program with earlier unpacked match data.
         copyTermFieldMatchData(matchData, _rankProgram.match_data());
-        _rankProgram.run(docid);
+        (void) docid;
     }
 };
 
