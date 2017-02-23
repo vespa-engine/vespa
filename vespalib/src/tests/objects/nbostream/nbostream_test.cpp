@@ -24,14 +24,6 @@ std::ostream &operator<<(std::ostream &out, const std::vector<uint8_t> &rhs)
     return out;
 }
 
-template <typename T, typename U>
-std::ostream &operator<<(std::ostream &out, const std::pair<T, U> &rhs)
-{
-    out << "{ " << rhs.first << ", " << rhs.second << " }";
-    return out;
-}
-
-
 template <typename T>
 std::ostream &
 operator<<(std::ostream &os, const vespalib::Array<T> &set)
