@@ -112,8 +112,10 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
             case document::DataType::T_LONG:
                 inserter.insertLong(fv.getAsLong());
                 break;
-            case document::DataType::T_FLOAT:
             case document::DataType::T_DOUBLE:
+                inserter.insertDouble(fv.getAsDouble());
+                break;
+            case document::DataType::T_FLOAT:
                 inserter.insertDouble(fv.getAsFloat());
                 break;
             default:
