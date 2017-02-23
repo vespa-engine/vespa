@@ -5,20 +5,26 @@
 
 namespace search {
 
-    std::unique_ptr<BitVector>
-    AttributeIteratorPack::get_hits(uint32_t begin_id, uint32_t end_id) {
-        BitVector::UP result(BitVector::create(begin_id, end_id));
+std::unique_ptr<BitVector>
+AttributeIteratorPack::get_hits(uint32_t begin_id, uint32_t end_id) {
+    BitVector::UP result(BitVector::create(begin_id, end_id));
+    or_hits_into(*result, begin_id);
+    return result;
+}
 
-        for (size_t i = 0; i < size(); ++i) {
-            uint32_t docId = get_docid(i);
-            if (begin_id > docId) {
-                seek(i, begin_id);
-            }
-            for (docId = get_docid(i); docId < end_id; docId = next(i)) {
-                result->setBit(docId);
-            }
+void
+AttributeIteratorPack::or_hits_into(BitVector &result, uint32_t begin_id) {
+    for (size_t i = 0; i < size(); ++i) {
+        uint32_t docId = get_docid(i);
+        if (begin_id > docId) {
+            seek(i, begin_id);
         }
-        return result;
+        for (docId = get_docid(i); docId < result.size(); docId = next(i)) {
+            result.setBit(docId);
+        }
     }
+}
+
+
 
 }
