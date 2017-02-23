@@ -48,7 +48,6 @@ using vespalib::RWLockWriter;
 using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
-using vespalib::slime::ObjectInserter;
 
 using search::TuneFileDocumentDB;
 using search::index::Schema;

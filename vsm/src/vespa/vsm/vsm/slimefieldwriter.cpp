@@ -52,15 +52,15 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
         } else if (cfv.inherits(document::WeightedSetFieldValue::classId)) {
             const document::WeightedSetFieldValue & wsfv = static_cast<const document::WeightedSetFieldValue &>(cfv);
             Cursor &a = inserter.insertArray();
-            Memory imem("item");
-            Memory wmem("weight");
+            Symbol isym = a.resolve("item");
+            Symbol wsym = a.resolve("weight");
             for (const auto &entry : wsfv) {
                 Cursor &o = a.addObject();
                 const document::FieldValue & nfv = *entry.first;
-                ObjectInserter oi(o, imem);
+                ObjectSymbolInserter oi(o, isym);
                 traverseRecursive(nfv, oi);
                 int weight = static_cast<const document::IntFieldValue &>(*entry.second).getValue();
-                o.setLong(wmem, weight);
+                o.setLong(wsym, weight);
             }
         } else {
             LOG(warning, "traverseRecursive: Cannot handle collection field value of type '%s'",
@@ -71,17 +71,17 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
         const document::MapFieldValue & mfv = static_cast<const document::MapFieldValue &>(fv);
         const document::MapDataType& mapType = static_cast<const document::MapDataType &>(*mfv.getDataType());
         Cursor &a = inserter.insertArray();
-        Memory keymem("key");
-        Memory valmem("value");
+        Symbol keysym = a.resolve("key");
+        Symbol valsym = a.resolve("value");
         for (const auto &entry : mfv) {
             Cursor &o = a.addObject();
-            ObjectInserter ki(o, keymem);
+            ObjectSymbolInserter ki(o, keysym);
             traverseRecursive(*entry.first, ki);
             document::FieldPathEntry valueEntry(
                     mapType, mapType.getKeyType(), mapType.getValueType(),
                     false, true);
             _currPath.push_back(valueEntry);
-            ObjectInserter vi(o, valmem);
+            ObjectSymbolInserter vi(o, valsym);
             traverseRecursive(*entry.second, vi);
             _currPath.pop_back();
         }

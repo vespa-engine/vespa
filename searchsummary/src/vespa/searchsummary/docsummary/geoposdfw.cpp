@@ -43,7 +43,8 @@ GeoPositionDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * d
                             ResType, vespalib::slime::Inserter &target)
 {
     using vespalib::slime::Cursor;
-    using vespalib::slime::ObjectInserter;
+    using vespalib::slime::ObjectSymbolInserter;
+    using vespalib::slime::Symbol;
     using vespalib::slime::ArrayInserter;
 
     const IAttributeVector & attribute = vec(*dsState);
@@ -51,14 +52,16 @@ GeoPositionDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * d
         uint32_t entries = attribute.getValueCount(docid);
         Cursor &arr = target.insertArray();
         if (attribute.hasWeightedSetType()) {
+            Symbol isym = arr.resolve("item");
+            Symbol wsym = arr.resolve("weight");
             std::vector<IAttributeVector::WeightedInt> elements(entries);
             entries = attribute.get(docid, &elements[0], entries);
             for (uint32_t i = 0; i < entries; ++i) {
                 Cursor &elem = arr.addObject();
                 int64_t pos = elements[i].getValue();
-                ObjectInserter obj(elem, "item");
+                ObjectSymbolInserter obj(elem, isym);
                 fmtZcurve(pos, obj);
-                elem.setLong("weight", elements[i].getWeight());
+                elem.setLong(wsym, elements[i].getWeight());
             }
         } else {
             std::vector<IAttributeVector::largeint_t> elements(16);
