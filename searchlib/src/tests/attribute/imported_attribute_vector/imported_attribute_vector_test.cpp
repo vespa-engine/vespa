@@ -66,29 +66,29 @@ GlobalId dummy_gid(uint32_t doc_index) {
 }
 
 struct Fixture {
-    std::shared_ptr<AttributeVector> target_attr;
-    std::shared_ptr<ReferenceAttribute> ref_attr;
-    std::shared_ptr<ImportedAttributeVector> imported_attribute;
+    std::shared_ptr<AttributeVector>           target_attr;
+    std::shared_ptr<ReferenceAttribute>        reference_attr;
+    std::shared_ptr<ImportedAttributeVector>   imported_attr;
     std::shared_ptr<MockGidToLidMapperFactory> mapper_factory;
 
     Fixture()
         : target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
-          ref_attr(create_reference_attribute()),
-          imported_attribute(create_attribute_vector_from_members()),
+          reference_attr(create_reference_attribute()),
+          imported_attr(create_attribute_vector_from_members()),
           mapper_factory(std::make_shared<MockGidToLidMapperFactory>())
     {
-        ref_attr->setGidToLidMapperFactory(mapper_factory);
+        reference_attr->setGidToLidMapperFactory(mapper_factory);
     }
 
     void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
-        assert(from_lid < ref_attr->getNumDocs());
-        ref_attr->update(from_lid, via_gid);
-        ref_attr->commit();
+        assert(from_lid < reference_attr->getNumDocs());
+        reference_attr->update(from_lid, via_gid);
+        reference_attr->commit();
         mapper_factory->_map[via_gid] = to_lid;
     }
 
     std::shared_ptr<ImportedAttributeVector> create_attribute_vector_from_members(vespalib::stringref name = "imported") {
-        return std::make_shared<ImportedAttributeVector>(name, ref_attr, target_attr);
+        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr);
     }
 
     template <typename AttrVecType>
@@ -100,7 +100,7 @@ struct Fixture {
 
     void reset_with_new_target_attr(std::shared_ptr<AttributeVector> new_target) {
         target_attr = std::move(new_target);
-        imported_attribute = create_attribute_vector_from_members();
+        imported_attr = create_attribute_vector_from_members();
     }
 
     template <typename ValueType>
@@ -123,7 +123,7 @@ struct Fixture {
 
     void set_up_attribute_vectors_before_adding_mappings() {
         // Make a sneaky assumption that no tests try to use a lid > 9
-        add_n_docs_with_undefined_values(*ref_attr, 10);
+        add_n_docs_with_undefined_values(*reference_attr, 10);
         add_n_docs_with_undefined_values(*target_attr, 10);
     }
 
@@ -182,7 +182,7 @@ void assert_multi_value_matches(const Fixture& f,
                                 const std::vector<AttrValueType>& expected,
                                 PredicateType predicate) {
     AttributeContent<AttrValueType> content;
-    content.fill(*f.imported_attribute, lid);
+    content.fill(*f.imported_attr, lid);
     EXPECT_EQUAL(expected.size(), content.size());
     std::vector<AttrValueType> actual(content.begin(), content.end());
     EXPECT_TRUE(std::equal(expected.begin(), expected.end(),
@@ -222,9 +222,9 @@ void reset_with_wset_value_reference_mappings(
 }
 
 TEST_F("Accessors return expected attributes", Fixture) {
-    EXPECT_EQUAL(f.imported_attribute->getReferenceAttribute().get(),
-                 f.ref_attr.get());
-    EXPECT_EQUAL(f.imported_attribute->getTargetAttribute().get(),
+    EXPECT_EQUAL(f.imported_attr->getReferenceAttribute().get(),
+                 f.reference_attr.get());
+    EXPECT_EQUAL(f.imported_attr->getTargetAttribute().get(),
                  f.target_attr.get());
 }
 
@@ -234,25 +234,25 @@ TEST_F("getName() is equal to name given during construction", Fixture) {
 }
 
 TEST_F("getNumDocs() returns number of documents in reference attribute vector", Fixture) {
-    add_n_docs_with_undefined_values(*f.ref_attr, 42);
-    EXPECT_EQUAL(42, f.imported_attribute->getNumDocs());
+    add_n_docs_with_undefined_values(*f.reference_attr, 42);
+    EXPECT_EQUAL(42, f.imported_attr->getNumDocs());
 }
 
 TEST_F("hasEnum() is false for non-enum target attribute vector", Fixture) {
-    EXPECT_FALSE(f.imported_attribute->hasEnum());
+    EXPECT_FALSE(f.imported_attr->hasEnum());
 }
 
 TEST_F("Collection type is inherited from target attribute", Fixture) {
-    EXPECT_EQUAL(CollectionType::SINGLE, f.imported_attribute->getCollectionType());
+    EXPECT_EQUAL(CollectionType::SINGLE, f.imported_attr->getCollectionType());
     f.reset_with_new_target_attr(create_array_attribute<IntegerAttribute>(BasicType::INT32));
-    EXPECT_EQUAL(CollectionType::ARRAY, f.imported_attribute->getCollectionType());
+    EXPECT_EQUAL(CollectionType::ARRAY, f.imported_attr->getCollectionType());
 }
 
 TEST_F("getBasicType() returns target vector basic type", Fixture) {
     f.reset_with_new_target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT64));
-    EXPECT_EQUAL(BasicType::INT64, f.imported_attribute->getBasicType());
+    EXPECT_EQUAL(BasicType::INT64, f.imported_attr->getBasicType());
     f.reset_with_new_target_attr(create_single_attribute<FloatingPointAttribute>(BasicType::DOUBLE));
-    EXPECT_EQUAL(BasicType::DOUBLE, f.imported_attribute->getBasicType());
+    EXPECT_EQUAL(BasicType::DOUBLE, f.imported_attr->getBasicType());
 }
 
 TEST_F("Single-valued integer attribute values can be retrieved via reference", Fixture) {
@@ -261,28 +261,28 @@ TEST_F("Single-valued integer attribute values can be retrieved via reference", 
             {{DocId(1), dummy_gid(3), DocId(3), 1234},
              {DocId(3), dummy_gid(7), DocId(7), 5678}});
 
-    EXPECT_EQUAL(1234, f.imported_attribute->getInt(DocId(1)));
-    EXPECT_EQUAL(5678, f.imported_attribute->getInt(DocId(3)));
+    EXPECT_EQUAL(1234, f.imported_attr->getInt(DocId(1)));
+    EXPECT_EQUAL(5678, f.imported_attr->getInt(DocId(3)));
 }
 
 TEST_F("getValueCount() is 1 for mapped single value attribute", Fixture) {
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32, {{DocId(1), dummy_gid(3), DocId(3), 1234}});
-    EXPECT_EQUAL(1u, f.imported_attribute->getValueCount(DocId(1)));
+    EXPECT_EQUAL(1u, f.imported_attr->getValueCount(DocId(1)));
 }
 
 TEST_F("getValueCount() is 0 for non-mapped single value attribute", Fixture) {
-    add_n_docs_with_undefined_values(*f.ref_attr, 3);
-    EXPECT_EQUAL(0u, f.imported_attribute->getValueCount(DocId(2)));
+    add_n_docs_with_undefined_values(*f.reference_attr, 3);
+    EXPECT_EQUAL(0u, f.imported_attr->getValueCount(DocId(2)));
 }
 
 TEST_F("getMaxValueCount() is 1 for single value attribute vectors", Fixture) {
-    EXPECT_EQUAL(1u, f.imported_attribute->getMaxValueCount());
+    EXPECT_EQUAL(1u, f.imported_attr->getMaxValueCount());
 }
 
 TEST_F("getFixedWidth() is inherited from target attribute vector", Fixture) {
     EXPECT_EQUAL(f.target_attr->getFixedWidth(),
-                 f.imported_attribute->getFixedWidth());
+                 f.imported_attr->getFixedWidth());
 }
 
 TEST_F("Multi-valued integer attribute values can be retrieved via reference", Fixture) {
@@ -311,9 +311,9 @@ TEST_F("Weighted integer attribute values can be retrieved via reference", Fixtu
 }
 
 TEST_F("LID with not present GID reference mapping returns default value", Fixture) {
-    add_n_docs_with_undefined_values(*f.ref_attr, 2);
+    add_n_docs_with_undefined_values(*f.reference_attr, 2);
     EXPECT_EQUAL(f.target_attr->getInt(DocId(0)), // Implicit default undefined value
-                 f.imported_attribute->getInt(DocId(1)));
+                 f.imported_attr->getInt(DocId(1)));
 }
 
 TEST_F("Singled-valued floating point attribute values can be retrieved via reference", Fixture) {
@@ -322,8 +322,8 @@ TEST_F("Singled-valued floating point attribute values can be retrieved via refe
             {{DocId(2), dummy_gid(3), DocId(3), 10.5f},
              {DocId(4), dummy_gid(8), DocId(8), 3.14f}});
 
-    EXPECT_EQUAL(10.5f, f.imported_attribute->getFloat(DocId(2)));
-    EXPECT_EQUAL(3.14f, f.imported_attribute->getFloat(DocId(4)));
+    EXPECT_EQUAL(10.5f, f.imported_attr->getFloat(DocId(2)));
+    EXPECT_EQUAL(3.14f, f.imported_attr->getFloat(DocId(4)));
 }
 
 TEST_F("Multi-valued floating point attribute values can be retrieved via reference", Fixture) {
@@ -368,27 +368,27 @@ struct SingleStringAttrFixture : Fixture {
 
 TEST_F("Single-valued string attribute values can be retrieved via reference", SingleStringAttrFixture) {
     char buf[64];
-    EXPECT_EQUAL(vespalib::string("foo"), f.imported_attribute->getString(f.from_lid1, buf, sizeof(buf)));
-    EXPECT_EQUAL(vespalib::string("bar"), f.imported_attribute->getString(f.from_lid2, buf, sizeof(buf)));
+    EXPECT_EQUAL(vespalib::string("foo"), f.imported_attr->getString(f.from_lid1, buf, sizeof(buf)));
+    EXPECT_EQUAL(vespalib::string("bar"), f.imported_attr->getString(f.from_lid2, buf, sizeof(buf)));
 }
 
 TEST_F("getEnum() returns target vector enum via reference", SingleStringAttrFixture) {
     EXPECT_EQUAL(f.target_attr->getEnum(f.to_lid1),
-                 f.imported_attribute->getEnum(f.from_lid1));
+                 f.imported_attr->getEnum(f.from_lid1));
     EXPECT_EQUAL(f.target_attr->getEnum(f.to_lid2),
-                 f.imported_attribute->getEnum(f.from_lid2));
+                 f.imported_attr->getEnum(f.from_lid2));
 }
 
 TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFixture) {
     EnumHandle expected_handle{};
     ASSERT_TRUE(f.target_attr->findEnum("foo", expected_handle));
     EnumHandle actual_handle{};
-    ASSERT_TRUE(f.imported_attribute->findEnum("foo", actual_handle));
+    ASSERT_TRUE(f.imported_attr->findEnum("foo", actual_handle));
     EXPECT_EQUAL(expected_handle, actual_handle);
 }
 
 TEST_F("hasEnum() is true for enum target attribute vector", SingleStringAttrFixture) {
-    EXPECT_TRUE(f.imported_attribute->hasEnum());
+    EXPECT_TRUE(f.imported_attr->hasEnum());
 }
 
 bool string_eq(const char* lhs, const char* rhs) noexcept {
@@ -428,11 +428,11 @@ TEST_F("Multi-valued enum attribute values can be retrieved via reference", Mult
 }
 
 TEST_F("getValueCount() is equal to stored values for mapped multi value attribute", MultiStringAttrFixture) {
-    EXPECT_EQUAL(f.doc7_values.size(), f.imported_attribute->getValueCount(DocId(4)));
+    EXPECT_EQUAL(f.doc7_values.size(), f.imported_attr->getValueCount(DocId(4)));
 }
 
 TEST_F("getMaxValueCount() is greater than 1 for multi value attribute vectors", MultiStringAttrFixture) {
-    EXPECT_GREATER(f.imported_attribute->getMaxValueCount(), 1u);
+    EXPECT_GREATER(f.imported_attr->getMaxValueCount(), 1u);
 }
 
 struct WeightedMultiStringAttrFixture : Fixture {
@@ -543,7 +543,7 @@ TEST_F("onSerializeForAscendingSort() is forwarded to target vector", SerializeF
     int dummy_tag;
     void* ser_to = &dummy_tag;
     EXPECT_EQUAL(f.mock_target->_return_value,
-                 f.imported_attribute->serializeForAscendingSort(
+                 f.imported_attr->serializeForAscendingSort(
                          DocId(10), ser_to, 777, &f.mock_converter));
     EXPECT_TRUE(f.mock_target->_ascending_called);
     EXPECT_EQUAL(DocId(10), f.mock_target->_doc_id);
@@ -556,7 +556,7 @@ TEST_F("onSerializeForDescendingSort() is forwarded to target vector", Serialize
     int dummy_tag;
     void* ser_to = &dummy_tag;
     EXPECT_EQUAL(f.mock_target->_return_value,
-                 f.imported_attribute->serializeForDescendingSort(
+                 f.imported_attr->serializeForDescendingSort(
                          DocId(20), ser_to, 555, &f.mock_converter));
     EXPECT_TRUE(f.mock_target->_descending_called);
     EXPECT_EQUAL(DocId(20), f.mock_target->_doc_id);
