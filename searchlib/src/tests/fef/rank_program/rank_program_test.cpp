@@ -13,6 +13,9 @@ using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
 
+using vespalib::eval::DoubleValue;
+using vespalib::eval::ValueType;
+
 uint32_t default_docid = 1;
 
 void maybe_insert(const LazyValue &value, std::vector<LazyValue> &seen) {
@@ -96,6 +99,31 @@ struct DocidBlueprint : Blueprint {
     }
 };
 
+struct BoxingExecutor : FeatureExecutor {
+    DoubleValue value;
+    BoxingExecutor() : value(0.0) {}
+    bool isPure() override { return true; }
+    void execute(uint32_t) override {
+        value = DoubleValue(inputs().get_number(0));
+        outputs().set_object(0, value);
+    }
+};
+
+struct BoxingBlueprint : Blueprint {
+    BoxingBlueprint() : Blueprint("box") {}
+    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new BoxingBlueprint()); }
+    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override {
+        ASSERT_EQUAL(1u, params.size());
+        defineInput(params[0]);
+        describeOutput("out", "boxed value", FeatureType::object(ValueType::double_type()));
+        return true;
+    }
+    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+        return stash.create<BoxingExecutor>();
+    }
+};
+
 struct MySetup {
     BlueprintFactory factory;
     IndexEnvironment indexEnv;
@@ -109,6 +137,7 @@ struct MySetup {
         factory.addPrototype(Blueprint::SP(new ImpureValueBlueprint()));
         factory.addPrototype(Blueprint::SP(new SumBlueprint()));
         factory.addPrototype(Blueprint::SP(new DocidBlueprint()));
+        factory.addPrototype(Blueprint::SP(new BoxingBlueprint()));
     }
     MySetup &add(const vespalib::string &feature) {
         resolver->addSeed(feature);
@@ -219,6 +248,22 @@ TEST_F("require that the rank program can calculate scores for multiple document
     EXPECT_EQUAL(f1.get(2), 12.0);
     EXPECT_EQUAL(f1.get(3), 13.0);
     EXPECT_EQUAL(f1.get(1), 11.0);
+}
+
+TEST_F("require that auto-unboxing of const object values work", MySetup()) {
+    f1.add("box(value(10))").compile();
+    EXPECT_EQUAL(10.0, f1.get());
+    EXPECT_EQUAL(2u, f1.program.num_executors());
+    EXPECT_EQUAL(3u, count_features(f1.program));
+    EXPECT_EQUAL(3u, count_const_features(f1.program));
+}
+
+TEST_F("require that auto-unboxing of non-const object values work", MySetup()) {
+    f1.add("box(ivalue(10))").compile();
+    EXPECT_EQUAL(10.0, f1.get());
+    EXPECT_EQUAL(2u, f1.program.num_executors());
+    EXPECT_EQUAL(3u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
