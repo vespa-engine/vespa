@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/query/query.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -40,8 +39,8 @@ TEST("testveryLongQueryResultingInBug6850778") {
     Node::UP node = builder.build();
     vespalib::string stackDump = StackDumpCreator::create(*node);
 
-    EmptyQueryNodeResult empty;
-    Query q(empty, stackDump);
+    QueryNodeResultFactory factory;
+    Query q(factory, stackDump);
     QueryTermList terms;
     QueryNodeRefList phrases;
     q.getLeafs(terms);

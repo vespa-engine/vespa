@@ -16,7 +16,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 
 using namespace document;
-using search::EmptyQueryNodeResult;
+using search::QueryNodeResultFactory;
 using search::QueryTerm;
 using search::QueryTermList;
 using namespace vsm;
@@ -56,7 +56,7 @@ private:
         for (size_t i = 0; i < terms.size(); ++i) {
             ParsedQueryTerm pqt = parseQueryTerm(terms[i]);
             ParsedTerm pt = parseTerm(pqt.second);
-            qtv.push_back(QueryTerm(eqnr, pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
+            qtv.push_back(QueryTerm(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
         }
         for (size_t i = 0; i < qtv.size(); ++i) {
             qtl.push_back(&qtv[i]);
@@ -65,7 +65,7 @@ private:
 public:
     typedef std::pair<std::string, std::string> ParsedQueryTerm;
     typedef std::pair<std::string, QueryTerm::SearchTerm> ParsedTerm;
-    EmptyQueryNodeResult   eqnr;
+    QueryNodeResultFactory   eqnr;
     std::vector<QueryTerm> qtv;
     QueryTermList          qtl;
     Query(const StringList & terms) : eqnr(), qtv(), qtl() {
@@ -268,9 +268,9 @@ getFieldValue(const FloatList & fv)
 bool
 assertMatchTermSuffix(const std::string & term, const std::string & word)
 {
-    EmptyQueryNodeResult eqnr;
-    QueryTerm qa(eqnr, term, "index", QueryTerm::WORD);
-    QueryTerm qb(eqnr, word, "index", QueryTerm::WORD);
+    QueryNodeResultFactory eqnr;
+    QueryTerm qa(eqnr.create(), term, "index", QueryTerm::WORD);
+    QueryTerm qb(eqnr.create(), word, "index", QueryTerm::WORD);
     const ucs4_t * a;
     size_t alen = qa.term(a);
     const ucs4_t * b;

@@ -6,7 +6,5 @@ using namespace search::fef;
 
 namespace storage {
 
-IMPLEMENT_DUPLICATE(QueryTermData);
-
 } // namespace storage
 

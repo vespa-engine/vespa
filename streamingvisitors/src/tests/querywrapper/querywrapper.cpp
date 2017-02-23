@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -23,7 +24,7 @@ public:
 void
 QueryWrapperTest::testQueryWrapper()
 {
-    EmptyQueryNodeResult empty;
+    QueryNodeResultFactory empty;
     PhraseQueryNode * null = NULL;
     {
         QueryBuilder<SimpleQueryNodeTypes> builder;

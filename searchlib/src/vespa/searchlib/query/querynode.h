@@ -10,7 +10,7 @@ namespace search {
 class SimpleQueryStackDumpIterator;
 class QueryTerm;
 class QueryNode;
-class QueryNodeResultBase;
+class QueryNodeResultFactory;
 
 /// Typedef a simple list that contains references to QueryNodes.
 typedef std::vector<QueryNode *> QueryNodeRefList;
@@ -55,7 +55,7 @@ class QueryNode : public vespalib::Identifiable
   virtual size_t depth() const { return 1; }
   /// Return the width of this tree.
   virtual size_t width() const { return 1; }
-  static UP Build(const QueryNode * parent, const QueryNodeResultBase & org, SimpleQueryStackDumpIterator & queryRep, bool allowRewrite);
+  static UP Build(const QueryNode * parent, const QueryNodeResultFactory & org, SimpleQueryStackDumpIterator & queryRep, bool allowRewrite);
 };
 
 /// A list conating the QuerNode objects. With copy/assignment.

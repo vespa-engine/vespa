@@ -3,6 +3,4 @@
 
 namespace search {
 
-IMPLEMENT_DUPLICATE(EmptyQueryNodeResult);
-
 }
