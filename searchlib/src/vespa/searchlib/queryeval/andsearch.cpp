@@ -7,13 +7,28 @@
 namespace search {
 namespace queryeval {
 
+namespace {
+
+void handleBitVectors(BitVector::UP & result, const MultiSearch::Children & children, uint32_t begin_id, bool onlyBitVector) {
+    for (SearchIterator * child : children) {
+        if (child->isBitVector() == onlyBitVector) {
+            if ( ! result ) {
+                result = child->get_hits(begin_id);
+            } else {
+                child->and_hits_into(*result, begin_id);
+            }
+        }
+    }
+}
+
+}
+
 BitVector::UP
 AndSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
-    BitVector::UP result = children.front()->get_hits(begin_id);
-    for (size_t i = 1; i < children.size(); ++i) {
-        children[i]->and_hits_into(*result, begin_id);
-    }
+    BitVector::UP result;
+    handleBitVectors(result, children, begin_id, true);
+    handleBitVectors(result, children, begin_id, false);
     return result;
 }
 
