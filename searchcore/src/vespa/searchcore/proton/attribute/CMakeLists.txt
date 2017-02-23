@@ -23,6 +23,7 @@ vespa_add_library(searchcore_attribute STATIC
     exclusive_attribute_read_accessor.cpp
     filter_attribute_manager.cpp
     flushableattribute.cpp
+    imported_attributes_repo.cpp
     initialized_attributes_result.cpp
     sequential_attributes_initializer.cpp
     DEPENDS
