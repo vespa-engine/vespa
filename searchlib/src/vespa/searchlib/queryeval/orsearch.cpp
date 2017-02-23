@@ -78,9 +78,20 @@ private:
 
 BitVector::UP
 OrSearch::get_hits(uint32_t begin_id) {
-    const Children &children = getChildren();
-    BitVector::UP result = orChildren(children, begin_id);
-    return result;
+    return orChildren(getChildren(), begin_id);
+}
+
+void
+OrSearch::and_hits_into(BitVector &result, uint32_t begin_id) {
+    result.andWith(*get_hits(begin_id));
+}
+
+void
+OrSearch::or_hits_into(BitVector &result, uint32_t begin_id)
+{
+    BitVector::UP dirty(&result);
+    orChildren(dirty, getChildren(), begin_id);
+    dirty.release(); // Yes I know, dirty...
 }
 
 SearchIterator *

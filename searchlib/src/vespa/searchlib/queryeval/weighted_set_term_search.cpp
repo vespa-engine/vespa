@@ -121,6 +121,13 @@ public:
     BitVector::UP get_hits(uint32_t begin_id) override {
         return _children.get_hits(begin_id, getEndId());
     }
+
+    void or_hits_into(BitVector &result, uint32_t begin_id) override {
+        _children.or_hits_into(result, begin_id);
+    }
+    void and_hits_into(BitVector &result, uint32_t begin_id) override {
+        result.andWith(*get_hits(begin_id));
+    }
 };
 
 //-----------------------------------------------------------------------------
