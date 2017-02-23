@@ -91,7 +91,6 @@ vespa_define_module(
     src/tests/attribute/sourceselector
     src/tests/attribute/stringattribute
     src/tests/attribute/tensorattribute
-    src/tests/attribute/imported_attribute_vector
     src/tests/bitcompression/expgolomb
     src/tests/bitvector
     src/tests/btree
