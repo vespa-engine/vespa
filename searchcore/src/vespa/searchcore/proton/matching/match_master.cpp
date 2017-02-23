@@ -127,11 +127,10 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
         if (search->seek(docs[i])) {
             uint32_t docId = search->getDocId();
             search->unpack(docId);
-            rankProgram->run(docId);
             search::feature_t * f = fs.getFeaturesByIndex(
                     fs.addDocId(docId));
             for (uint32_t j = 0; j < featureNames.size(); ++j) {
-                f[j] = *resolver.resolve_number(j);
+                f[j] = resolver.resolve(j).as_number(docId);
             }
         } else {
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. "

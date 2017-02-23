@@ -17,9 +17,8 @@ namespace matching {
 class DocumentScorer : public search::queryeval::HitCollector::DocumentScorer
 {
 private:
-    search::fef::RankProgram &_rankProgram;
     search::queryeval::SearchIterator &_searchItr;
-    const search::feature_t *_scoreFeature;
+    search::fef::LazyValue _scoreFeature;
 
 public:
     DocumentScorer(search::fef::RankProgram &rankProgram,
@@ -27,8 +26,7 @@ public:
 
     search::feature_t doScore(uint32_t docId) {
         _searchItr.unpack(docId);
-        _rankProgram.run(docId);
-        return *_scoreFeature;
+        return _scoreFeature.as_number(docId);
     }
 
     virtual search::feature_t score(uint32_t docId) override;

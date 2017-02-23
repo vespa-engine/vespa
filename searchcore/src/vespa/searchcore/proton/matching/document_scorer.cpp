@@ -5,6 +5,7 @@
 using search::feature_t;
 using search::fef::FeatureResolver;
 using search::fef::RankProgram;
+using search::fef::LazyValue;
 using search::queryeval::SearchIterator;
 
 namespace proton {
@@ -12,20 +13,19 @@ namespace matching {
 
 namespace {
 
-const feature_t *
+LazyValue
 extractScoreFeature(const RankProgram &rankProgram)
 {
     FeatureResolver resolver(rankProgram.get_seeds());
     assert(resolver.num_features() == 1u);
-    return resolver.resolve_number(0);
+    return resolver.resolve(0);
 }
 
 }
 
 DocumentScorer::DocumentScorer(RankProgram &rankProgram,
                                SearchIterator &searchItr)
-    : _rankProgram(rankProgram),
-      _searchItr(searchItr),
+    : _searchItr(searchItr),
       _scoreFeature(extractScoreFeature(rankProgram))
 {
 }
