@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
-import static com.yahoo.searchdefinition.TestUtils.joinLines;
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertNotNull;
 
 /**

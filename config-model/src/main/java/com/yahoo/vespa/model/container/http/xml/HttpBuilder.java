@@ -22,7 +22,6 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_CHAIN_ID;
 
@@ -46,7 +45,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
                 accessControl = buildAccessControl(ancestor, accessControlElem);
-                bindings.addAll(getAccessControlBindings(ancestor, accessControl));
+                bindings.addAll(accessControl.getBindings());
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
         } else {
@@ -66,6 +65,11 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 .orElse(getDeployedApplicationId(ancestor).value());
 
         AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application);
+
+        getContainerCluster(ancestor).ifPresent(cluster -> {
+            builder.setHandlers(cluster.getHandlers());
+            builder.setServlets(cluster.getAllServlets());
+        });
 
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
@@ -89,16 +93,6 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return getContainerCluster(ancestor)
                 .map(cluster -> cluster.getRoot().getDeployState().getProperties().applicationId().application())
                 .orElse(ApplicationId.defaultId().application());
-    }
-
-    private static List<Binding> getAccessControlBindings(AbstractConfigProducer ancestor, AccessControl accessControl) {
-        return getContainerCluster(ancestor)
-                .map(cluster -> cluster.getHandlers().stream()
-                        .filter(accessControl::shouldHandlerBeProtected)
-                        .flatMap(handler -> handler.getServerBindings().stream())
-                        .map(AccessControl::accessControlBinding)
-                        .collect(Collectors.toList()))
-                .orElse(new ArrayList<>());
     }
 
     private static Optional<ContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {

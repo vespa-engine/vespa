@@ -13,9 +13,9 @@ import java.util.List;
 
 /**
  * @author lulf
- * @since 5.1
+ * @author gjoranv
  */
-public class ConfigModelTestUtil {
+public class TestUtil {
     /**
      * @param xmlLines XML with " replaced with '
      */
@@ -33,8 +33,11 @@ public class ConfigModelTestUtil {
         }
     }
 
+    public static String joinLines(CharSequence... lines) {
+        return String.join("\n", lines);
+    }
+
     private static InputSource inputSource(String str) {
         return new InputSource(new StringReader(str));
     }
-
 }

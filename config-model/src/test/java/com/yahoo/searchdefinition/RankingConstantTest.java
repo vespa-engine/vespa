@@ -8,7 +8,7 @@ import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static com.yahoo.searchdefinition.TestUtils.joinLines;
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 /**
  * @author gjoranv
