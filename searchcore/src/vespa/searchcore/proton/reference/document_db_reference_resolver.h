@@ -2,16 +2,18 @@
 #pragma once
 
 #include "i_document_db_reference_resolver.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchlib/attribute/not_implemented_attribute.h>
 
-namespace document {
-class DocumentType;
-class DocumentTypeRepo;
-}
-namespace search { class IAttributeManager; }
+namespace document { class DocumentType; class DocumentTypeRepo; }
+namespace search { class IAttributeManager; namespace attribute { class IAttributeVector; class ReferenceAttribute; } }
+namespace vespa { namespace config { namespace search { namespace internal { class InternalImportedFieldsType; } } } }
 
 namespace proton {
 
+class IDocumentDBReferent;
 class IDocumentDBReferentRegistry;
+class ImportedAttributesRepo;
 
 /**
  * Class that for a given document db resolves all references to parent document dbs:
@@ -19,16 +21,43 @@ class IDocumentDBReferentRegistry;
  */
 class DocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
 private:
+    using ImportedFieldsConfig = const vespa::config::search::internal::InternalImportedFieldsType;
     const IDocumentDBReferentRegistry &_registry;
     const document::DocumentType &_thisDocType;
+    const ImportedFieldsConfig &_importedFieldsCfg;
 
+    std::shared_ptr<IDocumentDBReferent> getTargetDocumentDB(const vespalib::string &refAttrName) const;
     void connectReferenceAttributesToGidMapper(const search::IAttributeManager &attrMgr);
+    std::unique_ptr<ImportedAttributesRepo> createImportedAttributesRepo(const search::IAttributeManager &attrMgr);
 
 public:
     DocumentDBReferenceResolver(const IDocumentDBReferentRegistry &registry,
-                                const document::DocumentType &thisDocType);
+                                const document::DocumentType &thisDocType,
+                                const ImportedFieldsConfig &importedFieldsCfg);
 
-    virtual void resolve(const search::IAttributeManager &attrMgr) override;
+    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &attrMgr) override;
+};
+
+/**
+ * Temporary placeholder for an imported attribute vector.
+ * TODO: Remove when search::attribute::ImportedAttributeVector is finished
+ */
+class ImportedAttributeVector : public search::NotImplementedAttribute {
+private:
+    vespalib::string _name;
+    std::shared_ptr<search::attribute::ReferenceAttribute> _refAttr;
+    std::shared_ptr<search::attribute::IAttributeVector> _targetAttr;
+
+    virtual void onCommit() override {}
+    virtual void onUpdateStat() override {}
+
+public:
+    ImportedAttributeVector(vespalib::stringref name,
+                            std::shared_ptr<search::attribute::ReferenceAttribute> refAttr,
+                            std::shared_ptr<search::attribute::IAttributeVector> targetAttr);
+
+    std::shared_ptr<search::attribute::ReferenceAttribute> getReferenceAttribute() const { return _refAttr; }
+    std::shared_ptr<search::attribute::IAttributeVector> getTargetAttribute() const { return _targetAttr; }
 };
 
 }

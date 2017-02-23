@@ -5,12 +5,14 @@ namespace search { class IAttributeManager; }
 
 namespace proton {
 
+class ImportedAttributesRepo;
+
 /**
  * Interface used by a given document db to resolve all references to parent document dbs.
  */
 struct IDocumentDBReferenceResolver {
     virtual ~IDocumentDBReferenceResolver() {}
-    virtual void resolve(const search::IAttributeManager &attrMgr) = 0;
+    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &attrMgr) = 0;
 };
 
 }

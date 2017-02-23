@@ -46,6 +46,7 @@ TEST_F("require that attributes can be added and retrieved", Fixture)
     IAttributeVector::SP barAttr = MyAttributeVector::create("bar");
     f.add(fooAttr);
     f.add(barAttr);
+    EXPECT_EQUAL(2u, f.repo.size());
     EXPECT_EQUAL(f.get("foo").get(), fooAttr.get());
     EXPECT_EQUAL(f.get("bar").get(), barAttr.get());
 }
@@ -56,6 +57,7 @@ TEST_F("require that attribute can be replaced", Fixture)
     IAttributeVector::SP attr2 = MyAttributeVector::create("foo");
     f.add(attr1);
     f.add(attr2);
+    EXPECT_EQUAL(1u, f.repo.size());
     EXPECT_EQUAL(f.get("foo").get(), attr2.get());
 }
 

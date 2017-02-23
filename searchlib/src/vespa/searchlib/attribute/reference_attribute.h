@@ -65,6 +65,7 @@ private:
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
 
 public:
+    using SP = std::shared_ptr<ReferenceAttribute>;
     DECLARE_IDENTIFIABLE_ABSTRACT(ReferenceAttribute);
     ReferenceAttribute(const vespalib::stringref baseFileName,
                        const Config & cfg);

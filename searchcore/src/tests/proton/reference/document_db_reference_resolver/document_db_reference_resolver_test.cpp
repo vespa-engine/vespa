@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/log/log.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
@@ -22,6 +24,8 @@ using namespace search::attribute;
 using namespace search;
 using proton::test::MockDocumentDBReferent;
 using search::attribute::test::MockAttributeManager;
+using vespa::config::search::ImportedFieldsConfig;
+using vespa::config::search::ImportedFieldsConfigBuilder;
 
 struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     using SP = std::shared_ptr<MyGidToLidMapperFactory>;
@@ -31,10 +35,22 @@ struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
 };
 
 struct MyDocumentDBReferent : public MockDocumentDBReferent {
+    using SP = std::shared_ptr<MyDocumentDBReferent>;
+    using AttributesMap = std::map<vespalib::string, AttributeVector::SP>;
     MyGidToLidMapperFactory::SP factory;
+    AttributesMap attributes;
+
     MyDocumentDBReferent(MyGidToLidMapperFactory::SP factory_) : factory(factory_) {}
     virtual IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
         return factory;
+    }
+    virtual AttributeVector::SP getAttribute(vespalib::stringref name) override {
+        auto itr = attributes.find(name);
+        ASSERT_TRUE(itr != attributes.end());
+        return itr->second;
+    }
+    void addIntAttribute(vespalib::stringref name) {
+        attributes[name] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
     }
 };
 
@@ -43,10 +59,8 @@ struct MyReferentRegistry : public IDocumentDBReferentRegistry {
     ReferentMap map;
     virtual IDocumentDBReferent::SP get(vespalib::stringref name) const override {
         auto itr = map.find(name);
-        if (itr != map.end()) {
-            return itr->second;
-        }
-        return IDocumentDBReferent::SP();
+        ASSERT_TRUE(itr != map.end());
+        return itr->second;
     }
     virtual void add(vespalib::stringref name, IDocumentDBReferent::SP referent) override {
         map[name] = referent;
@@ -86,12 +100,42 @@ struct DocumentModel {
     }
 };
 
+void
+set(const vespalib::string &name,
+    const vespalib::string &referenceField,
+    const vespalib::string &targetField,
+    ImportedFieldsConfigBuilder::Attribute &attr)
+{
+    attr.name = name;
+    attr.referencefield = referenceField;
+    attr.targetfield = targetField;
+}
+
+ImportedFieldsConfig
+createImportedFieldsConfig()
+{
+    ImportedFieldsConfigBuilder builder;
+    builder.attribute.resize(2);
+    set("imported_a", "ref", "target_a", builder.attribute[0]);
+    set("imported_b", "other_ref", "target_b", builder.attribute[1]);
+    return builder;
+}
+
+const ImportedAttributeVector &
+asImportedAttribute(const IAttributeVector &attr)
+{
+    const ImportedAttributeVector *result = dynamic_cast<const ImportedAttributeVector *>(&attr);
+    ASSERT_TRUE(result != nullptr);
+    return *result;
+}
+
 struct Fixture {
     MyGidToLidMapperFactory::SP factory;
     MyDocumentDBReferent::SP parentReferent;
     MyReferentRegistry registry;
     MyAttributeManager attrMgr;
     DocumentModel docModel;
+    ImportedFieldsConfig importedFieldsCfg;
     DocumentDBReferenceResolver resolver;
     Fixture() :
         factory(std::make_shared<MyGidToLidMapperFactory>()),
@@ -99,21 +143,37 @@ struct Fixture {
         registry(),
         attrMgr(),
         docModel(),
-        resolver(registry, docModel.childDocType)
+        importedFieldsCfg(createImportedFieldsConfig()),
+        resolver(registry, docModel.childDocType, importedFieldsCfg)
     {
         registry.add("parent", parentReferent);
+        populateTargetAttributes();
         populateAttributeManager();
+    }
+    void populateTargetAttributes() {
+        parentReferent->addIntAttribute("target_a");
+        parentReferent->addIntAttribute("target_b");
     }
     void populateAttributeManager() {
         attrMgr.addReferenceAttribute("ref");
         attrMgr.addReferenceAttribute("other_ref");
         attrMgr.addIntAttribute("int_attr");
     }
-    void resolve() {
-        resolver.resolve(attrMgr);
+    ImportedAttributesRepo::UP resolve() {
+        return resolver.resolve(attrMgr);
     }
     const IGidToLidMapperFactory *getMapperFactoryPtr(const vespalib::string &attrName) {
         return attrMgr.getReferenceAttribute(attrName)->getGidToLidMapperFactory().get();
+    }
+    void assertImportedAttribute(const vespalib::string &name,
+                                 const vespalib::string &referenceField,
+                                 const vespalib::string &targetField,
+                                 IAttributeVector::SP attr) {
+        ASSERT_TRUE(attr.get());
+        EXPECT_EQUAL(name, attr->getName());
+        const ImportedAttributeVector &importedAttr = asImportedAttribute(*attr);
+        EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), importedAttr.getReferenceAttribute().get());
+        EXPECT_EQUAL(parentReferent->getAttribute(targetField).get(), importedAttr.getTargetAttribute().get());
     }
 };
 
@@ -122,6 +182,14 @@ TEST_F("require that reference attributes are connected to gid mapper", Fixture)
     f.resolve();
     EXPECT_EQUAL(f.factory.get(), f.getMapperFactoryPtr("ref"));
     EXPECT_EQUAL(f.factory.get(), f.getMapperFactoryPtr("other_ref"));
+}
+
+TEST_F("require that imported attributes are instantiated", Fixture)
+{
+    auto repo = f.resolve();
+    EXPECT_EQUAL(2u, repo->size());
+    f.assertImportedAttribute("imported_a", "ref", "target_a", repo->get("imported_a"));
+    f.assertImportedAttribute("imported_b", "other_ref", "target_b", repo->get("imported_b"));
 }
 
 TEST_MAIN()
