@@ -73,6 +73,7 @@ public:
         }
         _data_begin = &_data_space[0];
         _data_end = _data_begin + _data_space.size();
+        _tmd.reservePositions(_children.size());
     }
 
     void doSeek(uint32_t docId) override {

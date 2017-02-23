@@ -10,12 +10,8 @@ using fef::TermFieldMatchData;
 
 AttributeIteratorBase::AttributeIteratorBase(TermFieldMatchData * matchData) :
     _matchData(matchData),
-    _matchPosition(NULL)
-{
-    fef::TermFieldMatchDataPosition pos;
-    _matchData->appendPosition(pos);
-    _matchPosition = _matchData->getPositions();
-}
+    _matchPosition(_matchData->populate_fixed())
+{ }
 
 void
 AttributeIteratorBase::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -54,9 +50,7 @@ FlagAttributeIterator::doUnpack(uint32_t docId)
     _matchData->resetOnlyDocId(docId);
 }
 
-AttributePostingListIterator::
-    AttributePostingListIterator(bool hasWeight,
-                             TermFieldMatchData *matchData)
+AttributePostingListIterator:: AttributePostingListIterator(bool hasWeight, TermFieldMatchData *matchData)
     : AttributeIteratorBase(matchData),
       _hasWeight(hasWeight)
       // _hasWeight(_searchContext.attribute().hasWeightedSetType())

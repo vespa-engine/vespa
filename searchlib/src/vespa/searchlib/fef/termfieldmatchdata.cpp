@@ -84,21 +84,21 @@ constexpr size_t MAX_ELEMS =  std::numeric_limits<uint16_t>::max();
 void
 TermFieldMatchData::resizePositionVector(size_t sz)
 {
-    size_t newSize(std::min(MAX_ELEMS, std::max(1ul, sz*2)));
+    size_t newSize(std::min(MAX_ELEMS, std::max(1ul, sz)));
     TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[newSize];
-    if (sz > 0) {
+    if (_sz > 0) {
         if (isMultiPos()) {
             for (size_t i(0); i < _data._positions._allocated; i++) {
                 n[i] = _data._positions._positions[i];
             }
             delete [] _data._positions._positions;
         } else {
-            assert(sz == 1);
-            _fieldId = _fieldId | 0x4000;
+            assert(_sz == 1);
             n[0] = *getFixed();
             _data._positions._maxElementLength = getFixed()->getElementLen();
         }
     }
+    _fieldId = _fieldId | 0x4000;
     _data._positions._allocated = newSize;
     _data._positions._positions = n;
 }
@@ -107,7 +107,7 @@ void
 TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos)
 {
     if (__builtin_expect(_sz >= _data._positions._allocated, false)) {
-        resizePositionVector(_sz);
+        resizePositionVector(_sz*2);
     }
     if (__builtin_expect(pos.getElementLen() > _data._positions._maxElementLength, false)) {
         _data._positions._maxElementLength = pos.getElementLen();

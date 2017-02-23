@@ -70,6 +70,11 @@ public:
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }
     size_t size() const { return _sz; }
     size_t capacity() const { return allocated() ? _data._positions._allocated : 1; }
+    void reservePositions(size_t sz) {
+        if (sz > capacity()) {
+            resizePositionVector(sz);
+        }
+    }
 
     /**
      * Create empty object. To complete object setup, field id must be
@@ -89,6 +94,15 @@ public:
      * @param rhs The object to swap with.
      **/
     void swap(TermFieldMatchData &rhs);
+
+    MutablePositionsIterator populate_fixed() {
+        assert(!allocated());
+        if (_sz == 0) {
+            new (_data._position) TermFieldMatchDataPosition();
+            _sz = 1;
+        }
+        return getFixed();
+    }
 
     /**
      * Set which field this object has match information for.
