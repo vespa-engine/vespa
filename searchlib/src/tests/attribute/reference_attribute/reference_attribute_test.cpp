@@ -36,7 +36,7 @@ vespalib::string doc3("id:test:music::3");
 
 }
 
-struct MyGidToLidMapperFactory : public search::attribute::MockGidToLidMapperFactory
+struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMapperFactory
 {
     MyGidToLidMapperFactory() {
         _map.insert({toGid(doc1), 10});

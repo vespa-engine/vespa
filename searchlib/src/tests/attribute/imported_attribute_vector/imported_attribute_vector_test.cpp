@@ -27,6 +27,7 @@ using WeightedFloat     = IAttributeVector::WeightedFloat;
 using WeightedString    = IAttributeVector::WeightedString;
 using WeightedConstChar = IAttributeVector::WeightedConstChar;
 using WeightedEnum      = IAttributeVector::WeightedEnum;
+using test::MockGidToLidMapperFactory;
 
 std::shared_ptr<ReferenceAttribute> create_reference_attribute(vespalib::stringref name = "ref") {
     return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
@@ -349,11 +350,6 @@ TEST_F("Weighted floating point attribute values can be retrieved via reference"
 }
 
 struct SingleStringAttrFixture : Fixture {
-    DocId from_lid1{2};
-    DocId to_lid1{3};
-    DocId from_lid2{4};
-    DocId to_lid2{7};
-
     SingleStringAttrFixture() : Fixture() {
         setup();
     }
@@ -361,22 +357,22 @@ struct SingleStringAttrFixture : Fixture {
     void setup() {
         reset_with_single_value_reference_mappings<StringAttribute, const char*>(
                 BasicType::STRING,
-                {{from_lid1, dummy_gid(3), to_lid1, "foo"},
-                 {from_lid2, dummy_gid(7), to_lid2, "bar"}});
+                {{DocId(2), dummy_gid(3), DocId(3), "foo"},
+                 {DocId(4), dummy_gid(7), DocId(7), "bar"}});
     }
 };
 
 TEST_F("Single-valued string attribute values can be retrieved via reference", SingleStringAttrFixture) {
     char buf[64];
-    EXPECT_EQUAL(vespalib::string("foo"), f.imported_attr->getString(f.from_lid1, buf, sizeof(buf)));
-    EXPECT_EQUAL(vespalib::string("bar"), f.imported_attr->getString(f.from_lid2, buf, sizeof(buf)));
+    EXPECT_EQUAL(vespalib::string("foo"), f.imported_attr->getString(DocId(2), buf, sizeof(buf)));
+    EXPECT_EQUAL(vespalib::string("bar"), f.imported_attr->getString(DocId(4), buf, sizeof(buf)));
 }
 
 TEST_F("getEnum() returns target vector enum via reference", SingleStringAttrFixture) {
-    EXPECT_EQUAL(f.target_attr->getEnum(f.to_lid1),
-                 f.imported_attr->getEnum(f.from_lid1));
-    EXPECT_EQUAL(f.target_attr->getEnum(f.to_lid2),
-                 f.imported_attr->getEnum(f.from_lid2));
+    EXPECT_EQUAL(f.target_attr->getEnum(DocId(3)),
+                 f.imported_attr->getEnum(DocId(2)));
+    EXPECT_EQUAL(f.target_attr->getEnum(DocId(7)),
+                 f.imported_attr->getEnum(DocId(4)));
 }
 
 TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFixture) {

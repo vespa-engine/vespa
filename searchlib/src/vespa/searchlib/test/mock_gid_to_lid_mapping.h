@@ -9,11 +9,13 @@
 
 namespace search {
 namespace attribute {
+namespace test {
 
 using MockGidToLidMap = std::map<document::GlobalId, uint32_t>;
 
 struct MockGidToLidMapper : public search::IGidToLidMapper {
     const MockGidToLidMap &_map;
+
     MockGidToLidMapper(const MockGidToLidMap &map)
         : _map(map)
     {
@@ -37,5 +39,6 @@ struct MockGidToLidMapperFactory : public search::IGidToLidMapperFactory {
     }
 };
 
+} // test
 } // attribute
 } // search
