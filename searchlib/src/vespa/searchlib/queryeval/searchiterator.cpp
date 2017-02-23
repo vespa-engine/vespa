@@ -49,7 +49,7 @@ SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
     uint32_t docid = std::max(begin_id, getDocId());
     while (!isAtEnd(docid)) {
         docid = result.getNextFalseBit(docid);
-        if (!isAtEnd() && seek(docid)) {
+        if (!isAtEnd(docid) && seek(docid)) {
             result.setBit(docid);
         }
         docid = std::max(docid + 1, getDocId());
@@ -59,13 +59,18 @@ SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
 void
 SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 {
-    uint32_t docid = std::max(begin_id, getDocId());
-    while (!isAtEnd(docid)) {
-        docid = result.getNextTrueBit(docid);
-        if (!isAtEnd() && !seek(docid)) {
-            result.clearBit(docid);
+    uint32_t docidA = std::max(begin_id, getDocId());
+    uint32_t docidB = result.getNextTrueBit(begin_id);
+    while (!isAtEnd(docidA) || !isAtEnd(docidB)) {
+        if (docidA < docidB) {
+            docidA = (!isAtEnd(docidB)) ? seekNext(docidB) : docidB;
+        } else if (docidA > docidB) {
+            result.clearInterval(docidB, docidA);
+            docidB = (! isAtEnd(docidA)) ? result.getNextTrueBit(docidA) : docidA;
+        } else {
+            docidB = result.getNextTrueBit(docidB+1);
+            docidA = seekNext(docidB);
         }
-        docid = std::max(docid + 1, getDocId());
     }
 }
 
