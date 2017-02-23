@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -318,6 +319,8 @@ struct FixtureBase
 	    init();
 	}
 	~FixtureBase() {
+	    _writeService.sync();
+            _writeService.master().execute(makeLambdaTask([this]() { _subDb.close(); }));
 	    _writeService.sync();
 	}
     template <typename FunctionType>

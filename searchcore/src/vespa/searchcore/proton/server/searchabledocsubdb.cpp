@@ -9,6 +9,8 @@
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
+#include <vespa/searchcore/proton/reference/document_db_referent.h>
+#include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
@@ -48,7 +50,8 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _numSearcherThreads(cfg._numSearcherThreads),
-      _warmupExecutor(ctx._warmupExecutor)
+      _warmupExecutor(ctx._warmupExecutor),
+      _gidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>(&_writeService.master()))
 { }
 
 SearchableDocSubDB::~SearchableDocSubDB()
@@ -364,5 +367,17 @@ SearchableDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
     _lidReuseDelayer->setHasIndexedOrAttributeFields(config.hasIndexedOrAttributeFields());
 }
 
+void
+SearchableDocSubDB::close()
+{
+    _gidToLidChangeHandler->close();
+    Parent::close();
+}
+
+std::shared_ptr<IDocumentDBReferent>
+SearchableDocSubDB::getDocumentDBReferent()
+{
+    return std::make_shared<DocumentDBReferent>(getAttributeManager(), _dms, _gidToLidChangeHandler);
+}
 
 } // namespace proton

@@ -13,6 +13,7 @@ class IAttributeManager;
 namespace proton {
 
 class DocumentMetaStore;
+class IGidToLidChangeHandler;
 
 /*
  * Class for getting target attributes for imported
@@ -23,12 +24,15 @@ class DocumentDBReferent : public IDocumentDBReferent
 {
     std::shared_ptr<search::IAttributeManager> _attrMgr;
     std::shared_ptr<DocumentMetaStore> _dms;
+    std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 public:
     DocumentDBReferent(std::shared_ptr<search::IAttributeManager> attrMgr,
-                       std::shared_ptr<DocumentMetaStore> dms);
+                       std::shared_ptr<DocumentMetaStore> dms,
+                       std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler);
     virtual ~DocumentDBReferent();
     virtual std::shared_ptr<search::AttributeVector> getAttribute(vespalib::stringref name) override;
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override;
+    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override;
 };
 
 } // namespace proton

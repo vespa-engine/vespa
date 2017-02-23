@@ -6,13 +6,16 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include "gid_to_lid_mapper_factory.h"
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include "gid_to_lid_change_registrator.h"
 
 namespace proton {
 
 DocumentDBReferent::DocumentDBReferent(std::shared_ptr<search::IAttributeManager> attrMgr,
-                                       std::shared_ptr<DocumentMetaStore> dms)
+                                       std::shared_ptr<DocumentMetaStore> dms,
+                                       std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler)
     : _attrMgr(std::move(attrMgr)),
-      _dms(std::move(dms))
+      _dms(std::move(dms)),
+      _gidToLidChangeHandler(std::move(gidToLidChangeHandler))
 {
 }
 
@@ -36,5 +39,12 @@ DocumentDBReferent::getGidToLidMapperFactory()
 {
     return std::make_shared<GidToLidMapperFactory>(_dms);
 }
+
+std::unique_ptr<GidToLidChangeRegistrator>
+DocumentDBReferent::makeGidToLidChangeRegistrator(const vespalib::string &docTypeName)
+{
+    return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
+}
+
 
 } // namespace proton
