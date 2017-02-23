@@ -379,10 +379,10 @@ struct FeedViewComparer
     void expect_equal_index_adapter() {
         EXPECT_EQUAL(_old->getIndexWriter().get(), _new->getIndexWriter().get());
     }
-    void expect_equal_attribute_adapter() {
+    void expect_equal_attribute_writer() {
         EXPECT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
     }
-    void expect_not_equal_attribute_adapter() {
+    void expect_not_equal_attribute_writer() {
         EXPECT_NOT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
     }
     void expect_equal_summary_adapter() {
@@ -406,7 +406,7 @@ struct FastAccessFeedViewComparer
     void expect_not_equal() {
         EXPECT_NOT_EQUAL(_old.get(), _new.get());
     }
-    void expect_not_equal_attribute_adapter() {
+    void expect_not_equal_attribute_writer() {
         EXPECT_NOT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
     }
     void expect_equal_summary_adapter() {
@@ -438,7 +438,7 @@ TEST_F("require that we can reconfigure index searchable", Fixture)
         FeedViewComparer cmp(o.fv, n.fv);
         cmp.expect_not_equal();
         cmp.expect_equal_index_adapter();
-        cmp.expect_equal_attribute_adapter();
+        cmp.expect_equal_attribute_writer();
         cmp.expect_equal_summary_adapter();
         cmp.expect_equal_schema();
     }
@@ -472,7 +472,7 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
         FeedViewComparer cmp(o.fv, n.fv);
         cmp.expect_not_equal();
         cmp.expect_equal_index_adapter();
-        cmp.expect_not_equal_attribute_adapter();
+        cmp.expect_not_equal_attribute_writer();
         cmp.expect_equal_summary_adapter();
         cmp.expect_not_equal_schema();
     }
@@ -494,7 +494,7 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
     EXPECT_FALSE(init->hasReprocessors());
 }
 
-TEST_F("require that we can reconfigure attribute adapter", FastAccessFixture)
+TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 {
     AttributeCollectionSpec::AttributeList specList;
     AttributeCollectionSpec spec(specList, 1, 0);
@@ -504,7 +504,7 @@ TEST_F("require that we can reconfigure attribute adapter", FastAccessFixture)
 
     FastAccessFeedViewComparer cmp(o, n);
     cmp.expect_not_equal();
-    cmp.expect_not_equal_attribute_adapter();
+    cmp.expect_not_equal_attribute_writer();
     cmp.expect_equal_summary_adapter();
     cmp.expect_not_equal_schema();
 }
@@ -568,7 +568,7 @@ TEST_F("require that we can reconfigure matchers", Fixture)
         FeedViewComparer cmp(o.fv, n.fv);
         cmp.expect_not_equal();
         cmp.expect_equal_index_adapter();
-        cmp.expect_equal_attribute_adapter();
+        cmp.expect_equal_attribute_writer();
         cmp.expect_equal_summary_adapter();
         cmp.expect_equal_schema();
     }
