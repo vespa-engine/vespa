@@ -40,7 +40,7 @@ GidToLidChangeListener::notifyRegistered()
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();
     _attributeFieldWriter.execute(_attr->getName(),
-                                  [this, &promise]() { _attr->notifyGidToLidChangeListenerRegistered(); promise.set_value(true); });
+                                  [this, &promise]() { _attr->populateReferencedLids(); promise.set_value(true); });
     (void) future.get();
 }
 

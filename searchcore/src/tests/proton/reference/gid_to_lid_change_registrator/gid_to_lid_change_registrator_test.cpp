@@ -98,6 +98,8 @@ TEST_F("Test that we can register a listener", Fixture)
     TEST_DO(f.assertAdds({}));
     TEST_DO(f.assertRemoves({}));
     registrator->addListener(std::make_unique<MyListener>("testdoc", "f1"));
+    TEST_DO(f.assertAdds({{"testdoc","f1"}}));
+    TEST_DO(f.assertRemoves({}));
     registrator.reset();
     TEST_DO(f.assertAdds({{"testdoc","f1"}}));
     TEST_DO(f.assertRemoves({{"testdoc",{"f1"}}}));
@@ -110,6 +112,8 @@ TEST_F("Test that we can register multiple listeners", Fixture)
     TEST_DO(f.assertRemoves({}));
     registrator->addListener(std::make_unique<MyListener>("testdoc", "f1"));
     registrator->addListener(std::make_unique<MyListener>("testdoc", "f2"));
+    TEST_DO(f.assertAdds({{"testdoc","f1"},{"testdoc","f2"}}));
+    TEST_DO(f.assertRemoves({}));
     registrator.reset();
     TEST_DO(f.assertAdds({{"testdoc","f1"},{"testdoc","f2"}}));
     TEST_DO(f.assertRemoves({{"testdoc",{"f1","f2"}}}));

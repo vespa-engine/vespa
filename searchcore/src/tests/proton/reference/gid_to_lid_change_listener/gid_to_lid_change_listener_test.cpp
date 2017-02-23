@@ -144,7 +144,7 @@ TEST_F("Test that we can use gid to lid change listener", Fixture)
     TEST_DO(f.assertRefLid(10, 3));
 }
 
-TEST_F("Test that notifyRegistered method in gid to lid change listener works", Fixture)
+TEST_F("Test that referenced lids are populated when listener is registered", Fixture)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));

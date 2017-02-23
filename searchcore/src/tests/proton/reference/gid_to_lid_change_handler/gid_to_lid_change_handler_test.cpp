@@ -27,32 +27,32 @@ vespalib::string doc1("id:test:music::1");
 
 }
 
-class MyTarget {
+class ListenerStats {
     using lock_guard = std::lock_guard<std::mutex>;
     std::mutex _lock;
-    std::vector<std::pair<GlobalId, uint32_t>> _changes;
+    uint32_t  _changes;
     uint32_t  _createdListeners;
     uint32_t  _registeredListeners;
     uint32_t  _destroyedListeners;
 
 public:
-    MyTarget()
+    ListenerStats()
         : _lock(),
-          _changes(),
+          _changes(0u),
           _createdListeners(0u),
           _registeredListeners(0u),
           _destroyedListeners(0u)
     {
     }
 
-    ~MyTarget()
+    ~ListenerStats()
     {
         EXPECT_EQUAL(_createdListeners, _destroyedListeners);
     }
 
-    void notifyGidToLidChange(GlobalId gid, uint32_t lid) {
+    void notifyGidToLidChange() {
         lock_guard guard(_lock);
-        _changes.emplace_back(gid, lid);
+        ++_changes;
     }
     void markCreatedListener()    { lock_guard guard(_lock); ++_createdListeners; }
     void markRegisteredListener() { lock_guard guard(_lock); ++_registeredListeners; }
@@ -61,7 +61,6 @@ public:
     uint32_t getCreatedListeners() const { return _createdListeners; }
     uint32_t getRegisteredListeners() const { return _registeredListeners; }
     uint32_t getDestroyedListeners() const { return _destroyedListeners; }
-    const std::vector<std::pair<GlobalId, uint32_t>> &getChanges() const { return _changes; }
 
     void assertCounts(uint32_t expCreatedListeners,
                       uint32_t expRegisteredListeners,
@@ -71,29 +70,29 @@ public:
         EXPECT_EQUAL(expCreatedListeners, getCreatedListeners());
         EXPECT_EQUAL(expRegisteredListeners, getRegisteredListeners());
         EXPECT_EQUAL(expDestroyedListeners, getDestroyedListeners());
-        EXPECT_EQUAL(expChanges, _changes.size());
+        EXPECT_EQUAL(expChanges, _changes);
     }
 };
 
 class MyListener : public IGidToLidChangeListener
 {
-    MyTarget         &_target;
+    ListenerStats         &_stats;
     vespalib::string  _name;
     vespalib::string  _docTypeName;
 public:
-    MyListener(MyTarget &target,
+    MyListener(ListenerStats &stats,
                const vespalib::string &name,
                const vespalib::string &docTypeName)
         : IGidToLidChangeListener(),
-          _target(target),
+          _stats(stats),
           _name(name),
           _docTypeName(docTypeName)
     {
-        _target.markCreatedListener();
+        _stats.markCreatedListener();
     }
-    virtual ~MyListener() { _target.markDestroyedListener(); }
-    virtual void notifyGidToLidChange(GlobalId gid, uint32_t lid) override { _target.notifyGidToLidChange(gid, lid); }
-    virtual void notifyRegistered() override { _target.markRegisteredListener(); }
+    virtual ~MyListener() { _stats.markDestroyedListener(); }
+    virtual void notifyGidToLidChange(GlobalId, uint32_t) override { _stats.notifyGidToLidChange(); }
+    virtual void notifyRegistered() override { _stats.markRegisteredListener(); }
     virtual const vespalib::string &getName() const override { return _name; }
     virtual const vespalib::string &getDocTypeName() const override { return _docTypeName; }
 };
@@ -102,13 +101,13 @@ struct Fixture
 {
     vespalib::ThreadStackExecutor _masterExecutor;
     ExecutorThreadService _master;
-    std::vector<std::shared_ptr<MyTarget>> _targets;
+    std::vector<std::shared_ptr<ListenerStats>> _statss;
     std::shared_ptr<GidToLidChangeHandler> _handler;
 
     Fixture()
         : _masterExecutor(1, 128 * 1024),
           _master(_masterExecutor),
-          _targets(),
+          _statss(),
           _handler(std::make_shared<GidToLidChangeHandler>(&_master))
     {
     }
@@ -124,9 +123,9 @@ struct Fixture
         _master.sync();
     }
 
-    MyTarget &addTarget() {
-        _targets.push_back(std::make_shared<MyTarget>());
-        return *_targets.back();
+    ListenerStats &addStats() {
+        _statss.push_back(std::make_shared<ListenerStats>());
+        return *_statss.back();
     }
 
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) {
@@ -149,54 +148,67 @@ struct Fixture
 
 TEST_F("Test that we can register a listener", Fixture)
 {
-    auto &target = f.addTarget();
-    auto listener = std::make_unique<MyListener>(target, "test", "testdoc");
-    TEST_DO(target.assertCounts(1, 0, 0, 0));
+    auto &stats = f.addStats();
+    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
+    TEST_DO(stats.assertCounts(1, 0, 0, 0));
     f.addListener(std::move(listener));
-    TEST_DO(target.assertCounts(1, 1, 0, 0));
+    TEST_DO(stats.assertCounts(1, 1, 0, 0));
     f.notifyGidToLidChange(toGid(doc1), 10);
-    TEST_DO(target.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
     f.removeListeners("testdoc", {});
-    TEST_DO(target.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats.assertCounts(1, 1, 1, 1));
 }
 
 TEST_F("Test that we can register multiple listeners", Fixture)
 {
-    auto &target1 = f.addTarget();
-    auto &target2 = f.addTarget();
-    auto &target3 = f.addTarget();
-    auto listener1 = std::make_unique<MyListener>(target1, "test1", "testdoc");
-    auto listener2 = std::make_unique<MyListener>(target2, "test2", "testdoc");
-    auto listener3 = std::make_unique<MyListener>(target3, "test3", "testdoc2");
-    TEST_DO(target1.assertCounts(1, 0, 0, 0));
-    TEST_DO(target2.assertCounts(1, 0, 0, 0));
-    TEST_DO(target3.assertCounts(1, 0, 0, 0));
+    auto &stats1 = f.addStats();
+    auto &stats2 = f.addStats();
+    auto &stats3 = f.addStats();
+    auto listener1 = std::make_unique<MyListener>(stats1, "test1", "testdoc");
+    auto listener2 = std::make_unique<MyListener>(stats2, "test2", "testdoc");
+    auto listener3 = std::make_unique<MyListener>(stats3, "test3", "testdoc2");
+    TEST_DO(stats1.assertCounts(1, 0, 0, 0));
+    TEST_DO(stats2.assertCounts(1, 0, 0, 0));
+    TEST_DO(stats3.assertCounts(1, 0, 0, 0));
     f.addListener(std::move(listener1));
     f.addListener(std::move(listener2));
     f.addListener(std::move(listener3));
-    TEST_DO(target1.assertCounts(1, 1, 0, 0));
-    TEST_DO(target2.assertCounts(1, 1, 0, 0));
-    TEST_DO(target3.assertCounts(1, 1, 0, 0));
+    TEST_DO(stats1.assertCounts(1, 1, 0, 0));
+    TEST_DO(stats2.assertCounts(1, 1, 0, 0));
+    TEST_DO(stats3.assertCounts(1, 1, 0, 0));
     f.notifyGidToLidChange(toGid(doc1), 10);
-    TEST_DO(target1.assertCounts(1, 1, 0, 1));
-    TEST_DO(target2.assertCounts(1, 1, 0, 1));
-    TEST_DO(target3.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats1.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats2.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats3.assertCounts(1, 1, 0, 1));
     f.removeListeners("testdoc", {"test1"});
-    TEST_DO(target1.assertCounts(1, 1, 0, 1));
-    TEST_DO(target2.assertCounts(1, 1, 1, 1));
-    TEST_DO(target3.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats1.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats2.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats3.assertCounts(1, 1, 0, 1));
     f.removeListeners("testdoc", {});
-    TEST_DO(target1.assertCounts(1, 1, 1, 1));
-    TEST_DO(target2.assertCounts(1, 1, 1, 1));
-    TEST_DO(target3.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats1.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats2.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats3.assertCounts(1, 1, 0, 1));
     f.removeListeners("testdoc2", {"test3"});
-    TEST_DO(target1.assertCounts(1, 1, 1, 1));
-    TEST_DO(target2.assertCounts(1, 1, 1, 1));
-    TEST_DO(target3.assertCounts(1, 1, 0, 1));
+    TEST_DO(stats1.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats2.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats3.assertCounts(1, 1, 0, 1));
     f.removeListeners("testdoc2", {"foo"});
-    TEST_DO(target1.assertCounts(1, 1, 1, 1));
-    TEST_DO(target2.assertCounts(1, 1, 1, 1));
-    TEST_DO(target3.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats1.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats2.assertCounts(1, 1, 1, 1));
+    TEST_DO(stats3.assertCounts(1, 1, 1, 1));
+}
+
+TEST_F("Test that we keep old listener when registering duplicate", Fixture)
+{
+    auto &stats = f.addStats();
+    auto listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
+    TEST_DO(stats.assertCounts(1, 0, 0, 0));
+    f.addListener(std::move(listener));
+    TEST_DO(stats.assertCounts(1, 1, 0, 0));
+    listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
+    TEST_DO(stats.assertCounts(2, 1, 0, 0));
+    f.addListener(std::move(listener));
+    TEST_DO(stats.assertCounts(2, 1, 1, 0));
 }
 
 }

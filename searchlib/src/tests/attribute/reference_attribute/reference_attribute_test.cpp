@@ -184,8 +184,8 @@ struct Fixture
     void notifyGidToLidChange(const GlobalId &gid, uint32_t referencedDoc) {
         _attr->notifyGidToLidChange(gid, referencedDoc);
     }
-    void notifyGidToLidChangeListenerRegistered() {
-        _attr->notifyGidToLidChangeListenerRegistered();
+    void populateReferencedLids() {
+        _attr->populateReferencedLids();
     }
 };
 
@@ -317,7 +317,7 @@ TEST_F("require that notifyGidToLidChange works", Fixture)
     TEST_DO(f.assertRefLid(10, 3));
 }
 
-TEST_F("require that notifyGidToLidChangeListenerRegistered works", Fixture)
+TEST_F("require that populateReferencedLids works", Fixture)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
@@ -333,7 +333,7 @@ TEST_F("require that notifyGidToLidChangeListenerRegistered works", Fixture)
     std::shared_ptr<search::IGidToLidMapperFactory> factory =
         std::make_shared<MyGidToLidMapperFactory>();
     f._attr->setGidToLidMapperFactory(factory);
-    f.notifyGidToLidChangeListenerRegistered();
+    f.populateReferencedLids();
     TEST_DO(f.assertRefLid(10, 1));
     TEST_DO(f.assertRefLid(17, 2));
     TEST_DO(f.assertRefLid(10, 3));
