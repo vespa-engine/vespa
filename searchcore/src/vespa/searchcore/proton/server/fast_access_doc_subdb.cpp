@@ -120,8 +120,8 @@ FastAccessDocSubDB::initFeedView(const IAttributeWriter::SP &writer,
             getFeedViewPersistentParams(),
             FastAccessFeedView::Context(writer, _docIdLimit)));
 
-    _fastUpdateFeedView.set(FastAccessFeedView::SP(feedView.release()));
-    _iFeedView.set(_fastUpdateFeedView.get());
+    _fastAccessFeedView.set(FastAccessFeedView::SP(feedView.release()));
+    _iFeedView.set(_fastAccessFeedView.get());
 }
 
 AttributeManager::SP
@@ -195,7 +195,7 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
       _hasAttributes(cfg._hasAttributes),
       _fastAccessAttributesOnly(cfg._fastAccessAttributesOnly),
       _initAttrMgr(),
-      _fastUpdateFeedView(),
+      _fastAccessFeedView(),
       _subAttributeMetrics(ctx._subAttributeMetrics),
       _totalAttributeMetrics(ctx._totalAttributeMetrics),
       _addMetrics(cfg._addMetrics),
@@ -263,9 +263,9 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
      */
     if (params.shouldAttributeManagerChange() ||
         newConfigSnapshot.getDocumentTypeRepoSP().get() != oldConfigSnapshot.getDocumentTypeRepoSP().get()) {
-        FastAccessDocSubDBConfigurer configurer(_fastUpdateFeedView,
+        FastAccessDocSubDBConfigurer configurer(_fastAccessFeedView,
                 std::make_unique<AttributeWriterFactory>(), getSubDbName());
-        proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastUpdateFeedView.get());
+        proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastAccessFeedView.get());
         AttributeCollectionSpec::UP attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
         IReprocessingInitializer::UP initializer =
@@ -275,10 +275,10 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
         }
         if (_addMetrics) {
-            proton::IAttributeManager::SP newMgr = extractAttributeManager(_fastUpdateFeedView.get());
+            proton::IAttributeManager::SP newMgr = extractAttributeManager(_fastAccessFeedView.get());
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
-        _iFeedView.set(_fastUpdateFeedView.get());
+        _iFeedView.set(_fastAccessFeedView.get());
         _owner.syncFeedView();
     }
     return tasks;
@@ -287,13 +287,13 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
 proton::IAttributeManager::SP
 FastAccessDocSubDB::getAttributeManager() const
 {
-    return extractAttributeManager(_fastUpdateFeedView.get());
+    return extractAttributeManager(_fastAccessFeedView.get());
 }
 
 IDocumentRetriever::UP
 FastAccessDocSubDB::getDocumentRetriever()
 {
-    FastAccessFeedView::SP feedView = _fastUpdateFeedView.get();
+    FastAccessFeedView::SP feedView = _fastAccessFeedView.get();
     proton::IAttributeManager::SP attrMgr = extractAttributeManager(feedView);
     return IDocumentRetriever::UP(new FastAccessDocumentRetriever(feedView, attrMgr));
 }

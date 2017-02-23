@@ -66,7 +66,7 @@ private:
     const bool                    _hasAttributes;
     const bool                    _fastAccessAttributesOnly;
     AttributeManager::SP          _initAttrMgr;
-    Configurer::FeedViewVarHolder _fastUpdateFeedView;
+    Configurer::FeedViewVarHolder _fastAccessFeedView;
     AttributeMetricsCollection    _subAttributeMetrics;
     LegacyAttributeMetrics       *_totalAttributeMetrics;
 
