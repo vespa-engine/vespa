@@ -12,6 +12,10 @@ ImportedAttributesRepo::ImportedAttributesRepo()
 {
 }
 
+ImportedAttributesRepo::~ImportedAttributesRepo()
+{
+}
+
 void
 ImportedAttributesRepo::add(const vespalib::string &name,
                             IAttributeVector::SP attr)

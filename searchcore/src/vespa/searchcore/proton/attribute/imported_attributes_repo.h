@@ -22,6 +22,7 @@ private:
 public:
     using UP = std::unique_ptr<ImportedAttributesRepo>;
     ImportedAttributesRepo();
+    ~ImportedAttributesRepo();
     void add(const vespalib::string &name, std::shared_ptr<IAttributeVector> attr);
     std::shared_ptr<IAttributeVector> get(const vespalib::string &name) const;
     size_t size() const { return _repo.size(); }
