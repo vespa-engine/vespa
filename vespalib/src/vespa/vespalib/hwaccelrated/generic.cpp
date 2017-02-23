@@ -32,6 +32,32 @@ multiplyAdd(const T * a, const T * b, size_t sz)
     return sum;
 }
 
+template<size_t UNROLL, typename Operation>
+void
+bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) {
+
+    const size_t sz(bytes/sizeof(uint64_t));
+    {
+        uint64_t *a(static_cast<uint64_t *>(aOrg));
+        const uint64_t *b(static_cast<const uint64_t *>(bOrg));
+        size_t i(0);
+        for (; i + UNROLL <= sz; i += UNROLL) {
+            for (size_t j(0); j < UNROLL; j++) {
+                a[i + j] = operation(a[i + j], b[i + j]);
+            }
+        }
+        for (; i < sz; i++) {
+            a[i] = operation(a[i], b[i]);
+        }
+    }
+
+    uint8_t *a(static_cast<uint8_t *>(aOrg));
+    const uint8_t *b(static_cast<const uint8_t *>(bOrg));
+    for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
+        a[i] = operation(a[i], b[i]);
+    }
+}
+
 }
 
 float
@@ -61,48 +87,18 @@ GenericAccelrator::dotProduct(const int64_t * a, const int64_t * b, size_t sz) c
 void
 GenericAccelrator::orBit(void * aOrg, const void * bOrg, size_t bytes) const
 {
-    uint64_t *a(static_cast<uint64_t *>(aOrg));
-    const uint64_t *b(static_cast<const uint64_t *>(bOrg));
-    const size_t sz(bytes/sizeof(uint64_t));
-    for (size_t i(0); i < sz; i++) {
-        a[i] |= b[i];
-    }
-    uint8_t *ac(static_cast<uint8_t *>(aOrg));
-    const uint8_t *bc(static_cast<const uint8_t *>(bOrg));
-    for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
-        ac[i] |= bc[i];
-    }
+    bitOperation<8>([](uint64_t a, uint64_t b) { return a | b; }, aOrg, bOrg, bytes);
 }
 
 void
 GenericAccelrator::andBit(void * aOrg, const void * bOrg, size_t bytes) const 
 {
-    uint64_t *a(static_cast<uint64_t *>(aOrg));
-    const uint64_t *b(static_cast<const uint64_t *>(bOrg));
-    const size_t sz(bytes/sizeof(uint64_t));
-    for (size_t i(0); i < sz; i++) {
-        a[i] &= b[i];
-    }
-    uint8_t *ac(static_cast<uint8_t *>(aOrg));
-    const uint8_t *bc(static_cast<const uint8_t *>(bOrg));
-    for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
-        ac[i] &= bc[i];
-    }
+    bitOperation<8>([](uint64_t a, uint64_t b) { return a & b; }, aOrg, bOrg, bytes);
 }
 void
 GenericAccelrator::andNotBit(void * aOrg, const void * bOrg, size_t bytes) const 
 {
-    uint64_t *a(static_cast<uint64_t *>(aOrg));
-    const uint64_t *b(static_cast<const uint64_t *>(bOrg));
-    const size_t sz(bytes/sizeof(uint64_t));
-    for (size_t i(0); i < sz; i++) {
-        a[i] &= ~b[i];
-    }
-    uint8_t *ac(static_cast<uint8_t *>(aOrg));
-    const uint8_t *bc(static_cast<const uint8_t *>(bOrg));
-    for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
-        ac[i] &= ~bc[i];
-    }
+    bitOperation<8>([](uint64_t a, uint64_t b) { return a & ~b; }, aOrg, bOrg, bytes);
 }
 
 void
