@@ -57,6 +57,22 @@ public:
 //-----------------------------------------------------------------------------
 
 /**
+ * Implements the executor for lazy compiled ranking expressions
+ **/
+class LazyCompiledRankingExpressionExecutor : public fef::FeatureExecutor
+{
+private:
+    using function_type = CompiledFunction::lazy_function;
+    function_type _ranking_function;
+
+public:
+    LazyCompiledRankingExpressionExecutor(const CompiledFunction &compiled_function);
+    void execute(uint32_t docId) override;
+};
+
+//-----------------------------------------------------------------------------
+
+/**
  * Implements the executor for interpreted ranking expressions (with tensor support)
  **/
 class InterpretedRankingExpressionExecutor : public fef::FeatureExecutor
@@ -94,6 +110,23 @@ CompiledRankingExpressionExecutor::execute(uint32_t)
         _params[i] = inputs().get_number(i);
     }
     outputs().set_number(0, _ranking_function(&_params[0]));
+}
+
+//-----------------------------------------------------------------------------
+
+using Context = fef::FeatureExecutor::Inputs;
+double resolve_input(void *ctx, size_t idx) { return ((const Context *)(ctx))->get_number(idx); }
+Context *make_ctx(const Context &inputs) { return const_cast<Context *>(&inputs); }
+
+LazyCompiledRankingExpressionExecutor::LazyCompiledRankingExpressionExecutor(const CompiledFunction &compiled_function)
+    : _ranking_function(compiled_function.get_lazy_function())
+{
+}
+
+void
+LazyCompiledRankingExpressionExecutor::execute(uint32_t)
+{
+    outputs().set_number(0, _ranking_function(resolve_input, make_ctx(inputs())));
 }
 
 //-----------------------------------------------------------------------------
@@ -199,7 +232,11 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     // avoid costly compilation when only verifying setup
     if (env.getFeatureMotivation() != env.FeatureMotivation::VERIFY_SETUP) {
         if (do_compile) {
-            _compile_token = CompileCache::compile(rank_function, PassParams::ARRAY);
+            if (fef::indexproperties::eval::LazyExpressions::check(env.getProperties())) {
+                _compile_token = CompileCache::compile(rank_function, PassParams::LAZY);
+            } else {
+                _compile_token = CompileCache::compile(rank_function, PassParams::ARRAY);
+            }
         } else {
             _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), rank_function, node_types));
         }
@@ -225,7 +262,12 @@ RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &, vespa
         return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function, input_is_object);
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
-    return stash.create<CompiledRankingExpressionExecutor>(_compile_token->get());
+    if (_compile_token->get().pass_params() == PassParams::ARRAY) {
+        return stash.create<CompiledRankingExpressionExecutor>(_compile_token->get());
+    } else {
+        assert(_compile_token->get().pass_params() == PassParams::LAZY);
+        return stash.create<LazyCompiledRankingExpressionExecutor>(_compile_token->get());
+    }
 }
 
 //-----------------------------------------------------------------------------
