@@ -24,13 +24,13 @@ public class HostSpec implements Comparable<HostSpec> {
     /** The current membership role of this host in the cluster it belongs to */
     private final Optional<ClusterMembership> membership;
 
-    private final Optional<String> flavor;
+    private final Optional<Flavor> flavor;
 
     public HostSpec(String hostname, Optional<ClusterMembership> membership) {
         this(hostname, new ArrayList<>(), Optional.empty(), membership);
     }
 
-    public HostSpec(String hostname, ClusterMembership membership, String flavor) {
+    public HostSpec(String hostname, ClusterMembership membership, Flavor flavor) {
         this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership));
     }
 
@@ -42,7 +42,7 @@ public class HostSpec implements Comparable<HostSpec> {
         this(hostname, aliases, Optional.empty(), Optional.of(membership));
     }
 
-    public HostSpec(String hostname, List<String> aliases, Optional<String> flavor, Optional<ClusterMembership> membership) {
+    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor, Optional<ClusterMembership> membership) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
         this.aliases = ImmutableList.copyOf(aliases);
@@ -56,7 +56,7 @@ public class HostSpec implements Comparable<HostSpec> {
     /** Returns the aliases of this host as an immutable list. This may be empty but never null. */
     public List<String> aliases() { return aliases; }
 
-    public Optional<String> flavor() { return flavor; }
+    public Optional<Flavor> flavor() { return flavor; }
 
     /** Returns the membership of this host, or an empty value if not present */
     public Optional<ClusterMembership> membership() { return membership; }

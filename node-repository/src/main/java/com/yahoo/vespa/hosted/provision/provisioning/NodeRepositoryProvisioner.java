@@ -112,7 +112,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         for (Node node : nodes) {
             hosts.add(new HostSpec(node.hostname(),
                                    node.allocation().orElseThrow(IllegalStateException::new).membership(),
-                                   node.flavor().canonicalName()));
+                                   node.flavor()));
         }
         return hosts;
     }
