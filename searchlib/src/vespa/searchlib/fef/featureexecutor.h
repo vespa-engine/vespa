@@ -53,7 +53,7 @@ public:
         uint32_t _docid;
         vespalib::ConstArrayRef<LazyValue> _inputs;
     public:
-        Inputs() : _docid(0), _inputs() {}
+        Inputs() : _docid(-1), _inputs() {}
         void set_docid(uint32_t docid) { _docid = docid; }
         uint32_t get_docid() const { return _docid; }
         void bind(vespalib::ConstArrayRef<LazyValue> inputs) { _inputs = inputs; }
