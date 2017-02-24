@@ -67,6 +67,7 @@ import static org.junit.Assert.assertEquals;
 public class NodeFailTester {
 
     // Immutable components
+    public static final ApplicationId nodeAdminApp = ApplicationId.from(TenantName.from("hosted-vespa"), ApplicationName.from("routing"), InstanceName.from("default"));
     public static final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
     public static final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
     public static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "docker");
@@ -118,6 +119,41 @@ public class NodeFailTester {
         return tester;
     }
 
+    public static NodeFailTester withTwoApplicationsOnDocker(int numberOfHosts) {
+        NodeFailTester tester = new NodeFailTester();
+
+        int nodesPerHost = 3;
+        List<Node> hosts = tester.createHostNodes(numberOfHosts);
+        for (int i = 0; i < hosts.size(); i++) {
+            tester.createReadyNodes(nodesPerHost, i * nodesPerHost, Optional.of("parent" + i),
+                    nodeFlavors.getFlavorOrThrow("docker"), NodeType.tenant);
+        }
+
+        // Create applications
+        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Optional.empty());
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.of("vespa:6.75.0"));
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of("vespa:6.75.0"));
+        Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
+        Capacity capacity1 = Capacity.fromNodeCount(3, Optional.of("docker"));
+        Capacity capacity2 = Capacity.fromNodeCount(5, Optional.of("docker"));
+        tester.activate(nodeAdminApp, clusterNodeAdminApp, allHosts);
+        tester.activate(app1, clusterApp1, capacity1);
+        tester.activate(app2, clusterApp2, capacity2);
+        assertEquals(new HashSet<>(tester.nodeRepository.getNodes(NodeType.host)),
+                new HashSet<>(tester.nodeRepository.getNodes(nodeAdminApp, Node.State.active)));
+        assertEquals(capacity1.nodeCount(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
+        assertEquals(capacity2.nodeCount(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
+
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
+        apps.put(nodeAdminApp, new MockDeployer.ApplicationContext(nodeAdminApp, clusterNodeAdminApp, allHosts, 1));
+        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1, 1));
+        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2, 1));
+        tester.deployer = new MockDeployer(tester.provisioner, apps);
+        tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
+        tester.failer = tester.createFailer();
+        return tester;
+    }
+
     public static NodeFailTester withProxyApplication() {
         NodeFailTester tester = new NodeFailTester();
 
@@ -163,7 +199,7 @@ public class NodeFailTester {
     }
 
     public void createReadyNodes(int count, NodeType nodeType) {
-        createReadyNodes(count, 0, nodeFlavors.getFlavorOrThrow("default"), nodeType);
+        createReadyNodes(count, 0, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), nodeType);
     }
 
     public void createReadyNodes(int count, int startIndex) {
@@ -171,25 +207,26 @@ public class NodeFailTester {
     }
 
     public void createReadyNodes(int count, int startIndex, String flavor) {
-        createReadyNodes(count, startIndex, nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant);
+        createReadyNodes(count, startIndex, Optional.empty(), nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant);
     }
 
-    private void createReadyNodes(int count, int startIndex, Flavor flavor, NodeType nodeType) {
+    private void createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < startIndex + count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, nodeType));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, parentHostname, flavor, nodeType));
+
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes);
         nodeRepository.setReady(nodes);
     }
 
-    private void createHostNodes(int count) {
+    private List<Node> createHostNodes(int count) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
+        return nodeRepository.setReady(nodes);
     }
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount) {

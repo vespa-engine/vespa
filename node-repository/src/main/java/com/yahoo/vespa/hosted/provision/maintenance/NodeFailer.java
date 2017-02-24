@@ -42,7 +42,7 @@ public class NodeFailer extends Maintainer {
 
     /** Provides information about the status of ready hosts */
     private final HostLivenessTracker hostLivenessTracker;
-    
+
     /** Provides (more accurate) information about the status of active hosts */
     private final ServiceMonitor serviceMonitor;
 
@@ -50,11 +50,11 @@ public class NodeFailer extends Maintainer {
     private final Duration downTimeLimit;
     private final Clock clock;
     private final Orchestrator orchestrator;
-    
+
     private final Duration nodeRequestInterval = Duration.ofMinutes(10);
     private final Instant constructionTime;
 
-    public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker, 
+    public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator) {
         // check ping status every five minutes, but at least twice as often as the down time limit
@@ -87,7 +87,7 @@ public class NodeFailer extends Maintainer {
                 failActive(node);
         }
     }
-    
+
     private void updateNodeLivenessEventsForReadyNodes() {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
@@ -106,15 +106,15 @@ public class NodeFailer extends Maintainer {
         }
     }
 
-    private List<Node> readyNodesWhichAreDead() {    
+    private List<Node> readyNodesWhichAreDead() {
         // Allow requests some time to be registered in case all config servers have been down
         if (constructionTime.isAfter(clock.instant().minus(nodeRequestInterval).minus(nodeRequestInterval) ))
             return Collections.emptyList();
-        
+
         // Nodes are taken as dead if they have not made a config request since this instant.
         // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
         Instant oldestAcceptableRequestTime = clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
-        
+
         return nodeRepository().getNodes(Node.State.ready).stream()
                 .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
                 .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
@@ -159,7 +159,7 @@ public class NodeFailer extends Maintainer {
         if (nodeType == NodeType.tenant) return true;
         return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
     }
-    
+
     /**
      * If the node is positively DOWN, and there is no "down" history record, we add it.
      * If the node is positively UP we remove any "down" history record.
@@ -210,19 +210,34 @@ public class NodeFailer extends Maintainer {
 
     /**
      * Called when a node should be moved to the failed state: Do that if it seems safe,
-     * which is when the node repo has available capacity to replace the node.
+     * which is when the node repo has available capacity to replace the node (and all its tenant nodes if host).
      * Otherwise not replacing the node ensures (by Orchestrator check) that no further action will be taken.
+     *
+     * @return whether node was successfully failed
      */
-    private void failActive(Node node) {
+    private boolean failActive(Node node) {
         Optional<Deployment> deployment =
             deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
-        if ( ! deployment.isPresent()) return; // this will be done at another config server
+        if ( ! deployment.isPresent()) return false; // this will be done at another config server
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
+            // If the active node that we are trying to fail is of type host, we need to successfully fail all
+            // the children nodes running on it before we fail the host
+            boolean allTenantNodesFailedOutSuccessfully = true;
+            for (Node failingTenantNode : nodeRepository().getNodes(node)) {
+                if (failingTenantNode.state() == Node.State.active) {
+                    allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode);
+                } else {
+                    nodeRepository().fail(failingTenantNode.hostname());
+                }
+            }
+
+            if (! allTenantNodesFailedOutSuccessfully) return false;
             node = nodeRepository().fail(node.hostname());
             try {
                 deployment.get().prepare();
                 deployment.get().activate();
+                return true;
             }
             catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
@@ -230,6 +245,7 @@ public class NodeFailer extends Maintainer {
                 nodeRepository().reactivate(node.hostname());
                 log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
                                        ", but redeploying without the node failed", e);
+                return false;
             }
         }
     }
