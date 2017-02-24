@@ -1,0 +1,10 @@
+search ad {
+  document ad {
+    field campaign_ref type reference<campaign> {
+      indexing: attribute | summary
+    }
+    field other_ref type reference<campaign> {
+      indexing: attribute
+    }
+  }
+}
