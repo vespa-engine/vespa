@@ -28,12 +28,12 @@ public:
      * Creates a guard for the shared pointer of the given component.
      **/
     ComponentGuard(const Component & component);
-    const T & get()          const { return *_component; }
+    const T * get()          const { return _component.get(); }
 
     const Component & getSP(void) const { return _component; }
     const T * operator -> () const { return _component.get(); }
     const T & operator * ()  const { return *_component.get(); }
-    T & get()                      { return *_component; }
+    T * get()                      { return _component.get(); }
     T * operator -> ()             { return _component.get(); }
     T & operator * ()              { return *_component.get(); }
     bool valid()             const { return _component.get() != NULL; }

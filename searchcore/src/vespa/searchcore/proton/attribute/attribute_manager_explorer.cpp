@@ -32,7 +32,7 @@ AttributeManagerExplorer::get_children_names() const
     _mgr->getAttributeListAll(attributes);
     std::vector<vespalib::string> names;
     for (const auto &attr : attributes) {
-        names.push_back(attr.get().getName());
+        names.push_back(attr->getName());
     }
     return names;
 }

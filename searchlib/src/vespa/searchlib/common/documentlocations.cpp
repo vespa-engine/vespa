@@ -18,7 +18,7 @@ DocumentLocations::~DocumentLocations() { }
 void
 DocumentLocations::setVecGuard(std::unique_ptr<search::AttributeGuard> guard) {
     _vec_guard = std::move(guard);
-    setVec(_vec_guard.get()->get());
+    setVec(*_vec_guard.get()->get());
 }
 
 }  // namespace common

@@ -618,11 +618,11 @@ TEST_F("require that attributes can be initialized and loaded in sequence", Base
         SequentialAttributeManager newMgr(amf._m, AttrMgrSpec(newSpec, 10, createSerialNum + 5));
 
         AttributeGuard::UP a1 = newMgr.mgr.getAttribute("a1");
-        TEST_DO(validateAttribute(a1->get()));
+        TEST_DO(validateAttribute(*a1->get()));
         AttributeGuard::UP a2 = newMgr.mgr.getAttribute("a2");
-        TEST_DO(validateAttribute(a2->get()));
+        TEST_DO(validateAttribute(*a2->get()));
         AttributeGuard::UP a3 = newMgr.mgr.getAttribute("a3");
-        TEST_DO(validateAttribute(a3->get()));
+        TEST_DO(validateAttribute(*a3->get()));
     }
 }
 
@@ -653,11 +653,11 @@ TEST_F("require that attributes can be initialized and loaded in parallel", Base
         ParallelAttributeManager newMgr(createSerialNum + 5, amf._msp, attrCfg, 10);
 
         AttributeGuard::UP a1 = newMgr.mgr->get()->getAttribute("a1");
-        TEST_DO(validateAttribute(a1->get()));
+        TEST_DO(validateAttribute(*a1->get()));
         AttributeGuard::UP a2 = newMgr.mgr->get()->getAttribute("a2");
-        TEST_DO(validateAttribute(a2->get()));
+        TEST_DO(validateAttribute(*a2->get()));
         AttributeGuard::UP a3 = newMgr.mgr->get()->getAttribute("a3");
-        TEST_DO(validateAttribute(a3->get()));
+        TEST_DO(validateAttribute(*a3->get()));
     }
 }
 
