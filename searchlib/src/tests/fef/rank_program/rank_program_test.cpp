@@ -7,14 +7,13 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/test/plugin/sum.h>
+#include <vespa/searchlib/fef/test/plugin/double.h>
 #include <vespa/searchlib/fef/rank_program.h>
+#include <vespa/searchlib/fef/test/test_features.h>
 
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
-
-using vespalib::eval::DoubleValue;
-using vespalib::eval::ValueType;
 
 uint32_t default_docid = 1;
 
@@ -59,95 +58,33 @@ size_t count_const_features(const RankProgram &program) {
     return count(program, [](const LazyValue &value){ return value.is_const(); });
 }
 
-struct ImpureValueExecutor : FeatureExecutor {
-    double value;
-    ImpureValueExecutor(double value_in) : value(value_in) {}
-    bool isPure() override { return false; }
-    void execute(uint32_t) override { outputs().set_number(0, value); }
-};
-
-struct ImpureValueBlueprint : Blueprint {
-    double value;
-    ImpureValueBlueprint() : Blueprint("ivalue"), value(31212.0) {}
-    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
-    Blueprint::UP createInstance() const override { return Blueprint::UP(new ImpureValueBlueprint()); }
-    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override {
-        ASSERT_EQUAL(1u, params.size());
-        value = strtod(params[0].c_str(), nullptr);
-        describeOutput("out", "the impure value");
-        return true;
-    }
-    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
-        return stash.create<ImpureValueExecutor>(value);
-    }
-};
-
-struct DocidExecutor : FeatureExecutor {
-    void execute(uint32_t docid) override { outputs().set_number(0, docid); }
-};
-
-struct DocidBlueprint : Blueprint {
-    DocidBlueprint() : Blueprint("docid") {}
-    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
-    Blueprint::UP createInstance() const override { return Blueprint::UP(new DocidBlueprint()); }
-    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &) override {
-        describeOutput("out", "the local document id");
-        return true;
-    }
-    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
-        return stash.create<DocidExecutor>();
-    }
-};
-
-struct BoxingExecutor : FeatureExecutor {
-    DoubleValue value;
-    BoxingExecutor() : value(0.0) {}
-    bool isPure() override { return true; }
-    void execute(uint32_t) override {
-        value = DoubleValue(inputs().get_number(0));
-        outputs().set_object(0, value);
-    }
-};
-
-struct BoxingBlueprint : Blueprint {
-    BoxingBlueprint() : Blueprint("box") {}
-    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
-    Blueprint::UP createInstance() const override { return Blueprint::UP(new BoxingBlueprint()); }
-    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override {
-        ASSERT_EQUAL(1u, params.size());
-        defineInput(params[0]);
-        describeOutput("out", "boxed value", FeatureType::object(ValueType::double_type()));
-        return true;
-    }
-    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
-        return stash.create<BoxingExecutor>();
-    }
-};
-
-struct MySetup {
+struct Fixture {
     BlueprintFactory factory;
     IndexEnvironment indexEnv;
     BlueprintResolver::SP resolver;
     Properties overrides;
     RankProgram program;
-    MySetup() : factory(), indexEnv(), resolver(new BlueprintResolver(factory, indexEnv)),
-                overrides(), program(resolver)
+    size_t track_cnt;
+    Fixture() : factory(), indexEnv(), resolver(new BlueprintResolver(factory, indexEnv)),
+                overrides(), program(resolver), track_cnt(0)
     {
-        factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
+        factory.addPrototype(Blueprint::SP(new BoxingBlueprint()));
+        factory.addPrototype(Blueprint::SP(new DocidBlueprint()));
+        factory.addPrototype(Blueprint::SP(new DoubleBlueprint()));
         factory.addPrototype(Blueprint::SP(new ImpureValueBlueprint()));
         factory.addPrototype(Blueprint::SP(new SumBlueprint()));
-        factory.addPrototype(Blueprint::SP(new DocidBlueprint()));
-        factory.addPrototype(Blueprint::SP(new BoxingBlueprint()));
+        factory.addPrototype(Blueprint::SP(new TrackingBlueprint(track_cnt)));        
+        factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
     }
-    MySetup &add(const vespalib::string &feature) {
+    Fixture &add(const vespalib::string &feature) {
         resolver->addSeed(feature);
         return *this;
     }
-    MySetup &override(const vespalib::string &feature, double value) {
+    Fixture &override(const vespalib::string &feature, double value) {
         overrides.add(feature, vespalib::make_string("%g", value));
         return *this;
     }
-    MySetup &compile() {
+    Fixture &compile() {
         ASSERT_TRUE(resolver->compile());
         MatchDataLayout mdl;
         QueryEnvironment queryEnv(&indexEnv);
@@ -159,33 +96,33 @@ struct MySetup {
         EXPECT_EQUAL(1u, result.num_features());
         return result.resolve(0).as_number(docid);
     }
-    double get(const vespalib::string &feature) {
+    double get(const vespalib::string &feature, uint32_t docid = default_docid) {
         auto result = program.get_seeds();
         for (size_t i = 0; i < result.num_features(); ++i) {
             if (result.name_of(i) == feature) {
-                return result.resolve(i).as_number(default_docid);
+                return result.resolve(i).as_number(docid);
             }
         }
         return 31212.0;
     }
-    std::map<vespalib::string, double> all() {
+    std::map<vespalib::string, double> all(uint32_t docid = default_docid) {
         auto result = program.get_seeds();
         std::map<vespalib::string, double> result_map;
         for (size_t i = 0; i < result.num_features(); ++i) {
-            result_map[result.name_of(i)] = result.resolve(i).as_number(default_docid);
+            result_map[result.name_of(i)] = result.resolve(i).as_number(docid);
         }
         return result_map;
     }
 };
 
-TEST_F("require that simple program works", MySetup()) {
+TEST_F("require that simple program works", Fixture()) {
     EXPECT_EQUAL(15.0, f1.add("mysum(value(10),ivalue(5))").compile().get());
     EXPECT_EQUAL(3u, f1.program.num_executors());
     EXPECT_EQUAL(3u, count_features(f1.program));
     EXPECT_EQUAL(1u, count_const_features(f1.program));
 }
 
-TEST_F("require that const features work", MySetup()) {
+TEST_F("require that const features work", Fixture()) {
     f1.add("mysum(value(10),value(5))").compile();
     EXPECT_EQUAL(15.0, f1.get());
     EXPECT_EQUAL(3u, f1.program.num_executors());
@@ -193,7 +130,7 @@ TEST_F("require that const features work", MySetup()) {
     EXPECT_EQUAL(3u, count_const_features(f1.program));
 }
 
-TEST_F("require that non-const features work", MySetup()) {
+TEST_F("require that non-const features work", Fixture()) {
     f1.add("mysum(ivalue(10),ivalue(5))").compile();
     EXPECT_EQUAL(15.0, f1.get());
     EXPECT_EQUAL(3u, f1.program.num_executors());
@@ -201,7 +138,7 @@ TEST_F("require that non-const features work", MySetup()) {
     EXPECT_EQUAL(0u, count_const_features(f1.program));
 }
 
-TEST_F("require that a single program can calculate multiple output features", MySetup()) {
+TEST_F("require that a single program can calculate multiple output features", Fixture()) {
     f1.add("value(1)").add("ivalue(2)").add("ivalue(3)");
     f1.add("mysum(value(1),value(2),ivalue(3))");
     f1.compile();
@@ -216,7 +153,7 @@ TEST_F("require that a single program can calculate multiple output features", M
     EXPECT_EQUAL(6.0, result["mysum(value(1),value(2),ivalue(3))"]);
 }
 
-TEST_F("require that a single executor can produce multiple features", MySetup()) {
+TEST_F("require that a single executor can produce multiple features", Fixture()) {
     f1.add("mysum(value(1,2,3).0,value(1,2,3).1,value(1,2,3).2)");
     EXPECT_EQUAL(6.0, f1.compile().get());
     EXPECT_EQUAL(2u, f1.program.num_executors());
@@ -224,7 +161,7 @@ TEST_F("require that a single executor can produce multiple features", MySetup()
     EXPECT_EQUAL(4u, count_const_features(f1.program));
 }
 
-TEST_F("require that feature values can be overridden", MySetup()) {
+TEST_F("require that feature values can be overridden", Fixture()) {
     f1.add("value(1)").add("ivalue(2)").add("ivalue(3)");
     f1.add("mysum(value(1),value(2),ivalue(3))");
     f1.override("value(2)", 20.0).override("ivalue(3)", 30.0);
@@ -240,7 +177,7 @@ TEST_F("require that feature values can be overridden", MySetup()) {
     EXPECT_EQUAL(51.0, result["mysum(value(1),value(2),ivalue(3))"]);    
 }
 
-TEST_F("require that the rank program can calculate scores for multiple documents", MySetup()) {
+TEST_F("require that the rank program can calculate scores for multiple documents", Fixture()) {
     f1.add("mysum(value(10),docid)").compile();
     EXPECT_EQUAL(3u, count_features(f1.program));
     EXPECT_EQUAL(1u, count_const_features(f1.program));
@@ -250,7 +187,66 @@ TEST_F("require that the rank program can calculate scores for multiple document
     EXPECT_EQUAL(f1.get(1), 11.0);
 }
 
-TEST_F("require that auto-unboxing of const object values work", MySetup()) {
+TEST_F("require that only non-const features are calculated per document", Fixture()) {
+    f1.add("track(mysum(track(value(10)),track(ivalue(5))))").compile();
+    EXPECT_EQUAL(6u, f1.program.num_executors());
+    EXPECT_EQUAL(6u, count_features(f1.program));
+    EXPECT_EQUAL(2u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.track_cnt, 1u);
+    EXPECT_EQUAL(15.0, f1.get(1));
+    EXPECT_EQUAL(f1.track_cnt, 3u);
+    EXPECT_EQUAL(15.0, f1.get(2));
+    EXPECT_EQUAL(f1.track_cnt, 5u);
+}
+
+TEST_F("require that unused features are not calculated", Fixture()) {
+    f1.add("track(ivalue(1))");
+    f1.add("track(ivalue(2))");
+    f1.compile();
+    EXPECT_EQUAL(4u, f1.program.num_executors());
+    EXPECT_EQUAL(4u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.track_cnt, 0u);
+    EXPECT_EQUAL(f1.get("track(ivalue(1))", 1), 1.0);
+    EXPECT_EQUAL(f1.track_cnt, 1u);
+    EXPECT_EQUAL(f1.get("track(ivalue(2))", 2), 2.0);
+    EXPECT_EQUAL(f1.track_cnt, 2u);
+    EXPECT_EQUAL(f1.get("track(ivalue(1))", 3), 1.0);
+    EXPECT_EQUAL(f1.get("track(ivalue(2))", 3), 2.0);
+    EXPECT_EQUAL(f1.track_cnt, 4u);
+}
+
+TEST_F("require that re-used features are only calculated once", Fixture()) {
+    f1.add("track(mysum(track(ivalue(1)),track(ivalue(1))))").compile();
+    EXPECT_EQUAL(4u, f1.program.num_executors());
+    EXPECT_EQUAL(4u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.track_cnt, 0u);
+    EXPECT_EQUAL(f1.get(1), 2.0);
+    EXPECT_EQUAL(f1.track_cnt, 2u);
+}
+
+TEST_F("require that overrides of const features work for multiple documents", Fixture()) {
+    f1.add("mysum(value(1),docid)").override("value(1)", 10.0).compile();
+    EXPECT_EQUAL(3u, f1.program.num_executors());
+    EXPECT_EQUAL(3u, count_features(f1.program));
+    EXPECT_EQUAL(1u, count_const_features(f1.program));
+    EXPECT_EQUAL(11.0, f1.get(1));
+    EXPECT_EQUAL(12.0, f1.get(2));
+    EXPECT_EQUAL(13.0, f1.get(3));
+}
+
+TEST_F("require that overrides of non-const features work for multiple documents", Fixture()) {
+    f1.add("mysum(docid,ivalue(1))").override("ivalue(1)", 10.0).compile();
+    EXPECT_EQUAL(3u, f1.program.num_executors());
+    EXPECT_EQUAL(3u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQUAL(11.0, f1.get(1));
+    EXPECT_EQUAL(12.0, f1.get(2));
+    EXPECT_EQUAL(13.0, f1.get(3));
+}
+
+TEST_F("require that auto-unboxing of const object values work", Fixture()) {
     f1.add("box(value(10))").compile();
     EXPECT_EQUAL(10.0, f1.get());
     EXPECT_EQUAL(2u, f1.program.num_executors());
@@ -258,7 +254,7 @@ TEST_F("require that auto-unboxing of const object values work", MySetup()) {
     EXPECT_EQUAL(3u, count_const_features(f1.program));
 }
 
-TEST_F("require that auto-unboxing of non-const object values work", MySetup()) {
+TEST_F("require that auto-unboxing of non-const object values work", Fixture()) {
     f1.add("box(ivalue(10))").compile();
     EXPECT_EQUAL(10.0, f1.get());
     EXPECT_EQUAL(2u, f1.program.num_executors());
