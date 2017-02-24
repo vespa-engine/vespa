@@ -16,12 +16,10 @@
  * </p>
  *
  * <p>
- * Clients input data through the API in {@link com.yahoo.metrics.simple.MetricReceiver} (or
- * using the JDisc Metric API it will be received in
- * {@link com.yahoo.metrics.simple.jdisc.SimpleMetricConsumer}), while the internal work is
- * done by {@link com.yahoo.metrics.simple.MetricAggregator}. Initialization
- * is done top-down from {@link com.yahoo.metrics.simple.MetricManager}. The link
- * between calls to MetricReceiver and MetricAggregator is the role of
+ * Clients input data through the API in {@link com.yahoo.metrics.simple.MetricReceiver},
+ * while the internal work is done by {@link com.yahoo.metrics.simple.MetricAggregator}.
+ * Initialization is done top-down from {@link com.yahoo.metrics.simple.MetricManager}.
+ * The link between calls to MetricReceiver and MetricAggregator is the role of
  * {@link com.yahoo.metrics.simple.MetricUpdater}.
  * </p>
  *

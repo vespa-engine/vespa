@@ -4,7 +4,9 @@
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@PublicApi
 @ExportPackage
 package com.yahoo.metrics.simple.jdisc;
 
+import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;
