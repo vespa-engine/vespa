@@ -194,12 +194,11 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
     /**
      * <p>Sets the allocated time that this HttpRequest is allowed to spend trying to connect to a remote host. This has
      * no effect on an HttpRequest received by a {@link RequestHandler}. If no connection timeout is assigned to an
-     * HttpRequest, it defaults the connection-timeout in the corresponding {@link
-     * com.yahoo.jdisc.http.client.HttpClientConfig}.</p>
+     * HttpRequest, it defaults the connection-timeout in the client configuration.</p>
      *
      * <p><b>NOTE:</b> Where {@link Request#setTimeout(long, TimeUnit)} sets the expiration time between calling a
      * RequestHandler and a {@link ResponseHandler}, this method sets the expiration time of the connect-operation as
-     * performed by the {@link com.yahoo.jdisc.http.client.HttpClient}.</p>
+     * performed by the client.</p>
      *
      * @param timeout The allocated amount of time.
      * @param unit    The time unit of the <em>timeout</em> argument.
