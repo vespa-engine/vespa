@@ -381,17 +381,18 @@ StoreOnlyDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
     _commitTimeTracker.setVisibilityDelay(config.visibilityDelay());
 }
 
-
 IReprocessingTask::List
 StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                const DocumentDBConfig &oldConfigSnapshot,
                                SerialNum serialNum,
-                               const ReconfigParams & params)
+                               const ReconfigParams &params,
+                               IDocumentDBReferenceResolver &resolver)
 {
     (void) oldConfigSnapshot;
-    assert(_writeService.master().isCurrentThread());
     (void) serialNum;
     (void) params;
+    (void) resolver;
+    assert(_writeService.master().isCurrentThread());
     initFeedView(newConfigSnapshot);
     updateLidReuseDelayer(&newConfigSnapshot);
     _owner.syncFeedView();

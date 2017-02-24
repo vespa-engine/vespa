@@ -6,13 +6,15 @@
 
 namespace proton {
 
-struct IAttributeAdapterFactory
+/**
+ * Interface for a factory for creating new IAttributeWriter instances during reconfig.
+ */
+struct IAttributeWriterFactory
 {
-    typedef std::unique_ptr<IAttributeAdapterFactory> UP;
-    virtual ~IAttributeAdapterFactory() {}
+    using UP = std::unique_ptr<IAttributeWriterFactory>;
+    virtual ~IAttributeWriterFactory() {}
     virtual IAttributeWriter::SP create(const IAttributeWriter::SP &old,
             const AttributeCollectionSpec &attrSpec) const = 0;
 };
 
 } // namespace proton
-

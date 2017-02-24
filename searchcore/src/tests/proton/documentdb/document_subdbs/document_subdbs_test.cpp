@@ -1,20 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
 #include <vespa/searchcore/proton/metrics/legacy_attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_subdb_explorer.h>
 #include <vespa/searchcore/proton/server/emptysearchview.h>
 #include <vespa/searchcore/proton/server/fast_access_document_retriever.h>
 #include <vespa/searchcore/proton/server/minimal_document_retriever.h>
 #include <vespa/searchcore/proton/server/searchabledocsubdb.h>
-#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
@@ -22,7 +25,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 
 #include <iostream>
 
@@ -101,6 +103,12 @@ struct MyMetricsWireService : public DummyWireService
 	MyMetricsWireService() : _attributes() {}
 	virtual void addAttribute(const AttributeMetricsCollection &, LegacyAttributeMetrics *, const std::string &name) override {
 		_attributes.insert(name);
+	}
+};
+
+struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
+	std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &) override {
+        return std::make_unique<ImportedAttributesRepo>();
 	}
 };
 
@@ -346,11 +354,13 @@ struct FixtureBase
 	    cmpResult.attributesChanged = true;
 	    cmpResult._documenttypesChanged = true;
 	    cmpResult._documentTypeRepoChanged = true;
+		MyDocumentDBReferenceResolver resolver;
 	    IReprocessingTask::List tasks =
 	            _subDb.applyConfig(*newCfg->_cfg,
 	                    *_snapshot->_cfg,
 	                    serialNum,
-	                    ReconfigParams(cmpResult));
+	                    ReconfigParams(cmpResult),
+						resolver);
 	    _snapshot = std::move(newCfg);
 	    if (!tasks.empty()) {
 	        ReprocessingRunner runner;

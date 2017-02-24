@@ -66,7 +66,7 @@ private:
     const bool                    _hasAttributes;
     const bool                    _fastAccessAttributesOnly;
     AttributeManager::SP          _initAttrMgr;
-    Configurer::FeedViewVarHolder _fastUpdateFeedView;
+    Configurer::FeedViewVarHolder _fastAccessFeedView;
     AttributeMetricsCollection    _subAttributeMetrics;
     LegacyAttributeMetrics       *_totalAttributeMetrics;
 
@@ -116,7 +116,8 @@ public:
     IReprocessingTask::List applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                         const DocumentDBConfig &oldConfigSnapshot,
                                         SerialNum serialNum,
-                                        const ReconfigParams & params) override;
+                                        const ReconfigParams &params,
+                                        IDocumentDBReferenceResolver &resolver) override;
 
     proton::IAttributeManager::SP getAttributeManager() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;

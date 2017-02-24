@@ -372,88 +372,58 @@ struct MyLongRunningJob : public IMaintenanceJob
 
 struct MyAttributeManager : public proton::IAttributeManager
 {
-    virtual AttributeGuard::UP
-    getAttribute(const string &) const override {
+    virtual AttributeGuard::UP getAttribute(const string &) const override {
         abort();
     }
-
-    virtual AttributeGuard::UP
-    getAttributeStableEnum(const string &) const override {
+    virtual AttributeGuard::UP getAttributeStableEnum(const string &) const override {
         abort();
     }
-
-    virtual void
-    getAttributeList(std::vector<AttributeGuard> &) const override {
+    virtual void getAttributeList(std::vector<AttributeGuard> &) const override {
         abort();
     }
-
-    virtual search::attribute::IAttributeContext::UP
-    createContext() const override {
+    virtual search::attribute::IAttributeContext::UP createContext() const override {
         abort();
     }
-
-    virtual IAttributeManager::SP
-    create(const AttributeCollectionSpec &) const override {
+    virtual IAttributeManager::SP create(const AttributeCollectionSpec &) const override {
         abort();
     }
-
-    virtual std::vector<searchcorespi::IFlushTarget::SP>
-    getFlushTargets() const override {
+    virtual std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override {
         abort();
     }
-
-    virtual search::SerialNum
-    getFlushedSerialNum(const vespalib::string &) const override {
+    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &) const override {
         abort();
     }
-
     virtual search::SerialNum getOldestFlushedSerialNumber() const override {
         abort();
     }
-
-    virtual search::SerialNum
-    getNewestFlushedSerialNumber() const override {
+    virtual search::SerialNum getNewestFlushedSerialNumber() const override {
         abort();
     }
-
-    virtual void
-    getAttributeListAll(std::vector<search::AttributeGuard> &)
-        const override {
+    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const override {
         abort();
     }
-
-    virtual void
-    wipeHistory(const search::index::Schema &) override {
+    virtual void wipeHistory(const search::index::Schema &) override {
         abort();
     }
-
-    virtual const IAttributeFactory::SP &
-    getFactory() const override {
+    virtual const IAttributeFactory::SP &getFactory() const override {
         abort();
     }
-
-    virtual search::ISequencedTaskExecutor &
-    getAttributeFieldWriter() const override {
+    virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
         abort();
     }
-
-    virtual search::AttributeVector *
-    getWritableAttribute(const vespalib::string &) const override {
+    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
         abort();
     }
-
-    virtual const std::vector<search::AttributeVector *> &
-    getWritableAttributes() const override {
+    virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
         abort();
     }
-
-    virtual void
-    asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>)
+    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>)
         const override {
     }
-
-    virtual ExclusiveAttributeReadAccessor::UP
-    getExclusiveReadAccessor(const vespalib::string &) const override {
+    virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &) const override {
+        abort();
+    }
+    virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo>) override {
         abort();
     }
 };

@@ -1,14 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributemanager.h"
 #include "attribute_factory.h"
 #include "attributedisklayout.h"
-#include "sequential_attributes_initializer.h"
+#include "attributemanager.h"
 #include "i_attribute_functor.h"
+#include "imported_attributes_repo.h"
+#include "sequential_attributes_initializer.h"
 #include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -177,7 +178,8 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _factory(new AttributeFactory()),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
-      _hwInfo(hwInfo)
+      _hwInfo(hwInfo),
+      _importedAttributes()
 {
     createBaseDir();
 }
@@ -202,7 +204,8 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _factory(factory),
       _interlock(std::make_shared<search::attribute::Interlock>()),
       _attributeFieldWriter(attributeFieldWriter),
-      _hwInfo(hwInfo)
+      _hwInfo(hwInfo),
+      _importedAttributes()
 {
     createBaseDir();
 }
@@ -221,7 +224,8 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _factory(currMgr._factory),
       _interlock(currMgr._interlock),
       _attributeFieldWriter(currMgr._attributeFieldWriter),
-      _hwInfo(currMgr._hwInfo)
+      _hwInfo(currMgr._hwInfo),
+      _importedAttributes()
 {
     Spec::AttributeList toBeAdded;
     transferExistingAttributes(currMgr, newSpec, toBeAdded);
@@ -452,6 +456,12 @@ AttributeManager::getExclusiveReadAccessor(const vespalib::string &name) const
         return std::make_unique<ExclusiveAttributeReadAccessor>(attribute, _attributeFieldWriter);
     }
     return ExclusiveAttributeReadAccessor::UP();
+}
+
+void
+AttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes)
+{
+    _importedAttributes = std::move(attributes);
 }
 
 } // namespace proton

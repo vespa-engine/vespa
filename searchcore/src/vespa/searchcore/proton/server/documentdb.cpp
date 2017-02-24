@@ -1,27 +1,28 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "documentdb.h"
 #include "combiningfeedview.h"
+#include "commit_and_wait_document_retriever.h"
 #include "document_meta_store_read_guards.h"
 #include "document_subdb_collection_explorer.h"
+#include "documentdb.h"
+#include "documentdbconfigscout.h"
 #include "idocumentdbowner.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
-#include "commit_and_wait_document_retriever.h"
-#include "documentdbconfigscout.h"
 #include "reconfig_params.h"
+#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
+#include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
-#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/docsumreply.h>
-#include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
-
+#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -383,6 +384,13 @@ DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
     }
 }
 
+namespace {
+struct EmptyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
+    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &) override {
+        return std::make_unique<ImportedAttributesRepo>();
+    }
+};
+}
 
 void
 DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
@@ -465,7 +473,8 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         _writeService.setTaskLimit(_defaultExecutorTaskLimit);
     }
     if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
-        _subDBs.applyConfig(*configSnapshot, *_activeConfigSnapshot, serialNum, params);
+        EmptyDocumentDBReferenceResolver resolver;
+        _subDBs.applyConfig(*configSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
         if (serialNum < _feedHandler.getSerialNum()) {
             // Not last entry in tls.  Reprocessing should already be done.
             _subDBs.getReprocessingRunner().reset();

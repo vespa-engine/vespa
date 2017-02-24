@@ -64,7 +64,8 @@ private:
     IAttributeFactory::SP _factory;
     std::shared_ptr<search::attribute::Interlock> _interlock;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
-    HwInfo                          _hwInfo;
+    HwInfo _hwInfo;
+    std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
     search::AttributeVector::SP internalAddAttribute(const vespalib::string &name,
                                                      const Config &cfg,
@@ -134,53 +135,51 @@ public:
 
     static void padAttribute(search::AttributeVector &v, uint32_t docIdLimit);
 
-    // Implements search::IAttributeManager
-    virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const;
+    const ImportedAttributesRepo *getImportedAttributes() const { return _importedAttributes.get(); }
 
-    virtual search::AttributeGuard::UP getAttributeStableEnum(const vespalib::string &name) const;
+    // Implements search::IAttributeManager
+    virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
+
+    virtual search::AttributeGuard::UP getAttributeStableEnum(const vespalib::string &name) const override;
 
     /**
      * Fills all regular registered attributes (not extra attributes)
      * into the given list.
      */
-    virtual void getAttributeList(std::vector<search::AttributeGuard> &list) const;
+    virtual void getAttributeList(std::vector<search::AttributeGuard> &list) const override;
 
-    virtual search::attribute::IAttributeContext::UP createContext() const;
+    virtual search::attribute::IAttributeContext::UP createContext() const override;
 
 
     // Implements proton::IAttributeManager
 
-    virtual proton::IAttributeManager::SP create(const Spec &spec) const;
+    virtual proton::IAttributeManager::SP create(const Spec &spec) const override;
 
-    virtual std::vector<IFlushTarget::SP> getFlushTargets() const;
+    virtual std::vector<IFlushTarget::SP> getFlushTargets() const override;
 
-    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &name) const;
+    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &name) const override;
 
-    virtual SerialNum getOldestFlushedSerialNumber() const;
+    virtual SerialNum getOldestFlushedSerialNumber() const override;
 
-    virtual search::SerialNum
-    getNewestFlushedSerialNumber() const;
+    virtual search::SerialNum getNewestFlushedSerialNumber() const override;
 
-    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &list) const;
+    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &list) const override;
 
-    virtual void wipeHistory(const search::index::Schema &historySchema);
+    virtual void wipeHistory(const search::index::Schema &historySchema) override;
 
-    virtual const IAttributeFactory::SP &getFactory() const { return _factory; }
+    virtual const IAttributeFactory::SP &getFactory() const override { return _factory; }
 
-    virtual search::ISequencedTaskExecutor &
-    getAttributeFieldWriter() const override;
+    virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const override;
 
-    virtual search::AttributeVector *
-    getWritableAttribute(const vespalib::string &name) const override;
+    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override;
 
-    virtual const std::vector<search::AttributeVector *> &
-    getWritableAttributes() const override;
+    virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const override;
 
-    virtual void
-    asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
+    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
 
-    virtual ExclusiveAttributeReadAccessor::UP
-    getExclusiveReadAccessor(const vespalib::string &name) const override;
+    virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
+
+    virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
 };
 
 } // namespace proton

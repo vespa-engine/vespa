@@ -5,8 +5,8 @@
 LOG_SETUP(".proton.server.fast_access_doc_subdb_configurer");
 
 #include "fast_access_doc_subdb_configurer.h"
+#include "i_attribute_writer_factory.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 
@@ -15,7 +15,7 @@ using search::index::Schema;
 
 namespace proton {
 
-typedef AttributeReprocessingInitializer::Config ARIConfig;
+using ARIConfig = AttributeReprocessingInitializer::Config;
 
 void
 FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &curr,
@@ -37,7 +37,7 @@ FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &
 }
 
 FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
-                                                           IAttributeAdapterFactory::UP factory,
+                                                           IAttributeWriterFactory::UP factory,
                                                            const vespalib::string &subDbName)
     : _feedView(feedView),
       _factory(std::move(factory)),

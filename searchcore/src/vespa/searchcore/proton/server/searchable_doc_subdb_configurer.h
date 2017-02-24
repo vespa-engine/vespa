@@ -22,10 +22,13 @@
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 
 namespace proton {
 
+class IDocumentDBReferenceResolver;
 class ReconfigParams;
+
 /**
  * Class used to reconfig the feed view and search view used in a searchable sub database.
  */
@@ -92,13 +95,15 @@ public:
     void
     reconfigure(const DocumentDBConfig &newConfig,
                 const DocumentDBConfig &oldConfig,
-                const ReconfigParams &params);
+                const ReconfigParams &params,
+                IDocumentDBReferenceResolver &resolver);
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,
                 const DocumentDBConfig &oldConfig,
                 const AttributeCollectionSpec &attrSpec,
-                const ReconfigParams &params);
+                const ReconfigParams &params,
+                IDocumentDBReferenceResolver &resolver);
 };
 
 } // namespace proton
