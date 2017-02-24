@@ -21,6 +21,7 @@ public:
     virtual ~DocumentDBReferentRegistry();
 
     virtual std::shared_ptr<IDocumentDBReferent> get(vespalib::stringref docType) const override;
+    virtual std::shared_ptr<IDocumentDBReferent> tryGet(vespalib::stringref docType) const override;
     virtual void add(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee) override;
     virtual void remove(vespalib::stringref name) override;
 };

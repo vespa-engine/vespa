@@ -9,12 +9,18 @@
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
+#include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
+#include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/test/mock_document_db_referent.h>
+#include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 LOG_SETUP("document_db_reference_resolver_test");
 
@@ -27,6 +33,12 @@ using search::attribute::test::MockAttributeManager;
 using vespa::config::search::ImportedFieldsConfig;
 using vespa::config::search::ImportedFieldsConfigBuilder;
 
+const ReferenceAttribute *getReferenceAttribute(const IGidToLidChangeListener &listener) {
+    auto mylistener = dynamic_cast<const GidToLidChangeListener *>(&listener);
+    assert(mylistener);
+    return mylistener->getReferenceAttribute().get();
+}
+
 struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     using SP = std::shared_ptr<MyGidToLidMapperFactory>;
     virtual std::unique_ptr<IGidToLidMapper> getMapper() const override {
@@ -34,13 +46,23 @@ struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     }
 };
 
+using proton::test::MockGidToLidChangeHandler;
+using AddEntry = MockGidToLidChangeHandler::AddEntry;
+using RemoveEntry = MockGidToLidChangeHandler::RemoveEntry;
+
 struct MyDocumentDBReferent : public MockDocumentDBReferent {
     using SP = std::shared_ptr<MyDocumentDBReferent>;
     using AttributesMap = std::map<vespalib::string, AttributeVector::SP>;
     MyGidToLidMapperFactory::SP factory;
     AttributesMap attributes;
+    std::shared_ptr<MockGidToLidChangeHandler> _gidToLidChangeHandler;
 
-    MyDocumentDBReferent(MyGidToLidMapperFactory::SP factory_) : factory(factory_) {}
+    MyDocumentDBReferent(MyGidToLidMapperFactory::SP factory_,
+                         std::shared_ptr<MockGidToLidChangeHandler> gidToLidChangeHandler)
+        : factory(factory_),
+          _gidToLidChangeHandler(std::move(gidToLidChangeHandler))
+    {
+    }
     virtual IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
         return factory;
     }
@@ -52,6 +74,13 @@ struct MyDocumentDBReferent : public MockDocumentDBReferent {
     void addIntAttribute(vespalib::stringref name) {
         attributes[name] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
     }
+    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override {
+        return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
+    }
+
+    MockGidToLidChangeHandler &getGidToLidChangeHandler() {
+        return *_gidToLidChangeHandler;
+    }
 };
 
 struct MyReferentRegistry : public IDocumentDBReferentRegistry {
@@ -61,6 +90,14 @@ struct MyReferentRegistry : public IDocumentDBReferentRegistry {
         auto itr = map.find(name);
         ASSERT_TRUE(itr != map.end());
         return itr->second;
+    }
+    virtual IDocumentDBReferent::SP tryGet(vespalib::stringref name) const override {
+        auto itr = map.find(name);
+        if (itr != map.end()) {
+            return itr->second;
+        } else {
+            return IDocumentDBReferent::SP();
+        }
     }
     virtual void add(vespalib::stringref name, IDocumentDBReferent::SP referent) override {
         map[name] = referent;
@@ -86,10 +123,18 @@ struct MyAttributeManager : public MockAttributeManager {
 struct DocumentModel {
     DocumentType parentDocType;
     ReferenceDataType refDataType;
+    DocumentType parentDocType2;
+    ReferenceDataType refDataType2;
+    DocumentType parentDocType3;
+    ReferenceDataType refDataType3;
     DocumentType childDocType;
     DocumentModel()
         : parentDocType("parent"),
           refDataType(parentDocType, 1234),
+          parentDocType2("parent2"),
+          refDataType2(parentDocType2, 1235),
+          parentDocType3("parent3"),
+          refDataType3(parentDocType3, 1236),
           childDocType("child")
     {
         initChildDocType();
@@ -97,6 +142,8 @@ struct DocumentModel {
     void initChildDocType() {
         childDocType.addField(Field("ref", refDataType, true));
         childDocType.addField(Field("other_ref", refDataType, true));
+        childDocType.addField(Field("parent2_ref", refDataType2, true));
+        childDocType.addField(Field("parent3_ref", refDataType3, true));
     }
 };
 
@@ -131,36 +178,54 @@ asImportedAttribute(const IAttributeVector &attr)
 
 struct Fixture {
     MyGidToLidMapperFactory::SP factory;
+    MonitoredRefCount _gidToLidChangeListenerRefCount;
+    std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler;
+    std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler2;
     MyDocumentDBReferent::SP parentReferent;
+    MyDocumentDBReferent::SP parentReferent2;
     MyReferentRegistry registry;
     MyAttributeManager attrMgr;
+    MyAttributeManager oldAttrMgr;
     DocumentModel docModel;
     ImportedFieldsConfig importedFieldsCfg;
-    DocumentDBReferenceResolver resolver;
+    SequencedTaskExecutor _attributeFieldWriter;
     Fixture() :
         factory(std::make_shared<MyGidToLidMapperFactory>()),
-        parentReferent(std::make_shared<MyDocumentDBReferent>(factory)),
+        _gidToLidChangeListenerRefCount(),
+        _parentGidToLidChangeHandler(std::make_shared<MockGidToLidChangeHandler>()),
+        _parentGidToLidChangeHandler2(std::make_shared<MockGidToLidChangeHandler>()),
+        parentReferent(std::make_shared<MyDocumentDBReferent>(factory, _parentGidToLidChangeHandler)),
+        parentReferent2(std::make_shared<MyDocumentDBReferent>(factory, _parentGidToLidChangeHandler2)),
         registry(),
         attrMgr(),
         docModel(),
         importedFieldsCfg(createImportedFieldsConfig()),
-        resolver(registry, docModel.childDocType, importedFieldsCfg)
+        _attributeFieldWriter(1)
+
     {
         registry.add("parent", parentReferent);
+        registry.add("parent2", parentReferent2);
         populateTargetAttributes();
-        populateAttributeManager();
+        populateAttributeManagers();
     }
     void populateTargetAttributes() {
         parentReferent->addIntAttribute("target_a");
         parentReferent->addIntAttribute("target_b");
     }
-    void populateAttributeManager() {
+    void populateAttributeManagers() {
         attrMgr.addReferenceAttribute("ref");
         attrMgr.addReferenceAttribute("other_ref");
         attrMgr.addIntAttribute("int_attr");
+        oldAttrMgr.addReferenceAttribute("parent2_ref");
+        oldAttrMgr.addReferenceAttribute("parent3_ref");
     }
     ImportedAttributesRepo::UP resolve() {
-        return resolver.resolve(attrMgr);
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter);
+        return resolver.resolve(attrMgr, oldAttrMgr);
+    }
+    void teardown() {
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter);
+        resolver.teardown(attrMgr);
     }
     const IGidToLidMapperFactory *getMapperFactoryPtr(const vespalib::string &attrName) {
         return attrMgr.getReferenceAttribute(attrName)->getGidToLidMapperFactory().get();
@@ -174,6 +239,25 @@ struct Fixture {
         const ImportedAttributeVector &importedAttr = asImportedAttribute(*attr);
         EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), importedAttr.getReferenceAttribute().get());
         EXPECT_EQUAL(parentReferent->getAttribute(targetField).get(), importedAttr.getTargetAttribute().get());
+    }
+
+    MockGidToLidChangeHandler &getGidToLidChangeHandler(const vespalib::string &referencedDocTypeName) {
+        auto ireferent = registry.get(referencedDocTypeName);
+        auto referent = std::dynamic_pointer_cast<MyDocumentDBReferent>(ireferent);
+        assert(referent);
+        return referent->getGidToLidChangeHandler();
+    }
+
+    void assertParentAdds(const vespalib::string &referencedDocTypeName, const std::vector<AddEntry> &expAdds)
+    {
+        auto &handler = getGidToLidChangeHandler(referencedDocTypeName);
+        handler.assertAdds(expAdds);
+    }
+
+    void assertParentRemoves(const vespalib::string &referencedDocTypeName, const std::vector<RemoveEntry> &expRemoves)
+    {
+        auto &handler = getGidToLidChangeHandler(referencedDocTypeName);
+        handler.assertRemoves(expRemoves);
     }
 };
 
@@ -190,6 +274,28 @@ TEST_F("require that imported attributes are instantiated", Fixture)
     EXPECT_EQUAL(2u, repo->size());
     f.assertImportedAttribute("imported_a", "ref", "target_a", repo->get("imported_a"));
     f.assertImportedAttribute("imported_b", "other_ref", "target_b", repo->get("imported_b"));
+}
+
+TEST_F("require that listeners are added", Fixture)
+{
+    f.resolve();
+    TEST_DO(f.assertParentAdds("parent", {{"child","other_ref"},{"child","ref"}}));
+    TEST_DO(f.assertParentRemoves("parent", {{"child", {"other_ref","ref"}}}));
+    auto &listeners = f.getGidToLidChangeHandler("parent").getListeners();
+    EXPECT_EQUAL(2u, listeners.size());
+    EXPECT_EQUAL(f.attrMgr.getReferenceAttribute("other_ref"), getReferenceAttribute(*listeners[0]));
+    EXPECT_EQUAL(f.attrMgr.getReferenceAttribute("ref"), getReferenceAttribute(*listeners[1]));
+    TEST_DO(f.assertParentAdds("parent2", {}));
+    TEST_DO(f.assertParentRemoves("parent2", {{"child", {}}}));
+}
+
+TEST_F("require that listeners are removed", Fixture)
+{
+    f.teardown();
+    TEST_DO(f.assertParentAdds("parent", {}));
+    TEST_DO(f.assertParentRemoves("parent", {{"child", {}}}));
+    TEST_DO(f.assertParentAdds("parent2", {}));
+    TEST_DO(f.assertParentRemoves("parent2", {}));
 }
 
 TEST_MAIN()

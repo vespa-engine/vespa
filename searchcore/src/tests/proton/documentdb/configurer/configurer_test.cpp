@@ -129,9 +129,10 @@ struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
 };
 
 struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
-    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &) override {
+    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &, const search::IAttributeManager &) override {
         return std::make_unique<ImportedAttributesRepo>();
     }
+    void teardown(const search::IAttributeManager &) override { }
 };
 
 struct Fixture

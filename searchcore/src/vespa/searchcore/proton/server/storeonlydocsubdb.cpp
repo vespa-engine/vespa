@@ -12,7 +12,6 @@
 #include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreinitializer.h>
-#include <vespa/searchcore/proton/reference/document_db_referent.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
@@ -468,7 +467,7 @@ StoreOnlyDocSubDB::close()
 std::shared_ptr<IDocumentDBReferent>
 StoreOnlyDocSubDB::getDocumentDBReferent()
 {
-    return std::make_shared<DocumentDBReferent>(getAttributeManager(), _dms);
+    return std::shared_ptr<IDocumentDBReferent>();
 }
 
 void

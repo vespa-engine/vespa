@@ -78,6 +78,15 @@ TEST_F("Test that we block get until related add is completed", Fixture)
     getFooThread.join();
 }
 
+TEST_F("Test that tryGet method can fail", Fixture)
+{
+    auto referentFoo = f.add("foo");
+    auto referent = f._registry.tryGet("foo");
+    EXPECT_EQUAL(referentFoo.get(), referent.get());
+    referent = f._registry.tryGet("bar");
+    EXPECT_TRUE(referent.get() == nullptr);
+}
+
 }
 
 TEST_MAIN()

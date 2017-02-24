@@ -30,6 +30,7 @@ class DocumentDBConfig;
 class DocumentDBMetrics;
 class IDocumentDBReferenceResolver;
 class MetricsWireService;
+class GidToLidChangeHandler;
 
 /**
  * The searchable sub database supports searching and keeps all attribute fields in memory and
@@ -83,6 +84,7 @@ private:
     SearchableDocSubDBConfigurer                _configurer;
     const size_t                                _numSearcherThreads;
     vespalib::ThreadExecutor                   &_warmupExecutor;
+    std::shared_ptr<GidToLidChangeHandler>      _gidToLidChangeHandler;
 
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>
@@ -160,6 +162,8 @@ public:
     search::SearchableStats getSearchableStats() const override ;
     IDocumentRetriever::UP getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
+    virtual void close() override;
+    virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent() override;
 };
 
 } // namespace proton

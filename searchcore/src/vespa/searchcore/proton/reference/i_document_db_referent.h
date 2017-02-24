@@ -12,6 +12,8 @@ class IGidToLidMapperFactory;
 
 namespace proton {
 
+class GidToLidChangeRegistrator;
+
 /*
  * Interface class for getting target attributes for imported
  * attributes, and for getting interface for mapping to lids
@@ -24,6 +26,7 @@ public:
     virtual ~IDocumentDBReferent() { }
     virtual std::shared_ptr<search::AttributeVector> getAttribute(vespalib::stringref name) = 0;
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() = 0;
+    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) = 0;
 };
 
 } // namespace proton

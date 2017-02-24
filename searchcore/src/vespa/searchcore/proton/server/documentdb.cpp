@@ -386,9 +386,10 @@ DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
 
 namespace {
 struct EmptyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
-    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &) override {
+    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &, const search::IAttributeManager &) override {
         return std::make_unique<ImportedAttributesRepo>();
     }
+    void teardown(const search::IAttributeManager &) override { }
 };
 }
 
