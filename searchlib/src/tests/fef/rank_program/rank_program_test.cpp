@@ -3,7 +3,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/features/valuefeature.h>
+#include <vespa/searchlib/features/rankingexpressionfeature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
+#include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/test/plugin/sum.h>
@@ -58,6 +60,10 @@ size_t count_const_features(const RankProgram &program) {
     return count(program, [](const LazyValue &value){ return value.is_const(); });
 }
 
+vespalib::string expr_feature(const vespalib::string &name) {
+    return vespalib::make_string("rankingExpression(%s)", name.c_str());
+}
+
 struct Fixture {
     BlueprintFactory factory;
     IndexEnvironment indexEnv;
@@ -72,9 +78,22 @@ struct Fixture {
         factory.addPrototype(Blueprint::SP(new DocidBlueprint()));
         factory.addPrototype(Blueprint::SP(new DoubleBlueprint()));
         factory.addPrototype(Blueprint::SP(new ImpureValueBlueprint()));
+        factory.addPrototype(Blueprint::SP(new RankingExpressionBlueprint()));
         factory.addPrototype(Blueprint::SP(new SumBlueprint()));
         factory.addPrototype(Blueprint::SP(new TrackingBlueprint(track_cnt)));        
         factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
+    }
+    Fixture &lazy_expressions(bool value) {
+        indexEnv.getProperties().add(indexproperties::eval::LazyExpressions::NAME,
+                                     value ? "true" : "false");
+        return *this;
+    }
+    Fixture &add_expr(const vespalib::string &name, const vespalib::string &expr) {
+        vespalib::string feature_name = expr_feature(name);
+        vespalib::string expr_name = feature_name + ".rankingScript";
+        indexEnv.getProperties().add(expr_name, expr);
+        add(feature_name);
+        return *this;
     }
     Fixture &add(const vespalib::string &feature) {
         resolver->addSeed(feature);
@@ -273,6 +292,34 @@ TEST_F("require that auto-unboxing of non-const object values work", Fixture()) 
     EXPECT_EQUAL(2u, f1.program.num_executors());
     EXPECT_EQUAL(3u, count_features(f1.program));
     EXPECT_EQUAL(0u, count_const_features(f1.program));
+}
+
+TEST_F("require that non-lazy ranking expression always calculates all inputs", Fixture()) {
+    f1.lazy_expressions(false);
+    f1.add_expr("rank", "if(docid<10,track(ivalue(1)),track(ivalue(2)))");
+    f1.compile();
+    EXPECT_EQUAL(6u, f1.program.num_executors());
+    EXPECT_EQUAL(6u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.track_cnt, 0u);
+    EXPECT_EQUAL(f1.get(expr_feature("rank"), 5), 1.0);
+    EXPECT_EQUAL(f1.track_cnt, 2u);
+    EXPECT_EQUAL(f1.get(expr_feature("rank"), 15), 2.0);
+    EXPECT_EQUAL(f1.track_cnt, 4u);
+}
+
+TEST_F("require that lazy ranking expression only calculates needed inputs", Fixture()) {
+    f1.lazy_expressions(true);
+    f1.add_expr("rank", "if(docid<10,track(ivalue(1)),track(ivalue(2)))");
+    f1.compile();
+    EXPECT_EQUAL(6u, f1.program.num_executors());
+    EXPECT_EQUAL(6u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.track_cnt, 0u);
+    EXPECT_EQUAL(f1.get(expr_feature("rank"),  5), 1.0);
+    EXPECT_EQUAL(f1.track_cnt, 1u);
+    EXPECT_EQUAL(f1.get(expr_feature("rank"), 15), 2.0);
+    EXPECT_EQUAL(f1.track_cnt, 2u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

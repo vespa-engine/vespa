@@ -215,6 +215,14 @@ TEST("test stuff") {
     }
 
     { // test index properties known by the framework
+        { // vespa.eval.lazy_expressions
+            EXPECT_EQUAL(eval::LazyExpressions::NAME, vespalib::string("vespa.eval.lazy_expressions"));
+            EXPECT_EQUAL(eval::LazyExpressions::DEFAULT_VALUE, vespalib::string("false"));
+            Properties p;
+            EXPECT_TRUE(!eval::LazyExpressions::check(p));
+            p.add("vespa.eval.lazy_expressions", "true");
+            EXPECT_TRUE(eval::LazyExpressions::check(p));
+        }
         { // vespa.rank.firstphase
             EXPECT_EQUAL(rank::FirstPhase::NAME, vespalib::string("vespa.rank.firstphase"));
             EXPECT_EQUAL(rank::FirstPhase::DEFAULT_VALUE, vespalib::string("nativeRank"));
