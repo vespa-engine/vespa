@@ -156,7 +156,7 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
         uint32_t docId = hit.getDocId();
         search::feature_t * f = retval->getFeaturesByIndex(retval->addDocId(docId));
         for (uint32_t j = 0; j < names.size(); ++j) {
-            f[j] = *resolver.resolve_number(j);
+            f[j] = resolver.resolve(j).as_number(docId);
             LOG(debug, "getFeatureSet: lDocId(%u), '%s': %f", docId, names[j].c_str(), f[j]);
         }
     }

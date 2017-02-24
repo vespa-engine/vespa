@@ -95,14 +95,6 @@ public:
     bool execute(feature_t expected, double epsilon = 0, uint32_t docId = 1);
 
     /**
-     * Executes the content of this runner only.
-     *
-     * @param docId The document id to set on the match data object before running executors.
-     * @return Whether the executors were executed.
-     */
-    bool executeOnly(uint32_t docId = 1);
-
-    /**
      * Executes the content of this runner only and stores the result in the given rank result.
      *
      * @param result The rank result to store the rank scores.
@@ -115,7 +107,7 @@ public:
      * Resolve the only object feature that is present in the match data of the underlying
      * rank program.
      */
-    const vespalib::eval::Value::CREF *resolveObjectFeature();
+    vespalib::eval::Value::CREF resolveObjectFeature(uint32_t docid = 1);
 
 private:
     BlueprintFactory                       &_factory;

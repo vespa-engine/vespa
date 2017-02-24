@@ -18,7 +18,7 @@ FeatureExecutor::isPure()
 }
 
 void
-FeatureExecutor::handle_bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *>)
+FeatureExecutor::handle_bind_inputs(vespalib::ConstArrayRef<LazyValue>)
 {
 }
 
@@ -33,7 +33,7 @@ FeatureExecutor::handle_bind_match_data(MatchData &)
 }
 
 void
-FeatureExecutor::bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs)
+FeatureExecutor::bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs)
 {
     _inputs.bind(inputs);
     handle_bind_inputs(inputs);

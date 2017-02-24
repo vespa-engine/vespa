@@ -7,32 +7,34 @@
 namespace search {
 namespace fef {
 
-const feature_t *
-Utils::getScoreFeature(const RankProgram &rankProgram)
+feature_t
+Utils::getScoreFeature(const RankProgram &rankProgram, uint32_t docid)
 {
     FeatureResolver resolver(rankProgram.get_seeds(false));
     assert(resolver.num_features() == 1u);
-    return resolver.resolve_number(0);
+    assert(!resolver.is_object(0));
+    return resolver.resolve(0).as_number(docid);
 }
 
-const vespalib::eval::Value::CREF *
-Utils::getObjectFeature(const RankProgram &rankProgram)
+vespalib::eval::Value::CREF
+Utils::getObjectFeature(const RankProgram &rankProgram, uint32_t docid)
 {
     FeatureResolver resolver(rankProgram.get_seeds(false));
     assert(resolver.num_features() == 1u);
-    return resolver.resolve_object(0);
+    assert(resolver.is_object(0));
+    return resolver.resolve(0).as_object(docid);
 }
 
 namespace {
 
 std::map<vespalib::string, feature_t>
-resolveFeatures(const FeatureResolver &resolver)
+resolveFeatures(const FeatureResolver &resolver, uint32_t docid)
 {
     std::map<vespalib::string, feature_t> result;
     size_t numFeatures = resolver.num_features();
     for (size_t i = 0; i < numFeatures; ++i) {
         const vespalib::string &name = resolver.name_of(i);
-        feature_t value = *(resolver.resolve_number(i));
+        feature_t value = resolver.resolve(i).as_number(docid);
         result.insert(std::make_pair(name, value));
     }
     return result;
@@ -41,17 +43,17 @@ resolveFeatures(const FeatureResolver &resolver)
 }
 
 std::map<vespalib::string, feature_t>
-Utils::getSeedFeatures(const RankProgram &rankProgram)
+Utils::getSeedFeatures(const RankProgram &rankProgram, uint32_t docid)
 {
     FeatureResolver resolver(rankProgram.get_seeds());
-    return resolveFeatures(resolver);
+    return resolveFeatures(resolver, docid);
 }
 
 std::map<vespalib::string, feature_t>
-Utils::getAllFeatures(const RankProgram &rankProgram)
+Utils::getAllFeatures(const RankProgram &rankProgram, uint32_t docid)
 {
     FeatureResolver resolver(rankProgram.get_all_features());
-    return resolveFeatures(resolver);
+    return resolveFeatures(resolver, docid);
 }
 
 } // namespace fef

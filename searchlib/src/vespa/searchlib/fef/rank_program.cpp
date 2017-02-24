@@ -13,7 +13,8 @@ using vespalib::Stash;
 namespace search {
 namespace fef {
 
-using MappedValues = std::map<const NumberOrObject *, const NumberOrObject *>;
+using MappedValues = std::map<const NumberOrObject *, LazyValue>;
+using ValueSet = std::set<const NumberOrObject *>;
 
 namespace {
 
@@ -61,27 +62,10 @@ std::vector<Override> prepare_overrides(const BlueprintResolver::FeatureMap &fea
 }
 
 struct UnboxingExecutor : FeatureExecutor {
-    const NumberOrObject &input;
-    NumberOrObject &output;
-    UnboxingExecutor(const NumberOrObject &input_in, NumberOrObject &output_in)
-        : input(input_in), output(output_in) {}
-    void execute(uint32_t) override { output.as_number = input.as_object.get().as_double(); }
-};
-
-class Features {
-private:
-    vespalib::ArrayRef<NumberOrObject> _features;
-    size_t                             _used;
-public:
-    explicit Features(vespalib::ArrayRef<NumberOrObject> features)
-        : _features(features), _used(0) {}
-    vespalib::ArrayRef<NumberOrObject> alloc(size_t cnt) {
-        assert((_used + cnt) <= _features.size());
-        NumberOrObject *begin = &_features[_used];
-        _used += cnt;
-        return vespalib::ArrayRef<NumberOrObject>(begin, cnt);
+    bool isPure() override { return true; }
+    void execute(uint32_t) override {
+        outputs().set_number(0, inputs().get_object(0).get().as_double());
     }
-    bool is_full() const { return (_used == _features.size()); }
 };
 
 class StashSelector {
@@ -102,101 +86,83 @@ public:
     }
 };
 
-class ProgramBuilder {
-private:
-    std::vector<FeatureExecutor *> _program;
-    std::set<const NumberOrObject *> _is_calculated;
-public:
-    ProgramBuilder() : _program(), _is_calculated() {}
-    bool is_calculated(const NumberOrObject *raw_value) const {
-        return (_is_calculated.count(raw_value) == 1);
-    }
-    void add(FeatureExecutor *executor, bool is_const) {
-        if (is_const) {
-            executor->execute(1);
-            const auto &outputs = executor->outputs();
-            for (size_t out_idx = 0; out_idx < outputs.size(); ++out_idx) {
-                _is_calculated.insert(outputs.get_raw(out_idx));
-            }
-        } else {
-            _program.push_back(executor);
-        }
-    }
-    void unbox(const NumberOrObject &input, NumberOrObject &output, Stash &stash) {
-        if (is_calculated(&input)) {
-            output.as_number = input.as_object.get().as_double();
-        } else {
-            _program.push_back(&stash.create<UnboxingExecutor>(input, output));
-        }
-    }
-    const std::vector<FeatureExecutor *> &get() const { return _program; }
-};
+} // namespace search::fef::<unnamed>
 
-bool executor_is_const(FeatureExecutor *executor,
-                       const ProgramBuilder &program,
-                       const std::vector<FeatureExecutor *> &executors,
-                       const std::vector<BlueprintResolver::FeatureRef> &inputs)
+bool
+RankProgram::check_const(FeatureExecutor *executor, const std::vector<BlueprintResolver::FeatureRef> &inputs) const
 {
     if (!executor->isPure()) {
         return false;
     }
     for (const auto &ref: inputs) {
-        if (!program.is_calculated(executors[ref.executor]->outputs().get_raw(ref.output))) {
+        if (!check_const(_executors[ref.executor]->outputs().get_raw(ref.output))) {
             return false;
         }
     }
-    return true;
+    return true;    
 }
 
-size_t count_features(const BlueprintResolver &resolver) {
-    size_t cnt = 0;
-    const auto &specs = resolver.getExecutorSpecs();
-    for (const auto &entry: specs) {
-        cnt += entry.output_types.size(); // normal outputs
+void
+RankProgram::run_const(FeatureExecutor *executor)
+{
+    executor->lazy_execute(1);
+    const auto &outputs = executor->outputs();
+    for (size_t out_idx = 0; out_idx < outputs.size(); ++out_idx) {
+        _is_const.insert(outputs.get_raw(out_idx));
     }
-    for (const auto &seed_entry: resolver.getSeedMap()) {
-        auto seed = seed_entry.second;
-        if (specs[seed.executor].output_types[seed.output]) {
-            ++cnt; // unboxed seeds
-        }
-    }
-    return cnt;
 }
 
-FeatureResolver resolve(const BlueprintResolver::FeatureMap &features,
-                        const BlueprintResolver::ExecutorSpecList &specs,
-                        const std::vector<FeatureExecutor *> &executors,
-                        const MappedValues &unboxed_seeds,
-                        bool unbox_seeds)
+void
+RankProgram::unbox(BlueprintResolver::FeatureRef seed)
+{
+    FeatureExecutor *input_executor = _executors[seed.executor];
+    const NumberOrObject *input_value = input_executor->outputs().get_raw(seed.output);
+    vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(1);
+    if (check_const(input_value)) {
+        outputs[0].as_number = input_value->as_object.get().as_double();
+        _unboxed_seeds.emplace(input_value, LazyValue(&outputs[0]));
+    } else {
+        vespalib::ArrayRef<LazyValue> inputs = _hot_stash.create_array<LazyValue>(1, input_value, input_executor);
+        FeatureExecutor &unboxer = _hot_stash.create<UnboxingExecutor>();        
+        unboxer.bind_inputs(inputs);
+        unboxer.bind_outputs(outputs);
+        unboxer.bind_match_data(*_match_data);
+        _unboxed_seeds.emplace(input_value, LazyValue(&outputs[0], &unboxer));
+    }
+}
+
+FeatureResolver
+RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_seeds) const
 {
     FeatureResolver result(features.size());
+    const auto &specs = _resolver->getExecutorSpecs();
     for (const auto &entry: features) {
         const auto &name = entry.first;
         auto ref = entry.second;
         bool is_object = specs[ref.executor].output_types[ref.output];
-        const NumberOrObject *raw_value = executors[ref.executor]->outputs().get_raw(ref.output);
+        FeatureExecutor *executor = _executors[ref.executor];
+        const NumberOrObject *raw_value = executor->outputs().get_raw(ref.output);
+        LazyValue lazy_value = check_const(raw_value) ? LazyValue(raw_value) : LazyValue(raw_value, executor);
         if (is_object && unbox_seeds) {
-            auto pos = unboxed_seeds.find(raw_value);
-            if (pos != unboxed_seeds.end()) {
-                raw_value = pos->second;
+            auto pos = _unboxed_seeds.find(raw_value);
+            if (pos != _unboxed_seeds.end()) {
+                lazy_value = pos->second;
                 is_object = false;
             }
         }
-        result.add(name, raw_value, is_object);
+        result.add(name, lazy_value, is_object);
     }
     return result;
 }
-
-} // namespace search::fef::<unnamed>
 
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
       _match_data(),
       _hot_stash(32768),
       _cold_stash(),
-      _program(),
       _executors(),
-      _unboxed_seeds()
+      _unboxed_seeds(),
+      _is_const()
 {
 }
 
@@ -211,25 +177,29 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
     auto override = overrides.begin();
     auto override_end = overrides.end();
 
-    ProgramBuilder program;
-    Features features(_hot_stash.create_array<NumberOrObject>(count_features(*_resolver)));
     const auto &specs = _resolver->getExecutorSpecs();
     for (uint32_t i = 0; i < specs.size(); ++i) {
+        vespalib::ArrayRef<NumberOrObject> outputs = _hot_stash.create_array<NumberOrObject>(specs[i].output_types.size());
         StashSelector stash(_hot_stash, _cold_stash);
         FeatureExecutor *executor = &(specs[i].blueprint->createExecutor(queryEnv, stash.get()));
-        bool is_const = executor_is_const(executor, program, _executors, specs[i].inputs);
+        bool is_const = check_const(executor, specs[i].inputs);
         if (is_const) {
             stash.use_secondary();
             executor = &(specs[i].blueprint->createExecutor(queryEnv, stash.get()));
             is_const = executor->isPure();
         }
         size_t num_inputs = specs[i].inputs.size();
-        vespalib::ArrayRef<const NumberOrObject *> inputs = stash.get().create_array<const NumberOrObject *>(num_inputs);
+        vespalib::ArrayRef<LazyValue> inputs = stash.get().create_array<LazyValue>(num_inputs, nullptr);
         for (size_t input_idx = 0; input_idx < num_inputs; ++input_idx) {
             auto ref = specs[i].inputs[input_idx];
-            inputs[input_idx] = _executors[ref.executor]->outputs().get_raw(ref.output);
+            FeatureExecutor *input_executor = _executors[ref.executor];
+            const NumberOrObject *input_value = input_executor->outputs().get_raw(ref.output);
+            if (check_const(input_value)) {
+                inputs[input_idx] = LazyValue(input_value);
+            } else {
+                inputs[input_idx] = LazyValue(input_value, input_executor);
+            }
         }
-        vespalib::ArrayRef<NumberOrObject> outputs = features.alloc(specs[i].output_types.size());
         for (; (override < override_end) && (override->ref.executor == i); ++override) {
             FeatureExecutor *tmp = executor;
             executor = &(stash.get().create<FeatureOverrider>(*tmp, override->ref.output, override->value));
@@ -238,32 +208,29 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
         executor->bind_outputs(outputs);
         executor->bind_match_data(*_match_data);
         _executors.push_back(executor);
-        program.add(executor, is_const);
+        if (is_const) {
+            run_const(executor);
+        }
     }
     for (const auto &seed_entry: _resolver->getSeedMap()) {
         auto seed = seed_entry.second;
         if (specs[seed.executor].output_types[seed.output]) {
-            const NumberOrObject &input = *_executors[seed.executor]->outputs().get_raw(seed.output);
-            NumberOrObject &output = features.alloc(1)[0];
-            _unboxed_seeds[&input] = &output;
-            program.unbox(input, output, _hot_stash);
+            unbox(seed);
         }
     }
-    _program = _hot_stash.copy_array<FeatureExecutor *>(program.get());
     assert(_executors.size() == specs.size());
-    assert(features.is_full());
 }
 
 FeatureResolver
 RankProgram::get_seeds(bool unbox_seeds) const
 {
-    return resolve(_resolver->getSeedMap(), _resolver->getExecutorSpecs(), _executors, _unboxed_seeds, unbox_seeds);
+    return resolve(_resolver->getSeedMap(), unbox_seeds);
 }
 
 FeatureResolver
 RankProgram::get_all_features(bool unbox_seeds) const
 {
-    return resolve(_resolver->getFeatureMap(), _resolver->getExecutorSpecs(), _executors, _unboxed_seeds, unbox_seeds);
+    return resolve(_resolver->getFeatureMap(), unbox_seeds);
 }
 
 } // namespace fef

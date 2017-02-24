@@ -29,6 +29,7 @@ public:
     using MatchData = search::fef::MatchData;
     using HitCollector = search::queryeval::HitCollector;
     using RankProgram = search::fef::RankProgram;
+    using LazyValue = search::fef::LazyValue;
     using Doom = vespalib::Doom;
 
 private:
@@ -61,7 +62,7 @@ private:
         uint32_t                  matches;
     private:
         uint32_t                  _matches_limit;
-        const double            * _score_feature;
+        LazyValue                 _score_feature;
         RankProgram             & _ranking;
         double                    _rankDropLimit;
         HitCollector            & _hits;

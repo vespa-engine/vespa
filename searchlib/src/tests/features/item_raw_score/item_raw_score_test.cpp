@@ -97,8 +97,7 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
         rankProgram->setup(mdl, queryEnv);
     }
     feature_t getScore(uint32_t docId) {
-        rankProgram->run(docId);
-        return *Utils::getScoreFeature(*rankProgram);
+        return Utils::getScoreFeature(*rankProgram, docId);
     }
     void setScore(TermFieldHandle handle, uint32_t docId, feature_t score) {
         rankProgram->match_data().resolveTermField(handle)->setRawScore(docId, score);

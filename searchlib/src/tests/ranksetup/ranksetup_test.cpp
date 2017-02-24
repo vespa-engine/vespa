@@ -103,7 +103,7 @@ public:
         _initRank(initRank), _finalRank(finalRank), _rankEnv(rankEnv), _layout(),
         _rs(), _firstPhaseProgram(), _secondPhaseProgram() {}
     bool setup();
-    RankResult execute(uint32_t docId = 0);
+    RankResult execute(uint32_t docId = 1);
 };
 
 bool
@@ -136,12 +136,10 @@ RankResult
 RankExecutor::execute(uint32_t docId)
 {
     RankResult result;
-    _firstPhaseProgram->run(docId);
-    result.addScore(_initRank, *Utils::getScoreFeature(*_firstPhaseProgram));
+    result.addScore(_initRank, Utils::getScoreFeature(*_firstPhaseProgram, docId));
 
     if (_secondPhaseProgram.get() != nullptr) {
-        _secondPhaseProgram->run(docId);
-        result.addScore(_finalRank, *Utils::getScoreFeature(*_secondPhaseProgram));
+        result.addScore(_finalRank, Utils::getScoreFeature(*_secondPhaseProgram, docId));
     }
 
     return result;
@@ -198,8 +196,7 @@ FeatureDumper::setup()
 RankResult
 FeatureDumper::dump()
 {
-    _rankProgram->run(1);
-    std::map<vespalib::string, feature_t> features = Utils::getSeedFeatures(*_rankProgram);
+    std::map<vespalib::string, feature_t> features = Utils::getSeedFeatures(*_rankProgram, 1);
     RankResult retval;
     for (auto itr = features.begin(); itr != features.end(); ++itr) {
         retval.addScore(itr->first, itr->second);
@@ -230,10 +227,10 @@ private:
     void testCompilation();
     void testRankSetup();
     bool testExecution(const vespalib::string & initRank, feature_t initScore,
-                       const vespalib::string & finalRank = "", feature_t finalScore = 0.0f, uint32_t docId = 0);
+                       const vespalib::string & finalRank = "", feature_t finalScore = 0.0f, uint32_t docId = 1);
     bool testExecution(const RankEnvironment &rankEnv,
                        const vespalib::string & initRank, feature_t initScore,
-                       const vespalib::string & finalRank = "", feature_t finalScore = 0.0f, uint32_t docId = 0);
+                       const vespalib::string & finalRank = "", feature_t finalScore = 0.0f, uint32_t docId = 1);
     void testExecution();
     void testFeatureDump();
 
@@ -582,7 +579,7 @@ RankSetupTest::testExecution()
     { // static rank executor
         vespalib::string sr1 = "staticrank(staticrank1)";
         vespalib::string sr2 = "staticrank(staticrank2)";
-        for (uint32_t i = 0; i < 5; ++i) {
+        for (uint32_t i = 1; i < 5; ++i) {
             EXPECT_TRUE(testExecution(sr1, static_cast<feature_t>(i + 100),
                                      sr2, static_cast<feature_t>(i + 200), i));
         }
@@ -786,21 +783,18 @@ RankSetupTest::testFeatureNormalization()
         secondPhaseProgram->setup(layout, queryEnv);
         summaryProgram->setup(layout, queryEnv);
 
-        firstPhaseProgram->run(1);
-        EXPECT_APPROX(2.0, *Utils::getScoreFeature(*firstPhaseProgram), 0.001);
-        secondPhaseProgram->run(1);
-        EXPECT_APPROX(4.0, *Utils::getScoreFeature(*secondPhaseProgram), 0.001);
-        summaryProgram->run(1);
+        EXPECT_APPROX(2.0, Utils::getScoreFeature(*firstPhaseProgram, 1), 0.001);
+        EXPECT_APPROX(4.0, Utils::getScoreFeature(*secondPhaseProgram, 1), 0.001);
 
         { // rank seed features
-            std::map<vespalib::string, feature_t> actual = Utils::getSeedFeatures(*summaryProgram);
+            std::map<vespalib::string, feature_t> actual = Utils::getSeedFeatures(*summaryProgram, 1);
             std::map<vespalib::string, feature_t> exp;
             exp["mysum(value(5),value(5))"] = 10.0;
             exp["mysum(\"value( 5 )\",\"value( 5 )\")"] = 10.0;
             TEST_DO(checkFeatures(exp, actual));
         }
         { // all rank features (1. phase)
-            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*firstPhaseProgram);
+            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*firstPhaseProgram, 1);
             std::map<vespalib::string, feature_t> exp;
             exp["value(1)"] = 1.0;
             exp["value(1).0"] = 1.0;
@@ -809,7 +803,7 @@ RankSetupTest::testFeatureNormalization()
             TEST_DO(checkFeatures(exp, actual));
         }
         { // all rank features (2. phase)
-            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*secondPhaseProgram);
+            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*secondPhaseProgram, 1);
             std::map<vespalib::string, feature_t> exp;
             exp["value(2)"] = 2.0;
             exp["value(2).0"] = 2.0;
@@ -818,7 +812,7 @@ RankSetupTest::testFeatureNormalization()
             TEST_DO(checkFeatures(exp, actual));
         }
         { // all rank features (summary)
-            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*summaryProgram);
+            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*summaryProgram, 1);
             std::map<vespalib::string, feature_t> exp;
             exp["value(5)"] = 5.0;
             exp["value(5).0"] = 5.0;
@@ -835,10 +829,9 @@ RankSetupTest::testFeatureNormalization()
         QueryEnvironment queryEnv;
         RankProgram::UP rankProgram = rankSetup.create_dump_program();
         rankProgram->setup(layout, queryEnv);
-        rankProgram->run(1);
 
         { // dump seed features
-            std::map<vespalib::string, feature_t> actual = Utils::getSeedFeatures(*rankProgram);
+            std::map<vespalib::string, feature_t> actual = Utils::getSeedFeatures(*rankProgram, 1);
             std::map<vespalib::string, feature_t> exp;
             exp["mysum(value(10),value(10))"] = 20.0;
             exp["mysum(\"value( 10 )\",\"value( 10 )\")"] = 20.0;
@@ -846,7 +839,7 @@ RankSetupTest::testFeatureNormalization()
         }
 
         { // all dump features
-            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*rankProgram);
+            std::map<vespalib::string, feature_t> actual = Utils::getAllFeatures(*rankProgram, 1);
             std::map<vespalib::string, feature_t> exp;
 
             exp["value(10)"] = 10.0;

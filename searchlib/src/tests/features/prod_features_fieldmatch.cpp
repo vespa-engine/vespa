@@ -957,20 +957,20 @@ Test::testFieldMatchExecutorRemaining()
             ASSERT_TRUE(mdb->setFieldLength("foo", 3));
             ASSERT_TRUE(mdb->addOccurence("foo", 0, 0)); // 'a'
             ASSERT_TRUE(mdb->addOccurence("foo", 1, 1)); // 'b'
-            ASSERT_TRUE(mdb->apply(1));
+            ASSERT_TRUE(mdb->apply(2));
             RankResult rr = toRankResult("fieldMatch(foo)", "score:0.9558 matches:2");
             rr.setEpsilon(1e-4); // same as java tests
-            ASSERT_TRUE(ft.execute(rr, 1));
+            ASSERT_TRUE(ft.execute(rr, 2));
         }
         { // docid 3: "x a b"
             MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
             ASSERT_TRUE(mdb->setFieldLength("foo", 3));
             ASSERT_TRUE(mdb->addOccurence("foo", 0, 1)); // 'a'
             ASSERT_TRUE(mdb->addOccurence("foo", 1, 2)); // 'b'
-            ASSERT_TRUE(mdb->apply(2));
+            ASSERT_TRUE(mdb->apply(3));
             RankResult rr = toRankResult("fieldMatch(foo)", "score:0.9463 matches:2");
             rr.setEpsilon(1e-4); // same as java tests
-            ASSERT_TRUE(ft.execute(rr, 2));
+            ASSERT_TRUE(ft.execute(rr, 3));
         }
     }
 
@@ -1008,6 +1008,10 @@ Test::testFieldMatchExecutorRemaining()
             // add hit with query term 'b'
             mdb->getTermFieldMatchData(1, 0)->reset(1);
             ASSERT_TRUE(mdb->apply(1));
+            { // reset lazy evaluation
+                RankResult dummy;
+                ft.executeOnly(dummy, 0);
+            }
             ASSERT_TRUE(ft.execute(toRankResult("fieldMatch(foo)",
                                                 "score:0 completeness:0.475 queryCompleteness:0.5 weight:0.2 matches:2 degradedMatches:2").
                                    setEpsilon(1e-4)));

@@ -14,6 +14,32 @@
 namespace search {
 namespace fef {
 
+class FeatureExecutor;
+
+/**
+ * A LazyValue is a reference to a value that can be calculated by a
+ * FeatureExecutor when needed. Actual Values and FeatureExecutors are
+ * owned by a RankProgram. LazyValue objects are used when resolving
+ * value dependencies between FeatureExecutors inside a RankProgram
+ * and when a client wants to access values from the outside,
+ * typically during ranking and when producing summary features.
+ **/
+class LazyValue {
+private:
+    const NumberOrObject *_value;
+    FeatureExecutor *_executor;
+public:
+    explicit LazyValue(const NumberOrObject *value) : _value(value), _executor(nullptr) {}
+    LazyValue(const NumberOrObject *value, FeatureExecutor *executor)
+        : _value(value), _executor(executor) {}
+    bool is_const() const { return (_executor == nullptr); }
+    bool is_same(const LazyValue &rhs) const {
+        return ((_value == rhs._value) && (_executor == rhs._executor));
+    }
+    inline double as_number(uint32_t docid) const;
+    inline vespalib::eval::Value::CREF as_object(uint32_t docid) const;
+};
+
 /**
  * A feature executor is a general component that calculates one or
  * more feature values. It may take multiple features as input. A
@@ -24,19 +50,15 @@ class FeatureExecutor
 {
 public:
     class Inputs {
-        vespalib::ConstArrayRef<const NumberOrObject *> _inputs;
+        uint32_t _docid;
+        vespalib::ConstArrayRef<LazyValue> _inputs;
     public:
-        Inputs() : _inputs() {}
-        void bind(vespalib::ConstArrayRef<const NumberOrObject *> inputs) { _inputs = inputs; }
-        feature_t get_number(size_t idx) const {
-            return _inputs[idx]->as_number;
-        }
-        vespalib::eval::Value::CREF get_object(size_t idx) const {
-            return _inputs[idx]->as_object;
-        }
-        const NumberOrObject *get_raw(size_t idx) const {
-            return _inputs[idx];
-        }
+        Inputs() : _docid(0), _inputs() {}
+        void set_docid(uint32_t docid) { _docid = docid; }
+        uint32_t get_docid() const { return _docid; }
+        void bind(vespalib::ConstArrayRef<LazyValue> inputs) { _inputs = inputs; }
+        inline feature_t get_number(size_t idx) const;
+        inline vespalib::eval::Value::CREF get_object(size_t idx) const;
         size_t size() const { return _inputs.size(); }
     };
 
@@ -77,9 +99,16 @@ private:
     Outputs _outputs;
 
 protected:
-    virtual void handle_bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs);
+    virtual void handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs);
     virtual void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
     virtual void handle_bind_match_data(MatchData &md);
+
+    /**
+     * Execute this feature executor for the given document.
+     *
+     * @param docid the local document id being evaluated
+     **/
+    virtual void execute(uint32_t docId) = 0;
 
 public:
     /**
@@ -89,7 +118,7 @@ public:
     FeatureExecutor();
 
     // bind order per executor: inputs, outputs, match_data
-    void bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs);
+    void bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs);
     void bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
     void bind_match_data(MatchData &md);
 
@@ -115,17 +144,45 @@ public:
     virtual bool isPure();
 
     /**
-     * Execute this feature executor on the given data.
+     * Make sure this executor has been executed for the given
+     * document.
      *
      * @param docid the local document id being evaluated
      **/
-    virtual void execute(uint32_t docId) = 0;
+    void lazy_execute(uint32_t docid) {
+        if (_inputs.get_docid() != docid) {
+            _inputs.set_docid(docid);
+            execute(docid);
+        }
+    }
 
     /**
      * Virtual destructor to allow subclassing.
      **/
     virtual ~FeatureExecutor() {}
 };
+
+double LazyValue::as_number(uint32_t docid) const {
+    if (_executor != nullptr) {
+        _executor->lazy_execute(docid);
+    }
+    return _value->as_number;
+}
+
+vespalib::eval::Value::CREF LazyValue::as_object(uint32_t docid) const {
+    if (_executor != nullptr) {
+        _executor->lazy_execute(docid);
+    }
+    return _value->as_object;
+}
+
+feature_t FeatureExecutor::Inputs::get_number(size_t idx) const {
+    return _inputs[idx].as_number(_docid);
+}
+
+vespalib::eval::Value::CREF FeatureExecutor::Inputs::get_object(size_t idx) const {
+    return _inputs[idx].as_object(_docid);
+}
 
 } // namespace fef
 } // namespace search

@@ -292,6 +292,10 @@ Test::testProximity()
                     .addScore("proximity(foo,0,1).posA", a < b ? a     : util::FEATURE_MAX)
                     .addScore("proximity(foo,0,1).posB", a < b ? b     : util::FEATURE_MIN);
                 TEST_STATE(vespalib::make_string("a=%u, b=%u", a, b).c_str());
+                { // reset lazy evaluation
+                    RankResult dummy;
+                    ft.executeOnly(dummy, 0);
+                }
                 EXPECT_TRUE(ft.execute(exp));
             }
         }
@@ -344,6 +348,10 @@ Test::testQueryCompleteness()
             RankResult exp;
             exp.addScore("queryCompleteness(foo).hit", (feature_t)(i));
             exp.addScore("queryCompleteness(foo).miss", (feature_t)(5 - i));
+            { // reset lazy evaluation
+                RankResult dummy;
+                ft.executeOnly(dummy, 0);
+            }
             EXPECT_TRUE(ft.execute(exp));
         }
     }
@@ -374,6 +382,10 @@ Test::assertQueryCompleteness(FtFeatureTest & ft, uint32_t firstOcc, uint32_t hi
     RankResult exp;
     exp.addScore("queryCompleteness(foo,5,10).hit", hits);
     exp.addScore("queryCompleteness(foo,5,10).miss", miss);
+    { // reset lazy evaluation
+        RankResult dummy;
+        ft.executeOnly(dummy, 0);
+    }
     EXPECT_TRUE(ft.execute(exp));
 }
 
@@ -473,6 +485,10 @@ Test::testFlowCompleteness()
             exp.addScore("flowCompleteness(foo).weight", 100.0);
             exp.addScore("flowCompleteness(foo).flow", i);
             TEST_STATE("run execute");
+            { // reset lazy evaluation
+                RankResult dummy;
+                ft.executeOnly(dummy, 0);
+            }
             EXPECT_TRUE(ft.execute(exp));
         }
     }
@@ -524,6 +540,10 @@ Test::testFlowCompleteness()
                         exp.addScore("flowCompleteness(foo).flow", flow);
                         TEST_STATE(vespalib::make_string("execute t0m=%u t1m=%u t2m=%u t3m=%u flow=%u",
                                         t0m, t1m, t2m, t3m, flow).c_str());
+                        { // reset lazy evaluation
+                            RankResult dummy;
+                            ft.executeOnly(dummy, 0);
+                        }
                         ASSERT_TRUE(ft.execute(exp));
                     }
                 }

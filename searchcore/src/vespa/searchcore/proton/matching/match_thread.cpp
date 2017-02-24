@@ -22,6 +22,7 @@ using search::queryeval::SearchIterator;
 using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::fef::FeatureResolver;
+using search::fef::LazyValue;
 
 namespace {
 
@@ -74,10 +75,10 @@ private:
     std::unique_ptr<OptimizedAndNotForBlackListing> _search;
 };
 
-const double *get_score_feature(const RankProgram &rankProgram) {
+LazyValue get_score_feature(const RankProgram &rankProgram) {
     FeatureResolver resolver(rankProgram.get_seeds());
     assert(resolver.num_features() == 1u);
-    return resolver.resolve_number(0);
+    return resolver.resolve(0);
 }
 
 } // namespace proton::matching::<unnamed>
@@ -98,8 +99,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, Ran
 
 void
 MatchThread::Context::rankHit(uint32_t docId) {
-    _ranking.run(docId);
-    double score = *_score_feature;
+    double score = _score_feature.as_number(docId);
     // convert NaN and Inf scores to -Inf
     if (__builtin_expect(std::isnan(score) || std::isinf(score), false)) {
         score = -HUGE_VAL;

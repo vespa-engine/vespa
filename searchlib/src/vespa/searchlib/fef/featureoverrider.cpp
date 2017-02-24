@@ -7,7 +7,7 @@ namespace search {
 namespace fef {
 
 void
-FeatureOverrider::handle_bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs)
+FeatureOverrider::handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs)
 {
     _executor.bind_inputs(inputs);
 }
@@ -34,7 +34,7 @@ FeatureOverrider::isPure()
 void
 FeatureOverrider::execute(uint32_t docId)
 {
-    _executor.execute(docId);
+    _executor.lazy_execute(docId);
     if (_outputIdx < outputs().size()) {
         outputs().set_number(_outputIdx, _value);
     }

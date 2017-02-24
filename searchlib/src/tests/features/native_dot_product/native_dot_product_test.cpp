@@ -103,8 +103,7 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
         rankProgram->setup(mdl, queryEnv);
     }
     feature_t getScore(uint32_t docId) {
-        rankProgram->run(docId);
-        return *Utils::getScoreFeature(*rankProgram);
+        return Utils::getScoreFeature(*rankProgram, docId);
     }
     void setFooWeight(uint32_t i, uint32_t docId, int32_t index_weight) {
         ASSERT_LESS(i, fooHandles.size());

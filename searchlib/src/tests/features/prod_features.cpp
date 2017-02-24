@@ -1353,7 +1353,7 @@ Test::testNow()
         ASSERT_TRUE(ft.setup());
 
         RankResult res;
-        ASSERT_TRUE(ft.executeOnly(res, 0));
+        ASSERT_TRUE(ft.executeOnly(res, 1));
         feature_t now = 15000000000;
         ASSERT_EQUAL(now, res.getScore("now"));
     }

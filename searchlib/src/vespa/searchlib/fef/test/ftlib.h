@@ -104,10 +104,9 @@ public:
     bool setup()                                                                    { return _test.setup(); }
     bool execute(feature_t expected, double epsilon = 0, uint32_t docId = 1)        { return _test.execute(expected, epsilon, docId); }
     bool execute(const search::fef::test::RankResult &expected, uint32_t docId = 1) { return _test.execute(expected, docId); }
-    bool executeOnly(uint32_t docId = 1)                                            { return _test.executeOnly(docId); }
     bool executeOnly(search::fef::test::RankResult &result, uint32_t docId = 1)     { return _test.executeOnly(result, docId); }
     search::fef::test::MatchDataBuilder::UP createMatchDataBuilder()                { return _test.createMatchDataBuilder(); }
-    const vespalib::eval::Value::CREF *resolveObjectFeature() { return _test.resolveObjectFeature(); }
+    vespalib::eval::Value::CREF resolveObjectFeature(uint32_t docid = 1) { return _test.resolveObjectFeature(docid); }
 
     FtIndexEnvironment &getIndexEnv() { return _indexEnv; }
     FtQueryEnvironment &getQueryEnv() { return _queryEnv; }

@@ -234,6 +234,10 @@ Test::testAttributeMatch()
         mdb->apply(1);
         exp.clear().
             addScore("attributeMatch(wsint).fieldCompleteness", 0.5f);
+        { // reset lazy evaluation
+            RankResult dummy;
+            ft.executeOnly(dummy, 0);
+        }
         ASSERT_TRUE(ft.execute(exp));
 
         // test that normalized values lies in the interval [0,1].
@@ -243,6 +247,10 @@ Test::testAttributeMatch()
         exp.clear().
             addScore("attributeMatch(wsfloat).normalizedWeight", 1).
             addScore("attributeMatch(wsfloat).normalizedWeightedWeight", 1);
+        { // reset lazy evaluation
+            RankResult dummy;
+            ft.executeOnly(dummy, 0);
+        }
         ASSERT_TRUE(ft.execute(exp));
     }
 
