@@ -20,11 +20,14 @@ public:
 private:
     std::vector<AddEntry> _adds;
     std::vector<RemoveEntry> _removes;
+    std::vector<std::unique_ptr<IGidToLidChangeListener>> _listeners;
+
 public:
     MockGidToLidChangeHandler()
         : IGidToLidChangeHandler(),
           _adds(),
-          _removes()
+          _removes(),
+          _listeners()
     {
     }
 
@@ -32,6 +35,7 @@ public:
 
     virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override {
         _adds.emplace_back(listener->getDocTypeName(), listener->getName());
+        _listeners.push_back(std::move(listener));
     }
 
     virtual void removeListeners(const vespalib::string &docTypeName,
@@ -48,6 +52,8 @@ public:
     {
         EXPECT_EQUAL(expRemoves, _removes);
     }
+
+    const std::vector<std::unique_ptr<IGidToLidChangeListener>> &getListeners() const { return _listeners; }
 };
 
 }

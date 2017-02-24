@@ -33,6 +33,7 @@ public:
     virtual void notifyRegistered() override;
     virtual const vespalib::string &getName() const override;
     virtual const vespalib::string &getDocTypeName() const override;
+    const std::shared_ptr<search::attribute::ReferenceAttribute> &getReferenceAttribute() const { return _attr; }
 };
 
 } // namespace proton
