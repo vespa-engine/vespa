@@ -61,10 +61,11 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 {
     uint32_t docidA = begin_id - 1;
     uint32_t docidB = result.getNextTrueBit(begin_id);
-    while (!isAtEnd(docidA) || !isAtEnd(docidB)) {
+    while (!isAtEnd(docidB)) {
         if (docidA < docidB) {
             if (!isAtEnd(docidB)) {
-                if (seek(docidB)) {
+                doSeek(docidB);
+                if (getDocId() == docidB) {
                     docidA = docidB;
                 } else {
                     result.clearBit(docidB);
@@ -78,7 +79,6 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
             docidB = (! isAtEnd(docidA)) ? result.getNextTrueBit(docidA) : getEndId();
         } else {
             docidB = result.getNextTrueBit(docidB+1);
-            docidA = seekNext(docidB);
         }
     }
 }
