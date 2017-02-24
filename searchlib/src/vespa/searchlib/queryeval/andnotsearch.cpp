@@ -159,5 +159,10 @@ AndNotSearch::get_hits(uint32_t begin_id) {
     return result;
 }
 
+void
+AndNotSearch::or_hits_into(BitVector &result, uint32_t begin_id) {
+    result.orWith(*get_hits(begin_id));
+}
+
 }  // namespace queryeval
 }  // namespace search
