@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -197,6 +198,164 @@ public class NodeFailerTest {
     }
 
     @Test
+    public void testFailingDockerHost() {
+        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(7);
+
+        // For a day all nodes work so nothing happens
+        for (int minutes = 0; minutes < 24 * 60; minutes += 5 ) {
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            tester.failer.run();
+            assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+            assertEquals(7, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+            assertEquals( 13, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        }
+
+
+        // Select the first host that has two active nodes
+        String downHost1 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).stream()
+                .collect(Collectors.groupingBy(Node::parentHostname))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue().size() == 2)
+                .map(Map.Entry::getKey)
+                .findFirst().get().get();
+        tester.serviceMonitor.setHostDown(downHost1);
+
+        // nothing happens the first 45 minutes
+        for (int minutes = 0; minutes < 45; minutes += 5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            assertEquals( 0, tester.deployer.redeployments);
+            assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+            assertEquals(7, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+            assertEquals( 13, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        }
+
+        tester.clock.advance(Duration.ofMinutes(30));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        assertEquals( 3, tester.deployer.redeployments);
+        assertEquals(3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+        assertEquals(6, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+        assertEquals( 10, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+
+
+        // Now lets fail an active tenant node
+        String downTenant1 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).get(0).hostname();
+        tester.serviceMonitor.setHostDown(downTenant1);
+
+        // nothing happens the first 45 minutes
+        for (int minutes = 0; minutes < 45; minutes += 5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            assertEquals(3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        }
+
+        tester.clock.advance(Duration.ofMinutes(30));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        assertEquals( 4, tester.deployer.redeployments);
+        assertEquals(4, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+        assertEquals(6, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+        assertEquals( 9, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+
+
+        // Lets fail another host, but now nothing should happen as we have already failed a host
+        String downHost2 = tester.nodeRepository.getNodes(NodeType.host).get(0).hostname();
+        tester.serviceMonitor.setHostDown(downHost2);
+
+        // Nothing happens
+        for (int minutes = 0; minutes < 90; minutes += 5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            assertEquals( 4, tester.deployer.redeployments);
+            assertEquals(4, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+            assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+            assertEquals(6, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+            assertEquals( 9, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        }
+    }
+
+    @Test
+    public void testFailingDockerHostNoReplacement() {
+        // app2 requires 5 nodes
+        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(5);
+
+        // For a day all nodes work so nothing happens
+        for (int minutes = 0; minutes < 24 * 60; minutes += 5 ) {
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            tester.failer.run();
+            assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+            assertEquals(5, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+            assertEquals( 7, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        }
+
+
+        // Select the first host that has two active nodes
+        String downHost1 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).stream()
+                .collect(Collectors.groupingBy(Node::parentHostname))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue().size() == 2)
+                .map(Map.Entry::getKey)
+                .findFirst().get().get();
+        tester.serviceMonitor.setHostDown(downHost1);
+
+        // nothing happens the first 45 minutes
+        for (int minutes = 0; minutes < 45; minutes += 5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            assertEquals( 0, tester.deployer.redeployments);
+            assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+            assertEquals(5, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+            assertEquals( 7, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        }
+
+        tester.clock.advance(Duration.ofMinutes(30));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        // The node used by app1 should've been redeployed, while the host and node used by app2 should stay
+        assertEquals( 1, tester.deployer.redeployments);
+        assertEquals(2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+        assertEquals(5, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+        assertEquals( 5, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+
+
+        // Now lets fail an active tenant node, this should work as normal
+        String downTenant1 = tester.nodeRepository.getNodes(NodeFailTester.app1).get(0).hostname();
+        tester.serviceMonitor.setHostDown(downTenant1);
+
+        // nothing happens the first 45 minutes
+        for (int minutes = 0; minutes < 45; minutes += 5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            assertEquals(2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        }
+
+        tester.clock.advance(Duration.ofMinutes(30));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        assertEquals( 2, tester.deployer.redeployments);
+        assertEquals(3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(8, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
+        assertEquals(5, tester.nodeRepository.getNodes(NodeType.host, Node.State.active).size());
+        assertEquals( 4, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+    }
+
+
+    @Test
     public void testFailingProxyNodes() {
         NodeFailTester tester = NodeFailTester.withProxyApplication();
 
@@ -250,5 +409,5 @@ public class NodeFailerTest {
         assertFalse(failedHost1.equals(failedHost2));
         assertTrue(downHosts.contains(failedHost2));
     }
-    
+
 }
