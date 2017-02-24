@@ -81,6 +81,33 @@ BoxingBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stas
 
 //-----------------------------------------------------------------------------
 
+struct TrackingExecutor : FeatureExecutor {
+    size_t &ext_cnt;
+    TrackingExecutor(size_t &ext_cnt_in) : ext_cnt(ext_cnt_in) {}
+    bool isPure() override { return true; }
+    void execute(uint32_t) override {
+        ++ext_cnt;
+        outputs().set_number(0, inputs().get_number(0));
+    }
+};
+
+bool
+TrackingBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
+{
+    ASSERT_EQUAL(1u, params.size());
+    defineInput(params[0]);
+    describeOutput("out", "tracked value");
+    return true;
+}
+
+FeatureExecutor &
+TrackingBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
+{
+    return stash.create<TrackingExecutor>(ext_cnt);
+}
+
+//-----------------------------------------------------------------------------
+
 } // namespace test
 } // namespace fef
 } // namespace search

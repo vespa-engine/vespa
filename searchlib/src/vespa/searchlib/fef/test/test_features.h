@@ -45,6 +45,18 @@ struct BoxingBlueprint : Blueprint {
 
 //-----------------------------------------------------------------------------
 
+// "track(docid)" calculates docid and counts execution as a side-effect
+struct TrackingBlueprint : Blueprint {
+    size_t &ext_cnt;
+    TrackingBlueprint(size_t &ext_cnt_in) : Blueprint("track"), ext_cnt(ext_cnt_in) {}
+    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new TrackingBlueprint(ext_cnt)); }
+    bool setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params) override;
+    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override;
+};
+
+//-----------------------------------------------------------------------------
+
 } // namespace test
 } // namespace fef
 } // namespace search
