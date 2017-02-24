@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_registrator.h>
+#include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <map>
 #include <vespa/log/log.h>
@@ -29,48 +30,18 @@ public:
     virtual const vespalib::string &getDocTypeName() const override { return _docTypeName; }
 };
 
-using AddEntry = std::pair<vespalib::string, vespalib::string>;
-using RemoveEntry = std::pair<vespalib::string, std::set<vespalib::string>>;
 
-class MyHandler : public IGidToLidChangeHandler {
-    std::vector<AddEntry> _adds;
-    std::vector<RemoveEntry> _removes;
-public:
-    MyHandler()
-        : IGidToLidChangeHandler(),
-          _adds(),
-          _removes()
-    {
-    }
 
-    ~MyHandler() { }
-
-    virtual void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override {
-        _adds.emplace_back(listener->getDocTypeName(), listener->getName());
-    }
-
-    virtual void removeListeners(const vespalib::string &docTypeName,
-                                 const std::set<vespalib::string> &keepNames) override {
-        _removes.emplace_back(docTypeName, keepNames);
-    }
-
-    void assertAdds(const std::vector<AddEntry> &expAdds)
-    {
-        EXPECT_EQUAL(expAdds, _adds);
-    }
-
-    void assertRemoves(const std::vector<RemoveEntry> &expRemoves)
-    {
-        EXPECT_EQUAL(expRemoves, _removes);
-    }
-};
+using test::MockGidToLidChangeHandler;
+using AddEntry = MockGidToLidChangeHandler::AddEntry;
+using RemoveEntry = MockGidToLidChangeHandler::RemoveEntry;
 
 struct Fixture
 {
-    std::shared_ptr<MyHandler> _handler;
+    std::shared_ptr<MockGidToLidChangeHandler> _handler;
 
     Fixture()
-        : _handler(std::make_shared<MyHandler>())
+        : _handler(std::make_shared<MockGidToLidChangeHandler>())
     {
     }
 

@@ -28,6 +28,18 @@ DocumentDBReferentRegistry::get(vespalib::stringref name) const
     return itr->second;
 }
 
+std::shared_ptr<IDocumentDBReferent>
+DocumentDBReferentRegistry::tryGet(vespalib::stringref name) const
+{
+    std::unique_lock<std::mutex> guard(_lock);
+    auto itr = _handlers.find(name);
+    if (itr == _handlers.end()) {
+        return std::shared_ptr<IDocumentDBReferent>();
+    } else {
+        return itr->second;
+    }
+}
+
 void
 DocumentDBReferentRegistry::add(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee)
 {

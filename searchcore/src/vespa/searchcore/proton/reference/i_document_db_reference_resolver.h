@@ -12,7 +12,8 @@ class ImportedAttributesRepo;
  */
 struct IDocumentDBReferenceResolver {
     virtual ~IDocumentDBReferenceResolver() {}
-    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &attrMgr) = 0;
+    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr, const search::IAttributeManager &oldAttrMgr) = 0;
+    virtual void teardown(const search::IAttributeManager &oldAttrMgr) = 0;
 };
 
 }

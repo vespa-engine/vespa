@@ -20,6 +20,12 @@ public:
      */
     virtual std::shared_ptr<IDocumentDBReferent> get(vespalib::stringref name) const = 0;
 
+    /*
+     * Get named IDocumentDBReferent.  Returns empty shared pointer if
+     * it doesn't exist.
+     */
+    virtual std::shared_ptr<IDocumentDBReferent> tryGet(vespalib::stringref name) const = 0;
+
     virtual void add(vespalib::stringref name, std::shared_ptr<IDocumentDBReferent> referee) = 0;
 
     virtual void remove(vespalib::stringref name) = 0;
