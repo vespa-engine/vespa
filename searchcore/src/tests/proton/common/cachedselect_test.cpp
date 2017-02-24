@@ -272,7 +272,7 @@ MyDB::addDoc(uint32_t lid,
     _docIdToLid[docId] = lid;
     _lidToDocSP[lid] = Document::SP(doc.release());
     AttributeGuard::UP guard = _amgr.getAttribute("aa");
-    AttributeVector &av = guard->get();
+    AttributeVector &av = *guard->get();
     if (lid >= av.getNumDocs()) {
         AttributeVector::DocId checkDocId(0u);
         ASSERT_TRUE(av.addDoc(checkDocId));
