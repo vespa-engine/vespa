@@ -103,6 +103,13 @@ protected:
     virtual void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
     virtual void handle_bind_match_data(MatchData &md);
 
+    /**
+     * Execute this feature executor for the given document.
+     *
+     * @param docid the local document id being evaluated
+     **/
+    virtual void execute(uint32_t docId) = 0;
+
 public:
     /**
      * Create a feature executor that has not yet been bound to neither
@@ -137,12 +144,11 @@ public:
     virtual bool isPure();
 
     /**
-     * Execute this feature executor on the given data.
+     * Make sure this executor has been executed for the given
+     * document.
      *
      * @param docid the local document id being evaluated
      **/
-    virtual void execute(uint32_t docId) = 0;
-
     void lazy_execute(uint32_t docid) {
         if (_inputs.get_docid() != docid) {
             _inputs.set_docid(docid);

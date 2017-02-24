@@ -105,7 +105,7 @@ RankProgram::check_const(FeatureExecutor *executor, const std::vector<BlueprintR
 void
 RankProgram::run_const(FeatureExecutor *executor)
 {
-    executor->execute(1);
+    executor->lazy_execute(1);
     const auto &outputs = executor->outputs();
     for (size_t out_idx = 0; out_idx < outputs.size(); ++out_idx) {
         _is_const.insert(outputs.get_raw(out_idx));

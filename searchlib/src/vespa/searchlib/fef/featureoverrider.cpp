@@ -34,7 +34,7 @@ FeatureOverrider::isPure()
 void
 FeatureOverrider::execute(uint32_t docId)
 {
-    _executor.execute(docId);
+    _executor.lazy_execute(docId);
     if (_outputIdx < outputs().size()) {
         outputs().set_number(_outputIdx, _value);
     }
