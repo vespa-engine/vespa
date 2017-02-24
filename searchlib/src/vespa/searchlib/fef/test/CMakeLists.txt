@@ -10,5 +10,6 @@ vespa_add_library(searchlib_fef_test OBJECT
     queryenvironment.cpp
     queryenvironmentbuilder.cpp
     rankresult.cpp
+    test_features.cpp
     DEPENDS
 )
