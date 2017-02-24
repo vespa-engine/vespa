@@ -246,6 +246,19 @@ TEST_F("require that overrides of non-const features work for multiple documents
     EXPECT_EQUAL(13.0, f1.get(3));
 }
 
+TEST_F("require that partial multi-override works for multiple documents", Fixture()) {
+    f1.add("mysum(double(docid,docid,docid).0,double(docid,docid,docid).1,double(docid,docid,docid).2)");
+    f1.override("double(docid,docid,docid).0", 10.0);
+    f1.override("double(docid,docid,docid).1", 20.0);
+    f1.compile();
+    EXPECT_EQUAL(3u, f1.program.num_executors());
+    EXPECT_EQUAL(5u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.get(1), 32.0);
+    EXPECT_EQUAL(f1.get(2), 34.0);
+    EXPECT_EQUAL(f1.get(3), 36.0);
+}
+
 TEST_F("require that auto-unboxing of const object values work", Fixture()) {
     f1.add("box(value(10))").compile();
     EXPECT_EQUAL(10.0, f1.get());
