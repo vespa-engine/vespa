@@ -12,7 +12,7 @@ namespace proton {
  * subset of the attribute vectors in the wrapped manager.
  *
  * This manager only implements the subset of functions needed when used by
- * and attribute adapter in the context of an attribute populator.
+ * and attribute writer in the context of an attribute populator.
  */
 class FilterAttributeManager : public IAttributeManager
 {
@@ -52,6 +52,7 @@ public:
     virtual const std::vector<search::AttributeVector *> & getWritableAttributes() const override;
     virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
     virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
+    virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
 };
 
 } // namespace proton

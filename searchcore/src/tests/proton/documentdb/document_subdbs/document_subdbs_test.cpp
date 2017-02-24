@@ -110,7 +110,6 @@ struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
 	std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &) override {
         return std::make_unique<ImportedAttributesRepo>();
 	}
-
 };
 
 struct MyStoreOnlyConfig

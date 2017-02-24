@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "searchable_doc_subdb_configurer.h"
 #include "reconfig_params.h"
+#include "searchable_doc_subdb_configurer.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 
 using namespace vespa::config::search;
@@ -147,11 +149,12 @@ void
 SearchableDocSubDBConfigurer::
 reconfigure(const DocumentDBConfig &newConfig,
             const DocumentDBConfig &oldConfig,
-            const ReconfigParams &params)
+            const ReconfigParams &params,
+            IDocumentDBReferenceResolver &resolver)
 {
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, attrSpec, params);
+    reconfigure(newConfig, oldConfig, attrSpec, params, resolver);
 }
 
 namespace {
@@ -181,7 +184,8 @@ IReprocessingInitializer::UP
 SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
                                           const AttributeCollectionSpec &attrSpec,
-                                          const ReconfigParams &params)
+                                          const ReconfigParams &params,
+                                          IDocumentDBReferenceResolver &resolver)
 {
     bool shouldMatchViewChange = false;
     bool shouldSearchViewChange = false;
@@ -203,6 +207,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
     if (params.shouldAttributeManagerChange()) {
         IAttributeManager::SP newAttrMgr = attrMgr->create(attrSpec);
+        newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr));
         IAttributeManager::SP oldAttrMgr = attrMgr;
         attrMgr = newAttrMgr;
         shouldMatchViewChange = true;

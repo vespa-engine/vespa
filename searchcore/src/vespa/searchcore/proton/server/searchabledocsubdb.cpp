@@ -182,7 +182,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
         AttributeCollectionSpec::UP attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
         IReprocessingInitializer::UP initializer =
-                _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params);
+                _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params, resolver);
         if (initializer.get() != nullptr && initializer->hasReprocessors()) {
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
@@ -192,7 +192,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
     } else {
-        _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params);
+        _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params, resolver);
     }
     syncViews();
     return tasks;

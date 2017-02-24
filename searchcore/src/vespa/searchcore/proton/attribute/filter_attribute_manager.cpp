@@ -151,4 +151,10 @@ FilterAttributeManager::getExclusiveReadAccessor(const vespalib::string &name) c
     }
 }
 
+void
+FilterAttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo>)
+{
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+
 }

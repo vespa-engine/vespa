@@ -4,6 +4,7 @@
 
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
@@ -24,6 +25,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 
 using namespace config;
 using namespace document;
@@ -126,6 +128,12 @@ struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
     }
 };
 
+struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
+    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &) override {
+        return std::make_unique<ImportedAttributesRepo>();
+    }
+};
+
 struct Fixture
 {
     vespalib::Clock _clock;
@@ -134,6 +142,7 @@ struct Fixture
     ConstantValueRepo _constantValueRepo;
     vespalib::ThreadStackExecutor _summaryExecutor;
     ViewSet _views;
+    MyDocumentDBReferenceResolver _resolver;
     ConfigurerUP _configurer;
     Fixture()
         : _clock(),
@@ -142,6 +151,7 @@ struct Fixture
           _constantValueRepo(_constantValueFactory),
           _summaryExecutor(8, 128*1024),
           _views(),
+          _resolver(),
           _configurer()
     {
         vespalib::rmdir(BASE_DIR, true);
@@ -444,6 +454,14 @@ TEST_F("require that we can reconfigure index searchable", Fixture)
     }
 }
 
+const AttributeManager *
+asAttributeManager(const proton::IAttributeManager::SP &attrMgr)
+{
+    const AttributeManager *result = dynamic_cast<const AttributeManager *>(attrMgr.get());
+    ASSERT_TRUE(result != nullptr);
+    return result;
+}
+
 TEST_F("require that we can reconfigure attribute manager", Fixture)
 {
     ViewPtrs o = f._views.getViewPtrs();
@@ -454,7 +472,7 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
     AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(cmpres);
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params);
+    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -476,6 +494,7 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
         cmp.expect_equal_summary_adapter();
         cmp.expect_not_equal_schema();
     }
+    EXPECT_TRUE(asAttributeManager(f._views.getViewPtrs().fv.get()->getAttributeWriter()->getAttributeManager())->getImportedAttributes() != nullptr);
 }
 
 TEST_F("require that reconfigure returns reprocessing initializer when changing attributes", Fixture)
@@ -487,7 +506,7 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
     AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(cmpres);
     IReprocessingInitializer::UP init =
-            f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params);
+            f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -528,7 +547,7 @@ TEST_F("require that we can reconfigure summary manager", Fixture)
     cmpres.summarymapChanged = true;
     ReconfigParams params(cmpres);
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), params);
+    f._configurer->reconfigure(*createConfig(), *createConfig(), params, f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -550,7 +569,7 @@ TEST_F("require that we can reconfigure matchers", Fixture)
     cmpres.rankProfilesChanged = true;
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     f._configurer->reconfigure(*createConfig(o.fv->getSchema()), *createConfig(o.fv->getSchema()),
-            ReconfigParams(cmpres));
+            ReconfigParams(cmpres), f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view

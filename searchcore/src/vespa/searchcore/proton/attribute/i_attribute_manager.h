@@ -21,6 +21,7 @@ class ISequencedTaskExecutor;
 namespace proton {
 
 class IAttributeFunctor;
+class ImportedAttributesRepo;
 
 /**
  * Proton specific interface for an attribute manager that handles a set of attribute vectors.
@@ -58,8 +59,7 @@ struct IAttributeManager : public search::IAttributeManager
      */
     virtual search::SerialNum getOldestFlushedSerialNumber() const = 0;
 
-    virtual search::SerialNum
-    getNewestFlushedSerialNumber() const = 0;
+    virtual search::SerialNum getNewestFlushedSerialNumber() const = 0;
 
     /**
      * Fills all underlying attribute vectors (including extra attributes) into the given list.
@@ -76,8 +76,7 @@ struct IAttributeManager : public search::IAttributeManager
      */
     virtual const IAttributeFactory::SP &getFactory() const = 0;
 
-    virtual search::ISequencedTaskExecutor &
-    getAttributeFieldWriter() const = 0;
+    virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const = 0;
 
     /*
      * Get pointer to named writable attribute.  If attribute isn't
@@ -87,8 +86,7 @@ struct IAttributeManager : public search::IAttributeManager
      * attributes.  Lifetime should be guaranteed by syncing threads
      * at config changes.
      */
-    virtual search::AttributeVector *
-    getWritableAttribute(const vespalib::string &name) const = 0;
+    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &name) const = 0;
 
     /*
      * Get pointers to all writable attributes.
@@ -97,14 +95,13 @@ struct IAttributeManager : public search::IAttributeManager
      * attributes.  Lifetime should be guaranteed by syncing threads
      * at config changes.
      */
-    virtual const std::vector<search::AttributeVector *> &
-    getWritableAttributes() const = 0;
+    virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const = 0;
 
-    virtual void
-    asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const = 0;
+    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const = 0;
 
-    virtual ExclusiveAttributeReadAccessor::UP
-    getExclusiveReadAccessor(const vespalib::string &name) const = 0;
+    virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const = 0;
+
+    virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) = 0;
 };
 
 } // namespace proton
