@@ -26,6 +26,7 @@ private:
     BitVector::UP get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
+    void andnot_hits_into(BitVector &result, uint32_t begin_id) override;
     bool isBitVector() const override { return true; }
     fef::TermFieldMatchData  &_tfmd;
 public:

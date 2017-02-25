@@ -125,5 +125,10 @@ void BitVectorIterator::and_hits_into(BitVector &result, uint32_t begin_id) {
     result.andWith(_bv);
 }
 
+void BitVectorIterator::andnot_hits_into(BitVector &result, uint32_t begin_id) {
+    (void) begin_id;
+    result.andNotWith(_bv);
+}
+
 
 } // namespace search

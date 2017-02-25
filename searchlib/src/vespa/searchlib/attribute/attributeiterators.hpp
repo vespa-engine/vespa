@@ -296,6 +296,19 @@ FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) 
 }
 
 template <typename SC>
+void
+FlagAttributeIteratorT<SC>::andnot_hits_into(BitVector &result, uint32_t begin_id) {
+    const SC & sc(_sc);
+    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    for (int i = sc._low; i <  sc._high; i++) {
+        const BitVector * bv = attr.getBitVector(i);
+        if (bv != NULL) {
+            result.andNotWith(*bv);
+        }
+    }
+}
+
+template <typename SC>
 std::unique_ptr<BitVector>
 FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     const SC & sc(_sc);
