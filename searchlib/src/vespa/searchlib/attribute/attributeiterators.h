@@ -339,6 +339,7 @@ protected:
 
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
+    void andnot_hits_into(BitVector &result, uint32_t begin_id) override;
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 public:

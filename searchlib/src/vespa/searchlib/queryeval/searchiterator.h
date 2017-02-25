@@ -156,6 +156,8 @@ public:
      **/
     virtual void and_hits_into(BitVector &result, uint32_t begin_id);
 
+    virtual void andnot_hits_into(BitVector &result, uint32_t begin_id);
+
 public:
     typedef std::unique_ptr<SearchIterator> UP;
 

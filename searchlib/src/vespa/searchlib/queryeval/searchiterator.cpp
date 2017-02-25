@@ -51,6 +51,7 @@ SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
         docid = result.getNextFalseBit(docid);
         if (!isAtEnd(docid) && seek(docid)) {
             result.setBit(docid);
+//            printf("bit %d is hit, _docId=%d, _endId=%d\n", docid, getDocId(), getEndId());
         }
         docid = std::max(docid + 1, getDocId());
     }
@@ -63,21 +64,39 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
     uint32_t docidB = result.getNextTrueBit(begin_id);
     while (!isAtEnd(docidB)) {
         if (docidA < docidB) {
-            if (!isAtEnd(docidB)) {
-                doSeek(docidB);
-                if (getDocId() == docidB) {
-                    docidA = docidB;
-                } else {
-                    result.clearBit(docidB);
-                    docidB = result.getNextTrueBit(docidB+1);
-                }
+            doSeek(docidB);
+            if (getDocId() == docidB) {
+                docidA = docidB;
             } else {
-                docidA = getEndId();
+                result.clearBit(docidB);
+                docidB = result.getNextTrueBit(docidB+1);
             }
         } else if (docidA > docidB) {
             result.clearInterval(docidB, docidA);
             docidB = (! isAtEnd(docidA)) ? result.getNextTrueBit(docidA) : getEndId();
         } else {
+            docidB = result.getNextTrueBit(docidB+1);
+        }
+    }
+}
+
+void
+SearchIterator::andnot_hits_into(BitVector &result, uint32_t begin_id)
+{
+    uint32_t docidA = begin_id - 1;
+    uint32_t docidB = result.getNextTrueBit(begin_id);
+    while (!isAtEnd(docidA) && !isAtEnd(docidB)) {
+        if (docidA < docidB) {
+            doSeek(docidB);
+            if (getDocId() == docidB) {
+                docidA = docidB;
+            } else {
+                docidB = result.getNextTrueBit(docidB+1);
+            }
+        } else if (docidA > docidB) {
+            docidB = result.getNextTrueBit(docidA);
+        } else {
+            result.clearBit(docidB);
             docidB = result.getNextTrueBit(docidB+1);
         }
     }
