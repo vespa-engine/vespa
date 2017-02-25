@@ -26,6 +26,12 @@ AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t 
 }
 
 template <typename SC>
+void
+AttributeIteratorBase::andnot_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
+    result.foreach_truebit([&](uint32_t key) { if ( sc.cmp(key)) { result.clearBit(key); }}, begin_id);
+}
+
+template <typename SC>
 std::unique_ptr<BitVector>
 AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
     BitVector::UP result = BitVector::create(begin_id, getEndId());
@@ -120,6 +126,17 @@ AttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t beg
 
 template <typename PL>
 void
+AttributePostingListIteratorT<PL>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
+    (void) begin_id;
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+        if ( result.testBit(_iterator.getKey()) ) {
+            result.clearBit(_iterator.getKey());
+        }
+    }
+}
+
+template <typename PL>
+void
 AttributePostingListIteratorT<PL>::and_hits_into(BitVector &result, uint32_t begin_id) {
     result.andWith(*get_hits(begin_id));
 }
@@ -141,6 +158,17 @@ FilterAttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32
     for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
         if ( ! result.testBit(_iterator.getKey()) ) {
             result.setBit(_iterator.getKey());
+        }
+    }
+}
+
+template <typename PL>
+void
+FilterAttributePostingListIteratorT<PL>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
+    (void) begin_id;
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+        if ( result.testBit(_iterator.getKey()) ) {
+            result.clearBit(_iterator.getKey());
         }
     }
 }
@@ -417,10 +445,21 @@ AttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
     AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
 }
 
-
 template <typename SC>
 void
 FilterAttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
+}
+
+template <typename SC>
+void
+AttributeIteratorT<SC>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
+    AttributeIteratorBase::andnot_hits_into(_searchContext, result, begin_id);
+}
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
     AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
 }
 
