@@ -22,11 +22,7 @@ import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.UnknownConfigIdException;
-import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.VespaModel;
@@ -311,27 +307,6 @@ public class VespaModelTestCase {
         assertThat(model.getContainerClusters().size(), is(0));
         model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build());
         assertThat(model.getContainerClusters().size(), is(1));
-    }
-
-    @Test
-    public void testConfigResolving() throws IOException {
-        VespaModel model = VespaModelTestCase.getVespaModel(TESTDIR + "app_nohosts/");
-        ConfigDefinition def = new ConfigDefinition(LogdConfig.CONFIG_DEF_NAME, LogdConfig.CONFIG_DEF_SCHEMA);
-        ConfigKey<?> key = new ConfigKey<>(LogdConfig.CONFIG_DEF_NAME, "", LogdConfig.CONFIG_DEF_NAMESPACE);
-        ConfigPayload payload = model.getConfig(key, def, null);
-        assertPort(payload, 19081);
-
-        ConfigPayloadBuilder builder = new ConfigPayloadBuilder();
-        builder.getObject("logserver").setField("port", "19082");
-        payload = model.getConfig(key, def, ConfigPayload.fromBuilder(builder));
-        assertPort(payload, 19082);
-        payload = model.getConfig(key, def, ConfigPayload.fromBuilder(builder));
-        assertPort(payload, 19082);
-    }
-
-    private void assertPort(ConfigPayload payload, long expectedPort) {
-        long port = payload.getSlime().get().field("logserver").field("port").asLong();
-        assertThat(port, is(expectedPort));
     }
 
 }

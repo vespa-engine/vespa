@@ -21,7 +21,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
@@ -321,25 +320,22 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @return The payload as a list of strings
      */
     @Override
-    public ConfigPayload getConfig(ConfigKey configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
-        return getConfig(configKey, targetDef, null);
+    public ConfigPayload getConfig(ConfigKey<?> configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef, ConfigPayload override) {
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Resolve config for a given key and a def. Apply an override if given.
+     * Resolve config for a given key and config definition
      *
-     * @param configKey    The key to resolve.
-     * @param targetDef    The def file to use for the schema.
-     * @param userOverride A user override that should be applied to the config
+     * @param configKey The key to resolve.
+     * @param targetDef The config definition to use for the schema
      * @return The payload as a list of strings
      */
     @Override
-    public ConfigPayload getConfig(ConfigKey configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef, ConfigPayload userOverride) {
+    public ConfigPayload getConfig(ConfigKey configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
         ConfigBuilder builder = InstanceResolver.resolveToBuilder(configKey, this, targetDef);
         if (builder != null) {
             log.log(LogLevel.DEBUG, () -> "Found builder for " + configKey);
-            // Support deprecated configs/ user override
-            applyConfigsOverride(configKey, builder, userOverride, targetDef);
             ConfigPayload payload;
             InnerCNode innerCNode = targetDef != null ?  targetDef.getCNode() : null;
             if (builder instanceof GenericConfig.GenericConfigBuilder) {
@@ -369,13 +365,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     private ConfigPayload getConfigFromGenericBuilder(ConfigBuilder builder)  {
         return ((GenericConfig.GenericConfigBuilder) builder).getPayload();
-    }
-
-    private void applyConfigsOverride(ConfigKey configKey, ConfigBuilder builder, ConfigPayload userOverride, ConfigDefinition targetDef) {
-        if (userOverride != null) {
-            ConfigBuilder override = InstanceResolver.createBuilderFromPayload(new ConfigDefinitionKey(configKey), this, userOverride, targetDef);
-            ConfigInstanceUtil.setValues(builder, override);
-        }
     }
 
     @Override
