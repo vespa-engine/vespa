@@ -291,7 +291,7 @@ const HitList & QueryTerm::evaluateHits(HitList &) const { return _hitList; }
 void QueryTerm::resizeFieldId(size_t fieldNo)
 {
     if (fieldNo >= _fieldInfo.size()) {
-        _fieldInfo.resize(std::max(32, fieldNo + 1));
+        _fieldInfo.resize(std::max(32ul, fieldNo + 1));
     }
 }
 
