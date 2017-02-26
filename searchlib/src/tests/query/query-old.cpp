@@ -359,6 +359,10 @@ TEST("testPhraseEvaluate") {
     q.getPhrases(phrases);
     QueryTermList terms;
     q.getLeafs(terms);
+    for (QueryTerm * qt : terms) {
+        qt->resizeFieldId(1);
+    }
+
     // field 0
     terms[0]->add(0, 0, 1);
     terms[1]->add(1, 0, 1);
