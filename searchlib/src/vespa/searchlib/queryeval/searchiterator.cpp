@@ -67,8 +67,7 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
             if (seek(docidB)) {
                 docidA = docidB;
             } else {
-                result.clearBit(docidB);
-                docidB = result.getNextTrueBit(docidB+1);
+                docidA = std::max(docidB+1, getDocId());
             }
         } else if (docidA > docidB) {
             result.clearInterval(docidB, docidA);
@@ -89,7 +88,7 @@ SearchIterator::andnot_hits_into(BitVector &result, uint32_t begin_id)
             if (seek(docidB)) {
                 docidA = docidB;
             } else {
-                docidB = result.getNextTrueBit(docidB+1);
+                docidA = std::max(docidB+1, getDocId());
             }
         } else if (docidA > docidB) {
             docidB = result.getNextTrueBit(docidA);
