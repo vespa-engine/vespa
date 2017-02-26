@@ -95,7 +95,7 @@ QueryTerm::QueryTerm() :
     _hitList(),
     _weight(100),
     _uniqueId(0),
-    _fieldInfo(32)
+    _fieldInfo()
 { }
 
 QueryTerm::~QueryTerm() { }
@@ -269,7 +269,7 @@ QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & te
     _hitList(),
     _weight(100),
     _uniqueId(0),
-    _fieldInfo(32)
+    _fieldInfo()
 {
     if (!termS.empty()) {
         uint8_t enc(0xff);
@@ -291,7 +291,7 @@ const HitList & QueryTerm::evaluateHits(HitList &) const { return _hitList; }
 void QueryTerm::resizeFieldId(size_t fieldNo)
 {
     if (fieldNo >= _fieldInfo.size()) {
-        _fieldInfo.resize(fieldNo + 1);
+        _fieldInfo.resize(std::max(32, fieldNo + 1));
     }
 }
 
