@@ -148,9 +148,10 @@ BitVector::UP
 AndNotSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
     BitVector::UP result = children.front()->get_hits(begin_id);
-    for (size_t i = 1; i < children.size(); ++i) {
-        children[i]->andnot_hits_into(*result, begin_id);
-    }
+    result->notSelf();
+    Children negative(children.begin()+1, children.end());
+    orChildren(result, negative, begin_id);
+    result->notSelf();
     return result;
 }
 

@@ -144,6 +144,7 @@ public:
     void andWith(const BitVector &right);
     void orWith(const BitVector &right);
     void andNotWith(const BitVector &right);
+    void notSelf();
 
     /**
      * Clear all bits in the bit vector.
