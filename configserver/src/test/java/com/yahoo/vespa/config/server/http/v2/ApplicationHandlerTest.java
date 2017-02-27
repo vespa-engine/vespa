@@ -95,7 +95,7 @@ public class ApplicationHandlerTest {
                 provisioner,
                 new ApplicationConvergenceChecker(stateApiFactory),
                 mockHttpProxy,
-                new LogServerLogGrabber());
+                new MockLogServerLogGrabber());
         listApplicationsHandler = new ListApplicationsHandler(
                 Runnable::run, AccessLog.voidAccessLog(), tenants, Zone.defaultZone());
     }
@@ -216,6 +216,14 @@ public class ApplicationHandlerTest {
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
         addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
         converge(application, Zone.defaultZone());
+    }
+
+    @Test
+    public void testGrabLog() throws Exception {
+        long sessionId = 1;
+        ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
+        assertEquals("log line", grabLog(application, Zone.defaultZone()));
     }
 
     @Test
@@ -386,6 +394,13 @@ public class ApplicationHandlerTest {
         HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "");
     }
 
+    private String grabLog(ApplicationId application, Zone zone) throws IOException {
+        String restartUrl = toUrlPath(application, zone, true) + "/log";
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.POST));
+        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "");
+        return SessionHandlerTest.getRenderedString(response);
+    }
+
     private static class MockStateApiFactory implements ApplicationConvergenceChecker.StateApiFactory {
         public boolean createdApi = false;
         @Override
@@ -398,6 +413,13 @@ public class ApplicationHandlerTest {
                     throw new RuntimeException(e);
                 }
             };
+        }
+    }
+
+    private static class MockLogServerLogGrabber extends LogServerLogGrabber {
+        @Override
+        protected String readLog(String host, int port) throws IOException {
+            return "log line";
         }
     }
 }
