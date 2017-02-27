@@ -14,6 +14,7 @@ import com.yahoo.documentapi.SyncSession;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
+import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.storage.searcher.ContinuationHit;
@@ -140,12 +141,24 @@ public class OperationHandlerImpl implements OperationHandler {
         throw new RestApiException(Response.createErrorResponse(500, localDataVisitorHandler.getErrors(), restUri));
     }
 
+    private void setRoute(SyncSession session, Optional<String> route) throws RestApiException {
+        if (route.isPresent()) {
+            if (! (session instanceof MessageBusSyncSession)) {
+                // Not sure if this ever could happen but better be safe.
+                throw new RestApiException(Response.createErrorResponse(
+                        400, "Can not set route since the API is not using message bus."));
+            }
+            ((MessageBusSyncSession) session).setRoute(route.get());
+        }
+    }
+
     @Override
-    public void put(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException {
+    public void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
         try {
             DocumentPut put = new DocumentPut(data.getDocument());
             put.setCondition(data.getCondition());
+            setRoute(syncSession, route);
             syncSession.put(put);
         } catch (DocumentAccessException documentException) {
             throw new RestApiException(createErrorResponse(documentException, restUri));
@@ -157,8 +170,9 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public void update(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException {
+    public void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
+        setRoute(syncSession, route);
         try {
             syncSession.update(data.getDocumentUpdate());
         } catch (DocumentAccessException documentException) {
@@ -171,8 +185,9 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public void delete(RestUri restUri, String condition) throws RestApiException {
+    public void delete(RestUri restUri, String condition, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
+        setRoute(syncSession, route);
         try {
             DocumentId id = new DocumentId(restUri.generateFullId());
             DocumentRemove documentRemove = new DocumentRemove(id);

@@ -43,6 +43,7 @@ public class RestApi extends LoggingRequestHandler {
 
     private static final String CREATE_PARAMETER_NAME = "create";
     private static final String CONDITION_PARAMETER_NAME = "condition";
+    private static final String ROUTE_PARAMETER_NAME = "route";
     private static final String DOCUMENTS = "documents";
     private static final String FIELDS = "fields";
     private static final String DOC_ID_NAME = "id";
@@ -138,19 +139,21 @@ public class RestApi extends LoggingRequestHandler {
                     "false: " + request.getProperty(CREATE_PARAMETER_NAME));
         }
         String condition = request.getProperty(CONDITION_PARAMETER_NAME);
+        Optional<String> route = Optional.ofNullable(request.getProperty(ROUTE_PARAMETER_NAME));
+
         Optional<ObjectNode> resultJson = Optional.empty();
         try {
             switch (request.getMethod()) {
                 case GET:    // Vespa Visit/Get
                     return restUri.getDocId().isEmpty() ? handleVisit(restUri, request) : handleGet(restUri);
                 case POST:   // Vespa Put
-                    operationHandler.put(restUri, createPutOperation(request, restUri.generateFullId(), condition));
+                    operationHandler.put(restUri, createPutOperation(request, restUri.generateFullId(), condition), route);
                     break;
                 case PUT:    // Vespa Update
-                    operationHandler.update(restUri, createUpdateOperation(request, restUri.generateFullId(), condition, create));
+                    operationHandler.update(restUri, createUpdateOperation(request, restUri.generateFullId(), condition, create), route);
                     break;
                 case DELETE: // Vespa Delete
-                    operationHandler.delete(restUri, condition);
+                    operationHandler.delete(restUri, condition, route);
                     break;
                 default:
                     return new Response(405, Optional.empty(), Optional.of(restUri));

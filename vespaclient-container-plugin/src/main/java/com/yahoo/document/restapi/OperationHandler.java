@@ -25,11 +25,11 @@ public interface OperationHandler {
 
     VisitResult visit(RestUri restUri, String documentSelection,  Optional<String> cluster, Optional<String> continuation) throws RestApiException;
 
-    void put(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException;
+    void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException;
 
-    void update(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException;
+    void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException;
 
-    void delete(RestUri restUri, String condition) throws RestApiException;
+    void delete(RestUri restUri, String condition, Optional<String> route) throws RestApiException;
 
     Optional<String> get(RestUri restUri) throws RestApiException;
     

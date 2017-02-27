@@ -24,13 +24,13 @@ public class MockedOperationHandler implements OperationHandler {
     }
 
     @Override
-    public void put(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException {
+    public void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         log.append("PUT: " + data.getDocument().getId());
         log.append(data.getDocument().getBody().toString());
     }
 
     @Override
-    public void update(RestUri restUri, VespaXMLFeedReader.Operation data) throws RestApiException {
+    public void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         log.append("UPDATE: " + data.getDocumentUpdate().getId());
         log.append(data.getDocumentUpdate().getFieldUpdates().toString());
         if (data.getDocumentUpdate().getCreateIfNonExistent()) {
@@ -39,7 +39,7 @@ public class MockedOperationHandler implements OperationHandler {
     }
 
     @Override
-    public void delete(RestUri restUri, String condition) throws RestApiException {
+    public void delete(RestUri restUri, String condition, Optional<String> route) throws RestApiException {
         deleteCount++;
         if (deleteCount == 2) {
             String theLog = log.toString();
