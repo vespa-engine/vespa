@@ -164,7 +164,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .filter(container -> container.state.isRunning())
                 .ifPresent(container -> {
                     vespaVersion = dockerOperations.getVespaVersion(container.name);
-                    lastCpuMetric = new CpuUsageReporter(container.getCreatedAsInstant());
+                    lastCpuMetric = new CpuUsageReporter(container.created);
                 });
 
         loopThread = new Thread(this::loop);

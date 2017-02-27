@@ -2,22 +2,18 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 /**
  * @author stiankri
  */
 public class Container {
-    private static final DateTimeFormatter DOCKER_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSX");
     public final String hostname;
     public final DockerImage image;
     public final ContainerName name;
     public final State state;
     public final int pid;
-    public final String created;
+    public final Instant created;
 
     public Container(
             final String hostname,
@@ -31,7 +27,7 @@ public class Container {
         this.name = containerName;
         this.state = state;
         this.pid = pid;
-        this.created = created;
+        this.created = Instant.parse(created);
     }
 
     // For testing only
@@ -42,10 +38,6 @@ public class Container {
             final State state,
             final int pid) {
         this(hostname, image, containerName, state, pid, "2017-02-13T13:45:12.133713371Z");
-    }
-
-    public Instant getCreatedAsInstant() {
-        return LocalDateTime.parse(created, DOCKER_DATE_FORMAT).toInstant(ZoneOffset.UTC);
     }
 
     @Override
