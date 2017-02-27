@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
     }
     InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(interpreted);
-    double result = interpreted.eval(ctx).as_double();
+    InterpretedFunction::SimpleParams params({});
+    double result = interpreted.eval(ctx, params).as_double();
     fprintf(stdout, "%.32g\n", result);
     return 0;
 }

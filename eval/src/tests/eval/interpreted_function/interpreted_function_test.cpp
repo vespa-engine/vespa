@@ -48,10 +48,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
             InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
             ASSERT_EQUAL(ifun.num_params(), param_values.size());
             InterpretedFunction::Context ictx(ifun);
-            for (double param: param_values) {
-                ictx.add_param(param);
-            }
-            const Value &result_value = ifun.eval(ictx);
+            InterpretedFunction::SimpleParams params(param_values);
+            const Value &result_value = ifun.eval(ictx, params);
             double result = result_value.as_double();
             if (result_value.is_double() && is_same(expected_result, result)) {
                 print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",
@@ -84,11 +82,8 @@ TEST("require that invalid function evaluates to a error") {
     EXPECT_TRUE(function.has_error());
     InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(ifun);
-    ctx.add_param(1);
-    ctx.add_param(2);
-    ctx.add_param(3);
-    ctx.add_param(4);
-    const Value &result = ifun.eval(ctx);
+    InterpretedFunction::SimpleParams my_params({1,2,3,4});
+    const Value &result = ifun.eval(ctx, my_params);
     EXPECT_TRUE(result.is_error());
     EXPECT_EQUAL(error_value, result.as_double());
 }
@@ -99,10 +94,8 @@ size_t count_ifs(const vespalib::string &expr, std::initializer_list<double> par
     Function fun = Function::parse(expr);
     InterpretedFunction ifun(SimpleTensorEngine::ref(), fun, NodeTypes());
     InterpretedFunction::Context ctx(ifun);
-    for (double param: params_in) {
-        ctx.add_param(param);
-    }
-    ifun.eval(ctx);
+    InterpretedFunction::SimpleParams params(params_in);
+    ifun.eval(ctx, params);
     return ctx.if_cnt();
 }
 
@@ -125,11 +118,10 @@ TEST("require that basic addition works") {
     Function function = Function::parse("a+10");
     InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(interpreted);
-    ctx.add_param(20);
-    EXPECT_EQUAL(interpreted.eval(ctx).as_double(), 30.0);
-    ctx.clear_params();
-    ctx.add_param(40);
-    EXPECT_EQUAL(interpreted.eval(ctx).as_double(), 50.0);
+    InterpretedFunction::SimpleParams params_20({20});
+    InterpretedFunction::SimpleParams params_40({40});
+    EXPECT_EQUAL(interpreted.eval(ctx, params_20).as_double(), 30.0);
+    EXPECT_EQUAL(interpreted.eval(ctx, params_40).as_double(), 50.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -143,9 +135,8 @@ TEST("require that dot product like expression is not optimized for unknown type
     InterpretedFunction interpreted(engine, function, NodeTypes());
     EXPECT_EQUAL(4u, interpreted.program_size());
     InterpretedFunction::Context ctx(interpreted);
-    ctx.add_param(a);
-    ctx.add_param(b);
-    const Value &result = interpreted.eval(ctx);
+    InterpretedFunction::SimpleObjectParams params({a,b});
+    const Value &result = interpreted.eval(ctx, params);
     EXPECT_TRUE(result.is_double());
     EXPECT_EQUAL(expect, result.as_double());
 }
@@ -168,9 +159,8 @@ TEST("require that dot product works with tensor function") {
     InterpretedFunction::Context ctx(interpreted);
     TensorValue va(engine.create(a));
     TensorValue vb(engine.create(b));
-    ctx.add_param(va);
-    ctx.add_param(vb);
-    const Value &result = interpreted.eval(ctx);
+    InterpretedFunction::SimpleObjectParams params({va,vb});
+    const Value &result = interpreted.eval(ctx, params);
     EXPECT_TRUE(result.is_double());
     EXPECT_EQUAL(expect, result.as_double());
 }
@@ -199,9 +189,8 @@ TEST("require that matrix multiplication works with tensor function") {
     InterpretedFunction::Context ctx(interpreted);
     TensorValue va(engine.create(a));
     TensorValue vb(engine.create(b));
-    ctx.add_param(va);
-    ctx.add_param(vb);
-    const Value &result = interpreted.eval(ctx);
+    InterpretedFunction::SimpleObjectParams params({va,vb});
+    const Value &result = interpreted.eval(ctx, params);
     ASSERT_TRUE(result.is_tensor());
     EXPECT_EQUAL(expect, engine.to_spec(*result.as_tensor()));
 }

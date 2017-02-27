@@ -42,16 +42,16 @@ struct Params {
     }
 };
 
-void inject_params(const Function &function, const Params &params,
-                   InterpretedFunction::Context &ctx)
+InterpretedFunction::SimpleObjectParams make_params(const Function &function, const Params &params)
 {
-    ctx.clear_params();
+    InterpretedFunction::SimpleObjectParams fun_params({});
     EXPECT_EQUAL(params.map.size(), function.num_params());
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto param = params.map.find(function.param_name(i));
         ASSERT_TRUE(param != params.map.end());
-        ctx.add_param(*(param->second));
+        fun_params.params.push_back(*(param->second));
     }
+    return fun_params;
 }
 
 std::vector<ValueType> extract_param_types(const Function &function, const Params &params) {
@@ -70,23 +70,23 @@ double calculate_expression(const vespalib::string &expression, const Params &pa
     const NodeTypes types(function, extract_param_types(function, params));
     const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
     InterpretedFunction::Context context(interpreted);
-    inject_params(function, params, context);
-    const Value &result = interpreted.eval(context);
+    auto fun_params = make_params(function, params);
+    const Value &result = interpreted.eval(context, fun_params);
     EXPECT_TRUE(result.is_double());
     return result.as_double();
 }
 
 DoubleValue dummy_result(0.0);
-const Value &dummy_ranking(InterpretedFunction::Context &) { return dummy_result; }
+const Value &dummy_ranking(InterpretedFunction::Context &, InterpretedFunction::LazyParams &) { return dummy_result; }
 
 double benchmark_expression_us(const vespalib::string &expression, const Params &params) {
     const Function function = Function::parse(expression);
     const NodeTypes types(function, extract_param_types(function, params));
     const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
     InterpretedFunction::Context context(interpreted);
-    inject_params(function, params, context);
-    auto ranking = [&](){ interpreted.eval(context); };
-    auto baseline = [&](){ dummy_ranking(context); };
+    auto fun_params = make_params(function, params);
+    auto ranking = [&](){ interpreted.eval(context, fun_params); };
+    auto baseline = [&](){ dummy_ranking(context, fun_params); };
     return BenchmarkTimer::benchmark(ranking, baseline, 5.0) * 1000.0 * 1000.0;
 }
 

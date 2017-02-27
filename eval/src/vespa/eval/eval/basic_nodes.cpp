@@ -21,14 +21,21 @@ struct Frame {
     const Node &next_child() { return node.get_child(child_idx++); }
 };
 
+struct NoParams : InterpretedFunction::LazyParams {
+    const Value &resolve(size_t, Stash &stash) const override {
+        return stash.create<ErrorValue>();
+    }
+};
+
 } // namespace vespalib::eval::nodes::<unnamed>
 
 double
 Node::get_const_value() const {
     assert(is_const());
     InterpretedFunction function(SimpleTensorEngine::ref(), *this, 0, NodeTypes());
+    NoParams no_params;
     InterpretedFunction::Context ctx(function);
-    return function.eval(ctx).as_double();
+    return function.eval(ctx, no_params).as_double();
 }
 
 void
