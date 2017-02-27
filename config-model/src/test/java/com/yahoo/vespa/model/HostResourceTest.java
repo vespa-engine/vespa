@@ -17,20 +17,20 @@ public class HostResourceTest {
 
     @Test
     public void next_available_baseport_is_BASE_PORT_when_no_ports_have_been_reserved() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         assertThat(host.nextAvailableBaseport(1), is(HostResource.BASE_PORT));
     }
 
     @Test
     public void next_available_baseport_is_BASE_PORT_plus_one_when_one_port_has_been_reserved() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         host.reservePort(new TestService(1), HostResource.BASE_PORT);
         assertThat(host.nextAvailableBaseport(1), is(HostResource.BASE_PORT + 1));
     }
 
     @Test
     public void no_available_baseport_when_service_requires_more_consecutive_ports_than_available() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
 
         for (int p = HostResource.BASE_PORT; p < HostResource.BASE_PORT + HostResource.MAX_PORTS; p += 2) {
             host.reservePort(new TestService(1), p);
@@ -57,13 +57,13 @@ public class HostResourceTest {
 
     @Test
     public void port_above_vespas_port_range_can_be_reserved() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         host.allocateService(new TestService(1), HostResource.BASE_PORT + HostResource.MAX_PORTS + 1);
     }
 
     @Test(expected = RuntimeException.class)
     public void allocating_same_port_throws_exception() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         TestService service1 = new TestService(1);
         TestService service2 = new TestService(1);
 
@@ -73,7 +73,7 @@ public class HostResourceTest {
 
     @Test(expected = RuntimeException.class)
     public void allocating_overlapping_ports_throws_exception() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         TestService service2 = new TestService(2);
         TestService service1 = new TestService(1);
 
@@ -82,7 +82,7 @@ public class HostResourceTest {
     }
 
 
-    private HostResource newMockHostResource() {
+    private HostResource mockHostResource() {
         return new HostResource(new Host(new MockRoot()));
     }
 
