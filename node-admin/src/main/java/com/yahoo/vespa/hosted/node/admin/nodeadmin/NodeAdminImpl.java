@@ -247,7 +247,7 @@ public class NodeAdminImpl implements NodeAdmin {
             return;
         }
         final NodeAgent agent = nodeAgentFactory.apply(nodeSpec.hostname);
-        nodeAgents.put(nodeSpec.hostname, agent);
         agent.start(nodeAgentScanIntervalMillis);
+        nodeAgents.put(nodeSpec.hostname, agent);
     }
 }
