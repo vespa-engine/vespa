@@ -55,7 +55,7 @@ protected:
     /**
      * Used to adjust the end of the legal docid range.
      * Used by subclasses instead of a full initRange call.
-     * 
+     *
      * @param end_id the first docid outside the legal iterator range
      */
     void setEndId(uint32_t end_id) { _endid = end_id; }
