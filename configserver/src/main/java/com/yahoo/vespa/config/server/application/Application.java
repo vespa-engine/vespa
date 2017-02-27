@@ -177,8 +177,7 @@ public class Application implements ModelResult {
         return resolveConfig(req, new UncompressedConfigResponseFactory());
     }
 
-    // TODO: Remove 'throws IOException'
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, String configId) throws IOException {
+    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, String configId) {
         ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
         ConfigPayload payload = model.getConfig(key, (ConfigDefinition)null, null);
         return payload.toInstance(configClass, configId);
