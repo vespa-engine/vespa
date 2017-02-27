@@ -460,7 +460,7 @@ AttributeIteratorT<SC>::andnot_hits_into(BitVector & result, uint32_t begin_id) 
 template <typename SC>
 void
 FilterAttributeIteratorT<SC>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
-    AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
+    AttributeIteratorBase::andnot_hits_into(_searchContext, result, begin_id);
 }
 
 } // namespace search
