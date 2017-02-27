@@ -37,15 +37,16 @@ AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
     return result;
 }
 
+
 template <typename PL>
+template <typename... Args>
 AttributePostingListIteratorT<PL>::
-AttributePostingListIteratorT(PL &iterator, bool hasWeight, fef::TermFieldMatchData *matchData)
+AttributePostingListIteratorT(bool hasWeight, fef::TermFieldMatchData *matchData, Args &&... args)
     : AttributePostingListIterator(hasWeight, matchData),
-      _iterator(),
+      _iterator(args...),
       _postingInfo(1, 1),
       _postingInfoValid(false)
 {
-    _iterator.swap(iterator);
     setupPostingInfo();
 }
 
@@ -62,14 +63,14 @@ void AttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) 
 
 
 template <typename PL>
+template<typename... Args>
 FilterAttributePostingListIteratorT<PL>::
-FilterAttributePostingListIteratorT(PL &iterator, fef::TermFieldMatchData *matchData)
+FilterAttributePostingListIteratorT(fef::TermFieldMatchData *matchData, Args &&... args)
     : FilterAttributePostingListIterator(matchData),
-      _iterator(),
+      _iterator(args...),
       _postingInfo(1, 1),
       _postingInfoValid(false)
 {
-    _iterator.swap(iterator);
     setupPostingInfo();
     _matchPosition->setElementWeight(1);
 }
