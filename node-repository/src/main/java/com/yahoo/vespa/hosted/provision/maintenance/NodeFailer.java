@@ -150,13 +150,13 @@ public class NodeFailer extends Maintainer {
     }
 
     /**
-     * We can attempt to fail any number of *tenant* nodes because the operation will not be effected unless
-     * the node is replaced.
+     * We can attempt to fail any number of *tenant* and *host* nodes because the operation will not be effected
+     * unless the node is replaced.
      * However, nodes of other types are not replaced (because all of the type are used by a single application),
      * so we only allow one to be in failed at any point in time to protect against runaway failing.
      */
     private boolean failAllowedFor(NodeType nodeType) {
-        if (nodeType == NodeType.tenant) return true;
+        if (nodeType == NodeType.tenant || nodeType == NodeType.host) return true;
         return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
     }
 
