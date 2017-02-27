@@ -322,4 +322,18 @@ TEST_F("require that lazy ranking expression only calculates needed inputs", Fix
     EXPECT_EQUAL(f1.track_cnt, 2u);
 }
 
+TEST_F("require that interpreted ranking expressions are always lazy", Fixture()) {
+    f1.lazy_expressions(false);
+    f1.add_expr("rank", "if(docid<10,box(track(ivalue(1))),track(ivalue(2)))");
+    f1.compile();
+    EXPECT_EQUAL(7u, f1.program.num_executors());
+    EXPECT_EQUAL(8u, count_features(f1.program));
+    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.track_cnt, 0u);
+    EXPECT_EQUAL(f1.get(expr_feature("rank"),  5), 1.0);
+    EXPECT_EQUAL(f1.track_cnt, 1u);
+    EXPECT_EQUAL(f1.get(expr_feature("rank"), 15), 2.0);
+    EXPECT_EQUAL(f1.track_cnt, 2u);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

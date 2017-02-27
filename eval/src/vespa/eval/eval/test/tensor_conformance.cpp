@@ -342,7 +342,8 @@ struct Expr_V : Eval {
         NodeTypes types(fun, {});
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx(ifun);
-        return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
+        InterpretedFunction::SimpleObjectParams params({});
+        return Result(check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
 
@@ -357,8 +358,8 @@ struct Expr_T : Eval {
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx(ifun);
         TensorValue va(engine.create(a));
-        ctx.add_param(va);
-        return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
+        InterpretedFunction::SimpleObjectParams params({va});
+        return Result(check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
 
@@ -375,9 +376,8 @@ struct Expr_TT : Eval {
         InterpretedFunction::Context ctx(ifun);
         TensorValue va(engine.create(a));
         TensorValue vb(engine.create(b));
-        ctx.add_param(va);
-        ctx.add_param(vb);
-        return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
+        InterpretedFunction::SimpleObjectParams params({va,vb});
+        return Result(check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
 

@@ -26,17 +26,43 @@ class TensorEngine;
 class InterpretedFunction
 {
 public:
+    /**
+     * Interface used to lazy-resolve parameters when needed.
+     **/
+    struct LazyParams {
+        virtual const Value &resolve(size_t idx, Stash &stash) const = 0;
+        virtual ~LazyParams();
+    };
+    /**
+     * Simple wrapper for number-only parameters that are known up
+     * front. Intended for convenience (testing), not performance.
+     **/
+    struct SimpleParams : LazyParams {
+        std::vector<double> params;
+        explicit SimpleParams(const std::vector<double> &params_in) : params(params_in) {}
+        const Value &resolve(size_t idx, Stash &stash) const override;
+    };
+    /**
+     * Simple wrapper for object parameters that are known up
+     * front. Intended for convenience (testing), not performance.
+     **/
+    struct SimpleObjectParams : LazyParams {
+        std::vector<Value::CREF> params;
+        explicit SimpleObjectParams(const std::vector<Value::CREF> &params_in) : params(params_in) {}
+        const Value &resolve(size_t idx, Stash &stash) const override;
+    };
     struct State {
         const TensorEngine      &engine;
-        std::vector<Value::CREF> params;
+        const LazyParams        *params;
         Stash                    stash;
         std::vector<Value::CREF> stack;
         std::vector<Value::CREF> let_values;
         uint32_t                 program_offset;
         uint32_t                 if_cnt;
         State(const TensorEngine &engine_in)
-            : engine(engine_in), params(), stash(), stack(), let_values(), program_offset(0) {}
-        void clear() {
+            : engine(engine_in), params(nullptr), stash(), stack(), let_values(), program_offset(0) {}
+        void init(const LazyParams &params_in) {
+            params = &params_in;
             stash.clear();
             stack.clear();
             let_values.clear();
@@ -57,15 +83,8 @@ public:
         friend class InterpretedFunction;
     private:
         State _state;
-        Stash _param_stash;
     public:
         explicit Context(const InterpretedFunction &ifun);
-        void clear_params() {
-            _state.params.clear();
-            _param_stash.clear();
-        }
-        void add_param(const Value &param) { _state.params.push_back(param); }
-        void add_param(double param) { add_param(_param_stash.create<DoubleValue>(param)); }
         uint32_t if_cnt() const { return _state.if_cnt; }
     };
     using op_function = void (*)(State &, uint64_t);
@@ -96,7 +115,7 @@ public:
     InterpretedFunction(InterpretedFunction &&rhs) = default;
     size_t program_size() const { return _program.size(); }
     size_t num_params() const { return _num_params; }
-    const Value &eval(Context &ctx) const;
+    const Value &eval(Context &ctx, const LazyParams &params) const;
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
 };

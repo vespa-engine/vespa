@@ -42,7 +42,7 @@ void op_load_const(State &state, uint64_t param) {
 }
 
 void op_load_param(State &state, uint64_t param) {
-    state.stack.push_back(state.params[param]);
+    state.stack.push_back(state.params->resolve(param, state.stash));
 }
 
 void op_load_let(State &state, uint64_t param) {
@@ -171,14 +171,14 @@ struct TensorFunctionArgArgMeta {
 
 struct ArgArgInput : TensorFunction::Input {
     const TensorFunctionArgArgMeta &meta;
-    const State &state;
-    ArgArgInput(const TensorFunctionArgArgMeta &meta_in, const State &state_in)
+    State &state;
+    ArgArgInput(const TensorFunctionArgArgMeta &meta_in, State &state_in)
         : meta(meta_in), state(state_in) {}
     const Value &get_tensor(size_t id) const override {
         if (id == 0) {
-            return state.params[meta.param1];
+            return state.params->resolve(meta.param1, state.stash);
         } else if (id == 1) {
-            return state.params[meta.param2];
+            return state.params->resolve(meta.param2, state.stash);
         }
         return undef_cref<Value>();
     }
@@ -516,9 +516,26 @@ const Function *get_lambda(const nodes::Node &node) {
 
 } // namespace vespalib::<unnamed>
 
+InterpretedFunction::LazyParams::~LazyParams()
+{
+}
+
+const Value &
+InterpretedFunction::SimpleParams::resolve(size_t idx, Stash &stash) const
+{
+    assert(idx < params.size());
+    return stash.create<DoubleValue>(params[idx]);
+}
+
+const Value &
+InterpretedFunction::SimpleObjectParams::resolve(size_t idx, Stash &) const
+{
+    assert(idx < params.size());
+    return params[idx];
+}
+
 InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
-    : _state(ifun._tensor_engine),
-      _param_stash()
+    : _state(ifun._tensor_engine)
 {
 }
 
@@ -533,11 +550,10 @@ InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes
 }
 
 const Value &
-InterpretedFunction::eval(Context &ctx) const
+InterpretedFunction::eval(Context &ctx, const LazyParams &params) const
 {
     State &state = ctx._state;
-    state.clear();
-    assert(state.params.size() == _num_params);
+    state.init(params);
     while (state.program_offset < _program.size()) {
         _program[state.program_offset++].perform(state);
     }
@@ -551,10 +567,8 @@ double
 InterpretedFunction::estimate_cost_us(const std::vector<double> &params, double budget) const
 {
     Context ctx(*this);
-    for (double param: params) {
-        ctx.add_param(param);
-    }
-    auto actual = [&](){eval(ctx);};
+    SimpleParams lazy_params(params);
+    auto actual = [&](){eval(ctx, lazy_params);};
     return BenchmarkTimer::benchmark(actual, budget) * 1000.0 * 1000.0;
 }
 
