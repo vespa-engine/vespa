@@ -24,7 +24,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelResult;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -126,7 +125,7 @@ public class Application implements ModelResult {
         if (logDebug()) {
             debug("Resolving " + configKey + " with targetDef=" + def);
         }
-        ConfigPayload payload = model.getConfig(configKey,def,null); // TODO Remove last argument when possible
+        ConfigPayload payload = model.getConfig(configKey, def);
         if (payload == null) {
             metricUpdater.incrementFailedRequests();
             throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
@@ -179,7 +178,7 @@ public class Application implements ModelResult {
 
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, String configId) {
         ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
-        ConfigPayload payload = model.getConfig(key, (ConfigDefinition)null, null);
+        ConfigPayload payload = model.getConfig(key, null);
         return payload.toInstance(configClass, configId);
     }
 
@@ -188,6 +187,7 @@ public class Application implements ModelResult {
      * we may end up changing the config definition key (fallback mechanism when using
      * legacy config namespace (or not using config namespace))
      */
+    // TODO: Remove, no legacy config namespace anymore and namespace is required
     private static class ConfigDefinitionWrapper {
 
         private final ConfigDefinitionKey defKey;

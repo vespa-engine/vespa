@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -13,7 +12,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.server.application.Application;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -63,7 +61,8 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
     }
     
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, 
-                                                                    ApplicationId applicationId, String configId) throws IOException {
+                                                                    ApplicationId applicationId,
+                                                                    String configId) {
         TenantName tenant = applicationId.tenant();
         if (!models.containsKey(tenant)) {
             throw new IllegalArgumentException("Tenant " + tenant + " not found");
@@ -74,7 +73,7 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
         }
         Application application = applications.get(applicationId);
         ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
-        ConfigPayload payload = application.getModel().getConfig(key, (ConfigDefinition)null, null);
+        ConfigPayload payload = application.getModel().getConfig(key, null);
         return payload.toInstance(configClass, configId);
     }
 
