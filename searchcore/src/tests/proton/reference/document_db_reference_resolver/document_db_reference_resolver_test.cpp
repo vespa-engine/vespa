@@ -234,12 +234,11 @@ struct Fixture {
     void assertImportedAttribute(const vespalib::string &name,
                                  const vespalib::string &referenceField,
                                  const vespalib::string &targetField,
-                                 IAttributeVector::SP attr) {
+                                 ImportedAttributeVector::SP attr) {
         ASSERT_TRUE(attr.get());
         EXPECT_EQUAL(name, attr->getName());
-        const ImportedAttributeVector &importedAttr = asImportedAttribute(*attr);
-        EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), importedAttr.getReferenceAttribute().get());
-        EXPECT_EQUAL(parentReferent->getAttribute(targetField).get(), importedAttr.getTargetAttribute().get());
+        EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), attr->getReferenceAttribute().get());
+        EXPECT_EQUAL(parentReferent->getAttribute(targetField).get(), attr->getTargetAttribute().get());
     }
 
     MockGidToLidChangeHandler &getGidToLidChangeHandler(const vespalib::string &referencedDocTypeName) {

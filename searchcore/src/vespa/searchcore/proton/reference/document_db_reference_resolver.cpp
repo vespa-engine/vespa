@@ -142,7 +142,7 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
     for (const auto &attr : _importedFieldsCfg.attribute) {
         ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
         AttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
-        IAttributeVector::SP importedAttr = std::make_shared<ImportedAttributeVector>(attr.name, refAttr, targetAttr);
+        ImportedAttributeVector::SP importedAttr = std::make_shared<ImportedAttributeVector>(attr.name, refAttr, targetAttr);
         result->add(importedAttr->getName(), importedAttr);
     }
     return result;
