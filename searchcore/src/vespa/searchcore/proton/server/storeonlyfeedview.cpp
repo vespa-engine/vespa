@@ -673,6 +673,23 @@ StoreOnlyFeedView::removeIndexedFields(SerialNum serialNum,
     (void) immediateCommit;
 }
 
+
+namespace {
+
+std::vector<document::GlobalId> getGidsToRemove(const IDocumentMetaStore &metaStore, const LidVectorContext::LidVector &lidsToRemove) {
+    std::vector<document::GlobalId> gids;
+    gids.reserve(lidsToRemove.size());
+    for (const auto &lid : lidsToRemove) {
+        document::GlobalId gid;
+        if (metaStore.getGid(lid, gid)) {
+            gids.emplace_back(gid);
+        }
+    }
+    return gids;
+}
+
+}
+
 size_t
 StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op,
                                    bool remove_index_and_attributes,
@@ -690,14 +707,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op,
     bool useDMS = useDocumentMetaStore(serialNum);
     bool explicitReuseLids = false;
     if (useDMS) {
-        std::vector<document::GlobalId> gidsToRemove;
-        gidsToRemove.reserve(lidsToRemove.size());
-        for (const auto &lid : lidsToRemove) {
-            document::GlobalId gid;
-            if (_metaStore.getGid(lid, gid)) {
-                gidsToRemove.emplace_back(gid);
-            }
-        }
+        std::vector<document::GlobalId> gidsToRemove(getGidsToRemove(_metaStore, lidsToRemove));
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         for (const auto &gid : gidsToRemove) {
             notifyGidToLidChange(gid, 0u);
