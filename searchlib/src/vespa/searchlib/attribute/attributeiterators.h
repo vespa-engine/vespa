@@ -26,8 +26,6 @@ protected:
     template <typename SC>
     void or_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const;
     template <typename SC>
-    void andnot_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const;
-    template <typename SC>
     std::unique_ptr<BitVector> get_hits(const SC & sc, uint32_t begin_id) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     fef::TermFieldMatchData * _matchData;
@@ -82,7 +80,6 @@ private:
     void and_hits_into(BitVector & result, uint32_t begin_id) override;
     void or_hits_into(BitVector & result, uint32_t begin_id) override;
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
-    void andnot_hits_into(BitVector &result, uint32_t begin_id) override;
 
 protected:
     const SC & _searchContext;
@@ -101,7 +98,6 @@ private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void and_hits_into(BitVector & result, uint32_t begin_id) override;
     void or_hits_into(BitVector & result, uint32_t begin_id) override;
-    void andnot_hits_into(BitVector &result, uint32_t begin_id) override;
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
@@ -220,7 +216,6 @@ private:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
-    void andnot_hits_into(BitVector &result, uint32_t begin_id) override;
 
 public:
     // Note: iterator constructor argument is destroyed
@@ -238,7 +233,6 @@ public:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
-    void andnot_hits_into(BitVector &result, uint32_t begin_id) override;
 
 private:
     queryeval::MinMaxPostingInfo           _postingInfo;
@@ -345,7 +339,6 @@ protected:
 
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
-    void andnot_hits_into(BitVector &result, uint32_t begin_id) override;
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 public:

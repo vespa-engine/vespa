@@ -25,11 +25,6 @@ AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t 
     result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
 }
 
-template <typename SC>
-void
-AttributeIteratorBase::andnot_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
-    result.foreach_truebit([&](uint32_t key) { if ( sc.cmp(key)) { result.clearBit(key); }}, begin_id);
-}
 
 template <typename SC>
 std::unique_ptr<BitVector>
@@ -126,17 +121,6 @@ AttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t beg
 
 template <typename PL>
 void
-AttributePostingListIteratorT<PL>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
-    (void) begin_id;
-    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
-        if ( result.testBit(_iterator.getKey()) ) {
-            result.clearBit(_iterator.getKey());
-        }
-    }
-}
-
-template <typename PL>
-void
 AttributePostingListIteratorT<PL>::and_hits_into(BitVector &result, uint32_t begin_id) {
     result.andWith(*get_hits(begin_id));
 }
@@ -162,16 +146,6 @@ FilterAttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32
     }
 }
 
-template <typename PL>
-void
-FilterAttributePostingListIteratorT<PL>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
-    (void) begin_id;
-    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
-        if ( result.testBit(_iterator.getKey()) ) {
-            result.clearBit(_iterator.getKey());
-        }
-    }
-}
 
 template <typename PL>
 void
@@ -324,19 +298,6 @@ FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) 
 }
 
 template <typename SC>
-void
-FlagAttributeIteratorT<SC>::andnot_hits_into(BitVector &result, uint32_t begin_id) {
-    const SC & sc(_sc);
-    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
-    for (int i = sc._low; i <  sc._high; i++) {
-        const BitVector * bv = attr.getBitVector(i);
-        if (bv != NULL) {
-            result.andNotWith(*bv);
-        }
-    }
-}
-
-template <typename SC>
 std::unique_ptr<BitVector>
 FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     const SC & sc(_sc);
@@ -451,16 +412,5 @@ FilterAttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_i
     AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
 }
 
-template <typename SC>
-void
-AttributeIteratorT<SC>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
-    AttributeIteratorBase::andnot_hits_into(_searchContext, result, begin_id);
-}
-
-template <typename SC>
-void
-FilterAttributeIteratorT<SC>::andnot_hits_into(BitVector & result, uint32_t begin_id) {
-    AttributeIteratorBase::andnot_hits_into(_searchContext, result, begin_id);
-}
 
 } // namespace search
