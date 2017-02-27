@@ -85,13 +85,6 @@ void
 OrSearch::and_hits_into(BitVector &result, uint32_t begin_id) {
     result.andWith(*get_hits(begin_id));
 }
-
-void
-OrSearch::andnot_hits_into(BitVector &result, uint32_t begin_id) {
-    for (SearchIterator * child : getChildren()) {
-        child->andnot_hits_into(result, begin_id);
-    }
-}
     
 void
 OrSearch::or_hits_into(BitVector &result, uint32_t begin_id)
