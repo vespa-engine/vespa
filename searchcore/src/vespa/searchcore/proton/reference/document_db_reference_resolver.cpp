@@ -2,18 +2,19 @@
 
 #include <vespa/fastos/fastos.h>
 #include "document_db_reference_resolver.h"
-#include "i_document_db_referent_registry.h"
+#include "gid_to_lid_change_listener.h"
+#include "gid_to_lid_change_registrator.h"
 #include "i_document_db_referent.h"
+#include "i_document_db_referent_registry.h"
 #include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
-#include "gid_to_lid_change_registrator.h"
-#include "gid_to_lid_change_listener.h"
 
 using document::DataType;
 using document::DocumentType;
@@ -22,6 +23,7 @@ using document::ReferenceDataType;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::IAttributeVector;
+using search::attribute::ImportedAttributeVector;
 using search::attribute::ReferenceAttribute;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -71,15 +73,6 @@ getReferenceAttributes(const IAttributeManager &attrMgr)
     return result;
 }
 
-}
-
-ImportedAttributeVector::ImportedAttributeVector(vespalib::stringref name,
-                                                 ReferenceAttribute::SP refAttr,
-                                                 IAttributeVector::SP targetAttr)
-    : NotImplementedAttribute(name, Config(targetAttr->getBasicType(), targetAttr->getCollectionType())),
-      _refAttr(std::move(refAttr)),
-      _targetAttr(std::move(targetAttr))
-{
 }
 
 GidToLidChangeRegistrator &
@@ -148,7 +141,7 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
     auto result = std::make_unique<ImportedAttributesRepo>();
     for (const auto &attr : _importedFieldsCfg.attribute) {
         ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
-        IAttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
+        AttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
         IAttributeVector::SP importedAttr = std::make_shared<ImportedAttributeVector>(attr.name, refAttr, targetAttr);
         result->add(importedAttr->getName(), importedAttr);
     }

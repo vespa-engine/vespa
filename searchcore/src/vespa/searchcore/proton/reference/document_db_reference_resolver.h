@@ -52,26 +52,4 @@ public:
     virtual void teardown(const search::IAttributeManager &oldAttrMgr) override;
 };
 
-/**
- * Temporary placeholder for an imported attribute vector.
- * TODO: Remove when search::attribute::ImportedAttributeVector is finished
- */
-class ImportedAttributeVector : public search::NotImplementedAttribute {
-private:
-    vespalib::string _name;
-    std::shared_ptr<search::attribute::ReferenceAttribute> _refAttr;
-    std::shared_ptr<search::attribute::IAttributeVector> _targetAttr;
-
-    virtual void onCommit() override {}
-    virtual void onUpdateStat() override {}
-
-public:
-    ImportedAttributeVector(vespalib::stringref name,
-                            std::shared_ptr<search::attribute::ReferenceAttribute> refAttr,
-                            std::shared_ptr<search::attribute::IAttributeVector> targetAttr);
-
-    std::shared_ptr<search::attribute::ReferenceAttribute> getReferenceAttribute() const { return _refAttr; }
-    std::shared_ptr<search::attribute::IAttributeVector> getTargetAttribute() const { return _targetAttr; }
-};
-
 }
