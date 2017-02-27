@@ -53,6 +53,14 @@ protected:
     void setDocId(uint32_t id) { _docid = id; }
 
     /**
+     * Used to adjust the end of the legal docid range.
+     * Used by subclasses instead of a full initRange call.
+     * 
+     * @param end_id the first docid outside the legal iterator range
+     */
+    void setEndId(uint32_t end_id) { _endid = end_id; }
+
+    /**
      * Will terminate the iterator by setting it past the end.
      * Further calls to isAtEnd() will then return true.
      */
@@ -104,7 +112,8 @@ public:
      * @param beginId This is the first valid docId and the lowest that will be given to doSeek.
      * @param endId This is the first docid after the valid range.
      */ 
-    virtual void initRange(uint32_t beginId, uint32_t endId);
+    virtual void initRange(uint32_t begin_id, uint32_t end_id);
+
     /**
      * Will initialize the full range.
      **/
