@@ -220,7 +220,12 @@ public class RestApi extends LoggingRequestHandler {
                         "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.",
                         restUri);
             }
-            documentSelection = "id.group='" + restUri.getGroup().get().value + "'";
+            RestUri.Group group = restUri.getGroup().get();
+            if (group.name == 'n') {
+                documentSelection = "id.user=" + group.value;
+            } else {
+                documentSelection = "id.group='" + group.value + "'";
+            }
         }
         Optional<String> cluster = Optional.ofNullable(request.getProperty(CLUSTER));
         Optional<String> continuation = Optional.ofNullable(request.getProperty(CONTINUATION));
