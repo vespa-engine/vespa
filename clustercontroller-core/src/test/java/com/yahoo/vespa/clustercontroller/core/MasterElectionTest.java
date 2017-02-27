@@ -1,26 +1,28 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.log.LogLevel;
-
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-import java.util.logging.Logger;
-
 import com.yahoo.vdslib.state.ClusterState;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MasterElectionTest extends FleetControllerTest {
 
@@ -42,7 +44,7 @@ public class MasterElectionTest extends FleetControllerTest {
         this.options.zooKeeperSessionTimeout = 10 * timeoutMS;
         this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         this.options.slobrokConnectionSpecs = new String[1];
-        this.options.slobrokConnectionSpecs[0] = "tcp/"+ InetAddress.getLocalHost().getHostName()+":" + slobrok.port();
+        this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         this.options.fleetControllerCount = count;
         for (int i=0; i<count; ++i) {
             FleetControllerOptions nodeOptions = options.clone();
@@ -58,7 +60,7 @@ public class MasterElectionTest extends FleetControllerTest {
         options.zooKeeperSessionTimeout = 10 * timeoutMS;
         options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         options.slobrokConnectionSpecs = new String[1];
-        options.slobrokConnectionSpecs[0] = "tcp/"+ InetAddress.getLocalHost().getHostName()+":" + slobrok.port();
+        options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port(); // Spec.fromLocalHostName(slobrok.port()).toString();
         options.fleetControllerIndex = fleetControllerIndex;
         options.fleetControllerCount = fleetControllerCount;
         return options;
@@ -351,7 +353,7 @@ public class MasterElectionTest extends FleetControllerTest {
         List<Target> connections = new ArrayList<Target>();
         for (FleetController fleetController : fleetControllers) {
             int rpcPort = fleetController.getRpcPort();
-            Target connection = supervisor.connect(new Spec(rpcPort));
+            Target connection = supervisor.connect(new Spec("localhost", rpcPort));
             assertTrue(connection.isValid());
             connections.add(connection);
         }

@@ -3,11 +3,11 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.log.LogLevel;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
-import java.net.InetAddress;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
 
 public class StateGatherTest extends FleetControllerTest {
 
@@ -34,7 +34,7 @@ public class StateGatherTest extends FleetControllerTest {
         options.nodeStateRequestTimeoutLatestPercentage = 80;
         setUpFleetController(true, options);
         String connectionSpecs[] = new String[1];
-        connectionSpecs[0] = "tcp/" + InetAddress.getLocalHost().getHostName() + ":" + slobrok.port();
+        connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
         DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, true, 0);
         DummyVdsNode snode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, false, 0);

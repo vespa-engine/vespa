@@ -2,10 +2,8 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.net.HostName;
-
-import java.net.SocketAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 
 /**
@@ -61,7 +59,11 @@ public class Spec {
     }
 
     /**
-     * Create a Spec from a port number.
+     * Create a Spec with a wildcard address.
+     *
+     * WARNING: Do not use this constructor to connect to localhost - use e.g. Spec("localhost", port) instead.
+     * Why? Because Java may end up picking the wrong localhost hostname to connect to (for reasons
+     * detailed in HostName.getLocalhost).
      *
      * @param port port number
      */
@@ -116,7 +118,7 @@ public class Spec {
         }
         return address;
     }
-    
+
     /**
      * Obtain a string representation of this address. The return
      * value from this method may be used to create a new Spec.

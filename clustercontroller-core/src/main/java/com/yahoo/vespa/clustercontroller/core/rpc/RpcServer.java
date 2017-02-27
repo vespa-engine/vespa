@@ -1,25 +1,42 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.rpc;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Method;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringArray;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.net.HostName;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.MasterElectionHandler;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
-import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-import com.yahoo.vespa.clustercontroller.core.Timer;
 
-import java.util.logging.Logger;
-import java.util.*;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.io.StringWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Logger;
 
 public class RpcServer {
 
@@ -94,13 +111,12 @@ public class RpcServer {
         slobroks.append(" )");
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
-        log.log(LogLevel.DEBUG, "Trying to connect to slobrok using local address " + InetAddress.getLocalHost().getHostName()
-                              + ", port " + acceptor.port() + " using slobrok connection spec " + slobroks);
+        Spec spec = new Spec(HostName.getLocalhost(), acceptor.port());
+        log.log(LogLevel.INFO, "Registering " + spec + " with slobrok at " + slobroks);
         if (slobrokBackOffPolicy != null) {
-            register = new Register(supervisor, slist,
-                    new Spec(InetAddress.getLocalHost().getHostName(), acceptor.port()), slobrokBackOffPolicy);
+            register = new Register(supervisor, slist, spec, slobrokBackOffPolicy);
         } else {
-            register = new Register(supervisor, slist, InetAddress.getLocalHost().getHostName(), acceptor.port());
+            register = new Register(supervisor, slist, spec);
         }
         register.registerName(getSlobrokName());
     }

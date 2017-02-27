@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import org.apache.zookeeper.server.ZooKeeperServer;
+import com.yahoo.net.HostName;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.zookeeper.server.ZooKeeperServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class ZooKeeperTestServer {
     }
 
     public String getAddress() {
-        return factory.getLocalAddress().getHostName() + ":" + getPort();
+        return HostName.getLocalhost() + ":" + getPort();
     }
 
     public void shutdown(boolean cleanupZooKeeperDir) {
