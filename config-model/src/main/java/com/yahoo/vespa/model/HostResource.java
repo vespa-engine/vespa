@@ -3,6 +3,7 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 
 import javax.annotation.Nullable;
@@ -238,6 +239,23 @@ public class HostResource implements Comparable<HostResource> {
 
     public Set<ClusterMembership> clusterMemberships() {
         return Collections.unmodifiableSet(clusterMemberships);
+    }
+
+    /**
+     * Returns the "primary" cluster membership.
+     * Content clusters are preferred, then container clusters, and finally admin clusters.
+     * If there is more than one cluster of the preferred type, the cluster that was added first will be chosen.
+     */
+    public Optional<ClusterSpec> primaryClusterMembership() {
+        return clusterMemberships().stream()
+                .map(ClusterMembership::cluster)
+                .sorted(HostResource::compareClusters)
+                .findFirst();
+    }
+
+    private static int compareClusters(ClusterSpec cluster1, ClusterSpec cluster2) {
+        // This depends on the declared order of enum constants.
+        return cluster2.type().compareTo(cluster1.type());
     }
 
     @Override
