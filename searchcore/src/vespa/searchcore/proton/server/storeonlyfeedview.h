@@ -199,6 +199,8 @@ private:
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedToken::UP &token, FeedOperation::Type opType);
 
+    virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
+
 protected:
     virtual void
     internalDeleteBucket(const DeleteBucketOperation &delOp);

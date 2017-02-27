@@ -6,7 +6,6 @@
 #include <vector>
 #include <mutex>
 
-namespace document { class GlobalId; }
 namespace searchcorespi { namespace index { class IThreadService; } }
 
 namespace proton {
@@ -34,7 +33,7 @@ public:
     /**
      * Notify gid to lid mapping change. Called by master executor.
      */
-    void notifyGidToLidChange(document::GlobalId gid, uint32_t lid);
+    virtual void notifyGidToLidChange(document::GlobalId gid, uint32_t lid) override;
 
     /**
      * Close handler, further notifications are blocked.  Called by master

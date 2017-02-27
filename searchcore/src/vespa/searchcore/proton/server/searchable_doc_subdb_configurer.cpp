@@ -51,7 +51,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
                     curr->getLidReuseDelayer(), curr->getCommitTimeTracker()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(attrWriter, curr->getDocIdLimit()),
-            SearchableFeedView::Context(indexWriter))));
+            SearchableFeedView::Context(indexWriter, curr->getGidToLidChangeHandler()))));
 }
 
 void

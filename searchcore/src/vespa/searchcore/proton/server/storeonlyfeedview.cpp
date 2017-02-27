@@ -630,13 +630,18 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op,
                 op.getValidPrevDbdId(_params._subDbId) &&
                 op.getLid() != op.getPrevLid()) {
                 moveMetaData(_metaStore, docId, op);
+                notifyGidToLidChange(docId.getGlobalId(), op.getLid());
             } else {
                 putMetaData(_metaStore, docId, op,
                             _params._subDbType == SubDbType::REMOVED);
+                if (op.getDbDocumentId() != op.getPrevDbDocumentId()) {
+                    notifyGidToLidChange(docId.getGlobalId(), op.getLid());
+                }
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
             removeMetaData(_metaStore, docId, op,
                            _params._subDbType == SubDbType::REMOVED);
+            notifyGidToLidChange(docId.getGlobalId(), 0u);
         }
         _metaStore.commit(serialNum, serialNum);
     }
@@ -685,7 +690,18 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op,
     bool useDMS = useDocumentMetaStore(serialNum);
     bool explicitReuseLids = false;
     if (useDMS) {
+        std::vector<document::GlobalId> gidsToRemove;
+        gidsToRemove.reserve(lidsToRemove.size());
+        for (const auto &lid : lidsToRemove) {
+            document::GlobalId gid;
+            if (_metaStore.getGid(lid, gid)) {
+                gidsToRemove.emplace_back(gid);
+            }
+        }
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
+        for (const auto &gid : gidsToRemove) {
+            notifyGidToLidChange(gid, 0u);
+        }
         _metaStore.commit(serialNum, serialNum);
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
     }
@@ -865,5 +881,11 @@ StoreOnlyFeedView::getDocumentMetaStorePtr() const
     return &_documentMetaStoreContext->get();
 }
 
+void
+StoreOnlyFeedView::notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid)
+{
+    (void) gid;
+    (void) lid;
+}
 
 } // namespace proton
