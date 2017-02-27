@@ -14,7 +14,6 @@ import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author stiankri
@@ -33,33 +32,23 @@ public class OrchestratorImpl implements Orchestrator {
 
     private final ConfigServerHttpRequestExecutor requestExecutor;
 
-    // For testing
-    OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
+    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
         this.requestExecutor = requestExecutor;
-    }
-
-    public OrchestratorImpl(Set<String> configServerHosts) {
-        if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Environment setting for config servers missing or empty.");
-        }
-        this.requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
     }
 
     @Override
     public boolean suspend(final String hostName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
-                NodeRepositoryImpl.containerNameFromHostName(hostName));
-
+        PrefixLogger logger = getLogger(hostName);
         try {
-            final UpdateHostResponse updateHostResponse = requestExecutor.put(
-                    ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",
-                    WEB_SERVICE_PORT,
-                    Optional.empty(), /* body */
-                    UpdateHostResponse.class);
-            return updateHostResponse.reason() == null;
+            String path = getSuspendPath(hostName);
+            UpdateHostResponse response = requestExecutor.put(path,
+                                                              WEB_SERVICE_PORT,
+                                                              Optional.empty(), /* body */
+                                                              UpdateHostResponse.class);
+            return response.reason() == null;
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             // Orchestrator doesn't care about this node, so don't let that stop us.
-            logger.info("Got not found on delete, suspending");
+            logger.info("Got not found on suspending " + hostName +", suspending anyway");
             return true;
         } catch (Exception e) {
             logger.info("Got error on suspend " + hostName, e);
@@ -84,21 +73,27 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public boolean resume(final String hostName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
-                NodeRepositoryImpl.containerNameFromHostName(hostName));
+        PrefixLogger logger = getLogger(hostName);
         try {
-            final UpdateHostResponse batchOperationResult = requestExecutor.delete(
-                    ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",
-                    WEB_SERVICE_PORT,
-                    UpdateHostResponse.class);
-            return batchOperationResult.reason() == null;
+            String path = getSuspendPath(hostName);
+            UpdateHostResponse response = requestExecutor.delete(path, WEB_SERVICE_PORT, UpdateHostResponse.class);
+            return response.reason() == null;
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             // Orchestrator doesn't care about this node, so don't let that stop us.
-            logger.info("Got not found on delete, resuming");
+            logger.info("Got not found on resuming " + hostName + ", resuming anyway");
             return true;
         } catch (Exception e) {
             logger.info("Got error on resume " + hostName, e);
             return false;
         }
     }
+
+    private PrefixLogger getLogger(String hostName) {
+        return PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class, NodeRepositoryImpl.containerNameFromHostName(hostName));
+    }
+
+    private String getSuspendPath(String hostName) {
+        return ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended";
+    }
+
 }
