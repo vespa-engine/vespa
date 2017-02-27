@@ -8,6 +8,10 @@
 #include <memory>
 
 namespace search {
+
+class AttributeGuard;
+class AttributeEnumGuard;
+
 namespace attribute {
 
 /**
@@ -56,6 +60,21 @@ public:
     const std::shared_ptr<AttributeVector>& getTargetAttribute() const noexcept {
         return _target_attribute;
     }
+
+    /**
+     * Acquire an opaque composite guard that covers both the target attribute and
+     * the reference attribute. Note that these are not directly accessible via the
+     * returned guard object itself; it does not expose a valid pointer (i.e. get() will
+     * return nullptr).
+     */
+    std::unique_ptr<AttributeGuard> acquireGuard() const;
+    /**
+     * Acquires a composite guard similar to acquireGuard(), but the target attribute is
+     * covered by an AttributeEnumGuard instead of a regular AttributeGuard.
+     *
+     * The reference attribute is _not_ covered by an enum guard.
+     */
+    std::unique_ptr<AttributeEnumGuard> acquireEnumGuard() const;
 
 private:
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available,

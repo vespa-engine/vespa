@@ -3,6 +3,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -254,6 +255,55 @@ TEST_F("getBasicType() returns target vector basic type", Fixture) {
     EXPECT_EQUAL(BasicType::INT64, f.imported_attr->getBasicType());
     f.reset_with_new_target_attr(create_single_attribute<FloatingPointAttribute>(BasicType::DOUBLE));
     EXPECT_EQUAL(BasicType::DOUBLE, f.imported_attr->getBasicType());
+}
+
+TEST_F("acquireGuard() acquires guards on both target and reference attributes", Fixture) {
+    add_n_docs_with_undefined_values(*f.reference_attr, 2);
+    add_n_docs_with_undefined_values(*f.target_attr, 2);
+    // Now at generation 1 in both attributes.
+    {
+        auto guard = f.imported_attr->acquireGuard();
+        add_n_docs_with_undefined_values(*f.reference_attr, 1);
+        add_n_docs_with_undefined_values(*f.target_attr, 1);
+        
+        EXPECT_EQUAL(2u, f.target_attr->getCurrentGeneration());
+        EXPECT_EQUAL(2u, f.reference_attr->getCurrentGeneration());
+        // Should still be holding guard for first generation of writes for both attributes
+        EXPECT_EQUAL(1u, f.target_attr->getFirstUsedGeneration());
+        EXPECT_EQUAL(1u, f.reference_attr->getFirstUsedGeneration());
+    }
+    // Force a generation handler update
+    add_n_docs_with_undefined_values(*f.reference_attr, 1);
+    add_n_docs_with_undefined_values(*f.target_attr, 1);
+    EXPECT_EQUAL(3u, f.target_attr->getFirstUsedGeneration());
+    EXPECT_EQUAL(3u, f.reference_attr->getFirstUsedGeneration());
+}
+
+TEST_F("acquireEnumGuard() acquires enum guard on target and regular guard on reference attribute", Fixture) {
+    f.reset_with_new_target_attr(create_single_attribute<StringAttribute>(BasicType::STRING));
+    add_n_docs_with_undefined_values(*f.reference_attr, 2);
+    add_n_docs_with_undefined_values(*f.target_attr, 2);
+    {
+        auto guard = f.imported_attr->acquireEnumGuard();
+        // We can add docs, but not mutate enum values. That would deadlock the test, as the
+        // attribute enum guard already holds a shared lock. Could test the mutex itself to
+        // verify that it is indeed locked, but that's a private member in AttributeVector,
+        // so would be Very Dirty(tm).
+        // TODO find a robust way to test this.
+        add_n_docs_with_undefined_values(*f.target_attr, 1);
+        add_n_docs_with_undefined_values(*f.reference_attr, 1);
+
+        EXPECT_EQUAL(5u, f.target_attr->getCurrentGeneration());
+        EXPECT_EQUAL(2u, f.reference_attr->getCurrentGeneration());
+
+        EXPECT_EQUAL(3u, f.target_attr->getFirstUsedGeneration());
+        EXPECT_EQUAL(1u, f.reference_attr->getFirstUsedGeneration());
+    }
+    // Force a generation handler update
+    add_n_docs_with_undefined_values(*f.reference_attr, 1);
+    add_n_docs_with_undefined_values(*f.target_attr, 1);
+    EXPECT_EQUAL(7u, f.target_attr->getFirstUsedGeneration());
+    EXPECT_EQUAL(3u, f.reference_attr->getFirstUsedGeneration());
 }
 
 TEST_F("Single-valued integer attribute values can be retrieved via reference", Fixture) {
