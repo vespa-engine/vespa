@@ -218,9 +218,8 @@ private:
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
 
 public:
-    // Note: iterator constructor argument is destroyed
-    AttributePostingListIteratorT(PL &iterator, bool hasWeight,
-                                  fef::TermFieldMatchData *matchData);
+    template <typename... Args>
+    AttributePostingListIteratorT(bool hasWeight, fef::TermFieldMatchData *matchData, Args &&... args);
 };
 
 template <typename PL>
@@ -249,8 +248,8 @@ private:
     void initRange(uint32_t begin, uint32_t end) override;
 
 public:
-    // Note: iterator constructor argument is destroyed
-    FilterAttributePostingListIteratorT(PL &iterator, fef::TermFieldMatchData *matchData);
+    template <typename... Args>
+    FilterAttributePostingListIteratorT(fef::TermFieldMatchData *matchData, Args &&... args);
 };
 
 
