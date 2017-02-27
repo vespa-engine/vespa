@@ -16,6 +16,8 @@ using vespalib::eval::CompileCache;
 using vespalib::eval::CompiledFunction;
 using vespalib::eval::InterpretedFunction;
 using vespalib::eval::ValueType;
+using vespalib::eval::Value;
+using vespalib::eval::DoubleValue;
 using vespalib::eval::NodeTypes;
 using vespalib::tensor::DefaultTensorEngine;
 using search::fef::FeatureType;
@@ -72,6 +74,20 @@ public:
 
 //-----------------------------------------------------------------------------
 
+struct MyLazyParams : InterpretedFunction::LazyParams {
+    const fef::FeatureExecutor::Inputs &inputs;
+    const ConstArrayRef<char> input_is_object;
+    MyLazyParams(const fef::FeatureExecutor::Inputs &inputs_in, ConstArrayRef<char> input_is_object_in)
+        : inputs(inputs_in), input_is_object(input_is_object_in) {}
+    const Value &resolve(size_t idx, vespalib::Stash &stash) const override {
+        if (input_is_object[idx]) {
+            return inputs.get_object(idx);
+        } else {
+            return stash.create<DoubleValue>(inputs.get_number(idx));
+        }
+    }
+};
+
 /**
  * Implements the executor for interpreted ranking expressions (with tensor support)
  **/
@@ -79,8 +95,8 @@ class InterpretedRankingExpressionExecutor : public fef::FeatureExecutor
 {
 private:
     const InterpretedFunction   &_function;
-    const ConstArrayRef<char>    _input_is_object;
     InterpretedFunction::Context _context;
+    MyLazyParams                 _params;
 
 public:
     InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
@@ -134,23 +150,15 @@ LazyCompiledRankingExpressionExecutor::execute(uint32_t)
 InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
                                                                            ConstArrayRef<char> input_is_object)
     : _function(function),
-      _input_is_object(input_is_object),
-      _context(function)
+      _context(function),
+      _params(inputs(), input_is_object)
 {
 }
 
 void
 InterpretedRankingExpressionExecutor::execute(uint32_t)
 {
-    _context.clear_params();
-    for (size_t i = 0; i < _function.num_params(); ++i) {
-        if (_input_is_object[i]) {
-            _context.add_param(inputs().get_object(i));
-        } else {
-            _context.add_param(inputs().get_number(i));
-        }
-    }
-    outputs().set_object(0, _function.eval(_context));
+    outputs().set_object(0, _function.eval(_context, _params));
 }
 
 //-----------------------------------------------------------------------------
