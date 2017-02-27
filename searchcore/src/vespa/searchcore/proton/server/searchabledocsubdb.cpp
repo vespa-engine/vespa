@@ -249,7 +249,7 @@ SearchableDocSubDB::initFeedView(const IAttributeWriter::SP &attrWriter,
     SearchableFeedView::UP feedView(new SearchableFeedView(getStoreOnlyFeedViewContext(configSnapshot),
             getFeedViewPersistentParams(),
             FastAccessFeedView::Context(attrWriter, _docIdLimit),
-            SearchableFeedView::Context(getIndexWriter())));
+            SearchableFeedView::Context(getIndexWriter(), _gidToLidChangeHandler)));
 
     // XXX: Not exception safe.
     _rFeedView.set(SearchableFeedView::SP(feedView.release()));

@@ -630,13 +630,18 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op,
                 op.getValidPrevDbdId(_params._subDbId) &&
                 op.getLid() != op.getPrevLid()) {
                 moveMetaData(_metaStore, docId, op);
+                notifyGidToLidChange(docId.getGlobalId(), op.getLid());
             } else {
                 putMetaData(_metaStore, docId, op,
                             _params._subDbType == SubDbType::REMOVED);
+                if (op.getDbDocumentId() != op.getPrevDbDocumentId()) {
+                    notifyGidToLidChange(docId.getGlobalId(), op.getLid());
+                }
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
             removeMetaData(_metaStore, docId, op,
                            _params._subDbType == SubDbType::REMOVED);
+            notifyGidToLidChange(docId.getGlobalId(), 0u);
         }
         _metaStore.commit(serialNum, serialNum);
     }
@@ -668,6 +673,23 @@ StoreOnlyFeedView::removeIndexedFields(SerialNum serialNum,
     (void) immediateCommit;
 }
 
+
+namespace {
+
+std::vector<document::GlobalId> getGidsToRemove(const IDocumentMetaStore &metaStore, const LidVectorContext::LidVector &lidsToRemove) {
+    std::vector<document::GlobalId> gids;
+    gids.reserve(lidsToRemove.size());
+    for (const auto &lid : lidsToRemove) {
+        document::GlobalId gid;
+        if (metaStore.getGid(lid, gid)) {
+            gids.emplace_back(gid);
+        }
+    }
+    return gids;
+}
+
+}
+
 size_t
 StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op,
                                    bool remove_index_and_attributes,
@@ -685,7 +707,11 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op,
     bool useDMS = useDocumentMetaStore(serialNum);
     bool explicitReuseLids = false;
     if (useDMS) {
+        std::vector<document::GlobalId> gidsToRemove(getGidsToRemove(_metaStore, lidsToRemove));
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
+        for (const auto &gid : gidsToRemove) {
+            notifyGidToLidChange(gid, 0u);
+        }
         _metaStore.commit(serialNum, serialNum);
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
     }
@@ -865,5 +891,11 @@ StoreOnlyFeedView::getDocumentMetaStorePtr() const
     return &_documentMetaStoreContext->get();
 }
 
+void
+StoreOnlyFeedView::notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid)
+{
+    (void) gid;
+    (void) lid;
+}
 
 } // namespace proton

@@ -6,6 +6,8 @@
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
 
+namespace document { class GlobalId; }
+
 namespace proton {
 
 class IGidToLidChangeListener;
@@ -23,6 +25,8 @@ public:
 
     virtual void removeListeners(const vespalib::string &docTypeName,
                                  const std::set<vespalib::string> &keepNames) = 0;
+    virtual void notifyGidToLidChange(document::GlobalId gid, uint32_t lid)  = 0;
+
 };
 
 } // namespace proton

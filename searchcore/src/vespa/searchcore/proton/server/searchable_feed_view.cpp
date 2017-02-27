@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
+#include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
@@ -47,13 +48,26 @@ bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone,
 
 }
 
+SearchableFeedView::Context::Context(const IIndexWriter::SP &indexWriter,
+                                     const std::shared_ptr<IGidToLidChangeHandler> &gidToLidChangeHandler)
+    : _indexWriter(indexWriter),
+      _gidToLidChangeHandler(gidToLidChangeHandler)
+{
+}
+
+
+SearchableFeedView::Context::~Context()
+{
+}
+
 SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
                                        const PersistentParams &params,
                                        const FastAccessFeedView::Context &fastUpdateCtx,
                                        Context ctx)
     : Parent(storeOnlyCtx, params, fastUpdateCtx),
       _indexWriter(ctx._indexWriter),
-      _hasIndexedFields(_schema->getNumIndexFields() > 0)
+      _hasIndexedFields(_schema->getNumIndexFields() > 0),
+      _gidToLidChangeHandler(ctx._gidToLidChangeHandler)
 {
 }
 
@@ -292,5 +306,10 @@ SearchableFeedView::forceCommit(SerialNum serialNum,
                                                      onCommitDone); }));
 }
 
+void
+SearchableFeedView::notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid)
+{
+    _gidToLidChangeHandler->notifyGidToLidChange(gid, lid);
+}
 
 } // namespace proton

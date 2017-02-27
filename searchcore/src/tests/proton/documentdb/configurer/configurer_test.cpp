@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
+#include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -44,6 +45,7 @@ using fastos::TimeStamp;
 using proton::matching::SessionManager;
 using searchcorespi::IndexSearchable;
 using searchcorespi::index::IThreadingService;
+using proton::test::MockGidToLidChangeHandler;
 
 
 typedef DocumentDBConfig::ComparisonResult ConfigComparisonResult;
@@ -200,6 +202,7 @@ Fixture::initViewSet(ViewSet &views)
     IIndexWriter::SP indexWriter(new IndexWriter(indexMgr));
     AttributeWriter::SP attrWriter(new AttributeWriter(attrMgr));
     ISummaryAdapter::SP summaryAdapter(new SummaryAdapter(summaryMgr));
+    std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler(std::make_shared<MockGidToLidChangeHandler>());
     Schema::SP schema(new Schema());
     views._summaryMgr = summaryMgr;
     views._dmsc = metaStore;
@@ -236,7 +239,7 @@ Fixture::initViewSet(ViewSet &views)
                                     0u /* subDbId */,
                                     SubDbType::READY),
                             FastAccessFeedView::Context(attrWriter, views._docIdLimit),
-                            SearchableFeedView::Context(indexWriter))));
+                            SearchableFeedView::Context(indexWriter, gidToLidChangeHandler))));
 }
 
 

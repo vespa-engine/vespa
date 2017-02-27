@@ -23,6 +23,7 @@ LOG_SETUP("feedview_test");
 #include <vespa/searchcore/proton/test/mock_index_writer.h>
 #include <vespa/searchcore/proton/test/mock_index_manager.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
+#include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/docstore/cachestats.h>
@@ -56,6 +57,7 @@ using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using vespalib::eval::ValueType;
+using proton::test::MockGidToLidChangeHandler;
 
 typedef SearchableFeedView::SerialNum SerialNum;
 typedef search::DocumentIdT DocumentIdT;
@@ -175,6 +177,43 @@ struct MyIndexWriter : public test::MockIndexWriter
         _tracer.traceCommit(indexAdapterTypeName, serialNum);
     }
     virtual void heartBeat(SerialNum) override { ++_heartBeatCount; }
+};
+
+struct MyGidToLidChangeHandler : public MockGidToLidChangeHandler
+{
+    document::GlobalId _changeGid;
+    uint32_t _changeLid;
+    uint32_t _changes;
+    std::map<document::GlobalId, uint32_t> _gidToLid;
+public:
+    MyGidToLidChangeHandler()
+        : MockGidToLidChangeHandler(),
+          _changeGid(),
+          _changeLid(std::numeric_limits<uint32_t>::max()),
+          _changes(0u),
+          _gidToLid()
+    {
+    }
+
+    virtual void notifyGidToLidChange(document::GlobalId gid, uint32_t lid)  override {
+        _changeGid = gid;
+        _changeLid = lid;
+        _gidToLid[gid] = lid;
+        ++_changes;
+    }
+
+    void assertChanges(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
+        EXPECT_EQUAL(expGid, _changeGid);
+        EXPECT_EQUAL(expLid, _changeLid);
+        EXPECT_EQUAL(expChanges, _changes);
+    }
+    void assertNumChanges(uint32_t expChanges) {
+        EXPECT_EQUAL(expChanges, _changes);
+    }
+    void assertLid(document::GlobalId gid, uint32_t expLid) {
+        uint32_t lid = _gidToLid[gid];
+        EXPECT_EQUAL(expLid, lid);
+    }
 };
 
 struct MyDocumentStore : public test::DummyDocumentStore
@@ -438,6 +477,7 @@ struct DocumentContext
             builder.getDocumentType().getField(fieldName);
         upd->addUpdate(document::FieldUpdate(field));
     }
+    document::GlobalId gid() const { return doc->getId().getGlobalId(); }
 };
 
 namespace {
@@ -488,6 +528,7 @@ struct FixtureBase
     documentmetastore::LidReuseDelayer _lidReuseDelayer;
     CommitTimeTracker     _commitTimeTracker;
     SerialNum             serial;
+    std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
     FixtureBase(TimeStamp visibilityDelay) :
         _tracer(),
         iw(new MyIndexWriter(_tracer)),
@@ -505,7 +546,8 @@ struct FixtureBase
         _writeService(_writeServiceReal),
         _lidReuseDelayer(_writeService, _dmsc->get()),
         _commitTimeTracker(visibilityDelay),
-        serial(0)
+        serial(0),
+        _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
     {
         _dmsc->constructFreeList();
         _lidReuseDelayer.setImmediateCommit(visibilityDelay == 0);
@@ -620,6 +662,18 @@ struct FixtureBase
             removeAndWait(docs[i]);
         }
     }
+
+    void performMove(MoveOperation &op) {
+        op.setSerialNum(++serial);
+        getFeedView().handleMove(op);
+    }
+
+    void moveAndWait(const DocumentContext &docCtx, uint32_t fromLid, uint32_t toLid) {
+        MoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc, DbDocumentId(pc._params._subDbId, fromLid), pc._params._subDbId);
+        op.setTargetLid(toLid);
+        runInMaster([&]() { performMove(op); });
+    }
+
     void performDeleteBucket(DeleteBucketOperation &op) {
         getFeedView().prepareDeleteBucket(op);
         op.setSerialNum(++serial);
@@ -655,6 +709,15 @@ struct FixtureBase
     void compactLidSpaceAndWait(uint32_t wantedLidLimit) {
         runInMaster([&] () { performCompactLidSpace(wantedLidLimit); });
     }
+    void assertChangeHandler(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
+        _gidToLidChangeHandler->assertChanges(expGid, expLid, expChanges);
+    }
+    void assertChangeHandlerCount(uint32_t expChanges) {
+        _gidToLidChangeHandler->assertNumChanges(expChanges);
+    }
+    void assertChangeNotified(document::GlobalId gid, uint32_t expLid) {
+        _gidToLidChangeHandler->assertLid(gid, expLid);
+    }
 };
 
 struct SearchableFeedViewFixture : public FixtureBase
@@ -671,7 +734,7 @@ struct SearchableFeedViewFixture : public FixtureBase
                 _commitTimeTracker),
            pc.getParams(),
            FastAccessFeedView::Context(aw, _docIdLimit),
-           SearchableFeedView::Context(iw))
+           SearchableFeedView::Context(iw, _gidToLidChangeHandler))
     {
         runInMaster([&]() { _lidReuseDelayer.setHasIndexedOrAttributeFields(true); });
     }
@@ -759,6 +822,16 @@ TEST_F("require that put() calls attribute adapter", SearchableFeedViewFixture)
     EXPECT_EQUAL(2u, f._docIdLimit.get());
 }
 
+TEST_F("require that put() notifies gid to lid change handler", SearchableFeedViewFixture)
+{
+    DocumentContext dc1 = f.doc1(10);
+    DocumentContext dc2 = f.doc1(20);
+    f.putAndWait(dc1);
+    TEST_DO(f.assertChangeHandler(dc1.gid(), 1u, 1u));
+    f.putAndWait(dc2);
+    TEST_DO(f.assertChangeHandler(dc2.gid(), 1u, 1u));
+}
+
 TEST_F("require that update() updates document meta store with bucket info",
        SearchableFeedViewFixture)
 {
@@ -817,6 +890,16 @@ TEST_F("require that remove() calls attribute adapter", SearchableFeedViewFixtur
     EXPECT_EQUAL(1u, f.maw._removeLid);
 }
 
+TEST_F("require that remove() notifies gid to lid change handler", SearchableFeedViewFixture)
+{
+    DocumentContext dc1 = f.doc1(10);
+    DocumentContext dc2 = f.doc1(20);
+    f.putAndWait(dc1);
+    TEST_DO(f.assertChangeHandler(dc1.gid(), 1u, 1u));
+    f.removeAndWait(dc2);
+    TEST_DO(f.assertChangeHandler(dc2.gid(), 0u, 2u));
+}
+
 bool
 assertThreadObserver(uint32_t masterExecuteCnt,
                      uint32_t indexExecuteCnt,
@@ -852,6 +935,12 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     docs.push_back(f.doc("userdoc:test:2:2", 14));
 
     f.putAndWait(docs);
+    TEST_DO(f.assertChangeHandler(docs.back().gid(), 5u, 5u));
+    TEST_DO(f.assertChangeNotified(docs[0].gid(), 1));
+    TEST_DO(f.assertChangeNotified(docs[1].gid(), 2));
+    TEST_DO(f.assertChangeNotified(docs[2].gid(), 3));
+    TEST_DO(f.assertChangeNotified(docs[3].gid(), 4));
+    TEST_DO(f.assertChangeNotified(docs[4].gid(), 5));
 
     DocumentIdT lid;
     EXPECT_TRUE(f.getMetaStore().getLid(docs[0].doc->getId().getGlobalId(), lid));
@@ -874,6 +963,12 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     assertLidVector(exp, f.miw._removes);
     assertLidVector(exp, f.msa._removes);
     assertLidVector(exp, f.maw._removes);
+    TEST_DO(f.assertChangeHandlerCount(8));
+    TEST_DO(f.assertChangeNotified(docs[0].gid(), 0));
+    TEST_DO(f.assertChangeNotified(docs[1].gid(), 0));
+    TEST_DO(f.assertChangeNotified(docs[2].gid(), 0));
+    TEST_DO(f.assertChangeNotified(docs[3].gid(), 4));
+    TEST_DO(f.assertChangeNotified(docs[4].gid(), 5));
 }
 
 void
@@ -1210,6 +1305,21 @@ TEST_F("require that forceCommit updates docid limit during shrink",
     EXPECT_EQUAL(2u, f._docIdLimit.get());
     f.forceCommitAndWait();
     EXPECT_EQUAL(3u, f._docIdLimit.get());
+}
+
+TEST_F("require that move() notifies gid to lid change handler", SearchableFeedViewFixture)
+{
+    DocumentContext dc1 = f.doc("id::searchdocument::1", 10);
+    DocumentContext dc2 = f.doc("id::searchdocument::2", 20);
+    f.putAndWait(dc1);
+    TEST_DO(f.assertChangeHandler(dc1.gid(), 1u, 1u));
+    f.putAndWait(dc2);
+    TEST_DO(f.assertChangeHandler(dc2.gid(), 2u, 2u));
+    DocumentContext dc3 = f.doc("id::searchdocument::1", 30);
+    f.removeAndWait(dc3);
+    TEST_DO(f.assertChangeHandler(dc3.gid(), 0u, 3u));
+    f.moveAndWait(dc2, 2, 1);
+    TEST_DO(f.assertChangeHandler(dc2.gid(), 1u, 4u));
 }
 
 TEST_MAIN()

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
@@ -42,6 +43,8 @@ public:
                                  const std::set<vespalib::string> &keepNames) override {
         _removes.emplace_back(docTypeName, keepNames);
     }
+
+    virtual void notifyGidToLidChange(document::GlobalId, uint32_t)  override { }
 
     void assertAdds(const std::vector<AddEntry> &expAdds)
     {
