@@ -36,8 +36,7 @@ public class ServletOutputStreamWriter {
     private enum State {
         NOT_STARTED,
         WAITING_FOR_WRITE_POSSIBLE_CALLBACK,
-        WAITING_FOR_FIRST_BUFFER,
-        WAITING_FOR_SUBSEQUENT_BUFFER,
+        WAITING_FOR_BUFFER,
         WRITING_BUFFERS,
         FINISHED_OR_ERROR
     }
@@ -78,32 +77,13 @@ public class ServletOutputStreamWriter {
         this.metricReporter = metricReporter;
     }
 
-    public void registerWriteListener() {
-        outputStream.setWriteListener(writeListener);
-    }
-
     public void sendErrorContentAndCloseAsync(ByteBuffer errorContent) {
-        boolean thisThreadShouldWrite;
-
         synchronized (monitor) {
             // Assert that no content has been written as it is too late to write error response if the response is committed.
-            switch (state) {
-                case NOT_STARTED:
-                    queueErrorContent_holdingLock(errorContent);
-                    state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
-                    thisThreadShouldWrite = false;
-                    break;
-                case WAITING_FOR_FIRST_BUFFER:
-                    queueErrorContent_holdingLock(errorContent);
-                    state = State.WRITING_BUFFERS;
-                    thisThreadShouldWrite = true;
-                    break;
-                default:
-                    throw createAndLogAssertionError("Invalid state: " + state);
-            }
-        }
-        if (thisThreadShouldWrite) {
-            writeBuffersInQueueToOutputStream();
+            assertStateIs(state, State.NOT_STARTED);
+            queueErrorContent_holdingLock(errorContent);
+            state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
+            outputStream.setWriteListener(writeListener);
         }
     }
 
@@ -124,12 +104,12 @@ public class ServletOutputStreamWriter {
             switch (state) {
                 case NOT_STARTED:
                     state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
+                    outputStream.setWriteListener(writeListener);
                     break;
                 case WAITING_FOR_WRITE_POSSIBLE_CALLBACK:
                 case WRITING_BUFFERS:
                     break;
-                case WAITING_FOR_FIRST_BUFFER:
-                case WAITING_FOR_SUBSEQUENT_BUFFER:
+                case WAITING_FOR_BUFFER:
                     thisThreadShouldWrite = true;
                     state = State.WRITING_BUFFERS;
                     break;
@@ -171,7 +151,7 @@ public class ServletOutputStreamWriter {
                 contentPart = responseContentQueue.pollFirst();
 
                 if (contentPart == null && lastOperationWasFlush) {
-                    state = State.WAITING_FOR_SUBSEQUENT_BUFFER;
+                    state = State.WAITING_FOR_BUFFER;
                     return;
                 }
             }
@@ -272,14 +252,10 @@ public class ServletOutputStreamWriter {
 
     private static void assertStateIs(State currentState, State expectedState) {
         if (currentState != expectedState) {
-            throw createAndLogAssertionError("Expected state " + expectedState + ", got state " + currentState);
+            AssertionError error = new AssertionError("Expected state " + expectedState + ", got state " + currentState);
+            log.log(Level.WARNING, "Assertion failed.", error);
+            throw error;
         }
-    }
-
-    private static AssertionError createAndLogAssertionError(String detailedMessage) {
-        AssertionError error = new AssertionError(detailedMessage);
-        log.log(Level.WARNING, "Assertion failed.", error);
-        return error;
     }
 
     public void fail(Throwable t) {
@@ -289,27 +265,16 @@ public class ServletOutputStreamWriter {
     private final WriteListener writeListener = new WriteListener() {
         @Override
         public void onWritePossible() throws IOException {
-            boolean shouldWriteBuffers = false;
             synchronized (monitor) {
-                switch (state) {
-                    case NOT_STARTED:
-                        state = State.WAITING_FOR_FIRST_BUFFER;
-                        break;
-                    case WAITING_FOR_WRITE_POSSIBLE_CALLBACK:
-                        state = State.WRITING_BUFFERS;
-                        shouldWriteBuffers = true;
-                        break;
-                    case FINISHED_OR_ERROR:
-                        return;
-                    case WAITING_FOR_FIRST_BUFFER:
-                    case WAITING_FOR_SUBSEQUENT_BUFFER:
-                    case WRITING_BUFFERS:
-                        throw createAndLogAssertionError("Invalid state: " + state);
+                if (state == State.FINISHED_OR_ERROR) {
+                    return;
                 }
+
+                assertStateIs(state, State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK);
+                state = State.WRITING_BUFFERS;
             }
-            if (shouldWriteBuffers) {
-                writeBuffersInQueueToOutputStream();
-            }
+
+            writeBuffersInQueueToOutputStream();
         }
 
         @Override

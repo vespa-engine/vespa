@@ -69,9 +69,6 @@ public class ServletResponseController {
                 new ServletOutputStreamWriter(servletResponse.getOutputStream(), executor, metricReporter);
     }
 
-    public void registerWriteListener() {
-        servletOutputStreamWriter.registerWriteListener();
-    }
 
     private static int getStatusCode(Throwable t) {
         if (t instanceof BindingNotFoundException) {
