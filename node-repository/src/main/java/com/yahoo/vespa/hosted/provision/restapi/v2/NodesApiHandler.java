@@ -27,7 +27,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -96,7 +95,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
         if (path.startsWith("/nodes/v2/state/ready/")) {
-            return new MessageResponse(setNodeReady(path));
+            nodeRepository.setReady(lastElement(path));
+            return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
             nodeRepository.fail(lastElement(path));
@@ -212,24 +212,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
             case "proxy" : return NodeType.proxy;
             default: throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
         }
-    }
-
-    // TODO: Move most of this to node repo
-    public String setNodeReady(String path) {
-        String hostname = lastElement(path);
-        if ( nodeRepository.getNode(hostname, Node.State.ready).isPresent())
-            return "Nothing done; " + hostname + " is already ready";
-
-        Optional<Node> node = nodeRepository.getNode(hostname, Node.State.provisioned, Node.State.dirty, Node.State.failed, Node.State.parked);
-
-        if ( ! node.isPresent())
-            throw new IllegalArgumentException("Could not set " + hostname + " ready: Not registered as provisioned, dirty, failed or parked");
-
-        if (node.get().allocation().isPresent())
-            throw new IllegalArgumentException("Could not set " + hostname + " ready: Node is allocated and must be moved to dirty instead");
-
-        nodeRepository.setReady(Collections.singletonList(node.get()));
-        return "Moved " + hostname + " to ready";
     }
 
     public static NodeFilter toNodeFilter(HttpRequest request) {

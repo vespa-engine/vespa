@@ -97,9 +97,9 @@ public class NodeRepository extends AbstractComponent {
 
     // ---------------- Query API ----------------------------------------------------------------
 
-    /** 
+    /**
      * Finds and returns the node with the hostname in any of the given states, or empty if not found 
-     * 
+     *
      * @param hostname the full host name of the node
      * @param inState the states the node may be in. If no states are given, it will be returned from any state
      * @return the node, or empty if it was not found in any of the given states
@@ -131,13 +131,13 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Finds and returns all nodes that are children of the given parent node
      *
-     * @param parent Parent node
+     * @param hostname Parent hostname
      * @return List of child nodes
      */
-    public List<Node> getNodes(Node parent) {
+    public List<Node> getChildNodes(String hostname) {
         return zkClient.getNodes().stream()
                 .filter(node -> node.parentHostname()
-                        .map(parentHostname -> parentHostname.equals(parent.hostname()))
+                        .map(parentHostname -> parentHostname.equals(hostname))
                         .orElse(false))
                 .collect(Collectors.toList());
     }
@@ -209,7 +209,7 @@ public class NodeRepository extends AbstractComponent {
         final List<NodeAcl> nodeAcls = new ArrayList<>();
 
         if (children) {
-            final List<Node> childNodes = getNodes(node);
+            final List<Node> childNodes = getChildNodes(node.hostname());
             childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode))));
         } else {
             nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
@@ -263,6 +263,14 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
+    public Node setReady(String hostname) {
+        Node nodeToReady = getNode(hostname).orElseThrow(() ->
+                new NotFoundException("Could not move " + hostname + " to ready: Node not found"));
+
+        if (nodeToReady.state() == Node.State.ready) return nodeToReady;
+        return setReady(Collections.singletonList(nodeToReady)).get(0);
+    }
+
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
     public List<Node> reserve(List<Node> nodes) { return zkClient.writeTo(Node.State.reserved, nodes); }
 
@@ -288,8 +296,8 @@ public class NodeRepository extends AbstractComponent {
 
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex lock = lock(application)) {
-            zkClient.writeTo(Node.State.inactive, 
-                             zkClient.getNodes(application, Node.State.reserved, Node.State.active), 
+            zkClient.writeTo(Node.State.inactive,
+                             zkClient.getNodes(application, Node.State.reserved, Node.State.active),
                              transaction);
         }
     }
@@ -308,7 +316,7 @@ public class NodeRepository extends AbstractComponent {
         return performOn(NodeListFilter.from(nodes), node -> zkClient.writeTo(Node.State.dirty, node));
     }
 
-    /** 
+    /**
      * Set a node dirty, which is in the provisioned, failed or parked state.
      * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
      *
@@ -484,7 +492,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }
-    
+
     /** Create a lock which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application) { return zkClient.lock(application); }
 
@@ -498,5 +506,5 @@ public class NodeRepository extends AbstractComponent {
     private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
-    
+
 }

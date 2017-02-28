@@ -94,7 +94,7 @@ public class RestApiTest {
         // calling ready again is a noop:
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host8.yahoo.com",
                                   new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Nothing done; host8.yahoo.com is already ready\"}");
+                       "{\"message\":\"Moved host8.yahoo.com to ready\"}");
 
         // PUT a node in failed ...
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host3.yahoo.com",
@@ -312,7 +312,7 @@ public class RestApiTest {
                        "{\"message\":\"Moved host1.yahoo.com to failed\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host1.yahoo.com ready: Node is allocated and must be moved to dirty instead\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set failed node host1.yahoo.com allocated to tenant 'tenant2', application 'application2', instance 'instance2' as 'content/id2/0/0' ready. It is not dirty.\"}");
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -327,7 +327,7 @@ public class RestApiTest {
                        "{\"message\":\"Moved host2.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host2.yahoo.com ready: Node is allocated and must be moved to dirty instead\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set parked node host2.yahoo.com allocated to tenant 'tenant2', application 'application2', instance 'instance2' as 'content/id2/0/1' ready. It is not dirty.\"}");
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
