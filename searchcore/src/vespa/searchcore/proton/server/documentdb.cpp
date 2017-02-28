@@ -19,6 +19,7 @@
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
+#include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
@@ -69,6 +70,12 @@ uint32_t semiUnboundTaskLimit(uint32_t semiUnboundExecutorTaskLimit,
     return taskLimit;
 }
 
+}
+
+template <typename FunctionType>
+void
+DocumentDB::masterExecute(FunctionType &&function) {
+    _writeService.master().execute(makeLambdaTask(std::forward<FunctionType>(function)));
 }
 
 DocumentDB::DocumentDB(const vespalib::string &baseDir,
@@ -554,6 +561,24 @@ DocumentDB::performDropFeedView2(IFeedView::SP feedView)
 
 
 void
+DocumentDB::tearDownReferences()
+{
+    // Called by master executor thread
+    auto registry = _owner.getDocumentDBReferentRegistry();
+    auto activeConfig = getActiveConfig();
+    auto repo = activeConfig->getDocumentTypeRepoSP();
+    auto docType = repo->getDocumentType(_docTypeName.getName());
+    assert(docType != nullptr);
+    DocumentDBReferenceResolver resolver(*registry,
+                                         *docType,
+                                         activeConfig->getImportedFieldsConfig(),
+                                         *docType,
+                                         _refCount,
+                                         _writeService.attributeFieldWriter());
+    _subDBs.tearDownReferences(resolver);
+}
+
+void
 DocumentDB::close()
 {
     {
@@ -561,6 +586,8 @@ DocumentDB::close()
         _state.enterShutdownState();
     }
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
+    masterExecute([this]() { tearDownReferences(); });
+    _writeService.master().sync();
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
     _refCount.waitForZeroRefCount();

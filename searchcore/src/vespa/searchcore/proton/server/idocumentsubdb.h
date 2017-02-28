@@ -130,6 +130,7 @@ public:
     virtual matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const = 0;
     virtual void close() = 0;
     virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent() = 0;
+    virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) = 0;
 };
 
 } // namespace proton

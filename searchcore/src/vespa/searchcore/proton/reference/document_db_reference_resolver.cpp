@@ -172,6 +172,10 @@ DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBRefere
 {
 }
 
+DocumentDBReferenceResolver::~DocumentDBReferenceResolver()
+{
+}
+
 ImportedAttributesRepo::UP
 DocumentDBReferenceResolver::resolve(const IAttributeManager &newAttrMgr, const IAttributeManager &oldAttrMgr)
 {

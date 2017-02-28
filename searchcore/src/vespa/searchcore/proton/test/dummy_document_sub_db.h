@@ -96,6 +96,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent() override {
         return std::shared_ptr<IDocumentDBReferent>();
     }
+    virtual void tearDownReferences(IDocumentDBReferenceResolver &) override { }
 };
 
 } // namespace test

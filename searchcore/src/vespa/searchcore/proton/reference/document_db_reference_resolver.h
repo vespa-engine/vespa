@@ -47,6 +47,7 @@ public:
                                 const document::DocumentType &prevThisDocType,
                                 MonitoredRefCount &refCount,
                                 search::ISequencedTaskExecutor &attributeFieldWriter);
+    ~DocumentDBReferenceResolver();
 
     virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr, const search::IAttributeManager &oldAttrMgr) override;
     virtual void teardown(const search::IAttributeManager &oldAttrMgr) override;
