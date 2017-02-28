@@ -46,7 +46,7 @@ DataStoreBase::FallbackHold::FallbackHold(size_t size,
 }
 
 
-DataStoreBase::FallbackHold::~FallbackHold(void)
+DataStoreBase::FallbackHold::~FallbackHold()
 {
     _typeHandler->destroyElements(_buffer.get(), _usedElems);
 }
@@ -68,7 +68,7 @@ public:
     }
 
     virtual
-    ~BufferHold(void)
+    ~BufferHold()
     {
         _dsb.doneHoldBuffer(_bufferId);
     }
@@ -93,7 +93,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers,
 }
 
 
-DataStoreBase::~DataStoreBase(void)
+DataStoreBase::~DataStoreBase()
 {
     disableFreeLists();
 
@@ -133,7 +133,7 @@ DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
 
 
 void
-DataStoreBase::initActiveBuffers(void)
+DataStoreBase::initActiveBuffers()
 {
     uint32_t numTypes = _activeBufferIds.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
@@ -209,7 +209,7 @@ DataStoreBase::trimHoldLists(generation_t usedGen)
 
 
 void
-DataStoreBase::clearHoldLists(void)
+DataStoreBase::clearHoldLists()
 {
     transferElemHoldList(0);
     clearElemHoldList();
@@ -218,7 +218,7 @@ DataStoreBase::clearHoldLists(void)
 
 
 void
-DataStoreBase::dropBuffers(void)
+DataStoreBase::dropBuffers()
 {
     uint32_t numBuffers = _buffers.size();
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
@@ -229,7 +229,7 @@ DataStoreBase::dropBuffers(void)
 
 
 MemoryUsage
-DataStoreBase::getMemoryUsage(void) const
+DataStoreBase::getMemoryUsage() const
 {
     MemStats stats = getMemStats();
     MemoryUsage usage;
@@ -252,7 +252,7 @@ DataStoreBase::holdBuffer(uint32_t bufferId)
 
 
 void
-DataStoreBase::enableFreeLists(void)
+DataStoreBase::enableFreeLists()
 {
     for (BufferState & bState : _states) {
         if (!bState.isActive() || bState.getCompacting()) {
@@ -265,7 +265,7 @@ DataStoreBase::enableFreeLists(void)
 
 
 void
-DataStoreBase::disableFreeLists(void)
+DataStoreBase::disableFreeLists()
 {
     for (BufferState & bState : _states) {
         bState.setFreeListList(nullptr);
@@ -294,7 +294,7 @@ DataStoreBase::disableFreeList(uint32_t bufferId)
 
 
 void
-DataStoreBase::disableElemHoldList(void)
+DataStoreBase::disableElemHoldList()
 {
     for (auto &state : _states) {
         if (!state.isFree()) {
@@ -305,7 +305,7 @@ DataStoreBase::disableElemHoldList(void)
 
 
 DataStoreBase::MemStats
-DataStoreBase::getMemStats(void) const
+DataStoreBase::getMemStats() const
 {
     MemStats stats;
 
@@ -348,7 +348,7 @@ DataStoreBase::getMemStats(void) const
 }
 
 AddressSpace
-DataStoreBase::getAddressSpaceUsage(void) const
+DataStoreBase::getAddressSpaceUsage() const
 {
     size_t usedClusters = 0;
     size_t deadClusters = 0;
