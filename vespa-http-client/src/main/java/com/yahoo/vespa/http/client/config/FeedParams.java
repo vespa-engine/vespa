@@ -52,7 +52,7 @@ public final class FeedParams {
         private String priority = null;
         private boolean denyIfBusyV3 = true;
         private long maxSleepTimeMs = 3000;
-        private boolean silentUpgrade = false;
+        private boolean silentUpgrade = true;
 
         /**
          * Make server not throw 4xx/5xx for situations that are normal during upgrade as this can esily mask
