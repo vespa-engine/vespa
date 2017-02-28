@@ -353,16 +353,19 @@ public class NodeRepository extends AbstractComponent {
         return move(hostname, Node.State.active);
     }
 
-    public Node move(String hostname, Node.State toState) {
-        Optional<Node> node = getNode(hostname);
-        if ( ! node.isPresent()) {
-            throw new NotFoundException("Could not move " + hostname + " to " + toState + ": Node not found");
+
+    private Node move(String hostname, Node.State toState) {
+        Node node = getNode(hostname).orElseThrow(() ->
+                new NotFoundException("Could not move " + hostname + " to " + toState + ": Node not found"));
+        return move(node, toState);
+    }
+
+    private Node move(Node node, Node.State toState) {
+        if (toState == Node.State.active && !node.allocation().isPresent()) {
+            throw new IllegalArgumentException("Could not set " + node.hostname() + " active. It has no allocation.");
         }
-        if (toState == Node.State.active && !node.get().allocation().isPresent()) {
-            throw new IllegalArgumentException("Could not set " + hostname + " active. It has no allocation.");
-        }
-        try (Mutex lock = lock(node.get())) {
-            return zkClient.writeTo(toState, node.get());
+        try (Mutex lock = lock(node)) {
+            return zkClient.writeTo(toState, node);
         }
     }
 
