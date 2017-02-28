@@ -8,6 +8,7 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import org.w3c.dom.Element;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -25,9 +26,10 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
         Element legacyServerConfig = XML.getChild(serverSpec, "config");
         if (legacyServerConfig != null) {
             String configName = legacyServerConfig.getAttribute("name");
-            if (!configName.equals("container.jdisc.config.http-server")) {
-                log.warning("The config 'container.jdisc.config.http-server' is deprecated and will be removed in a later version of Vespa."
-                                    + " Please use 'jdisc.http.connector' instead, see https://git.corp.yahoo.com/pages/vespa/documentation/documentation/jdisc/http-server-and-filters.html#configuring-jetty-server");
+            if (configName.equals("container.jdisc.config.http-server")) {
+                ancestor.deployLogger().log(Level.WARNING, "The config 'container.jdisc.config.http-server' is deprecated and will be removed in a later version of Vespa."
+                        + " Please use 'jdisc.http.connector' instead, see https://git.corp.yahoo.com/pages/vespa/documentation/documentation/jdisc/http-server-and-filters.html#configuring-jetty-server");
+            } else {
                 legacyServerConfig = null;
             }
         }
