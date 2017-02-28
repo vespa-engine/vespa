@@ -27,13 +27,22 @@ UpdateOperation::UpdateOperation(Type type)
 }
 
 
-UpdateOperation::UpdateOperation(const BucketId &bucketId,
+UpdateOperation::UpdateOperation(Type type,
+                                 const BucketId &bucketId,
                                  const Timestamp &timestamp,
                                  const DocumentUpdate::SP &upd)
-    : DocumentOperation(FeedOperation::UPDATE,
+    : DocumentOperation(type,
                         bucketId,
                         timestamp),
       _upd(upd)
+{
+}
+
+
+UpdateOperation::UpdateOperation(const BucketId &bucketId,
+                                 const Timestamp &timestamp,
+                                 const DocumentUpdate::SP &upd)
+    : UpdateOperation(FeedOperation::UPDATE, bucketId, timestamp, upd)
 {
 }
 
@@ -78,4 +87,13 @@ vespalib::string UpdateOperation::toString() const {
                        _upd->getId().getScheme().toString().c_str() : "NULL",
                        docArgsToString().c_str());
 }
+
+UpdateOperation
+UpdateOperation::makeOldUpdate(const document::BucketId &bucketId,
+                               const storage::spi::Timestamp &timestamp,
+                               const document::DocumentUpdate::SP &upd)
+{
+    return UpdateOperation(FeedOperation::UPDATE_42, bucketId, timestamp, upd);
+}
+
 } // namespace proton
