@@ -176,6 +176,9 @@ SearchableFeedView::getUpdateScope(const DocumentUpdate &upd)
             updateScope._nonAttributeFields = true;
         }
     }
+    if (!upd.getFieldPathUpdates().empty()) {
+        updateScope._nonAttributeFields = true;
+    }
     return updateScope;
 }
 

@@ -16,16 +16,22 @@ using vespalib::make_string;
 namespace proton {
 
 UpdateOperation::UpdateOperation()
-    : DocumentOperation(FeedOperation::UPDATE),
+    : UpdateOperation(FeedOperation::UPDATE)
+{
+}
+
+UpdateOperation::UpdateOperation(Type type)
+    : DocumentOperation(type),
       _upd()
 {
 }
 
 
-UpdateOperation::UpdateOperation(const BucketId &bucketId,
+UpdateOperation::UpdateOperation(Type type,
+                                 const BucketId &bucketId,
                                  const Timestamp &timestamp,
                                  const DocumentUpdate::SP &upd)
-    : DocumentOperation(FeedOperation::UPDATE,
+    : DocumentOperation(type,
                         bucketId,
                         timestamp),
       _upd(upd)
@@ -33,19 +39,10 @@ UpdateOperation::UpdateOperation(const BucketId &bucketId,
 }
 
 
-UpdateOperation::UpdateOperation(const document::BucketId &bucketId,
-                                 const storage::spi::Timestamp &timestamp,
-                                 const document::DocumentUpdate::SP &upd,
-                                 SerialNum serialNum,
-                                 DbDocumentId dbdId,
-                                 DbDocumentId prevDbdId)
-    : DocumentOperation(FeedOperation::UPDATE,
-                        bucketId,
-                        timestamp,
-                        serialNum,
-                        dbdId,
-                        prevDbdId),
-      _upd(upd)
+UpdateOperation::UpdateOperation(const BucketId &bucketId,
+                                 const Timestamp &timestamp,
+                                 const DocumentUpdate::SP &upd)
+    : UpdateOperation(FeedOperation::UPDATE, bucketId, timestamp, upd)
 {
 }
 
@@ -55,7 +52,11 @@ UpdateOperation::serialize(vespalib::nbostream &os) const
 {
     assertValidBucketId(_upd->getId());
     DocumentOperation::serialize(os);
-    _upd->serialize42(os);
+    if (getType() == FeedOperation::UPDATE_42) {
+        _upd->serialize42(os);
+    } else {
+        _upd->serializeHEAD(os);
+    }
 }
 
 
@@ -65,11 +66,10 @@ UpdateOperation::deserialize(vespalib::nbostream &is,
 {
     DocumentOperation::deserialize(is, repo);
     document::ByteBuffer buf(is.peek(), is.size());
+    using Version = DocumentUpdate::SerializeVersion;
+    Version version = ((getType() == FeedOperation::UPDATE_42) ? Version::SERIALIZE_42 : Version::SERIALIZE_HEAD);
     try {
-        DocumentUpdate::SP update(new DocumentUpdate(repo, buf,
-                                                     DocumentUpdate::
-                                                     SerializeVersion::
-                                                     SERIALIZE_42));
+        DocumentUpdate::SP update(std::make_shared<DocumentUpdate>(repo, buf, version));
         is.adjustReadPos(buf.getPos());
         _upd = update;
     } catch (document::DocumentTypeNotFoundException &e) {
@@ -81,9 +81,19 @@ UpdateOperation::deserialize(vespalib::nbostream &is,
 }
 
 vespalib::string UpdateOperation::toString() const {
-    return make_string("Update(%s, %s)",
+    return make_string("%s(%s, %s)",
+                       ((getType() == FeedOperation::UPDATE_42) ? "Update42" : "Update"),
                        _upd.get() ?
                        _upd->getId().getScheme().toString().c_str() : "NULL",
                        docArgsToString().c_str());
 }
+
+UpdateOperation
+UpdateOperation::makeOldUpdate(const document::BucketId &bucketId,
+                               const storage::spi::Timestamp &timestamp,
+                               const document::DocumentUpdate::SP &upd)
+{
+    return UpdateOperation(FeedOperation::UPDATE_42, bucketId, timestamp, upd);
+}
+
 } // namespace proton

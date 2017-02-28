@@ -10,6 +10,10 @@ LOG_SETUP("feedoperation_test");
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/fieldupdate.h>
+#include <vespa/document/update/valueupdate.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <persistence/spi/types.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
@@ -25,13 +29,24 @@ LOG_SETUP("feedoperation_test");
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
 #include <vespa/searchlib/query/base.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using document::BucketId;
 using document::DataType;
 using document::Document;
+using document::DocumentType;
 using document::DocumentId;
 using document::DocumentUpdate;
+using document::DocumentTypeRepo;
+using document::GlobalId;
+using document::StringFieldValue;
+using document::AssignValueUpdate;
+using document::FieldUpdate;
+using document::config_builder::DocumenttypesConfigBuilderHelper;
+using document::config_builder::Struct;
+using document::config_builder::Map;
 using search::DocumentIdT;
 using storage::spi::Timestamp;
 using namespace proton;
@@ -42,6 +57,58 @@ struct MyStreamHandler : NewConfigOperation::IStreamHandler {
     typedef NewConfigOperation::SerialNum SerialNum;
     virtual void serializeConfig(SerialNum, vespalib::nbostream &) {}
     virtual void deserializeConfig(SerialNum, vespalib::nbostream &) {}
+};
+
+
+const int32_t doc_type_id = 787121340;
+const vespalib::string type_name = "test";
+const vespalib::string header_name = type_name + ".header";
+const vespalib::string body_name = type_name + ".body";
+
+const document::DocumentId docId("id::test::1");
+
+BucketId toBucket(const GlobalId &gid)
+{
+    BucketId bucket(gid.convertToBucketId());
+    bucket.setUsedBits(8);
+    return bucket;
+}
+
+DocumentTypeRepo::UP
+makeDocTypeRepo(void)
+{
+    DocumenttypesConfigBuilderHelper builder;
+    builder.document(doc_type_id, type_name,
+                     Struct(header_name), Struct(body_name).
+                     addField("string", DataType::T_STRING).
+                     addField("struct", Struct("pair").
+                              addField("x", DataType::T_STRING).
+                              addField("y", DataType::T_STRING)).
+                     addField("map", Map(DataType::T_STRING,
+                                         DataType::T_STRING)));
+    return DocumentTypeRepo::UP(new DocumentTypeRepo(builder.config()));
+}
+
+
+struct Fixture
+{
+    DocumentTypeRepo::SP _repo;
+    const DocumentType &_docType;
+
+public:
+    Fixture()
+        : _repo(makeDocTypeRepo()),
+          _docType(*_repo->getDocumentType(type_name))
+    {
+    }
+
+    auto makeUpdate() {
+        auto upd(std::make_shared<DocumentUpdate>(_docType, docId));
+        upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
+                       addUpdate(AssignValueUpdate(StringFieldValue("newval"))));
+        return upd;
+    }
+
 };
 
 TEST("require that toString() on derived classes are meaningful")
@@ -164,6 +231,42 @@ TEST("require that serialize/deserialize works for CompactLidSpaceOperation")
         EXPECT_EQUAL(FeedOperation::COMPACT_LID_SPACE, op.getType());
         EXPECT_EQUAL(2u, op.getSubDbId());
         EXPECT_EQUAL(99u, op.getLidLimit());
+    }
+}
+
+TEST_F("require that we can serialize and deserialize update operations", Fixture)
+{
+    vespalib::nbostream stream;
+    BucketId bucket(toBucket(docId.getGlobalId()));
+    auto upd(f.makeUpdate());
+    {
+        UpdateOperation op(bucket, Timestamp(10), upd);
+        op.serialize(stream);
+    }
+    {
+        UpdateOperation op;
+        op.deserialize(stream, *f._repo);
+        EXPECT_EQUAL(*upd, *op.getUpdate());
+        EXPECT_EQUAL(bucket, op.getBucketId());
+        EXPECT_EQUAL(10, op.getTimestamp().getValue());
+    }
+}
+
+TEST_F("require that we can deserialize old update operations", Fixture)
+{
+    vespalib::nbostream stream;
+    BucketId bucket(toBucket(docId.getGlobalId()));
+    auto upd(f.makeUpdate());
+    {
+        UpdateOperation op(UpdateOperation::makeOldUpdate(bucket, Timestamp(10), upd));
+        op.serialize(stream);
+    }
+    {
+        UpdateOperation op(FeedOperation::UPDATE_42);
+        op.deserialize(stream, *f._repo);
+        EXPECT_EQUAL(*upd, *op.getUpdate());
+        EXPECT_EQUAL(bucket, op.getBucketId());
+        EXPECT_EQUAL(10, op.getTimestamp().getValue());
     }
 }
 

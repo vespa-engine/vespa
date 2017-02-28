@@ -10,23 +10,25 @@ class UpdateOperation : public DocumentOperation
 {
 private:
     document::DocumentUpdate::SP _upd;
+    UpdateOperation(Type type,
+                    const document::BucketId &bucketId,
+                    const storage::spi::Timestamp &timestamp,
+                    const document::DocumentUpdate::SP &upd);
 public:
     UpdateOperation();
+    UpdateOperation(Type type);
     UpdateOperation(const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
                     const document::DocumentUpdate::SP &upd);
-    UpdateOperation(const document::BucketId &bucketId,
-                    const storage::spi::Timestamp &timestamp,
-                    const document::DocumentUpdate::SP &upd,
-                    SerialNum serialNum,
-                    DbDocumentId dbdId,
-                    DbDocumentId prevDbdId);
     virtual ~UpdateOperation() {}
     const document::DocumentUpdate::SP &getUpdate() const { return _upd; }
     virtual void serialize(vespalib::nbostream &os) const;
     virtual void deserialize(vespalib::nbostream &is,
                              const document::DocumentTypeRepo &repo);
     virtual vespalib::string toString() const;
+    static UpdateOperation makeOldUpdate(const document::BucketId &bucketId,
+                                         const storage::spi::Timestamp &timestamp,
+                                         const document::DocumentUpdate::SP &upd);
 };
 
 } // namespace proton

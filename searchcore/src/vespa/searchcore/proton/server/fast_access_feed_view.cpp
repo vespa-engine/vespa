@@ -24,6 +24,9 @@ FastAccessFeedView::getUpdateScope(const DocumentUpdate &upd)
             break;
         }
     }
+    if (!upd.getFieldPathUpdates().empty()) {
+        updateScope._nonAttributeFields = true;
+    }
     return updateScope;
 }
 

@@ -267,8 +267,7 @@ StoreOnlyFeedView::UpdateScope
 StoreOnlyFeedView::getUpdateScope(const DocumentUpdate &upd)
 {
     UpdateScope updateScope;
-    size_t m(upd.getUpdates().size());
-    if (m != 0) {
+    if (!upd.getUpdates().empty() || !upd.getFieldPathUpdates().empty()) {
         updateScope._nonAttributeFields = true;
     }
     return updateScope;
