@@ -36,20 +36,32 @@ protected:
     typedef vespalib::GenerationHandler::generation_t generation_t;
     typedef vespalib::GenerationHandler::sgeneration_t sgeneration_t;
 
-    std::vector<void *>   _buffers; // For fast mapping with known types
 private:
-    std::vector<uint32_t> _typeIds; // Cached,compact access to frequently used typeId
+    class BufferAndTypeId {
+    public:
+        using B = void *;
+        BufferAndTypeId() : BufferAndTypeId(nullptr, 0) { }
+        BufferAndTypeId(B buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
+        B getBuffer() const { return _buffer; }
+        B & getBuffer() { return _buffer; }
+        uint32_t getTypeId() const { return _typeId; }
+        void setTypeId(uint32_t typeId) { _typeId = typeId; }
+    private:
+        B          _buffer;
+        uint32_t   _typeId;
+    };
+    std::vector<BufferAndTypeId> _buffers; // For fast mapping with known types
 protected:
     std::vector<uint32_t> _activeBufferIds; // typeId -> active buffer
 
+    void * getBuffer(uint32_t bufferId) { return _buffers[bufferId].getBuffer(); }
     // Hold list at freeze, when knowing how long elements must be held
     class ElemHold2ListElem : public ElemHold1ListElem
     {
     public:
         generation_t _generation;
 
-        ElemHold2ListElem(const ElemHold1ListElem &hold1,
-                          generation_t generation)
+        ElemHold2ListElem(const ElemHold1ListElem &hold1, generation_t generation)
             : ElemHold1ListElem(hold1),
               _generation(generation)
         { }
@@ -66,11 +78,8 @@ protected:
         BufferTypeBase    *_typeHandler;
         uint32_t           _typeId;
 
-        FallbackHold(size_t size,
-                     BufferState::Alloc &&buffer,
-                     size_t usedElems,
-                     BufferTypeBase *typeHandler,
-                     uint32_t typeId);
+        FallbackHold(size_t size, BufferState::Alloc &&buffer, size_t usedElems,
+                     BufferTypeBase *typeHandler, uint32_t typeId);
 
         virtual ~FallbackHold();
     };
@@ -165,7 +174,7 @@ protected:
      * @return			active buffer
      */
     void *activeBuffer(uint32_t typeId) {
-        return _buffers[_activeBufferIds[typeId]];
+        return _buffers[_activeBufferIds[typeId]].getBuffer();
     }
 
     /**
@@ -256,12 +265,12 @@ public:
 
     template <typename EntryType>
     EntryType *getBufferEntry(uint32_t bufferId, uint64_t offset) {
-        return static_cast<EntryType *>(_buffers[bufferId]) + offset;
+        return static_cast<EntryType *>(_buffers[bufferId].getBuffer()) + offset;
     }
 
     template <typename EntryType>
     const EntryType *getBufferEntry(uint32_t bufferId, uint64_t offset) const {
-        return static_cast<const EntryType *>(_buffers[bufferId]) + offset;
+        return static_cast<const EntryType *>(_buffers[bufferId].getBuffer()) + offset;
     }
 
     void dropBuffers();
@@ -308,6 +317,7 @@ public:
      */
     void setInitializing(bool initializing) { _initializing = initializing; }
 
+private:
     /**
      * Switch buffer state to active.
      *
@@ -316,9 +326,9 @@ public:
      * @param sizeNeeded	Number of elements needed to be free
      */
     void onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded);
-
+public:
     uint32_t getTypeId(uint32_t bufferId) const {
-        return _states[bufferId].getTypeId();
+        return _buffers[bufferId].getTypeId();
     }
 
     std::vector<uint32_t> startCompact(uint32_t typeId);

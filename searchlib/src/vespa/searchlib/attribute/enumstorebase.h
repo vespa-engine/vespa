@@ -42,9 +42,7 @@ struct CompareEnumIndex
 {
     typedef EnumStoreIndex Index;
 
-    inline bool
-    operator()(const Index &lhs, const Index &rhs) const
-    {
+    bool operator()(const Index &lhs, const Index &rhs) const {
         return lhs.ref() < rhs.ref();
     }
 };
@@ -63,77 +61,38 @@ protected:
 
 public:
     EnumStoreDictBase(EnumStoreBase &enumStore);
+    virtual ~EnumStoreDictBase();
 
-    virtual
-    ~EnumStoreDictBase(void);
+    virtual void freezeTree() = 0;
+    virtual uint32_t getNumUniques() const = 0;
+    virtual MemoryUsage getTreeMemoryUsage() const = 0;
+    virtual void reEnumerate() = 0;
+    virtual void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const = 0;
+    virtual ssize_t deserialize(const void *src, size_t available, IndexVector &idx) = 0;
 
-    virtual void
-    freezeTree(void) = 0;
+    virtual void fixupRefCounts(const EnumVector &hist) = 0;
+    virtual void freeUnusedEnums(const EnumStoreComparator &cmp,
+                                 const EnumStoreComparator *fcmp) = 0;
+    virtual void freeUnusedEnums(const IndexVector &toRemove,
+                                 const EnumStoreComparator &cmp,
+                                 const EnumStoreComparator *fcmp) = 0;
+    virtual bool findIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
+    virtual bool findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
+    virtual void onReset() = 0;
+    virtual void onTransferHoldLists(generation_t generation) = 0;
+    virtual void onTrimHoldLists(generation_t firstUsed) = 0;
+    virtual btree::BTreeNode::Ref getFrozenRootRef() const = 0;
 
-    virtual uint32_t
-    getNumUniques(void) const = 0;
-    
-    virtual MemoryUsage
-    getTreeMemoryUsage(void) const = 0;
+    virtual uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
+                                      const EnumStoreComparator &comp) const = 0;
 
-    virtual void
-    reEnumerate(void) = 0;
+    virtual uint32_t lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
+                                       const EnumStoreComparator &low,
+                                       const EnumStoreComparator &high) const = 0;
 
-    virtual void
-    writeAllValues(BufferWriter &writer,
-                   btree::BTreeNode::Ref rootRef) const = 0;
-
-    virtual ssize_t
-    deserialize(const void *src, size_t available,
-                IndexVector &idx) = 0;
-
-    virtual void
-    fixupRefCounts(const EnumVector &hist) = 0;
-
-    virtual void
-    freeUnusedEnums(const EnumStoreComparator &cmp,
-                    const EnumStoreComparator *fcmp) = 0;
-
-    virtual void
-    freeUnusedEnums(const IndexVector &toRemove,
-                    const EnumStoreComparator &cmp,
-                    const EnumStoreComparator *fcmp) = 0;
-
-    virtual bool
-    findIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
-
-    virtual bool
-    findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
-
-    virtual void
-    onReset(void) = 0;
-
-    virtual void
-    onTransferHoldLists(generation_t generation) = 0;
-
-    virtual void
-    onTrimHoldLists(generation_t firstUsed) = 0;
-
-    virtual btree::BTreeNode::Ref
-    getFrozenRootRef(void) const = 0;
-
-    virtual uint32_t
-    lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
-                     const EnumStoreComparator &comp) const = 0;
-
-    virtual uint32_t
-    lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
-                      const EnumStoreComparator &low,
-                      const EnumStoreComparator &high) const = 0;
-
-    virtual EnumPostingTree &
-    getPostingDictionary(void) = 0;
-
-    virtual const EnumPostingTree &
-    getPostingDictionary(void) const = 0;
-
-    virtual bool
-    hasData(void) const = 0;
+    virtual EnumPostingTree &getPostingDictionary() = 0;
+    virtual const EnumPostingTree &getPostingDictionary() const = 0;
+    virtual bool hasData() const = 0;
 };
 
 
@@ -146,93 +105,48 @@ protected:
 public:
     EnumStoreDict(EnumStoreBase &enumStore);
 
-    virtual
-    ~EnumStoreDict(void);
+    virtual ~EnumStoreDict();
 
-    const Dictionary &
-    getDictionary() const
-    {
-        return _dict;
-    }
-
-    Dictionary &
-    getDictionary()
-    {
-        return _dict;
-    }
+    const Dictionary &getDictionary() const { return _dict; }
+    Dictionary &getDictionary() { return _dict; }
     
-    virtual void
-    freezeTree(void);
+    void freezeTree() override;
+    uint32_t getNumUniques() const override;
+    MemoryUsage getTreeMemoryUsage() const override;
+    void reEnumerate() override;
+    void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const override;
+    ssize_t deserialize(const void *src, size_t available, IndexVector &idx) override;
+    void fixupRefCounts(const EnumVector &hist) override;
 
-    virtual uint32_t
-    getNumUniques(void) const;
-    
-    virtual MemoryUsage
-    getTreeMemoryUsage(void) const;
+    void removeUnusedEnums(const IndexSet &unused,
+                           const EnumStoreComparator &cmp,
+                           const EnumStoreComparator *fcmp);
 
-    virtual void
-    reEnumerate(void);
+    void freeUnusedEnums(const EnumStoreComparator &cmp,
+                         const EnumStoreComparator *fcmp) override;
 
-    virtual void
-    writeAllValues(BufferWriter &writer,
-                   btree::BTreeNode::Ref rootRef) const override;
+    void freeUnusedEnums(const IndexVector &toRemove,
+                         const EnumStoreComparator &cmp,
+                         const EnumStoreComparator *fcmp) override;
 
-    virtual ssize_t
-    deserialize(const void *src, size_t available,
-                IndexVector &idx);
+    bool findIndex(const EnumStoreComparator &cmp, Index &idx) const override;
+    bool findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const override;
+    void onReset() override;
+    void onTransferHoldLists(generation_t generation) override;
+    void onTrimHoldLists(generation_t firstUsed) override;
+    btree::BTreeNode::Ref getFrozenRootRef() const override;
 
-    virtual void
-    fixupRefCounts(const EnumVector &hist);
+    uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
+                              const EnumStoreComparator &comp) const override;
 
-    void
-    removeUnusedEnums(const IndexSet &unused,
-                      const EnumStoreComparator &cmp,
-                      const EnumStoreComparator *fcmp);
+    uint32_t lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
+                               const EnumStoreComparator &low,
+                               const EnumStoreComparator &high) const override;
 
-    virtual void
-    freeUnusedEnums(const EnumStoreComparator &cmp,
-                    const EnumStoreComparator *fcmp);
+    EnumPostingTree & getPostingDictionary() override;
+    const EnumPostingTree & getPostingDictionary() const override;
 
-    virtual void
-    freeUnusedEnums(const IndexVector &toRemove,
-                    const EnumStoreComparator &cmp,
-                    const EnumStoreComparator *fcmp);
-
-    virtual bool
-    findIndex(const EnumStoreComparator &cmp, Index &idx) const;
-
-    virtual bool
-    findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const;
-
-    virtual void
-    onReset(void);
-
-    virtual void
-    onTransferHoldLists(generation_t generation);
-
-    virtual void
-    onTrimHoldLists(generation_t firstUsed);
-
-    virtual btree::BTreeNode::Ref
-    getFrozenRootRef(void) const;
-
-    virtual uint32_t
-    lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
-                     const EnumStoreComparator &comp) const;
-
-    virtual uint32_t
-    lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
-                      const EnumStoreComparator &low,
-                      const EnumStoreComparator &high) const;
-
-    virtual EnumPostingTree &
-    getPostingDictionary(void);
-
-    virtual const EnumPostingTree &
-    getPostingDictionary(void) const;
-
-    virtual bool
-    hasData(void) const;
+    bool hasData() const override;
 };
 
 
@@ -250,50 +164,32 @@ public:
     protected:
         char * _data;
     public:
-        EntryBase(void * data)
-            :
-            _data(static_cast<char *>(data))
-        {
+        EntryBase(void * data) : _data(static_cast<char *>(data)) {}
+
+        uint32_t getEnum() const {
+            return *reinterpret_cast<uint32_t *>(_data);
         }
 
-        uint32_t
-        getEnum() const
-        {
-            uint32_t *src = reinterpret_cast<uint32_t *>(_data);
-            return *src;
+        uint32_t getRefCount() const {
+            return *(reinterpret_cast<uint32_t *>(_data) + 1);
         }
 
-        uint32_t
-        getRefCount(void) const
-        {
-            uint32_t *src = reinterpret_cast<uint32_t *>(_data) + 1;
-            return *src;
-        }
-
-        void
-        incRefCount(void)
-        {
+        void incRefCount() {
             uint32_t *dst = reinterpret_cast<uint32_t *>(_data) + 1;
             ++(*dst);
         }
 
-        void
-        decRefCount(void)
-        {
+        void decRefCount() {
             uint32_t *dst = reinterpret_cast<uint32_t *>(_data) + 1;
             --(*dst);
         }
 
-        void
-        setEnum(uint32_t enumValue)
-        {
+        void setEnum(uint32_t enumValue) {
             uint32_t *dst = reinterpret_cast<uint32_t *>(_data);
             *dst = enumValue;
         }
 
-        void
-        setRefCount(uint32_t refCount)
-        {
+        void setRefCount(uint32_t refCount) {
             uint32_t *dst = reinterpret_cast<uint32_t *>(_data) + 1;
             *dst = refCount;
         }
@@ -309,43 +205,27 @@ protected:
     private:
         uint64_t _minSizeNeeded; // lower cap for sizeNeeded
         uint64_t _deadElems;     // dead elements in active buffer
-        bool _pendingCompact;
-        bool _wantCompact;
+        bool     _pendingCompact;
+        bool     _wantCompact;
     public:
         EnumBufferType();
 
-        virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const override;
+        size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const override;
 
         void setSizeNeededAndDead(uint64_t sizeNeeded, uint64_t deadElems) {
             _minSizeNeeded = sizeNeeded;
             _deadElems = deadElems;
         }
 
-        virtual void
-        onFree(size_t usedElems)
-        {
+        void onFree(size_t usedElems) override {
             datastore::BufferType<char>::onFree(usedElems);
             _pendingCompact = _wantCompact;
             _wantCompact = false;
         }
 
-        void
-        setWantCompact(void)
-        {
-            _wantCompact = true;
-        }
-
-        bool
-        getPendingCompact(void) const
-        {
-            return _pendingCompact;
-        }
-
-        void
-        clearPendingCompact(void)
-        {
-            _pendingCompact = false;
-        }
+        void setWantCompact() { _wantCompact = true; }
+        bool getPendingCompact() const { return _pendingCompact; }
+        void clearPendingCompact() { _pendingCompact = false; }
     };
 
     EnumStoreDictBase    *_enumDict;
@@ -359,8 +239,7 @@ protected:
 
     static const uint32_t TYPE_ID = 0;
 
-    EnumStoreBase(uint64_t initBufferSize,
-                  bool hasPostings);
+    EnumStoreBase(uint64_t initBufferSize, bool hasPostings);
 
     virtual ~EnumStoreBase();
 
@@ -382,8 +261,7 @@ protected:
     bool preCompact(uint64_t bytesNeeded);
 
 public:
-    void
-    reset(uint64_t initBufferSize);
+    void reset(uint64_t initBufferSize);
 
     virtual uint32_t getFixedSize() const = 0;
     size_t getMaxEnumOffset() const {
@@ -396,80 +274,44 @@ public:
     void decRefCount(Index idx)           { getEntryBase(idx).decRefCount(); }
     
     // Only use when reading from enumerated attribute save files
-    void
-    fixupRefCount(Index idx, uint32_t refCount)
-    {
+    void fixupRefCount(Index idx, uint32_t refCount) {
         getEntryBase(idx).setRefCount(refCount);
     } 
     
     template <typename Tree>
-    void
-    fixupRefCounts(const EnumVector &hist,
-                   Tree &tree);
+    void fixupRefCounts(const EnumVector &hist, Tree &tree);
 
     void clearIndexMap()                  { IndexVector().swap(_indexMap); }
     uint32_t getLastEnum()          const { return _nextEnum ? _nextEnum - 1 : _nextEnum; }
-
-    inline uint32_t
-    getNumUniques() const
-    {
-        return _enumDict->getNumUniques();
-    }
+    uint32_t getNumUniques() const { return _enumDict->getNumUniques(); }
 
     uint32_t getRemaining() const {
         return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).remaining();
     }
     MemoryUsage getMemoryUsage() const;
-
-    inline MemoryUsage
-    getTreeMemoryUsage() const
-    {
-        return _enumDict->getTreeMemoryUsage();
-    }
+    MemoryUsage getTreeMemoryUsage() const { return _enumDict->getTreeMemoryUsage(); }
 
     AddressSpace getAddressSpaceUsage() const;
 
     bool getCurrentIndex(Index oldIdx, Index & newIdx) const;
 
-    void
-    transferHoldLists(generation_t generation);
-
+    void transferHoldLists(generation_t generation);
     void trimHoldLists(generation_t firstUsed);
 
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
 
     // Align buffers and entries to 4 bytes boundary.
-    static uint64_t alignBufferSize(uint64_t val) {
-        return Index::align(val);
-    }
-    static uint32_t alignEntrySize(uint32_t val) {
-        return Index::align(val);
-    }
+    static uint64_t alignBufferSize(uint64_t val) { return Index::align(val); }
+    static uint32_t alignEntrySize(uint32_t val) { return Index::align(val); }
 
-    void
-    fallbackResize(uint64_t bytesNeeded);
-
-    bool
-    getPendingCompact(void) const
-    {
-        return _type.getPendingCompact();
-    }
-
-    void
-    clearPendingCompact(void)
-    {
-        _type.clearPendingCompact();
-    }
+    void fallbackResize(uint64_t bytesNeeded);
+    bool getPendingCompact() const { return _type.getPendingCompact(); }
+    void clearPendingCompact() { _type.clearPendingCompact(); }
 
     template <typename Tree>
-    void
-    reEnumerate(const Tree &tree);
+    void reEnumerate(const Tree &tree);
 
-    inline void
-    reEnumerate(void)
-    {
-        _enumDict->reEnumerate();
-    }
+    void reEnumerate() { _enumDict->reEnumerate(); }
 
     // Disable reenumeration during compaction.
     void disableReEnumerate() const;
@@ -477,88 +319,42 @@ public:
     // Allow reenumeration during compaction.
     void enableReEnumerate() const;
 
-    virtual void writeValues(BufferWriter &writer,
-                             const Index *idxs, size_t count) const = 0;
+    virtual void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const = 0;
 
-    void writeEnumValues(BufferWriter &writer,
-                         const Index *idxs, size_t count) const;
+    void writeEnumValues(BufferWriter &writer, const Index *idxs, size_t count) const;
 
-    virtual ssize_t
-    deserialize(const void *src, size_t available, size_t &initSpace) = 0;
+    virtual ssize_t deserialize(const void *src, size_t available, size_t &initSpace) = 0;
+    virtual ssize_t deserialize(const void *src, size_t available, Index &idx) = 0;
+    virtual bool foldedChange(const Index &idx1, const Index &idx2) = 0;
 
-    virtual ssize_t
-    deserialize(const void *src, size_t available, Index &idx) = 0;
-
-    virtual bool
-    foldedChange(const Index &idx1, const Index &idx2) = 0;
-
-    ssize_t
-    deserialize0(const void *src, size_t available, IndexVector &idx);
+    ssize_t deserialize0(const void *src, size_t available, IndexVector &idx);
 
     template <typename Tree>
-    ssize_t
-    deserialize(const void *src, size_t available, IndexVector &idx,
-                Tree &tree);
+    ssize_t deserialize(const void *src, size_t available, IndexVector &idx, Tree &tree);
 
-    inline ssize_t
-    deserialize(const void *src, size_t available,
-                IndexVector &idx)
-    {
+    ssize_t deserialize(const void *src, size_t available, IndexVector &idx) {
         return _enumDict->deserialize(src, available, idx);
     }
 
-    virtual void
-    freeUnusedEnum(Index idx, IndexSet &unused) = 0;
+    virtual void freeUnusedEnum(Index idx, IndexSet &unused) = 0;
+    virtual void freeUnusedEnums(bool movePostingIdx) = 0;
+    virtual void freeUnusedEnums(const IndexVector &toRemove) = 0;
 
-    virtual void
-    freeUnusedEnums(bool movePostingIdx) = 0;
+    void fixupRefCounts(const EnumVector &hist) { _enumDict->fixupRefCounts(hist); }
+    void freezeTree() { _enumDict->freezeTree(); }
 
-    virtual void
-    freeUnusedEnums(const IndexVector &toRemove) = 0;
+    virtual bool performCompaction(uint64_t bytesNeeded) = 0;
 
-    inline void
-    fixupRefCounts(const EnumVector &hist)
-    {
-        _enumDict->fixupRefCounts(hist);
-    }
+    EnumStoreDictBase &getEnumStoreDict() { return *_enumDict; }
+    const EnumStoreDictBase &getEnumStoreDict() const { return *_enumDict; }
+    EnumPostingTree &getPostingDictionary() { return _enumDict->getPostingDictionary(); }
 
-    inline void
-    freezeTree(void)
-    {
-        _enumDict->freezeTree();
-    }
-
-    virtual bool
-    performCompaction(uint64_t bytesNeeded) = 0;
-
-    EnumStoreDictBase &
-    getEnumStoreDict(void)
-    {
-        return *_enumDict;
-    }
-
-    const EnumStoreDictBase &
-    getEnumStoreDict(void) const
-    {
-        return *_enumDict;
-    }
-
-    EnumPostingTree &
-    getPostingDictionary(void)
-    {
-        return _enumDict->getPostingDictionary();
-    }
-
-    const EnumPostingTree &
-    getPostingDictionary(void) const
-    {
+    const EnumPostingTree &getPostingDictionary() const {
         return _enumDict->getPostingDictionary();
     }
 };
 
-
 vespalib::asciistream & operator << (vespalib::asciistream & os, const EnumStoreBase::Index & idx);
-
 
 /**
  * Base comparator class needed by the btree.
@@ -582,11 +378,9 @@ public:
     typedef EnumStoreBase::Index EnumIndex;
     EnumStoreComparatorWrapper(const EnumStoreComparator &comp)
         : _comp(comp)
-    {
-    }
+    { }
 
-    inline bool operator()(const EnumIndex &lhs, const EnumIndex &rhs) const
-    {
+    bool operator()(const EnumIndex &lhs, const EnumIndex &rhs) const {
         return _comp(lhs, rhs);
     }
 };
@@ -595,4 +389,3 @@ extern template class
 datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
 
 }
-
