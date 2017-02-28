@@ -166,9 +166,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (endIndex < 0) endIndex = path.length(); // path ends by ip
         String hostname = path.substring(beginIndex, endIndex);
 
-        Optional<Node> node = nodeRepository.getNode(hostname);
-        if ( ! node.isPresent()) throw new NotFoundException("No node found with hostname " + hostname);
-        return node.get();
+        return nodeRepository.getNode(hostname).orElseThrow(() ->
+                new NotFoundException("No node found with hostname " + hostname));
     }
 
     public int addNodes(InputStream jsonStream) {

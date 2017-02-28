@@ -315,12 +315,12 @@ public class NodeRepository extends AbstractComponent {
      * @throws IllegalArgumentException if the node has hardware failure
      */
     public Node setDirty(String hostname) {
-        Optional<Node> nodeToDirty = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked);
-        if ( ! nodeToDirty.isPresent())
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the provisioned, failed or parked state");
-        if (nodeToDirty.get().status().hardwareFailure().isPresent())
+        Node nodeToDirty = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked).orElseThrow(() ->
+                new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the provisioned, failed or parked state"));
+
+        if (nodeToDirty.status().hardwareFailure().isPresent())
             throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure");
-        return setDirty(Collections.singletonList(nodeToDirty.get())).get(0);
+        return setDirty(Collections.singletonList(nodeToDirty)).get(0);
     }
 
     /**
