@@ -89,7 +89,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, nodeRepository);
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
-        return ErrorResponse.notFoundError("Nothing at path '" + path + "'");
+        throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
@@ -114,14 +114,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
             nodeRepository.reactivate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
-        else {
-            return ErrorResponse.notFoundError("Cannot put to path '" + path + "'");
-        }
+
+        throw new NotFoundException("Cannot put to path '" + path + "'");
     }
 
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
-        if ( ! path.startsWith("/nodes/v2/node/")) return ErrorResponse.notFoundError("Nothing at '" + path + "'");
+        if ( ! path.startsWith("/nodes/v2/node/")) throw new NotFoundException("Nothing at '" + path + "'");
         Node node = nodeFromRequest(request);
         nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.clock()).apply());
         return new MessageResponse("Updated " + node.hostname());
@@ -139,7 +138,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 int addedNodes = addNodes(request.getData());
                 return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
             default:
-                return ErrorResponse.notFoundError("Nothing at path '" + request.getUri().getPath() + "'");
+                throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
         }
     }
 
@@ -150,11 +149,10 @@ public class NodesApiHandler extends LoggingRequestHandler {
             if (nodeRepository.remove(hostname))
                 return new MessageResponse("Removed " + hostname);
             else
-                return ErrorResponse.notFoundError("No node in the failed state with hostname " + hostname);
+                throw new NotFoundException("No node in the failed state with hostname " + hostname);
         }
-        else {
-            return ErrorResponse.notFoundError("Nothing at path '" + request.getUri().getPath() + "'");
-        }
+
+        throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
 
     private Node nodeFromRequest(HttpRequest request) {
