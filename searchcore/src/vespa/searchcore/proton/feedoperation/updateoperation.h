@@ -12,15 +12,10 @@ private:
     document::DocumentUpdate::SP _upd;
 public:
     UpdateOperation();
+    UpdateOperation(Type type);
     UpdateOperation(const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
                     const document::DocumentUpdate::SP &upd);
-    UpdateOperation(const document::BucketId &bucketId,
-                    const storage::spi::Timestamp &timestamp,
-                    const document::DocumentUpdate::SP &upd,
-                    SerialNum serialNum,
-                    DbDocumentId dbdId,
-                    DbDocumentId prevDbdId);
     virtual ~UpdateOperation() {}
     const document::DocumentUpdate::SP &getUpdate() const { return _upd; }
     virtual void serialize(vespalib::nbostream &os) const;

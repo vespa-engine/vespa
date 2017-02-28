@@ -61,6 +61,7 @@ FeedToken::State::ack(const FeedOperation::Type opType,
         case FeedOperation::REMOVE_BATCH:
             metrics.RegisterRemove(_startTime);
             break;
+        case FeedOperation::UPDATE42:
         case FeedOperation::UPDATE:
             metrics.RegisterUpdate(_startTime);
             break;

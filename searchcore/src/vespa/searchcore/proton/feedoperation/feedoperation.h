@@ -18,7 +18,7 @@ public:
         PUT                     = 1,
         REMOVE                  = 2,
         REMOVE_BATCH            = 3,
-        UPDATE                  = 4,
+        UPDATE42                = 4,
         NOOP                    = 5,
         NEW_CONFIG              = 6,
         WIPE_HISTORY            = 7,
@@ -30,7 +30,8 @@ public:
         SPOOLER_REPLAY_COMPLETE = 14,
         MOVE                    = 15,
         CREATE_BUCKET           = 16,
-        COMPACT_LID_SPACE       = 17
+        COMPACT_LID_SPACE       = 17,
+        UPDATE                  = 18
     };
 
 private:
