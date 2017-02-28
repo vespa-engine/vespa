@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_attribute_vector.h"
+#include "attributeguard.h"
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace search {
@@ -119,6 +120,48 @@ long ImportedAttributeVector::onSerializeForDescendingSort(DocId doc,
                                                            long available,
                                                            const common::BlobConverter *bc) const {
     return _target_attribute->serializeForDescendingSort(doc, serTo, available, bc);
+}
+
+namespace {
+
+class ImportedAttributeGuard : public AttributeGuard {
+public:
+    ImportedAttributeGuard(const AttributeVectorSP& target_attr,
+                           const AttributeVectorSP& reference_attr)
+        : AttributeGuard(),
+          _target_attr_guard(target_attr),
+          _reference_attr_guard(reference_attr)
+    {
+    }
+    
+private:
+    AttributeGuard _target_attr_guard;
+    AttributeGuard _reference_attr_guard;
+};
+
+class ImportedAttributeEnumGuard : public AttributeEnumGuard {
+public:
+    ImportedAttributeEnumGuard(const AttributeVectorSP& target_attr,
+                               const AttributeVectorSP& reference_attr)
+        : AttributeEnumGuard(AttributeVectorSP()),
+          _target_attr_enum_guard(target_attr),
+          _reference_attr_guard(reference_attr)
+    {
+    }
+    
+private:
+    AttributeEnumGuard _target_attr_enum_guard;
+    AttributeGuard _reference_attr_guard;
+};
+
+}
+
+std::unique_ptr<AttributeGuard> ImportedAttributeVector::acquireGuard() const {
+    return std::make_unique<ImportedAttributeGuard>(_target_attribute, _reference_attribute);
+}
+
+std::unique_ptr<AttributeEnumGuard> ImportedAttributeVector::acquireEnumGuard() const {
+    return std::make_unique<ImportedAttributeEnumGuard>(_target_attribute, _reference_attribute);
 }
 
 }
