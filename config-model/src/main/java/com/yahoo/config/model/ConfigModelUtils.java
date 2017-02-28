@@ -1,15 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.Serializable;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static javax.xml.xpath.XPathConstants.BOOLEAN;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -49,16 +44,6 @@ public class ConfigModelUtils implements Serializable {
     /** Parses a day of week name in english to an int, where 0 is sunday, 6 saturday. */
     public static int getDayOfWeek(String day) {
         return ConfigModelUtils.day2int.get(toLowerCase(day));
-    }
-
-    /**
-     * Create a string with link to documentation for latest release.
-     *
-     * @param filePath Relative path of the file to link to, e.g. reference/services-jdisc.html
-     * @return a String with link to documentation
-     */
-    public static String createDocLink(String filePath) {
-        return filePath;
     }
 
 }

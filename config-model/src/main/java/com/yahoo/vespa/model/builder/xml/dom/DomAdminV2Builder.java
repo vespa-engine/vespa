@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
@@ -58,8 +57,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         int count = configservers.size();
         if (count % 2 == 0) {
             admin.deployLogger().log(Level.WARNING, "An even number (" + count + ") of config servers have been configured. " +
-                    "This is discouraged, see " + "" +
-                    ConfigModelUtils.createDocLink("cloudconfig/configuration-server.html#fault-tolerance"));
+                    "This is discouraged, see doc for configuration server ");
         }
         return configservers;
     }
