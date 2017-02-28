@@ -36,9 +36,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
 
-    // TODO: this map can probably be removed since the HostResource owns a set of memberships.
-    private final Map<HostResource, Set<ClusterMembership>> mapping = new LinkedHashMap<>();
-
     public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner) {
         super(parent, name);
         this.provisioner = provisioner;
@@ -116,7 +113,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (HostResource host : mapping.keySet()) {
+        for (HostResource host : hostname2host.values()) {
             sb.append(host).append(",");
         }
         if (sb.length() > 0) sb.deleteCharAt(sb.length() - 1);
@@ -125,10 +122,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     public HostResource getHost(String hostAlias) {
         HostSpec hostSpec = provisioner.allocateHost(hostAlias);
-        for (Map.Entry<HostResource, Set<ClusterMembership>> entrySet : mapping.entrySet()) {
-            HostResource resource = entrySet.getKey();
+        for (HostResource resource : hostname2host.values()) {
             if (resource.getHostName().equals(hostSpec.hostname())) {
-                entrySet.getValue().add(hostSpec.membership().orElse(null));
                 hostSpec.membership().ifPresent(resource::addClusterMembership);
                 return resource;
             }
@@ -142,16 +137,12 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
         hostname2host.put(host.getHostName(), hostResource);
-        Set<ClusterMembership> hostMemberships = new LinkedHashSet<>();
-        if (hostSpec.membership().isPresent())
-            hostMemberships.add(hostSpec.membership().get());
-        mapping.put(hostResource, hostMemberships);
-        return hostResource;
+       return hostResource;
     }
 
     /** Returns the hosts owned by the application having this system - i.e all hosts except shared ones */
     public List<HostResource> getHosts() {
-        return mapping.keySet().stream()
+        return hostname2host.values().stream()
                 .filter(host -> !host.getHost().isMultitenant())
                 .collect(Collectors.toList());
     }
@@ -171,7 +162,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     private Optional<HostResource> getExistingHost(HostSpec key) {
-        List<HostResource> hosts = mapping.keySet().stream()
+        List<HostResource> hosts = hostname2host.values().stream()
                 .filter(resource -> resource.getHostName().equals(key.hostname()))
                 .collect(Collectors.toList());
         if (hosts.isEmpty()) {
@@ -182,19 +173,18 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     public void addBoundHost(HostResource host) {
-        mapping.put(host, new LinkedHashSet<>());
         hostname2host.put(host.getHostName(), host);
     }
 
-    Map<HostSpec, Set<ClusterMembership>> getHostToServiceSpecMapping() {
-        Map<HostSpec, Set<ClusterMembership>> specMapping = new LinkedHashMap<>();
-        for (Map.Entry<HostResource, Set<ClusterMembership>> entrySet : mapping.entrySet()) {
-            if (!entrySet.getKey().getHost().isMultitenant()) {
-                Optional<ClusterMembership> membership = entrySet.getValue().stream().filter(m -> m != null).findFirst();
-                specMapping.put(new HostSpec(entrySet.getKey().getHostName(), membership), new LinkedHashSet<>(entrySet.getValue()));
+    Set<HostSpec> getSingleTenantHosts() {
+        LinkedHashSet<HostSpec> hostSpecs = new LinkedHashSet<>();
+        for (HostResource host: hostname2host.values()) {
+            if (! host.getHost().isMultitenant()) {
+                // TODO: always using the first cluster membership seems fishy.
+                hostSpecs.add(new HostSpec(host.getHostName(), host.clusterMemberships().stream().findFirst()));
             }
         }
-        return specMapping;
+        return hostSpecs;
     }
 
     /** A provision logger which forwards to a deploy logger */

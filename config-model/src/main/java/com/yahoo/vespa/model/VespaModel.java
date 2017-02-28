@@ -166,8 +166,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     private ProvisionInfo createProvisionInfo() {
-        HostSystem hostSystem = root.getHostSystem();
-        return ProvisionInfo.withHosts(hostSystem.getHostToServiceSpecMapping().keySet());
+        return ProvisionInfo.withHosts(root.getHostSystem().getSingleTenantHosts());
     }
 
     private void validateWrapExceptions() {

@@ -3,6 +3,8 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ public class HostResource implements Comparable<HostResource> {
     private Set<ClusterMembership> clusterMemberships = new LinkedHashSet<>();
 
     // Empty for self-hosted Vespa.
-    private Optional<String> flavor = Optional.empty();
+    private Optional<Flavor> flavor = Optional.empty();
 
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
@@ -225,10 +227,10 @@ public class HostResource implements Comparable<HostResource> {
                 .collect(Collectors.toSet()));
     }
 
-    public void setFlavor(Optional<String> flavor) { this.flavor = flavor; }
+    public void setFlavor(Optional<Flavor> flavor) { this.flavor = flavor; }
 
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
-    public Optional<String> getFlavor() { return flavor; }
+    public Optional<Flavor> getFlavor() { return flavor; }
 
     public void addClusterMembership(@Nullable ClusterMembership clusterMembership) {
         if (clusterMembership != null)
@@ -237,6 +239,22 @@ public class HostResource implements Comparable<HostResource> {
 
     public Set<ClusterMembership> clusterMemberships() {
         return Collections.unmodifiableSet(clusterMemberships);
+    }
+
+    /**
+     * Returns the "primary" cluster membership.
+     * Content clusters are preferred, then container clusters, and finally admin clusters.
+     * If there is more than one cluster of the preferred type, the cluster that was added first will be chosen.
+     */
+    public Optional<ClusterMembership> primaryClusterMembership() {
+        return clusterMemberships().stream()
+                .sorted(HostResource::compareClusters)
+                .findFirst();
+    }
+
+    private static int compareClusters(ClusterMembership cluster1, ClusterMembership cluster2) {
+        // This depends on the declared order of enum constants.
+        return cluster2.cluster().type().compareTo(cluster1.cluster().type());
     }
 
     @Override

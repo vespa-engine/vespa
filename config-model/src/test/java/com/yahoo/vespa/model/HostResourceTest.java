@@ -2,35 +2,45 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Optional;
+
+import static com.yahoo.config.provision.ClusterSpec.Type.admin;
+import static com.yahoo.config.provision.ClusterSpec.Type.container;
+import static com.yahoo.config.provision.ClusterSpec.Type.content;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
- * @since 5.1.14
  */
 public class HostResourceTest {
 
     @Test
     public void next_available_baseport_is_BASE_PORT_when_no_ports_have_been_reserved() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         assertThat(host.nextAvailableBaseport(1), is(HostResource.BASE_PORT));
     }
 
     @Test
     public void next_available_baseport_is_BASE_PORT_plus_one_when_one_port_has_been_reserved() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         host.reservePort(new TestService(1), HostResource.BASE_PORT);
         assertThat(host.nextAvailableBaseport(1), is(HostResource.BASE_PORT + 1));
     }
 
     @Test
     public void no_available_baseport_when_service_requires_more_consecutive_ports_than_available() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
 
         for (int p = HostResource.BASE_PORT; p < HostResource.BASE_PORT + HostResource.MAX_PORTS; p += 2) {
             host.reservePort(new TestService(1), p);
@@ -57,13 +67,13 @@ public class HostResourceTest {
 
     @Test
     public void port_above_vespas_port_range_can_be_reserved() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         host.allocateService(new TestService(1), HostResource.BASE_PORT + HostResource.MAX_PORTS + 1);
     }
 
     @Test(expected = RuntimeException.class)
     public void allocating_same_port_throws_exception() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         TestService service1 = new TestService(1);
         TestService service2 = new TestService(1);
 
@@ -73,7 +83,7 @@ public class HostResourceTest {
 
     @Test(expected = RuntimeException.class)
     public void allocating_overlapping_ports_throws_exception() {
-        HostResource host = newMockHostResource();
+        HostResource host = mockHostResource();
         TestService service2 = new TestService(2);
         TestService service1 = new TestService(1);
 
@@ -81,9 +91,69 @@ public class HostResourceTest {
         host.allocateService(service1, HostResource.BASE_PORT + 1);
     }
 
+    @Test
+    public void no_clusters_yields_no_primary_cluster_membership() {
+        HostResource host = hostResourceWithMemberships();
+        assertTrue(host.clusterMemberships().isEmpty());
 
-    private HostResource newMockHostResource() {
+        assertFalse(host.primaryClusterMembership().isPresent());
+    }
+
+    @Test
+    public void one_cluster_yields_that_primary_cluster_membership() {
+        HostResource host = hostResourceWithMemberships(ClusterMembership.from(clusterSpec(container, "jdisc"), 0));
+        assertClusterMembership(host, container, "jdisc");
+    }
+
+    @Test
+    public void content_cluster_membership_is_preferred_over_other_types() {
+        HostResource host = hostResourceWithMemberships(
+                ClusterMembership.from(clusterSpec(container, "jdisc"), 0),
+                ClusterMembership.from(clusterSpec(content, "search"), 0),
+                ClusterMembership.from(clusterSpec(admin, "admin"), 0));
+
+        assertClusterMembership(host, content, "search");
+    }
+
+    @Test
+    public void container_cluster_membership_is_preferred_over_admin() {
+        HostResource host = hostResourceWithMemberships(
+                ClusterMembership.from(clusterSpec(admin, "admin"), 0),
+                ClusterMembership.from(clusterSpec(container, "jdisc"), 0));
+
+        assertClusterMembership(host, container, "jdisc");
+    }
+
+    @Test
+    public void cluster_membership_that_was_added_first_is_preferred() {
+        HostResource host = hostResourceWithMemberships(
+                ClusterMembership.from(clusterSpec(content, "content1"), 0),
+                ClusterMembership.from(clusterSpec(content, "content0"), 0),
+                ClusterMembership.from(clusterSpec(content, "content2"), 0));
+
+        assertClusterMembership(host, content, "content1");
+    }
+
+    private void assertClusterMembership(HostResource host, ClusterSpec.Type type, String id) {
+        ClusterSpec membership = host.primaryClusterMembership().map(ClusterMembership::cluster)
+                .orElseThrow(() -> new RuntimeException("No cluster membership!"));
+
+        assertEquals(type, membership.type());
+        assertEquals(id, membership.id().value());
+    }
+
+    private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
+        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Optional.empty());
+    }
+
+    private HostResource mockHostResource() {
         return new HostResource(new Host(new MockRoot()));
+    }
+
+    private static HostResource hostResourceWithMemberships(ClusterMembership... memberships) {
+        HostResource host = new HostResource(new Host(null, "hostname"));
+        Arrays.asList(memberships).forEach(host::addClusterMembership);
+        return host;
     }
 
     private class TestService extends AbstractService {
