@@ -7,6 +7,7 @@
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/searchlib/common/address_space.h>
 #include <vector>
+#include <deque>
 
 namespace search {
 namespace datastore {
@@ -36,6 +37,9 @@ protected:
     typedef vespalib::GenerationHandler::sgeneration_t sgeneration_t;
 
     std::vector<void *>   _buffers; // For fast mapping with known types
+private:
+    std::vector<uint32_t> _typeIds; // Cached,compact access to frequently used typeId
+protected:
     std::vector<uint32_t> _activeBufferIds; // typeId -> active buffer
 
     // Hold list at freeze, when knowing how long elements must be held
@@ -121,8 +125,9 @@ public:
         }
     };
 
-protected:
+private:
     std::vector<BufferState> _states;
+protected:
     std::vector<BufferTypeBase *> _typeHandlers; // TypeId -> handler
 
     std::vector<BufferState::FreeListList> _freeListLists;
@@ -132,8 +137,8 @@ protected:
     ElemHold1List _elemHold1List;
     ElemHold2List _elemHold2List;
 
-    uint32_t _numBuffers;
-    size_t _maxClusters;
+    const uint32_t _numBuffers;
+    const size_t   _maxClusters;
 
     vespalib::GenerationHolder _genHolder;
 
@@ -220,15 +225,9 @@ public:
      * Get active buffer id for the given type id.
      */
     uint32_t getActiveBufferId(uint32_t typeId) const { return _activeBufferIds[typeId]; }
-
     const BufferState &getBufferState(uint32_t bufferId) const { return _states[bufferId]; }
-
     BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
-
     uint32_t getNumBuffers() const { return _numBuffers; }
-
-    uint32_t getNumActiveBuffers() const;
-
     bool hasElemHold1() const { return !_elemHold1List.empty(); }
 
     /**

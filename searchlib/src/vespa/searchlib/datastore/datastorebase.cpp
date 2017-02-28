@@ -75,9 +75,9 @@ public:
 };
 
 
-DataStoreBase::DataStoreBase(uint32_t numBuffers,
-                             size_t maxClusters)
+DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxClusters)
     : _buffers(numBuffers),
+      _typeIds(numBuffers),
       _activeBufferIds(),
       _states(numBuffers),
       _typeHandlers(),
@@ -158,18 +158,6 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
     _typeHandlers.push_back(typeHandler);
     _freeListLists.push_back(BufferState::FreeListList());
     return typeId;
-}
-
-uint32_t
-DataStoreBase::getNumActiveBuffers() const
-{
-    uint32_t result = 0;
-    for (const auto &state : _states) {
-        if (state.isActive()) {
-            ++result;
-        }
-    }
-    return result;
 }
 
 void
@@ -373,8 +361,7 @@ DataStoreBase::getAddressSpaceUsage() const
 }
 
 void
-DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId,
-                        size_t sizeNeeded)
+DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
