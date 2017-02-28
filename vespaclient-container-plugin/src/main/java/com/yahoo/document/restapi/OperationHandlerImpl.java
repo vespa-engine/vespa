@@ -142,14 +142,12 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     private void setRoute(SyncSession session, Optional<String> route) throws RestApiException {
-        if (route.isPresent()) {
-            if (! (session instanceof MessageBusSyncSession)) {
-                // Not sure if this ever could happen but better be safe.
-                throw new RestApiException(Response.createErrorResponse(
-                        400, "Can not set route since the API is not using message bus."));
-            }
-            ((MessageBusSyncSession) session).setRoute(route.get());
+        if (! (session instanceof MessageBusSyncSession)) {
+            // Not sure if this ever could happen but better be safe.
+            throw new RestApiException(Response.createErrorResponse(
+                    400, "Can not set route since the API is not using message bus."));
         }
+        ((MessageBusSyncSession) session).setRoute(route.orElse("default"));
     }
 
     @Override
@@ -207,6 +205,7 @@ public class OperationHandlerImpl implements OperationHandler {
     @Override
     public Optional<String> get(RestUri restUri) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
+        setRoute(syncSession, Optional.empty());
         try {
             DocumentId id = new DocumentId(restUri.generateFullId());
             final Document document = syncSession.get(id);
