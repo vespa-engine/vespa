@@ -262,7 +262,7 @@ public class FastSearcherTestCase {
         buf.get(actual);
 
         byte IGNORE = 69;
-        byte[] expected = new byte[] { 0, 0, 0, -89, 0, 0, 0, -37, 0, 0, 16, 17, 0, 0, 0, 0,
+        byte[] expected = new byte[] { 0, 0, 0, -85, 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -275,8 +275,9 @@ public class FastSearcherTestCase {
                 // match: documentdb.searchdoctype => test
                 0, 0, 0, 5, 'm', 'a', 't', 'c', 'h', 0, 0, 0, 1, 0, 0, 0, 24, 'd', 'o', 'c', 'u', 'm', 'e', 'n', 't', 'd', 'b', '.', 's', 'e', 'a', 'r', 'c', 'h', 'd', 'o', 'c', 't', 'y', 'p', 'e', 0, 0, 0, 4, 't', 'e', 's', 't',
                 // sessionId => qrserver.0.XXXXXXXXXXXXX.0
-                0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e'
-                // no flags
+                0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
+                // flags
+                0, 0, 0, 2
         };
         assertEquals(expected.length, actual.length);
         for (int i = 0; i < expected.length; ++i) {
