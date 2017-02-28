@@ -65,13 +65,13 @@ public class MockNodeRepository extends NodeRepository {
         node4 = node4.with(node4.status().withDockerImage("image-12"));
         nodes.add(node4);
 
-        Node node5 = createNode("node5", "host5.yahoo.com", Optional.of("dockerhost"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node5 = createNode("node5", "host5.yahoo.com", Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodes.add(node5.with(node5.status().withDockerImage("image-123").withVespaVersion(new Version("1.2.3"))));
 
         nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(createNode("node7", "host7.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         // 8 and 9 are added by web service calls
-        Node node10 = createNode("node10", "host10.yahoo.com", Optional.of("parent.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node10 = createNode("node10", "host10.yahoo.com", Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
                 .withVespaVersion(Version.fromString("5.104.142"))

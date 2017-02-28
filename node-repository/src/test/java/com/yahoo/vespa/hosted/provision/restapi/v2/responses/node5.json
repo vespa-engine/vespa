@@ -4,7 +4,7 @@
   "state": "failed",
   "type": "tenant",
   "hostname": "host5.yahoo.com",
-  "parentHostname":"dockerhost",
+  "parentHostname":"parent1.yahoo.com",
   "openStackId": "node5",
   "flavor": "default",
   "canonicalFlavor": "default",

@@ -4,7 +4,7 @@
   "state": "reserved",
   "type": "tenant",
   "hostname": "host10.yahoo.com",
-  "parentHostname": "parent.yahoo.com",
+  "parentHostname": "parent1.yahoo.com",
   "openStackId": "node10",
   "flavor": "default",
   "canonicalFlavor": "default",

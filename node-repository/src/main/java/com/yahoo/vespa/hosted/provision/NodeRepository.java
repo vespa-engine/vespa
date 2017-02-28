@@ -342,6 +342,15 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
+     * Fails all the nodes that are children of hostname before finally failing the hostname itself.
+     *
+     * @return List of all the failed nodes in their new state
+     */
+    public List<Node> failRecursively(String hostname) {
+        return moveRecursively(hostname, Node.State.failed);
+    }
+
+    /**
      * Parks this node and returns it in its new state.
      *
      * @return the node in its new state
@@ -349,6 +358,15 @@ public class NodeRepository extends AbstractComponent {
      */
     public Node park(String hostname) {
         return move(hostname, Node.State.parked);
+    }
+
+    /**
+     * Parks all the nodes that are children of hostname before finally parking the hostname itself.
+     *
+     * @return List of all the parked nodes in their new state
+     */
+    public List<Node> parkRecursively(String hostname) {
+        return moveRecursively(hostname, Node.State.parked);
     }
 
     /**
@@ -361,6 +379,14 @@ public class NodeRepository extends AbstractComponent {
         return move(hostname, Node.State.active);
     }
 
+    private List<Node> moveRecursively(String hostname, Node.State toState) {
+        List<Node> moved = getChildNodes(hostname).stream()
+                .map(child -> move(child, toState))
+                .collect(Collectors.toList());
+
+        moved.add(move(hostname, toState));
+        return moved;
+    }
 
     private Node move(String hostname, Node.State toState) {
         Node node = getNode(hostname).orElseThrow(() ->

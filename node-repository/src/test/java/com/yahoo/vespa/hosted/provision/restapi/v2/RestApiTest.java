@@ -46,7 +46,7 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterType=content"), "active-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterId=id2"), "application2-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&application=tenant2.application2.instance2"), "application2-nodes.json");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&parentHost=parent.yahoo.com,parent.host.yahoo.com"), "parent-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&parentHost=parent1.yahoo.com,parent.host.yahoo.com"), "parent-nodes.json");
 
         // POST restart command
         assertRestart(1, new Request("http://localhost:8080/nodes/v2/command/restart?hostname=host2.yahoo.com",
@@ -128,6 +128,16 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host6.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host6.yahoo.com to dirty\"}");
+
+        // Put a host in failed and make sure it's children are also failed
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/parent1.yahoo.com", new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved host10.yahoo.com, host5.yahoo.com, parent1.yahoo.com to failed\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed"), "{\"nodes\":[" +
+                "{\"url\":\"http://localhost:8080/nodes/v2/node/parent1.yahoo.com\"}," +
+                "{\"url\":\"http://localhost:8080/nodes/v2/node/host5.yahoo.com\"}," +
+                "{\"url\":\"http://localhost:8080/nodes/v2/node/host10.yahoo.com\"}]}");
+
 
         // Update (PATCH) a node (multiple fields can also be sent in one request body)
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",

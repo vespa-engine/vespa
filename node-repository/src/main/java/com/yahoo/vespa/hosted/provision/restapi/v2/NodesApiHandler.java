@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
@@ -99,12 +100,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
-            nodeRepository.fail(lastElement(path));
-            return new MessageResponse("Moved " + lastElement(path) + " to failed");
+            List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path));
+            String failedHostnames = failedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+            return new MessageResponse("Moved " + failedHostnames + " to failed");
         }
         else if (path.startsWith("/nodes/v2/state/parked/")) {
-            nodeRepository.park(lastElement(path));
-            return new MessageResponse("Moved " + lastElement(path) + " to parked");
+            List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path));
+            String parkedHostnames = parkedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+            return new MessageResponse("Moved " + parkedHostnames + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
             nodeRepository.setDirty(lastElement(path));
