@@ -46,11 +46,11 @@ ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg)
 
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg)
-    : _store(),
+    : _largeArrayTypeId(0),
       _maxSmallArraySize(cfg.maxSmallArraySize()),
+      _store(),
       _smallArrayTypes(),
-      _largeArrayType(cfg.specForSize(0)),
-      _largeArrayTypeId()
+      _largeArrayType(cfg.specForSize(0))
 {
     initArrayTypes(cfg);
     _store.initActiveBuffers();

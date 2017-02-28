@@ -9,7 +9,6 @@
 #include "entryref.h"
 #include "i_compaction_context.h"
 #include <vespa/vespalib/util/array.h>
-#include <unordered_map>
 
 namespace search {
 namespace datastore {
@@ -45,11 +44,11 @@ private:
     };
 
 
-    DataStoreType _store;
+    uint32_t _largeArrayTypeId;
     uint32_t _maxSmallArraySize;
+    DataStoreType _store;
     std::vector<std::unique_ptr<SmallArrayType>> _smallArrayTypes;
     LargeArrayType _largeArrayType;
-    uint32_t _largeArrayTypeId;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     void initArrayTypes(const ArrayStoreConfig &cfg);

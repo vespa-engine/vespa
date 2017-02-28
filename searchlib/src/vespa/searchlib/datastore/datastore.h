@@ -39,9 +39,7 @@ public:
      * @param ref		Reference to dead stored features
      * @param dead		Number of newly dead elements
      */
-    void
-    incDead(EntryRef ref, uint64_t dead)
-    {
+    void incDead(EntryRef ref, uint64_t dead) {
         RefType intRef(ref);
         DataStoreBase::incDead(intRef.bufferId(), dead);
     }
@@ -49,29 +47,23 @@ public:
     /**
      * Free element.
      */
-    void
-    freeElem(EntryRef ref, uint64_t len);
+    void freeElem(EntryRef ref, uint64_t len);
 
     /**
      * Hold element.
      */
-    void
-    holdElem(EntryRef ref, uint64_t len, size_t extraBytes = 0);
+    void holdElem(EntryRef ref, uint64_t len, size_t extraBytes = 0);
 
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.
      *
      * @param usedGen		lowest generation that is still used.
      */
-    virtual void
-    trimElemHoldList(generation_t usedGen);
+    void trimElemHoldList(generation_t usedGen) override;
 
-    virtual void
-    clearElemHoldList(void);
+    void clearElemHoldList() override;
 
-    bool
-    getCompacting(EntryRef ref) const
-    {
+    bool getCompacting(EntryRef ref) const {
         return getBufferState(RefType(ref).bufferId()).getCompacting();
     }
 
@@ -90,11 +82,6 @@ public:
 template <typename EntryType, typename RefT = EntryRefT<22> >
 class DataStore : public DataStoreT<RefT>
 {
-private:
-    DataStore(const DataStore &rhs);
-
-    DataStore &
-    operator=(const DataStore &rhs);
 protected:
     typedef DataStoreT<RefT> ParentType;
     using ParentType::ensureBufferCapacity;
@@ -111,18 +98,14 @@ protected:
     BufferType<EntryType> _type;
 public:
     typedef typename ParentType::RefType RefType;
+    DataStore(const DataStore &rhs) = delete;
+    DataStore &operator=(const DataStore &rhs) = delete;
     DataStore();
+    ~DataStore();
 
-    ~DataStore(void);
-
-    EntryRef
-    addEntry(const EntryType &e);
-
-    EntryRef
-    addEntry2(const EntryType &e);
-
-    const EntryType &
-    getEntry(EntryRef ref) const;
+    EntryRef addEntry(const EntryType &e);
+    EntryRef addEntry2(const EntryType &e);
+    const EntryType &getEntry(EntryRef ref) const;
 };
 
 extern template class DataStoreT<EntryRefT<22> >;
