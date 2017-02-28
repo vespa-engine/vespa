@@ -180,8 +180,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         LinkedHashSet<HostSpec> hostSpecs = new LinkedHashSet<>();
         for (HostResource host: hostname2host.values()) {
             if (! host.getHost().isMultitenant()) {
-                // TODO: always using the first cluster membership seems fishy.
-                hostSpecs.add(new HostSpec(host.getHostName(), host.clusterMemberships().stream().findFirst()));
+                hostSpecs.add(new HostSpec(host.getHostName(), host.primaryClusterMembership()));
             }
         }
         return hostSpecs;
