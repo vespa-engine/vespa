@@ -551,7 +551,7 @@ TEST_F("require that filter attribute manager can filter attributes", FilterFixt
     std::vector<AttributeGuard> attrs;
     f._filterMgr.getAttributeList(attrs);
     EXPECT_EQUAL(1u, attrs.size());
-    EXPECT_EQUAL("a2", attrs[0].get().getName());
+    EXPECT_EQUAL("a2", attrs[0]->getName());
 }
 
 TEST_F("require that filter attribute manager can return flushed serial number", FilterFixture)

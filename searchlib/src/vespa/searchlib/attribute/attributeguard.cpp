@@ -32,7 +32,7 @@ AttributeEnumGuard::AttributeEnumGuard(const AttributeGuard & attr) :
 
 void AttributeEnumGuard::takeLock() {
     if (valid()) {
-        std::shared_lock<std::shared_timed_mutex> take(get().getEnumLock(),
+        std::shared_lock<std::shared_timed_mutex> take(get()->getEnumLock(),
                                                        std::defer_lock);
         _lock = std::move(take);
         _lock.lock();

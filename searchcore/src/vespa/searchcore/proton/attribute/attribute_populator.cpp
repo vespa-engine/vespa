@@ -25,7 +25,7 @@ AttributePopulator::getNames() const
     _writer.getAttributeManager()->getAttributeList(attrs);
     std::vector<vespalib::string> names;
     for (const search::AttributeGuard &attr : attrs) {
-        names.push_back(_subDbName + ".attribute." + attr.get().getName());
+        names.push_back(_subDbName + ".attribute." + attr->getName());
     }
     return names;
 }

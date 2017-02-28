@@ -14,7 +14,7 @@ AttributeContext::getAttribute(AttributeMap & map, const string & name, bool sta
 {
     AttributeMap::const_iterator itr = map.find(name);
     if (itr != map.end()) {
-        return itr->second->operator->();
+        return itr->second->get();
     } else {
         AttributeGuard::UP ret;
         if (stableEnum) {
@@ -25,7 +25,7 @@ AttributeContext::getAttribute(AttributeMap & map, const string & name, bool sta
         if (ret) {
             const AttributeGuard & guard = *ret;
             map[name] = std::move(ret);
-            return guard.operator->();
+            return guard.get();
         }
         return nullptr;
     }

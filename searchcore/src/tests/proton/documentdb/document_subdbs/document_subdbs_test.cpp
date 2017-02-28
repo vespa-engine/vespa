@@ -453,7 +453,7 @@ void
 assertAttributes1(const AttributeGuardList &attributes)
 {
 	EXPECT_EQUAL(1u, attributes.size());
-	EXPECT_EQUAL("attr1", attributes[0].get().getName());
+	EXPECT_EQUAL("attr1", attributes[0]->getName());
 }
 
 void
@@ -467,8 +467,8 @@ void
 assertAttributes2(const AttributeGuardList &attributes)
 {
 	EXPECT_EQUAL(2u, attributes.size());
-	EXPECT_EQUAL("attr1", attributes[0].get().getName());
-	EXPECT_EQUAL("attr2", attributes[1].get().getName());
+	EXPECT_EQUAL("attr1", attributes[0]->getName());
+	EXPECT_EQUAL("attr2", attributes[1]->getName());
 }
 
 void
@@ -716,7 +716,7 @@ TEST_F("require that only fast-access attributes are instantiated", FastAccessOn
 	std::vector<AttributeGuard> attrs;
 	f.getAttributeManager()->getAttributeList(attrs);
 	EXPECT_EQUAL(1u, attrs.size());
-	EXPECT_EQUAL("attr1", attrs[0].get().getName());
+	EXPECT_EQUAL("attr1", attrs[0]->getName());
 }
 
 template <typename FixtureType>
@@ -803,12 +803,12 @@ assertAttribute(const AttributeGuard &attr,
                 SerialNum createSerialNum,
                 SerialNum lastSerialNum)
 {
-	EXPECT_EQUAL(name, attr.get().getName());
-	EXPECT_EQUAL(numDocs, attr.get().getNumDocs());
-	EXPECT_EQUAL(doc1Value, attr.get().getInt(1));
-	EXPECT_EQUAL(doc2Value, attr.get().getInt(2));
-	EXPECT_EQUAL(createSerialNum, attr.get().getCreateSerialNum());
-	EXPECT_EQUAL(lastSerialNum, attr.get().getStatus().getLastSyncToken());
+	EXPECT_EQUAL(name, attr->getName());
+	EXPECT_EQUAL(numDocs, attr->getNumDocs());
+	EXPECT_EQUAL(doc1Value, attr->getInt(1));
+	EXPECT_EQUAL(doc2Value, attr->getInt(2));
+	EXPECT_EQUAL(createSerialNum, attr->getCreateSerialNum());
+	EXPECT_EQUAL(lastSerialNum, attr->getStatus().getLastSyncToken());
 }
 
 void

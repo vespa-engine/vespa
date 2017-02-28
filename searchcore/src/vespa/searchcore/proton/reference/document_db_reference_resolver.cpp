@@ -49,7 +49,7 @@ getReferenceAttribute(const vespalib::string &name, const IAttributeManager &att
 {
     AttributeGuard::UP guard = attrMgr.getAttribute(name);
     assert(guard.get());
-    assert(guard->get().getBasicType() == BasicType::REFERENCE);
+    assert(guard->get()->getBasicType() == BasicType::REFERENCE);
     return std::dynamic_pointer_cast<ReferenceAttribute>(guard->getSP());
 }
 
@@ -61,7 +61,7 @@ getReferenceAttributes(const IAttributeManager &attrMgr)
     std::vector<AttributeGuard> attributeList;
     attrMgr.getAttributeList(attributeList);
     for (auto &guard : attributeList) {
-        AttributeVector &attr = guard.get();
+        AttributeVector &attr = *guard;
         if (attr.getBasicType() == BasicType::REFERENCE) {
             auto refAttr = std::dynamic_pointer_cast<ReferenceAttribute>(guard.getSP());
             assert(refAttr);

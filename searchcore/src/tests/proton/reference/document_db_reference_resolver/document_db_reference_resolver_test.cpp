@@ -114,7 +114,7 @@ struct MyAttributeManager : public MockAttributeManager {
     }
     const ReferenceAttribute *getReferenceAttribute(const vespalib::string &name) const {
         AttributeGuard::UP guard = getAttribute(name);
-        const ReferenceAttribute *result = dynamic_cast<const ReferenceAttribute *>(&guard->get());
+        const ReferenceAttribute *result = dynamic_cast<const ReferenceAttribute *>(guard->get());
         ASSERT_TRUE(result != nullptr);
         return result;
     }
