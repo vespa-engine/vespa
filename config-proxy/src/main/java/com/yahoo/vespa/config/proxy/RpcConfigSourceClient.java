@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.jrt.Request;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  * @author hmusum
  * @since 5.1.9
  */
-public class RpcConfigSourceClient extends ConfigSourceClient {
+class RpcConfigSourceClient extends ConfigSourceClient {
 
     private final static Logger log = Logger.getLogger(RpcConfigSourceClient.class.getName());
     private final Supervisor supervisor = new Supervisor(new Transport());
@@ -140,18 +141,28 @@ public class RpcConfigSourceClient extends ConfigSourceClient {
             delayedResponses.add(new DelayedResponse(request));
         }
         if (needToGetConfig) {
-            synchronized (activeSubscribersLock) {
-                if (activeSubscribers.containsKey(configCacheKey)) {
-                    log.log(LogLevel.DEBUG, "Already a subscriber running for: " + configCacheKey);
-                } else {
-                    log.log(LogLevel.DEBUG, "Could not find good config in cache, creating subscriber for: " + configCacheKey);
-                    Subscriber subscriber = new UpstreamConfigSubscriber(input, clientUpdater, configSourceSet, timingValues, requesterPool, activeSubscribers);
+            subscribeToConfig(input, configCacheKey);
+        }
+        return ret;
+    }
+
+    private void subscribeToConfig(RawConfig input, ConfigCacheKey configCacheKey) {
+        synchronized (activeSubscribersLock) {
+            if (activeSubscribers.containsKey(configCacheKey)) {
+                log.log(LogLevel.DEBUG, "Already a subscriber running for: " + configCacheKey);
+            } else {
+                log.log(LogLevel.DEBUG, "Could not find good config in cache, creating subscriber for: " + configCacheKey);
+                UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, clientUpdater, configSourceSet, timingValues, requesterPool);
+                try {
+                    subscriber.subscribe();
                     activeSubscribers.put(configCacheKey, subscriber);
                     exec.execute(subscriber);
+                } catch (ConfigurationRuntimeException e) {
+                    log.log(LogLevel.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
+                    subscriber.cancel();
                 }
             }
         }
-        return ret;
     }
 
     @Override
