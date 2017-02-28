@@ -1,14 +1,24 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.searchdefinition.FieldSets;
 import com.yahoo.vespa.model.application.validation.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
+import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test validation of changes between a current and next document type used in a document database.
@@ -165,6 +175,33 @@ public class DocumentTypeChangeValidatorTest {
         f.assertValidation(newRefeedAction("field-type-change",
                                            ValidationOverrides.empty(),
                                            "Field 'f3' changed: data type: 's1:{f1:string,f2:int}' -> 's1:{f1:int,f2:string}'"));
+    }
+
+    @Test
+    public void requireThatChangingTargetTypeOfReferenceFieldIsNotOK() throws Exception {
+        DocumentTypeChangeValidator validator = new DocumentTypeChangeValidator(
+                createDocumentTypeWithReferenceField("oldDoc"),
+                createDocumentTypeWithReferenceField("newDoc"));
+        List<VespaConfigChangeAction> result = validator.validate(ValidationOverrides.empty());
+        assertEquals(1, result.size());
+        VespaConfigChangeAction action = result.get(0);
+        assertTrue(action instanceof VespaRefeedAction);
+        assertEquals(
+                "type='refeed', " +
+                        "message='Field 'ref' changed: data type: 'Reference<oldDoc>' -> 'Reference<newDoc>'', " +
+                        "services=[], documentType=''",
+                action.toString());
+    }
+
+    private static NewDocumentType createDocumentTypeWithReferenceField(String nameReferencedDocumentType) {
+        StructDataType headerfields = new StructDataType("headerfields");
+        headerfields.addField(new Field("ref", new ReferenceDataType(new DocumentType(nameReferencedDocumentType), 0)));
+        return new NewDocumentType(
+                new NewDocumentType.Name("mydoc"),
+                headerfields,
+                new StructDataType("bodyfields"),
+                new FieldSets(),
+                Collections.emptySet());
     }
 
 }
