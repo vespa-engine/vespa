@@ -101,6 +101,14 @@ public:
           _docType(*_repo->getDocumentType(type_name))
     {
     }
+
+    auto makeUpdate() {
+        auto upd(std::make_shared<DocumentUpdate>(_docType, docId));
+        upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
+                       addUpdate(AssignValueUpdate(StringFieldValue("newval"))));
+        return upd;
+    }
+
 };
 
 TEST("require that toString() on derived classes are meaningful")
@@ -229,34 +237,36 @@ TEST("require that serialize/deserialize works for CompactLidSpaceOperation")
 TEST_F("require that we can serialize and deserialize update operations", Fixture)
 {
     vespalib::nbostream stream;
-    auto upd(std::make_shared<DocumentUpdate>(f._docType, docId));
-    upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
-                   addUpdate(AssignValueUpdate(StringFieldValue("newval"))));
+    BucketId bucket(toBucket(docId.getGlobalId()));
+    auto upd(f.makeUpdate());
     {
-        UpdateOperation op(toBucket(docId.getGlobalId()), Timestamp(10), upd);
+        UpdateOperation op(bucket, Timestamp(10), upd);
         op.serialize(stream);
     }
     {
         UpdateOperation op;
         op.deserialize(stream, *f._repo);
         EXPECT_EQUAL(*upd, *op.getUpdate());
+        EXPECT_EQUAL(bucket, op.getBucketId());
+        EXPECT_EQUAL(10, op.getTimestamp().getValue());
     }
 }
 
 TEST_F("require that we can deserialize old update operations", Fixture)
 {
     vespalib::nbostream stream;
-    auto upd(std::make_shared<DocumentUpdate>(f._docType, docId));
-    upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
-                   addUpdate(AssignValueUpdate(StringFieldValue("newval"))));
+    BucketId bucket(toBucket(docId.getGlobalId()));
+    auto upd(f.makeUpdate());
     {
-        UpdateOperation op(UpdateOperation::makeOldUpdate(toBucket(docId.getGlobalId()), Timestamp(10), upd));
+        UpdateOperation op(UpdateOperation::makeOldUpdate(bucket, Timestamp(10), upd));
         op.serialize(stream);
     }
     {
         UpdateOperation op(FeedOperation::UPDATE_42);
         op.deserialize(stream, *f._repo);
         EXPECT_EQUAL(*upd, *op.getUpdate());
+        EXPECT_EQUAL(bucket, op.getBucketId());
+        EXPECT_EQUAL(10, op.getTimestamp().getValue());
     }
 }
 
