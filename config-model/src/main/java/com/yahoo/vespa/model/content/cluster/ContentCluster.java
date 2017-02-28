@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
@@ -290,8 +289,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                 if (clusterControllers == null) {
                     List<HostResource> hosts = admin.getClusterControllerHosts();
                     if (hosts.size() > 1) {
-                        admin.deployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly." +
-                                                             " See " + ConfigModelUtils.createDocLink("reference/services-admin.html#cluster-controller"));
+                        admin.deployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
                     clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false);
                     admin.setClusterControllers(clusterControllers);
