@@ -154,10 +154,9 @@ DataStore<EntryType, RefT>::addEntry(const EntryType &e)
 {
     ensureBufferCapacity(0, 1);
     uint32_t activeBufferId = _activeBufferIds[0];
-    BufferState &state = _states[activeBufferId];
+    BufferState &state = this->getBufferState(activeBufferId);
     size_t oldSize = state.size();
-    EntryType *be = static_cast<EntryType *>(_buffers[activeBufferId]) +
-                    oldSize;
+    EntryType *be = static_cast<EntryType *>(this->getBuffer(activeBufferId)) + oldSize;
     new (static_cast<void *>(be)) EntryType(e);
     RefType ref(oldSize, activeBufferId);
     state.pushed_back(1);

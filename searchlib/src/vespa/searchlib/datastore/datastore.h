@@ -87,8 +87,6 @@ protected:
     using ParentType::ensureBufferCapacity;
     // using ParentType::activeBuffer;
     using ParentType::_activeBufferIds;
-    using ParentType::_buffers;
-    using ParentType::_states;
     using ParentType::_freeListLists;
     using ParentType::getBufferEntry;
     using ParentType::dropBuffers;
