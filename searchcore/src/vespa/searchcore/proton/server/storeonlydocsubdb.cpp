@@ -471,7 +471,7 @@ StoreOnlyDocSubDB::getDocumentDBReferent()
 }
 
 void
-StoreOnlyDocSubDB::tear_down_references(IDocumentDBReferenceResolver &resolver)
+StoreOnlyDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &resolver)
 {
     (void) resolver;
 }

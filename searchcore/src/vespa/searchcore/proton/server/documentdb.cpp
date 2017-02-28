@@ -561,7 +561,7 @@ DocumentDB::performDropFeedView2(IFeedView::SP feedView)
 
 
 void
-DocumentDB::tear_down_references()
+DocumentDB::tearDownReferences()
 {
     // Called by master executor thread
     auto registry = _owner.getDocumentDBReferentRegistry();
@@ -575,7 +575,7 @@ DocumentDB::tear_down_references()
                                          *docType,
                                          _refCount,
                                          _writeService.attributeFieldWriter());
-    _subDBs.tear_down_references(resolver);
+    _subDBs.tearDownReferences(resolver);
 }
 
 void
@@ -586,7 +586,7 @@ DocumentDB::close()
         _state.enterShutdownState();
     }
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
-    masterExecute([this]() { tear_down_references(); });
+    masterExecute([this]() { tearDownReferences(); });
     _writeService.master().sync();
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.

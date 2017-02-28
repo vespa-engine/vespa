@@ -380,7 +380,7 @@ SearchableDocSubDB::getDocumentDBReferent()
 }
 
 void
-SearchableDocSubDB::tear_down_references(IDocumentDBReferenceResolver &resolver)
+SearchableDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &resolver)
 {
     auto attrMgr = getAttributeManager();
     resolver.teardown(*attrMgr);

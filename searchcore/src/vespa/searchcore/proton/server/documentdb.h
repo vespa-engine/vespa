@@ -245,7 +245,7 @@ private:
      * Tear down references to this document db (e.g. listeners for
      * gid to lid changes) from other document dbs.
      */
-    void tear_down_references();
+    void tearDownReferences();
 
     template <typename FunctionType>
     inline void masterExecute(FunctionType &&function);

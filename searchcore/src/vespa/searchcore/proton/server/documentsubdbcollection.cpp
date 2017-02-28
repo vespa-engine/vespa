@@ -319,10 +319,10 @@ DocumentSubDBCollection::close()
 }
 
 void
-DocumentSubDBCollection::tear_down_references(IDocumentDBReferenceResolver &resolver)
+DocumentSubDBCollection::tearDownReferences(IDocumentDBReferenceResolver &resolver)
 {
     for (auto subDb : _subDBs) {
-        subDb->tear_down_references(resolver);
+        subDb->tearDownReferences(resolver);
     }
 }
 
