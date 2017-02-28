@@ -43,7 +43,7 @@ UpdateOperation::serialize(vespalib::nbostream &os) const
 {
     assertValidBucketId(_upd->getId());
     DocumentOperation::serialize(os);
-    if (getType() == FeedOperation::UPDATE42) {
+    if (getType() == FeedOperation::UPDATE_42) {
         _upd->serialize42(os);
     } else {
         _upd->serializeHEAD(os);
@@ -58,7 +58,7 @@ UpdateOperation::deserialize(vespalib::nbostream &is,
     DocumentOperation::deserialize(is, repo);
     document::ByteBuffer buf(is.peek(), is.size());
     using Version = DocumentUpdate::SerializeVersion;
-    Version version = ((getType() == FeedOperation::UPDATE42) ? Version::SERIALIZE_42 : Version::SERIALIZE_HEAD);
+    Version version = ((getType() == FeedOperation::UPDATE_42) ? Version::SERIALIZE_42 : Version::SERIALIZE_HEAD);
     try {
         DocumentUpdate::SP update(std::make_shared<DocumentUpdate>(repo, buf, version));
         is.adjustReadPos(buf.getPos());
@@ -73,7 +73,7 @@ UpdateOperation::deserialize(vespalib::nbostream &is,
 
 vespalib::string UpdateOperation::toString() const {
     return make_string("%s(%s, %s)",
-                       ((getType() == FeedOperation::UPDATE42) ? "Update42" : "Update"),
+                       ((getType() == FeedOperation::UPDATE_42) ? "Update42" : "Update"),
                        _upd.get() ?
                        _upd->getId().getScheme().toString().c_str() : "NULL",
                        docArgsToString().c_str());

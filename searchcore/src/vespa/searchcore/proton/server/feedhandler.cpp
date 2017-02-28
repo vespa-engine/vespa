@@ -142,7 +142,7 @@ void notifyConfigRejected(FeedToken *token, FeedOperation::Type type,
                           DocTypeName docTypeName) {
     if (type == FeedOperation::REMOVE) {
         configRejected<RemoveResult>(token, docTypeName);
-    } else if ((type == FeedOperation::UPDATE42) || (type == FeedOperation::UPDATE)) {
+    } else if ((type == FeedOperation::UPDATE_42) || (type == FeedOperation::UPDATE)) {
         configRejected<UpdateResult>(token, docTypeName);
     } else {
         configRejected<Result>(token, docTypeName);
@@ -665,7 +665,7 @@ namespace {
 bool
 isRejectableFeedOperation(FeedOperation::Type type)
 {
-    return type == FeedOperation::PUT || type == FeedOperation::UPDATE42 || type == FeedOperation::UPDATE;
+    return type == FeedOperation::PUT || type == FeedOperation::UPDATE_42 || type == FeedOperation::UPDATE;
 }
 
 template <typename ResultType>
@@ -684,7 +684,7 @@ void
 notifyFeedOperationRejected(FeedToken *token, const FeedOperation &op,
                             DocTypeName docTypeName, const vespalib::string &rejectMessage)
 {
-    if ((op.getType() == FeedOperation::UPDATE42) || (op.getType() == FeedOperation::UPDATE)) {
+    if ((op.getType() == FeedOperation::UPDATE_42) || (op.getType() == FeedOperation::UPDATE)) {
         vespalib::string docId = (static_cast<const UpdateOperation &>(op)).getUpdate()->getId().toString();
         feedOperationRejected<UpdateResult>(token, "Update", docId, docTypeName, rejectMessage);
     } else if (op.getType() == FeedOperation::PUT) {
@@ -727,7 +727,7 @@ FeedHandler::performOperation(FeedToken::UP token, FeedOperation::UP op)
     case FeedOperation::REMOVE:
         performRemove(std::move(token), static_cast<RemoveOperation &>(*op));
         return;
-    case FeedOperation::UPDATE42:
+    case FeedOperation::UPDATE_42:
     case FeedOperation::UPDATE:
         performUpdate(std::move(token), static_cast<UpdateOperation &>(*op));
         return;

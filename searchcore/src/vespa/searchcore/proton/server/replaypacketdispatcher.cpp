@@ -39,7 +39,7 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
         RemoveOperation op;
         replay(op, is, entry);
         break;
-    } case FeedOperation::UPDATE42:
+    } case FeedOperation::UPDATE_42:
       case FeedOperation::UPDATE: {
         UpdateOperation op(static_cast<FeedOperation::Type>(entry.type()));
         replay(op, is, entry);
