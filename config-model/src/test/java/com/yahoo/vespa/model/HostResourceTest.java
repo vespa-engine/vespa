@@ -135,7 +135,7 @@ public class HostResourceTest {
     }
 
     private void assertClusterMembership(HostResource host, ClusterSpec.Type type, String id) {
-        ClusterSpec membership = host.primaryClusterMembership()
+        ClusterSpec membership = host.primaryClusterMembership().map(ClusterMembership::cluster)
                 .orElseThrow(() -> new RuntimeException("No cluster membership!"));
 
         assertEquals(type, membership.type());

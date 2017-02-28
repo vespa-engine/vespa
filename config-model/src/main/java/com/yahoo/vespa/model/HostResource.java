@@ -246,16 +246,15 @@ public class HostResource implements Comparable<HostResource> {
      * Content clusters are preferred, then container clusters, and finally admin clusters.
      * If there is more than one cluster of the preferred type, the cluster that was added first will be chosen.
      */
-    public Optional<ClusterSpec> primaryClusterMembership() {
+    public Optional<ClusterMembership> primaryClusterMembership() {
         return clusterMemberships().stream()
-                .map(ClusterMembership::cluster)
                 .sorted(HostResource::compareClusters)
                 .findFirst();
     }
 
-    private static int compareClusters(ClusterSpec cluster1, ClusterSpec cluster2) {
+    private static int compareClusters(ClusterMembership cluster1, ClusterMembership cluster2) {
         // This depends on the declared order of enum constants.
-        return cluster2.type().compareTo(cluster1.type());
+        return cluster2.cluster().type().compareTo(cluster1.cluster().type());
     }
 
     @Override
