@@ -12,7 +12,7 @@ namespace search {
 namespace datastore {
 
 template <typename RefT>
-DataStoreT<RefT>::DataStoreT(void)
+DataStoreT<RefT>::DataStoreT()
     : DataStoreBase(RefType::numBuffers(),
                     RefType::offsetSize() / RefType::align(1))
 {
@@ -20,7 +20,7 @@ DataStoreT<RefT>::DataStoreT(void)
 
 
 template <typename RefT>
-DataStoreT<RefT>::~DataStoreT(void)
+DataStoreT<RefT>::~DataStoreT()
 {
 }
 
@@ -42,7 +42,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
         assert(state.isOnHold());
     }
     state.incDeadElems(len);
-    state.cleanHold(_buffers[intRef.bufferId()],
+    state.cleanHold(getBuffer(intRef.bufferId()),
                     (intRef.offset() / RefType::align(1)) *
                     state.getClusterSize(), len);
 }
@@ -92,7 +92,7 @@ DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
 
 template <typename RefT>
 void
-DataStoreT<RefT>::clearElemHoldList(void)
+DataStoreT<RefT>::clearElemHoldList()
 {
     ElemHold2List &elemHold2List = _elemHold2List;
 
@@ -134,7 +134,7 @@ DataStoreT<RefT>::rawAllocator(uint32_t typeId)
 
 
 template <typename EntryType, typename RefT>
-DataStore<EntryType, RefT>::DataStore(void)
+DataStore<EntryType, RefT>::DataStore()
     : ParentType(),
       _type(1, RefType::offsetSize(), RefType::offsetSize())
 {
@@ -143,7 +143,7 @@ DataStore<EntryType, RefT>::DataStore(void)
 }
 
 template <typename EntryType, typename RefT>
-DataStore<EntryType, RefT>::~DataStore(void)
+DataStore<EntryType, RefT>::~DataStore()
 {
     dropBuffers();	// Drop buffers before type handlers are dropped
 }

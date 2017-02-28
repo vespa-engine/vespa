@@ -77,7 +77,6 @@ public:
 
 DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxClusters)
     : _buffers(numBuffers),
-      _typeIds(numBuffers),
       _activeBufferIds(),
       _states(numBuffers),
       _typeHandlers(),
@@ -183,7 +182,7 @@ DataStoreBase::transferHoldLists(generation_t generation)
 void
 DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 {
-    _states[bufferId].onFree(_buffers[bufferId]);
+    _states[bufferId].onFree(_buffers[bufferId].getBuffer());
 }
 
 
@@ -210,7 +209,7 @@ DataStoreBase::dropBuffers()
 {
     uint32_t numBuffers = _buffers.size();
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
-        _states[bufferId].dropBuffer(_buffers[bufferId]);
+        _states[bufferId].dropBuffer(_buffers[bufferId].getBuffer());
     }
     _genHolder.clearHoldLists();
 }
@@ -365,11 +364,12 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
+    _buffers[bufferId].setTypeId(typeId);
     BufferState &state = _states[bufferId];
     state.onActive(bufferId, typeId,
                    _typeHandlers[typeId],
                    sizeNeeded,
-                   _buffers[bufferId]);
+                   _buffers[bufferId].getBuffer());
     enableFreeList(bufferId);
 }
 
@@ -409,9 +409,8 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
     size_t oldUsedElems = state.size();
     size_t oldAllocElems = state.capacity();
     size_t elementSize = state.getTypeHandler()->elementSize();
-    state.fallbackResize(bufferId,
-                         sizeNeeded,
-                         _buffers[bufferId],
+    state.fallbackResize(bufferId, sizeNeeded,
+                         _buffers[bufferId].getBuffer(),
                          toHoldBuffer);
     GenerationHeldBase::UP
         hold(new FallbackHold(oldAllocElems * elementSize,
