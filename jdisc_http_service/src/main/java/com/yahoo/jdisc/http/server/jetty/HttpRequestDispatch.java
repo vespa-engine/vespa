@@ -143,7 +143,6 @@ class HttpRequestDispatch {
 
     @SuppressWarnings("try")
     private ServletRequestReader handleRequest() throws IOException {
-        servletResponseController.registerWriteListener();
         HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, servletRequest);
         ContentChannel requestContentChannel;
 
@@ -175,7 +174,6 @@ class HttpRequestDispatch {
 
     ContentChannel handleRequestFilterResponse(Response response) {
         try {
-            servletResponseController.registerWriteListener();
             servletRequest.getInputStream().close();
             ContentChannel responseContentChannel = servletResponseController.responseHandler.handleResponse(response);
             servletResponseController.finishedFuture().whenComplete(completeRequestCallback);
