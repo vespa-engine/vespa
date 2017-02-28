@@ -57,14 +57,33 @@ private:
     size_t getArraySize(uint32_t typeId) const { return typeId; }
     EntryRef addSmallArray(const ConstArrayRef &array);
     EntryRef addLargeArray(const ConstArrayRef &array);
-    ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const;
-    ConstArrayRef getLargeArray(RefT ref) const;
+    ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
+        size_t bufferOffset = ref.offset() * arraySize;
+        const EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), bufferOffset);
+        return ConstArrayRef(buf, arraySize);
+    }
+    ConstArrayRef getLargeArray(RefT ref) const {
+        const LargeArray *buf = _store.template getBufferEntry<LargeArray>(ref.bufferId(), ref.offset());
+        return ConstArrayRef(&(*buf)[0], buf->size());
+    }
 
 public:
     ArrayStore(const ArrayStoreConfig &cfg);
     ~ArrayStore();
     EntryRef add(const ConstArrayRef &array);
-    ConstArrayRef get(EntryRef ref) const;
+    ConstArrayRef get(EntryRef ref) const {
+        if (!ref.valid()) {
+            return ConstArrayRef();
+        }
+        RefT internalRef(ref);
+        uint32_t typeId = _store.getTypeId(internalRef.bufferId());
+        if (typeId != _largeArrayTypeId) {
+            size_t arraySize = getArraySize(typeId);
+            return getSmallArray(internalRef, arraySize);
+        } else {
+            return getLargeArray(internalRef);
+        }
+    }
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst(bool compactMemory, bool compactAddressSpace);
     MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
