@@ -30,7 +30,7 @@ void
 DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
 {
     RefType intRef(ref);
-    BufferState &state = _states[intRef.bufferId()];
+    BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
         if (state.freeListList() != NULL && len == state.getClusterSize()) {
             if (state.freeList().empty()) {
@@ -54,7 +54,7 @@ DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len, size_t extraBytes)
 {
     RefType intRef(ref);
     uint64_t alignedLen = RefType::align(len);
-    BufferState &state = _states[intRef.bufferId()];
+    BufferState &state = getBufferState(intRef.bufferId());
     assert(state.isActive());
     if (state.hasDisabledElemHoldList()) {
         state.incDeadElems(alignedLen);
@@ -79,7 +79,7 @@ DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
         if (static_cast<sgeneration_t>(it->_generation - usedGen) >= 0)
             break;
         RefType intRef(it->_ref);
-        BufferState &state = _states[intRef.bufferId()];
+        BufferState &state = getBufferState(intRef.bufferId());
         freeElem(it->_ref, it->_len);
         state.decHoldElems(it->_len);
         ++freed;
@@ -100,7 +100,7 @@ DataStoreT<RefT>::clearElemHoldList(void)
     ElemHold2List::iterator ite(elemHold2List.end());
     for (; it != ite; ++it) {
         RefType intRef(it->_ref);
-        BufferState &state = _states[intRef.bufferId()];
+        BufferState &state = getBufferState(intRef.bufferId());
         freeElem(it->_ref, it->_len);
         state.decHoldElems(it->_len);
     }
