@@ -318,4 +318,12 @@ DocumentSubDBCollection::close()
     }
 }
 
+void
+DocumentSubDBCollection::tear_down_references(IDocumentDBReferenceResolver &resolver)
+{
+    for (auto subDb : _subDBs) {
+        subDb->tear_down_references(resolver);
+    }
+}
+
 } // namespace proton

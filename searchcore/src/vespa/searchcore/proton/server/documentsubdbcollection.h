@@ -126,6 +126,7 @@ public:
     ReprocessingRunner &getReprocessingRunner() { return _reprocessingRunner; }
     double getReprocessingProgress() const;
     void close();
+    void tear_down_references(IDocumentDBReferenceResolver &resolver);
 };
 
 

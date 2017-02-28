@@ -285,6 +285,7 @@ public:
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
     void close() override;
     virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent() override;
+    virtual void tear_down_references(IDocumentDBReferenceResolver &resolver) override;
 };
 
 } // namespace proton

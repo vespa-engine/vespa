@@ -241,6 +241,15 @@ private:
     void updateMetrics(DocumentDBTaggedMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
 
+    /*
+     * Tear down references to this document db (e.g. listeners for
+     * gid to lid changes) from other document dbs.
+     */
+    void tear_down_references();
+
+    template <typename FunctionType>
+    inline void masterExecute(FunctionType &&function);
+
 public:
     typedef std::unique_ptr<DocumentDB> UP;
     typedef std::shared_ptr<DocumentDB> SP;

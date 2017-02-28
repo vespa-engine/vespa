@@ -174,7 +174,6 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                 const ReconfigParams &params,
                                 IDocumentDBReferenceResolver &resolver)
 {
-    (void) resolver;
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
     if (params.shouldMatchersChange() && _addMetrics) {
@@ -378,6 +377,13 @@ std::shared_ptr<IDocumentDBReferent>
 SearchableDocSubDB::getDocumentDBReferent()
 {
     return std::make_shared<DocumentDBReferent>(getAttributeManager(), _dms, _gidToLidChangeHandler);
+}
+
+void
+SearchableDocSubDB::tear_down_references(IDocumentDBReferenceResolver &resolver)
+{
+    auto attrMgr = getAttributeManager();
+    resolver.teardown(*attrMgr);
 }
 
 } // namespace proton

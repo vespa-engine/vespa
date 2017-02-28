@@ -471,6 +471,12 @@ StoreOnlyDocSubDB::getDocumentDBReferent()
 }
 
 void
+StoreOnlyDocSubDB::tear_down_references(IDocumentDBReferenceResolver &resolver)
+{
+    (void) resolver;
+}
+
+void
 StoreOnlySubDBFileHeaderContext::
 addTags(vespalib::GenericHeader &header,
         const vespalib::string &name) const
