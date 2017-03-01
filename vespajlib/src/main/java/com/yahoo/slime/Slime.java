@@ -91,7 +91,7 @@ public final class Slime
      * @param str the actual string for the new value
      **/
     public Cursor setString(String str) {
-        root = new StringValue(str);
+        root = StringValue.create(str);
         return root;
     }
 
@@ -100,7 +100,7 @@ public final class Slime
      * @param utf8 the actual string (encoded as UTF-8 data) for the new value
      **/
     public Cursor setString(byte[] utf8) {
-        root = new Utf8Value(utf8);
+        root = Utf8Value.create(utf8);
         return root;
     }
 
@@ -109,7 +109,7 @@ public final class Slime
      * @param data the actual data to be put into the new value.
      **/
     public Cursor setData(byte[] data) {
-        root = new DataValue(data);
+        root = DataValue.create(data);
         return root;
     }
 

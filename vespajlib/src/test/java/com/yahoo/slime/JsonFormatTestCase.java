@@ -104,6 +104,32 @@ public class JsonFormatTestCase {
     }
 
     @Test
+    public void testNullJavaStringNixFallback() {
+        Slime slime = new Slime();
+        String str = null;
+        slime.setString(str);
+        assertThat(slime.get().type(), is(Type.NIX));
+        verifyEncoding(slime, "null");
+    }
+
+    @Test
+    public void testNullUtf8StringNixFallback() {
+        Slime slime = new Slime();
+        byte[] utf8 = null;
+        slime.setString(utf8);
+        assertThat(slime.get().type(), is(Type.NIX));
+        verifyEncoding(slime, "null");
+    }
+
+    @Test
+    public void testNullDataNixFallback() {
+        Slime slime = new Slime();
+        slime.setData(null);
+        assertThat(slime.get().type(), is(Type.NIX));
+        verifyEncoding(slime, "null");
+    }
+
+    @Test
     public void testArray() {
         System.out.println("test encoding slime holding an array of various basic values");
         Slime slime = new Slime();
@@ -211,20 +237,6 @@ public class JsonFormatTestCase {
         new JsonFormat(true).encode(a, slime);
         String val = new String(a.toByteArray(), "UTF-8");
         assertEquals("\"M\u00E6L\"", val);
-
-        // TODO Some issues with newline
-        /*
-        slime = new Slime();
-        final String str = "# Use unicode equivalents in java source:\n" +
-                "        #\n" +
-                "        #\n" +
-                "        #   佳:\u4f73\n";
-        slime.setString(str);
-        a = new ByteArrayOutputStream();
-        new JsonFormat(true).encode(a, slime);
-        val = new String(a.toByteArray(), "UTF-8");
-        assertEquals(str, val);
-        */
     }
 
     private void verifyEncoding(Slime slime, String expected, boolean compact) {
