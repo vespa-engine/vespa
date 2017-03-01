@@ -9,7 +9,14 @@ package com.yahoo.slime;
 final class Utf8Value extends Value {
     private final byte[] value;
     private String string;
-    public Utf8Value(byte[] value) { this.value = value; }
+    private Utf8Value(byte[] value) { this.value = value; }
+    public static Value create(byte[] value) {
+        if (value == null) {
+            return NixValue.instance();
+        } else {
+            return new Utf8Value(value);
+        }
+    }
     public final Type type() { return Type.STRING; }
     public final String asString() {
         if (string == null) {

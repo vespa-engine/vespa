@@ -43,9 +43,9 @@ abstract class Value implements Cursor {
     public final Cursor addBool(boolean bit) { return addLeaf(BoolValue.instance(bit)); }
     public final Cursor addLong(long l) { return addLeaf(new LongValue(l)); }
     public final Cursor addDouble(double d) { return addLeaf(new DoubleValue(d)); }
-    public final Cursor addString(String str) { return addLeaf(new StringValue(str)); }
-    public final Cursor addString(byte[] utf8) { return addLeaf(new Utf8Value(utf8)); }
-    public final Cursor addData(byte[] data) { return addLeaf(new DataValue(data)); }
+    public final Cursor addString(String str) { return addLeaf(StringValue.create(str)); }
+    public final Cursor addString(byte[] utf8) { return addLeaf(Utf8Value.create(utf8)); }
+    public final Cursor addData(byte[] data) { return addLeaf(DataValue.create(data)); }
 
     protected Cursor setLeaf(int sym, Value value) { return NixValue.invalid(); }
     public Cursor setArray(int sym) { return NixValue.invalid(); }
@@ -55,9 +55,9 @@ abstract class Value implements Cursor {
     public final Cursor setBool(int sym, boolean bit) { return setLeaf(sym, BoolValue.instance(bit)); }
     public final Cursor setLong(int sym, long l) { return setLeaf(sym, new LongValue(l)); }
     public final Cursor setDouble(int sym, double d) { return setLeaf(sym, new DoubleValue(d)); }
-    public final Cursor setString(int sym, String str) { return setLeaf(sym, new StringValue(str)); }
-    public final Cursor setString(int sym, byte[] utf8) { return setLeaf(sym, new Utf8Value(utf8)); }
-    public final Cursor setData(int sym, byte[] data) { return setLeaf(sym, new DataValue(data)); }
+    public final Cursor setString(int sym, String str) { return setLeaf(sym, StringValue.create(str)); }
+    public final Cursor setString(int sym, byte[] utf8) { return setLeaf(sym, Utf8Value.create(utf8)); }
+    public final Cursor setData(int sym, byte[] data) { return setLeaf(sym, DataValue.create(data)); }
 
     protected Cursor setLeaf(String name, Value value) { return NixValue.invalid(); }
     public Cursor setArray(String name) { return NixValue.invalid(); }
@@ -67,9 +67,9 @@ abstract class Value implements Cursor {
     public final Cursor setBool(String name, boolean bit) { return setLeaf(name, BoolValue.instance(bit)); }
     public final Cursor setLong(String name, long l) { return setLeaf(name, new LongValue(l)); }
     public final Cursor setDouble(String name, double d) { return setLeaf(name, new DoubleValue(d)); }
-    public final Cursor setString(String name, String str) { return setLeaf(name, new StringValue(str)); }
-    public final Cursor setString(String name, byte[] utf8) { return setLeaf(name, new Utf8Value(utf8)); }
-    public final Cursor setData(String name, byte[] data) { return setLeaf(name, new DataValue(data)); }
+    public final Cursor setString(String name, String str) { return setLeaf(name, StringValue.create(str)); }
+    public final Cursor setString(String name, byte[] utf8) { return setLeaf(name, Utf8Value.create(utf8)); }
+    public final Cursor setData(String name, byte[] data) { return setLeaf(name, DataValue.create(data)); }
 
     public final String toString() {
         try {
