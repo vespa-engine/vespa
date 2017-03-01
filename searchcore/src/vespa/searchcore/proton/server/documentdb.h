@@ -163,6 +163,7 @@ private:
     handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
                          const ConfigValidator::Result &cvr,
                          const DDBState::ConfigState &cs);
+    void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot, SerialNum serialNum, const ReconfigParams &params);
     void applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum);
 
     /**
