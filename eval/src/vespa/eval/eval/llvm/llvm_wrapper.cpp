@@ -163,6 +163,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             params.push_back(itr);
         }
     }
+    ~FunctionBuilder();
 
     //-------------------------------------------------------------------------
 
@@ -617,6 +618,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_call_1("vespalib_eval_sigmoid");
     }
 };
+
+FunctionBuilder::~FunctionBuilder() { }
 
 } // namespace vespalib::eval::<unnamed>
 

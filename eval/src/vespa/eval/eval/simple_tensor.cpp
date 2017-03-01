@@ -141,27 +141,8 @@ private:
     size_t _block_size;
     BlockMap _blocks;
 public:
-    explicit Builder(const ValueType &type)
-        : _type(type),
-          _mapped(),
-          _indexed(),
-          _block_size(1),
-          _blocks()
-    {
-        assert_type(_type);
-        for (size_t i = 0; i < type.dimensions().size(); ++i) {
-            const auto &dimension = _type.dimensions()[i];
-            if (dimension.is_mapped()) {
-                _mapped.push_back(i);
-            } else {
-                _block_size *= dimension.size;
-                _indexed.push_back(i);
-            }
-        }
-        if (_mapped.empty()) {
-            _blocks.emplace(Address(), Block(_type, _indexed, _block_size));
-        }
-    }
+    explicit Builder(const ValueType &type);
+    ~Builder();
     void set(const Address &address, double value) {
         assert_address(address, _type);
         Address block_key = select(address, _mapped);
@@ -189,6 +170,29 @@ public:
     }
 };
 
+Builder::Builder(const ValueType &type)
+        : _type(type),
+          _mapped(),
+          _indexed(),
+          _block_size(1),
+          _blocks()
+{
+    assert_type(_type);
+    for (size_t i = 0; i < type.dimensions().size(); ++i) {
+        const auto &dimension = _type.dimensions()[i];
+        if (dimension.is_mapped()) {
+            _mapped.push_back(i);
+        } else {
+            _block_size *= dimension.size;
+            _indexed.push_back(i);
+        }
+    }
+    if (_mapped.empty()) {
+        _blocks.emplace(Address(), Block(_type, _indexed, _block_size));
+    }
+}
+Builder::~Builder() { }
+
 /**
  * Helper class used to calculate which dimensions are shared between
  * types and which are not. Also calculates how address elements from
@@ -204,42 +208,18 @@ struct TypeAnalyzer {
     IndexList combine;
     size_t    ignored_a;
     size_t    ignored_b;
-    TypeAnalyzer(const ValueType &lhs, const ValueType &rhs, const vespalib::string &ignore = "")
-        : only_a(), overlap_a(), overlap_b(), only_b(), combine(), ignored_a(npos), ignored_b(npos) 
-    {
-        const auto &a = lhs.dimensions();
-        const auto &b = rhs.dimensions();
-        size_t b_idx = 0;
-        for (size_t a_idx = 0; a_idx < a.size(); ++a_idx) {
-            while ((b_idx < b.size()) && (b[b_idx].name < a[a_idx].name)) {
-                if (b[b_idx].name != ignore) {
-                    only_b.push_back(b_idx);
-                    combine.push_back(a.size() + b_idx);
-                } else {
-                    ignored_b = b_idx;
-                }
-                ++b_idx;
-            }
-            if ((b_idx < b.size()) && (b[b_idx].name == a[a_idx].name)) {
-                if (a[a_idx].name != ignore) {
-                    overlap_a.push_back(a_idx);
-                    overlap_b.push_back(b_idx);
-                    combine.push_back(a_idx);
-                } else {
-                    ignored_a = a_idx;
-                    ignored_b = b_idx;
-                }
-                ++b_idx;
-            } else {
-                if (a[a_idx].name != ignore) {
-                    only_a.push_back(a_idx);
-                    combine.push_back(a_idx);
-                } else {
-                    ignored_a = a_idx;
-                }
-            }
-        }
-        while (b_idx < b.size()) {
+    TypeAnalyzer(const ValueType &lhs, const ValueType &rhs, const vespalib::string &ignore = "");
+    ~TypeAnalyzer();
+};
+
+TypeAnalyzer::TypeAnalyzer(const ValueType &lhs, const ValueType &rhs, const vespalib::string &ignore)
+    : only_a(), overlap_a(), overlap_b(), only_b(), combine(), ignored_a(npos), ignored_b(npos)
+{
+    const auto &a = lhs.dimensions();
+    const auto &b = rhs.dimensions();
+    size_t b_idx = 0;
+    for (size_t a_idx = 0; a_idx < a.size(); ++a_idx) {
+        while ((b_idx < b.size()) && (b[b_idx].name < a[a_idx].name)) {
             if (b[b_idx].name != ignore) {
                 only_b.push_back(b_idx);
                 combine.push_back(a.size() + b_idx);
@@ -248,8 +228,37 @@ struct TypeAnalyzer {
             }
             ++b_idx;
         }
+        if ((b_idx < b.size()) && (b[b_idx].name == a[a_idx].name)) {
+            if (a[a_idx].name != ignore) {
+                overlap_a.push_back(a_idx);
+                overlap_b.push_back(b_idx);
+                combine.push_back(a_idx);
+            } else {
+                ignored_a = a_idx;
+                ignored_b = b_idx;
+            }
+            ++b_idx;
+        } else {
+            if (a[a_idx].name != ignore) {
+                only_a.push_back(a_idx);
+                combine.push_back(a_idx);
+            } else {
+                ignored_a = a_idx;
+            }
+        }
     }
-};
+    while (b_idx < b.size()) {
+        if (b[b_idx].name != ignore) {
+            only_b.push_back(b_idx);
+            combine.push_back(a.size() + b_idx);
+        } else {
+            ignored_b = b_idx;
+        }
+        ++b_idx;
+    }
+}
+
+TypeAnalyzer::~TypeAnalyzer() { }
 
 /**
  * A view is a total ordering of cells from a SimpleTensor according
@@ -316,12 +325,15 @@ public:
         }
         std::sort(_refs.begin(), _refs.end(), _less);
     }
+    ~View();
     const IndexList &selector() const { return _less.selector; }
     const CellRef *refs_begin() const { return &_refs[0]; }
     const CellRef *refs_end() const { return (refs_begin() + _refs.size()); }
     EqualRange first_range() const { return make_range(refs_begin()); }
     EqualRange next_range(const EqualRange &prev) const { return make_range(prev.end()); }
 };
+
+View::~View() { }
 
 /**
  * Helper class used to find matching EqualRanges from two different
@@ -343,6 +355,7 @@ public:
         {
             assert(a_selector.size() == b_selector.size());
         }
+        ~CrossCompare();
         Result compare(const Cell &a, const Cell &b) const {
             for (size_t i = 0; i < a_selector.size(); ++i) {
                 if (a.address[a_selector[i]] != b.address[b_selector[i]]) {
@@ -392,6 +405,7 @@ public:
     {
         find_match();
     }
+    ~ViewMatcher();
     bool valid() const { return (has_a() && has_b()); }
     const EqualRange &get_a() const { return _a_range; }
     const EqualRange &get_b() const { return _b_range; }
@@ -401,6 +415,10 @@ public:
         find_match();
     }
 };
+
+ViewMatcher::~ViewMatcher() { }
+
+ViewMatcher::CrossCompare::~CrossCompare() { }
 
 } // namespace vespalib::eval::<unnamed>
 

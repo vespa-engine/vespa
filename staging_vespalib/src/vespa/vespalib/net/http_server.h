@@ -41,6 +41,7 @@ private:
 public:
     typedef std::unique_ptr<HttpServer> UP;
     HttpServer(int port_in);
+    ~HttpServer();
     const vespalib::string &host() const { return _my_host; }
     JsonHandlerRepo &repo() { return _handler_repo; }
     void start();

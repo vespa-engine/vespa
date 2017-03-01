@@ -6,6 +6,8 @@
 
 namespace vespalib {
 
+TimeTracker::Task::~Task() { }
+
 TimeTracker::TimeTracker(uint32_t max_level_in)
     : _tasks(),
       _current_level(0),

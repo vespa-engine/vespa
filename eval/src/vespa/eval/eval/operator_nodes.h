@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <cmath>
-#include <memory>
+#include "basic_nodes.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "basic_nodes.h"
+#include <cmath>
+#include <memory>
 #include <map>
 
 namespace vespalib {
@@ -35,8 +35,8 @@ private:
     bool             _is_const;
 
 public:
-    Operator(const vespalib::string &op_str_in, int priority_in, Order order_in)
-        : _op_str(op_str_in), _priority(priority_in), _order(order_in), _lhs(), _rhs(), _is_const(false) {}
+    Operator(const vespalib::string &op_str_in, int priority_in, Order order_in);
+    ~Operator();
     vespalib::string op_str() const { return _op_str; }
     int priority() const { return _priority; }
     Order order() const { return _order; }

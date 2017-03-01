@@ -239,6 +239,8 @@ Schema::Schema()
 {
 }
 
+Schema::Schema(const Schema & rhs) = default;
+
 Schema::~Schema() { }
 
 bool

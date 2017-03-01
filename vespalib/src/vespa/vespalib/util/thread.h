@@ -27,8 +27,10 @@ private:
 
         Proxy(Thread &parent, Runnable &target)
             : thread(parent), runnable(target),
-              start(), started(), cancel(false) {}
-        virtual void Run(FastOS_ThreadInterface *thisThread, void *arguments);
+              start(), started(), cancel(false) { }
+        ~Proxy();
+
+        void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
     };
 
     Proxy             _proxy;

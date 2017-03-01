@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "ifetchercallback.h"
+#include "ihandle.h"
 #include <vespa/config/subscription/configsubscriber.h>
 #include <vespa/config/common/timingvalues.h>
 #include <vespa/vespalib/util/runnable.h>
-#include "ifetchercallback.h"
-#include "ihandle.h"
 
 namespace config {
 
@@ -16,7 +16,8 @@ namespace config {
 class ConfigPoller : public vespalib::Runnable {
 public:
     ConfigPoller(const IConfigContext::SP & context);
-    void run();
+    ~ConfigPoller();
+    void run() override;
     template <typename ConfigType>
     void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, uint64_t subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
     void subscribeGenerationChanges(IGenerationCallback * callback) { _genCallback = callback; }
