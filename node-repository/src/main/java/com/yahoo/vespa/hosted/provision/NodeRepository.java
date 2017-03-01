@@ -270,7 +270,7 @@ public class NodeRepository extends AbstractComponent {
 
     public Node setReady(String hostname) {
         Node nodeToReady = getNode(hostname).orElseThrow(() ->
-                new NotFoundException("Could not move " + hostname + " to ready: Node not found"));
+                new NoSuchNodeException("Could not move " + hostname + " to ready: Node not found"));
 
         if (nodeToReady.state() == Node.State.ready) return nodeToReady;
         return setReady(Collections.singletonList(nodeToReady)).get(0);
@@ -341,7 +341,7 @@ public class NodeRepository extends AbstractComponent {
      * Fails this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws NotFoundException if the node is not found
+     * @throws NoSuchNodeException if the node is not found
      */
     public Node fail(String hostname, String reason) {
         return move(hostname, Node.State.failed, Optional.of(reason));
@@ -360,7 +360,7 @@ public class NodeRepository extends AbstractComponent {
      * Parks this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws NotFoundException if the node is not found
+     * @throws NoSuchNodeException if the node is not found
      */
     public Node park(String hostname) {
         return move(hostname, Node.State.parked, Optional.empty());
@@ -379,7 +379,7 @@ public class NodeRepository extends AbstractComponent {
      * Moves a previously failed or parked node back to the active state.
      *
      * @return the node in its new state
-     * @throws NotFoundException if the node is not found
+     * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname) {
         return move(hostname, Node.State.active, Optional.empty());
@@ -396,7 +396,7 @@ public class NodeRepository extends AbstractComponent {
 
     private Node move(String hostname, Node.State toState, Optional<String> reason) {
         Node node = getNode(hostname).orElseThrow(() ->
-                new NotFoundException("Could not move " + hostname + " to " + toState + ": Node not found"));
+                new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
         return move(node, toState, reason);
     }
 
