@@ -30,5 +30,6 @@
   "currentRebootGeneration": 0,
   "failCount": 0,
   "hardwareFailure" : false,
+  "wantToRetire" : false,
   "history":[{"event":"readied","at":123},{"event":"reserved","at":123},{"event":"activated","at":123}]
 }

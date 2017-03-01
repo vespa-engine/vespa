@@ -83,6 +83,8 @@ public class NodePatcher {
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
                 return node.withIpAddresses(asStringSet(value));
+            case "wantToRetire" :
+                return node.with(node.status().withWantToRetire(asBoolean(value)));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

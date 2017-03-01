@@ -16,6 +16,7 @@
   "currentRebootGeneration": 0,
   "failCount": 0,
   "hardwareFailure": false,
+  "wantToRetire" : false,
   "history": [
     {
       "event": "readied",

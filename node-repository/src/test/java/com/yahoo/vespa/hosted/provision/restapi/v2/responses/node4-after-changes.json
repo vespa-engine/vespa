@@ -37,6 +37,7 @@
   "failCount": 0,
   "hardwareFailure": true,
   "hardwareFailureType": "memory_mcelog",
+  "wantToRetire" : true,
   "history": [
     {
       "event": "readied",

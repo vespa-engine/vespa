@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 /**
 * @author bratseth
@@ -171,6 +170,7 @@ class NodesResponse extends HttpResponse {
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailure().isPresent());
         node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", toString(failure)));
+        object.setBool("wantToRetire", node.status().wantToRetire());
         toSlime(node.history(), object.setArray("history"));
     }
 
