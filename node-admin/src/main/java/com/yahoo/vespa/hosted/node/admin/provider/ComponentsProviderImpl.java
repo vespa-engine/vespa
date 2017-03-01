@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
+import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 
@@ -53,8 +54,11 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                                   boolean isRunningLocally) {
         String baseHostName = HostName.getLocalhost();
         Set<String> configServerHosts = environment.getConfigServerHosts();
+        if (configServerHosts.isEmpty()) {
+            throw new IllegalStateException("Environment setting for config servers missing or empty.");
+        }
 
-        Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
+        Orchestrator orchestrator = new OrchestratorImpl(ConfigServerHttpRequestExecutor.create(configServerHosts));
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, metricReceiver);
 
