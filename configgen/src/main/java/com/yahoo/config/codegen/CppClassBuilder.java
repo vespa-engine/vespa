@@ -346,7 +346,7 @@ public class CppClassBuilder implements ClassBuilder {
                 );
     }
 
-    void writeClassCopyConstructorDefinition(Writer w, String parent, String className, CNode node) throws IOException {
+    void writeClassCopyConstructorDefinition(Writer w, String parent, CNode node) throws IOException {
         String typeName = getTypeName(node, false);
         // Write empty constructor
         w.write(parent + typeName + "(const " + typeName + " & __rhs)\n");
@@ -359,12 +359,15 @@ public class CppClassBuilder implements ClassBuilder {
                 );
     }
 
+    void writeDestructor(Writer w, String parent, String className) throws IOException {
+        w.write(parent + "~" + className + "() { } \n");
+    }
+
     void writeCommonFunctionDeclarations(Writer w, String className, CNode node, String indent) throws IOException {
-        w.write(""
-                + indent + className + "();\n");
+        w.write("" + indent + className + "();\n");
         writeClassCopyConstructorDeclaration(w, className, node, indent);
-        w.write(""
-                + "\n"
+        w.write("" + indent + "~" + className + "();\n");
+        w.write("\n"
                 + indent + "bool operator==(const " + className + "& __rhs) const;\n"
                 + indent + "bool operator!=(const " + className + "& __rhs) const;\n"
                 + "\n"
@@ -711,7 +714,8 @@ public class CppClassBuilder implements ClassBuilder {
         if (root)
             writeConfigClassCopyConstructorDefinition(w, parent, typeName, node);
         else
-            writeClassCopyConstructorDefinition(w, parent, typeName, node);
+            writeClassCopyConstructorDefinition(w, parent, node);
+        writeDestructor(w, parent, typeName);
 
         // Write parsing constructor
         String indent = "    ";
