@@ -391,13 +391,23 @@ DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
     }
 }
 
-namespace {
-struct EmptyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
-    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &, const search::IAttributeManager &) override {
-        return std::make_unique<ImportedAttributesRepo>();
-    }
-    void teardown(const search::IAttributeManager &) override { }
-};
+void
+DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot, SerialNum serialNum, const ReconfigParams &params)
+{
+    auto registry = _owner.getDocumentDBReferentRegistry();
+    auto oldRepo = _activeConfigSnapshot->getDocumentTypeRepoSP();
+    auto oldDocType = oldRepo->getDocumentType(_docTypeName.getName());
+    assert(oldDocType != nullptr);
+    auto newRepo = newConfigSnapshot.getDocumentTypeRepoSP();
+    auto newDocType = newRepo->getDocumentType(_docTypeName.getName());
+    assert(newDocType != nullptr);
+    DocumentDBReferenceResolver resolver(*registry,
+                                         *newDocType,
+                                         newConfigSnapshot.getImportedFieldsConfig(),
+                                         *oldDocType,
+                                         _refCount,
+                                         _writeService.attributeFieldWriter());
+    _subDBs.applyConfig(newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
 }
 
 void
@@ -409,6 +419,10 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     // feed mode and when switching to normal feed mode after replay.
     // Called by replayConfig() in visitor callback by executor thread
     // when using config from transaction log.
+    if (_state.getClosed()) {
+        LOG(error, "Applying config to closed document db");
+        return;
+    }
     ConfigComparisonResult cmpres;
     Schema::SP oldSchema;
     bool fallbackConfig = false;
@@ -481,8 +495,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         _writeService.setTaskLimit(_defaultExecutorTaskLimit);
     }
     if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
-        EmptyDocumentDBReferenceResolver resolver;
-        _subDBs.applyConfig(*configSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
+        applySubDBConfig(*configSnapshot, serialNum, params);
         if (serialNum < _feedHandler.getSerialNum()) {
             // Not last entry in tls.  Reprocessing should already be done.
             _subDBs.getReprocessingRunner().reset();
@@ -576,6 +589,7 @@ DocumentDB::tearDownReferences()
                                          _refCount,
                                          _writeService.attributeFieldWriter());
     _subDBs.tearDownReferences(resolver);
+    registry->remove(_docTypeName.getName());
 }
 
 void

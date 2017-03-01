@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/server/idocumentdbowner.h>
+#include <vespa/searchcore/proton/reference/document_db_referent_registry.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -10,6 +11,13 @@ namespace proton
 {
 
 struct DummyDBOwner : IDocumentDBOwner {
+    std::shared_ptr<IDocumentDBReferentRegistry> _registry;
+
+    DummyDBOwner()
+        : _registry(std::make_shared<DocumentDBReferentRegistry>())
+    {
+    }
+
     bool isInitializing() const override { return false; }
 
     searchcorespi::IIndexManagerFactory::SP
@@ -18,7 +26,7 @@ struct DummyDBOwner : IDocumentDBOwner {
     }
     uint32_t getDistributionKey() const override { return -1; }
     std::shared_ptr<IDocumentDBReferentRegistry> getDocumentDBReferentRegistry() const override {
-        return std::shared_ptr<IDocumentDBReferentRegistry>();
+        return _registry;
     }
 };
 
