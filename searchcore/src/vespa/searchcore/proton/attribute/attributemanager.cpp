@@ -4,6 +4,7 @@
 #include "attributedisklayout.h"
 #include "attributemanager.h"
 #include "i_attribute_functor.h"
+#include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -23,8 +24,9 @@ using search::AttributeVector;
 using search::IndexMetaInfo;
 using search::TuneFileAttributes;
 using search::attribute::IAttributeContext;
-using search::index::Schema;
+using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
+using search::index::Schema;
 
 namespace proton {
 
@@ -334,10 +336,53 @@ AttributeManager::getAttributeList(std::vector<AttributeGuard> &list) const
     }
 }
 
+namespace {
+
+class CombinedAttributeContext : public IAttributeContext {
+private:
+    AttributeContext _ctx;
+    ImportedAttributesContext _importedCtx;
+
+public:
+    CombinedAttributeContext(const search::IAttributeManager &mgr,
+                             const ImportedAttributesRepo &importedAttributes)
+        : _ctx(mgr),
+          _importedCtx(importedAttributes)
+    {
+    }
+    virtual const IAttributeVector *getAttribute(const vespalib::string &name) const override {
+        const IAttributeVector *result = _ctx.getAttribute(name);
+        if (result == nullptr) {
+            result = _importedCtx.getAttribute(name);
+        }
+        return result;
+    }
+    virtual const IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override {
+        const IAttributeVector *result = _ctx.getAttributeStableEnum(name);
+        if (result == nullptr) {
+            result = _importedCtx.getAttributeStableEnum(name);
+        }
+        return result;
+    }
+    virtual void getAttributeList(std::vector<const IAttributeVector *> &list) const override {
+        _ctx.getAttributeList(list);
+        _importedCtx.getAttributeList(list);
+    }
+    virtual void releaseEnumGuards() override {
+        _ctx.releaseEnumGuards();
+        _importedCtx.releaseEnumGuards();
+    }
+};
+
+}
+
 IAttributeContext::UP
 AttributeManager::createContext() const
 {
-    return IAttributeContext::UP(new AttributeContext(*this));
+    if (_importedAttributes.get() != nullptr) {
+        return std::make_unique<CombinedAttributeContext>(*this, *_importedAttributes.get());
+    }
+    return std::make_unique<AttributeContext>(*this);
 }
 
 proton::IAttributeManager::SP
