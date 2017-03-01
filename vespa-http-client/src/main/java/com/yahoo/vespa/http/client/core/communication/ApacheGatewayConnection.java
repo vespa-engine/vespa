@@ -268,8 +268,12 @@ class ApacheGatewayConnection implements GatewayConnection {
     private void verifyServerResponseCode(StatusLine statusLine) throws ServerResponseException {
         // We use code 261-299 to report errors related to internal transitive errors that the tenants should not care
         // about to avoid masking more serious errors.
-        if (statusLine.getStatusCode() > 199 && statusLine.getStatusCode() < 260) {
+        int statusCode = statusLine.getStatusCode();
+        if (statusCode > 199 && statusCode < 260) {
             return;
+        }
+        if (statusCode == 299) {
+            throw new ServerResponseException(429, "Too  many requests.");
         }
         throw new ServerResponseException(statusLine.getStatusCode(), statusLine.getReasonPhrase());
     }
