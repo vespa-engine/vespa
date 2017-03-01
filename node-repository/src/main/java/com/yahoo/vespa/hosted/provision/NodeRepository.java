@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
  */
 // Node state transitions:
 // 1) (new) - > provisioned -> dirty -> ready -> reserved -> active -> inactive -> dirty -> ready
-// 2) inactive -> reserved
+// 2) inactive -> reserved | parked
 // 3) reserved -> dirty
 // 3) * -> failed | parked -> dirty | active | (removed)
 // Nodes have an application assigned when in states reserved, active and inactive.
