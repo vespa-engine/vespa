@@ -26,6 +26,7 @@ namespace attribute {
  */
 class ImportedAttributeVector : public IAttributeVector {
 public:
+    using SP = std::shared_ptr<ImportedAttributeVector>;
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
                             std::shared_ptr<AttributeVector> target_attribute);

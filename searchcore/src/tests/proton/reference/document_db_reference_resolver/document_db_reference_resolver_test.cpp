@@ -6,15 +6,16 @@
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/log/log.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
+#include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent.h>
 #include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
-#include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/test/mock_document_db_referent.h>
 #include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
-#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
@@ -233,12 +234,11 @@ struct Fixture {
     void assertImportedAttribute(const vespalib::string &name,
                                  const vespalib::string &referenceField,
                                  const vespalib::string &targetField,
-                                 IAttributeVector::SP attr) {
+                                 ImportedAttributeVector::SP attr) {
         ASSERT_TRUE(attr.get());
         EXPECT_EQUAL(name, attr->getName());
-        const ImportedAttributeVector &importedAttr = asImportedAttribute(*attr);
-        EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), importedAttr.getReferenceAttribute().get());
-        EXPECT_EQUAL(parentReferent->getAttribute(targetField).get(), importedAttr.getTargetAttribute().get());
+        EXPECT_EQUAL(attrMgr.getReferenceAttribute(referenceField), attr->getReferenceAttribute().get());
+        EXPECT_EQUAL(parentReferent->getAttribute(targetField).get(), attr->getTargetAttribute().get());
     }
 
     MockGidToLidChangeHandler &getGidToLidChangeHandler(const vespalib::string &referencedDocTypeName) {

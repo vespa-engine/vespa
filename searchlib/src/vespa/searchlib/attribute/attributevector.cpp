@@ -791,6 +791,20 @@ AttributeVector::onInitSave()
     return std::unique_ptr<AttributeSaver>();
 }
 
+bool
+AttributeVector::hasActiveEnumGuards()
+{
+    std::unique_lock<std::shared_timed_mutex> lock(_enumLock, std::defer_lock);
+    for (size_t i = 0; i < 1000; ++i) {
+        // Note: Need to run this in loop as try_lock() is allowed to fail spuriously and return false
+        // even if the mutex is not currently locked by any other thread.
+        if (lock.try_lock()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 IExtendAttribute *AttributeVector::getExtendInterface() { return nullptr; }
 
 uint64_t

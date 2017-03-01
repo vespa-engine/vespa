@@ -4,46 +4,42 @@
 LOG_SETUP("imported_attributes_repo_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchlib/attribute/not_implemented_attribute.h>
-#include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 
 using proton::ImportedAttributesRepo;
+using search::AttributeVector;
 using search::attribute::BasicType;
 using search::attribute::Config;
-using search::attribute::IAttributeVector;
-using search::NotImplementedAttribute;
+using search::attribute::ImportedAttributeVector;
+using search::attribute::ReferenceAttribute;
 
-struct MyAttributeVector : public NotImplementedAttribute {
-private:
-    virtual void onCommit() override {}
-    virtual void onUpdateStat() override {}
-
-public:
-    MyAttributeVector(const vespalib::string &name)
-        : NotImplementedAttribute(name, Config(BasicType::NONE))
-    {}
-    static IAttributeVector::SP create(const vespalib::string &name) {
-        return std::make_shared<MyAttributeVector>(name);
-    }
-};
+ImportedAttributeVector::SP
+createAttr(const vespalib::string &name)
+{
+    return std::make_shared<ImportedAttributeVector>(name,
+                                                     ReferenceAttribute::SP(),
+                                                     AttributeVector::SP());
+}
 
 struct Fixture {
     ImportedAttributesRepo repo;
     Fixture() : repo() {}
-    void add(IAttributeVector::SP attr) {
+    void add(ImportedAttributeVector::SP attr) {
         repo.add(attr->getName(), attr);
     }
-    IAttributeVector::SP get(const vespalib::string &name) const {
+    ImportedAttributeVector::SP get(const vespalib::string &name) const {
         return repo.get(name);
     }
 };
 
 TEST_F("require that attributes can be added and retrieved", Fixture)
 {
-    IAttributeVector::SP fooAttr = MyAttributeVector::create("foo");
-    IAttributeVector::SP barAttr = MyAttributeVector::create("bar");
+    ImportedAttributeVector::SP fooAttr = createAttr("foo");
+    ImportedAttributeVector::SP barAttr = createAttr("bar");
     f.add(fooAttr);
     f.add(barAttr);
     EXPECT_EQUAL(2u, f.repo.size());
@@ -53,8 +49,8 @@ TEST_F("require that attributes can be added and retrieved", Fixture)
 
 TEST_F("require that attribute can be replaced", Fixture)
 {
-    IAttributeVector::SP attr1 = MyAttributeVector::create("foo");
-    IAttributeVector::SP attr2 = MyAttributeVector::create("foo");
+    ImportedAttributeVector::SP attr1 = createAttr("foo");
+    ImportedAttributeVector::SP attr2 = createAttr("foo");
     f.add(attr1);
     f.add(attr2);
     EXPECT_EQUAL(1u, f.repo.size());
@@ -63,8 +59,19 @@ TEST_F("require that attribute can be replaced", Fixture)
 
 TEST_F("require that not-found attribute returns nullptr", Fixture)
 {
-    IAttributeVector *notFound = nullptr;
+    ImportedAttributeVector *notFound = nullptr;
     EXPECT_EQUAL(f.get("not_found").get(), notFound);
+}
+
+TEST_F("require that all attributes can be retrieved", Fixture)
+{
+    f.add(createAttr("foo"));
+    f.add(createAttr("bar"));
+    std::vector<ImportedAttributeVector::SP> list;
+    f.repo.getAll(list);
+    EXPECT_EQUAL(2u, list.size());
+    EXPECT_EQUAL("bar", list[0]->getName());
+    EXPECT_EQUAL("foo", list[1]->getName());
 }
 
 TEST_MAIN()
