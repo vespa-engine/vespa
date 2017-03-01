@@ -77,8 +77,6 @@ public class NodePatcher {
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
-            case "hardwareFailure" : // TODO (Aug 2016): Remove support for this when mpolden says ok
-                return node.with(node.status().withHardwareFailure(toHardwareFailureType(asBoolean(value))));
             case "hardwareFailureType" :
                 return node.with(node.status().withHardwareFailure(toHardwareFailureType(asString(value))));
             case "parentHostname" :

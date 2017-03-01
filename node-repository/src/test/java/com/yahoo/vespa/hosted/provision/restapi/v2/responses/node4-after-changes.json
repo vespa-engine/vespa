@@ -36,7 +36,7 @@
   "convergedStateVersion": "5.104.142-2.1.2408",
   "failCount": 0,
   "hardwareFailure": true,
-  "hardwareFailureType":"unknown",
+  "hardwareFailureType": "memory_mcelog",
   "history": [
     {
       "event": "readied",
