@@ -84,7 +84,7 @@ public class NodeRepository extends AbstractComponent {
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
-        this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone, nameResolver);
+        this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone);
         this.curator = curator;
         this.clock = clock;
         this.flavors = flavors;
@@ -319,7 +319,12 @@ public class NodeRepository extends AbstractComponent {
 
     /** Move nodes to the dirty state */
     public List<Node> setDirty(List<Node> nodes) {
-        return performOn(NodeListFilter.from(nodes), node -> zkClient.writeTo(Node.State.dirty, node, Optional.empty()));
+        return performOn(NodeListFilter.from(nodes), this::setDirty);
+    }
+
+    /** Move a single node to the dirty state */
+    public Node setDirty(Node node) {
+        return zkClient.writeTo(Node.State.dirty, node, Optional.empty());
     }
 
     /**
@@ -334,7 +339,7 @@ public class NodeRepository extends AbstractComponent {
 
         if (nodeToDirty.status().hardwareFailure().isPresent())
             throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure");
-        return setDirty(Collections.singletonList(nodeToDirty)).get(0);
+        return setDirty(nodeToDirty);
     }
 
     /**

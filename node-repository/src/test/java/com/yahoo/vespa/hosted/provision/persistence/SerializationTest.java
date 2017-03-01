@@ -245,6 +245,20 @@ public class SerializationTest {
         assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipAddresses());
     }
 
+    @Test
+    public void want_to_retire_defaults_to_false() throws Exception {
+        String nodeData =
+                "{\n" +
+                        "   \"type\" : \"tenant\",\n" +
+                        "   \"flavor\" : \"large\",\n" +
+                        "   \"openStackId\" : \"myId\",\n" +
+                        "   \"hostname\" : \"myHostname\",\n" +
+                        "   \"ipAddresses\" : [\"127.0.0.1\"]\n" +
+                        "}";
+        Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
+        assertFalse(node.status().wantToRetire());
+    }
+
     private byte[] createNodeJson(String hostname, String... ipAddress) {
         String ipAddressJsonPart = "";
         if (ipAddress.length > 0) {

@@ -216,8 +216,8 @@ class GroupPreparer {
         public List<Node> offer(List<Node> offeredNodes, boolean canChangeGroup) {
             List<Node> accepted = new ArrayList<>();
             for (Node offered : offeredNodes) {
-                boolean wantToRetireNode = false;
                 if (offered.allocation().isPresent()) {
+                    boolean wantToRetireNode = false;
                     ClusterMembership membership = offered.allocation().get().membership();
                     if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
                     if ( ! membership.cluster().equalsIgnoringGroupAndDockerImage(cluster)) continue; // wrong cluster id/type
@@ -229,6 +229,7 @@ class GroupPreparer {
                     if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) wantToRetireNode = true;
                     if ( !hasCompatibleFlavor(offered)) wantToRetireNode = true;
                     if ( offered.flavor().isRetired()) wantToRetireNode = true;
+                    if ( offered.status().wantToRetire()) wantToRetireNode = true;
 
                     if ((!saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) )
                         accepted.add(acceptNode(offered, wantToRetireNode));
@@ -241,8 +242,11 @@ class GroupPreparer {
                     if (offered.flavor().isRetired()) {
                         continue;
                     }
+                    if (offered.status().wantToRetire()) {
+                        continue;
+                    }
                     Node alloc = offered.allocate(application, ClusterMembership.from(cluster, highestIndex.add(1)), clock.instant());
-                    accepted.add(acceptNode(alloc, wantToRetireNode));
+                    accepted.add(acceptNode(alloc, false));
                 }
             }
 

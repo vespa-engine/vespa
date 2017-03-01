@@ -57,6 +57,7 @@ public class NodeSerializer {
     private static final String failCountKey = "failCount";
     private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
+    private static final String wantToRetireKey = "wantToRetire";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -108,6 +109,7 @@ public class NodeSerializer {
         node.status().dockerImage().ifPresent(image -> object.setString(dockerImageKey, image));
         object.setLong(failCountKey, node.status().failCount());
         node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
+        object.setBool(wantToRetireKey, node.status().wantToRetire());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
@@ -167,7 +169,8 @@ public class NodeSerializer {
                           optionalString(object.field(stateVersionKey)),
                           optionalString(object.field(dockerImageKey)),
                           (int)object.field(failCountKey).asLong(),
-                          hardwareFailureFromSlime(object.field(hardwareFailureKey)));
+                          hardwareFailureFromSlime(object.field(hardwareFailureKey)),
+                          object.field(wantToRetireKey).asBool());
     }
 
     private Flavor flavorFromSlime(Inspector object) {
