@@ -20,6 +20,8 @@ Thread::Proxy::Run(FastOS_ThreadInterface *, void *)
     _currentThread = 0;
 }
 
+Thread::Proxy::~Proxy() { }
+
 Thread::Thread(Runnable &runnable)
     : _proxy(*this, runnable),
       _pool(STACK_SIZE, 1),

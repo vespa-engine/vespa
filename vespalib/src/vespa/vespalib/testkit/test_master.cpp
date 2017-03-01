@@ -29,6 +29,8 @@ __thread TestMaster::ThreadState *TestMaster::_threadState = 0;
 
 //-----------------------------------------------------------------------------
 
+TestMaster::TraceItem::~TraceItem() { }
+
 TestMaster::ThreadState &
 TestMaster::threadState(const vespalib::LockGuard &)
 {

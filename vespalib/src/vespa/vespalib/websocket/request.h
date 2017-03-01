@@ -24,6 +24,8 @@ private:
                        const vespalib::string &header_line);
 
 public:
+    Request();
+    ~Request();
     bool read_header(Connection &conn);
     bool is_get() const { return _method == "GET"; }
     const vespalib::string &get_header(const vespalib::string &name) const;

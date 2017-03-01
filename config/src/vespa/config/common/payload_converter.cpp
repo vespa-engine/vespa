@@ -12,6 +12,8 @@ PayloadConverter::PayloadConverter(const Inspector & inspector)
       _lines()
 {}
 
+PayloadConverter::~PayloadConverter() { }
+
 const std::vector<vespalib::string> &
 PayloadConverter::convert()
 {

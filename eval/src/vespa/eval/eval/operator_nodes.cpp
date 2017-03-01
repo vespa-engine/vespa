@@ -1,12 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "operator_nodes.h"
 #include "node_visitor.h"
 
 namespace vespalib {
 namespace eval {
 namespace nodes {
+
+Operator::Operator(const vespalib::string &op_str_in, int priority_in, Order order_in)
+    : _op_str(op_str_in),
+      _priority(priority_in),
+      _order(order_in),
+      _lhs(),
+      _rhs(),
+      _is_const(false)
+{}
+
+Operator::~Operator() { }
 
 template <typename T> void OperatorHelper<T>::accept(NodeVisitor &visitor) const {
     visitor.visit(static_cast<const T&>(*this));

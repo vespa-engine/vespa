@@ -33,6 +33,8 @@ public:
 
 }
 
+DenseTensorAddressCombiner::~DenseTensorAddressCombiner() { }
+
 DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs,
                                                        const eval::ValueType &rhs)
     : _ops(),

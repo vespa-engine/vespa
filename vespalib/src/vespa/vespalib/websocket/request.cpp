@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
-#include <vespa/fastos/fastos.h>
 #include "request.h"
-#include <algorithm>
+#include <cassert>
 
 namespace vespalib {
 namespace ws {
@@ -31,6 +29,9 @@ void split(vespalib::stringref str, vespalib::stringref sep,
 }
 
 } // namespace vespalib::ws::<unnamed>
+
+Request::Request() { }
+Request::~Request() { }
 
 bool
 Request::handle_header(vespalib::string &header_name,

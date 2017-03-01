@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace vespalib {
 namespace ws {
