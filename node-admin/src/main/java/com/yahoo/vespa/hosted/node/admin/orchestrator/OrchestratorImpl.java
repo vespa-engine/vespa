@@ -48,10 +48,10 @@ public class OrchestratorImpl implements Orchestrator {
             return response.reason() == null;
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             // Orchestrator doesn't care about this node, so don't let that stop us.
-            logger.info("Got not found on suspending " + hostName +", allowed to suspend");
+            logger.info("Got not found on suspending, allowed to suspend");
             return true;
         } catch (Exception e) {
-            logger.info("Got error on suspend " + hostName, e);
+            logger.info("Got error on suspend", e);
             return false;
         }
     }
@@ -80,10 +80,10 @@ public class OrchestratorImpl implements Orchestrator {
             return response.reason() == null;
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             // Orchestrator doesn't care about this node, so don't let that stop us.
-            logger.info("Got not found on resuming " + hostName + ", allowed to suspend");
+            logger.info("Got not found on resuming, allowed to resume");
             return true;
         } catch (Exception e) {
-            logger.info("Got error on resume " + hostName, e);
+            logger.info("Got error on resume", e);
             return false;
         }
     }
