@@ -26,6 +26,7 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
+import com.yahoo.vdslib.VisitorStatistics;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -153,9 +154,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
         result.setTotalHitCount(visitor.getTotalHitCount());
 
-        Execution.Trace traceChild = query.getContext(true).getTrace().createChild();
-        traceChild.setTraceLevel(2);
-        traceChild.setProperty(STREAMING_STATISTICS, visitor.getStatistics());
+        VisitorStatistics statistics = visitor.getStatistics();
+        query.trace(statistics.toString(), false, 2);
+        query.properties().set(STREAMING_STATISTICS, statistics);
 
         Packet[] summaryPackets = new Packet [hits.size()];
 
