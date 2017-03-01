@@ -27,13 +27,13 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
@@ -89,22 +89,25 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, nodeRepository);
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
-        return ErrorResponse.notFoundError("Nothing at path '" + path + "'");
+        throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
         if (path.startsWith("/nodes/v2/state/ready/")) {
-            return new MessageResponse(setNodeReady(path));
+            nodeRepository.setReady(lastElement(path));
+            return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
-            nodeRepository.fail(lastElement(path));
-            return new MessageResponse("Moved " + lastElement(path) + " to failed");
+            List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path));
+            String failedHostnames = failedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+            return new MessageResponse("Moved " + failedHostnames + " to failed");
         }
         else if (path.startsWith("/nodes/v2/state/parked/")) {
-            nodeRepository.park(lastElement(path));
-            return new MessageResponse("Moved " + lastElement(path) + " to parked");
+            List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path));
+            String parkedHostnames = parkedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+            return new MessageResponse("Moved " + parkedHostnames + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
             nodeRepository.setDirty(lastElement(path));
@@ -114,14 +117,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
             nodeRepository.reactivate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
-        else {
-            return ErrorResponse.notFoundError("Cannot put to path '" + path + "'");
-        }
+
+        throw new NotFoundException("Cannot put to path '" + path + "'");
     }
 
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
-        if ( ! path.startsWith("/nodes/v2/node/")) return ErrorResponse.notFoundError("Nothing at '" + path + "'");
+        if ( ! path.startsWith("/nodes/v2/node/")) throw new NotFoundException("Nothing at '" + path + "'");
         Node node = nodeFromRequest(request);
         nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.clock()).apply());
         return new MessageResponse("Updated " + node.hostname());
@@ -139,7 +141,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 int addedNodes = addNodes(request.getData());
                 return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
             default:
-                return ErrorResponse.notFoundError("Nothing at path '" + request.getUri().getPath() + "'");
+                throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
         }
     }
 
@@ -150,11 +152,10 @@ public class NodesApiHandler extends LoggingRequestHandler {
             if (nodeRepository.remove(hostname))
                 return new MessageResponse("Removed " + hostname);
             else
-                return ErrorResponse.notFoundError("No node in the failed state with hostname " + hostname);
+                throw new NotFoundException("No node in the failed state with hostname " + hostname);
         }
-        else {
-            return ErrorResponse.notFoundError("Nothing at path '" + request.getUri().getPath() + "'");
-        }
+
+        throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
 
     private Node nodeFromRequest(HttpRequest request) {
@@ -166,9 +167,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (endIndex < 0) endIndex = path.length(); // path ends by ip
         String hostname = path.substring(beginIndex, endIndex);
 
-        Optional<Node> node = nodeRepository.getNode(hostname);
-        if ( ! node.isPresent()) throw new NotFoundException("No node found with hostname " + hostname);
-        return node.get();
+        return nodeRepository.getNode(hostname).orElseThrow(() ->
+                new NotFoundException("No node found with hostname " + hostname));
     }
 
     public int addNodes(InputStream jsonStream) {
@@ -215,24 +215,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
             case "proxy" : return NodeType.proxy;
             default: throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
         }
-    }
-
-    // TODO: Move most of this to node repo
-    public String setNodeReady(String path) {
-        String hostname = lastElement(path);
-        if ( nodeRepository.getNode(hostname, Node.State.ready).isPresent())
-            return "Nothing done; " + hostname + " is already ready";
-
-        Optional<Node> node = nodeRepository.getNode(hostname, Node.State.provisioned, Node.State.dirty, Node.State.failed, Node.State.parked);
-
-        if ( ! node.isPresent())
-            throw new IllegalArgumentException("Could not set " + hostname + " ready: Not registered as provisioned, dirty, failed or parked");
-
-        if (node.get().allocation().isPresent())
-            throw new IllegalArgumentException("Could not set " + hostname + " ready: Node is allocated and must be moved to dirty instead");
-
-        nodeRepository.setReady(Collections.singletonList(node.get()));
-        return "Moved " + hostname + " to ready";
     }
 
     public static NodeFilter toNodeFilter(HttpRequest request) {

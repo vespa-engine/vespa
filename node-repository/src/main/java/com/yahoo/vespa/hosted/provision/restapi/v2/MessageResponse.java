@@ -2,17 +2,11 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 
 import java.io.IOException;
 import java.io.OutputStream;
-
-import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
-import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
-import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
-import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 
 /**
  * A 200 ok response with a message in JSON

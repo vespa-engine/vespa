@@ -224,7 +224,7 @@ public class NodeFailer extends Maintainer {
             // If the active node that we are trying to fail is of type host, we need to successfully fail all
             // the children nodes running on it before we fail the host
             boolean allTenantNodesFailedOutSuccessfully = true;
-            for (Node failingTenantNode : nodeRepository().getNodes(node)) {
+            for (Node failingTenantNode : nodeRepository().getChildNodes(node.hostname())) {
                 if (failingTenantNode.state() == Node.State.active) {
                     allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode);
                 } else {

@@ -12,9 +12,9 @@
   "description":"Flavor-name-is-default",
   "minCpuCores":2.0,
   "environment":"BARE_METAL",
-  "rebootGeneration": 2,
+  "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "failCount": 0,
   "hardwareFailure" : false,
-  "history":[{"event":"readied","at":123},{"event":"deallocated","at":123}]
+  "history":[{"event":"deallocated","at":123}]
 }

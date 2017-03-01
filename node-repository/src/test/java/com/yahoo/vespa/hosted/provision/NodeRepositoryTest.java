@@ -24,7 +24,7 @@ public class NodeRepositoryTest {
 
         assertEquals(3, tester.getNodes(NodeType.tenant).size());
         
-        tester.nodeRepository().move("host2", Node.State.parked);
+        tester.nodeRepository().park("host2");
         assertTrue(tester.nodeRepository().remove("host2"));
 
         assertEquals(2, tester.getNodes(NodeType.tenant).size());

@@ -123,10 +123,9 @@ class NodesResponse extends HttpResponse {
     }
 
     private void nodeToSlime(String hostname, Cursor object) {
-        Optional<Node> node = nodeRepository.getNode(hostname);
-        if (! node.isPresent())
-            throw new NotFoundException("No node with hostname '" + hostname + "'");
-        toSlime(node.get(), true, object);
+        Node node = nodeRepository.getNode(hostname).orElseThrow(() ->
+                new NotFoundException("No node with hostname '" + hostname + "'"));
+        toSlime(node, true, object);
     }
 
     private void toSlime(Node node, boolean allFields, Cursor object) {
