@@ -63,6 +63,17 @@ TEST_F("require that not-found attribute returns nullptr", Fixture)
     EXPECT_EQUAL(f.get("not_found").get(), notFound);
 }
 
+TEST_F("require that all attributes can be retrieved", Fixture)
+{
+    f.add(createAttr("foo"));
+    f.add(createAttr("bar"));
+    std::vector<ImportedAttributeVector::SP> list;
+    f.repo.getAll(list);
+    EXPECT_EQUAL(2u, list.size());
+    EXPECT_EQUAL("bar", list[0]->getName());
+    EXPECT_EQUAL("foo", list[1]->getName());
+}
+
 TEST_MAIN()
 {
     TEST_RUN_ALL();

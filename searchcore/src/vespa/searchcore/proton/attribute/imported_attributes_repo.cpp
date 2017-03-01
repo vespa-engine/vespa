@@ -2,6 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include "imported_attributes_repo.h"
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
 
@@ -31,6 +32,15 @@ ImportedAttributesRepo::get(const vespalib::string &name) const
         return itr->second;
     }
     return ImportedAttributeVector::SP();
+}
+
+void
+ImportedAttributesRepo::getAll(std::vector<std::shared_ptr<ImportedAttributeVector>> &result) const
+{
+    result.reserve(_repo.size());
+    for (const auto &itr : _repo) {
+        result.push_back(itr.second);
+    }
 }
 
 }

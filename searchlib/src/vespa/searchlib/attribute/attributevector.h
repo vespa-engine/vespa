@@ -289,6 +289,11 @@ public:
         return _genHandler.getCurrentGeneration();
     }
 
+    /**
+     * Used for unit testing. Must not be called from the thread owning the enum guard(s).
+     */
+    bool hasActiveEnumGuards();
+
     virtual IExtendAttribute * getExtendInterface();
 
 protected:
