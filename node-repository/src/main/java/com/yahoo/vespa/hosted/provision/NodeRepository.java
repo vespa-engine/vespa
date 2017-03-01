@@ -225,6 +225,11 @@ public class NodeRepository extends AbstractComponent {
                 .findFirst();
     }
 
+    /** Get default flavor override for an application, if present. */
+    public Optional<String> getDefaultFlavorOverride(ApplicationId applicationId) {
+        return zkClient.getDefaultFlavorForApplication(applicationId);
+    }
+
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */

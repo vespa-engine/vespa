@@ -5,8 +5,10 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
@@ -15,8 +17,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,7 +80,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
+            Optional<String> defaultFlavorOverride = nodeRepository.getDefaultFlavorOverride(application);
+            Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster, defaultFlavorOverride);
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
             requestedNodes = NodeSpec.from(nodeCount, flavor);
         }

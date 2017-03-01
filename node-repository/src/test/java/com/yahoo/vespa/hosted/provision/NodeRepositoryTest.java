@@ -1,9 +1,18 @@
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.path.Path;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -28,6 +37,24 @@ public class NodeRepositoryTest {
         assertTrue(tester.nodeRepository().remove("host2"));
 
         assertEquals(2, tester.getNodes(NodeType.tenant).size());
+    }
+
+    @Test
+    public void applicationDefaultFlavor() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+
+        ApplicationId application = ApplicationId.from(TenantName.from("a"), ApplicationName.from("b"), InstanceName.from("c"));
+
+        Path path = Path.fromString("/provision/v1/defaultFlavor").append(application.serializedForm());
+        String flavor = "example-flavor";
+        tester.curator().create(path);
+        tester.curator().set(path, flavor.getBytes(StandardCharsets.UTF_8));
+
+        assertEquals(Optional.of(flavor), tester.nodeRepository().getDefaultFlavorOverride(application));
+
+        ApplicationId applicationWithoutDefaultFlavor =
+                ApplicationId.from(TenantName.from("does"), ApplicationName.from("not"), InstanceName.from("exist"));
+        assertFalse(tester.nodeRepository().getDefaultFlavorOverride(applicationWithoutDefaultFlavor).isPresent());
     }
     
 }
