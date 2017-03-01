@@ -3,6 +3,9 @@
     "application": "host_life",
     "dimensions": {
       "flavor": "docker",
+      "instanceName": "testinstance",
+      "applicationId": "tester.testapp.testinstance",
+      "applicationName": "testapp",
       "app": "testapp.testinstance",
       "clustertype": "clustType",
       "role": "tenants",
@@ -29,6 +32,9 @@
     "application":"docker",
     "dimensions":{
       "flavor":"docker",
+      "applicationName": "testapp",
+      "instanceName": "testinstance",
+      "applicationId": "tester.testapp.testinstance",
       "app":"testapp.testinstance",
       "clustertype":"clustType",
       "role":"tenants",
@@ -55,6 +61,9 @@
     "application":"docker",
     "dimensions":{
       "flavor":"docker",
+      "applicationName": "testapp",
+      "instanceName": "testinstance",
+      "applicationId": "tester.testapp.testinstance",
       "app":"testapp.testinstance",
       "clustertype":"clustType",
       "role":"tenants",
@@ -82,6 +91,9 @@
     "application":"docker",
     "dimensions":{
       "flavor":"docker",
+      "applicationName": "testapp",
+      "instanceName": "testinstance",
+      "applicationId": "tester.testapp.testinstance",
       "app":"testapp.testinstance",
       "clustertype":"clustType",
       "role":"tenants",

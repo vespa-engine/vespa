@@ -498,6 +498,9 @@ public class NodeAgentImpl implements NodeAgent {
         nodeSpec.owner.ifPresent(owner ->
                 dimensionsBuilder
                         .add("tenantName", owner.tenant)
+                        .add("applicationName", owner.application)
+                        .add("instanceName", owner.instance)
+                        .add("applicationId", owner.tenant + "." + owner.application + "." + owner.instance)
                         .add("app", owner.application + "." + owner.instance));
 
         nodeSpec.membership.ifPresent(membership ->

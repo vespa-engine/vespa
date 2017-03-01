@@ -17,6 +17,9 @@ public class SecretAgentScheduleMakerTest {
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("system-checks", 60,
                 Paths.get("/some/test"), "arg1", "arg2 with space")
                 .withTag("tenantName", "vespa")
+                .withTag("applicationName", "canary-docker")
+                .withTag("instanceName", "default")
+                .withTag("applicationId", "vespa.canary-docker.default")
                 .withTag("app", "canary-docker.default")
                 .withTag("clustertype", "container")
                 .withTag("clusterid", "canary")
@@ -36,6 +39,9 @@ public class SecretAgentScheduleMakerTest {
                 "    - arg2 with space\n" +
                 "  tags:\n" +
                 "    tenantName: vespa\n" +
+                "    applicationName: canary-docker\n" +
+                "    instanceName: default\n" +
+                "    applicationId: vespa.canary-docker.default\n" +
                 "    app: canary-docker.default\n" +
                 "    clustertype: container\n" +
                 "    clusterid: canary\n" +
