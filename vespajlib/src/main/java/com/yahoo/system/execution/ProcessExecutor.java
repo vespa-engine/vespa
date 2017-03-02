@@ -3,6 +3,7 @@ package com.yahoo.system.execution;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
 
@@ -73,7 +74,12 @@ public class ProcessExecutor {
         executor.setWatchdog(watchDog);
         executor.setExitValues(successExitCodes);
 
-        int exitCode = executor.execute(CommandLine.parse(command));
+         int exitCode;
+         try {
+             exitCode = executor.execute(CommandLine.parse(command));
+         } catch (ExecuteException e) {
+             exitCode = e.getExitValue();
+         }
         return (watchDog.killedProcess()) ?
                 Optional.empty() : Optional.of(new ProcessResult(exitCode, processOut.toString(), processErr.toString()));
     }
