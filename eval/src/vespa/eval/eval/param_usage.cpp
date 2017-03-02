@@ -44,7 +44,7 @@ struct CountUsage : NodeTraverser {
 
 struct CheckUsage : NodeTraverser {
     std::vector<double> result;
-    CheckUsage(size_t num_params) : result(num_params) {}
+    CheckUsage(size_t num_params) : result(num_params, 0.0) {}
     void merge(const std::vector<double> &true_result,
                const std::vector<double> &false_result,
                double p_true)
