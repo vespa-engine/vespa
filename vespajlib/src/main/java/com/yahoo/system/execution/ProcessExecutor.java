@@ -64,7 +64,7 @@ public class ProcessExecutor {
      * @return The result of the execution, or empty if the process does not terminate within the timeout set for this executor.
      * @throws IOException if the process execution failed.
      */
-     public Optional<ProcessResult> execute(String command, String processInput) throws IOException {
+    public Optional<ProcessResult> execute(String command, String processInput) throws IOException {
         ByteArrayOutputStream processErr = new ByteArrayOutputStream();
         ByteArrayOutputStream processOut = new ByteArrayOutputStream();
 
@@ -74,12 +74,12 @@ public class ProcessExecutor {
         executor.setWatchdog(watchDog);
         executor.setExitValues(successExitCodes);
 
-         int exitCode;
-         try {
-             exitCode = executor.execute(CommandLine.parse(command));
-         } catch (ExecuteException e) {
-             exitCode = e.getExitValue();
-         }
+        int exitCode;
+        try {
+            exitCode = executor.execute(CommandLine.parse(command));
+        } catch (ExecuteException e) {
+            exitCode = e.getExitValue();
+        }
         return (watchDog.killedProcess()) ?
                 Optional.empty() : Optional.of(new ProcessResult(exitCode, processOut.toString(), processErr.toString()));
     }
