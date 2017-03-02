@@ -191,13 +191,19 @@ FastS_PlainDataSet::MHPN_log_t::MHPN_log_t()
 void
 FastS_PlainDataSet::InsertEngine(FastS_EngineBase *engine)
 {
-    _enginesArray.Add(engine);
+    _enginesArray.push_back(engine);
 }
 
 FastS_EngineBase *
 FastS_PlainDataSet::ExtractEngine()
 {
-    return _enginesArray.Extract();
+    if (_enginesArray.size() > 0) {
+        FastS_EngineBase *ret = _enginesArray.back();
+        _enginesArray.pop_back();
+        return ret;
+    } else {
+        return NULL;
+    }
 }
 
 FastS_PlainDataSet::FastS_PlainDataSet(FastS_AppContext *appCtx,
@@ -322,8 +328,6 @@ FastS_PlainDataSet::UseNewEngine(FastS_EngineBase *oldEngine,
 
     return RefCostUseNewEngine(oldEngine, newEngine, oldCount);
 }
-
-using namespace FastS_QueryDistribution;
 
 FastS_EngineBase *
 FastS_PlainDataSet::getPartition(const FastOS_Mutex & dsMutex, uint32_t partindex, uint32_t rowid)
@@ -557,7 +561,7 @@ FastS_PlainDataSet::AreEnginesReady()
 
     // We don't need to lock things here, since the engine list
     // is non-mutable during datasetcollection lifetime.
-     return _enginesArray.ForEach( CheckReady() ).allReady;
+    return ForEachEngine( CheckReady() ).allReady;
 }
 
 void
@@ -567,8 +571,9 @@ FastS_PlainDataSet::Ping()
     FastOS_Time beforePing;
     beforePing.SetNow();
 #endif
-    _enginesArray.ForEach(
-            std::mem_fun(&FastS_EngineBase::Ping) );
+    for (FastS_EngineBase* engine : _enginesArray) {
+        engine->Ping();
+    }
 #ifdef FNET_SANITY_CHECKS
     double pingTime = beforePing.MilliSecsToNow();
     if (pingTime > 100.0) {

@@ -9,12 +9,11 @@
 #include "child_info.h"
 #include <vespa/searchcore/fdispatch/search/dataset_base.h>
 #include <vespa/searchlib/util/rand48.h>
-
-#include <vespa/searchcore/fdispatch/search/partitioned_array.h>
 #include <vespa/searchcore/fdispatch/search/configdesc.h>
-
 #include <vespa/searchcore/fdispatch/search/rowstate.h>
 #include <vespa/fnet/task.h>
+
+class FastS_EngineBase;
 
 //----------------------------------------------------------------
 // class holding information about a set of partitions
@@ -133,7 +132,7 @@ protected:
 
     FastS_DataSetDesc::QueryDistributionMode  _queryDistributionMode;
     //all engines in this dataset
-    FastS_QueryDistribution::PartitionedArray _enginesArray;
+    std::vector<FastS_EngineBase *> _enginesArray;
     search::Rand48 _randState;
 
     void InsertEngine(FastS_EngineBase *engine);
@@ -215,14 +214,13 @@ public:
 
     template <class FUN>
     FUN ForEachEngine(FUN fun) {
-        return _enginesArray.ForEach(fun);
+        for (FastS_EngineBase *ptr : _enginesArray) {
+            fun(ptr);
+        }
+        return fun;
     }
 
     static bool EngineDocStampOK(time_t haveDocStamp) { return (haveDocStamp != 0); }
-
-    void EnginePartIDChanged_HasLock(FastS_EngineBase* engine, uint32_t oldID) {
-        _enginesArray.EnginePartitionIDChanged(engine, oldID);
-    }
 
     void UseDeterministicQueryDistribution(bool);
 };
