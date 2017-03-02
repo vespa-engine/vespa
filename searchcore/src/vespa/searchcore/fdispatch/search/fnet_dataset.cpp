@@ -77,7 +77,7 @@ struct ConnectFNETEngine {
 void
 FastS_FNET_DataSet::ConfigDone(FastS_DataSetCollection *)
 {
-    _enginesArray.ForEach( ConnectFNETEngine() );
+    ForEachEngine( ConnectFNETEngine() );
     _pingTask.ScheduleNow();
 }
 

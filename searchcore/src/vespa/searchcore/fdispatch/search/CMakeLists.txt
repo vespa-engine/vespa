@@ -10,7 +10,6 @@ vespa_add_library(searchcore_fdispatch_search STATIC
     fnet_search.cpp
     mergehits.cpp
     nodemanager.cpp
-    partitioned_array.cpp
     plain_dataset.cpp
     query.cpp
     querycacheutil.cpp

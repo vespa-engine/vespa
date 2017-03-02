@@ -296,8 +296,6 @@ FastS_EngineBase::HandlePingResponse(uint32_t partid,
                        activeDocs != _reported._activeDocs ||
                        parts    != _reported._actParts));
 
-    bool partIdChanged = partid != _partid;
-    uint32_t oldPartID = _partid;
     // nothing happened ?
 
 #if 0
@@ -360,9 +358,6 @@ FastS_EngineBase::HandlePingResponse(uint32_t partid,
 
     _dataset->LinkInPart_HasLock(this);
 
-    if (partIdChanged) {
-        _dataset->EnginePartIDChanged_HasLock(this, oldPartID);
-    }
     _dataset->UnlockDataset();
     _dataset->ScheduleCheckTempFail();
 
