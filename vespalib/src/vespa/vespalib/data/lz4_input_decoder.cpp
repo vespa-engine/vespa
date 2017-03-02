@@ -19,30 +19,27 @@ Lz4InputDecoder::decode_more()
 {
     assert((_pos == _used) && !_eof);
     Memory memory = _input.obtain();
-    if (memory.size == 0) {
-        auto res = LZ4F_freeDecompressionContext(_ctx);
-        _ctx = nullptr;
-        _eof = true;
-        if (LZ4F_isError(res)) {
-            fail(LZ4F_getErrorName(res));
-        }
+    size_t input_size = memory.size;
+    size_t output_size = _buffer.size();
+    auto decode_res = LZ4F_decompress(_ctx,
+                                      &_buffer[0], &output_size,
+                                      memory.data, &input_size,
+                                      nullptr);
+    if (LZ4F_isError(decode_res)) {
+        fail(LZ4F_getErrorName(decode_res));
     } else {
-        size_t input_size = memory.size;
-        size_t output_size = _buffer.size();
-        auto res = LZ4F_decompress(_ctx,
-                                   &_buffer[0], &output_size,
-                                   memory.data, &input_size,
-                                   nullptr);
-        if (LZ4F_isError(res)) {
-            fail(LZ4F_getErrorName(res));
-        } else if (input_size == 0) {
-            fail("lz4 refusing to eat input");
-        } else {
-            assert(input_size <= memory.size);
-            assert(output_size <= _buffer.size());
-            _input.evict(input_size);
-            _used = output_size;
-            _pos = 0;
+        assert(input_size <= memory.size);
+        assert(output_size <= _buffer.size());
+        _input.evict(input_size);
+        _used = output_size;
+        _pos = 0;
+        if ((input_size == 0) && (output_size == 0)) {
+            auto fini_res = LZ4F_freeDecompressionContext(_ctx);
+            _ctx = nullptr;
+            _eof = true;
+            if (LZ4F_isError(fini_res)) {
+                fail(LZ4F_getErrorName(fini_res));
+            }
         }
     }
 }
@@ -57,9 +54,9 @@ Lz4InputDecoder::Lz4InputDecoder(Input &input, size_t buffer_size)
       _reason(),
       _ctx(nullptr)
 {
-    auto res = LZ4F_createDecompressionContext(&_ctx, LZ4F_VERSION);
-    if (LZ4F_isError(res)) {
-        fail(LZ4F_getErrorName(res));
+    auto init_res = LZ4F_createDecompressionContext(&_ctx, LZ4F_VERSION);
+    if (LZ4F_isError(init_res)) {
+        fail(LZ4F_getErrorName(init_res));
     }
 }
 
