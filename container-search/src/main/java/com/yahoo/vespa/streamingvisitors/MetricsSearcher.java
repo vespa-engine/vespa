@@ -2,20 +2,17 @@
 package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.log.event.Event;
-import com.yahoo.search.query.context.QueryContext;
-import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.search.searchchain.Execution;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vdslib.VisitorStatistics;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-
-import static com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher.STREAMING_STATISTICS;
 
 /**
  * Generates mail-specific query metrics.
@@ -77,11 +74,7 @@ public class MetricsSearcher extends Searcher {
                 stats.ok++;
             }
 
-            VisitorStatistics visitorstats = null;
-            final QueryContext queryContext = query.getContext(false);
-            if (queryContext != null) {
-                visitorstats = (VisitorStatistics)queryContext.getProperty(STREAMING_STATISTICS);
-            }
+            VisitorStatistics visitorstats = (VisitorStatistics) query.properties().get(VdsStreamingSearcher.STREAMING_STATISTICS);
             if (visitorstats != null) {
                 stats.dataStreamed += visitorstats.getBytesVisited();
                 stats.documentsStreamed += visitorstats.getDocumentsVisited();
