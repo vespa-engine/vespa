@@ -15,6 +15,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Configurable system command executor that captures stdout and stderr.
+ *
  * @author gjoranv
  * @author bjorncs
  */
@@ -46,11 +48,22 @@ public class ProcessExecutor {
     public final int timeoutSeconds;
     private final int[] successExitCodes;
 
+    /**
+     * Convenience method to execute a process with no input data. See {@link #execute(String, String)} for details.
+     */
     public Optional<ProcessResult> execute(String command) throws IOException {
         return execute(command, null);
     }
 
-    public Optional<ProcessResult> execute(String command, String processInput) throws IOException {
+    /**
+     * Executes the given command synchronously.
+     *
+     * @param command The command to execute.
+     * @param processInput Input provided to the process.
+     * @return The result of the execution, or empty if the process does not terminate within the timeout set for this executor.
+     * @throws IOException if the process execution failed.
+     */
+     public Optional<ProcessResult> execute(String command, String processInput) throws IOException {
         ByteArrayOutputStream processErr = new ByteArrayOutputStream();
         ByteArrayOutputStream processOut = new ByteArrayOutputStream();
 
