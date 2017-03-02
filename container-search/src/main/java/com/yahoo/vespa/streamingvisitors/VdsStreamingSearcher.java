@@ -26,7 +26,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
-import com.yahoo.vdslib.VisitorStatistics;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -49,7 +48,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     private static final CompoundName streamingGroupname=new CompoundName("streaming.groupname");
     private static final CompoundName streamingSelection=new CompoundName("streaming.selection");
 
-    public static final CompoundName STREAMING_STATISTICS = new CompoundName("streaming.statistics");
+    public static final String STREAMING_STATISTICS = "streaming.statistics";
     private VisitorFactory visitorFactory;
     private static final Logger log = Logger.getLogger(VdsStreamingSearcher.class.getName());
     private Route route;
@@ -154,9 +153,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
         result.setTotalHitCount(visitor.getTotalHitCount());
 
-        VisitorStatistics statistics = visitor.getStatistics();
-        query.trace(statistics.toString(), false, 2);
-        query.properties().set(STREAMING_STATISTICS, statistics);
+        Execution.Trace traceChild = query.getContext(true).getTrace().createChild();
+        traceChild.setTraceLevel(2);
+        traceChild.setProperty(STREAMING_STATISTICS, visitor.getStatistics());
 
         Packet[] summaryPackets = new Packet [hits.size()];
 
