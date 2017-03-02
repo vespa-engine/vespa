@@ -3,35 +3,39 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_manager_test");
 
+#include <vespa/config-attributes.h>
 #include <vespa/fastos/file.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
-#include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+#include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/util/filekit.h>
-
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/predicate/predicate_index.h>
-#include <vespa/searchlib/predicate/predicate_tree_annotator.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/predicate/predicate_tree_annotator.h>
+#include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/config-attributes.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
 
 namespace vespa { namespace config { namespace search {}}}
 
@@ -45,9 +49,14 @@ using namespace search::index;
 using proton::initializer::InitializerTask;
 using proton::test::AttributeUtils;
 using proton::test::Int32Attribute;
-using search::TuneFileAttributes;
-using search::index::DummyFileHeaderContext;
 using search::ForegroundTaskExecutor;
+using search::TuneFileAttributes;
+using search::attribute::BasicType;
+using search::attribute::IAttributeContext;
+using search::attribute::IAttributeVector;
+using search::attribute::ImportedAttributeVector;
+using search::attribute::ReferenceAttribute;
+using search::index::DummyFileHeaderContext;
 using search::predicate::PredicateIndex;
 using search::predicate::PredicateTreeAnnotations;
 using vespa::config::search::AttributesConfig;
@@ -102,6 +111,20 @@ fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64
     test::AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
 }
 
+struct ImportedAttributesRepoBuilder {
+    ImportedAttributesRepo::UP _repo;
+    ImportedAttributesRepoBuilder() : _repo(std::make_unique<ImportedAttributesRepo>()) {}
+    void add(const vespalib::string &name) {
+        auto refAttr = std::make_shared<ReferenceAttribute>(name + "_ref", AVConfig(BasicType::REFERENCE));
+        auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
+        auto importedAttr = std::make_shared<ImportedAttributeVector>(name, refAttr, targetAttr);
+        _repo->add(name, importedAttr);
+    }
+    ImportedAttributesRepo::UP build() {
+        return std::move(_repo);
+    }
+};
+
 struct BaseFixture
 {
     test::DirectoryHandler _dirHandler;
@@ -123,16 +146,24 @@ struct AttributeManagerFixture
     proton::AttributeManager::SP _msp;
     proton::AttributeManager &_m;
     AttributeWriter _aw;
+    ImportedAttributesRepoBuilder _builder;
     AttributeManagerFixture(BaseFixture &bf)
         : _msp(std::make_shared<proton::AttributeManager>
                (test_dir, "test.subdb", TuneFileAttributes(), bf._fileHeaderContext,
                 bf._attributeFieldWriter, bf._hwInfo)),
           _m(*_msp),
-          _aw(_msp)
+          _aw(_msp),
+          _builder()
     {
     }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
         return _m.addAttribute(name, INT32_SINGLE, createSerialNum);
+    }
+    void addImportedAttribute(const vespalib::string &name) {
+        _builder.add(name);
+    }
+    void setImportedAttributes() {
+        _m.setImportedAttributes(_builder.build());
     }
 };
 
@@ -680,6 +711,27 @@ TEST_F("require that we can acquire exclusive read access to attribute", Fixture
     ExclusiveAttributeReadAccessor::UP noneAccessor = f._m.getExclusiveReadAccessor("none");
     EXPECT_TRUE(attrAccessor.get() != nullptr);
     EXPECT_TRUE(noneAccessor.get() == nullptr);
+}
+
+TEST_F("require that imported attributes are exposed via attribute context together vi regular attributes", Fixture)
+{
+    f.addAttribute("attr");
+    f.addImportedAttribute("imported");
+    f.setImportedAttributes();
+
+    IAttributeContext::UP ctx = f._m.createContext();
+    EXPECT_TRUE(ctx->getAttribute("attr") != nullptr);
+    EXPECT_TRUE(ctx->getAttribute("imported") != nullptr);
+    EXPECT_TRUE(ctx->getAttribute("not_found") == nullptr);
+    EXPECT_TRUE(ctx->getAttributeStableEnum("attr") != nullptr);
+    EXPECT_TRUE(ctx->getAttributeStableEnum("imported") != nullptr);
+    EXPECT_TRUE(ctx->getAttributeStableEnum("not_found") == nullptr);
+
+    std::vector<const IAttributeVector *> all;
+    ctx->getAttributeList(all);
+    EXPECT_EQUAL(2u, all.size());
+    EXPECT_EQUAL("attr", all[0]->getName());
+    EXPECT_EQUAL("imported", all[1]->getName());
 }
 
 TEST_MAIN()
