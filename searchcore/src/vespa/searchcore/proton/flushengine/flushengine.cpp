@@ -34,11 +34,20 @@ findOldestFlushedSerial(const IFlushTarget::List &lst,
 
 }
 
+FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, fastos::TimeStamp start, uint32_t id) :
+    _name(name),
+    _start(start),
+    _id(id)
+{ }
+FlushEngine::FlushMeta::~FlushMeta() { }
+
 FlushEngine::FlushInfo::FlushInfo() :
     FlushMeta("", fastos::ClockSystem::now(), 0),
     _target()
 {
 }
+
+FlushEngine::FlushInfo::~FlushInfo() { }
 
 
 FlushEngine::FlushInfo::FlushInfo(uint32_t taskId,

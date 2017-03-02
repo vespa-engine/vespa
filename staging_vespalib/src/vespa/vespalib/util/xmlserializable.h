@@ -57,6 +57,7 @@ class XmlTag {
 public:
     XmlTag(const XmlTag&);
     XmlTag(const std::string& name, XmlTagFlags = NONE);
+    ~XmlTag();
 
     const std::string& getName() const { return _name; }
 };

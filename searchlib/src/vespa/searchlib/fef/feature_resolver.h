@@ -22,11 +22,8 @@ private:
     std::vector<LazyValue> _features;
     std::vector<bool> _is_object;
 public:
-    FeatureResolver(size_t size_hint) : _names(), _features(), _is_object() {
-        _names.reserve(size_hint);
-        _features.reserve(size_hint);
-        _is_object.reserve(size_hint);
-    }
+    FeatureResolver(size_t size_hint);
+    ~FeatureResolver();
     void add(const vespalib::string &name, LazyValue feature, bool is_object) {
         _names.push_back(name);
         _features.push_back(feature);

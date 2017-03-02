@@ -1,16 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.queryeval.fake_searchable");
-
 #include "fake_searchable.h"
 #include "leaf_blueprints.h"
 #include "termasstring.h"
-
 #include "create_blueprint_visitor_helper.h"
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/visit.h>
 
 using search::query::NumberTerm;
@@ -54,28 +47,12 @@ class LookupVisitor : public CreateBlueprintVisitorHelper
     const vespalib::string _tag;
 
 public:
-    LookupVisitor(Searchable &searchable,
-                  const IRequestContext & requestContext,
-                  const Map &map, const vespalib::string &tag,
-                  const FieldSpec &field)
-        : CreateBlueprintVisitorHelper(searchable, field, requestContext),
-          _map(map), _tag(tag) {}
+    LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
+                  const Map &map, const vespalib::string &tag, const FieldSpec &field);
 
+    ~LookupVisitor();
     template <class TermNode>
-    void visitTerm(TermNode &n) {
-        const vespalib::string term_string = termAsString(n);
-
-        FakeResult result;
-        typename Map::const_iterator pos =
-            _map.find(typename Map::key_type(getField().getName(), term_string));
-        if (pos != _map.end()) {
-            result = pos->second;
-        }
-        FakeBlueprint *fake = new FakeBlueprint(getField(), result);
-        Blueprint::UP b(fake);
-        fake->tag(_tag).term(term_string);
-        setResult(std::move(b));
-    }
+    void visitTerm(TermNode &n);
 
     virtual void visit(NumberTerm &n) { visitTerm(n); }
     virtual void visit(LocationTerm &n) { visitTerm(n); }
@@ -87,6 +64,35 @@ public:
     virtual void visit(PredicateQuery &n) { visitTerm(n); }
     virtual void visit(RegExpTerm &n) { visitTerm(n); }
 };
+
+template <class Map>
+LookupVisitor<Map>::LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
+                                  const Map &map, const vespalib::string &tag, const FieldSpec &field)
+    : CreateBlueprintVisitorHelper(searchable, field, requestContext),
+      _map(map),
+      _tag(tag)
+{}
+
+template <class Map>
+LookupVisitor<Map>::~LookupVisitor() { }
+
+template <class Map>
+template <class TermNode>
+void
+LookupVisitor<Map>::visitTerm(TermNode &n) {
+    const vespalib::string term_string = termAsString(n);
+
+    FakeResult result;
+    typename Map::const_iterator pos =
+            _map.find(typename Map::key_type(getField().getName(), term_string));
+    if (pos != _map.end()) {
+        result = pos->second;
+    }
+    FakeBlueprint *fake = new FakeBlueprint(getField(), result);
+    Blueprint::UP b(fake);
+    fake->tag(_tag).term(term_string);
+    setResult(std::move(b));
+}
 
 } // namespace search::queryeval::<unnamed>
 

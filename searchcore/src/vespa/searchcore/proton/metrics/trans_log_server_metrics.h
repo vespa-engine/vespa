@@ -20,6 +20,7 @@ public:
 
         typedef std::unique_ptr<DomainMetrics> UP;
         DomainMetrics(metrics::MetricSet *parent, const vespalib::string &documentType);
+        ~DomainMetrics();
         void update(const search::transactionlog::DomainInfo &stats);
     };
 
@@ -33,6 +34,7 @@ private:
 
 public:
     TransLogServerMetrics(metrics::MetricSet *parent);
+    ~TransLogServerMetrics();
     void update(const search::transactionlog::DomainStats &stats);
 };
 

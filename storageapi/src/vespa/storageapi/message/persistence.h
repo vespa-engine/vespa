@@ -22,8 +22,8 @@ class TestAndSetCommand : public BucketInfoCommand {
     TestAndSetCondition _condition;
 
 public:
-    TestAndSetCommand(const MessageType & messageType, const document::BucketId & id)
-        : BucketInfoCommand(messageType, id) {}
+    TestAndSetCommand(const MessageType & messageType, const document::BucketId & id);
+    ~TestAndSetCommand();
 
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
     const TestAndSetCondition & getCondition() const { return _condition; }
@@ -47,8 +47,8 @@ class PutCommand : public TestAndSetCommand {
     Timestamp _updateTimestamp;
 
 public:
-    PutCommand(const document::BucketId&, const document::Document::SP&,
-               Timestamp);
+    PutCommand(const document::BucketId&, const document::Document::SP&, Timestamp);
+    ~PutCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
 
@@ -94,6 +94,7 @@ class PutReply : public BucketInfoReply {
 
 public:
     explicit PutReply(const PutCommand& cmd, bool wasFound = true);
+    ~PutReply();
 
     const document::DocumentId& getDocumentId() const { return _docId; }
     bool hasDocument() const { return _document.get(); }
@@ -124,6 +125,7 @@ class UpdateCommand : public TestAndSetCommand {
 public:
     UpdateCommand(const document::BucketId&,
                   const document::DocumentUpdate::SP&, Timestamp);
+    ~UpdateCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
     void setOldTimestamp(Timestamp ts) { _oldTimestamp = ts; }
@@ -163,6 +165,7 @@ class UpdateReply : public BucketInfoReply {
 
 public:
     UpdateReply(const UpdateCommand& cmd, Timestamp oldTimestamp = 0);
+    ~UpdateReply();
 
     void setOldTimestamp(Timestamp ts) { _oldTimestamp = ts; }
 
@@ -205,6 +208,7 @@ class GetCommand : public BucketInfoCommand {
 public:
     GetCommand(const document::BucketId&, const document::DocumentId&,
                const vespalib::stringref & fieldSet, Timestamp before = MAX_TIMESTAMP);
+    ~GetCommand();
 
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
 
@@ -240,6 +244,7 @@ public:
     GetReply(const GetCommand& cmd,
              const document::Document::SP& doc = document::Document::SP(),
              Timestamp lastModified = 0);
+    ~GetReply();
 
     const document::Document::SP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const { return _docId; }
@@ -273,6 +278,7 @@ class RemoveCommand : public TestAndSetCommand {
 public:
     RemoveCommand(const document::BucketId&, const document::DocumentId& docId,
                   Timestamp timestamp);
+    ~RemoveCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
 
@@ -302,6 +308,7 @@ class RemoveReply : public BucketInfoReply {
 
 public:
     explicit RemoveReply(const RemoveCommand& cmd, Timestamp oldTimestamp = 0);
+    ~RemoveReply();
 
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getTimestamp() { return _timestamp; };
@@ -329,6 +336,7 @@ class RevertCommand : public BucketInfoCommand {
 public:
     RevertCommand(const document::BucketId& bucket,
                   const std::vector<Timestamp>& revertTokens);
+    ~RevertCommand();
 
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
 
@@ -349,6 +357,7 @@ class RevertReply : public BucketInfoReply {
 
 public:
     explicit RevertReply(const RevertCommand& cmd);
+    ~RevertReply();
 
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
 

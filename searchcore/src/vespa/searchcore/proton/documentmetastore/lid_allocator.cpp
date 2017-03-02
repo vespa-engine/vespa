@@ -46,6 +46,8 @@ LidAllocator::LidAllocator(uint32_t size,
 
 }
 
+LidAllocator::~LidAllocator() {}
+
 LidAllocator::DocId
 LidAllocator::getFreeLid(DocId lidLimit)
 {

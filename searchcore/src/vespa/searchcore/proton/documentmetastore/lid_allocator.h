@@ -37,6 +37,7 @@ public:
                  uint32_t capacity,
                  vespalib::GenerationHolder &genHolder,
                  const search::GrowStrategy & grow);
+    ~LidAllocator();
 
     DocId getFreeLid(DocId lidLimit);
     DocId peekFreeLid(DocId lidLimit);

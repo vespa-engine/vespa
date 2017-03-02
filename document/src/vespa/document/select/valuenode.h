@@ -269,6 +269,8 @@ private:
     class IteratorHandler : public FieldValue::IteratorHandler
     {
     public:
+        IteratorHandler();
+        ~IteratorHandler();
         bool hasSingleValue() const;
 
         std::unique_ptr<Value> getSingleValue();

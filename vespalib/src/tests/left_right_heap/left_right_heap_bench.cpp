@@ -74,26 +74,32 @@ struct Data32p {
     size_t size;
     std::vector<uint32_t> values;
     std::vector<uint16_t> data;
-    Data32p(size_t s) : cmp(0), size(s), values(), data() {}
+    Data32p(size_t s);
+    ~Data32p();
     static const char *name() { return "uint32_t[uint16_t]"; }
-    void init(bool inv) {
-        values.resize(size);
-        data.resize(size);
-        srandom(42);
-        for (size_t i = 0; i < size; ++i) {
-            if (inv) {
-                values[size - i - 1] = random();
-                data[size - i - 1] = (size - i - 1);
-            } else {
-                values[i] = random();
-                data[i] = i;
-            }
-        }
-        ASSERT_EQUAL(size, values.size());
-        ASSERT_EQUAL(size, data.size());
-        cmp = MyCmp(&values[0]);
-    }
+    void init(bool inv);
 };
+
+Data32p::Data32p(size_t s) : cmp(0), size(s), values(), data() {}
+Data32p::~Data32p() {}
+void
+Data32p::init(bool inv) {
+    values.resize(size);
+    data.resize(size);
+    srandom(42);
+    for (size_t i = 0; i < size; ++i) {
+        if (inv) {
+            values[size - i - 1] = random();
+            data[size - i - 1] = (size - i - 1);
+        } else {
+            values[i] = random();
+            data[i] = i;
+        }
+    }
+    ASSERT_EQUAL(size, values.size());
+    ASSERT_EQUAL(size, data.size());
+    cmp = MyCmp(&values[0]);
+}
 
 template <typename T, typename C>
 bool verifyOrder(T *begin, T *end, const C &cmp, bool inv) {

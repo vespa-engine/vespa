@@ -12,6 +12,8 @@ TransportMetrics::QueryMetrics::QueryMetrics(metrics::MetricSet *parent)
 {
 }
 
+TransportMetrics::QueryMetrics::~QueryMetrics() { }
+
 TransportMetrics::DocsumMetrics::DocsumMetrics(metrics::MetricSet *parent)
     : metrics::MetricSet("docsum", "", "Docsum metrics", parent),
       count("count", "logdefault", "Docsum requests handled", this),
@@ -20,6 +22,8 @@ TransportMetrics::DocsumMetrics::DocsumMetrics(metrics::MetricSet *parent)
 {
 }
 
+TransportMetrics::DocsumMetrics::~DocsumMetrics() { }
+
 TransportMetrics::TransportMetrics()
     : metrics::MetricSet("transport", "", "Transport server metrics", 0),
       updateLock(),
@@ -27,6 +31,8 @@ TransportMetrics::TransportMetrics()
       docsum(this)
 {
 }
+
+TransportMetrics::~TransportMetrics() { }
 
 } // namespace engine
 } // namespace search

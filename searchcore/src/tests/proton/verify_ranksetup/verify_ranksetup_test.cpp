@@ -50,9 +50,8 @@ struct Model {
     std::map<std::string,std::string>                         properties;
     std::map<std::string,std::string>                         constants;
     std::vector<bool>                                         extra_profiles;
-    Model() : indexes(), attributes(), properties(), extra_profiles() {
-        verify_dir();
-    }
+    Model();
+    ~Model();
     void index(const std::string &name, schema::DataType data_type,
                schema::CollectionType collection_type)
     {
@@ -155,6 +154,16 @@ struct Model {
         }
     }
 };
+
+Model::Model()
+    : indexes(),
+      attributes(),
+      properties(),
+      extra_profiles()
+{
+    verify_dir();
+}
+Model::~Model() {}
 
 //-----------------------------------------------------------------------------
 

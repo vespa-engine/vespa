@@ -2,7 +2,6 @@
 
 #include "integerbase.hpp"
 #include "attributevector.hpp"
-#include <vespa/searchlib/common/sort.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace search {
@@ -14,6 +13,8 @@ IntegerAttribute::IntegerAttribute(const vespalib::string & name, const Config &
     _changes()
 {
 }
+
+IntegerAttribute::~IntegerAttribute() { }
 
 uint32_t IntegerAttribute::clearDoc(DocId doc)
 {

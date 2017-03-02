@@ -92,6 +92,7 @@ public:
         : _caller(std::move(closure)),
           _index(index)
     { }
+    ~DiskIndexWithDestructorClosure();
     const IDiskIndex &getWrapped() const { return *_index; }
 
     /**
@@ -128,6 +129,8 @@ public:
     virtual const search::index::Schema &getSchema() const { return _index->getSchema(); }
 
 };
+
+DiskIndexWithDestructorClosure::~DiskIndexWithDestructorClosure() {}
 
 }  // namespace
 
@@ -408,6 +411,33 @@ IndexMaintainer::createNewSourceCollection(const LockGuard &newSearchLock)
     ISearchableIndexCollection::SP currentLeaf(getLeaf(newSearchLock, _source_list));
     return ISearchableIndexCollection::UP(new IndexCollection(_selector, *currentLeaf));
 }
+
+IndexMaintainer::FlushArgs::FlushArgs()
+    : old_index(),
+      old_absolute_id(0),
+      old_source_list(),
+      save_info(),
+      flush_serial_num(),
+      stats(NULL),
+      _skippedEmptyLast(false),
+      _extraIndexes(),
+      _changeGens(),
+      _wtSchema()
+{
+}
+IndexMaintainer::FlushArgs::~FlushArgs() { }
+IndexMaintainer::FlushArgs::FlushArgs(FlushArgs &&) = default;
+IndexMaintainer::FlushArgs & IndexMaintainer::FlushArgs::operator=(FlushArgs &&) = default;
+
+IndexMaintainer::WipeHistoryArgs::WipeHistoryArgs()
+        : _old_source_list(),
+          _new_source_list()
+{ }
+
+IndexMaintainer::WipeHistoryArgs::WipeHistoryArgs(WipeHistoryArgs &&) = default;
+IndexMaintainer::WipeHistoryArgs & IndexMaintainer::WipeHistoryArgs::operator=(WipeHistoryArgs &&) = default;
+
+IndexMaintainer::WipeHistoryArgs::~WipeHistoryArgs() { }
 
 bool
 IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)

@@ -17,38 +17,16 @@ private:
     fef::MatchData::UP                     _md;
 
 public:
-    SearchIteratorPack() : _children(), _childMatch(), _md() {}
-    SearchIteratorPack(SearchIteratorPack &&rhs)
-        : _children(std::move(rhs._children)),
-          _childMatch(std::move(rhs._childMatch)),
-          _md(std::move(rhs._md)) {}
-
-    SearchIteratorPack &operator=(SearchIteratorPack &&rhs) {
-        _children = std::move(rhs._children);
-        _childMatch = std::move(rhs._childMatch);
-        _md = std::move(rhs._md);
-        return *this;
-    }
+    SearchIteratorPack();
+    ~SearchIteratorPack();
+    SearchIteratorPack(SearchIteratorPack &&rhs);
+    SearchIteratorPack &operator=(SearchIteratorPack &&rhs);
 
     SearchIteratorPack(const std::vector<SearchIterator*> &children,
                        const std::vector<fef::TermFieldMatchData*> &childMatch,
-                       fef::MatchData::UP md)
-        : _children(),
-          _childMatch(childMatch),
-          _md(std::move(md))
-    {
-        _children.reserve(children.size());
-        for (auto child: children) {
-            _children.emplace_back(child);
-        }
-        assert((_children.size() == _childMatch.size()) ||
-               (_childMatch.empty() && (_md.get() == nullptr)));
-    }
+                       fef::MatchData::UP md);
 
-    explicit SearchIteratorPack(const std::vector<SearchIterator*> &children)
-        : SearchIteratorPack(children,
-                             std::vector<fef::TermFieldMatchData*>(),
-                             fef::MatchData::UP()) {}
+    explicit SearchIteratorPack(const std::vector<SearchIterator*> &children);
 
     uint32_t get_docid(uint32_t ref) const {
         return _children[ref]->getDocId();

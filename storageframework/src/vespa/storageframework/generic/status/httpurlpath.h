@@ -26,6 +26,7 @@ class HttpUrlPath : public vespalib::Printable {
 public:
     HttpUrlPath(const vespalib::string& urlpath);
     HttpUrlPath(const vespalib::string& urlpath, const vespalib::string& serverSpec);
+    ~HttpUrlPath();
 
     const vespalib::string& getPath() const { return _path; }
     const std::map<vespalib::string, vespalib::string>& getAttributes() const

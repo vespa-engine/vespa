@@ -70,6 +70,8 @@ AttributeVector::BaseName::BaseName(const vespalib::stringref &base,
     append(name);
 }
 
+AttributeVector::BaseName::~BaseName() { }
+
 
 AttributeVector::BaseName::string
 AttributeVector::BaseName::getIndexName() const

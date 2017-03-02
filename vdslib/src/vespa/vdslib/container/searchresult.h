@@ -23,6 +23,7 @@ class BlobContainer
 {
 public:
     BlobContainer(size_t reserve=4096);
+    ~BlobContainer();
     size_t append(const void * v, size_t sz);
     void getBlob(size_t index, const void * & blob, size_t & sz) const;
     size_t getCount() const { return _offsets.size() - 1; }
@@ -50,6 +51,7 @@ public:
      * @param buf A byte buffer that contains a serialized message.
      */
     SearchResult(document::ByteBuffer & buf);
+    ~SearchResult();
 
     AggregatorList       & getGroupingList()               { return _groupingList; }
     const AggregatorList & getGroupingList()         const { return _groupingList; }

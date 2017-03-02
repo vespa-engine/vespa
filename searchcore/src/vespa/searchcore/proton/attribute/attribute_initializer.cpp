@@ -100,6 +100,8 @@ AttributeInitializer::AttributeHeader::AttributeHeader()
 {
 }
 
+AttributeInitializer::AttributeHeader::~AttributeHeader() {}
+
 AttributeVector::SP
 AttributeInitializer::tryLoadAttribute(const IndexMetaInfo &info) const
 {
@@ -186,6 +188,8 @@ AttributeInitializer::AttributeInitializer(const vespalib::string &baseDir,
       _factory(factory)
 {
 }
+
+AttributeInitializer::~AttributeInitializer() {}
 
 search::AttributeVector::SP
 AttributeInitializer::init() const

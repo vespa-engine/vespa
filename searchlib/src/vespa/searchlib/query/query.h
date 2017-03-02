@@ -17,6 +17,7 @@ class QueryConnector : public QueryNode, public QueryNodeList
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT_NS(search, QueryConnector);
     QueryConnector(const char * opName);
+    ~QueryConnector();
     virtual const HitList & evaluateHits(HitList & hl) const;
     /// Will clear the results from the querytree.
     virtual void reset();

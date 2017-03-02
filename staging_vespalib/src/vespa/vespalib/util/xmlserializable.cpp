@@ -354,6 +354,8 @@ XmlTag::XmlTag(const XmlTag& tag)
 {
 }
 
+XmlTag::~XmlTag() {}
+
 XmlTag::XmlTag(const std::string& name, XmlTagFlags flags)
     : _name(name),
       _attributes(),
@@ -377,9 +379,9 @@ XmlAttribute::XmlAttribute(const XmlAttribute& attribute)
 }
 
 XmlAttribute::XmlAttribute(const std::string& name, const char * value, uint32_t flags)
-        : _name(name),
-          _value(),
-          _next()
+    : _name(name),
+      _value(),
+      _next()
 {
     vespalib::asciistream ost;
     if (flags & HEX) ost << vespalib::hex << "0x";

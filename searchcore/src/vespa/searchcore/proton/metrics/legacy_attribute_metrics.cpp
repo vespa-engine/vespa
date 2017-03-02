@@ -63,6 +63,8 @@ LegacyAttributeMetrics::List::List(metrics::MetricSet *parent)
 {
 }
 
+LegacyAttributeMetrics::List::~List() {}
+
 LegacyAttributeMetrics::LegacyAttributeMetrics(metrics::MetricSet *parent)
     : metrics::MetricSet("attributes", "", "Attribute metrics", parent),
       list(this),
@@ -70,5 +72,7 @@ LegacyAttributeMetrics::LegacyAttributeMetrics(metrics::MetricSet *parent)
       bitVectors("bitvectors", "", "Number of bitvectors for attributes", this)
 {
 }
+
+LegacyAttributeMetrics::~LegacyAttributeMetrics() {}
 
 } // namespace proton

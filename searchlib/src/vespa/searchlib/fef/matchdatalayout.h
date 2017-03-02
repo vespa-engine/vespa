@@ -23,6 +23,7 @@ public:
      * Create an empty object.
      **/
     MatchDataLayout();
+    ~MatchDataLayout();
 
     /**
      * Allocate space for a term field match data structure.

@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blueprint.h"
-#include <vespa/vespalib/objects/visit.hpp>
-#include <vespa/vespalib/objects/objectdumper.h>
 #include "leaf_blueprints.h"
 #include "intermediate_blueprints.h"
 #include "equiv_blueprint.h"
+#include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/util/classname.h>
 
 #include <vespa/log/log.h>
@@ -60,6 +60,16 @@ Blueprint::min(const std::vector<HitEstimate> &data)
     }
     return est;
 }
+
+Blueprint::State::State(const FieldSpecBaseList &fields_in)
+    : _fields(fields_in),
+      _estimate(),
+      _tree_size(1),
+      _allow_termwise_eval(true)
+{
+}
+
+Blueprint::State::~State() { }
 
 Blueprint::Blueprint()
     : _parent(0),
@@ -451,6 +461,14 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
 
 
 //-----------------------------------------------------------------------------
+
+LeafBlueprint::LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval)
+    : _state(fields)
+{
+    _state.allow_termwise_eval(allow_termwise_eval);
+}
+
+LeafBlueprint::~LeafBlueprint() { }
 
 void
 LeafBlueprint::fetchPostings(bool strict)

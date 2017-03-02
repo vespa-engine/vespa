@@ -27,6 +27,8 @@ FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo,
     deserialize(repo, type, buffer, version);
 }
 
+FieldUpdate::~FieldUpdate() {}
+
 bool
 FieldUpdate::operator==(const FieldUpdate& other) const
 {

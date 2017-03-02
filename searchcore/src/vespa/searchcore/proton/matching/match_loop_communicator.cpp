@@ -6,6 +6,13 @@
 namespace proton {
 namespace matching {
 
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
+    : _estimate_match_frequency(threads),
+      _selectBest(threads, topN),
+      _rangeCover(threads)
+{}
+MatchLoopCommunicator::~MatchLoopCommunicator() {}
+
 void
 MatchLoopCommunicator::EstimateMatchFrequency::mingle()
 {

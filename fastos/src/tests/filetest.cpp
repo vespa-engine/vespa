@@ -817,7 +817,13 @@ public:
 
         return allWasOk() ? 0 : 1;
     }
+    FileTest();
+    ~FileTest();
 };
+
+FileTest::FileTest() { }
+FileTest::~FileTest() { }
+
 
 int main (int argc, char **argv)
 {

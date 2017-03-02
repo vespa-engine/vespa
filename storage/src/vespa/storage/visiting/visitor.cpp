@@ -229,6 +229,8 @@ Visitor::VisitorTarget::VisitorTarget()
 {
 }
 
+Visitor::VisitorTarget::~VisitorTarget() {}
+
 Visitor::Visitor(StorageComponent& component)
     : _component(component),
       _visitorOptions(),

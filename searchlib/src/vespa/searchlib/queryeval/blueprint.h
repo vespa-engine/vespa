@@ -62,13 +62,8 @@ public:
         bool              _allow_termwise_eval;
 
     public:
-        State(const FieldSpecBaseList &fields_in)
-            : _fields(fields_in),
-              _estimate(),
-              _tree_size(1),
-              _allow_termwise_eval(true)
-        {
-        }
+        State(const FieldSpecBaseList &fields_in);
+        ~State();
         void swap(State & rhs) {
             _fields.swap(rhs._fields);
             std::swap(_estimate, rhs._estimate);
@@ -292,11 +287,9 @@ protected:
     void set_allow_termwise_eval(bool value);
     void set_tree_size(uint32_t value);
 
-    LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval) : _state(fields) {
-        _state.allow_termwise_eval(allow_termwise_eval);
-    }
-
+    LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);
 public:
+    ~LeafBlueprint();
     const State &getState() const override final { return _state; }
     void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(bool strict) override;

@@ -76,6 +76,9 @@ CompressedBlobSet::CompressedBlobSet() :
 {
 }
 
+CompressedBlobSet::~CompressedBlobSet() { }
+
+
 CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compression, const BlobSet & uncompressed) :
     _compression(compression.type),
     _positions(uncompressed.getPositions()),

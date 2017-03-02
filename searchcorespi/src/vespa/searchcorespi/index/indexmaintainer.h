@@ -211,19 +211,12 @@ class IndexMaintainer : public IIndexManager,
         ChangeGens _changeGens;
         Schema::SP _wtSchema;
 
-        FlushArgs(void)
-            : old_index(),
-              old_absolute_id(0),
-              old_source_list(),
-              save_info(),
-              flush_serial_num(),
-              stats(NULL),
-              _skippedEmptyLast(false),
-              _extraIndexes(),
-              _changeGens(),
-              _wtSchema()
-        {
-        }
+        FlushArgs();
+        FlushArgs(const FlushArgs &) = delete;
+        FlushArgs & operator=(const FlushArgs &) = delete;
+        FlushArgs(FlushArgs &&);
+        FlushArgs & operator=(FlushArgs &&);
+        ~FlushArgs();
     };
 
     bool doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index);
@@ -288,17 +281,18 @@ class IndexMaintainer : public IIndexManager,
         ISearchableIndexCollection::SP _old_source_list;
         ISearchableIndexCollection::SP _new_source_list;
 
-        WipeHistoryArgs()
-            : _old_source_list(),
-              _new_source_list()
-        { }
+        WipeHistoryArgs();
+        WipeHistoryArgs(WipeHistoryArgs &&);
+        WipeHistoryArgs & operator=(WipeHistoryArgs &&);
+
+        ~WipeHistoryArgs();
     };
 
     bool doneWipeHistory(WipeHistoryArgs &args);
     Schema getSchema(void) const;
-    Schema::SP getActiveFusionWipeTimeSchema(void) const;
-    search::TuneFileAttributes getAttrTune(void);
-    ChangeGens getChangeGens(void);
+    Schema::SP getActiveFusionWipeTimeSchema() const;
+    search::TuneFileAttributes getAttrTune();
+    ChangeGens getChangeGens();
 
     /*
      * Schedule document db executor task to use reconfigurer to
