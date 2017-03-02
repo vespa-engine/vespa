@@ -110,21 +110,26 @@ struct FieldBlock {
     search::RawBuf binary;
     vespalib::string json;
 
-    explicit FieldBlock(const vespalib::string &jsonInput)
-        : input(jsonInput), slime(), binary(1024), json()
-    {
-        size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
-        EXPECT_EQUAL(jsonInput.size(), used);
-        {
-            search::SlimeOutputRawBufAdapter adapter(binary);
-            vespalib::slime::JsonFormat::encode(slime, adapter, true);
-            json.assign(binary.GetDrainPos(), binary.GetUsedLen());
-            binary.reset();
-        }
-        search::SlimeOutputRawBufAdapter adapter(binary);
-        vespalib::slime::BinaryFormat::encode(slime, adapter);
-    }
+    explicit FieldBlock(const vespalib::string &jsonInput);
+    ~FieldBlock();
 };
+
+FieldBlock::FieldBlock(const vespalib::string &jsonInput)
+    : input(jsonInput), slime(), binary(1024), json()
+{
+    size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
+    EXPECT_EQUAL(jsonInput.size(), used);
+    {
+        search::SlimeOutputRawBufAdapter adapter(binary);
+        vespalib::slime::JsonFormat::encode(slime, adapter, true);
+        json.assign(binary.GetDrainPos(), binary.GetUsedLen());
+        binary.reset();
+    }
+    search::SlimeOutputRawBufAdapter adapter(binary);
+    vespalib::slime::BinaryFormat::encode(slime, adapter);
+}
+
+FieldBlock::~FieldBlock() {}
 
 class Test : public vespalib::TestApp {
     std::unique_ptr<Schema> _schema;

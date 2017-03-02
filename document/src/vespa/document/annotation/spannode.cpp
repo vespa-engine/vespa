@@ -11,7 +11,8 @@ namespace {
 
 class ToStringVisitor : public SpanTreeVisitor {
 public:
-    ToStringVisitor() : _os(), _indent() { }
+    ToStringVisitor();
+    ~ToStringVisitor();
     vespalib::stringref str() const { return _os.str(); }
 private:
     vespalib::asciistream _os;
@@ -78,6 +79,9 @@ private:
         _os << ")";
     }
 };
+
+ToStringVisitor::ToStringVisitor() : _os(), _indent() { }
+ToStringVisitor::~ToStringVisitor() { }
 
 }
 

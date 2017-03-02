@@ -15,6 +15,7 @@ struct ExecutorMetrics : metrics::MetricSet
 
     void update(const vespalib::ThreadStackExecutorBase::Stats &stats);
     ExecutorMetrics(const std::string &name, metrics::MetricSet *parent);
+    ~ExecutorMetrics();
 };
 
 } // namespace proton

@@ -46,11 +46,9 @@ public:
 
     class Key {
     public:
-        Key() : _indexes() { }
-        Key(const IndexList & indexes, vespalib::stringref word) :
-            _word(word),
-            _indexes(indexes)
-        { }
+        Key();
+        Key(const IndexList & indexes, vespalib::stringref word);
+        ~Key();
         uint32_t hash() const {
             return vespalib::hashValue(_word.c_str(), _word.size());
         }

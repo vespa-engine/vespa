@@ -4,16 +4,15 @@
 
 #pragma once
 
-#include <limits>
+#include "compression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
+#include <limits>
 
 #define K_VALUE_COUNTFILE_POSOCCBITS 6
 
-namespace search
-{
+namespace search {
 
-namespace bitcompression
-{
+namespace bitcompression {
 
 class PostingListCountFileDecodeContext : public FeatureDecodeContext<true>
 {

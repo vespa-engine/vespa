@@ -158,24 +158,13 @@ private:
     IteratorPack         _iteratorPack;
 
 public:
-    VectorizedState() : _docId(), _weight(), _maxScore(), _iteratorPack() {}
+    VectorizedState();
+    VectorizedState(VectorizedState &&);
+    VectorizedState & operator=(VectorizedState &&);
+    ~VectorizedState();
 
     template <typename Scorer, typename Input>
-    std::vector<ref_t> init_state(const Input &input, uint32_t docIdLimit) {
-        std::vector<ref_t> order;
-        std::vector<score_t> max_scores;
-        order.reserve(input.size());
-        max_scores.reserve(input.size());
-        for (size_t i = 0; i < input.size(); ++i) {
-            order.push_back(i);
-            max_scores.push_back(Scorer::calculate_max_score(input, i));
-        }
-        std::sort(order.begin(), order.end(), MaxSkipOrder<Input>(docIdLimit, input, max_scores));
-        _docId = assemble([&input](ref_t ref){ return input.get_initial_docid(ref); }, order);
-        _weight = assemble([&input](ref_t ref){ return input.get_weight(ref); }, order);
-        _maxScore = assemble([&max_scores](ref_t ref){ return max_scores[ref]; }, order);
-        return order;
-    }
+    std::vector<ref_t> init_state(const Input &input, uint32_t docIdLimit);
 
     docid_t *docId() { return &(_docId[0]); }
     const int32_t *weight() const { return &(_weight[0]); }
@@ -191,15 +180,55 @@ public:
     uint32_t seek(uint16_t ref, uint32_t docid) { return _iteratorPack.seek(ref, docid); }
     int32_t get_weight(uint16_t ref, uint32_t docid) { return _iteratorPack.get_weight(ref, docid); }
     
-    vespalib::string stringify_docid() const {
-        auto range = assemble(Ident(), NumericOrder(_docId.size()));
-        return do_stringify("state{docid}", range.begin(), range.end(),
-                            [this](ref_t ref)
-                            {
-                                return vespalib::make_string("%u:%u/%u", ref, _docId[ref], _iteratorPack.get_docid(ref));
-                            });
-    }
+    vespalib::string stringify_docid() const;
 };
+
+template <typename IteratorPack>
+VectorizedState<IteratorPack>::VectorizedState()
+    : _docId(),
+      _weight(),
+      _maxScore(),
+      _iteratorPack()
+{}
+template <typename IteratorPack>
+VectorizedState<IteratorPack>::~VectorizedState() { }
+
+template <typename IteratorPack>
+VectorizedState<IteratorPack>::VectorizedState(VectorizedState &&) = default;
+
+template <typename IteratorPack>
+VectorizedState<IteratorPack> &
+VectorizedState<IteratorPack>::operator=(VectorizedState &&) = default;
+
+template <typename IteratorPack>
+template <typename Scorer, typename Input>
+std::vector<ref_t>
+VectorizedState<IteratorPack>::init_state(const Input &input, uint32_t docIdLimit) {
+    std::vector<ref_t> order;
+    std::vector<score_t> max_scores;
+    order.reserve(input.size());
+    max_scores.reserve(input.size());
+    for (size_t i = 0; i < input.size(); ++i) {
+        order.push_back(i);
+        max_scores.push_back(Scorer::calculate_max_score(input, i));
+    }
+    std::sort(order.begin(), order.end(), MaxSkipOrder<Input>(docIdLimit, input, max_scores));
+    _docId = assemble([&input](ref_t ref){ return input.get_initial_docid(ref); }, order);
+    _weight = assemble([&input](ref_t ref){ return input.get_weight(ref); }, order);
+    _maxScore = assemble([&max_scores](ref_t ref){ return max_scores[ref]; }, order);
+    return order;
+}
+
+template <typename IteratorPack>
+vespalib::string
+VectorizedState<IteratorPack>::stringify_docid() const {
+    auto range = assemble(Ident(), NumericOrder(_docId.size()));
+    return do_stringify("state{docid}", range.begin(), range.end(),
+                        [this](ref_t ref)
+                        {
+                            return vespalib::make_string("%u:%u/%u", ref, _docId[ref], _iteratorPack.get_docid(ref));
+                        });
+}
 
 //-----------------------------------------------------------------------------
 
@@ -211,19 +240,27 @@ private:
 public:
     template <typename Scorer>
     VectorizedIteratorTerms(const Terms &t, const Scorer &, uint32_t docIdLimit,
-                            fef::MatchData::UP childrenMatchData)
-        : _terms()
-    {
-        std::vector<ref_t> order = init_state<Scorer>(TermInput(t), docIdLimit);
-        _terms = assemble([&t](ref_t ref){ return t[ref]; }, order);
-        iteratorPack() = SearchIteratorPack(assemble([&t](ref_t ref){ return t[ref].search; }, order),
-                                            assemble([&t](ref_t ref){ return t[ref].matchData; }, order),
-                                            std::move(childrenMatchData));
-    }
+                            fef::MatchData::UP childrenMatchData);
+    VectorizedIteratorTerms(VectorizedIteratorTerms &&);
+    VectorizedIteratorTerms & operator=(VectorizedIteratorTerms &&);
+
+    ~VectorizedIteratorTerms();
     void unpack(uint16_t ref, uint32_t docid) { iteratorPack().unpack(ref, docid); }
     void visit_members(vespalib::ObjectVisitor &visitor) const;
     const Terms &input_terms() const { return _terms; }
 };
+
+template <typename Scorer>
+VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer &, uint32_t docIdLimit,
+                                                 fef::MatchData::UP childrenMatchData)
+    : _terms()
+{
+    std::vector<ref_t> order = init_state<Scorer>(TermInput(t), docIdLimit);
+    _terms = assemble([&t](ref_t ref){ return t[ref]; }, order);
+    iteratorPack() = SearchIteratorPack(assemble([&t](ref_t ref){ return t[ref].search; }, order),
+                                        assemble([&t](ref_t ref){ return t[ref].matchData; }, order),
+                                        std::move(childrenMatchData));
+}
 
 //-----------------------------------------------------------------------------
 
@@ -278,28 +315,9 @@ private:
     size_t             _size;
 
 public:
-    DualHeap(const DocIdOrder &futureCmp, size_t size)
-        : _futureCmp(futureCmp), _space(), _future(nullptr), _present(nullptr), _past(nullptr), _trash(nullptr), _size(size)
-    {
-        FutureHeap::require_left_heap();
-        PastHeap::require_right_heap();
-        _space.reserve(size);
-        init();
-    }
-    void init() {
-        _space.clear();
-        _future = &(_space[0]);
-        _present = _future;
-        for (size_t i = 0; i < _size; ++i) {
-            if (!_futureCmp.at_end(i)) {
-                _space.push_back(i);
-                FutureHeap::push(_future, ++_present, _futureCmp);
-            }
-        }
-        _past = _present;
-        _trash = _past;
-        assert(_future == &(_space[0])); // space has not moved
-    }
+    DualHeap(const DocIdOrder &futureCmp, size_t size);
+    ~DualHeap();
+    void init();
     bool has_future() const { return (_future != _present);}
     bool has_present() const { return (_present != _past);}
     bool has_past() const { return (_past != _trash);}
@@ -320,17 +338,56 @@ public:
     }
     ref_t *present_begin() const { return _present; }
     ref_t *present_end() const { return _past; }
-    vespalib::string stringify() const {
-        return "Heaps: "
-            + do_stringify("future", _future, _present,
-                           [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); })
-            + " " + do_stringify("present", _present, _past,
-                                 [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); })
-            + " " + do_stringify("past", _past, _trash,
-                                 [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); });
-    }
+    vespalib::string stringify() const;
 };
 
+template <typename FutureHeap, typename PastHeap>
+DualHeap<FutureHeap, PastHeap>::DualHeap(const DocIdOrder &futureCmp, size_t size)
+    : _futureCmp(futureCmp),
+      _space(),
+      _future(nullptr),
+      _present(nullptr),
+      _past(nullptr),
+      _trash(nullptr),
+      _size(size)
+{
+    FutureHeap::require_left_heap();
+    PastHeap::require_right_heap();
+    _space.reserve(size);
+    init();
+}
+
+template <typename FutureHeap, typename PastHeap>
+DualHeap<FutureHeap, PastHeap>::~DualHeap() { }
+
+template <typename FutureHeap, typename PastHeap>
+void
+DualHeap<FutureHeap, PastHeap>::init() {
+    _space.clear();
+    _future = &(_space[0]);
+    _present = _future;
+    for (size_t i = 0; i < _size; ++i) {
+        if (!_futureCmp.at_end(i)) {
+            _space.push_back(i);
+            FutureHeap::push(_future, ++_present, _futureCmp);
+        }
+    }
+    _past = _present;
+    _trash = _past;
+    assert(_future == &(_space[0])); // space has not moved
+}
+
+template <typename FutureHeap, typename PastHeap>
+vespalib::string
+DualHeap<FutureHeap, PastHeap>::stringify() const {
+    return "Heaps: "
+           + do_stringify("future", _future, _present,
+                          [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); })
+           + " " + do_stringify("present", _present, _past,
+                                [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); })
+           + " " + do_stringify("past", _past, _trash,
+                                [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); });
+}
 //-----------------------------------------------------------------------------
 
 #define TermFrequencyScorer_TERM_SCORE_FACTOR 1000000.0

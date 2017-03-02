@@ -430,6 +430,30 @@ getParams(PostingListParams &params) const
     params.clear();
 }
 
+template <>
+void
+EncodeContext64EBase<true>::writeBits(uint64_t data, uint32_t length)
+{
+    // While there are enough bits remaining in "data",
+    // fill the cacheInt and flush it to vector
+    if (length >= _cacheFree) {
+        // Shift new bits into cacheInt
+        _cacheInt |= ((data >> (length - _cacheFree)) &
+                      CodingTables::_intMask64[_cacheFree]);
+        *_valI++ = bswap(_cacheInt);
+
+        // Initialize variables for receiving new bits
+        length -= _cacheFree;
+        _cacheInt = 0;
+        _cacheFree = 64;
+    }
+
+    if (length > 0) {
+        uint64_t dataFragment = (data & CodingTables::_intMask64[length]);
+        _cacheInt |= (dataFragment << (_cacheFree - length));
+        _cacheFree -= length;
+    }
+}
 
 template class FeatureDecodeContext<true>;
 template class FeatureDecodeContext<false>;

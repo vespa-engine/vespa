@@ -67,6 +67,7 @@ public:
 
     VersionSpecification(int major = UNSPECIFIED, int minor = UNSPECIFIED,
                          int micro = UNSPECIFIED, const string & qualifier = "");
+    VersionSpecification(const VersionSpecification &);
     ~VersionSpecification();
 
     /**

@@ -58,6 +58,7 @@ private:
 
 public:
     SharedWeakAndPriorityQueue(uint32_t scoresToTrack);
+    ~SharedWeakAndPriorityQueue();
     Scores &getScores() { return _bestScores; }
     void adjust(score_t *begin, score_t *end) override;
 };

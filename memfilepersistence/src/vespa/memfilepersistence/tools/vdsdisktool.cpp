@@ -123,6 +123,7 @@ struct CmdLineOptions : public vespalib::ProgramOptions {
                     "Required when disabling a disk, such that other "
                     "administrators can see why it has happened.");
     }
+    ~CmdLineOptions();
 
     vector<std::string> listDir(const std::string& dir) {
         DIR* dirp = opendir(dir.c_str());
@@ -313,6 +314,7 @@ struct CmdLineOptions : public vespalib::ProgramOptions {
 
 };
 
+CmdLineOptions::~CmdLineOptions() {}
 
 int
 VdsDiskTool::run(int argc, const char * const * argv,

@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "visible_map.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vismap");
-
-#include "visible_map.h"
-#include "named_service.h"
 
 namespace slobrok {
 
@@ -144,7 +142,15 @@ VisibleMap::history(const vespalib::GenCnt& gen) const
     return retval;
 }
 
+VisibleMap::MapDiff::MapDiff() {}
+VisibleMap::MapDiff::~MapDiff() {}
 
+VisibleMap::VisibleMap()
+    : _map(NULL),
+      _waitList(),
+      _genCnt(1)
+{
+}
 VisibleMap::~VisibleMap()
 {
     aborted();

@@ -272,6 +272,7 @@ private:
         }
 
         VisitorTarget();
+        ~VisitorTarget();
     };
 
 protected:

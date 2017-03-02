@@ -57,8 +57,8 @@ public:
         std::vector<FeatureRef>  inputs;
         std::vector<FeatureType> output_types;
 
-        ExecutorSpec(Blueprint::SP blueprint_in)
-            : blueprint(blueprint_in), inputs(), output_types() {}
+        ExecutorSpec(Blueprint::SP blueprint_in);
+        ~ExecutorSpec();
     };
     typedef std::vector<ExecutorSpec> ExecutorSpecList;
 
@@ -82,6 +82,7 @@ private:
 public:
     BlueprintResolver(const BlueprintResolver &) = delete;
     BlueprintResolver &operator=(const BlueprintResolver &) = delete;
+    ~BlueprintResolver();
 
     /**
      * Create a new blueprint resolver within the given index

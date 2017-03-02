@@ -12,6 +12,10 @@ VectorizedIteratorTerms::visit_members(vespalib::ObjectVisitor &visitor) const {
     visit(visitor, "children", _terms);
 }
 
+VectorizedIteratorTerms::VectorizedIteratorTerms(VectorizedIteratorTerms &&) = default;
+VectorizedIteratorTerms & VectorizedIteratorTerms::operator=(VectorizedIteratorTerms &&) = default;
+VectorizedIteratorTerms::~VectorizedIteratorTerms() { }
+
 } // namespace wand
 } // namespace queryeval
 } // namespace search

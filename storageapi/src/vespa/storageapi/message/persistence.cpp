@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-
 namespace storage {
 namespace api {
 
@@ -19,6 +18,11 @@ IMPLEMENT_REPLY(RemoveReply)
 IMPLEMENT_COMMAND(RevertCommand, RevertReply)
 IMPLEMENT_REPLY(RevertReply)
 
+TestAndSetCommand::TestAndSetCommand(const MessageType & messageType, const document::BucketId & id)
+    : BucketInfoCommand(messageType, id)
+{}
+TestAndSetCommand::~TestAndSetCommand() { }
+
 PutCommand::PutCommand(const document::BucketId& id,
                        const document::Document::SP& doc, Timestamp time)
     : TestAndSetCommand(MessageType::PUT, id),
@@ -31,6 +35,8 @@ PutCommand::PutCommand(const document::BucketId& id,
                 "Cannot put a null document", VESPA_STRLOC);
     }
 }
+
+PutCommand::~PutCommand() {}
 
 StorageCommand::UP
 PutCommand::createCopyToForward(
@@ -78,6 +84,8 @@ PutReply::PutReply(const PutCommand& cmd, bool wasFoundFlag)
 {
 }
 
+PutReply::~PutReply() {}
+
 void
 PutReply::print(std::ostream& out, bool verbose,
                  const std::string& indent) const
@@ -110,6 +118,8 @@ UpdateCommand::UpdateCommand(const document::BucketId& id,
                 "Cannot update a null update", VESPA_STRLOC);
     }
 }
+
+UpdateCommand::~UpdateCommand() {}
 
 vespalib::string
 UpdateCommand::getSummary() const {
@@ -161,6 +171,8 @@ UpdateReply::UpdateReply(const UpdateCommand& cmd, Timestamp oldTimestamp)
 {
 }
 
+UpdateReply::~UpdateReply() {}
+
 void
 UpdateReply::print(std::ostream& out, bool verbose,
                  const std::string& indent) const
@@ -190,6 +202,8 @@ GetCommand::GetCommand(const document::BucketId& bid,
       _fieldSet(fieldSet)
 {
 }
+
+GetCommand::~GetCommand() {}
 
 StorageCommand::UP
 GetCommand::createCopyToForward(
@@ -237,6 +251,8 @@ GetReply::GetReply(const GetCommand& cmd,
 {
 }
 
+GetReply::~GetReply() {}
+
 void
 GetReply::print(std::ostream& out, bool verbose,
                  const std::string& indent) const
@@ -257,6 +273,8 @@ RemoveCommand::RemoveCommand(const document::BucketId& bid,
       _timestamp(timestamp)
 {
 }
+
+RemoveCommand::~RemoveCommand() {}
 
 StorageCommand::UP
 RemoveCommand::createCopyToForward(
@@ -294,6 +312,8 @@ RemoveReply::RemoveReply(const RemoveCommand& cmd, Timestamp oldTimestamp)
 {
 }
 
+RemoveReply::~RemoveReply() {}
+
 void
 RemoveReply::print(std::ostream& out, bool verbose,
                  const std::string& indent) const
@@ -319,6 +339,8 @@ RevertCommand::RevertCommand(const document::BucketId& id,
 {
 }
 
+RevertCommand::~RevertCommand() {}
+
 void
 RevertCommand::print(std::ostream& out, bool verbose,
                      const std::string& indent) const
@@ -342,6 +364,8 @@ RevertReply::RevertReply(const RevertCommand& cmd)
       _tokens(cmd.getRevertTokens())
 {
 }
+
+RevertReply::~RevertReply() {}
 
 void
 RevertReply::print(std::ostream& out, bool verbose,

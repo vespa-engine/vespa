@@ -1,28 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include "pagedict4.h"
 #include "compression.h"
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
-#include "pagedict4.h"
-#include <map>
-#include <string>
-#include <iostream>
-#include <sstream>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <sstream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".pagedict4");
 
-namespace search
-{
+namespace search {
 
-namespace bitcompression
-{
+namespace bitcompression {
 
-namespace
-{
+namespace {
 
 void
 setDecoderPositionHelper(PostingListCountFileDecodeContext &ctx,

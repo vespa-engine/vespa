@@ -50,7 +50,9 @@ BlobContainer::BlobContainer(size_t reserve) :
     _offsets.push_back(0);
 }
 
-size_t BlobContainer::BlobContainer::append(const void * v, size_t sz)
+BlobContainer::~BlobContainer() {}
+
+size_t BlobContainer::append(const void * v, size_t sz)
 {
     const size_t index(getCount());
     _offsets.push_back(_offsets.back() + sz);
@@ -112,6 +114,8 @@ SearchResult::SearchResult(document::ByteBuffer & buf) :
 {
     deserialize(buf);
 }
+
+SearchResult::~SearchResult() {}
 
 void SearchResult::deserialize(document::ByteBuffer & buf)
 {

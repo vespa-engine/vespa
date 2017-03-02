@@ -24,6 +24,7 @@ public:
         vespalib::string _btString;
         vespalib::string _ctString;
         AttributeHeader();
+        ~AttributeHeader();
     };
 
 private:
@@ -52,6 +53,7 @@ public:
                          const search::attribute::Config &cfg,
                          uint64_t currentSerialNum,
                          const IAttributeFactory &factory);
+    ~AttributeInitializer();
 
     search::AttributeVector::SP init() const;
     uint64_t getCurrentSerialNum() const { return _currentSerialNum; }

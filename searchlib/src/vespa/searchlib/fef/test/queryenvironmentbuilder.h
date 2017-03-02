@@ -17,6 +17,7 @@ public:
      * @param layout   The layout of match data to simultaneously update.
      */
     QueryEnvironmentBuilder(QueryEnvironment &queryEnv, MatchDataLayout &layout);
+    ~QueryEnvironmentBuilder();
 
     /**
      * Add a term node searching all known fields to this query

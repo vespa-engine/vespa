@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.metrics.documentdb_tagged_metrics");
 #include "documentdb_tagged_metrics.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -28,14 +25,17 @@ DocumentDBTaggedMetrics::JobMetrics::JobMetrics(metrics::MetricSet* parent)
 {
 }
 
-DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name,
-                                                    MetricSet *parent)
+DocumentDBTaggedMetrics::JobMetrics::~JobMetrics() {}
+
+DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name, MetricSet *parent)
     : MetricSet(name, "", "Sub database metrics", parent),
       lidSpace(this),
       documentStore(this),
       attributes(this)
 {
 }
+
+DocumentDBTaggedMetrics::SubDBMetrics::~SubDBMetrics() { }
 
 DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSet *parent)
     : MetricSet("lid_space", "", "Local document id (lid) space metrics for this document sub DB", parent),
@@ -51,6 +51,8 @@ DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSe
 {
 }
 
+DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::~LidSpaceMetrics() { }
+
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetrics(MetricSet *parent)
     : MetricSet("document_store", "", "document store metrics for this document sub DB", parent),
       diskUsage("disk_usage", "", "Disk space usage in bytes", this),
@@ -60,11 +62,15 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetric
 {
 }
 
+DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetrics() {}
+
 DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
     : MetricSet("attribute", "", "Attribute vector metrics for this document db", parent),
       resourceUsage(this)
 {
 }
+
+DocumentDBTaggedMetrics::AttributeMetrics::~AttributeMetrics() {}
 
 DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMetrics(MetricSet *parent)
     : MetricSet("resource_usage", "", "Usage metrics for various attribute vector resources", parent),
@@ -82,6 +88,8 @@ DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
 {
 }
 
+DocumentDBTaggedMetrics::IndexMetrics::~IndexMetrics() {}
+
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
@@ -92,5 +100,7 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       removed("removed", this)
 {
 }
+
+DocumentDBTaggedMetrics::~DocumentDBTaggedMetrics() {}
 
 } // namespace proton

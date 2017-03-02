@@ -33,6 +33,7 @@ public:
      * @param indexEnv The index environment of this.
      */
     QueryEnvironment(IndexEnvironment *indexEnv = NULL);
+    ~QueryEnvironment();
 
     // Inherit doc from IQueryEnvironment.
     virtual const Properties &getProperties() const { return _properties; }

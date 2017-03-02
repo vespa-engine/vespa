@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "valuenode.h"
 #include "visitor.h"
-
-#include <iomanip>
-#include <vespa/document/base/exceptions.h>
 #include "parser.h"
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <regex>
+#include <iomanip>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.select.valuenode");
@@ -262,6 +262,9 @@ FieldValueNode::getValue(const Context& context) const
         return std::unique_ptr<Value>(new InvalidValue());
     }
 }
+
+FieldValueNode::IteratorHandler::IteratorHandler() { }
+FieldValueNode::IteratorHandler::~IteratorHandler() { }
 
 bool
 FieldValueNode::IteratorHandler::hasSingleValue() const {

@@ -24,11 +24,12 @@ public:
         search::attribute::Config _cfg;
     public:
         Attribute(const vespalib::string &name,
-                      const search::attribute::Config &cfg)
-            : _name(name),
-              _cfg(cfg)
-        {
-        }
+                  const search::attribute::Config &cfg);
+        Attribute(const Attribute &);
+        Attribute & operator=(const Attribute &);
+        Attribute(Attribute &&);
+        Attribute & operator=(Attribute &&);
+        ~Attribute();
         const vespalib::string &getName() const { return _name; }
         const search::attribute::Config &getConfig() const { return _cfg; }
     };
@@ -45,12 +46,8 @@ private:
 public:
     AttributeCollectionSpec(const AttributeList &attributes,
                             uint32_t docIdLimit,
-                            SerialNum currentSerialNum)
-        : _attributes(attributes),
-          _docIdLimit(docIdLimit),
-          _currentSerialNum(currentSerialNum)
-    {
-    }
+                            SerialNum currentSerialNum);
+    ~AttributeCollectionSpec();
     const AttributeList &getAttributes() const {
         return _attributes;
     }

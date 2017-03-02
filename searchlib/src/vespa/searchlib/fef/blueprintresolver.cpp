@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.blueprintresolver");
 #include "blueprintresolver.h"
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
-#include "featurenamebuilder.h"
 #include <stack>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.blueprintresolver");
 
 namespace search {
 namespace fef {
@@ -171,6 +170,15 @@ struct Compiler : public Blueprint::DependencyHandler {
 };
 
 } // namespace search::fef::<unnamed>
+
+BlueprintResolver::ExecutorSpec::ExecutorSpec(Blueprint::SP blueprint_in)
+    : blueprint(blueprint_in),
+      inputs(),
+      output_types()
+{ }
+
+BlueprintResolver::ExecutorSpec::~ExecutorSpec() { }
+BlueprintResolver::~BlueprintResolver() { }
 
 BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
                                      const IIndexEnvironment &indexEnv)

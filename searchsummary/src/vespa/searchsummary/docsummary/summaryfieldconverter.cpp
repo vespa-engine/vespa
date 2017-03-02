@@ -318,10 +318,8 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     }
 
 public:
-    SummaryFieldValueConverter(bool tokenize, FieldValueConverter &subConverter)
-        : _str(), _tokenize(tokenize),
-          _structuredFieldConverter(subConverter)
-    {}
+    SummaryFieldValueConverter(bool tokenize, FieldValueConverter &subConverter);
+    ~SummaryFieldValueConverter();
 
     FieldValue::UP convert(const FieldValue &input) {
         input.accept(*this);
@@ -332,7 +330,11 @@ public:
     }
 };
 
-
+SummaryFieldValueConverter::SummaryFieldValueConverter(bool tokenize, FieldValueConverter &subConverter)
+    : _str(), _tokenize(tokenize),
+      _structuredFieldConverter(subConverter)
+{}
+SummaryFieldValueConverter::~SummaryFieldValueConverter() {}
 
 using namespace vespalib::slime::convenience;
 

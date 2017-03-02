@@ -136,6 +136,7 @@ public:
         BaseName(const vespalib::stringref &base,
                  const vespalib::stringref &snap,
                  const vespalib::stringref &name);
+        ~BaseName();
 
         string getIndexName() const;
         string getSnapshotName() const;

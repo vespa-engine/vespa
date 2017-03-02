@@ -3,6 +3,7 @@ vespa_add_library(document_serialization OBJECT
     SOURCES
     annotationdeserializer.cpp
     annotationserializer.cpp
+    slime_output_to_vector.cpp
     vespadocumentserializer.cpp
     vespadocumentdeserializer.cpp
     DEPENDS

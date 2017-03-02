@@ -15,6 +15,7 @@ struct TransportMetrics : metrics::MetricSet
         metrics::DoubleAverageMetric latency;
 
         QueryMetrics(metrics::MetricSet *parent);
+        ~QueryMetrics();
     };
 
     struct DocsumMetrics : metrics::MetricSet {
@@ -23,6 +24,7 @@ struct TransportMetrics : metrics::MetricSet
         metrics::DoubleAverageMetric latency;
 
         DocsumMetrics(metrics::MetricSet *parent);
+        ~DocsumMetrics();
     };
 
     vespalib::Lock updateLock;
@@ -30,6 +32,7 @@ struct TransportMetrics : metrics::MetricSet
     DocsumMetrics  docsum;
 
     TransportMetrics();
+    ~TransportMetrics();
 };
 
 } // namespace engine

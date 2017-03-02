@@ -13,7 +13,8 @@ class SlimeOutputToVector : public vespalib::Output {
     size_t _size;
 
 public:
-    SlimeOutputToVector() : _buf(), _size(0) {}
+    SlimeOutputToVector();
+    ~SlimeOutputToVector();
 
     vespalib::WritableMemory reserve(size_t reserve) {
         if (_size + reserve > _buf.size()) {

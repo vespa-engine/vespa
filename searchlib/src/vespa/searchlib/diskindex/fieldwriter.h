@@ -1,25 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "bitvectorfile.h"
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
-#include "bitvectorfile.h"
 
-namespace vespalib
-{
+namespace vespalib { class nbostream; }
 
-class nbostream;
+namespace search {
 
-}
-
-namespace search
-{
-
-namespace diskindex
-{
+namespace diskindex {
 
 /*
  * FieldWriter is used to write a dictionary and posting list file
@@ -39,11 +32,7 @@ private:
     uint64_t _wordNum;
     uint32_t _prevDocId;
 
-    static uint64_t
-    noWordNum(void)
-    {
-        return 0u;
-    }
+    static uint64_t noWordNum(void) { return 0u; }
 public:
 
     using DictionaryFileSeqWrite = index::DictionaryFileSeqWrite;
@@ -65,22 +54,16 @@ private:
     uint64_t _compactWordNum;
     vespalib::string _word;
 
-    void
-    flush(void);
+    void flush();
 
 public:
-    FieldWriter(uint32_t docIdLimit,
-                uint64_t numWordIds);
+    FieldWriter(uint32_t docIdLimit, uint64_t numWordIds);
+    ~FieldWriter();
 
-    void
-    newWord(uint64_t wordNum, const vespalib::stringref &word);
+    void newWord(uint64_t wordNum, const vespalib::stringref &word);
+    void newWord(const vespalib::stringref &word);
 
-    void
-    newWord(const vespalib::stringref &word);
-
-    void
-    add(const DocIdAndFeatures &features)
-    {
+    void add(const DocIdAndFeatures &features) {
         assert(features._docId < _docIdLimit);
         assert(features._docId > _prevDocId);
         _posoccfile->writeDocIdAndFeatures(features);
@@ -88,48 +71,29 @@ public:
         _prevDocId = features._docId;
     }
 
-    uint64_t
-    getSparseWordNum() const
-    {
-        return _wordNum;
-    }
+    uint64_t getSparseWordNum() const { return _wordNum; }
 
-    void
-    earlyOpen(const vespalib::string &prefix,
-              uint32_t minSkipDocs,
-              uint32_t minChunkDocs,
-              bool dynamicKPosOccFormat,
-              const Schema &schema,
-              uint32_t indexId,
-              const TuneFileSeqWrite &tuneFileWrite);
+    void earlyOpen(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
+                   bool dynamicKPosOccFormat, const Schema &schema, uint32_t indexId,
+                   const TuneFileSeqWrite &tuneFileWrite);
 
-    bool
-    lateOpen(const TuneFileSeqWrite &tuneFileWrite,
-             const search::common::FileHeaderContext &fileHeaderContext);
+    bool lateOpen(const TuneFileSeqWrite &tuneFileWrite,
+                  const search::common::FileHeaderContext &fileHeaderContext);
 
-    bool
-    close(void);
+    bool close();
 
     /*
      * To be called between words, not in the middle of one.
      */
-    void
-    checkPointWrite(vespalib::nbostream &out);
+    void checkPointWrite(vespalib::nbostream &out);
 
     /*
      * To be called after earlyOpen() but before afterOpen().
      */
-    void
-    checkPointRead(vespalib::nbostream &in);
-
-    void
-    setFeatureParams(const PostingListParams &params);
-
-    void
-    getFeatureParams(PostingListParams &params);
-
-    static void
-    remove(const vespalib::string &prefix);
+    void checkPointRead(vespalib::nbostream &in);
+    void setFeatureParams(const PostingListParams &params);
+    void getFeatureParams(PostingListParams &params);
+    static void remove(const vespalib::string &prefix);
 };
 
 } // namespace diskindex

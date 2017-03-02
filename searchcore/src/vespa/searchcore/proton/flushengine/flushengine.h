@@ -18,11 +18,8 @@ class FlushEngine : public FastOS_Runnable
 public:
     class FlushMeta {
     public:
-        FlushMeta(const vespalib::string & name, fastos::TimeStamp start, uint32_t id) :
-            _name(name),
-            _start(start),
-            _id(id)
-        { }
+        FlushMeta(const vespalib::string & name, fastos::TimeStamp start, uint32_t id);
+        ~FlushMeta();
         const vespalib::string & getName() const { return _name; }
         fastos::TimeStamp getStart() const { return _start; }
         uint32_t getId() const { return _id; }
@@ -40,6 +37,7 @@ private:
         FlushInfo(uint32_t taskId,
                   const IFlushTarget::SP &target,
                   const vespalib::string &destination);
+        ~FlushInfo();
 
         IFlushTarget::SP  _target;
     };

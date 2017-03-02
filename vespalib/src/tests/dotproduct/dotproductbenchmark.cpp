@@ -28,20 +28,8 @@ template <typename T>
 class FullBenchmark : public Benchmark
 {
 public:
-    FullBenchmark(size_t numDocs, size_t numValues) :
-        _values(numDocs*numValues),
-        _query(numValues),
-        _dp(IAccelrated::getAccelrator())
-    {
-        for (size_t i(0); i < numDocs; i++) {
-            for (size_t j(0); j < numValues; j++) {
-                _values[i*numValues + j] = j;
-            }
-        }
-        for (size_t j(0); j < numValues; j++) {
-            _query[j] = j;
-        }
-    }
+    FullBenchmark(size_t numDocs, size_t numValue);
+    ~FullBenchmark();
     virtual void compute(size_t docId) const {
         _dp->dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
     }
@@ -51,20 +39,30 @@ private:
     IAccelrated::UP _dp;
 };
 
+template <typename T>
+FullBenchmark<T>::FullBenchmark(size_t numDocs, size_t numValues)
+    : _values(numDocs*numValues),
+      _query(numValues),
+      _dp(IAccelrated::getAccelrator())
+{
+    for (size_t i(0); i < numDocs; i++) {
+        for (size_t j(0); j < numValues; j++) {
+            _values[i*numValues + j] = j;
+        }
+    }
+    for (size_t j(0); j < numValues; j++) {
+        _query[j] = j;
+    }
+}
+
+template <typename T>
+FullBenchmark<T>::~FullBenchmark() { }
+
 class SparseBenchmark : public Benchmark
 {
 public:
-    SparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues) :
-        _numValues(numValues),
-        _values(numDocs*numValues)
-    {
-        for (size_t i(0); i < numDocs; i++) {
-            for (size_t j(0); j < numValues; j++) {
-                size_t k(numValues < numQueryValues ?  (j*numQueryValues)/numValues : j);
-                _values[i*numValues + j] = P(k, k);
-            }
-        }
-    }
+    SparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
+    ~SparseBenchmark();
 protected:
     struct P {
         P(uint32_t key=0, int32_t value=0) :
@@ -78,18 +76,26 @@ protected:
     std::vector<P> _values;
 };
 
+SparseBenchmark::SparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues)
+    : _numValues(numValues),
+      _values(numDocs*numValues)
+{
+    for (size_t i(0); i < numDocs; i++) {
+        for (size_t j(0); j < numValues; j++) {
+            size_t k(numValues < numQueryValues ?  (j*numQueryValues)/numValues : j);
+            _values[i*numValues + j] = P(k, k);
+        }
+    }
+}
+SparseBenchmark::~SparseBenchmark() { }
+
 class UnorderedSparseBenchmark : public SparseBenchmark
 {
 private:
     typedef hash_map<uint32_t, int32_t> map;
 public:
-    UnorderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues) :
-        SparseBenchmark(numDocs, numValues, numQueryValues)
-    {
-        for (size_t j(0); j < numQueryValues; j++) {
-            _query[j] = j;
-        }
-    }
+    UnorderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
+    ~UnorderedSparseBenchmark();
 private:
     virtual void compute(size_t docId) const {
         int64_t sum(0);
@@ -105,19 +111,21 @@ private:
     map _query;
 };
 
+UnorderedSparseBenchmark::UnorderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues)
+    : SparseBenchmark(numDocs, numValues, numQueryValues)
+{
+    for (size_t j(0); j < numQueryValues; j++) {
+        _query[j] = j;
+    }
+}
+UnorderedSparseBenchmark::~UnorderedSparseBenchmark() {}
+
 class OrderedSparseBenchmark : public SparseBenchmark
 {
 private:
 public:
-    OrderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues) :
-        SparseBenchmark(numDocs, numValues, numQueryValues),
-        _query(numQueryValues)
-    {
-        for (size_t j(0); j < numQueryValues; j++) {
-            size_t k(numValues > numQueryValues ?  j*numValues/numQueryValues : j);
-            _query[j] = P(k, k);
-        }
-    }
+    OrderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
+    ~OrderedSparseBenchmark();
 private:
     virtual void compute(size_t docId) const {
         int64_t sum(0);
@@ -132,6 +140,17 @@ private:
     }
     std::vector<P> _query;
 };
+
+OrderedSparseBenchmark::OrderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues)
+    : SparseBenchmark(numDocs, numValues, numQueryValues),
+      _query(numQueryValues)
+{
+    for (size_t j(0); j < numQueryValues; j++) {
+        size_t k(numValues > numQueryValues ?  j*numValues/numQueryValues : j);
+        _query[j] = P(k, k);
+    }
+}
+OrderedSparseBenchmark::~OrderedSparseBenchmark() { }
 
 int main(int argc, char *argv[])
 {

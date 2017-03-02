@@ -17,6 +17,7 @@ struct LegacyProtonMetrics : metrics::MetricSet
     struct DocumentTypeMetrics : metrics::MetricSet {
         // documentdb metrics will be wired in here (by the metrics engine)
         DocumentTypeMetrics(metrics::MetricSet *parent);
+        ~DocumentTypeMetrics();
     };
 
     DocumentTypeMetrics                          docTypes;
@@ -35,6 +36,7 @@ struct LegacyProtonMetrics : metrics::MetricSet
     // transport metrics will be wired in here
 
     LegacyProtonMetrics();
+    ~LegacyProtonMetrics();
 };
 
 } // namespace proton

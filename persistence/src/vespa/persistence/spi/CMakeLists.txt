@@ -12,6 +12,7 @@ vespa_add_library(persistence_spi OBJECT
     metricpersistenceprovider.cpp
     read_consistency.cpp
     result
+    selection.cpp
     docentry
     DEPENDS
 )

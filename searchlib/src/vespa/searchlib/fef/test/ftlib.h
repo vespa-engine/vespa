@@ -70,6 +70,7 @@ private:
 class FtQueryEnvironment : public search::fef::test::QueryEnvironment {
 public:
     FtQueryEnvironment(search::fef::test::IndexEnvironment &indexEnv);
+    ~FtQueryEnvironment();
 
     search::fef::test::QueryEnvironmentBuilder &getBuilder() { return _builder; }
     search::fef::MatchDataLayout               &getLayout()  { return _layout; }

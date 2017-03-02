@@ -170,6 +170,9 @@ public:
      **/
     Schema();
     Schema(const Schema & rhs);
+    Schema & operator=(const Schema & rhs);
+    Schema(Schema && rhs);
+    Schema & operator=(Schema && rhs);
     ~Schema();
 
     /**
