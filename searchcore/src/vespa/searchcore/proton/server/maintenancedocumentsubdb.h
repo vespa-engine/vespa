@@ -19,12 +19,13 @@ public:
     IDocumentRetriever::SP   _retriever;
     uint32_t                 _subDbId;
 
-    MaintenanceDocumentSubDB(void)
+    MaintenanceDocumentSubDB()
         : _metaStore(),
           _retriever(),
           _subDbId(0u)
     {
     }
+    ~MaintenanceDocumentSubDB();
 
     MaintenanceDocumentSubDB(const IDocumentMetaStore::SP & metaStore,
                              const IDocumentRetriever::SP & retriever,

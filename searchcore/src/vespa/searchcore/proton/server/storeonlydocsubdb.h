@@ -71,19 +71,8 @@ public:
     StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
                                     const search::common::FileHeaderContext & parentFileHeaderContext,
                                     const DocTypeName &docTypeName,
-                                    const vespalib::string &baseDir)
-        : search::common::FileHeaderContext(),
-          _owner(owner),
-          _parentFileHeaderContext(parentFileHeaderContext),
-          _docTypeName(docTypeName),
-          _subDB()
-    {
-        size_t pos = baseDir.rfind('/');
-        if (pos != vespalib::string::npos)
-            _subDB = baseDir.substr(pos + 1);
-        else
-            _subDB = baseDir;
-    }
+                                    const vespalib::string &baseDir);
+    ~StoreOnlySubDBFileHeaderContext();
 
     void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
 };
@@ -113,15 +102,8 @@ public:
                const search::GrowStrategy &attributeGrow,
                size_t attributeGrowNumDocs,
                uint32_t subDbId,
-               SubDbType subDbType)
-            : _docTypeName(docTypeName),
-              _subName(subName),
-              _baseDir(baseDir + "/" + subName),
-              _attributeGrow(attributeGrow),
-              _attributeGrowNumDocs(attributeGrowNumDocs),
-              _subDbId(subDbId),
-              _subDbType(subDbType)
-        { }
+               SubDbType subDbType);
+        ~Config();
     };
 
     struct Context {
@@ -148,19 +130,8 @@ public:
                 bucketDBHandlerInitializer,
                 LegacyDocumentDBMetrics &metrics,
                 std::mutex &configMutex,
-                const HwInfo &hwInfo)
-            : _owner(owner),
-              _tlSyncer(tlSyncer),
-              _getSerialNum(getSerialNum),
-              _fileHeaderContext(fileHeaderContext),
-              _writeService(writeService),
-              _summaryExecutor(summaryExecutor),
-              _bucketDB(bucketDB),
-              _bucketDBHandlerInitializer(bucketDBHandlerInitializer),
-              _metrics(metrics),
-              _configMutex(configMutex),
-              _hwInfo(hwInfo)
-        { }
+                const HwInfo &hwInfo);
+        ~Context();
     };
 
 

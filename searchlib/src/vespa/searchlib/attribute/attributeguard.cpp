@@ -30,6 +30,8 @@ AttributeEnumGuard::AttributeEnumGuard(const AttributeGuard & attr) :
     takeLock();
 }
 
+AttributeEnumGuard::~AttributeEnumGuard() { }
+
 void AttributeEnumGuard::takeLock() {
     if (valid()) {
         std::shared_lock<std::shared_timed_mutex> take(get()->getEnumLock(),

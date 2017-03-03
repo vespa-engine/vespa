@@ -60,6 +60,7 @@ private:
 
 public:
     DiskMemUsageFilter(uint64_t physicalMememory_in);
+    ~DiskMemUsageFilter();
     void setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in);
     void setDiskStats(space_info diskStats_in);
     void setConfig(Config config);

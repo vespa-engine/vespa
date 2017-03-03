@@ -4,15 +4,12 @@
 #include "node_visitor.h"
 #include "node_traverser.h"
 #include "check_type.h"
-#include <cmath>
-#include <vespa/vespalib/util/approx.h>
-#include "operation.h"
-#include <set>
 #include "tensor_spec.h"
-#include "simple_tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <set>
+
 
 namespace vespalib {
 namespace eval {
@@ -520,6 +517,12 @@ InterpretedFunction::LazyParams::~LazyParams()
 {
 }
 
+InterpretedFunction::SimpleParams::SimpleParams(const std::vector<double> &params_in)
+    : params(params_in)
+{}
+
+InterpretedFunction::SimpleParams::~SimpleParams() { }
+
 const Value &
 InterpretedFunction::SimpleParams::resolve(size_t idx, Stash &stash) const
 {
@@ -543,6 +546,8 @@ InterpretedFunction::State::State(const TensorEngine &engine_in)
       program_offset(0)
 {
 }
+
+InterpretedFunction::State::~State() {}
 
 void
 InterpretedFunction::State::init(const LazyParams &params_in) {

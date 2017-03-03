@@ -86,6 +86,7 @@ private:
     public:
         ProtonFileHeaderContext(const Proton &proton_,
                                 const vespalib::string &creator);
+        ~ProtonFileHeaderContext();
 
         virtual void
         addTags(vespalib::GenericHeader &header,
