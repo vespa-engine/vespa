@@ -60,4 +60,4 @@ findroot
 
 # END environment bootstrap section
 
-(echo "$@" | $VESPA_HOME/bin/zkcli) 2>&1
+sudo -u yahoo java -cp $VESPA_HOME/lib/jars/zkctl-jar-with-dependencies.jar -Dlog4j.configuration=file:$VESPA_HOME/etc/log4j-vespa.properties org.apache.zookeeper.ZooKeeperMain
