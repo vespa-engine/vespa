@@ -41,7 +41,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -336,22 +335,18 @@ public class DockerImpl implements Docker {
     public List<Container> getAllContainersManagedBy(String manager) {
         return listAllContainers().stream()
                 .filter(container -> isManagedBy(container, manager))
+                .map(com.github.dockerjava.api.model.Container::getId)
                 .flatMap(this::asContainer)
                 .collect(Collectors.toList());
     }
 
     @Override
     public Optional<Container> getContainer(ContainerName containerName) {
-        return listAllContainers().stream()
-                .filter(container -> Arrays.stream(container.getNames())
-                        .map(this::decode)
-                        .anyMatch(name -> name.equals(containerName.asString())))
-                .flatMap(this::asContainer)
-                .findFirst();
+        return asContainer(containerName.asString()).findFirst();
     }
 
-    private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
-        return inspectContainerCmd(dockerClientContainer.getId())
+    private Stream<Container> asContainer(String container) {
+        return inspectContainerCmd(container)
                 .map(response ->
                         new Container(
                                 response.getConfig().getHostName(),
