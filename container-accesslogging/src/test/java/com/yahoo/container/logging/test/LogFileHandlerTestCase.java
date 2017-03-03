@@ -2,6 +2,7 @@
 package com.yahoo.container.logging.test;
 
 import com.yahoo.container.logging.LogFileHandler;
+import org.junit.Test;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -12,20 +13,19 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author <a href="mailto:travisb@yahoo-inc.com">Bob Travis</a>
  */
 // TODO: Make these tests wait until the right things happen rather than waiting for a predetermined time
 // These tests take too long, and are not cleaning up properly. See how this should be done in YApacheLogTestCase
-public class LogFileHandlerTestCase extends junit.framework.TestCase {
-
-    public LogFileHandlerTestCase(String name) {
-        super(name);
-    }
+public class LogFileHandlerTestCase {
 
     /**
      * The scenario
      */
+    @Test
     public void testIt() {
         LogFileHandler h = new LogFileHandler();
         h.setFilePattern("./logfilehandlertest.%Y%m%d%H%M%S");
@@ -67,6 +67,7 @@ public class LogFileHandlerTestCase extends junit.framework.TestCase {
       file.deleteOnExit();
     }
 
+    @Test
     public void testDeleteFileFirst() {
       String logFilePattern = "./testLogFileG.txt";
 
@@ -88,16 +89,17 @@ public class LogFileHandlerTestCase extends junit.framework.TestCase {
       delete2(logFilePattern);
     }
 
+    @Test
     public void testDeleteDirFirst() {
       //delete log file and dir
-      delete("./testlogsG/foo/bar/testlog");
-      delete("./testlogsG/foo/bar");
-      delete("./testlogsG/foo");
+      delete("./testlogsG/delete/first/testlog");
+      delete("./testlogsG/delete/first");
+      delete("./testlogsG/delete");
       delete("./testlogsG");
 
       //create logfilehandler
       LogFileHandler h = new LogFileHandler();
-      h.setFilePattern("./testlogsG/foo/bar/testlog");
+      h.setFilePattern("./testlogsG/delete/first/testlog");
       h.setFormatter(new SimpleFormatter());
       h.setRotationTimes("0 5 ...");
 
@@ -107,12 +109,13 @@ public class LogFileHandlerTestCase extends junit.framework.TestCase {
       h.flush();
 
       //delete log file and dir
-      delete2("./testlogsG/foo/bar/testlog");
-      delete2("./testlogsG/foo/bar");
-      delete2("./testlogsG/foo");
+      delete2("./testlogsG/delete/first/testlog");
+      delete2("./testlogsG/delete/first");
+      delete2("./testlogsG/delete");
       delete2("./testlogsG");
     }
 
+    @Test
     public void testDeleteFileDuringLogging() {
       String logFilePattern = "./testLogFileG.txt";
 
@@ -139,10 +142,11 @@ public class LogFileHandlerTestCase extends junit.framework.TestCase {
       delete2(logFilePattern);
     }
 
+    @Test
     public void testDeleteDirDuringLogging() {
       //create logfilehandler
       LogFileHandler h = new LogFileHandler();
-      h.setFilePattern("./testlogsG/foo/bar/testlog");
+      h.setFilePattern("./testlogsG/delete/during/testlog");
       h.setFormatter(new SimpleFormatter());
       h.setRotationTimes("0 5 ...");
 
@@ -152,9 +156,9 @@ public class LogFileHandlerTestCase extends junit.framework.TestCase {
       h.flush();
 
       //delete log file and dir
-      delete("./testlogsG/foo/bar/testlog");
-      delete("./testlogsG/foo/bar");
-      delete("./testlogsG/foo");
+      delete("./testlogsG/delete/during/testlog");
+      delete("./testlogsG/delete/during");
+      delete("./testlogsG/delete");
       delete("./testlogsG");
 
       //write log
@@ -163,12 +167,13 @@ public class LogFileHandlerTestCase extends junit.framework.TestCase {
       h.flush();
 
       //delete log file and dir
-      delete2("./testlogsG/foo/bar/testlog");
-      delete2("./testlogsG/foo/bar");
-      delete2("./testlogsG/foo");
+      delete2("./testlogsG/delete/during/testlog");
+      delete2("./testlogsG/delete/during");
+      delete2("./testlogsG/delete");
       delete2("./testlogsG");
     }
 
+    @Test
     public void testSymlink() {
         LogFileHandler h = new LogFileHandler();
         h.setFilePattern("./testlogforsymlinkchecking/logfilehandlertest.%Y%m%d%H%M%S%s");
