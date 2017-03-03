@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -111,9 +110,8 @@ public class RunInContainerTest {
 
         ComponentsProviderWithMocks.nodeRepositoryMock
                 .addContainerNodeSpec(new ContainerNodeSpec.Builder()
-                                              .hostname("hostName")
+                                              .hostname("host1.test.yahoo.com")
                                               .wantedDockerImage(new DockerImage("dockerImage"))
-                                              .containerName(new ContainerName("container"))
                                               .nodeState(Node.State.active)
                                               .nodeType("tenant")
                                               .nodeFlavor("docker")
@@ -123,7 +121,7 @@ public class RunInContainerTest {
         ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
         ComponentsProviderWithMocks.callOrderVerifier
-                .assertInOrder("Suspend with parent: localhost and hostnames: [hostName] - Forced response: Optional[Denied]");
+                .assertInOrder("Suspend with parent: localhost and hostnames: [host1.test.yahoo.com] - Forced response: Optional[Denied]");
 
         assertThat(doGetInfoCall(), is("{\"dockerHostHostName\":\"localhost\",\"NodeAdmin\":{\"isFrozen\":true,\"NodeAgents\":[]}}"));
     }

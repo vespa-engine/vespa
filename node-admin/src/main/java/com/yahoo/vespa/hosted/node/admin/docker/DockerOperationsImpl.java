@@ -135,10 +135,10 @@ public class DockerOperationsImpl implements DockerOperations {
 
     // Returns true if started
     @Override
-    public boolean startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (docker.getContainer(nodeSpec.hostname).isPresent()) return false;
+    public boolean startContainerIfNeeded(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
+        if (docker.getContainer(containerName).isPresent()) return false;
 
-        startContainer(nodeSpec);
+        startContainer(containerName, nodeSpec);
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
         return true;
     }
@@ -150,8 +150,8 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public Optional<Container> getContainer(String hostname) {
-        return docker.getContainer(hostname);
+    public Optional<Container> getContainer(ContainerName containerName) {
+        return docker.getContainer(containerName);
     }
 
     /**
@@ -175,10 +175,10 @@ public class DockerOperationsImpl implements DockerOperations {
         }
     }
 
-    private void startContainer(final ContainerNodeSpec nodeSpec) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
+    private void startContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
-        logger.info("Starting container " + nodeSpec.containerName);
+        logger.info("Starting container " + containerName);
         try {
             InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
             final boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
@@ -186,7 +186,7 @@ public class DockerOperationsImpl implements DockerOperations {
             String configServers = String.join(",", environment.getConfigServerHosts());
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
-                    nodeSpec.containerName,
+                    containerName,
                     nodeSpec.hostname)
                     .withManagedBy(MANAGER_NAME)
                     .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
@@ -199,7 +199,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
-                String pathInHost = environment.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
+                String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
                 command.withVolume(pathInHost, pathInNode);
             }
 
@@ -221,17 +221,17 @@ public class DockerOperationsImpl implements DockerOperations {
             command.create();
 
             if (isIPv6) {
-                docker.connectContainerToNetwork(nodeSpec.containerName, "bridge");
-                docker.startContainer(nodeSpec.containerName);
-                setupContainerNetworkingWithScript(nodeSpec.containerName);
+                docker.connectContainerToNetwork(containerName, "bridge");
+                docker.startContainer(containerName);
+                setupContainerNetworkingWithScript(containerName);
             } else {
-                docker.startContainer(nodeSpec.containerName);
+                docker.startContainer(containerName);
             }
 
             DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
-                    docker.executeInContainerAsRoot(nodeSpec.containerName, "chmod", "-R", "a+w", entry.getKey()));
+                    docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", entry.getKey()));
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create container " + nodeSpec.containerName.asString(), e);
+            throw new RuntimeException("Failed to create container " + containerName.asString(), e);
         }
     }
 
@@ -246,8 +246,8 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void scheduleDownloadOfImage(final ContainerNodeSpec nodeSpec, Runnable callback) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
+    public void scheduleDownloadOfImage(ContainerName containerName, final ContainerNodeSpec nodeSpec, Runnable callback) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         logger.info("Schedule async download of " + nodeSpec.wantedDockerImage.get());
         final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(nodeSpec.wantedDockerImage.get());
@@ -263,8 +263,8 @@ public class DockerOperationsImpl implements DockerOperations {
 
     @Override
     public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         if (existingContainer.state.isRunning()) {
             logger.info("Stopping container " + containerName.asString());
             docker.stopContainer(containerName);

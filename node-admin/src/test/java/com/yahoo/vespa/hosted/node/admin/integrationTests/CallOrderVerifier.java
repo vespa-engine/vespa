@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
  * @author freva
  */
 public class CallOrderVerifier {
-    private static final int waitForCallOrderTimeout = 60000; //ms
+    private static final int waitForCallOrderTimeout = 600; //ms
 
     private final LinkedList<String> callOrder = new LinkedList<>();
     private final Object monitor = new Object();

@@ -14,9 +14,11 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
+import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -46,7 +48,9 @@ public class DockerTester implements AutoCloseable {
             throw new RuntimeException(e);
         }
 
-        Environment environment = new Environment.Builder().inetAddressResolver(inetAddressResolver).build();
+        Environment environment = new Environment.Builder()
+                .inetAddressResolver(inetAddressResolver)
+                .pathResolver(new PathResolver(Paths.get("/tmp"), Paths.get("/tmp"))).build();
 
         callOrderVerifier = new CallOrderVerifier();
         orchestratorMock = new OrchestratorMock(callOrderVerifier);

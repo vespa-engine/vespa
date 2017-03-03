@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
@@ -29,9 +28,8 @@ public class ResumeTest {
             final NodeAdminStateUpdater nodeAdminStateUpdater = dockerTester.getNodeAdminStateUpdater();
 
             dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder()
-                                                      .hostname("host1")
+                                                      .hostname("host1.test.yahoo.com")
                                                       .wantedDockerImage(new DockerImage("dockerImage"))
-                                                      .containerName(new ContainerName("container"))
                                                       .nodeState(Node.State.active)
                                                       .nodeType("tenant")
                                                       .nodeFlavor("docker")
@@ -47,8 +45,8 @@ public class ResumeTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
-            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1, ContainerName { name=container }",
-                                            "updateNodeAttributes with HostName: host1, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=dockerImage, vespaVersion=''}");
+            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                                            "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=dockerImage, vespaVersion=''}");
 
             // Force orchestrator to reject the suspend
             orchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));
@@ -80,9 +78,9 @@ public class ResumeTest {
                 Thread.sleep(10);
             }
 
-            callOrderVerifier.assertInOrder("Resume for host1",
-                                            "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional[Orchestrator reject suspend]",
-                                            "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty");
+            callOrderVerifier.assertInOrder("Resume for host1.test.yahoo.com",
+                                            "Suspend with parent: basehostname and hostnames: [host1.test.yahoo.com] - Forced response: Optional[Orchestrator reject suspend]",
+                                            "Suspend with parent: basehostname and hostnames: [host1.test.yahoo.com] - Forced response: Optional.empty");
 
         }
     }

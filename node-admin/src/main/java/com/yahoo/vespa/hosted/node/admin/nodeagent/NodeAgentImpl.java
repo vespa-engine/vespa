@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -53,6 +52,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private DockerImage imageBeingDownloaded = null;
     private final String hostname;
+    private final ContainerName containerName;
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
@@ -95,10 +95,10 @@ public class NodeAgentImpl implements NodeAgent {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
+        this.containerName = ContainerName.fromHostname(hostName);
         this.dockerOperations = dockerOperations;
         this.storageMaintainer = storageMaintainer;
-        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
-                NodeRepositoryImpl.containerNameFromHostName(hostName));
+        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
         this.metricReceiver = metricReceiver;
         this.environment = environment;
     }
@@ -160,7 +160,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         // If the container is already running, initialize vespaVersion and lastCpuMetric
-        dockerOperations.getContainer(hostname)
+        dockerOperations.getContainer(containerName)
                 .filter(container -> container.state.isRunning())
                 .ifPresent(container -> {
                     vespaVersion = dockerOperations.getVespaVersion(container.name);
@@ -195,7 +195,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         addDebugMessage("Starting optional node program resume command");
         logger.info("Starting optional node program resume command");
-        dockerOperations.resumeNode(nodeSpec.containerName);
+        dockerOperations.resumeNode(containerName);
         containerState = RUNNING;
     }
 
@@ -236,10 +236,10 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (dockerOperations.startContainerIfNeeded(nodeSpec)) {
+        if (dockerOperations.startContainerIfNeeded(containerName, nodeSpec)) {
             metricReceiver.unsetMetricsForContainer(hostname);
             lastCpuMetric = new CpuUsageReporter(Instant.now());
-            vespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
+            vespaVersion = dockerOperations.getVespaVersion(containerName);
 
             configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
@@ -262,7 +262,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         Optional<String> restartReason = shouldRestartServices(nodeSpec);
         if (restartReason.isPresent()) {
-            Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
+            Optional<Container> existingContainer = dockerOperations.getContainer(containerName);
             if (existingContainer.isPresent()) {
                 logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
                 restartServices(nodeSpec, existingContainer.get(), orchestrator);
@@ -318,7 +318,7 @@ public class NodeAgentImpl implements NodeAgent {
     // Returns true if container is absent on return
     private boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
             throws Exception {
-        Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
+        Optional<Container> existingContainer = dockerOperations.getContainer(containerName);
         if (!existingContainer.isPresent()) {
             return true;
         }
@@ -350,7 +350,7 @@ public class NodeAgentImpl implements NodeAgent {
             }
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a signalWorkToBeDone when download is finished.
-            dockerOperations.scheduleDownloadOfImage(nodeSpec, this::signalWorkToBeDone);
+            dockerOperations.scheduleDownloadOfImage(containerName, nodeSpec, this::signalWorkToBeDone);
         } else if (imageBeingDownloaded != null) { // Image was downloading, but now it's ready
             imageBeingDownloaded = null;
         }
@@ -429,8 +429,8 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             case active:
                 storageMaintainer.ifPresent(maintainer -> {
-                    maintainer.removeOldFilesFromNode(nodeSpec.containerName);
-                    maintainer.handleCoreDumpsForContainer(nodeSpec, environment);
+                    maintainer.removeOldFilesFromNode(containerName);
+                    maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
                 });
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
@@ -456,7 +456,7 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestrator.resume(nodeSpec.hostname);
                 break;
             case inactive:
-                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(nodeSpec.containerName));
+                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
@@ -464,10 +464,10 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeRepository.markAsDirty(nodeSpec.hostname);
                 break;
             case dirty:
-                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(nodeSpec.containerName));
+                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
-                storageMaintainer.ifPresent(maintainer -> maintainer.archiveNodeData(nodeSpec.containerName));
+                storageMaintainer.ifPresent(maintainer -> maintainer.archiveNodeData(containerName));
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
                 break;
             default:
@@ -483,7 +483,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         if (nodeSpec == null || !vespaVersion.isPresent()) return;
-        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(nodeSpec.containerName);
+        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
         if ( ! containerStats.isPresent()) return;
 
         Docker.ContainerStats stats = containerStats.get();
@@ -537,7 +537,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.limit").sample(diskGB * bytesInGB));
 
         storageMaintainer.ifPresent(maintainer -> maintainer
-                .updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName)
+                .updateIfNeededAndGetDiskMetricsFor(containerName)
                 .forEach((metricName, metricValue) ->
                         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, metricName).sample(metricValue.doubleValue())));
 
@@ -563,6 +563,14 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    public String getHostname() {
+        return hostname;
+    }
+
+    public ContainerName getContainerName() {
+        return containerName;
+    }
+
     @Override
     public boolean isDownloadingImage() {
         return imageBeingDownloaded != null;
@@ -577,7 +585,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void configureContainerMetrics(ContainerNodeSpec nodeSpec) {
         if (! storageMaintainer.isPresent()) return;
-        final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
+        final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
@@ -603,9 +611,9 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
             final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
-            dockerOperations.executeCommandInContainerAsRoot(nodeSpec.containerName, restartYamasAgent);
+            dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
+            throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);
         }
     }
 

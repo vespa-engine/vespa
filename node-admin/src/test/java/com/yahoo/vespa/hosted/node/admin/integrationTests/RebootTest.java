@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
@@ -39,8 +38,8 @@ public class RebootTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
-            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1, ContainerName { name=container }",
-                                            "updateNodeAttributes with HostName: host1, NodeAttributes{restartGeneration=1, rebootGeneration=null,  dockerImage=dockerImage, vespaVersion='null'}");
+            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                                            "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=null,  dockerImage=dockerImage, vespaVersion='null'}");
 
             NodeAdminStateUpdater updater = dockerTester.getNodeAdminStateUpdater();
             assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
@@ -57,15 +56,14 @@ public class RebootTest {
 
             assertTrue(nodeAdmin.freezeNodeAgentsAndCheckIfAllFrozen());
 
-            callOrderVerifier.assertInOrder("executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]");
+            callOrderVerifier.assertInOrder("executeInContainer with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]");
         }
     }
 
     private ContainerNodeSpec createContainerNodeSpec() {
         return new ContainerNodeSpec.Builder()
-                .hostname("host1")
+                .hostname("host1.test.yahoo.com")
                 .wantedDockerImage(new DockerImage("dockerImage"))
-                .containerName(new ContainerName("container"))
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")

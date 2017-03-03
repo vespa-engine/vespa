@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -17,9 +16,8 @@ import java.io.IOException;
  */
 public class NodeStateTest {
     private final ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec.Builder()
-            .hostname("host1")
+            .hostname("host1.test.yahoo.com")
             .wantedDockerImage(new DockerImage("dockerImage"))
-            .containerName(new ContainerName("container"))
             .nodeState(Node.State.active)
             .nodeType("tenant")
             .nodeFlavor("docker")
@@ -36,8 +34,8 @@ public class NodeStateTest {
         }
 
         tester.getCallOrderVerifier().assertInOrder(
-                "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1, ContainerName { name=container }",
-                "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
     }
 
 
@@ -57,9 +55,9 @@ public class NodeStateTest {
             }
 
             dockerTester.getCallOrderVerifier()
-                        .assertInOrder("executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]",
-                                       "stopContainer with ContainerName { name=container }",
-                                       "deleteContainer with ContainerName { name=container }");
+                        .assertInOrder("executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]",
+                                       "stopContainer with ContainerName { name=host1 }",
+                                       "deleteContainer with ContainerName { name=host1 }");
         }
     }
 
@@ -79,8 +77,8 @@ public class NodeStateTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrderWithAssertMessage("Node set to inactive, but no stop/delete call received",
-                                                             "stopContainer with ContainerName { name=container }",
-                                                             "deleteContainer with ContainerName { name=container }");
+                                                             "stopContainer with ContainerName { name=host1 }",
+                                                             "deleteContainer with ContainerName { name=host1 }");
 
 
             // Change node state to active
@@ -91,9 +89,9 @@ public class NodeStateTest {
 
             // Check that the container is started again after the delete call
             callOrderVerifier.assertInOrderWithAssertMessage("Node not started again after being put to active state",
-                                                             "deleteContainer with ContainerName { name=container }",
-                                                             "createContainerCommand with DockerImage { imageId=newDockerImage }, HostName: host1, ContainerName { name=container }",
-                                                             "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                                                             "deleteContainer with ContainerName { name=host1 }",
+                                                             "createContainerCommand with DockerImage { imageId=newDockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                                                             "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
         }
     }
 }

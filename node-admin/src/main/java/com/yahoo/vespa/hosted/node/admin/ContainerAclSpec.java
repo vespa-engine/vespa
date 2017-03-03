@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin;
 
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+
 import java.util.Objects;
 
 /**
@@ -11,9 +13,9 @@ public class ContainerAclSpec {
 
     private final String hostname;
     private final String ipAddress;
-    private final String trustedBy;
+    private final ContainerName trustedBy;
 
-    public ContainerAclSpec(String hostname, String ipAddress, String trustedBy) {
+    public ContainerAclSpec(String hostname, String ipAddress, ContainerName trustedBy) {
         this.hostname = hostname;
         this.ipAddress = ipAddress;
         this.trustedBy = trustedBy;
@@ -27,7 +29,7 @@ public class ContainerAclSpec {
         return ipAddress;
     }
 
-    public String trustedBy() {
+    public ContainerName trustedBy() {
         return trustedBy;
     }
 

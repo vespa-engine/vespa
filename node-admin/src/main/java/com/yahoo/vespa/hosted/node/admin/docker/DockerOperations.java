@@ -15,14 +15,14 @@ public interface DockerOperations {
     Optional<String> getVespaVersion(ContainerName containerName);
 
     // Returns true if started
-    boolean startContainerIfNeeded(ContainerNodeSpec nodeSpec);
+    boolean startContainerIfNeeded(ContainerName containerName, ContainerNodeSpec nodeSpec);
 
     // Returns false if image is already downloaded
     boolean shouldScheduleDownloadOfImage(DockerImage dockerImage);
 
-    Optional<Container> getContainer(String hostname);
+    Optional<Container> getContainer(ContainerName containerName);
 
-    void scheduleDownloadOfImage(ContainerNodeSpec nodeSpec, Runnable callback);
+    void scheduleDownloadOfImage(ContainerName containerName, ContainerNodeSpec nodeSpec, Runnable callback);
 
     void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer);
 

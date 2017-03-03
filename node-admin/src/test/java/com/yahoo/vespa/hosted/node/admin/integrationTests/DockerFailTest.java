@@ -17,9 +17,8 @@ public class DockerFailTest {
     public void dockerFailTest() throws Exception {
         try (DockerTester dockerTester = new DockerTester()) {
             ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec.Builder()
-                    .hostname("hostName")
+                    .hostname("host1.test.yahoo.com")
                     .wantedDockerImage(new DockerImage("dockerImage"))
-                    .containerName(new ContainerName("container"))
                     .nodeState(Node.State.active)
                     .nodeType("tenant")
                     .nodeFlavor("docker")
@@ -35,15 +34,15 @@ public class DockerFailTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrder(
-                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName { name=container }",
-                    "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
-            dockerTester.deleteContainer(containerNodeSpec.containerName);
+            dockerTester.deleteContainer(new ContainerName("host1"));
 
             callOrderVerifier.assertInOrder(
-                    "deleteContainer with ContainerName { name=container }",
-                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName { name=container }",
-                    "executeInContainerAsRoot with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "deleteContainer with ContainerName { name=host1 }",
+                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
         }
     }
 }

@@ -3,13 +3,11 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +33,7 @@ public class NodeAdminStateUpdaterTest {
         NodeAdmin nodeAdmin = mock(NodeAdmin.class);
         final List<ContainerNodeSpec> accumulatedArgumentList = Collections.synchronizedList(new ArrayList<>());
         doAnswer(
-                (Answer<Void>) invocation -> {
+                invocation -> {
                     List<ContainerNodeSpec> containersToRunInArgument = (List<ContainerNodeSpec>) invocation.getArguments()[0];
                     containersToRunInArgument.forEach(accumulatedArgumentList::add);
                     if (accumulatedArgumentList.size() == 2) {
@@ -83,8 +81,7 @@ public class NodeAdminStateUpdaterTest {
 
     private ContainerNodeSpec createSample() {
         return new ContainerNodeSpec.Builder()
-                .hostname("hostName")
-                .containerName(new ContainerName("containerName"))
+                .hostname("host1.test.yahoo.com")
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
