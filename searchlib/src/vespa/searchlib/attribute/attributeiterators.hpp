@@ -108,6 +108,17 @@ AttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
 }
 
 template <typename PL>
+void
+AttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t begin_id) {
+    (void) begin_id;
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+        if ( ! result.testBit(_iterator.getKey()) ) {
+            result.setBit(_iterator.getKey());
+        }
+    }
+}
+
+template <typename PL>
 std::unique_ptr<BitVector>
 FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     BitVector::UP result(BitVector::create(begin_id, getEndId()));
@@ -115,6 +126,17 @@ FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
         result->setBit(_iterator.getKey());
     }
     return result;
+}
+
+template <typename PL>
+void
+FilterAttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t begin_id) {
+    (void) begin_id;
+    for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
+        if ( ! result.testBit(_iterator.getKey()) ) {
+            result.setBit(_iterator.getKey());
+        }
+    }
 }
 
 template <typename PL>

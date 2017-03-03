@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/trinary.h>
 #include <memory>
+#include <vector>
 
 namespace vespalib { class ObjectVisitor; };
 
@@ -326,6 +327,13 @@ public:
     virtual UP andWith(UP filter, uint32_t estimate);
 
     virtual Trinary is_strict() const { return Trinary::Undefined; }
+
+    using Children = std::vector<SearchIterator *>;
+    using OwnedChildren = std::vector<std::unique_ptr<SearchIterator>>;
+
+    static std::unique_ptr<BitVector> andChildren(const Children & children, uint32_t begin_id);
+    static std::unique_ptr<BitVector> orChildren(const Children & children, uint32_t begin_id);
+    static std::unique_ptr<BitVector> orChildren(const OwnedChildren & children, uint32_t begin_id);
 };
 
 } // namespace queryeval

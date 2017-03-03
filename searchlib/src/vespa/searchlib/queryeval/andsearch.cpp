@@ -10,10 +10,7 @@ namespace queryeval {
 BitVector::UP
 AndSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
-    BitVector::UP result = children.front()->get_hits(begin_id);
-    for (size_t i = 1; i < children.size(); ++i) {
-        children[i]->and_hits_into(*result, begin_id);
-    }
+    BitVector::UP result = andChildren(children, begin_id);
     return result;
 }
 
