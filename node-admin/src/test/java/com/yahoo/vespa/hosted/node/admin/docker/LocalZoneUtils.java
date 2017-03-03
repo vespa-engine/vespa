@@ -10,6 +10,9 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerTestUtils;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
+import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -143,6 +146,19 @@ public class LocalZoneUtils {
         Files.write(dockerfilePath, dockerfileTemplate.getBytes());
 
         docker.buildImage(dockerfilePath.getParent().toFile(), VESPA_LOCAL_IMAGE);
+    }
+
+    public static Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
+        try {
+            GetNodesResponse.Node nodeResponse = requestExecutor.get("/nodes/v2/node/" + hostName,
+                    CONFIG_SERVER_WEB_SERVICE_PORT, GetNodesResponse.Node.class);
+            if (nodeResponse == null) {
+                return Optional.empty();
+            }
+            return Optional.of(NodeRepositoryImpl.createContainerNodeSpec(nodeResponse));
+        } catch (ConfigServerHttpRequestExecutor.NotFoundException e) {
+            return Optional.empty();
+        }
     }
 
     public static void provisionHost(String hostname) {
