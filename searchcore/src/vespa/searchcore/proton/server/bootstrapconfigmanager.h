@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/config/retriever/configkeyset.h>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace config { class ConfigSnapshot; };
 namespace proton {
@@ -23,7 +23,7 @@ public:
     std::shared_ptr<BootstrapConfig>
     getConfig() const
     {
-        vespalib::LockGuard lock(_pendingConfigLock);
+        std::lock_guard<std::mutex> lock(_pendingConfigMutex);
         return _pendingConfigSnapshot;
     }
     void update(const config::ConfigSnapshot & snapshot);
@@ -31,7 +31,7 @@ public:
 private:
     std::shared_ptr<BootstrapConfig> _pendingConfigSnapshot;
     vespalib::string                 _configId;
-    vespalib::Lock                   _pendingConfigLock;
+    mutable std::mutex               _pendingConfigMutex;
 };
 
 } // namespace proton

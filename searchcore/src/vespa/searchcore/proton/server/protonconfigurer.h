@@ -76,7 +76,8 @@ private:
     config::ConfigRetriever _retriever;
     IBootstrapOwner * _bootstrapOwner;
 
-    vespalib::Lock _lock; // Protects maps
+    mutable std::mutex _mutex; // Protects maps
+    using lock_guard = std::lock_guard<std::mutex>;
     DBManagerMap _dbManagerMap;
     DocumentDBOwnerMap _documentDBOwnerMap;
 

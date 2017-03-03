@@ -29,7 +29,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         DocumentDBMetricsCollection &metrics,
         matching::QueryLimiter &queryLimiter,
         const vespalib::Clock &clock,
-        vespalib::Lock &configLock,
+        std::mutex &configMutex,
         const vespalib::string &baseDir,
         const ProtonConfig &protonCfg,
         const HwInfo &hwInfo)
@@ -62,7 +62,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                                        _bucketDB,
                                        *_bucketDBHandler,
                                        metrics.getLegacyMetrics(),
-                                       configLock,
+                                       configMutex,
                                        hwInfo);
     _subDBs.push_back
         (new SearchableDocSubDB

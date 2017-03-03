@@ -78,7 +78,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _metrics(ctx._metrics),
       _iSearchView(),
       _iFeedView(),
-      _configLock(ctx._configLock),
+      _configMutex(ctx._configMutex),
       _hwInfo(ctx._hwInfo),
       _getSerialNum(ctx._getSerialNum),
       _tlsSyncer(ctx._writeService.master(), ctx._getSerialNum, ctx._tlSyncer),
@@ -336,7 +336,7 @@ StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
     assert(_writeService.master().isCurrentThread());
     _iSearchView.set(ISearchHandler::SP(new EmptySearchView));
     {
-        vespalib::LockGuard guard(_configLock);
+        std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(configSnapshot);
     }
     (void) sessionManager;

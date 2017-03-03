@@ -41,7 +41,6 @@ LOG_SETUP(".proton.server.proton");
 using document::DocumentTypeRepo;
 using vespalib::FileHeader;
 using vespalib::IllegalStateException;
-using vespalib::LockGuard;
 using vespalib::MonitorGuard;
 using vespalib::RWLockReader;
 using vespalib::RWLockWriter;
@@ -197,7 +196,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _activeConfigSnapshot(),
       _activeConfigSnapshotGeneration(0),
       _pendingConfigSnapshot(),
-      _configLock(),
+      _configMutex(),
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
@@ -407,7 +406,7 @@ Proton::getActiveConfigSnapshot() const
 {
     BootstrapConfig::SP result;
     {
-        LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         result = _activeConfigSnapshot;
     }
     return result;
@@ -430,7 +429,7 @@ Proton::reconfigure(const BootstrapConfig::SP & config)
 {
     _pendingConfigSnapshot.set(config);
     {
-        LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         if (_activeConfigSnapshot.get() == NULL)
             return;
         if (!_allowReconfig)
@@ -451,7 +450,7 @@ Proton::performReconfig()
     bool generationChanged = false;
     bool snapChanged = false;
     {
-        LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         if (_activeConfigSnapshotGeneration != configSnapshot->getGeneration())
             generationChanged = true;
         if (_activeConfigSnapshot.get() != configSnapshot.get()) {
@@ -522,7 +521,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot,
         removeDocumentDB(docTypeName);
     }
     {
-        LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         _activeConfigSnapshot = configSnapshot;
         _activeConfigSnapshotGeneration = configSnapshot->getGeneration();
     }
@@ -575,7 +574,7 @@ Proton::~Proton()
     }
     _protonConfigurer.close();
     {
-        LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         _allowReconfig = false;
     }
     _executor.sync();
@@ -1027,7 +1026,7 @@ Proton::getConfigGeneration(void)
     int64_t g = 0;
     std::vector<DocumentDB::SP> dbs;
     {
-        LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         g = _activeConfigSnapshot->getGeneration();
     }
     {

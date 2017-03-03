@@ -19,6 +19,7 @@
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <mutex>
 
 namespace proton {
 
@@ -133,7 +134,7 @@ public:
         std::shared_ptr<BucketDBOwner> _bucketDB;
         bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
         LegacyDocumentDBMetrics &_metrics;
-        vespalib::Lock &_configLock;
+        std::mutex &_configMutex;
         const HwInfo &_hwInfo;
 
         Context(IDocumentSubDB::IOwner &owner,
@@ -146,7 +147,7 @@ public:
                 bucketdb::IBucketDBHandlerInitializer &
                 bucketDBHandlerInitializer,
                 LegacyDocumentDBMetrics &metrics,
-                vespalib::Lock &configLock,
+                std::mutex &configMutex,
                 const HwInfo &hwInfo)
             : _owner(owner),
               _tlSyncer(tlSyncer),
@@ -157,7 +158,7 @@ public:
               _bucketDB(bucketDB),
               _bucketDBHandlerInitializer(bucketDBHandlerInitializer),
               _metrics(metrics),
-              _configLock(configLock),
+              _configMutex(configMutex),
               _hwInfo(hwInfo)
         { }
     };
@@ -187,7 +188,7 @@ protected:
     LegacyDocumentDBMetrics                 &_metrics;
     vespalib::VarHolder<ISearchHandler::SP> _iSearchView;
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;
-    vespalib::Lock                         &_configLock;
+    std::mutex                         &_configMutex;
     HwInfo                                  _hwInfo;
 private:
     const IGetSerialNum             &_getSerialNum;

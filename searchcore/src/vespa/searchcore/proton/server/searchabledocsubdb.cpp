@@ -232,7 +232,7 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
 
     IAttributeWriter::SP attrWriter(new AttributeWriter(attrMgr));
     {
-        vespalib::LockGuard guard(_configLock);
+        std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(attrWriter, configSnapshot);
     }
     if (_addMetrics) {
@@ -286,7 +286,7 @@ reconfigure(vespalib::Closure0<bool>::UP closure)
 void
 SearchableDocSubDB::reconfigureIndexSearchable()
 {
-    vespalib::LockGuard guard(_configLock);
+    std::lock_guard<std::mutex> guard(_configMutex);
     // Create new views as needed.
     _configurer.reconfigureIndexSearchable();
     // Activate new feed view at once

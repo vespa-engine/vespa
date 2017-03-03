@@ -15,6 +15,7 @@
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
+#include <mutex>
 
 namespace proton {
 class DocumentDBConfig;
@@ -58,7 +59,7 @@ public:
             DocumentDBMetricsCollection &metrics,
             matching::QueryLimiter & queryLimiter,
             const vespalib::Clock &clock,
-            vespalib::Lock &configLock,
+            std::mutex &configMutex,
             const vespalib::string &baseDir,
             const vespa::config::search::core::ProtonConfig &protonCfg,
             const HwInfo &hwInfo);

@@ -33,6 +33,7 @@
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/rwlock.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <mutex>
 
 namespace proton {
 
@@ -62,6 +63,7 @@ private:
     typedef std::shared_ptr<FastOS_DynamicLibrary>      DynamicLibrarySP;
     typedef std::map<vespalib::string, DynamicLibrarySP>  LibraryMap;
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using lock_guard = std::lock_guard<std::mutex>;
 
     struct MetricsUpdateHook : metrics::UpdateHook
     {
@@ -128,7 +130,7 @@ private:
     BootstrapConfig::SP             _activeConfigSnapshot;
     int64_t                         _activeConfigSnapshotGeneration;
     vespalib::VarHolder<BootstrapConfig::SP> _pendingConfigSnapshot;
-    vespalib::Lock                  _configLock;	
+    mutable std::mutex              _configMutex;
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;
