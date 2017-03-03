@@ -2,9 +2,11 @@
 package com.yahoo.container.logging.test;
 
 import com.yahoo.container.logging.LogFileHandler;
+import com.yahoo.io.IOUtils;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -61,18 +63,17 @@ public class LogFileHandlerTestCase {
       return file.delete();
     }
 
-    // Feeble attempt to get rid of test dirs and files somewhat more reliably in these poorly written tests
-    private void delete2(String fileOrDir) {
-      File file = new File(fileOrDir);
-      file.deleteOnExit();
+    private void deleteOnExit(String fileOrDir) {
+        new File(fileOrDir).deleteOnExit();
+    }
+
+    private static void deleteRecursive(String directory) {
+       IOUtils.recursiveDeleteDir(new File(directory));
     }
 
     @Test
-    public void testDeleteFileFirst() {
-      String logFilePattern = "./testLogFileG.txt";
-
-      //delete log file
-      delete(logFilePattern);
+    public void testSimpleLogging() {
+      String logFilePattern = "./testLogFileG1.txt";
 
       //create logfilehandler
       LogFileHandler h = new LogFileHandler();
@@ -85,39 +86,12 @@ public class LogFileHandlerTestCase {
       h.publish(lr);
       h.flush();
 
-      //delete log file
-      delete2(logFilePattern);
-    }
-
-    @Test
-    public void testDeleteDirFirst() {
-      //delete log file and dir
-      delete("./testlogsG/delete/first/testlog");
-      delete("./testlogsG/delete/first");
-      delete("./testlogsG/delete");
-      delete("./testlogsG");
-
-      //create logfilehandler
-      LogFileHandler h = new LogFileHandler();
-      h.setFilePattern("./testlogsG/delete/first/testlog");
-      h.setFormatter(new SimpleFormatter());
-      h.setRotationTimes("0 5 ...");
-
-      //write log
-      LogRecord lr = new LogRecord(Level.INFO, "testDeleteDirFirst1");
-      h.publish(lr);
-      h.flush();
-
-      //delete log file and dir
-      delete2("./testlogsG/delete/first/testlog");
-      delete2("./testlogsG/delete/first");
-      delete2("./testlogsG/delete");
-      delete2("./testlogsG");
+      new File(logFilePattern).deleteOnExit();
     }
 
     @Test
     public void testDeleteFileDuringLogging() {
-      String logFilePattern = "./testLogFileG.txt";
+      String logFilePattern = "./testLogFileG2.txt";
 
       //create logfilehandler
       LogFileHandler h = new LogFileHandler();
@@ -138,39 +112,34 @@ public class LogFileHandlerTestCase {
       h.publish(lr);
       h.flush();
 
-      //delete log file
-      delete2(logFilePattern);
+      new File(logFilePattern).deleteOnExit();
     }
 
     @Test
-    public void testDeleteDirDuringLogging() {
-      //create logfilehandler
-      LogFileHandler h = new LogFileHandler();
-      h.setFilePattern("./testlogsG/delete/during/testlog");
-      h.setFormatter(new SimpleFormatter());
-      h.setRotationTimes("0 5 ...");
+    public void testDeleteDirDuringLogging() throws IOException {
+        //create logfilehandler
+        LogFileHandler h = new LogFileHandler();
+        h.setFilePattern("./testlogsG/delete/during/testlog");
+        h.setFormatter(new SimpleFormatter());
+        h.setRotationTimes("0 5 ...");
 
-      //write log
-      LogRecord lr = new LogRecord(Level.INFO, "testDeleteDirDuringLogging1");
-      h.publish(lr);
-      h.flush();
+        //write log
+        LogRecord lr = new LogRecord(Level.INFO, "testDeleteDirDuringLogging1");
+        h.publish(lr);
+        h.flush();
 
-      //delete log file and dir
-      delete("./testlogsG/delete/during/testlog");
-      delete("./testlogsG/delete/during");
-      delete("./testlogsG/delete");
-      delete("./testlogsG");
+        //delete log file and dir
+        deleteRecursive("./testlogsG");
 
-      //write log
-      lr = new LogRecord(Level.INFO, "testDeleteDirDuringLogging2");
-      h.publish(lr);
-      h.flush();
+        //write log again
+        LogRecord lr2 = new LogRecord(Level.INFO, "testDeleteDirDuringLogging2");
+        h.publish(lr2);
+        h.flush();
 
-      //delete log file and dir
-      delete2("./testlogsG/delete/during/testlog");
-      delete2("./testlogsG/delete/during");
-      delete2("./testlogsG/delete");
-      delete2("./testlogsG");
+        deleteOnExit("./testlogsG");
+        deleteOnExit("./testlogsG/delete");
+        deleteOnExit("./testlogsG/delete/first");
+        deleteOnExit("./testlogsG/delete/first/testlog");
     }
 
     @Test
@@ -188,6 +157,7 @@ public class LogFileHandlerTestCase {
         LogRecord lr = new LogRecord(Level.INFO, "test");
         h.publish(lr);
         String f1 = h.getFileName();
+        String f2 = null;
         try {
             while (f1 == null) {
                 Thread.sleep(1);
@@ -195,7 +165,7 @@ public class LogFileHandlerTestCase {
             }
             h.rotateNow();
             Thread.sleep(1);
-            String f2 = h.getFileName();
+            f2 = h.getFileName();
             while (f1.equals(f2)) {
                 Thread.sleep(1);
                 f2 = h.getFileName();
@@ -217,13 +187,14 @@ public class LogFileHandlerTestCase {
             assertEquals(secondLength, link);
             assertEquals(31, first);
             assertEquals(secondLength, second);
-            delete2(f2);
         } catch (InterruptedException e) {
             // just let the test pass
         }
-        delete2(f1);
-        delete2("./testlogforsymlinkchecking/symlink");
-        delete2("./testlogforsymlinkchecking");
+        deleteOnExit("./testlogforsymlinkchecking");
+        deleteOnExit("./testlogforsymlinkchecking/symlink");
+        deleteOnExit(f1);
+        if (f2 != null)
+            deleteOnExit(f2);
     }
 
 }
