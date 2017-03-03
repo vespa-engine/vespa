@@ -16,6 +16,7 @@
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/eval/eval/param_usage.h>
 #include <cmath>
 
 //-----------------------------------------------------------------------------
@@ -64,11 +65,12 @@ size_t count_nodes(const Node &node) {
 struct InputInfo {
     vespalib::string name;
     std::vector<double> cmp_with;
-    explicit InputInfo(vespalib::stringref name_in)
-        : name(name_in), cmp_with() {}
+    double usage_probability;
+    double expected_usage;
+    InputInfo(vespalib::stringref name_in, double usage_probability_in, double expected_usage_in)
+        : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in) {}
     double select_value() const {
         return cmp_with.empty() ? 0.5 : cmp_with[(cmp_with.size()-1)/2];
-        return 0.5;
     }
 };
 
@@ -148,8 +150,10 @@ struct FunctionInfo {
           inputs(),
           params()
     {
+        auto checked_usage = check_param_usage(function);
+        auto counted_usage = count_param_usage(function);
         for (size_t i = 0; i < function.num_params(); ++i) {
-            inputs.emplace_back(function.param_name(i));
+            inputs.emplace_back(function.param_name(i), checked_usage[i], counted_usage[i]);
         }
         find_forests(function.root());
         analyze_inputs(function.root());
@@ -173,8 +177,18 @@ struct FunctionInfo {
         return path;
     }
 
-    void report() const {
+    void report(bool verbose) const {
         fprintf(stderr, "  number of inputs: %zu\n", inputs.size());
+        if (verbose) {
+            for (size_t i = 0; i < inputs.size(); ++i) {
+                fprintf(stderr, "  input %zu:\n", i);
+                fprintf(stderr, "    name: %s\n", inputs[i].name.c_str());
+                fprintf(stderr, "    usage probability: %g\n", inputs[i].usage_probability);
+                fprintf(stderr, "    expected usage: %g\n", inputs[i].expected_usage);
+                fprintf(stderr, "    constants compared with: %zu\n", inputs[i].cmp_with.size());
+                fprintf(stderr, "    sample value: %g\n", inputs[i].select_value());
+            }
+        }
         fprintf(stderr, "  expression size (AST node count): %zu\n", expression_size);
         if (root_is_forest) {
             fprintf(stderr, "  expression root is a sum of GBD trees\n");
@@ -280,8 +294,8 @@ struct State {
         fprintf(stderr, "  LLVM(%s) execute time: %g us\n", opt_name.c_str(), options_us.back());
     }
 
-    void report() {
-        fun_info.report();
+    void report(bool verbose) {
+        fun_info.report(verbose);
         benchmark_llvm_compile();
         fprintf(stderr, "  LLVM compile time: %g s\n", llvm_compile_s);
         llvm_execute_us = compiled_function->estimate_cost_us(fun_info.params);
@@ -319,18 +333,20 @@ struct MyApp : public FastOS_Application {
 
 int
 MyApp::usage() {
-    fprintf(stderr, "usage: %s <expression-file>\n", _argv[0]);
+    fprintf(stderr, "usage: %s [-v] <expression-file>\n", _argv[0]);
     fprintf(stderr, "  analyze/benchmark vespa ranking expression\n");
+    fprintf(stderr, "  -v: more verbose output\n");
     return 1;
 }
 
 int
 MyApp::Main()
 {
-    if (_argc != 2) {
+    bool verbose = (_argc == 3) && (strcmp(_argv[1], "-v") == 0);
+    if (!(verbose || (_argc == 2))) {
         return usage();
     }
-    vespalib::string file_name(_argv[1]);
+    vespalib::string file_name(verbose ? _argv[2] : _argv[1]);
     vespalib::MappedFileInput file(file_name);
     if (!file.valid()) {
         fprintf(stderr, "could not read input file: '%s'\n",
@@ -346,7 +362,7 @@ MyApp::Main()
     }
     fprintf(stderr, "analyzing expression file: '%s'\n",
             file_name.c_str());
-    state.report();
+    state.report(verbose);
     return 0;
 }
 
