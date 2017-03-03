@@ -57,6 +57,49 @@ IIndexWriter::SP nullIndexWriter;
 
 }
 
+
+StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName,
+                                  const vespalib::string &subName,
+                                  const vespalib::string &baseDir,
+                                  const search::GrowStrategy &attributeGrow,
+                                  size_t attributeGrowNumDocs,
+                                  uint32_t subDbId,
+                                  SubDbType subDbType)
+    : _docTypeName(docTypeName),
+      _subName(subName),
+      _baseDir(baseDir + "/" + subName),
+      _attributeGrow(attributeGrow),
+      _attributeGrowNumDocs(attributeGrowNumDocs),
+      _subDbId(subDbId),
+      _subDbType(subDbType)
+{ }
+StoreOnlyDocSubDB::Config::~Config() { }
+
+StoreOnlyDocSubDB::Context::Context(IDocumentSubDB::IOwner &owner,
+                                    search::transactionlog::SyncProxy &tlSyncer,
+                                    const IGetSerialNum &getSerialNum,
+                                    const search::common::FileHeaderContext &fileHeaderContext,
+                                    searchcorespi::index::IThreadingService &writeService,
+                                    vespalib::ThreadStackExecutorBase &summaryExecutor,
+                                    std::shared_ptr<BucketDBOwner> bucketDB,
+                                    bucketdb::IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
+                                    LegacyDocumentDBMetrics &metrics,
+                                    std::mutex &configMutex,
+                                    const HwInfo &hwInfo)
+    : _owner(owner),
+      _tlSyncer(tlSyncer),
+      _getSerialNum(getSerialNum),
+      _fileHeaderContext(fileHeaderContext),
+      _writeService(writeService),
+      _summaryExecutor(summaryExecutor),
+      _bucketDB(bucketDB),
+      _bucketDBHandlerInitializer(bucketDBHandlerInitializer),
+      _metrics(metrics),
+      _configMutex(configMutex),
+      _hwInfo(hwInfo)
+{ }
+StoreOnlyDocSubDB::Context::~Context() { }
+
 StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
     : DocSubDB(ctx._owner, ctx._tlSyncer),
       _docTypeName(cfg._docTypeName),
@@ -469,6 +512,25 @@ StoreOnlyDocSubDB::getDocumentDBReferent()
 {
     return std::shared_ptr<IDocumentDBReferent>();
 }
+
+StoreOnlySubDBFileHeaderContext::
+StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
+                                const search::common::FileHeaderContext & parentFileHeaderContext,
+                                const DocTypeName &docTypeName,
+                                const vespalib::string &baseDir)
+    : search::common::FileHeaderContext(),
+      _owner(owner),
+      _parentFileHeaderContext(parentFileHeaderContext),
+      _docTypeName(docTypeName),
+      _subDB()
+{
+    size_t pos = baseDir.rfind('/');
+    if (pos != vespalib::string::npos)
+        _subDB = baseDir.substr(pos + 1);
+    else
+        _subDB = baseDir;
+}
+StoreOnlySubDBFileHeaderContext::~StoreOnlySubDBFileHeaderContext() {}
 
 void
 StoreOnlyDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &resolver)

@@ -107,6 +107,7 @@ Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const Proton &proton_,
     assert(!_hostName.empty());
 }
 
+Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() { }
 
 void
 Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,

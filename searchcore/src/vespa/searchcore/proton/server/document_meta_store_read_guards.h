@@ -22,6 +22,7 @@ struct DocumentMetaStoreReadGuards
           remdms(subDBs.getRemSubDB()->getDocumentMetaStoreContext().getReadGuard())
     {
     }
+    ~DocumentMetaStoreReadGuards();
     uint32_t numActiveDocs() const {
         return readydms->get().getNumActiveLids();
     }

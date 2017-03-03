@@ -17,6 +17,8 @@ IndexEnvironment::IndexEnvironment(const ITableManager & tableManager) :
 {
 }
 
+IndexEnvironment::~IndexEnvironment() {}
+
 bool
 IndexEnvironment::addField(const vespalib::string & name, bool isAttribute)
 {

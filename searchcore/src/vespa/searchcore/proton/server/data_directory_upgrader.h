@@ -22,6 +22,7 @@ public:
 
     public:
         RowColDir(const vespalib::string &row_, const vespalib::string &col_);
+        ~RowColDir();
         const vespalib::string &row() const { return _row; }
         const vespalib::string &col() const { return _col; }
         vespalib::string dir() const { return row() + "/" + col(); }

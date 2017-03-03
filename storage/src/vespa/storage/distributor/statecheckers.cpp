@@ -649,6 +649,8 @@ public:
         }
     }
 
+    ~MergeNodes();
+
     void operator+=(const MergeNodes& other) {
         _reason << other._reason.str();
         _problemFlags |= other._problemFlags;
@@ -713,6 +715,8 @@ private:
     uint8_t _problemFlags;
     uint8_t _priority;
 };
+
+MergeNodes::~MergeNodes() {}
 
 bool
 presentInIdealState(const StateChecker::Context& c, uint16_t node)

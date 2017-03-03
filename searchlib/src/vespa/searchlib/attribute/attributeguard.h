@@ -33,6 +33,7 @@ public:
     AttributeEnumGuard & operator = (const AttributeEnumGuard &) = delete;
     explicit AttributeEnumGuard(const AttributeVectorSP & attribute);
     explicit AttributeEnumGuard(const AttributeGuard & attribute);
+    ~AttributeEnumGuard();
 private:
     mutable std::shared_lock<std::shared_timed_mutex> _lock;
     void takeLock();

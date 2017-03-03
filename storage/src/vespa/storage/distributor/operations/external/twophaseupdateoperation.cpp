@@ -7,7 +7,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -38,6 +37,8 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
     _updateDocBucketId = idFactory.getBucketId(_updateCmd->getDocumentId());
 }
 
+TwoPhaseUpdateOperation::~TwoPhaseUpdateOperation() {}
+
 namespace {
 
 struct IntermediateMessageSender : DistributorMessageSender {
@@ -46,13 +47,10 @@ struct IntermediateMessageSender : DistributorMessageSender {
     DistributorMessageSender& forward;
     std::shared_ptr<api::StorageReply> _reply;
 
-    IntermediateMessageSender(
-        SentMessageMap& mm,
-        const std::shared_ptr<Operation>& cb,
-        DistributorMessageSender & fwd)
-        : msgMap(mm), callback(cb), forward(fwd)
-    {
-    }
+    IntermediateMessageSender(SentMessageMap& mm,
+                              const std::shared_ptr<Operation>& cb,
+                              DistributorMessageSender & fwd);
+    ~IntermediateMessageSender();
 
     virtual void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) {
         msgMap.insert(cmd->getMsgId(), callback);
@@ -75,6 +73,16 @@ struct IntermediateMessageSender : DistributorMessageSender {
         return forward.getPendingMessageTracker();
     }
 };
+
+IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm,
+                                                     const std::shared_ptr<Operation>& cb,
+                                                     DistributorMessageSender & fwd)
+    : msgMap(mm),
+      callback(cb),
+      forward(fwd)
+{
+}
+IntermediateMessageSender::~IntermediateMessageSender() { }
 
 }
 

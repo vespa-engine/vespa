@@ -32,6 +32,7 @@ public:
                      const IndexEnvironment & indexEnv,
                      const search::fef::Properties & properties,
                      const search::IAttributeManager * attrMgr = NULL);
+    ~QueryEnvironment();
 
     // inherit documentation
     virtual const search::fef::Properties & getProperties() const { return _properties; }

@@ -3,9 +3,9 @@
 #pragma once
 
 #include "function.h"
-#include <vespa/vespalib/util/stash.h>
 #include "simple_tensor_engine.h"
 #include "node_types.h"
+#include <vespa/vespalib/util/stash.h>
 
 namespace vespalib {
 namespace eval {
@@ -39,7 +39,8 @@ public:
      **/
     struct SimpleParams : LazyParams {
         std::vector<double> params;
-        explicit SimpleParams(const std::vector<double> &params_in) : params(params_in) {}
+        explicit SimpleParams(const std::vector<double> &params_in);
+        ~SimpleParams();
         const Value &resolve(size_t idx, Stash &stash) const override;
     };
     /**

@@ -14,7 +14,8 @@ namespace storage {
 
 namespace {
 
-search::fef::Location parseLocation(const string & location_str)
+search::fef::Location
+parseLocation(const string & location_str)
 {
     search::fef::Location fefLocation;
     if (location_str.empty()) {
@@ -56,6 +57,8 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
     _location(parseLocation(location_str))
 {
 }
+
+QueryEnvironment::~QueryEnvironment() {}
 
 } // namespace storage
 

@@ -150,13 +150,18 @@ SearchIterator::orChildren(BitVector::UP result, const Children &children, uint3
 }
 
 BitVector::UP
+SearchIterator::orChildren(BitVector::UP result, const OwnedChildren &children, uint32_t begin_id) {
+    return orIterators(orIterators(std::move(result), children, begin_id, true), children, begin_id, false);
+}
+
+BitVector::UP
 SearchIterator::orChildren(const Children &children, uint32_t begin_id) {
     return orChildren(BitVector::UP(), children, begin_id);
 }
 
 BitVector::UP
 SearchIterator::orChildren(const OwnedChildren &children, uint32_t begin_id) {
-    return orIterators(orIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
+    return orChildren(BitVector::UP(), children, begin_id);
 }
 
 } // namespace queryeval

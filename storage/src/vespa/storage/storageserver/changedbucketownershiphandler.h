@@ -58,22 +58,8 @@ public:
         metrics::LongCountMetric idealStateOpsAborted;
         metrics::LongCountMetric externalLoadOpsAborted;
 
-        Metrics(metrics::MetricSet* owner = 0)
-            : metrics::MetricSet("changedbucketownershiphandler",
-                                 "", "", owner),
-              averageAbortProcessingTime(
-                      "avg_abort_processing_time", "",
-                      "Average time spent aborting operations for changed "
-                      "buckets", this),
-              idealStateOpsAborted(
-                      "ideal_state_ops_aborted", "",
-                      "Number of outdated ideal state operations aborted",
-                      this),
-              externalLoadOpsAborted(
-                      "external_load_ops_aborted", "",
-                      "Number of outdated external load operations aborted",
-                      this)
-        {}
+        Metrics(metrics::MetricSet* owner = 0);
+        ~Metrics();
     };
 
     /**
@@ -92,11 +78,8 @@ public:
         using CSP = std::shared_ptr<const OwnershipState>;
 
         OwnershipState(const lib::Distribution::SP& distribution,
-                       const lib::ClusterState::CSP& state)
-            : _distribution(distribution),
-              _state(state)
-        {
-        }
+                       const lib::ClusterState::CSP& state);
+        ~OwnershipState();
 
         static const uint16_t FAILED_TO_RESOLVE = 0xffff;
 
