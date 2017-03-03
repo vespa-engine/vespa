@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertTrue;
 
@@ -79,7 +80,13 @@ public class RunVespaLocal {
 
         logger.info("Provisioning nodes");
         Set<String> hostnames = LocalZoneUtils.provisionNodes(LocalZoneUtils.NODE_ADMIN_HOSTNAME, numNodesToProvision);
-        hostnames.forEach(hostname -> LocalZoneUtils.setState(Node.State.ready, hostname));
+        hostnames.stream()
+                .map(LocalZoneUtils::getContainerNodeSpec)
+                .flatMap(optional -> optional.isPresent() ? Stream.of(optional.get()) : Stream.empty()) // Remove with JDK 9
+                .forEach(nodeSpec -> {
+                    if (nodeSpec.nodeState == Node.State.provisioned) LocalZoneUtils.setState(Node.State.dirty, nodeSpec.hostname);
+                    if (nodeSpec.nodeState == Node.State.dirty) LocalZoneUtils.setState(Node.State.ready, nodeSpec.hostname);
+                });
     }
 
     /**
@@ -111,7 +118,11 @@ public class RunVespaLocal {
 
         logger.info("Provisioning host at " + parentHostHostname);
         LocalZoneUtils.provisionHost(parentHostHostname);
-        LocalZoneUtils.setState(Node.State.ready, parentHostHostname);
+        LocalZoneUtils.getContainerNodeSpec(parentHostHostname)
+                .ifPresent(nodeSpec -> {
+                    if (nodeSpec.nodeState == Node.State.provisioned) LocalZoneUtils.setState(Node.State.dirty, nodeSpec.hostname);
+                    if (nodeSpec.nodeState == Node.State.dirty) LocalZoneUtils.setState(Node.State.ready, nodeSpec.hostname);
+                });
 
         logger.info("Deploying node-admin app");
         LocalZoneUtils.deployApp(docker, pathToNodeAdminApp, "vespa", "node-admin");

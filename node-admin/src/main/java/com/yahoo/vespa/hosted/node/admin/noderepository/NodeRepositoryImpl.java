@@ -97,7 +97,7 @@ public class NodeRepositoryImpl implements NodeRepository {
         }
     }
 
-    private static ContainerNodeSpec createContainerNodeSpec(GetNodesResponse.Node node)
+    public static ContainerNodeSpec createContainerNodeSpec(GetNodesResponse.Node node)
             throws IllegalArgumentException, NullPointerException {
         Objects.requireNonNull(node.nodeState, "Unknown node state");
         Node.State nodeState = Node.State.valueOf(node.nodeState);
