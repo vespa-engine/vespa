@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -89,7 +89,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     private PrefixLogger getLogger(String hostName) {
-        return PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class, NodeRepositoryImpl.containerNameFromHostName(hostName));
+        return PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class, ContainerName.fromHostname(hostName));
     }
 
     private String getSuspendPath(String hostName) {
