@@ -15,15 +15,16 @@ vespa_define_module(
     src/tests/eval/gbdt
     src/tests/eval/interpreted_function
     src/tests/eval/node_types
+    src/tests/eval/param_usage
     src/tests/eval/simple_tensor
     src/tests/eval/tensor_function
     src/tests/eval/value_cache
     src/tests/eval/value_type
-    src/tests/tensor/sparse_tensor_builder
     src/tests/tensor/dense_dot_product_function
     src/tests/tensor/dense_tensor_address_combiner
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_tensor_function_compiler
+    src/tests/tensor/sparse_tensor_builder
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
     src/tests/tensor/tensor_mapper
