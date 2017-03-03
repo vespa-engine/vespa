@@ -88,7 +88,8 @@ TrackingTask::TrackingTask(Scheduler& scheduler,
 
 TrackingTask::~TrackingTask() {}
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winline"
 //TODO: refactor
 void
 TrackingTask::doHandle() {
@@ -121,6 +122,7 @@ TrackingTask::doHandle() {
         }
     }
 }
+#pragma GCC diagnostic pop
 
 PeerEntries
 TrackingTask::getPeers(const std::shared_ptr<FileDownloader>& downloader) {
