@@ -1,9 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "flags.h"
 #include <vespa/fnet/frt/frt.h>
 
+struct Flags {
+    vespalib::string method;
+    std::vector<vespalib::string> args;
+    vespalib::string hostname;
+    int portnumber;
+    Flags(const Flags &);
+    Flags & operator=(const Flags &);
+    Flags();
+    ~Flags();
+};
 
 class ProxyCmd
 {
@@ -22,7 +31,7 @@ private:
 public:
     ProxyCmd(const Flags& flags);
 
-    virtual ~ProxyCmd() {}
+    virtual ~ProxyCmd();
 
     int action();
 };

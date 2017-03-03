@@ -90,11 +90,8 @@ struct Fixture
 {
     DenseDotProductFunction function;
     FunctionInput input;
-    Fixture(size_t lhsNumCells, size_t rhsNumCells)
-        : function(0, 1),
-          input(lhsNumCells, rhsNumCells)
-    {
-    }
+    Fixture(size_t lhsNumCells, size_t rhsNumCells);
+    ~Fixture();
     double eval() const {
         Stash stash;
         const Value &result = function.eval(input, stash);
@@ -106,6 +103,13 @@ struct Fixture
         return result.as_double();
     }
 };
+
+Fixture::Fixture(size_t lhsNumCells, size_t rhsNumCells)
+    : function(0, 1),
+      input(lhsNumCells, rhsNumCells)
+{ }
+
+Fixture::~Fixture() { }
 
 void
 assertDotProduct(size_t numCells)

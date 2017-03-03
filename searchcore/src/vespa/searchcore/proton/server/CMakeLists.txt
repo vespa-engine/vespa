@@ -17,6 +17,7 @@ vespa_add_library(searchcore_server STATIC
     docstorevalidator.cpp
     document_db_explorer.cpp
     document_db_maintenance_config.cpp
+    document_meta_store_read_guards.cpp
     document_scan_iterator.cpp
     document_subdb_collection_explorer.cpp
     document_subdb_collection_initializer.cpp
@@ -56,6 +57,7 @@ vespa_add_library(searchcore_server STATIC
     maintenance_controller_explorer.cpp
     maintenance_jobs_injector.cpp
     maintenancecontroller.cpp
+    maintenancedocumentsubdb.cpp
     maintenancejobrunner.cpp
     matchers.cpp
     matchview.cpp

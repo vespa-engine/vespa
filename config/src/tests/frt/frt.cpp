@@ -128,13 +128,8 @@ namespace {
         FRT_Supervisor supervisor;
         FNET_Scheduler scheduler;
         vespalib::string address;
-        ConnectionMock(FRT_RPCRequest * answer = NULL)
-            : errorCode(0),
-              timeout(0),
-              ans(answer),
-              supervisor(),
-              address()
-        { }
+        ConnectionMock(FRT_RPCRequest * answer = NULL);
+        ~ConnectionMock();
         FRT_RPCRequest * allocRPCRequest() { return supervisor.AllocRPCRequest(); }
         void setError(int ec) { errorCode = ec; }
         void invoke(FRT_RPCRequest * req, double t, FRT_IRequestWait * waiter)
@@ -148,6 +143,15 @@ namespace {
         const vespalib::string & getAddress() const { return address; }
         void setTransientDelay(int64_t delay) { (void) delay; }
     };
+
+    ConnectionMock::ConnectionMock(FRT_RPCRequest * answer)
+        : errorCode(0),
+          timeout(0),
+          ans(answer),
+          supervisor(),
+          address()
+    { }
+    ConnectionMock::~ConnectionMock() { }
 
     struct FactoryMock : public ConnectionFactory {
         ConnectionMock * current;

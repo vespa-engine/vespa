@@ -696,6 +696,32 @@ AuxTest::assertChar(ucs4_t act, char exp)
     return _test((char) act == exp);
 }
 
+typedef std::unique_ptr<QueryNode> QueryNodeUP;
+struct QB {
+    QueryNodeUP q;
+    QB(size_t numTerms) : q(new QueryNode(numTerms, 0, 0)) {}
+    QB(QB & rhs) : q(std::move(rhs.q)) { }
+    QB & add(const char * t, bool st = true) {
+        QueryTerm * qt = new QueryTerm(t, strlen(t), 0);
+        if (st) qt->_options |= X_SPECIALTOKEN;
+        q->AddChild(qt);
+        return *this;
+    }
+};
+struct Ctx {
+    std::string text;
+    QB qb;
+    SpecialTokenRegistry str;
+    Fast_NormalizeWordFolder wf;
+    TokenProcessor tp;
+    JuniperTokenizer jt;
+    Ctx(const std::string & text_, QB & qb_);
+    ~Ctx();
+};
+
+Ctx::Ctx(const std::string & text_, QB & qb_) : text(text_), qb(qb_), str(qb.q.get()), wf(), tp(text), jt(&wf, text.c_str(), text.size(), &tp, &str) { jt.scan(); }
+Ctx::~Ctx() { }
+
 void
 AuxTest::TestSpecialTokenRegistry()
 {
@@ -775,27 +801,6 @@ AuxTest::TestSpecialTokenRegistry()
         }
     }
     { // test tokenizer with special token registry
-        typedef std::unique_ptr<QueryNode> QueryNodeUP;
-        struct QB {
-            QueryNodeUP q;
-            QB(size_t numTerms) : q(new QueryNode(numTerms, 0, 0)) {}
-            QB(QB & rhs) : q(std::move(rhs.q)) { }
-            QB & add(const char * t, bool st = true) {
-                QueryTerm * qt = new QueryTerm(t, strlen(t), 0);
-                if (st) qt->_options |= X_SPECIALTOKEN;
-                q->AddChild(qt);
-                return *this;
-            }
-        };
-        struct Ctx {
-            std::string text;
-            QB qb;
-            SpecialTokenRegistry str;
-            Fast_NormalizeWordFolder wf;
-            TokenProcessor tp;
-            JuniperTokenizer jt;
-            Ctx(const std::string & text_, QB & qb_) : text(text_), qb(qb_), str(qb.q.get()), wf(), tp(text), jt(&wf, text.c_str(), text.size(), &tp, &str) { jt.scan(); }
-        };
 
         { // only special token registered
             Ctx c("foo", QB(2).add("c++").add("foo", false));

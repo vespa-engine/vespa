@@ -94,13 +94,16 @@ struct LazyTestFixture
     ConfigHandle<FunctionTestConfig>::UP _handle;
     std::unique_ptr<FunctionTestConfig> _config;
 
-    LazyTestFixture(const std::string & dirName)
+    LazyTestFixture(const std::string & dirName);
+    ~LazyTestFixture();
+};
+
+LazyTestFixture::LazyTestFixture(const std::string & dirName)
         : _spec(TEST_PATH(dirName)),
           _subscriber(_spec),
           _handle(_subscriber.subscribe<FunctionTestConfig>(""))
-    {
-    }
-};
+{ }
+LazyTestFixture::~LazyTestFixture() { }
 
 struct TestFixture : public LazyTestFixture
 {
