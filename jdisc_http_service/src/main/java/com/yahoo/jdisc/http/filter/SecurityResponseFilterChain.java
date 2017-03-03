@@ -84,6 +84,7 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
         public URI getUri() {
             return request.getUri();
         }
+
     }
 
 }

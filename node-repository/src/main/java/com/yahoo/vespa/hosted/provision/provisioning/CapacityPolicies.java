@@ -40,7 +40,7 @@ public class CapacityPolicies {
 
     public Flavor decideFlavor(Capacity requestedCapacity, ClusterSpec cluster, Optional<String> defaultFlavorOverride) {
         // for now, always use requested docker flavor when requested
-        final Optional<String> requestedFlavor = requestedCapacity.flavor();
+        Optional<String> requestedFlavor = requestedCapacity.flavor();
         if (requestedFlavor.isPresent() &&
                 flavors.getFlavorOrThrow(requestedFlavor.get()).getType() == Flavor.Type.DOCKER_CONTAINER)
             return flavors.getFlavorOrThrow(requestedFlavor.get());
