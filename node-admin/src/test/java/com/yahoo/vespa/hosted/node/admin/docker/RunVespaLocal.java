@@ -117,6 +117,7 @@ public class RunVespaLocal {
         LocalZoneUtils.startNodeAdminIfNeeded(docker, environmentBuilder.build(), pathToContainerStorage);
 
         logger.info("Provisioning host at " + parentHostHostname);
+        LocalZoneUtils.provisionHost(parentHostHostname);
         LocalZoneUtils.getContainerNodeSpec(parentHostHostname)
                 .ifPresent(nodeSpec -> {
                     if (nodeSpec.nodeState == Node.State.provisioned) LocalZoneUtils.setState(Node.State.dirty, nodeSpec.hostname);
