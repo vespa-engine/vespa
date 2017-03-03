@@ -31,7 +31,7 @@ public class ProcessExecutor {
             this.timeoutSeconds = timeoutSeconds;
         }
 
-        public Builder setSuccessExitCodes(int... successExitCodes) {
+        public Builder successExitCodes(int... successExitCodes) {
             this.successExitCodes = successExitCodes;
             return this;
         }
