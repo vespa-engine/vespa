@@ -341,18 +341,12 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public Optional<Container> getContainer(String hostname) {
-        return listAllContainers().stream()
-                .flatMap(this::asContainer)
-                .filter(c -> Objects.equals(hostname, c.hostname))
-                .findFirst();
-    }
-
-    @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         return listAllContainers().stream()
+                .filter(container -> Arrays.stream(container.getNames())
+                        .map(this::decode)
+                        .anyMatch(name -> name.equals(containerName.asString())))
                 .flatMap(this::asContainer)
-                .filter(c -> Objects.equals(containerName, c.name))
                 .findFirst();
     }
 

@@ -91,23 +91,23 @@ public class DockerTest {
         final String containerHostname = "hostName1";
 
         docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
-        Optional<Container> container = docker.getContainer(containerHostname);
+        Optional<Container> container = docker.getContainer(containerName);
         assertTrue(container.isPresent());
         assertEquals(container.get().state, Container.State.CREATED);
 
         docker.startContainer(containerName);
-        container = docker.getContainer(containerHostname);
+        container = docker.getContainer(containerName);
         assertTrue(container.isPresent());
         assertEquals(container.get().state, Container.State.RUNNING);
 
         docker.dockerClient.pauseContainerCmd(containerName.asString()).exec();
-        container = docker.getContainer(containerHostname);
+        container = docker.getContainer(containerName);
         assertTrue(container.isPresent());
         assertEquals(container.get().state, Container.State.PAUSED);
 
         docker.dockerClient.unpauseContainerCmd(containerName.asString()).exec();
         docker.stopContainer(containerName);
-        container = docker.getContainer(containerHostname);
+        container = docker.getContainer(containerName);
         assertTrue(container.isPresent());
         assertEquals(container.get().state, Container.State.EXITED);
 

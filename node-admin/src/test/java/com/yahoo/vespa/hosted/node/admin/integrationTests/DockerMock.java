@@ -97,13 +97,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public Optional<Container> getContainer(String hostname) {
-        synchronized (monitor) {
-            return containers.stream().filter(container -> container.hostname.equals(hostname)).findFirst();
-        }
-    }
-
-    @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         synchronized (monitor) {
             return containers.stream().filter(container -> container.name.equals(containerName)).findFirst();

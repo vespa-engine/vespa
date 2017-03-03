@@ -195,7 +195,7 @@ public class RunSystemTests {
     private void startSystemTestNodeIfNeeded(ContainerName containerName) throws IOException, InterruptedException, ExecutionException {
         buildVespaSystestDockerImage(docker, vespaBaseImage);
 
-        Optional<Container> container = docker.getContainer(containerName.asString());
+        Optional<Container> container = docker.getContainer(containerName);
         if (container.isPresent()) {
             if (container.get().state.isRunning()) return;
             else docker.deleteContainer(containerName);
