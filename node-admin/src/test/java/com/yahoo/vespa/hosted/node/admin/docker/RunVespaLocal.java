@@ -19,7 +19,6 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;

@@ -6,7 +6,6 @@ import com.google.common.collect.Sets;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -91,7 +90,6 @@ public class NodeRepositoryImplTest {
         final ContainerNodeSpec nodeSpec = containersToRun.get(0);
         assertThat(nodeSpec.hostname, is("host4.yahoo.com"));
         assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("image-123")));
-        assertThat(nodeSpec.containerName, is(new ContainerName("host4")));
         assertThat(nodeSpec.nodeState, is(Node.State.reserved));
         assertThat(nodeSpec.wantedRestartGeneration.get(), is(0L));
         assertThat(nodeSpec.currentRestartGeneration.get(), is(0L));
@@ -108,7 +106,6 @@ public class NodeRepositoryImplTest {
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertThat(nodeSpec.isPresent(), is(true));
         assertThat(nodeSpec.get().hostname, is(hostname));
-        assertThat(nodeSpec.get().containerName, is(new ContainerName("host4")));
     }
 
     @Test

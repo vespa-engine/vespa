@@ -55,8 +55,6 @@ public interface Docker {
 
     List<Container> getAllContainersManagedBy(String manager);
 
-    Optional<Container> getContainer(String hostname);
-
     Optional<Container> getContainer(ContainerName containerName);
 
     CompletableFuture<DockerImage> pullImageAsync(DockerImage image);

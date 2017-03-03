@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin;
 
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -15,7 +14,6 @@ import java.util.Optional;
 public class ContainerNodeSpec {
     public final String hostname;
     public final Optional<DockerImage> wantedDockerImage;
-    public final ContainerName containerName;
     public final Node.State nodeState;
     public final String nodeType;
     public final String nodeFlavor;
@@ -33,7 +31,6 @@ public class ContainerNodeSpec {
     public ContainerNodeSpec(
             final String hostname,
             final Optional<DockerImage> wantedDockerImage,
-            final ContainerName containerName,
             final Node.State nodeState,
             final String nodeType,
             final String nodeFlavor,
@@ -48,14 +45,12 @@ public class ContainerNodeSpec {
             final Optional<Double> minMainMemoryAvailableGb,
             final Optional<Double> minDiskAvailableGb) {
         Objects.requireNonNull(hostname);
-        Objects.requireNonNull(containerName);
         Objects.requireNonNull(nodeState);
         Objects.requireNonNull(nodeType);
         Objects.requireNonNull(nodeFlavor);
 
         this.hostname = hostname;
         this.wantedDockerImage = wantedDockerImage;
-        this.containerName = containerName;
         this.nodeState = nodeState;
         this.nodeType = nodeType;
         this.nodeFlavor = nodeFlavor;
@@ -80,7 +75,6 @@ public class ContainerNodeSpec {
 
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(wantedDockerImage, that.wantedDockerImage) &&
-                Objects.equals(containerName, that.containerName) &&
                 Objects.equals(nodeState, that.nodeState) &&
                 Objects.equals(nodeType, that.nodeType) &&
                 Objects.equals(nodeFlavor, that.nodeFlavor) &&
@@ -101,7 +95,6 @@ public class ContainerNodeSpec {
         return Objects.hash(
                 hostname,
                 wantedDockerImage,
-                containerName,
                 nodeState,
                 nodeType,
                 nodeFlavor,
@@ -122,7 +115,6 @@ public class ContainerNodeSpec {
         return getClass().getSimpleName() + " {"
                 + " hostname=" + hostname
                 + " wantedDockerImage=" + wantedDockerImage
-                + " containerName=" + containerName
                 + " nodeState=" + nodeState
                 + " nodeType = " + nodeType
                 + " nodeFlavor = " + nodeFlavor
@@ -235,7 +227,6 @@ public class ContainerNodeSpec {
     public static class Builder {
         private String hostname;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
-        private ContainerName containerName;
         private Node.State nodeState;
         private String nodeType;
         private String nodeFlavor;
@@ -254,7 +245,6 @@ public class ContainerNodeSpec {
 
         public Builder(ContainerNodeSpec nodeSpec) {
             hostname(nodeSpec.hostname);
-            containerName(nodeSpec.containerName);
             nodeState(nodeSpec.nodeState);
             nodeType(nodeSpec.nodeType);
             nodeFlavor(nodeSpec.nodeFlavor);
@@ -279,11 +269,6 @@ public class ContainerNodeSpec {
 
         public Builder wantedDockerImage(DockerImage wantedDockerImage) {
             this.wantedDockerImage = Optional.of(wantedDockerImage);
-            return this;
-        }
-
-        public Builder containerName(ContainerName containerName) {
-            this.containerName = containerName;
             return this;
         }
 
@@ -352,7 +337,7 @@ public class ContainerNodeSpec {
         }
 
         public ContainerNodeSpec build() {
-            return new ContainerNodeSpec(hostname, wantedDockerImage, containerName, nodeState, nodeType, nodeFlavor,
+            return new ContainerNodeSpec(hostname, wantedDockerImage, nodeState, nodeType, nodeFlavor,
                                          vespaVersion, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,
                                          wantedRebootGeneration, currentRebootGeneration,

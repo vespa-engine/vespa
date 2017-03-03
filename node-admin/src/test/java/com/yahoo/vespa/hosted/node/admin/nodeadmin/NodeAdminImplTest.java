@@ -57,14 +57,13 @@ public class NodeAdminImplTest {
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
         when(nodeAgentFactory.apply(any(String.class))).thenReturn(nodeAgent1).thenReturn(nodeAgent2);
 
-        final String hostName = "host";
+        final String hostName = "host1.test.yahoo.com";
         final DockerImage dockerImage = new DockerImage("image");
-        final ContainerName containerName = new ContainerName("container");
+        final ContainerName containerName = new ContainerName("host1");
         final Container existingContainer = new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 5);
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
-                .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")

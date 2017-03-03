@@ -145,9 +145,8 @@ public class NodeAdminImpl implements NodeAdmin {
         }
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             try {
-                final Optional<ContainerNodeSpec> containerNodeSpec = nodeAgent.getContainerNodeSpec();
-                if (containerNodeSpec.isPresent() && nodes.contains(containerNodeSpec.get().hostname)) {
-                    final ContainerName containerName = containerNodeSpec.get().containerName;
+                if (nodes.contains(nodeAgent.getHostname())) {
+                    final ContainerName containerName = nodeAgent.getContainerName();
 
                     if ( ! isFrozen()) return Optional.of("Node agent for " + containerName + " is not frozen");
 

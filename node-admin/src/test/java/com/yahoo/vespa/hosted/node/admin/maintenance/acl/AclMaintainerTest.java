@@ -150,16 +150,17 @@ public class AclMaintainerTest {
     }
 
     private Container makeContainer(String hostname, Container.State state, int pid) {
+        final ContainerName containerName = new ContainerName(hostname);
         final Container container = new Container(hostname, new DockerImage("mock"),
-                new ContainerName(hostname), state, pid);
-        when(dockerOperations.getContainer(eq(hostname))).thenReturn(Optional.of(container));
+                containerName, state, pid);
+        when(dockerOperations.getContainer(eq(containerName))).thenReturn(Optional.of(container));
         return container;
     }
 
     private static List<ContainerAclSpec> makeAclSpecs(int count, ContainerName containerName) {
         return IntStream.rangeClosed(1, count)
                 .mapToObj(i -> new ContainerAclSpec("node-" + i, "::" + i,
-                        containerName.asString()))
+                        containerName))
                 .collect(Collectors.toList());
     }
 

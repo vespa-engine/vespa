@@ -25,6 +25,10 @@ public class ContainerName {
         return name;
     }
 
+    public static ContainerName fromHostname(final String hostName) {
+        return new ContainerName(hostName.split("\\.")[0]);
+    }
+
     @Override
     public int hashCode() {
         return name.hashCode();

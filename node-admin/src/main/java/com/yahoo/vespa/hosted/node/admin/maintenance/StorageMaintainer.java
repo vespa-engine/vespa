@@ -158,7 +158,7 @@ public class StorageMaintainer {
     /**
      * Checks if container has any new coredumps, reports and archives them if so
      */
-    public void handleCoreDumpsForContainer(ContainerNodeSpec nodeSpec, Environment environment) {
+    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, Environment environment) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", nodeSpec.hostname);
         attributes.put("parent_hostname", HostName.getLocalhost());
@@ -182,7 +182,7 @@ public class StorageMaintainer {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
         maintainerExecutor.addJob("handle-core-dumps")
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
-                .withArgument("containerCoredumpsPath", environment.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/home/y/var/crash"))
+                .withArgument("containerCoredumpsPath", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/crash"))
                 .withArgument("attributes", attributes);
         maintainerExecutor.execute();
     }

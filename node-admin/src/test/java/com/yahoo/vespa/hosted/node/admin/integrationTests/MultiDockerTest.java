@@ -18,9 +18,9 @@ public class MultiDockerTest {
     @Test
     public void test() throws InterruptedException, IOException {
         try (DockerTester dockerTester = new DockerTester()) {
-            addAndWaitForNode(dockerTester, "host1", new ContainerName("container1"), new DockerImage("image1"));
+            addAndWaitForNode(dockerTester, "host1.test.yahoo.com", new DockerImage("image1"));
             ContainerNodeSpec containerNodeSpec2 =
-                    addAndWaitForNode(dockerTester, "host2", new ContainerName("container2"), new DockerImage("image2"));
+                    addAndWaitForNode(dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
 
             dockerTester.updateContainerNodeSpec(
                     new ContainerNodeSpec.Builder(containerNodeSpec2)
@@ -33,39 +33,38 @@ public class MultiDockerTest {
                 Thread.sleep(10);
             }
 
-            addAndWaitForNode(dockerTester, "host3", new ContainerName("container3"), new DockerImage("image1"));
+            addAndWaitForNode(dockerTester, "host3.test.yahoo.com", new DockerImage("image1"));
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrder(
-                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host1, ContainerName { name=container1 }",
-                    "executeInContainerAsRoot with ContainerName { name=container1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
+                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
-                    "createContainerCommand with DockerImage { imageId=image2 }, HostName: host2, ContainerName { name=container2 }",
-                    "executeInContainerAsRoot with ContainerName { name=container2 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
+                    "createContainerCommand with DockerImage { imageId=image2 }, HostName: host2.test.yahoo.com, ContainerName { name=host2 }",
+                    "executeInContainerAsRoot with ContainerName { name=host2 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
-                    "stopContainer with ContainerName { name=container2 }",
-                    "deleteContainer with ContainerName { name=container2 }",
+                    "stopContainer with ContainerName { name=host2 }",
+                    "deleteContainer with ContainerName { name=host2 }",
 
-                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host3, ContainerName { name=container3 }",
-                    "executeInContainerAsRoot with ContainerName { name=container3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host3.test.yahoo.com, ContainerName { name=host3 }",
+                    "executeInContainerAsRoot with ContainerName { name=host3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
             callOrderVerifier.assertInOrderWithAssertMessage("Maintainer did not receive call to delete application storage",
-                                                             "deleteContainer with ContainerName { name=container2 }",
-                                                             "DeleteContainerStorage with ContainerName { name=container2 }");
+                                                             "deleteContainer with ContainerName { name=host2 }",
+                                                             "DeleteContainerStorage with ContainerName { name=host2 }");
 
             callOrderVerifier.assertInOrder(
-                    "updateNodeAttributes with HostName: host1, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}",
-                    "updateNodeAttributes with HostName: host2, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion=''}",
-                    "markAsReady with HostName: host2",
-                    "updateNodeAttributes with HostName: host3, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}");
+                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}",
+                    "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion=''}",
+                    "markAsReady with HostName: host2.test.yahoo.com",
+                    "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}");
         }
     }
 
-    private ContainerNodeSpec addAndWaitForNode(DockerTester tester, String hostName, ContainerName containerName, DockerImage dockerImage) throws InterruptedException {
+    private ContainerNodeSpec addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) throws InterruptedException {
         ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
-                .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
@@ -80,6 +79,7 @@ public class MultiDockerTest {
             Thread.sleep(10);
         }
 
+        ContainerName containerName = ContainerName.fromHostname(hostName);
         tester.getCallOrderVerifier().assertInOrder(
                 "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
                 "executeInContainerAsRoot with " + containerName + ", args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");

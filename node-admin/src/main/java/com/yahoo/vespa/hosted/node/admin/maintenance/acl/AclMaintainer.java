@@ -86,12 +86,12 @@ public class AclMaintainer implements Runnable {
 
     private void configureAcls() {
         final List<ContainerAclSpec> aclSpecs = nodeRepository.getContainerAclSpecs(nodeAdminHostnameSupplier.get());
-        final Map<String, List<ContainerAclSpec>> aclSpecsGroupedByHostname = aclSpecs.stream()
+        final Map<ContainerName, List<ContainerAclSpec>> aclSpecsGroupedByHostname = aclSpecs.stream()
                 .collect(Collectors.groupingBy(ContainerAclSpec::trustedBy));
 
-        for (Map.Entry<String, List<ContainerAclSpec>> entry : aclSpecsGroupedByHostname.entrySet()) {
-            final String hostname = entry.getKey();
-            final Optional<Container> container = dockerOperations.getContainer(hostname);
+        for (Map.Entry<ContainerName, List<ContainerAclSpec>> entry : aclSpecsGroupedByHostname.entrySet()) {
+            final ContainerName containerName = entry.getKey();
+            final Optional<Container> container = dockerOperations.getContainer(containerName);
             if (!container.isPresent()) {
                 // Container belongs to this Docker host, but is currently unallocated
                 continue;

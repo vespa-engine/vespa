@@ -66,6 +66,10 @@ public interface NodeAgent {
      */
     void updateContainerNodeMetrics();
 
+    ContainerName getContainerName();
+
+    String getHostname();
+
     /**
      * Returns true if NodeAgent is waiting for an image download to finish
      */

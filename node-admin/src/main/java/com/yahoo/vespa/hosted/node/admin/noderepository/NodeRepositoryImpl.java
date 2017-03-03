@@ -89,7 +89,8 @@ public class NodeRepositoryImpl implements NodeRepository {
             final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
             final GetAclResponse response = requestExecutor.get(path, port, GetAclResponse.class);
             return response.trustedNodes.stream()
-                    .map(node -> new ContainerAclSpec(node.hostname, node.ipAddress, node.trustedBy))
+                    .map(node -> new ContainerAclSpec(
+                            node.hostname, node.ipAddress, ContainerName.fromHostname(node.trustedBy)))
                     .collect(Collectors.toList());
         } catch (ConfigServerHttpRequestExecutor.NotFoundException e) {
             return Collections.emptyList();
@@ -122,7 +123,6 @@ public class NodeRepositoryImpl implements NodeRepository {
         return new ContainerNodeSpec(
                 hostName,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
-                containerNameFromHostName(hostName),
                 nodeState,
                 node.nodeType,
                 node.nodeFlavor,
@@ -136,10 +136,6 @@ public class NodeRepositoryImpl implements NodeRepository {
                 Optional.ofNullable(node.minCpuCores),
                 Optional.ofNullable(node.minMainMemoryAvailableGb),
                 Optional.ofNullable(node.minDiskAvailableGb));
-    }
-
-    public static ContainerName containerNameFromHostName(final String hostName) {
-        return new ContainerName(hostName.split("\\.")[0]);
     }
 
     @Override
