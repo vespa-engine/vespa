@@ -510,6 +510,7 @@ public class NodeAgentImplTest {
                 .nodeFlavor("docker")
                 .owner(owner)
                 .membership(membership)
+                .minDiskAvailableGb(250)
                 .build();
 
         long totalContainerCpuTime = (long) ((Map) cpu_stats.get("cpu_usage")).get("total_usage");

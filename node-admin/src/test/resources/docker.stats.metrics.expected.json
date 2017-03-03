@@ -78,8 +78,9 @@
     "metrics":{
       "node.cpu.busy.pct": 45.6789123,
       "node.cpu.throttled_time": 4523.0,
-      "node.memory.usage":1.752707072E9,
-      "node.memory.limit":4.294967296E9
+      "node.memory.usage":1.326026752E9,
+      "node.memory.limit":4.294967296E9,
+      "node.disk.limit":2.68435456E11
     },
     "routing":{
       "yamas":{

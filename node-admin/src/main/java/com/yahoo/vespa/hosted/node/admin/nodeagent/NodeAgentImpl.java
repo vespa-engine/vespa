@@ -519,7 +519,11 @@ public class NodeAgentImpl implements NodeAgent {
 
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
         addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
-        addIfNotNull(dimensions, "node.memory.usage", stats.getMemoryStats(), "usage");
+
+        long memoryUsageTotal = ((Number) stats.getMemoryStats().get("usage")).longValue();
+        long memoryUsageCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
+        long memoryUsage = memoryUsageTotal - memoryUsageCache;
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.memory.usage").sample(memoryUsage);
 
         stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
             Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
@@ -528,14 +532,17 @@ public class NodeAgentImpl implements NodeAgent {
             addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
         });
 
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "uptime").sample(lastCpuMetric.getUptime());
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "alive").sample(1);
-
+        long bytesInGB = 1 << 30;
+        nodeSpec.minDiskAvailableGb.ifPresent(diskGB -> metricReceiver
+                .declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.limit").sample(diskGB * bytesInGB));
 
         storageMaintainer.ifPresent(maintainer -> maintainer
                 .updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName)
                 .forEach((metricName, metricValue) ->
                         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, metricName).sample(metricValue.doubleValue())));
+
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "uptime").sample(lastCpuMetric.getUptime());
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "alive").sample(1);
     }
 
     @SuppressWarnings("unchecked")
