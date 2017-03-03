@@ -84,10 +84,10 @@ namespace {
 
 using Children = SearchIterator::Children;
 
-void
-andIterators(BitVector::UP &result, const Children &children, uint32_t begin_id, bool onlyBitVector) {
+BitVector::UP
+andIterators(BitVector::UP result, const Children &children, uint32_t begin_id, bool select_bitvector) {
     for (SearchIterator *child : children) {
-        if (child->isBitVector() == onlyBitVector) {
+        if (child->isBitVector() == select_bitvector) {
             if (!result) {
                 result = child->get_hits(begin_id);
             } else {
@@ -95,13 +95,14 @@ andIterators(BitVector::UP &result, const Children &children, uint32_t begin_id,
             }
         }
     }
+    return result;
 }
 
 template<typename Children>
-void
-orIterators(BitVector::UP &result, const Children &children, uint32_t begin_id, bool onlyBitVector) {
+BitVector::UP
+orIterators(BitVector::UP result, const Children &children, uint32_t begin_id, bool select_bitvector) {
     for (auto & child : children) {
-        if (child->isBitVector() == onlyBitVector) {
+        if (child->isBitVector() == select_bitvector) {
             if (!result) {
                 result = child->get_hits(begin_id);
             } else {
@@ -109,26 +110,24 @@ orIterators(BitVector::UP &result, const Children &children, uint32_t begin_id, 
             }
         }
     }
+    return result;
 }
 
 }
 
-void
-SearchIterator::andChildren(BitVector::UP &result, const Children &children, uint32_t begin_id) {
-    andIterators(result, children, begin_id, true);
-    andIterators(result, children, begin_id, false);
+BitVector::UP
+SearchIterator::andChildren(const Children &children, uint32_t begin_id) {
+    return andIterators(andIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
 }
 
-void
-SearchIterator::orChildren(BitVector::UP &result, const Children &children, uint32_t begin_id) {
-    orIterators(result, children, begin_id, true);
-    orIterators(result, children, begin_id, false);
+BitVector::UP
+SearchIterator::orChildren(const Children &children, uint32_t begin_id) {
+    return orIterators(orIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
 }
 
-void
-SearchIterator::orChildren(BitVector::UP &result, const OwnedChildren &children, uint32_t begin_id) {
-    orIterators(result, children, begin_id, true);
-    orIterators(result, children, begin_id, false);
+BitVector::UP
+SearchIterator::orChildren(const OwnedChildren &children, uint32_t begin_id) {
+    return orIterators(orIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
 }
 
 } // namespace queryeval

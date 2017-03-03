@@ -79,8 +79,7 @@ private:
 BitVector::UP
 OrSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
-    BitVector::UP result;
-    orChildren(result, children, begin_id);
+    BitVector::UP result = orChildren(children, begin_id);
     return result;
 }
 

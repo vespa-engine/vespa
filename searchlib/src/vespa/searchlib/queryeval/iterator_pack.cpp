@@ -9,8 +9,7 @@ namespace queryeval {
 std::unique_ptr<BitVector>
 SearchIteratorPack::get_hits(uint32_t begin_id, uint32_t end_id) {
 
-    BitVector::UP result;
-    SearchIterator::orChildren(result, _children, begin_id);
+    BitVector::UP result = SearchIterator::orChildren(_children, begin_id);
     if (! result ) {
         result = BitVector::create(begin_id, end_id);
     }
