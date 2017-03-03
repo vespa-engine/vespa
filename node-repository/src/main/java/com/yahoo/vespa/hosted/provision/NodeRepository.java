@@ -92,7 +92,7 @@ public class NodeRepository extends AbstractComponent {
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
-            zkClient.writeTo(state, zkClient.getNodes(state));
+            zkClient.writeTo(state, zkClient.getNodes(state), Optional.empty());
     }
 
     // ---------------- Query API ----------------------------------------------------------------
@@ -264,7 +264,7 @@ public class NodeRepository extends AbstractComponent {
             if (node.state() != Node.State.dirty)
                 throw new IllegalArgumentException("Can not set " + node + " ready. It is not dirty.");
         try (Mutex lock = lockUnallocated()) {
-            return zkClient.writeTo(Node.State.ready, nodes);
+            return zkClient.writeTo(Node.State.ready, nodes, Optional.empty());
         }
     }
 
@@ -277,11 +277,11 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
-    public List<Node> reserve(List<Node> nodes) { return zkClient.writeTo(Node.State.reserved, nodes); }
+    public List<Node> reserve(List<Node> nodes) { return zkClient.writeTo(Node.State.reserved, nodes, Optional.empty()); }
 
     /** Activate nodes. This method does <b>not</b> lock the node repository */
     public List<Node> activate(List<Node> nodes, NestedTransaction transaction) {
-        return zkClient.writeTo(Node.State.active, nodes, transaction);
+        return zkClient.writeTo(Node.State.active, nodes, Optional.empty(), transaction);
     }
 
     /**
@@ -303,7 +303,8 @@ public class NodeRepository extends AbstractComponent {
         try (Mutex lock = lock(application)) {
             zkClient.writeTo(Node.State.inactive,
                              zkClient.getNodes(application, Node.State.reserved, Node.State.active),
-                             transaction);
+                             Optional.empty(), transaction
+            );
         }
     }
 
@@ -313,12 +314,12 @@ public class NodeRepository extends AbstractComponent {
      * This method does <b>not</b> lock
      */
     public List<Node> deactivate(List<Node> nodes, NestedTransaction transaction) {
-        return zkClient.writeTo(Node.State.inactive, nodes, transaction);
+        return zkClient.writeTo(Node.State.inactive, nodes, Optional.empty(), transaction);
     }
 
     /** Move nodes to the dirty state */
     public List<Node> setDirty(List<Node> nodes) {
-        return performOn(NodeListFilter.from(nodes), node -> zkClient.writeTo(Node.State.dirty, node));
+        return performOn(NodeListFilter.from(nodes), node -> zkClient.writeTo(Node.State.dirty, node, Optional.empty()));
     }
 
     /**
@@ -342,8 +343,8 @@ public class NodeRepository extends AbstractComponent {
      * @return the node in its new state
      * @throws NotFoundException if the node is not found
      */
-    public Node fail(String hostname) {
-        return move(hostname, Node.State.failed);
+    public Node fail(String hostname, String reason) {
+        return move(hostname, Node.State.failed, Optional.of(reason));
     }
 
     /**
@@ -351,8 +352,8 @@ public class NodeRepository extends AbstractComponent {
      *
      * @return List of all the failed nodes in their new state
      */
-    public List<Node> failRecursively(String hostname) {
-        return moveRecursively(hostname, Node.State.failed);
+    public List<Node> failRecursively(String hostname, String reason) {
+        return moveRecursively(hostname, Node.State.failed, Optional.of(reason));
     }
 
     /**
@@ -362,7 +363,7 @@ public class NodeRepository extends AbstractComponent {
      * @throws NotFoundException if the node is not found
      */
     public Node park(String hostname) {
-        return move(hostname, Node.State.parked);
+        return move(hostname, Node.State.parked, Optional.empty());
     }
 
     /**
@@ -371,7 +372,7 @@ public class NodeRepository extends AbstractComponent {
      * @return List of all the parked nodes in their new state
      */
     public List<Node> parkRecursively(String hostname) {
-        return moveRecursively(hostname, Node.State.parked);
+        return moveRecursively(hostname, Node.State.parked, Optional.empty());
     }
 
     /**
@@ -381,30 +382,30 @@ public class NodeRepository extends AbstractComponent {
      * @throws NotFoundException if the node is not found
      */
     public Node reactivate(String hostname) {
-        return move(hostname, Node.State.active);
+        return move(hostname, Node.State.active, Optional.empty());
     }
 
-    private List<Node> moveRecursively(String hostname, Node.State toState) {
+    private List<Node> moveRecursively(String hostname, Node.State toState, Optional<String> reason) {
         List<Node> moved = getChildNodes(hostname).stream()
-                .map(child -> move(child, toState))
+                .map(child -> move(child, toState, reason))
                 .collect(Collectors.toList());
 
-        moved.add(move(hostname, toState));
+        moved.add(move(hostname, toState, reason));
         return moved;
     }
 
-    private Node move(String hostname, Node.State toState) {
+    private Node move(String hostname, Node.State toState, Optional<String> reason) {
         Node node = getNode(hostname).orElseThrow(() ->
                 new NotFoundException("Could not move " + hostname + " to " + toState + ": Node not found"));
-        return move(node, toState);
+        return move(node, toState, reason);
     }
 
-    private Node move(Node node, Node.State toState) {
+    private Node move(Node node, Node.State toState, Optional<String> reason) {
         if (toState == Node.State.active && !node.allocation().isPresent()) {
             throw new IllegalArgumentException("Could not set " + node.hostname() + " active. It has no allocation.");
         }
         try (Mutex lock = lock(node)) {
-            return zkClient.writeTo(toState, node);
+            return zkClient.writeTo(toState, node, reason);
         }
     }
 
@@ -444,7 +445,7 @@ public class NodeRepository extends AbstractComponent {
      *
      * @return the written node for convenience
      */
-    public Node write(Node node) { return zkClient.writeTo(node.state(), node); }
+    public Node write(Node node) { return zkClient.writeTo(node.state(), node, Optional.empty()); }
 
     /**
      * Writes these nodes after they have changed some internal state but NOT changed their state field.
@@ -461,7 +462,7 @@ public class NodeRepository extends AbstractComponent {
             if ( node.state() != state)
                 throw new IllegalArgumentException("Multiple states: " + node.state() + " and " + state);
         }
-        return zkClient.writeTo(state, nodes);
+        return zkClient.writeTo(state, nodes, Optional.empty());
     }
 
     /**

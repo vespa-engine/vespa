@@ -123,15 +123,15 @@ public class CuratorDatabaseClient {
      * @param  nodes the list of nodes to write
      * @return the nodes in their persisted state
      */
-    public List<Node> writeTo(Node.State toState, List<Node> nodes) {
+    public List<Node> writeTo(Node.State toState, List<Node> nodes, Optional<String> reason) {
         try (NestedTransaction nestedTransaction = new NestedTransaction()) {
-            List<Node> writtenNodes = writeTo(toState, nodes, nestedTransaction);
+            List<Node> writtenNodes = writeTo(toState, nodes, reason, nestedTransaction);
             nestedTransaction.commit();
             return writtenNodes;
         }
     }
-    public Node writeTo(Node.State toState, Node node) {
-        return writeTo(toState, Collections.singletonList(node)).get(0);
+    public Node writeTo(Node.State toState, Node node, Optional<String> reason) {
+        return writeTo(toState, Collections.singletonList(node), reason).get(0);
     }
 
     /**
@@ -140,10 +140,12 @@ public class CuratorDatabaseClient {
      *
      * @param  toState the state to write the nodes to
      * @param  nodes the list of nodes to write
+     * @param  reason an optional reason to be logged, for humans
      * @param  transaction the transaction to which write operations are added by this
      * @return the nodes in their state as it will be written if committed
      */
-    public List<Node> writeTo(Node.State toState, List<Node> nodes, NestedTransaction transaction) {
+    public List<Node> writeTo(Node.State toState, List<Node> nodes,
+                              Optional<String> reason, NestedTransaction transaction) {
         if (nodes.isEmpty()) return nodes;
 
         List<Node> writtenNodes = new ArrayList<>(nodes.size());
@@ -165,7 +167,7 @@ public class CuratorDatabaseClient {
         transaction.onCommitted(() -> { // schedule logging on commit of nodes which changed state
             for (Node node : nodes) {
                 if (toState != node.state())
-                    log.log(LogLevel.INFO, "Moved to " + toState + ": " + node);
+                    log.log(LogLevel.INFO, "Moved to " + toState + ": " + node + (reason.isPresent() ? ": " + reason.get() : ""));
             }
         });
         return writtenNodes;

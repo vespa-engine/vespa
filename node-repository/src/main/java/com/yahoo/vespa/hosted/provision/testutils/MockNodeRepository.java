@@ -88,7 +88,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.remove(7);
         nodes = setDirty(nodes);
         setReady(nodes);
-        fail("host5.yahoo.com");
+        fail("host5.yahoo.com", "Failing to unit test");
         setDirty("host55.yahoo.com");
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));

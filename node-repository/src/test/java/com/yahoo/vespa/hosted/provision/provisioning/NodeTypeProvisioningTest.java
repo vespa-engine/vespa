@@ -70,9 +70,9 @@ public class NodeTypeProvisioningTest {
 
         { // Remove 3 proxies then redeploy
             List<Node> nodes = tester.nodeRepository().getNodes(NodeType.proxy, Node.State.active);
-            tester.nodeRepository().fail(nodes.get(0).hostname());
-            tester.nodeRepository().fail(nodes.get(1).hostname());
-            tester.nodeRepository().fail(nodes.get(5).hostname());
+            tester.nodeRepository().fail(nodes.get(0).hostname(), "Failing to unit test");
+            tester.nodeRepository().fail(nodes.get(1).hostname(), "Failing to unit test");
+            tester.nodeRepository().fail(nodes.get(5).hostname(), "Failing to unit test");
             
             List<HostSpec> hosts = deployProxies(application, tester);
             assertEquals(10, hosts.size());
