@@ -16,8 +16,7 @@ public class DelayedResponsesTest {
     public void basic() throws InterruptedException {
         ConfigTester tester = new ConfigTester();
         DelayedResponses responses = new DelayedResponses(new ConfigProxyStatistics());
-        long returnTime = System.currentTimeMillis() + 10;
-        DelayedResponse delayedResponse = new DelayedResponse(tester.createRequest("foo", "id", "bar"), returnTime);
+        DelayedResponse delayedResponse = new DelayedResponse(tester.createRequest("foo", "id", "bar", 10));
         responses.add(delayedResponse);
 
         assertThat(responses.size(), is(1));
