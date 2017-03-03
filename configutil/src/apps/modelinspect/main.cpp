@@ -18,11 +18,15 @@ class Application : public FastOS_Application
     int parseOpts();
     vespalib::string getSources();
 public:
-    void usage(void);
-    int Main(void);
+    void usage();
+    int Main();
 
-    Application() : _flags(), _cfgId("admin/model"), _specString("") {}
+    Application();
+    ~Application();
 };
+
+Application::Application() : _flags(), _cfgId("admin/model"), _specString("") {}
+Application::~Application() { }
 
 int
 Application::parseOpts()

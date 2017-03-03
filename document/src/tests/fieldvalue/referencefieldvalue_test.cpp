@@ -19,8 +19,12 @@ struct Fixture {
 
     DocumentType otherDocType{"bar"};
     ReferenceDataType otherRefType{otherDocType, 54321};
+    Fixture();
+    ~Fixture();
 };
 
+    Fixture::Fixture() { }
+    Fixture::~Fixture() { }
 }
 
 using vespalib::IllegalArgumentException;

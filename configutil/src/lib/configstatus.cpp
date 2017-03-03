@@ -29,6 +29,8 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser
         : _configId(configId), _state(ROOT), _generations(generations)
     {}
 
+    ~ComponentTraverser();
+
     void object(const vespalib::slime::Inspector &inspector) {
         inspector.traverse(*this);
     }
@@ -70,6 +72,8 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser
     }
 };
 
+ComponentTraverser::~ComponentTraverser() {}
+
 class MyHttpHandler : public vbench::HttpResultHandler {
 private:
     std::string _json;
@@ -81,6 +85,7 @@ public:
     MyHttpHandler(std::string configId)
         : _json(), _error(), _configId(configId)
     {}
+    ~MyHttpHandler();
 
     virtual void handleHeader(const vbench::string &name, const vbench::string &value) {
         (void) name;
@@ -104,6 +109,8 @@ public:
         return _json;
     }
 };
+
+MyHttpHandler::~MyHttpHandler() {}
 
 ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
     : _cfg(), _flags(flags), _generation(0)
