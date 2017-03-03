@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * @author hmusum
  * @since 5.1.9
  */
-class RpcConfigSourceClient extends ConfigSourceClient {
+class RpcConfigSourceClient implements ConfigSourceClient {
 
     private final static Logger log = Logger.getLogger(RpcConfigSourceClient.class.getName());
     private final Supervisor supervisor = new Supervisor(new Transport());
@@ -111,7 +111,7 @@ class RpcConfigSourceClient extends ConfigSourceClient {
      * @return A Config with a payload.
      */
     @Override
-    RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
+    public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
         long start = System.currentTimeMillis();
         RawConfig ret = null;
         final ConfigCacheKey configCacheKey = new ConfigCacheKey(input.getKey(), input.getDefMd5());
@@ -166,7 +166,7 @@ class RpcConfigSourceClient extends ConfigSourceClient {
     }
 
     @Override
-    void cancel() {
+    public void cancel() {
         shutdownSourceConnections();
     }
 
@@ -174,7 +174,7 @@ class RpcConfigSourceClient extends ConfigSourceClient {
      * Takes down connection(s) to config sources and running tasks
      */
     @Override
-    void shutdownSourceConnections() {
+    public void shutdownSourceConnections() {
         synchronized (activeSubscribersLock) {
             for (Subscriber subscriber : activeSubscribers.values()) {
                 subscriber.cancel();
@@ -188,7 +188,7 @@ class RpcConfigSourceClient extends ConfigSourceClient {
     }
 
     @Override
-    String getActiveSourceConnection() {
+    public String getActiveSourceConnection() {
         if (requesterPool.get(configSourceSet) != null) {
             return requesterPool.get(configSourceSet).getConnectionPool().getCurrent().getAddress();
         } else {
@@ -197,7 +197,7 @@ class RpcConfigSourceClient extends ConfigSourceClient {
     }
 
     @Override
-    List<String> getSourceConnections() {
+    public List<String> getSourceConnections() {
         ArrayList<String> ret = new ArrayList<>();
         final JRTConfigRequester jrtConfigRequester = requesterPool.get(configSourceSet);
         if (jrtConfigRequester != null) {

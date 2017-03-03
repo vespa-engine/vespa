@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.config.subscription.RawSource;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import org.junit.After;
@@ -166,12 +165,6 @@ public class ProxyServerTest {
         assertThat(properties.eventInterval, is(ConfigProxyStatistics.defaultEventInterval));
         assertThat(properties.configSources.length, is(1));
         assertThat(properties.configSources[0], is(ProxyServer.DEFAULT_PROXY_CONFIG_SOURCES));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalConfigSource() {
-        RawSource source = new RawSource("bar 1");
-        proxy = ProxyServer.createTestServer(source);
     }
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode) {

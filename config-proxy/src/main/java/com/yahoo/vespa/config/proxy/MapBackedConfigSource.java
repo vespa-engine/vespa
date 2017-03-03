@@ -17,7 +17,7 @@ import java.util.List;
  * @author hmusum
  * @since 5.1.10
  */
-public class MapBackedConfigSource extends ConfigSourceClient implements ConfigSource {
+public class MapBackedConfigSource implements ConfigSource, ConfigSourceClient {
     private final HashMap<ConfigKey<?>, RawConfig> backing = new HashMap<>();
     private final ClientUpdater clientUpdater;
 
@@ -32,7 +32,7 @@ public class MapBackedConfigSource extends ConfigSourceClient implements ConfigS
     }
 
     @Override
-    RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
+    public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
         return getConfig(input.getKey());
     }
 
@@ -41,12 +41,12 @@ public class MapBackedConfigSource extends ConfigSourceClient implements ConfigS
     }
 
     @Override
-    void cancel() {
+    public void cancel() {
         clear();
     }
 
     @Override
-    void shutdownSourceConnections() {
+    public void shutdownSourceConnections() {
     }
 
     public void clear() {
@@ -54,12 +54,12 @@ public class MapBackedConfigSource extends ConfigSourceClient implements ConfigS
     }
 
     @Override
-    String getActiveSourceConnection() {
+    public String getActiveSourceConnection() {
         return "N/A";
     }
 
     @Override
-    List<String> getSourceConnections() {
+    public List<String> getSourceConnections() {
         return Collections.singletonList("N/A");
     }
 }

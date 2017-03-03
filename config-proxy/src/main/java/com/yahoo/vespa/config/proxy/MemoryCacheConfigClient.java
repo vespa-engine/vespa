@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  * @author hmusum
  * @since 5.1.10
  */
-class MemoryCacheConfigClient extends ConfigSourceClient {
+class MemoryCacheConfigClient implements ConfigSourceClient {
 
     private final static Logger log = Logger.getLogger(MemoryCacheConfigClient.class.getName());
     private final MemoryCache cache;
@@ -29,7 +29,7 @@ class MemoryCacheConfigClient extends ConfigSourceClient {
      * @return A Config with a payload.
      */
     @Override
-    RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
+    public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
         log.log(LogLevel.DEBUG, "Getting config from cache");
         ConfigKey<?> key = input.getKey();
         RawConfig cached = cache.get(new ConfigCacheKey(key, input.getDefMd5()));
@@ -42,20 +42,20 @@ class MemoryCacheConfigClient extends ConfigSourceClient {
     }
 
     @Override
-    void cancel() {
+    public void cancel() {
     }
 
     @Override
-    void shutdownSourceConnections() {
+    public void shutdownSourceConnections() {
     }
 
     @Override
-    String getActiveSourceConnection() {
+    public String getActiveSourceConnection() {
         return "N/A";
     }
 
     @Override
-    List<String> getSourceConnections() {
+    public List<String> getSourceConnections() {
         return Collections.singletonList("N/A");
     }
 
