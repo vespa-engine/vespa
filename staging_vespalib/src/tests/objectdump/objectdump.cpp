@@ -75,23 +75,32 @@ struct Foo : public Base
     std::vector<Bar> _list;
     std::vector<IdentifiablePtr<Base> > _list2;
 
-    Foo() : _objMember(), _objMember2(), _objPtr(0), _list(), _list2() {
-        _list.push_back(Bar());
-        _list.push_back(Bar());
-        _list.push_back(Bar());
-        _list2.push_back(Bar());
-        _list2.push_back(Baz());
-    }
-    virtual Foo *clone() const { return new Foo(*this); }
-
-    virtual void visitMembers(ObjectVisitor &v) const {
-        visit(v, "_objMember", _objMember);
-        visit(v, "_objMember2", _objMember2);
-        visit(v, "_objPtr", _objPtr);
-        visit(v, "_list", _list);
-        visit(v, "_list2", _list2);
-    }
+    Foo();
+    ~Foo();
+    Foo *clone() const override { return new Foo(*this); }
+    void visitMembers(ObjectVisitor &v) const override;
 };
+
+Foo::~Foo() { }
+Foo::Foo()
+        : _objMember(), _objMember2(), _objPtr(0), _list(), _list2()
+{
+    _list.push_back(Bar());
+    _list.push_back(Bar());
+    _list.push_back(Bar());
+    _list2.push_back(Bar());
+    _list2.push_back(Baz());
+}
+
+void
+Foo::visitMembers(ObjectVisitor &v) const {
+    visit(v, "_objMember", _objMember);
+    visit(v, "_objMember2", _objMember2);
+    visit(v, "_objPtr", _objPtr);
+    visit(v, "_list", _list);
+    visit(v, "_list2", _list2);
+}
+
 IMPLEMENT_IDENTIFIABLE(Foo, Base);
 
 TEST_SETUP(Test);

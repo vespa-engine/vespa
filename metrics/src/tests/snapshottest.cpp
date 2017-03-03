@@ -38,63 +38,71 @@ struct SubSubMetricSet : public MetricSet {
     LoadMetric<DoubleAverageMetric> loadAverage;
     SumMetric<DoubleAverageMetric> averageSum;
 
-    SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_,
-                    MetricSet* owner = 0)
-        : MetricSet(name, "", "", owner),
-          loadTypes(loadTypes_),
-          incVal(1),
-          count1("count1", "", "", this),
-          count2("count2", "", "", this),
-          loadCount(loadTypes, LongCountMetric("loadCount", "", ""), this),
-          countSum("countSum", "", "", this),
-          value1("value1", "", "", this),
-          value2("value2", "", "", this),
-          loadValue(loadTypes, DoubleValueMetric("loadValue", "", ""), this),
-          valueSum("valueSum", "", "", this),
-          average1("average1", "", "", this),
-          average2("average2", "", "", this),
-          loadAverage(loadTypes, DoubleAverageMetric("loadAverage", "", ""),
-                      this),
-          averageSum("averageSum", "", "", this)
-    {
-        countSum.addMetricToSum(count1);
-        countSum.addMetricToSum(count2);
-        valueSum.addMetricToSum(value1);
-        valueSum.addMetricToSum(value2);
-        averageSum.addMetricToSum(average1);
-        averageSum.addMetricToSum(average2);
-    }
-
-    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList,
-                          CopyType copyType, metrics::MetricSet* owner,
-                          bool includeUnused) const
-    {
-        if (copyType == INACTIVE) {
-            return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
-        }
-        return (SubSubMetricSet*) (new SubSubMetricSet(
-                                        getName(), loadTypes, owner))
-                ->assignValues(*this);
-    }
-
-    void incValues() {
-        count1.inc(incVal);
-        count2.inc(incVal);
-        for (uint32_t i=0; i<loadTypes.size(); ++i) {
-            loadCount[loadTypes[i]].inc(incVal);
-        }
-        value1.set(incVal);
-        value2.set(incVal);
-        for (uint32_t i=0; i<loadTypes.size(); ++i) {
-            loadValue[loadTypes[i]].set(incVal);
-        }
-        average1.set(incVal);
-        average2.set(incVal);
-        for (uint32_t i=0; i<loadTypes.size(); ++i) {
-            loadAverage[loadTypes[i]].set(incVal);
-        }
-    }
+    SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner = 0);
+    ~SubSubMetricSet();
+    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                             metrics::MetricSet* owner, bool includeUnused) const;
+    void incValues();
 };
+
+SubSubMetricSet::SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner)
+    : MetricSet(name, "", "", owner),
+      loadTypes(loadTypes_),
+      incVal(1),
+      count1("count1", "", "", this),
+      count2("count2", "", "", this),
+      loadCount(loadTypes, LongCountMetric("loadCount", "", ""), this),
+      countSum("countSum", "", "", this),
+      value1("value1", "", "", this),
+      value2("value2", "", "", this),
+      loadValue(loadTypes, DoubleValueMetric("loadValue", "", ""), this),
+      valueSum("valueSum", "", "", this),
+      average1("average1", "", "", this),
+      average2("average2", "", "", this),
+      loadAverage(loadTypes, DoubleAverageMetric("loadAverage", "", ""), this),
+      averageSum("averageSum", "", "", this)
+{
+    countSum.addMetricToSum(count1);
+    countSum.addMetricToSum(count2);
+    valueSum.addMetricToSum(value1);
+    valueSum.addMetricToSum(value2);
+    averageSum.addMetricToSum(average1);
+    averageSum.addMetricToSum(average2);
+}
+SubSubMetricSet::~SubSubMetricSet() { }
+
+MetricSet*
+SubSubMetricSet::clone(std::vector<Metric::LP>& ownerList,
+                       CopyType copyType, metrics::MetricSet* owner,
+                       bool includeUnused) const
+{
+    if (copyType == INACTIVE) {
+        return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
+    }
+    return (SubSubMetricSet*) (new SubSubMetricSet(
+            getName(), loadTypes, owner))
+            ->assignValues(*this);
+}
+
+void
+SubSubMetricSet::incValues() {
+    count1.inc(incVal);
+    count2.inc(incVal);
+    for (uint32_t i=0; i<loadTypes.size(); ++i) {
+        loadCount[loadTypes[i]].inc(incVal);
+    }
+    value1.set(incVal);
+    value2.set(incVal);
+    for (uint32_t i=0; i<loadTypes.size(); ++i) {
+        loadValue[loadTypes[i]].set(incVal);
+    }
+    average1.set(incVal);
+    average2.set(incVal);
+    for (uint32_t i=0; i<loadTypes.size(); ++i) {
+        loadAverage[loadTypes[i]].set(incVal);
+    }
+}
+
 
 struct SubMetricSet : public MetricSet {
     const LoadTypeSet& loadTypes;
@@ -103,39 +111,47 @@ struct SubMetricSet : public MetricSet {
     LoadMetric<SubSubMetricSet> loadSet;
     SumMetric<SubSubMetricSet> setSum;
 
-    SubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_,
-                 MetricSet* owner = 0)
-        : MetricSet(name, "", "", owner),
-          loadTypes(loadTypes_),
-          set1("set1", loadTypes, this),
-          set2("set2", loadTypes, this),
-          loadSet(loadTypes, *std::unique_ptr<SubSubMetricSet>(
-                      new SubSubMetricSet("loadSet", loadTypes)), this),
-          setSum("setSum", "", "", this)
-    {
-        setSum.addMetricToSum(set1);
-        setSum.addMetricToSum(set2);
-    }
+    SubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner = 0);
+    ~SubMetricSet();
 
-    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList,
-                          CopyType copyType, metrics::MetricSet* owner,
-                          bool includeUnused) const
-    {
-        if (copyType == INACTIVE) {
-            return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
-        }
-        return (SubMetricSet*) (new SubMetricSet(getName(), loadTypes, owner))
-                ->assignValues(*this);
-    }
+    MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                     metrics::MetricSet* owner, bool includeUnused) const override;
 
-    void incValues() {
-        set1.incValues();
-        set2.incValues();
-        for (uint32_t i=0; i<loadTypes.size(); ++i) {
-            loadSet[loadTypes[i]].incValues();
-        }
-    }
+    void incValues();
 };
+
+SubMetricSet::SubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner)
+    : MetricSet(name, "", "", owner),
+      loadTypes(loadTypes_),
+      set1("set1", loadTypes, this),
+      set2("set2", loadTypes, this),
+      loadSet(loadTypes, *std::unique_ptr<SubSubMetricSet>(new SubSubMetricSet("loadSet", loadTypes)), this),
+      setSum("setSum", "", "", this)
+{
+    setSum.addMetricToSum(set1);
+    setSum.addMetricToSum(set2);
+}
+SubMetricSet::~SubMetricSet() { }
+
+MetricSet*
+SubMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                    metrics::MetricSet* owner, bool includeUnused) const
+{
+    if (copyType == INACTIVE) {
+        return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
+    }
+    return (SubMetricSet*) (new SubMetricSet(getName(), loadTypes, owner))
+            ->assignValues(*this);
+}
+
+void
+SubMetricSet::incValues() {
+    set1.incValues();
+    set2.incValues();
+    for (uint32_t i=0; i<loadTypes.size(); ++i) {
+        loadSet[loadTypes[i]].incValues();
+    }
+}
 
 struct TestMetricSet : public MetricSet {
     const LoadTypeSet& loadTypes;
@@ -144,28 +160,34 @@ struct TestMetricSet : public MetricSet {
     LoadMetric<SubMetricSet> loadSet;
     SumMetric<SubMetricSet> setSum;
 
-    TestMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_,
-                  MetricSet* owner = 0)
-        : MetricSet(name, "", "", owner),
-          loadTypes(loadTypes_),
-          set1("set1", loadTypes, this),
-          set2("set2", loadTypes, this),
-          loadSet(loadTypes, *std::unique_ptr<SubMetricSet>(
-                      new SubMetricSet("loadSet", loadTypes)), this),
-          setSum("setSum", "", "", this)
-    {
-        setSum.addMetricToSum(set1);
-        setSum.addMetricToSum(set2);
-    }
+    TestMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner = 0);
+    ~TestMetricSet();
 
-    void incValues() {
-        set1.incValues();
-        set2.incValues();
-        for (uint32_t i=0; i<loadTypes.size(); ++i) {
-            loadSet[loadTypes[i]].incValues();
-        }
-    }
+    void incValues();
 };
+
+
+TestMetricSet::TestMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner)
+    : MetricSet(name, "", "", owner),
+      loadTypes(loadTypes_),
+      set1("set1", loadTypes, this),
+      set2("set2", loadTypes, this),
+      loadSet(loadTypes, *std::unique_ptr<SubMetricSet>(new SubMetricSet("loadSet", loadTypes)), this),
+      setSum("setSum", "", "", this)
+{
+    setSum.addMetricToSum(set1);
+    setSum.addMetricToSum(set2);
+}
+TestMetricSet::~TestMetricSet() { }
+
+void
+TestMetricSet::incValues() {
+    set1.incValues();
+    set2.incValues();
+    for (uint32_t i=0; i<loadTypes.size(); ++i) {
+        loadSet[loadTypes[i]].incValues();
+    }
+}
 
 struct FakeTimer : public MetricManager::Timer {
     uint32_t _timeInSecs;

@@ -4,12 +4,24 @@
 #include <iostream>
 #include <vespa/vespalib/util/stringfmt.h>
 
+Flags::Flags(const Flags &) = default;
+Flags & Flags::operator=(const Flags &) = default;
+Flags::Flags()
+    : method("cache"),
+      args(),
+      hostname("localhost"),
+      portnumber(19090)
+{ }
+Flags::~Flags() { }
+
 ProxyCmd::ProxyCmd(const Flags& flags)
     : _supervisor(NULL),
       _target(NULL),
       _req(NULL),
       _flags(flags)
-{}
+{ }
+
+ProxyCmd::~ProxyCmd() { }
 
 void ProxyCmd::initRPC() {
     _supervisor = new FRT_Supervisor();

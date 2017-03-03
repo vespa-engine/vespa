@@ -63,16 +63,21 @@ struct SubMetricSet : public MetricSet
     DoubleValueMetric val2;
     SumMetric<DoubleValueMetric> valsum;
 
-    SubMetricSet(const Metric::String & name, MetricSet* owner)
-        : MetricSet(name, "sub", "sub desc", owner, "sub"),
-          val1("val1", "tag4 snaptest", "val1 desc", this),
-          val2("val2", "tag5", "val2 desc", this),
-          valsum("valsum", "tag4 snaptest", "valsum desc", this)
-    {
-        valsum.addMetricToSum(val1);
-        valsum.addMetricToSum(val2);
-    }
+    SubMetricSet(const Metric::String & name, MetricSet* owner);
+    ~SubMetricSet();
 };
+
+
+SubMetricSet::SubMetricSet(const Metric::String & name, MetricSet* owner)
+    : MetricSet(name, "sub", "sub desc", owner, "sub"),
+      val1("val1", "tag4 snaptest", "val1 desc", this),
+      val2("val2", "tag5", "val2 desc", this),
+      valsum("valsum", "tag4 snaptest", "valsum desc", this)
+{
+    valsum.addMetricToSum(val1);
+    valsum.addMetricToSum(val2);
+}
+SubMetricSet::~SubMetricSet() { }
 
 struct MultiSubMetricSet
 {
@@ -82,21 +87,23 @@ struct MultiSubMetricSet
     SubMetricSet b;
     SumMetric<MetricSet> sum;
 
-    MultiSubMetricSet(MetricSet* owner)
-        : set("multisub", "multisub", "", owner),
-          count("count", "snaptest", "counter", &set),
-          a("a", &set),
-          b("b", &set),
-          sum("sum", "snaptest", "", &set)
-    {
-        sum.addMetricToSum(a);
-        sum.addMetricToSum(b);
-    }
-
+    MultiSubMetricSet(MetricSet* owner);
+    ~MultiSubMetricSet();
 };
 
-struct TestMetricSet
+MultiSubMetricSet::MultiSubMetricSet(MetricSet* owner)
+    : set("multisub", "multisub", "", owner),
+    count("count", "snaptest", "counter", &set),
+    a("a", &set),
+    b("b", &set),
+    sum("sum", "snaptest", "", &set)
 {
+    sum.addMetricToSum(a);
+    sum.addMetricToSum(b);
+}
+    MultiSubMetricSet::~MultiSubMetricSet() { }
+
+struct TestMetricSet {
     MetricSet set;
     DoubleValueMetric val1;
     DoubleValueMetric val2;
@@ -109,22 +116,26 @@ struct TestMetricSet
     SubMetricSet val9;
     MultiSubMetricSet val10;
 
-    TestMetricSet()
-        : set("temp", "test", "desc of test set"),
-          val1("val1", "tag1", "val1 desc", &set),
-          val2("val2", "tag1 tag2", "val2 desc", &set),
-          val3("val3", "tag2 tag3", "val3 desc", &set),
-          val4("val4", "tag3", "val4 desc", &set),
-          val5("val5", "tag2", "val5 desc", &set),
-          val6("val6", "tag4 snaptest", "val6 desc", &set),
-          val7("val7", "", "val7 desc", &set),
-          val8("val8", "tag6", "val8 desc", &set),
-          val9("sub", &set),
-          val10(&set)
-    {
-    }
-
+    TestMetricSet();
+    ~TestMetricSet();
 };
+
+TestMetricSet::TestMetricSet()
+    : set("temp", "test", "desc of test set"),
+      val1("val1", "tag1", "val1 desc", &set),
+      val2("val2", "tag1 tag2", "val2 desc", &set),
+      val3("val3", "tag2 tag3", "val3 desc", &set),
+      val4("val4", "tag3", "val4 desc", &set),
+      val5("val5", "tag2", "val5 desc", &set),
+      val6("val6", "tag4 snaptest", "val6 desc", &set),
+      val7("val7", "", "val7 desc", &set),
+      val8("val8", "tag6", "val8 desc", &set),
+      val9("sub", &set),
+      val10(&set)
+{ }
+
+TestMetricSet::~TestMetricSet() { }
+
 
 struct MetricNameVisitor : public MetricVisitor {
     std::ostringstream ost;
@@ -898,12 +909,8 @@ class JsonMetricWrapper
     std::string _jsonText;
     vespalib::Slime _tree;
 public:
-    JsonMetricWrapper(const std::string& jsonText)
-        : _jsonText(jsonText)
-    {
-        vespalib::slime::JsonFormat::decode(
-                vespalib::Memory(jsonText), _tree);
-    }
+    JsonMetricWrapper(const std::string& jsonText);
+    ~JsonMetricWrapper();
 
     // XXX ideally all these should be const, but is not clear how/if it's
     // possible to get a const cursor into the underlying tree.
@@ -945,19 +952,28 @@ public:
     }
 };
 
+JsonMetricWrapper::JsonMetricWrapper(const std::string& jsonText)
+    : _jsonText(jsonText)
+{
+    vespalib::slime::JsonFormat::decode(vespalib::Memory(jsonText), _tree);
+}
+JsonMetricWrapper::~JsonMetricWrapper() { }
+
 struct DimensionTestMetricSet : MetricSet
 {
     DoubleValueMetric val1;
     LongCountMetric val2;
 
-    DimensionTestMetricSet(MetricSet* owner = nullptr)
-        : MetricSet("temp", {{"foo", "megafoo"}, {"bar", "hyperbar"}},
-                    "", owner),
-          val1("val1", "tag1", "val1 desc", this), // Legacy tag; not dimension
-          val2("val2", {{"baz", "superbaz"}}, "val2 desc", this)
-    {
-    }
+    DimensionTestMetricSet(MetricSet* owner = nullptr);
+    ~DimensionTestMetricSet();
 };
+
+DimensionTestMetricSet::DimensionTestMetricSet(MetricSet* owner)
+    : MetricSet("temp", {{"foo", "megafoo"}, {"bar", "hyperbar"}}, "", owner),
+      val1("val1", "tag1", "val1 desc", this),
+      val2("val2", {{"baz", "superbaz"}}, "val2 desc", this)
+{ }
+DimensionTestMetricSet::~DimensionTestMetricSet() { }
 
 } // anon ns
 
@@ -1027,8 +1043,7 @@ struct DimensionOverridableTestMetricSet : MetricSet
                                 MetricSet* owner = nullptr)
         : MetricSet("temp", {{"foo", dimValue}}, "", owner),
           val("val", "", "val desc", this)
-    {
-    }
+    { }
 };
 
 struct SameNamesTestMetricSet : MetricSet
@@ -1036,13 +1051,16 @@ struct SameNamesTestMetricSet : MetricSet
     DimensionOverridableTestMetricSet set1;
     DimensionOverridableTestMetricSet set2;
 
-    SameNamesTestMetricSet()
-        : MetricSet("outer", {{"fancy", "stuff"}}, ""),
-          set1("bar", this),
-          set2("baz", this)
-    {
-    }
+    SameNamesTestMetricSet();
+    ~SameNamesTestMetricSet();
 };
+
+SameNamesTestMetricSet::SameNamesTestMetricSet()
+    : MetricSet("outer", {{"fancy", "stuff"}}, ""),
+      set1("bar", this),
+      set2("baz", this)
+{ }
+SameNamesTestMetricSet::~SameNamesTestMetricSet() { }
 
 } // anon ns
 

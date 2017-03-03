@@ -64,72 +64,90 @@ struct TrackingTask : public Scheduler::Task {
                  const libtorrent::tracker_request& trackerRequest,
                  const TorrentSP & torrent,
                  const std::weak_ptr<FileDownloader>& downloader,
-                 const std::shared_ptr<FileDistributionModel>& model)
-        : Task(scheduler),
-          _numTimesRescheduled(0),
-          _trackerRequest(trackerRequest),
-          _torrent(torrent),
-          _downloader(downloader),
-          _model(model)
-    {}
+                 const std::shared_ptr<FileDistributionModel>& model);
+    ~TrackingTask();
 
     //TODO: refactor
-    void doHandle() {
-        if (std::shared_ptr<FileDownloader> downloader = _downloader.lock()) {
-            //All torrents must be destructed before the session is destructed.
-            //It's okay to prevent the torrent from expiring here
-            //since the session can't be destructed while
-            //we hold a shared_ptr to the downloader.
-            if (TorrentSP torrent = _torrent.lock()) {
-                PeerEntries peers = getPeers(downloader);
+    void doHandle();
+    PeerEntries getPeers(const std::shared_ptr<FileDownloader>& downloader);
+    void reschedule();
+};
 
-                if (!peers.empty()) {
-                    torrent->session().m_io_service.dispatch(
-                        [torrent_weak_ptr = _torrent, trackerRequest = _trackerRequest, peers = peers]() mutable {
-                            if (auto torrent_sp = torrent_weak_ptr.lock()) {
-                                torrent_sp->tracker_response(
-			            trackerRequest,
-				    libtorrent::address(),
-				    std::list<libtorrent::address>(),
-				    peers,
-				    -1, -1, -1, -1, -1,
-				    libtorrent::address(), "trackerid");
-                            }
-                        });
-                }
+TrackingTask::TrackingTask(Scheduler& scheduler,
+                           const libtorrent::tracker_request& trackerRequest,
+                           const TorrentSP & torrent,
+                           const std::weak_ptr<FileDownloader>& downloader,
+                           const std::shared_ptr<FileDistributionModel>& model)
+    : Task(scheduler),
+      _numTimesRescheduled(0),
+      _trackerRequest(trackerRequest),
+      _torrent(torrent),
+      _downloader(downloader),
+      _model(model)
+{ }
 
-                if (peers.size() < 5) {
-                    reschedule();
-                }
+TrackingTask::~TrackingTask() {}
+
+
+//TODO: refactor
+void
+TrackingTask::doHandle() {
+    if (std::shared_ptr<FileDownloader> downloader = _downloader.lock()) {
+        //All torrents must be destructed before the session is destructed.
+        //It's okay to prevent the torrent from expiring here
+        //since the session can't be destructed while
+        //we hold a shared_ptr to the downloader.
+        if (TorrentSP torrent = _torrent.lock()) {
+            PeerEntries peers = getPeers(downloader);
+
+            if (!peers.empty()) {
+                torrent->session().m_io_service.dispatch(
+                [torrent_weak_ptr = _torrent, trackerRequest = _trackerRequest, peers = peers]() mutable {
+                    if (auto torrent_sp = torrent_weak_ptr.lock()) {
+                        torrent_sp->tracker_response(
+                                trackerRequest,
+                                libtorrent::address(),
+                                std::list<libtorrent::address>(),
+                                peers,
+                                -1, -1, -1, -1, -1,
+                                libtorrent::address(), "trackerid");
+                    }
+                });
+            }
+
+            if (peers.size() < 5) {
+                reschedule();
             }
         }
     }
+}
 
-    PeerEntries getPeers(const std::shared_ptr<FileDownloader>& downloader) {
-        std::string fileReference = downloader->infoHash2FileReference(_trackerRequest.info_hash);
+PeerEntries
+TrackingTask::getPeers(const std::shared_ptr<FileDownloader>& downloader) {
+    std::string fileReference = downloader->infoHash2FileReference(_trackerRequest.info_hash);
 
-        const size_t recommendedMaxNumberOfPeers = 30;
-        PeerEntries peers = _model->getPeers(fileReference, recommendedMaxNumberOfPeers);
+    const size_t recommendedMaxNumberOfPeers = 30;
+    PeerEntries peers = _model->getPeers(fileReference, recommendedMaxNumberOfPeers);
 
-        //currently, libtorrent stops working if it tries to connect to itself.
-        filterSelf(peers, downloader->_hostName, downloader->_port);
-        resolveIPAddresses(peers);
-        for (const auto& peer: peers) {
-            LOG(debug, "Returning peer with ip %s", peer.ip.c_str());
-        }
-
-        return peers;
+    //currently, libtorrent stops working if it tries to connect to itself.
+    filterSelf(peers, downloader->_hostName, downloader->_port);
+    resolveIPAddresses(peers);
+    for (const auto& peer: peers) {
+        LOG(debug, "Returning peer with ip %s", peer.ip.c_str());
     }
 
-    void reschedule() {
-        if (_numTimesRescheduled < 5) {
-            double fudgeFactor = 0.1;
-            schedule(boost::posix_time::seconds(static_cast<int>(
-                                    std::pow(3., _numTimesRescheduled) + fudgeFactor)));
-            _numTimesRescheduled++;
-        }
+    return peers;
+}
+
+void
+TrackingTask::reschedule() {
+    if (_numTimesRescheduled < 5) {
+        double fudgeFactor = 0.1;
+        schedule(boost::posix_time::seconds(static_cast<int>(
+                                                    std::pow(3., _numTimesRescheduled) + fudgeFactor)));
+        _numTimesRescheduled++;
     }
-};
+}
 
 } //anonymous namespace
 

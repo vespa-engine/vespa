@@ -43,7 +43,12 @@ struct DstFixture {
     Slime slime7;
     Slime slime8;
     Slime slime9;
+    DstFixture();
+    ~DstFixture();
 };
+
+DstFixture::DstFixture() { }
+DstFixture::~DstFixture() { }
 
 TEST_FF("inject into slime", SrcFixture(), DstFixture()) {
     EXPECT_TRUE(f1.empty.get().valid()); // explicit nix

@@ -17,11 +17,15 @@ template <typename T>
 struct Receptor : vespalib::ws::Handler<T> {
     std::unique_ptr<T> obj;
     vespalib::Gate gate;
+    ~Receptor();
     void handle(std::unique_ptr<T> t) override {
         obj = std::move(t);
         gate.countDown();
     }
 };
+
+template <typename T>
+Receptor<T>::~Receptor() { }
 
 vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
     char tmp[64];
