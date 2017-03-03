@@ -1,29 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.times;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.document.predicate.Predicate;
-
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -39,6 +16,8 @@ import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.predicate.Predicate;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.search.Query;
@@ -59,15 +38,34 @@ import com.yahoo.search.result.Relevance;
 import com.yahoo.search.result.StructuredData;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.statistics.ElapsedTimeTestCase;
-import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.search.statistics.ElapsedTimeTestCase.CreativeTimeSource;
 import com.yahoo.search.statistics.ElapsedTimeTestCase.UselessSearcher;
+import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.trace.TraceNode;
-
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.times;
 
 /**
  * Functional testing of {@link JsonRenderer}.
@@ -329,31 +327,38 @@ public class JsonRendererTestCase {
 
     @Test
     public final void testHalfEmptyTracing() throws IOException, InterruptedException, ExecutionException {
-        String expected = "{\n"
-                + "    \"root\": {\n"
-                + "        \"fields\": {\n"
-                + "            \"totalCount\": 0\n"
-                + "        },\n"
-                + "        \"id\": \"toplevel\",\n"
-                + "        \"relevance\": 1.0\n"
-                + "    },\n"
-                + "    \"trace\": {\n"
-                + "        \"children\": [\n"
-                + "            {\n"
-                + "                \"children\": [\n"
-                + "                    {"
-                + "                        \"children\": [\n"
-                + "                            {\n"
-                + "                                \"message\": \"green\""
-                + "                            }"
-                + "                        ]"
-                + "                    }\n"
-                + "                ]\n"
-                + "            }\n"
-                + "        ]\n"
-                + "    }\n"
-                + "}\n";
-        Query q = new Query("/?query=a&tracelevel=0");
+        String expected =
+                "{\n" +
+                "  \"trace\": {\n" +
+                "    \"children\": [\n" +
+                "      {\n" +
+                "        \"message\": \"No query profile is used\"\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"children\": [\n" +
+                "          {\n" +
+                "            \"children\": [\n" +
+                "              {\n" +
+                "                \"message\": \"green\"\n" +
+                "              }\n" +
+                "            ]\n" +
+                "          },\n" +
+                "          {\n" +
+                "            \"message\": \"marker\"\n" +
+                "          }\n" +
+                "        ]\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  },\n" +
+                "  \"root\": {\n" +
+                "    \"id\": \"toplevel\",\n" +
+                "    \"relevance\": 1.0,\n" +
+                "    \"fields\": {\n" +
+                "      \"totalCount\": 0\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Query q = new Query("/?query=a&tracelevel=1");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
 
