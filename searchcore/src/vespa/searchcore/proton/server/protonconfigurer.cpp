@@ -79,19 +79,16 @@ ProtonConfigurer::reconfigureBootstrap(const ConfigSnapshot & snapshot)
     _bootstrapOwner->reconfigure(_bootstrapConfigManager.getConfig());
 }
 
-bool
+void
 ProtonConfigurer::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstrapConfig, const ConfigSnapshot & snapshot)
 {
     vespalib::LockGuard guard(_lock);
-    bool modifiedConfigKeySet(false);
     for (DBManagerMap::iterator it(_dbManagerMap.begin()), mt(_dbManagerMap.end());
          it != mt;
          it++) {
         it->second->forwardConfig(bootstrapConfig);
         it->second->update(snapshot);
-        modifiedConfigKeySet = modifiedConfigKeySet || _bootstrapOwner->addExtraConfigs(*it->second);
     }
-    return modifiedConfigKeySet;
 }
 
 void
@@ -142,7 +139,8 @@ ProtonConfigurer::fetchConfigs()
                         LOG(debug, "Set is not empty, reconfiguring with generation %" PRId64, _retriever.getGeneration());
                         // Update document dbs first, so that we are prepared for
                         // getConfigs.
-                        needsMoreConfig = updateDocumentDBConfigs(config, snapshot);
+                        updateDocumentDBConfigs(config, snapshot);
+                        needsMoreConfig = false;
 
                         // Perform callbacks
                         reconfigureBootstrap(bootstrapSnapshot);

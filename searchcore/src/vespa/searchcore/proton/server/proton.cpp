@@ -567,12 +567,6 @@ Proton::addDocumentDB(const DocTypeName & docTypeName,
     }
 }
 
-bool Proton::addExtraConfigs(DocumentDBConfigManager & dbCfgMan)
-{
-    (void) dbCfgMan;
-    return false;
-}
-
 Proton::~Proton()
 {
     assert(_initStarted);

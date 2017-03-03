@@ -174,7 +174,6 @@ private:
     void waitForInitDone();
     void waitForOnlineState();
     virtual storage::spi::PersistenceProvider::UP create() const override;
-    virtual bool addExtraConfigs(DocumentDBConfigManager & dbCfgMan) override;
     searchcorespi::IIndexManagerFactory::SP
     getIndexManagerFactory(const vespalib::stringref & name) const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
