@@ -114,7 +114,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
       _pendingConfigSnapshot(configSnapshot),
-      _configLock(),
+      _configMutex(),
       _activeConfigSnapshot(),
       _activeConfigSnapshotGeneration(0),
       _activeConfigSnapshotSerialNum(0u),
@@ -157,7 +157,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
               getMetricsCollection(),
               queryLimiter,
               clock,
-              _configLock,
+              _configMutex,
               _baseDir,
               protonCfg,
               hwInfo),
@@ -226,7 +226,7 @@ void DocumentDB::registerReferent()
 
 void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
                                  SerialNum serialNum, int64_t generation) {
-    vespalib::LockGuard guard(_configLock);
+    lock_guard guard(_configMutex);
     registerReferent();
     _activeConfigSnapshot = config;
     assert(generation >= config->getGeneration());
@@ -237,7 +237,7 @@ void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
 }
 
 DocumentDBConfig::SP DocumentDB::getActiveConfig() const {
-    vespalib::LockGuard guard(_configLock);
+    lock_guard guard(_configMutex);
     return _activeConfigSnapshot;
 }
 
@@ -294,7 +294,7 @@ DocumentDB::newConfigSnapshot(DocumentDBConfig::SP snapshot)
     // Called by executor thread
     _pendingConfigSnapshot.set(snapshot);
     {
-        vespalib::LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         if (_activeConfigSnapshot.get() == NULL) {
             LOG(debug,
                 "DocumentDB(%s): Ignoring new available config snapshot. "
@@ -428,7 +428,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     bool fallbackConfig = false;
     int64_t generation = configSnapshot->getGeneration();
     {
-        vespalib::LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         assert(_activeConfigSnapshot.get());
         if (_activeConfigSnapshot.get() == configSnapshot.get() ||
             *_activeConfigSnapshot == *configSnapshot) {
@@ -596,7 +596,7 @@ void
 DocumentDB::close()
 {
     {
-        vespalib::LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         _state.enterShutdownState();
     }
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
@@ -665,7 +665,7 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
 {
     // Only called from ctor
 
-    vespalib::LockGuard guard(_configLock);
+    lock_guard guard(_configMutex);
     if (_config_store->getBestSerialNum() != 0)
         return;				// Initial config already present
 
@@ -891,7 +891,7 @@ DocumentDB::enterApplyLiveConfigState()
     assert(_writeService.master().isCurrentThread());
     // Enable reconfig and queue currently pending config as executor task.
     {
-        vespalib::LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         (void) _state.enterApplyLiveConfigState();
     }
     _writeService.master().execute(makeTask(makeClosure(this,
@@ -1072,7 +1072,7 @@ DocumentDB::listSchema(std::vector<vespalib::string> &fieldNames,
 
 
 int64_t DocumentDB::getActiveGeneration() const {
-    vespalib::LockGuard guard(_configLock);
+    lock_guard guard(_configMutex);
     return _activeConfigSnapshotGeneration;
 }
 
@@ -1140,7 +1140,7 @@ DocumentDB::performStartMaintenance(void)
 
     DocumentDBMaintenanceConfig::SP maintenanceConfig;
     {
-        vespalib::LockGuard guard(_configLock);
+        lock_guard guard(_configMutex);
         if (_state.getClosed())
             return;
         assert(_activeConfigSnapshot.get() != NULL);

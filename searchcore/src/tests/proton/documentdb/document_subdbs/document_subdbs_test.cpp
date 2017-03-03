@@ -134,7 +134,7 @@ struct MyStoreOnlyContext
 	MyGetSerialNum _getSerialNum;
 	MyFileHeaderContext _fileHeader;
 	LegacyDocumentDBMetrics _metrics;
-	vespalib::Lock _configLock;
+        std::mutex       _configMutex;
         HwInfo           _hwInfo;
 	StoreOnlyContext _ctx;
 	MyStoreOnlyContext(IThreadingService &writeService,
@@ -147,7 +147,7 @@ struct MyStoreOnlyContext
 	      _getSerialNum(),
 	      _fileHeader(),
 	      _metrics(DOCTYPE_NAME, 1),
-	      _configLock(),
+	      _configMutex(),
               _hwInfo(),
 	      _ctx(_owner,
                _syncProxy,
@@ -158,7 +158,7 @@ struct MyStoreOnlyContext
                    bucketDB,
                    bucketDBHandlerInitializer,
                _metrics,
-               _configLock,
+               _configMutex,
                _hwInfo)
 	{
 	}

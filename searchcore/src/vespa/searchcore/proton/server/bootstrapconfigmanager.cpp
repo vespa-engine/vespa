@@ -20,7 +20,7 @@ namespace proton
 BootstrapConfigManager::BootstrapConfigManager(const vespalib::string & configId)
     : _pendingConfigSnapshot(),
       _configId(configId),
-      _pendingConfigLock()
+      _pendingConfigMutex()
 { }
 
 BootstrapConfigManager::~BootstrapConfigManager() { }
@@ -99,7 +99,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
 
     assert(newSnapshot->valid());
     {
-        vespalib::LockGuard lock(_pendingConfigLock);
+        std::lock_guard<std::mutex> lock(_pendingConfigMutex);
         _pendingConfigSnapshot = newSnapshot;
     }
 }

@@ -170,10 +170,6 @@ struct OwnerFixture : public ConfigOwner
         config.set(cfg);
         configured = true;
     }
-    bool addExtraConfigs(DocumentDBConfigManager & dbCfgMan) {
-        (void) dbCfgMan;
-        return false;
-    }
 };
 
 typedef OwnerFixture<BootstrapConfig::SP, IBootstrapOwner> BootstrapOwner;

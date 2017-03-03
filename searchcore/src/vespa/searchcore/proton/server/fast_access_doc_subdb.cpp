@@ -239,7 +239,7 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
     _iSearchView.set(ISearchHandler::SP(new EmptySearchView));
     IAttributeWriter::SP writer(new AttributeWriter(getAndResetInitAttributeManager()));
     {
-        vespalib::LockGuard guard(_configLock);
+        std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(writer, configSnapshot);
     }
 }

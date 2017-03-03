@@ -39,6 +39,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include "disk_mem_usage_forwarder.h"
 #include <vespa/metrics/updatehook.h>
+#include <mutex>
 
 using vespa::config::search::core::ProtonConfig;
 
@@ -103,11 +104,12 @@ private:
     typedef fastos::TimeStamp      TimeStamp;
     typedef vespalib::Closure      Closure;
     typedef search::index::Schema  Schema;
+    using lock_guard = std::lock_guard<std::mutex>;
     // variables related to reconfig
     DocumentDBConfig::SP          _initConfigSnapshot;
     SerialNum                     _initConfigSerialNum;
     vespalib::VarHolder<DocumentDBConfig::SP> _pendingConfigSnapshot;
-    vespalib::Lock                _configLock;  // protects _active* below.
+    mutable std::mutex            _configMutex;  // protects _active* below.
     DocumentDBConfig::SP          _activeConfigSnapshot;
     int64_t                       _activeConfigSnapshotGeneration;
     SerialNum                     _activeConfigSnapshotSerialNum;

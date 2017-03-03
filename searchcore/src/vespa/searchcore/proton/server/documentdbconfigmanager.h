@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/config.h>
 #include "documentdbconfig.h"
+#include <mutex>
 
 namespace proton {
 
@@ -24,7 +25,7 @@ private:
     BootstrapConfigSP    _bootstrapConfig;
     DocumentDBConfig::SP _pendingConfigSnapshot;
     bool                 _ignoreForwardedConfig;
-    vespalib::Lock       _pendingConfigLock;
+    mutable std::mutex   _pendingConfigMutex;
     config::ConfigKeySet _extraConfigKeys;
 
     search::index::Schema::SP

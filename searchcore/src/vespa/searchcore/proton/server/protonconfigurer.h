@@ -18,7 +18,6 @@ class IBootstrapOwner
 public:
     virtual ~IBootstrapOwner() { }
     virtual void reconfigure(const std::shared_ptr<BootstrapConfig> & config) = 0;
-    virtual bool addExtraConfigs(DocumentDBConfigManager & dbCfgMan) = 0;
 };
 
 class IDocumentDBConfigOwner
@@ -77,7 +76,8 @@ private:
     config::ConfigRetriever _retriever;
     IBootstrapOwner * _bootstrapOwner;
 
-    vespalib::Lock _lock; // Protects maps
+    mutable std::mutex _mutex; // Protects maps
+    using lock_guard = std::lock_guard<std::mutex>;
     DBManagerMap _dbManagerMap;
     DocumentDBOwnerMap _documentDBOwnerMap;
 
@@ -85,7 +85,7 @@ private:
 
     void fetchConfigs();
     void reconfigureBootstrap(const config::ConfigSnapshot & snapshot);
-    bool updateDocumentDBConfigs(const BootstrapConfigSP & config, const config::ConfigSnapshot & snapshot);
+    void updateDocumentDBConfigs(const BootstrapConfigSP & config, const config::ConfigSnapshot & snapshot);
     void reconfigureDocumentDBs();
     const config::ConfigKeySet pruneManagerMap(const BootstrapConfigSP & config);
 };

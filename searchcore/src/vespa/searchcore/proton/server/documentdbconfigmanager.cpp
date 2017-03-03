@@ -279,7 +279,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  extraConfigs));
     assert(newSnapshot->valid());
     {
-        vespalib::LockGuard lock(_pendingConfigLock);
+        std::lock_guard<std::mutex> lock(_pendingConfigMutex);
         _pendingConfigSnapshot = newSnapshot;
     }
 }
@@ -293,7 +293,7 @@ DocumentDBConfigManager(const vespalib::string &configId,
       _bootstrapConfig(),
       _pendingConfigSnapshot(),
       _ignoreForwardedConfig(true),
-      _pendingConfigLock(),
+      _pendingConfigMutex(),
       _extraConfigKeys()
 { }
 
@@ -301,7 +301,7 @@ DocumentDBConfigManager::~DocumentDBConfigManager() { }
 
 DocumentDBConfig::SP
 DocumentDBConfigManager::getConfig() const {
-    vespalib::LockGuard lock(_pendingConfigLock);
+    std::lock_guard<std::mutex> lock(_pendingConfigMutex);
     return _pendingConfigSnapshot;
 }
 

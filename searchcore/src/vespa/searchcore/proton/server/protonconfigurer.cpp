@@ -18,7 +18,7 @@ ProtonConfigurer::ProtonConfigurer(const config::ConfigUri & configUri, IBootstr
     : _bootstrapConfigManager(configUri.getConfigId()),
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
       _bootstrapOwner(owner),
-      _lock(),
+      _mutex(),
       _dbManagerMap(),
       _documentDBOwnerMap(),
       _threadPool(128 * 1024, 1)
@@ -52,7 +52,7 @@ ProtonConfigurer::pruneManagerMap(const BootstrapConfig::SP & config)
     DBManagerMap newMap;
     ConfigKeySet set;
 
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_mutex);
     for (size_t i = 0; i < protonConfig.documentdb.size(); i++) {
         const ProtonConfig::Documentdb & ddb(protonConfig.documentdb[i]);
         DocTypeName docTypeName(ddb.inputdoctypename);
@@ -79,25 +79,22 @@ ProtonConfigurer::reconfigureBootstrap(const ConfigSnapshot & snapshot)
     _bootstrapOwner->reconfigure(_bootstrapConfigManager.getConfig());
 }
 
-bool
+void
 ProtonConfigurer::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstrapConfig, const ConfigSnapshot & snapshot)
 {
-    vespalib::LockGuard guard(_lock);
-    bool modifiedConfigKeySet(false);
+    lock_guard guard(_mutex);
     for (DBManagerMap::iterator it(_dbManagerMap.begin()), mt(_dbManagerMap.end());
          it != mt;
          it++) {
         it->second->forwardConfig(bootstrapConfig);
         it->second->update(snapshot);
-        modifiedConfigKeySet = modifiedConfigKeySet || _bootstrapOwner->addExtraConfigs(*it->second);
     }
-    return modifiedConfigKeySet;
 }
 
 void
 ProtonConfigurer::reconfigureDocumentDBs()
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_mutex);
     for (DocumentDBOwnerMap::iterator it(_documentDBOwnerMap.begin()), mt(_documentDBOwnerMap.end());
          it != mt;
          it++) {
@@ -142,7 +139,8 @@ ProtonConfigurer::fetchConfigs()
                         LOG(debug, "Set is not empty, reconfiguring with generation %" PRId64, _retriever.getGeneration());
                         // Update document dbs first, so that we are prepared for
                         // getConfigs.
-                        needsMoreConfig = updateDocumentDBConfigs(config, snapshot);
+                        updateDocumentDBConfigs(config, snapshot);
+                        needsMoreConfig = false;
 
                         // Perform callbacks
                         reconfigureBootstrap(bootstrapSnapshot);
@@ -186,7 +184,7 @@ ProtonConfigurer::close()
 void
 ProtonConfigurer::registerDocumentDB(const DocTypeName & docTypeName, IDocumentDBConfigOwner * owner)
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_mutex);
     assert(_documentDBOwnerMap.find(docTypeName) == _documentDBOwnerMap.end());
     LOG(debug, "Registering new document db with checker");
     _documentDBOwnerMap[docTypeName] = owner;
@@ -195,7 +193,7 @@ ProtonConfigurer::registerDocumentDB(const DocTypeName & docTypeName, IDocumentD
 void
 ProtonConfigurer::unregisterDocumentDB(const DocTypeName & docTypeName)
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_mutex);
     LOG(debug, "Removing document db from checker");
     assert(_documentDBOwnerMap.find(docTypeName) != _documentDBOwnerMap.end());
     _documentDBOwnerMap.erase(docTypeName);
@@ -204,7 +202,7 @@ ProtonConfigurer::unregisterDocumentDB(const DocTypeName & docTypeName)
 DocumentDBConfig::SP
 ProtonConfigurer::getDocumentDBConfig(const DocTypeName & docTypeName) const
 {
-    vespalib::LockGuard guard(_lock);
+    lock_guard guard(_mutex);
     DBManagerMap::const_iterator it(_dbManagerMap.find(docTypeName));
     if (it == _dbManagerMap.end())
         return DocumentDBConfig::SP();
