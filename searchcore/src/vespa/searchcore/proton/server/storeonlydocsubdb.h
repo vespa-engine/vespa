@@ -159,7 +159,7 @@ protected:
     LegacyDocumentDBMetrics                 &_metrics;
     vespalib::VarHolder<ISearchHandler::SP> _iSearchView;
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;
-    std::mutex                         &_configMutex;
+    std::mutex                             &_configMutex;
     HwInfo                                  _hwInfo;
 private:
     const IGetSerialNum             &_getSerialNum;
