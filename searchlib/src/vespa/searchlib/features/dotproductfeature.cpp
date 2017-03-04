@@ -54,6 +54,8 @@ DotProductExecutor<Vector, Buffer>::execute(uint32_t docId)
     outputs().set_number(0, val);
 }
 
+StringVector::~StringVector() { }
+
 }
 
 namespace array {
