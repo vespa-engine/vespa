@@ -28,6 +28,7 @@ struct LegacyAttributeMetrics : metrics::MetricSet {
 
         // per attribute metrics will be wired in here (by the metrics engine)
         List(metrics::MetricSet *parent);
+        ~List();
 
     private:
         std::map<std::string, Entry::LP> metrics;
@@ -38,6 +39,7 @@ struct LegacyAttributeMetrics : metrics::MetricSet {
     metrics::LongValueMetric bitVectors;
 
     LegacyAttributeMetrics(metrics::MetricSet *parent);
+    ~LegacyAttributeMetrics();
 };
 
 } // namespace proton

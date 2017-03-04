@@ -526,9 +526,9 @@ public:
      */
     template <class AggrCalcT>
     BTreeConstIterator(const KeyDataType *shortArray,
-             uint32_t arraySize,
-                  const NodeAllocatorType &allocator,
-                  const AggrCalcT &aggrCalc)
+                       uint32_t arraySize,
+                       const NodeAllocatorType &allocator,
+                       const AggrCalcT &aggrCalc)
         : ParentType(shortArray, arraySize, allocator, aggrCalc)
     {
     }

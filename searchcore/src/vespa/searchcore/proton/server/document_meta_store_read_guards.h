@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "documentsubdbcollection.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
 namespace proton {
+
+class DocumentSubDBCollection;
 
 /**
  * Class that takes and owns read guards of the document meta stores of the 3 sub databases.
@@ -16,12 +17,10 @@ struct DocumentMetaStoreReadGuards
     IDocumentMetaStoreContext::IReadGuard::UP readydms;
     IDocumentMetaStoreContext::IReadGuard::UP notreadydms;
     IDocumentMetaStoreContext::IReadGuard::UP remdms;
-    DocumentMetaStoreReadGuards(DocumentSubDBCollection &subDBs)
-        : readydms(subDBs.getReadySubDB()->getDocumentMetaStoreContext().getReadGuard()),
-          notreadydms(subDBs.getNotReadySubDB()->getDocumentMetaStoreContext().getReadGuard()),
-          remdms(subDBs.getRemSubDB()->getDocumentMetaStoreContext().getReadGuard())
-    {
-    }
+
+    DocumentMetaStoreReadGuards(DocumentSubDBCollection &subDBs);
+    ~DocumentMetaStoreReadGuards();
+
     uint32_t numActiveDocs() const {
         return readydms->get().getNumActiveLids();
     }

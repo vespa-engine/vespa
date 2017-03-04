@@ -26,6 +26,8 @@ StringFieldValue::StringFieldValue(const StringFieldValue & rhs) :
 {
 }
 
+StringFieldValue::~StringFieldValue() {}
+
 StringFieldValue & StringFieldValue::operator=(const StringFieldValue & rhs)
 {
     if (&rhs != this) {

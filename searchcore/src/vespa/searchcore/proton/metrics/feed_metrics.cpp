@@ -17,6 +17,8 @@ FeedMetrics::FeedMetrics()
 {
 }
 
+FeedMetrics::~FeedMetrics() {}
+
 PerDocTypeFeedMetrics::PerDocTypeFeedMetrics(MetricSet *parent)
     : MetricSet("feedmetrics", "", "Feed metrics", parent),
       _update_lock(),
@@ -30,6 +32,8 @@ PerDocTypeFeedMetrics::PerDocTypeFeedMetrics(MetricSet *parent)
       _move_latency("move_latency", "", "Latency for feed moves", this)
 {
 }
+
+PerDocTypeFeedMetrics::~PerDocTypeFeedMetrics() {}
 
 void PerDocTypeFeedMetrics::RegisterPut(const FastOS_Time &start_time) {
     LockGuard lock(_update_lock);

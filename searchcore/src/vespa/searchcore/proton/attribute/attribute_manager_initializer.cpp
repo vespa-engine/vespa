@@ -56,21 +56,32 @@ public:
     AttributeInitializerTasksBuilder(InitializerTask &attrMgrInitTask,
                                      InitializerTask::SP documentMetaStoreInitTask,
                                      DocumentMetaStore::SP documentMetaStore,
-                                     InitializedAttributesResult &attributesResult)
-        : _attrMgrInitTask(attrMgrInitTask),
-          _documentMetaStoreInitTask(documentMetaStoreInitTask),
-          _documentMetaStore(documentMetaStore),
-          _attributesResult(attributesResult)
-    {}
-    virtual void add(AttributeInitializer::UP initializer) override {
-        InitializerTask::SP attributeInitTask =
-                std::make_shared<AttributeInitializerTask>(std::move(initializer),
-                                                           _documentMetaStore,
-                                                           _attributesResult);
-        attributeInitTask->addDependency(_documentMetaStoreInitTask);
-        _attrMgrInitTask.addDependency(attributeInitTask);
-    }
+                                     InitializedAttributesResult &attributesResult);
+    ~AttributeInitializerTasksBuilder();
+    void add(AttributeInitializer::UP initializer) override;
 };
+
+AttributeInitializerTasksBuilder::AttributeInitializerTasksBuilder(InitializerTask &attrMgrInitTask,
+                                                                   InitializerTask::SP documentMetaStoreInitTask,
+                                                                   DocumentMetaStore::SP documentMetaStore,
+                                                                   InitializedAttributesResult &attributesResult)
+    : _attrMgrInitTask(attrMgrInitTask),
+      _documentMetaStoreInitTask(documentMetaStoreInitTask),
+      _documentMetaStore(documentMetaStore),
+      _attributesResult(attributesResult)
+{ }
+
+AttributeInitializerTasksBuilder::~AttributeInitializerTasksBuilder() {}
+
+void
+AttributeInitializerTasksBuilder::add(AttributeInitializer::UP initializer) {
+    InitializerTask::SP attributeInitTask =
+            std::make_shared<AttributeInitializerTask>(std::move(initializer),
+                                                       _documentMetaStore,
+                                                       _attributesResult);
+    attributeInitTask->addDependency(_documentMetaStoreInitTask);
+    _attrMgrInitTask.addDependency(attributeInitTask);
+}
 
 }
 

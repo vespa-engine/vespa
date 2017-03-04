@@ -19,6 +19,8 @@ LegacyDocumentDBMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
       diskUsage("diskusage", "", "Disk usage for disk indexes", this)
 { }
 
+LegacyDocumentDBMetrics::IndexMetrics::~IndexMetrics() {}
+
 LegacyDocumentDBMetrics::DocstoreMetrics::DocstoreMetrics(MetricSet *parent)
     : MetricSet("docstore", "", "Document store metrics", parent),
       memoryUsage("memoryusage", "", "Memory usage for docstore", this),
@@ -28,6 +30,8 @@ LegacyDocumentDBMetrics::DocstoreMetrics::DocstoreMetrics(MetricSet *parent)
       cacheElements("cacheelements", "", "Number of elements in summary cache", this),
       cacheMemoryUsed("cachememoryused", "", "Memory used by summary cache", this)
 { }
+
+LegacyDocumentDBMetrics::DocstoreMetrics::~DocstoreMetrics() {}
 
 void
 LegacyDocumentDBMetrics::MatchingMetrics::update(const MatchingStats &stats)
@@ -52,6 +56,8 @@ LegacyDocumentDBMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       queryLatency("querylatency", "", "Average latency when matching a query", this)
 { }
 
+LegacyDocumentDBMetrics::MatchingMetrics::~MatchingMetrics() {}
+
 LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics(
         const std::string &name, size_t numDocIdPartitions, MetricSet *parent)
     : MetricSet(name, "", "Rank profile metrics", parent),
@@ -67,6 +73,8 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
     }
 }
 
+LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::~RankProfileMetrics() {}
+
 LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const std::string &name, MetricSet *parent) :
     MetricSet(name, "", "DocId Partition profile metrics", parent),
     docsMatched("docsmatched", "", "Number of documents matched", this),
@@ -75,6 +83,8 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::Do
     active_time("activetime", "", "Time spent doing actual work", this),
     wait_time("waittime", "", "Time spent waiting for other external threads and resources", this)
 { }
+
+LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::~DocIdPartition() {}
 
 void
 LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::update(const MatchingStats::Partition &stats)
@@ -109,8 +119,7 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     }
 }
 
-LegacyDocumentDBMetrics::SubDBMetrics::DocumentMetaStoreMetrics::
-DocumentMetaStoreMetrics(MetricSet *parent)
+LegacyDocumentDBMetrics::SubDBMetrics::DocumentMetaStoreMetrics::DocumentMetaStoreMetrics(MetricSet *parent)
     : MetricSet("docmetastore", "", "Document meta store metrics", parent),
       lidLimit("lidlimit", "", "The size of the allocated lid space", this),
       usedLids("usedlids", "", "The number of lids used", this),
@@ -124,11 +133,15 @@ DocumentMetaStoreMetrics(MetricSet *parent)
 {
 }
 
+LegacyDocumentDBMetrics::SubDBMetrics::DocumentMetaStoreMetrics::~DocumentMetaStoreMetrics() {}
+
 LegacyDocumentDBMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name, MetricSet *parent)
     : MetricSet(name, "", "Sub database metrics", parent),
       attributes(this),
       docMetaStore(this)
 { }
+
+LegacyDocumentDBMetrics::SubDBMetrics::~SubDBMetrics() {}
 
 LegacyDocumentDBMetrics::LegacyDocumentDBMetrics(const std::string &docTypeName, size_t maxNumThreads)
     : MetricSet(make_string("%s", docTypeName.c_str()), "", "Document DB Metrics", 0),
@@ -156,5 +169,7 @@ LegacyDocumentDBMetrics::LegacyDocumentDBMetrics(const std::string &docTypeName,
     memoryUsage.addMetricToSum(attributes.memoryUsage);
     memoryUsage.addMetricToSum(docstore.memoryUsage);
 }
+
+LegacyDocumentDBMetrics::~LegacyDocumentDBMetrics() { }
 
 } // namespace proton

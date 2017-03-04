@@ -54,7 +54,8 @@ private:
     vespalib::string _type;
     Cells _cells;
 public:
-    TensorSpec(const vespalib::string &type_spec) : _type(type_spec), _cells() {}
+    TensorSpec(const vespalib::string &type_spec);
+    ~TensorSpec();
     TensorSpec &add(const Address &address, double value) {
         _cells.emplace(address, value);
         return *this;

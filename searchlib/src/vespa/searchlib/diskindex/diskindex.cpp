@@ -37,6 +37,13 @@ DiskIndex::LookupResult::LookupResult()
 {
 }
 
+DiskIndex::Key::Key() : _indexes() { }
+DiskIndex::Key::Key(const IndexList & indexes, vespalib::stringref word) :
+    _word(word),
+    _indexes(indexes)
+{ }
+DiskIndex::Key::~Key() { }
+
 DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
     : _indexDir(indexDir),
       _cacheSize(cacheSize),

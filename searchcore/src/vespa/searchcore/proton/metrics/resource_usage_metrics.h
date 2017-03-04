@@ -18,6 +18,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
     metrics::LongValueMetric feedingBlocked;
 
     ResourceUsageMetrics(metrics::MetricSet *parent);
+    ~ResourceUsageMetrics();
 };
 
 } // namespace proton

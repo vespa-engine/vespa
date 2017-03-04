@@ -27,12 +27,8 @@ private:
     TimestampSubset   _timestampSubset;
 
 public:
-    Selection(const DocumentSelection& docSel)
-        : _documentSelection(docSel),
-          _fromTimestamp(0),
-          _toTimestamp(INT64_MAX),
-          _timestampSubset()
-    { }
+    Selection(const DocumentSelection& docSel);
+    ~Selection();
 
     const DocumentSelection& getDocumentSelection() const {
         return _documentSelection;

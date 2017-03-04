@@ -106,17 +106,20 @@ namespace {
         ConfigManager _mgr;
         ConfigSubscription::SP sub;
 
-        ManagerTester(const ConfigKey & k, const MySpec & s)
-            : key(k),
-              _mgr(s.createSourceFactory(testTimingValues), 1)
-        {
-        }
+        ManagerTester(const ConfigKey & k, const MySpec & s);
+        ~ManagerTester();
 
         void subscribe()
         {
             sub = _mgr.subscribe(key, 5000);
         }
     };
+
+    ManagerTester::ManagerTester(const ConfigKey & k, const MySpec & s)
+        : key(k),
+          _mgr(s.createSourceFactory(testTimingValues), 1)
+    { }
+    ManagerTester::~ManagerTester() { }
 
 }
 

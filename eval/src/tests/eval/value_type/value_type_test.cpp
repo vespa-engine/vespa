@@ -308,14 +308,18 @@ struct ParseResult {
     const char *end;
     const char *after;
     ValueType type;
-    ParseResult(const vespalib::string &spec_in)
-        : spec(spec_in),
-          pos(spec.data()),
-          end(pos + spec.size()),
-          after(nullptr),
-          type(value_type::parse_spec(pos, end, after)) {}
+    ParseResult(const vespalib::string &spec_in);
+    ~ParseResult();
     bool after_inside() const { return ((after > pos) && (after < end)); }
 };
+ParseResult::ParseResult(const vespalib::string &spec_in)
+    : spec(spec_in),
+      pos(spec.data()),
+      end(pos + spec.size()),
+      after(nullptr),
+      type(value_type::parse_spec(pos, end, after))
+{ }
+ParseResult::~ParseResult() { }
 
 TEST("require that we can parse a partial string into a type with the low-level API") {
     ParseResult result("tensor(a[]) , ");

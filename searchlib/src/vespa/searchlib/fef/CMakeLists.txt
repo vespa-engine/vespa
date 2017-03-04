@@ -10,6 +10,7 @@ vespa_add_library(searchlib_fef OBJECT
     featurenamebuilder.cpp
     featurenameparser.cpp
     featureoverrider.cpp
+    feature_resolver.cpp
     fef.cpp
     fieldinfo.cpp
     fieldpositionsiterator.cpp

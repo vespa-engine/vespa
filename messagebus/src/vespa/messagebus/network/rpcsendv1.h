@@ -56,6 +56,7 @@ public:
      * its attach() method has been called.
      */
     RPCSendV1();
+    ~RPCSendV1();
 
     // Implements RPCSendAdapter.
     void attach(RPCNetwork &net) override;

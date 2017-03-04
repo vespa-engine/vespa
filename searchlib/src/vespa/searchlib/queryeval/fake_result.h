@@ -47,6 +47,7 @@ private:
 
 public:
     FakeResult() : _documents(), _minMaxPostingInfo() {}
+    ~FakeResult();
 
     FakeResult &doc(uint32_t docId) {
         _documents.push_back(Document(docId));

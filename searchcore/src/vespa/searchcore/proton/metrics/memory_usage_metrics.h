@@ -21,6 +21,7 @@ private:
 
 public:
     MemoryUsageMetrics(metrics::MetricSet *parent);
+    ~MemoryUsageMetrics();
     void update(const search::MemoryUsage &usage);
 };
 

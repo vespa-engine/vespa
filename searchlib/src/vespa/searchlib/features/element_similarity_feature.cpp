@@ -115,7 +115,10 @@ struct VectorizedQueryTerms {
             weights.push_back(terms[i].weight);
         }
     }
+    ~VectorizedQueryTerms();
 };
+
+VectorizedQueryTerms::~VectorizedQueryTerms() { }
 
 //-----------------------------------------------------------------------------
 

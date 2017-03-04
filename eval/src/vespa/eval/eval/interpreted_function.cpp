@@ -1,19 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "interpreted_function.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
 #include "check_type.h"
-#include <cmath>
-#include <vespa/vespalib/util/approx.h>
-#include "operation.h"
-#include <set>
 #include "tensor_spec.h"
-#include "simple_tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <set>
+
 
 namespace vespalib {
 namespace eval {
@@ -516,9 +512,16 @@ const Function *get_lambda(const nodes::Node &node) {
 
 } // namespace vespalib::<unnamed>
 
+
 InterpretedFunction::LazyParams::~LazyParams()
 {
 }
+
+InterpretedFunction::SimpleParams::SimpleParams(const std::vector<double> &params_in)
+    : params(params_in)
+{}
+
+InterpretedFunction::SimpleParams::~SimpleParams() { }
 
 const Value &
 InterpretedFunction::SimpleParams::resolve(size_t idx, Stash &stash) const
@@ -532,6 +535,36 @@ InterpretedFunction::SimpleObjectParams::resolve(size_t idx, Stash &) const
 {
     assert(idx < params.size());
     return params[idx];
+}
+
+InterpretedFunction::State::State(const TensorEngine &engine_in)
+    : engine(engine_in),
+      params(nullptr),
+      stash(),
+      stack(),
+      let_values(),
+      program_offset(0)
+{
+}
+
+InterpretedFunction::State::~State() {}
+
+void
+InterpretedFunction::State::init(const LazyParams &params_in) {
+    params = &params_in;
+    stash.clear();
+    stack.clear();
+    let_values.clear();
+    program_offset = 0;
+    if_cnt = 0;
+}
+
+void
+InterpretedFunction::State::replace(size_t prune_cnt, const Value &value) {
+    for (size_t i = 0; i < prune_cnt; ++i) {
+        stack.pop_back();
+    }
+    stack.push_back(value);
 }
 
 InterpretedFunction::Context::Context(const InterpretedFunction &ifun)

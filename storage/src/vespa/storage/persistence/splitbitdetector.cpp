@@ -53,18 +53,8 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
     };
     std::vector<DocInfo> _firstDocs;
 
-    BucketVisitor(const document::BucketIdFactory& factory)
-        : _factory(factory), _splitBit(58),
-          _splitMask(0), _refId(), _refBucket(),
-          _conflictId(), _conflictBucket(),
-          _docCount(0), _docSize(0), _firstDocs()
-    {
-        _firstDocs.reserve(keepFirstCount);
-        // LOG(spam, "Checking out meta entries in bucket");
-        for (uint32_t i=0; i<_splitBit; ++i) {
-            _splitMask = (_splitMask << 1) | 1;
-        }
-    }
+    BucketVisitor(const document::BucketIdFactory& factory);
+    ~BucketVisitor();
 
     void process(spi::DocEntry& slot) {
         assert(slot.getDocumentId());
@@ -105,6 +95,20 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
     }
 
 };
+
+BucketVisitor::BucketVisitor(const document::BucketIdFactory& factory)
+    : _factory(factory), _splitBit(58),
+      _splitMask(0), _refId(), _refBucket(),
+      _conflictId(), _conflictBucket(),
+      _docCount(0), _docSize(0), _firstDocs()
+{
+    _firstDocs.reserve(keepFirstCount);
+    // LOG(spam, "Checking out meta entries in bucket");
+    for (uint32_t i=0; i<_splitBit; ++i) {
+        _splitMask = (_splitMask << 1) | 1;
+    }
+}
+BucketVisitor::~BucketVisitor() { }
 
 bool
 smallerThanSizeLimit(uint32_t minCount,

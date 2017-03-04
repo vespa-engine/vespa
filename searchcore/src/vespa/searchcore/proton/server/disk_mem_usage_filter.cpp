@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "disk_mem_usage_filter.h"
 #include "i_disk_mem_usage_listener.h"
-#include <sstream>
 
 namespace proton {
 
@@ -108,9 +106,9 @@ DiskMemUsageFilter::DiskMemUsageFilter(uint64_t physicalMemory_in)
       _acceptWrite(true),
       _dmstate(),
       _listeners()
-{
-}
+{ }
 
+DiskMemUsageFilter::~DiskMemUsageFilter() { }
 
 void
 DiskMemUsageFilter::setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in)

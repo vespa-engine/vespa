@@ -14,6 +14,7 @@ namespace config {
 class PayloadConverter : public vespalib::slime::ObjectTraverser, public vespalib::slime::ArrayTraverser {
 public:
     PayloadConverter(const vespalib::slime::Inspector & inspector);
+    ~PayloadConverter();
     const std::vector<vespalib::string> & convert();
     void field(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector);
     void entry(size_t idx, const vespalib::slime::Inspector & inspector);

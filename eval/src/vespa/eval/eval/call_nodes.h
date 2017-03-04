@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "basic_nodes.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "basic_nodes.h"
 #include <map>
 #include <cmath>
 
@@ -29,6 +29,7 @@ private:
 public:
     Call(const vespalib::string &name_in, size_t num_params_in)
         : _name(name_in), _num_params(num_params_in), _is_const(false) {}
+    ~Call();
     virtual bool is_const() const override { return _is_const; }
     const vespalib::string &name() const { return _name; }
     size_t num_params() const { return _num_params; }

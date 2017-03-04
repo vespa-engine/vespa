@@ -241,6 +241,10 @@ Schema::Schema()
 {
 }
 
+Schema::Schema(const Schema & rhs) = default;
+Schema & Schema::operator=(const Schema & rhs) = default;
+Schema::Schema(Schema && rhs) = default;
+Schema & Schema::operator=(Schema && rhs) = default;
 Schema::~Schema() { }
 
 bool

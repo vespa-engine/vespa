@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "datatype.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vector>
-#include "datatype.h"
 
 namespace vespalib {
     class asciistream;
@@ -166,6 +166,10 @@ public:
      * Create an initially empty schema
      **/
     Schema();
+    Schema(const Schema & rhs);
+    Schema & operator=(const Schema & rhs);
+    Schema(Schema && rhs);
+    Schema & operator=(Schema && rhs);
     ~Schema();
 
     /**

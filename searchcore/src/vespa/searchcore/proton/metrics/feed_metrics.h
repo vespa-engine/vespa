@@ -14,6 +14,7 @@ struct FeedMetrics : metrics::MetricSet
     metrics::DoubleAverageMetric latency;
 
     FeedMetrics();
+    ~FeedMetrics();
 };
 
 class PerDocTypeFeedMetrics : metrics::MetricSet {
@@ -29,6 +30,7 @@ class PerDocTypeFeedMetrics : metrics::MetricSet {
 
 public:
     PerDocTypeFeedMetrics(metrics::MetricSet *parent);
+    ~PerDocTypeFeedMetrics();
     void RegisterPut(const FastOS_Time &start_time);
     void RegisterUpdate(const FastOS_Time &start_time);
     void RegisterRemove(const FastOS_Time &start_time);

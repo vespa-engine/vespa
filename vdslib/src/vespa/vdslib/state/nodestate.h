@@ -43,12 +43,16 @@ public:
     static double getListingBucketsInitProgressLimit() { return 0.01; }
 
     NodeState();
+    NodeState(const NodeState &);
+    NodeState & operator = (const NodeState &);
+    NodeState(NodeState &&);
+    NodeState & operator = (NodeState &&);
     NodeState(const NodeType& nodeType, const State&,
               const vespalib::stringref & description = "",
               double capacity = 1.0, uint16_t reliability = 1);
     /** Set type if you want to verify that content fit with the given type. */
     NodeState(const vespalib::stringref & serialized, const NodeType* nodeType = 0);
-    virtual ~NodeState() {}
+    ~NodeState();
 
     /**
      * Setting prefix to something implies using this function to write a

@@ -18,6 +18,7 @@ struct SessionManagerMetrics : metrics::MetricSet
 
     void update(const proton::matching::SessionManager::Stats &stats);
     SessionManagerMetrics(metrics::MetricSet *parent);
+    ~SessionManagerMetrics();
 };
 
 }  // namespace grouping

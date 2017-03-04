@@ -72,8 +72,8 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     using action_function = void (*)(State &);
     std::vector<std::pair<const Node *, action_function>> actions;
     TypeResolver(const std::vector<ValueType> &params_in,
-                 std::map<const Node *, ValueType> &type_map_out)
-        : state(params_in, type_map_out), actions() {}
+                 std::map<const Node *, ValueType> &type_map_out);
+    ~TypeResolver();
 
     //-------------------------------------------------------------------------
 
@@ -241,6 +241,14 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         check_actions(node);
     }
 };
+
+TypeResolver::TypeResolver(const std::vector<ValueType> &params_in,
+                           std::map<const Node *, ValueType> &type_map_out)
+    : state(params_in, type_map_out),
+      actions()
+{ }
+
+TypeResolver::~TypeResolver() { }
 
 } // namespace vespalib::eval::nodes::<unnamed>
 } // namespace vespalib::eval::nodes

@@ -193,6 +193,12 @@ MultiValueNumericAttribute<B, M>::onInitSave()
 }
 
 template <typename B, typename M>
+uint32_t
+MultiValueNumericAttribute<B, M>::getRawValues(DocId doc, const WType * & values) const {
+    return get(doc, values);
+}
+
+template <typename B, typename M>
 bool MultiValueNumericAttribute<B, M>::SetSearchContext::valid() const { return this->isValid(); }
 
 template <typename B, typename M>

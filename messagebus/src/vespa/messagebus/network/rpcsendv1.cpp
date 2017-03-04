@@ -66,9 +66,9 @@ RPCSendV1::RPCSendV1() :
     _net(NULL),
     _clientIdent("client"),
     _serverIdent("server")
-{
-    // empty
-}
+{ }
+
+RPCSendV1::~RPCSendV1() {}
 
 void
 RPCSendV1::attach(RPCNetwork &net)

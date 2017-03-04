@@ -20,6 +20,8 @@ VersionSpecification::VersionSpecification(int major, int minor, int micro, cons
     initialize();
 }
 
+VersionSpecification::VersionSpecification(const VersionSpecification &) = default;
+
 VersionSpecification::~VersionSpecification() { }
 
 void

@@ -10,6 +10,8 @@ namespace vdslib {
 class DocumentSummary {
 public:
     DocumentSummary();
+    ~DocumentSummary();
+
 
     /**
      * Constructs a new message from a byte buffer.

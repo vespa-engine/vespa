@@ -11,6 +11,8 @@ Error::Error()
       _service()
 { }
 
+Error::~Error() {}
+
 Error::Error(uint32_t c, const string &m, const string &s)
     : _code(c),
       _msg(m),

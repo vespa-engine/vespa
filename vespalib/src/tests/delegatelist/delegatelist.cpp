@@ -213,17 +213,21 @@ private:
     void doneOp(const Command &cmd);
     int perform(int cnt, int start, const CmdList &cmdList);
 public:
-    Actor(int id, History *hist)
-        : _id(id), _hist(hist), _queue(), _cond(), _state(STATE_INIT),
-          _waitCnt(0), _opCnt(0), _exit(false) {}
+    Actor(int id, History *hist);
+    ~Actor();
     int getOpCnt() const { return _opCnt; }
     int getState() const { return _state; }
     void doIt(const CmdList &cmdList);
     void doIt(const Command &cmd);
     void waitState(int state);
-    void Run(FastOS_ThreadInterface *, void *);
+    void Run(FastOS_ThreadInterface *, void *) override;
 };
 
+Actor::Actor(int id, History *hist)
+    : _id(id), _hist(hist), _queue(), _cond(), _state(STATE_INIT),
+      _waitCnt(0), _opCnt(0), _exit(false)
+{}
+Actor::~Actor() {}
 
 void
 Actor::setState(int state, MonitorGuard &guard) {

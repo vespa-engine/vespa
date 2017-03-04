@@ -608,7 +608,11 @@ struct UnWrapped {
     vespalib::string wrapper;
     vespalib::string body;
     vespalib::string error;
+    ~UnWrapped();
 };
+
+
+UnWrapped::~UnWrapped() {}
 
 UnWrapped unwrap(const vespalib::string &str) {
     UnWrapped result;

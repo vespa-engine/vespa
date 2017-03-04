@@ -495,5 +495,8 @@ FeatureNameParser::FeatureNameParser(const string &input)
     }
 }
 
+FeatureNameParser::~FeatureNameParser() { }
+
+
 } // namespace fef
 } // namespace search

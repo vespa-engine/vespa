@@ -49,7 +49,12 @@ namespace {
         std::string path;
         Device::State status;
         std::string description;
+        Entry();
+        ~Entry();
     };
+
+    Entry::Entry() {}
+    Entry::~Entry() {}
 
     Entry parseDirectoryString(const std::string& serialized) {
         while (1) {

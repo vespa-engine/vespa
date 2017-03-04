@@ -27,6 +27,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::DoubleAverageMetric total;
 
         JobMetrics(metrics::MetricSet *parent);
+        ~JobMetrics();
     };
 
     struct SubDBMetrics : metrics::MetricSet
@@ -41,6 +42,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::DoubleValueMetric lidFragmentationFactor;
 
             LidSpaceMetrics(metrics::MetricSet *parent);
+            ~LidSpaceMetrics();
         };
 
         struct DocumentStoreMetrics : metrics::MetricSet
@@ -51,6 +53,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             MemoryUsageMetrics memoryUsage;
 
             DocumentStoreMetrics(metrics::MetricSet *parent);
+            ~DocumentStoreMetrics();
         };
 
         LidSpaceMetrics lidSpace;
@@ -58,6 +61,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         proton::AttributeMetrics attributes;
 
         SubDBMetrics(const vespalib::string &name, metrics::MetricSet *parent);
+        ~SubDBMetrics();
     };
 
     struct AttributeMetrics : metrics::MetricSet
@@ -69,11 +73,13 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::LongValueMetric   feedingBlocked;
 
             ResourceUsageMetrics(metrics::MetricSet *parent);
+            ~ResourceUsageMetrics();
         };
 
         ResourceUsageMetrics resourceUsage;
 
         AttributeMetrics(metrics::MetricSet *parent);
+        ~AttributeMetrics();
     };
 
     struct IndexMetrics : metrics::MetricSet
@@ -81,6 +87,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         MemoryUsageMetrics memoryUsage;
 
         IndexMetrics(metrics::MetricSet *parent);
+        ~IndexMetrics();
     };
 
     JobMetrics job;
@@ -91,6 +98,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SubDBMetrics removed;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
+    ~DocumentDBTaggedMetrics();
 };
 
 } // namespace proton

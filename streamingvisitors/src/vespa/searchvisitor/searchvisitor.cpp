@@ -105,7 +105,11 @@ SearchVisitor::SummaryGenerator::SummaryGenerator() :
 {
 }
 
-vespalib::ConstBufferRef SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass)
+SearchVisitor::SummaryGenerator::~SummaryGenerator() { }
+
+
+vespalib::ConstBufferRef
+SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass)
 {
     if (_docsumWriter != NULL) {
         _rawBuf.reset();
@@ -134,6 +138,8 @@ SearchVisitor::GroupingEntry::GroupingEntry(Grouping * grouping) :
     _limit(grouping->getMaxN(std::numeric_limits<size_t>::max()))
 {
 }
+
+SearchVisitor::GroupingEntry::~GroupingEntry() { }
 
 void SearchVisitor::GroupingEntry::aggregate(const document::Document & doc, search::HitRank rank)
 {
@@ -390,6 +396,8 @@ SearchVisitor::PositionInserter::PositionInserter(search::AttributeVector & attr
 {
 }
 
+SearchVisitor::PositionInserter::~PositionInserter() {}
+
 void
 SearchVisitor::PositionInserter::onPrimitive(const IteratorContent & c)
 {
@@ -454,6 +462,8 @@ SearchVisitor::RankController::RankController() :
     _dumpProcessor()
 {
 }
+
+SearchVisitor::RankController::~RankController() {}
 
 void
 SearchVisitor::RankController::setupRankProcessors(search::Query & query, 

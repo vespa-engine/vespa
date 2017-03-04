@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.metrics.legacy_proton_metrics");
 #include "legacy_proton_metrics.h"
 
 namespace proton {
@@ -11,6 +8,8 @@ LegacyProtonMetrics::DocumentTypeMetrics::DocumentTypeMetrics(metrics::MetricSet
     : metrics::MetricSet("doctypes", "", "Metrics per document type", parent)
 {
 }
+
+LegacyProtonMetrics::DocumentTypeMetrics::~DocumentTypeMetrics() { }
 
 LegacyProtonMetrics::LegacyProtonMetrics()
     : metrics::MetricSet("proton", "", "Search engine metrics", 0),
@@ -43,5 +42,7 @@ LegacyProtonMetrics::LegacyProtonMetrics()
     numStoredDocs.setStartValue(start);
     numRemovedDocs.setStartValue(start);
 }
+
+LegacyProtonMetrics::~LegacyProtonMetrics() {}
 
 } // namespace proton

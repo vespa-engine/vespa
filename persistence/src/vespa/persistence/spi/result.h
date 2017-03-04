@@ -36,7 +36,7 @@ public:
         : _errorCode(error),
           _errorMessage(errorMessage) {}
 
-    virtual ~Result() { }
+    virtual ~Result();
 
     bool operator==(const Result& o) const {
         return _errorCode == o._errorCode

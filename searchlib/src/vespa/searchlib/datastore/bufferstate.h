@@ -2,14 +2,11 @@
 
 #pragma once
 
-#include <vector>
-#include <deque>
-#include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/array.h>
-
 #include "buffer_type.h"
 #include "entryref.h"
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/array.h>
 
 namespace search {
 namespace datastore {
@@ -40,24 +37,24 @@ public:
     };
 
 private:
-    size_t _usedElems;
-    size_t _allocElems;
-    uint64_t _deadElems;
-    State _state;
-    bool  _disableElemHoldList;
-    uint64_t _holdElems;
+    size_t        _usedElems;
+    size_t        _allocElems;
+    uint64_t      _deadElems;
+    State         _state;
+    bool          _disableElemHoldList;
+    uint64_t      _holdElems;
     // Number of bytes that are heap allocated by elements that are stored in this buffer.
     // For simple types this is 0.
-    size_t _extraUsedBytes;
+    size_t        _extraUsedBytes;
     // Number of bytes that are heap allocated by elements that are stored in this buffer and is now on hold.
     // For simple types this is 0.
-    size_t _extraHoldBytes;
-    FreeList _freeList;
+    size_t        _extraHoldBytes;
+    FreeList      _freeList;
     FreeListList *_freeListList;	// non-NULL if free lists are enabled
 
     // NULL pointers if not on circular list of buffer states with free elems
-    BufferState *_nextHasFree;
-    BufferState *_prevHasFree;
+    BufferState    *_nextHasFree;
+    BufferState    *_prevHasFree;
 
     BufferTypeBase *_typeHandler;
     uint32_t        _typeId;
@@ -83,9 +80,8 @@ public:
      * @param sizeNeeded	Number of elements needed to be free
      * @param buffer		start of buffer.
      */
-    void
-    onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
-             size_t sizeNeeded, void *&buffer);
+    void onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
+                  size_t sizeNeeded, void *&buffer);
 
     /**
      * Transition from ACTIVE to HOLD state.

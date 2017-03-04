@@ -130,28 +130,28 @@ class ConfigFile
     std::vector<char> _content;
 
 public:
-    ConfigFile(void);
+    ConfigFile();
+    ~ConfigFile();
 
     ConfigFile(const vespalib::string &name,
                const vespalib::string &fullName);
 
-    nbostream &
-    serialize(nbostream &stream) const;
+    nbostream &serialize(nbostream &stream) const;
 
-    nbostream &
-    deserialize(nbostream &stream);
+    nbostream &deserialize(nbostream &stream);
 
-    void
-    save(const vespalib::string &snapDir) const;
+    void save(const vespalib::string &snapDir) const;
 };
 
 
-ConfigFile::ConfigFile(void)
+ConfigFile::ConfigFile()
     : _name(),
       _modTime(0),
       _content()
 {
 }
+
+ConfigFile::~ConfigFile() {}
 
 
 ConfigFile::ConfigFile(const vespalib::string &name,

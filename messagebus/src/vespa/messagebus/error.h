@@ -28,6 +28,7 @@ public:
      * for standard library containers.
      **/
     Error();
+    ~Error();
 
     /**
      * Create a new error with the given code and message

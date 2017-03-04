@@ -20,8 +20,16 @@ public:
     void usage(void);
     int Main(void);
 
-    Application() : _flags(), _cfgId("admin/model"), _specString("") {}
+    Application();
+    ~Application();
 };
+
+Application::Application()
+    : _flags(),
+      _cfgId("admin/model"),
+      _specString("")
+{}
+Application::~Application() { }
 
 int Application::parseOpts() {
     char c = '?';

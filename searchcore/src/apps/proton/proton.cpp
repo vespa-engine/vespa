@@ -20,7 +20,10 @@ struct Params
     std::string identity;
     std::string serviceidentity;
     uint64_t subscribeTimeout;
+    ~Params();
 };
+
+Params::~Params() {}
 
 class App : public FastOS_Application
 {

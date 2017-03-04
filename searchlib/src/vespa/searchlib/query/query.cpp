@@ -31,6 +31,8 @@ QueryConnector::QueryConnector(const char * opName) :
 {
 }
 
+QueryConnector::~QueryConnector() { }
+
 const HitList & QueryConnector::evaluateHits(HitList & hl) const
 {
   if (evaluate()) {

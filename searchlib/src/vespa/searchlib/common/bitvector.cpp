@@ -226,6 +226,13 @@ BitVector::andNotWith(const BitVector& right)
     invalidateCachedCount();
 }
 
+void
+BitVector::notSelf() {
+    IAccelrated::getAccelrator()->notBit(getActiveStart(), getActiveBytes());
+    setGuardBit();
+    invalidateCachedCount();
+}
+
 bool
 BitVector::operator==(const BitVector &rhs) const
 {

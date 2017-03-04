@@ -20,6 +20,8 @@ DocumentSummary::DocumentSummary(document::ByteBuffer& buf) :
     deserialize(buf);
 }
 
+DocumentSummary::~DocumentSummary() {}
+
 void DocumentSummary::deserialize(document::ByteBuffer& buf)
 {
     int32_t tmp;

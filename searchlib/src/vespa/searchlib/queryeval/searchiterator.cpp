@@ -46,17 +46,36 @@ SearchIterator::andWith(UP filter, uint32_t estimate)
 void
 SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP tmp = get_hits(begin_id);
-    const BitVector &rhs = *tmp;
-    result.orWith(rhs);
+    uint32_t docid = std::max(begin_id, getDocId());
+    while (!isAtEnd(docid)) {
+        docid = result.getNextFalseBit(docid);
+        if (!isAtEnd(docid) && seek(docid)) {
+            result.setBit(docid);
+//            printf("bit %d is hit, _docId=%d, _endId=%d\n", docid, getDocId(), getEndId());
+        }
+        docid = std::max(docid + 1, getDocId());
+    }
 }
 
 void
 SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP tmp = get_hits(begin_id);
-    const BitVector &rhs = *tmp;
-    result.andWith(rhs);
+    uint32_t docidA = begin_id - 1;
+    uint32_t docidB = result.getNextTrueBit(begin_id);
+    while (!isAtEnd(docidB)) {
+        if (docidA < docidB) {
+            if (seek(docidB)) {
+                docidA = docidB;
+            } else {
+                docidA = std::max(docidB+1, getDocId());
+            }
+        } else if (docidA > docidB) {
+            result.clearInterval(docidB, docidA);
+            docidB = (! isAtEnd(docidA)) ? result.getNextTrueBit(docidA) : getEndId();
+        } else {
+            docidB = result.getNextTrueBit(docidB+1);
+        }
+    }
 }
 
 vespalib::string
@@ -116,18 +135,33 @@ orIterators(BitVector::UP result, const Children &children, uint32_t begin_id, b
 }
 
 BitVector::UP
+SearchIterator::andChildren(BitVector::UP result, const Children &children, uint32_t begin_id) {
+    return andIterators(andIterators(std::move(result), children, begin_id, true), children, begin_id, false);
+}
+
+BitVector::UP
 SearchIterator::andChildren(const Children &children, uint32_t begin_id) {
-    return andIterators(andIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
+    return andChildren(BitVector::UP(), children, begin_id);
+}
+
+BitVector::UP
+SearchIterator::orChildren(BitVector::UP result, const Children &children, uint32_t begin_id) {
+    return orIterators(orIterators(std::move(result), children, begin_id, true), children, begin_id, false);
+}
+
+BitVector::UP
+SearchIterator::orChildren(BitVector::UP result, const OwnedChildren &children, uint32_t begin_id) {
+    return orIterators(orIterators(std::move(result), children, begin_id, true), children, begin_id, false);
 }
 
 BitVector::UP
 SearchIterator::orChildren(const Children &children, uint32_t begin_id) {
-    return orIterators(orIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
+    return orChildren(BitVector::UP(), children, begin_id);
 }
 
 BitVector::UP
 SearchIterator::orChildren(const OwnedChildren &children, uint32_t begin_id) {
-    return orIterators(orIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
+    return orChildren(BitVector::UP(), children, begin_id);
 }
 
 } // namespace queryeval

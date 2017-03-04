@@ -106,6 +106,8 @@ StorageBucketDBInitializer::Metrics::Metrics(framework::Component& component)
     component.registerMetric(*this);
 }
 
+StorageBucketDBInitializer::Metrics::~Metrics() {}
+
 StorageBucketDBInitializer::GlobalState::GlobalState()
         : _insertedCount(0), _infoReadCount(0),
           _infoSetByLoad(0), _dirsListed(0), _dirsToList(0),

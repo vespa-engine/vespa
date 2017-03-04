@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include "bitvector.h"
+#include <vespa/searchlib/queryeval/searchiterator.h>
 
 
 namespace search {

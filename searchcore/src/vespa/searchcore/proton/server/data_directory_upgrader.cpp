@@ -101,6 +101,8 @@ DataDirectoryUpgrader::RowColDir::RowColDir(const vespalib::string &row_,
 {
 }
 
+DataDirectoryUpgrader::RowColDir::~RowColDir() { }
+
 DataDirectoryUpgrader::ScanResult::ScanResult()
     : _rowColDirs(),
       _destDirExisting(false)

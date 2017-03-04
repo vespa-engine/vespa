@@ -36,6 +36,7 @@ public:
      * @param featureName feature name
      **/
     FeatureNameParser(const vespalib::string &featureName);
+    ~FeatureNameParser();
 
     /**
      * Does this object represent a valid feature name?

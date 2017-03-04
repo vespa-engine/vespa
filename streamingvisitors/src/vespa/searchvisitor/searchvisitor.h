@@ -101,6 +101,7 @@ private:
     class PositionInserter : public AttributeInserter {
     public:
         PositionInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
+        ~PositionInserter();
     private:
         virtual void onPrimitive(const IteratorContent & c);
         virtual void onStructStart(const Content & fv);
@@ -133,6 +134,7 @@ private:
 
     public:
         RankController();
+        ~RankController();
         bool valid() const { return _rankProcessor.get() != NULL; }
         void setRankProfile(const vespalib::string &rankProfile) { _rankProfile = rankProfile; }
         const vespalib::string &getRankProfile() const { return _rankProfile; }
@@ -368,6 +370,7 @@ private:
     class GroupingEntry : std::shared_ptr<Grouping> {
     public:
         GroupingEntry(Grouping * grouping);
+        ~GroupingEntry();
         void aggregate(const document::Document & doc, search::HitRank rank);
         const Grouping & operator * () const { return *_grouping; }
         Grouping & operator * () { return *_grouping; }
@@ -384,6 +387,7 @@ private:
     {
     public:
         SummaryGenerator();
+        ~SummaryGenerator();
         GetDocsumsState & getDocsumState() { return _docsumState; }
         vsm::GetDocsumsStateCallback & getDocsumCallback() { return _callback; }
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }

@@ -39,6 +39,7 @@ public:
         TraceItem(const std::string &file_in, uint32_t line_in,
                   const std::string &msg_in)
             : file(file_in), line(line_in), msg(msg_in) {}
+        ~TraceItem();
     };
 
 private:

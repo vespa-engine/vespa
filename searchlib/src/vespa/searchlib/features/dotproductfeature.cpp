@@ -1,18 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.dotproduct");
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchlib/fef/properties.h>
-
 #include "dotproductfeature.h"
-#include "array_parser.hpp"
-#include "utils.h"
 #include "valuefeature.h"
 #include "weighted_set_parser.hpp"
+#include "array_parser.hpp"
+#include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.dotproduct");
 
 using namespace search::attribute;
 using namespace search::fef;
@@ -22,6 +19,12 @@ namespace search {
 namespace features {
 namespace dotproduct {
 namespace wset {
+
+template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
+VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::VectorBase() { }
+
+template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
+VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::~VectorBase() { }
 
 template <typename Vector, typename Buffer>
 DotProductExecutor<Vector, Buffer>::DotProductExecutor(const IAttributeVector * attribute, const Vector & vector) :
@@ -65,6 +68,9 @@ DotProductExecutor<A>::DotProductExecutor(const A * attribute, const V & vector)
 }
 
 template <typename A>
+DotProductExecutor<A>::~DotProductExecutor() { }
+
+template <typename A>
 size_t
 DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 {
@@ -90,6 +96,9 @@ SparseDotProductExecutor<A>::SparseDotProductExecutor(const A * attribute, const
 }
 
 template <typename A>
+SparseDotProductExecutor<A>::~SparseDotProductExecutor() { }
+
+template <typename A>
 size_t
 SparseDotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 {
@@ -111,6 +120,9 @@ DotProductByCopyExecutor<A>::DotProductByCopyExecutor(const A * attribute, const
 }
 
 template <typename A>
+DotProductByCopyExecutor<A>::~DotProductByCopyExecutor() { }
+
+template <typename A>
 size_t
 DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 {
@@ -129,6 +141,9 @@ SparseDotProductByCopyExecutor<A>::SparseDotProductByCopyExecutor(const A * attr
     _copy(std::max(static_cast<size_t>(attribute->getMaxValueCount()), indexes.size()))
 {
 }
+
+template <typename A>
+SparseDotProductByCopyExecutor<A>::~SparseDotProductByCopyExecutor() { }
 
 template <typename A>
 size_t

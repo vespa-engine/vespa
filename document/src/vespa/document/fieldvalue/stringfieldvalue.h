@@ -30,6 +30,7 @@ public:
 
     StringFieldValue &operator=(const StringFieldValue &rhs);
     StringFieldValue &operator=(const vespalib::stringref &value) override;
+    ~StringFieldValue();
 
     FieldValue &assign(const FieldValue &) override;
 

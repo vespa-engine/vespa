@@ -3,9 +3,9 @@
 #pragma once
 
 #include "function.h"
-#include <vespa/vespalib/util/stash.h>
 #include "simple_tensor_engine.h"
 #include "node_types.h"
+#include <vespa/vespalib/util/stash.h>
 
 namespace vespalib {
 namespace eval {
@@ -39,7 +39,8 @@ public:
      **/
     struct SimpleParams : LazyParams {
         std::vector<double> params;
-        explicit SimpleParams(const std::vector<double> &params_in) : params(params_in) {}
+        explicit SimpleParams(const std::vector<double> &params_in);
+        ~SimpleParams();
         const Value &resolve(size_t idx, Stash &stash) const override;
     };
     /**
@@ -59,25 +60,15 @@ public:
         std::vector<Value::CREF> let_values;
         uint32_t                 program_offset;
         uint32_t                 if_cnt;
-        State(const TensorEngine &engine_in)
-            : engine(engine_in), params(nullptr), stash(), stack(), let_values(), program_offset(0) {}
-        void init(const LazyParams &params_in) {
-            params = &params_in;
-            stash.clear();
-            stack.clear();
-            let_values.clear();
-            program_offset = 0;
-            if_cnt = 0;
-        }
+
+        State(const TensorEngine &engine_in);
+        ~State();
+
+        void init(const LazyParams &params_in);
         const Value &peek(size_t ridx) const {
             return stack[stack.size() - 1 - ridx];
         }
-        void replace(size_t prune_cnt, const Value &value) {
-            for (size_t i = 0; i < prune_cnt; ++i) {
-                stack.pop_back();
-            }
-            stack.push_back(value);
-        }
+        void replace(size_t prune_cnt, const Value &value);
     };
     class Context {
         friend class InterpretedFunction;

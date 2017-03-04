@@ -12,8 +12,9 @@ using namespace config;
 class MyCallback : public IFetcherCallback<MyConfig>
 {
 public:
-    MyCallback(const std::string & badConfig="") : _config(), _configured(false), _badConfig(badConfig) { }
-    void configure(std::unique_ptr<MyConfig> config)
+    MyCallback(const std::string & badConfig="");
+    ~MyCallback();
+    void configure(std::unique_ptr<MyConfig> config) override
     {
         _config = std::move(config);
         _configured = true;
@@ -25,6 +26,9 @@ public:
     std::atomic<bool> _configured;
     std::string _badConfig;
 };
+
+MyCallback::MyCallback(const std::string & badConfig) : _config(), _configured(false), _badConfig(badConfig) { }
+MyCallback::~MyCallback() { }
 
 TEST("requireThatConfigIsAvailableOnConstruction") {
     RawSpec spec("myField \"foo\"\n");
