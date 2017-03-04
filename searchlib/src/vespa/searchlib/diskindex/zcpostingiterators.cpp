@@ -26,7 +26,7 @@ void
 ZcIteratorBase::initRange(uint32_t beginid, uint32_t endid)
 {
     uint32_t prev = getDocId();
-    RankedSearchIteratorBase::initRange(beginid, endid);
+    setEndId(endid);
     if ((beginid <= prev) || (prev == 0)) {
         rewind(_start);
         readWordStart(getDocIdLimit());
