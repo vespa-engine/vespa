@@ -343,11 +343,12 @@ public:
     static std::unique_ptr<BitVector> andChildren(const Children & children, uint32_t begin_id);
     static std::unique_ptr<BitVector> orChildren(const Children & children, uint32_t begin_id);
     static std::unique_ptr<BitVector> orChildren(const OwnedChildren & children, uint32_t begin_id);
-protected:
     static std::unique_ptr<BitVector> andChildren(std::unique_ptr<BitVector> result,
                                                   const Children & children, uint32_t begin_id);
     static std::unique_ptr<BitVector> orChildren(std::unique_ptr<BitVector> result,
                                                  const Children & children, uint32_t begin_id);
+    static std::unique_ptr<BitVector> orChildren(std::unique_ptr<BitVector> result,
+                                                 const OwnedChildren & children, uint32_t begin_id);
 };
 
 } // namespace queryeval
