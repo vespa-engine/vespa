@@ -357,12 +357,12 @@ class SlimeFiller : public ConstFieldValueVisitor {
 
     virtual void visit(const MapFieldValue & v) {
         Cursor &a = _inserter.insertArray();
-        Memory keymem("key");
-        Memory valmem("value");
+        Symbol keysym = a.resolve("key");
+        Symbol valsym = a.resolve("value");
         for (const auto & entry : v) {
             Cursor &c = a.addObject();
-            ObjectInserter ki(c, keymem);
-            ObjectInserter vi(c, valmem);
+            ObjectSymbolInserter ki(c, keysym);
+            ObjectSymbolInserter vi(c, valsym);
             SlimeFiller keyConv(ki, _tokenize);
             SlimeFiller valConv(vi, _tokenize);
 
@@ -456,15 +456,15 @@ class SlimeFiller : public ConstFieldValueVisitor {
     virtual void visit(const WeightedSetFieldValue &value) {
         Cursor &a = _inserter.insertArray();
         if (value.size() > 0) {
-            Memory imem("item");
-            Memory wmem("weight");
+            Symbol isym = a.resolve("item");
+            Symbol wsym = a.resolve("weight");
             for (const auto & entry : value) {
                 Cursor &o = a.addObject();
-                ObjectInserter ki(o, imem);
+                ObjectSymbolInserter ki(o, isym);
                 SlimeFiller conv(ki, _tokenize);
                 entry.first->accept(conv);
                 int weight = static_cast<const IntFieldValue &>(*entry.second).getValue();
-                o.setLong(wmem, weight);
+                o.setLong(wsym, weight);
             }
         }
     }
