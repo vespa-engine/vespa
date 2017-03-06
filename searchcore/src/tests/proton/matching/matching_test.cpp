@@ -198,9 +198,11 @@ struct MyWorld {
             const document::GlobalId &gid = docId.getGlobalId();
             typedef DocumentMetaStore::Result PutRes;
             document::BucketId bucketId(BucketFactory::getBucketId(docId));
+            uint32_t docSize = 1;
             PutRes putRes(metaStore.put(gid,
                                         bucketId,
                                         Timestamp(0u),
+                                        docSize,
                                         i));
             metaStore.setBucketState(bucketId, true);
         }

@@ -66,8 +66,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual Result put(const GlobalId &gid,
                        const BucketId &bucketId,
                        const Timestamp &timestamp,
+                       uint32_t size,
                        DocId lid) override {
-        return _store.put(gid, bucketId, timestamp, lid);
+        return _store.put(gid, bucketId, timestamp, size, lid);
     }
     virtual bool updateMetaData(DocId lid,
                                 const BucketId &bucketId,

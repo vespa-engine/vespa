@@ -135,7 +135,7 @@ struct MySubDb
             for (size_t i = 0; i < bucketDocs.getDocs().size(); ++i) {
                 const test::Document &testDoc = bucketDocs.getDocs()[i];
                 _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
-                               testDoc.getTimestamp(), testDoc.getLid());
+                               testDoc.getTimestamp(), testDoc.getSize(), testDoc.getLid());
                 _realRetriever->_docs.push_back(testDoc.getDoc());
                 ASSERT_EQUAL(testDoc.getLid() + 1,
                              _realRetriever->_docs.size());

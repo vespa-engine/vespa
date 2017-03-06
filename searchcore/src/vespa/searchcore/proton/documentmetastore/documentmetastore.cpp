@@ -492,10 +492,11 @@ DocumentMetaStore::Result
 DocumentMetaStore::put(const GlobalId &gid,
                        const BucketId &bucketId,
                        const Timestamp &timestamp,
+                       uint32_t size,
                        DocId lid)
 {
     Result res;
-    RawDocumentMetaData metaData(gid, bucketId, timestamp);
+    RawDocumentMetaData metaData(gid, bucketId, timestamp, size);
     KeyComp comp(metaData, _metaDataStore, *_gidCompare);
     TreeType::Iterator itr = _gidToLidMap.lowerBound(KeyComp::FIND_DOC_ID,
             comp);

@@ -64,7 +64,7 @@ public:
     }
 
     virtual Result put(const GlobalId &, const BucketId &, const Timestamp &,
-                       DocId) override
+                       uint32_t, DocId) override
     {
         return Result();
     }
