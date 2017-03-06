@@ -595,9 +595,12 @@ private:
 // trace nodes. Wrap this in a somewhat more convenient macro to hide the details.
 // Can only be called by Visitor or its subclasses.
 #define VISITOR_TRACE(level, message) \
-    if (traceLevel() >= (level)) { \
-        addBoundedTrace(level, message); \
-    }
+    do { \
+        if (traceLevel() >= (level)) { \
+            addBoundedTrace(level, message); \
+        } \
+    } while (false);
+
 
 } // storage
 
