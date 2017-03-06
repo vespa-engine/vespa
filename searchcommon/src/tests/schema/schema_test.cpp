@@ -55,6 +55,12 @@ void assertSchema(const Schema & exp, const Schema & act) {
     for (size_t i = 0; i < exp.getNumFieldSets(); ++i) {
         assertSet(exp.getFieldSet(i), act.getFieldSet(i));
     }
+    const auto &expImported = exp.getImportedAttributeFields();
+    const auto &actImported = act.getImportedAttributeFields();
+    ASSERT_EQUAL(expImported.size(), actImported.size());
+    for (size_t i = 0; i < expImported.size(); ++i) {
+        assertField(expImported[i], actImported[i]);
+    }
 }
 
 TEST("testBasic") {
@@ -62,6 +68,7 @@ TEST("testBasic") {
     EXPECT_EQUAL(0u, s.getNumIndexFields());
     EXPECT_EQUAL(0u, s.getNumAttributeFields());
     EXPECT_EQUAL(0u, s.getNumSummaryFields());
+    EXPECT_EQUAL(0u, s.getNumImportedAttributeFields());
 
     s.addIndexField(Schema::IndexField("foo", schema::STRING));
     s.addIndexField(Schema::IndexField("bar", schema::INT32));
@@ -75,8 +82,9 @@ TEST("testBasic") {
     s.addSummaryField(Schema::SummaryField("cox", schema::STRING));
     s.addSummaryField(Schema::SummaryField("fox", schema::RAW));
 
-    s.addFieldSet(Schema::FieldSet("default").
-                  addField("foo").addField("bar"));
+    s.addFieldSet(Schema::FieldSet("default").addField("foo").addField("bar"));
+
+    s.addImportedAttributeField(Schema::ImportedAttributeField("imported", schema::INT32));
 
     EXPECT_EQUAL(2u, s.getNumIndexFields());
     {
@@ -145,12 +153,21 @@ TEST("testBasic") {
         EXPECT_EQUAL("foo", s.getFieldSet(0).getFields()[0]);
         EXPECT_EQUAL("bar", s.getFieldSet(0).getFields()[1]);
     }
+    EXPECT_EQUAL(1u, s.getNumImportedAttributeFields());
+    {
+        const auto &imported = s.getImportedAttributeFields();
+        EXPECT_EQUAL(1u, imported.size());
+        EXPECT_EQUAL("imported", imported[0].getName());
+        EXPECT_EQUAL(schema::INT32, imported[0].getDataType());
+        EXPECT_EQUAL(schema::SINGLE, imported[0].getCollectionType());
+    }
 }
 
 TEST("testLoadAndSave") {
-    typedef Schema::IndexField SIF;
-    typedef Schema::AttributeField SAF;
-    typedef Schema::SummaryField SSF;
+    using SIF = Schema::IndexField;
+    using SAF = Schema::AttributeField;
+    using SSF = Schema::SummaryField;
+    using SIAF = Schema::ImportedAttributeField;
     using SDT = schema::DataType;
     using SCT = schema::CollectionType;
     typedef Schema::FieldSet SFS;
@@ -203,6 +220,7 @@ TEST("testLoadAndSave") {
         EXPECT_TRUE(s3.loadFromFile("schema.txt"));
         assertSchema(s, s3); // test that saved file is loaded correctly
         s3.addIndexField(SIF("foo", SDT::STRING));
+        s3.addImportedAttributeField(SIAF("imported", schema::INT32));
         EXPECT_TRUE(s3.loadFromFile("schema.txt")); // load should clear the current content
         assertSchema(s, s3);
     }
@@ -211,6 +229,7 @@ TEST("testLoadAndSave") {
         EXPECT_TRUE(s.saveToFile("schema2.txt"));
         Schema s2;
         s2.addIndexField(SIF("foo", SDT::STRING));
+        s2.addImportedAttributeField(SIAF("imported", schema::INT32));
         EXPECT_TRUE(s2.loadFromFile("schema2.txt"));
         assertSchema(s, s2);
     }
@@ -375,6 +394,21 @@ TEST("require that incompatible fields are removed from intersection") {
     Schema::UP schema = Schema::intersect(s1, s2);
     EXPECT_EQUAL(0u, schema->getNumIndexFields());
     EXPECT_FALSE(schema->isIndexField(name));
+}
+
+TEST("require that imported attribute fields are not saved to disk")
+{
+    const vespalib::string fileName = "schema-no-imported-fields.txt";
+    {
+        Schema s;
+        s.addImportedAttributeField(Schema::ImportedAttributeField("imported", schema::INT32));
+        s.saveToFile(fileName);
+    }
+    {
+        Schema s;
+        s.loadFromFile(fileName);
+        EXPECT_EQUAL(0u, s.getNumImportedAttributeFields());
+    }
 }
 
 }  // namespace index

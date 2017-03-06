@@ -111,7 +111,6 @@ Schema::Field::write(vespalib::asciistream & os, const vespalib::stringref & pre
     }
 }
 
-
 bool
 Schema::Field::operator==(const Field &rhs) const
 {
@@ -121,7 +120,6 @@ Schema::Field::operator==(const Field &rhs) const
       _timestamp == rhs._timestamp;
 }
 
-
 bool
 Schema::Field::operator!=(const Field &rhs) const
 {
@@ -130,7 +128,6 @@ Schema::Field::operator!=(const Field &rhs) const
  _collectionType != rhs._collectionType ||
       _timestamp != rhs._timestamp;
 }
-
 
 Schema::IndexField::IndexField(const vespalib::stringref &name, DataType dt)
     : Field(name, dt),
@@ -160,7 +157,6 @@ Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
 {
 }
 
-
 void
 Schema::IndexField::write(vespalib::asciistream & os, const vespalib::stringref & prefix) const
 {
@@ -170,7 +166,6 @@ Schema::IndexField::write(vespalib::asciistream & os, const vespalib::stringref 
     os << prefix << "positions " << (_positions ? "true" : "false") << "\n";
     os << prefix << "averageelementlen " << static_cast<int32_t>(_avgElemLen) << "\n";
 }
-
 
 bool
 Schema::IndexField::operator==(const IndexField &rhs) const
@@ -182,7 +177,6 @@ Schema::IndexField::operator==(const IndexField &rhs) const
               _avgElemLen == rhs._avgElemLen;
 }
 
-
 bool
 Schema::IndexField::operator!=(const IndexField &rhs) const
 {
@@ -192,7 +186,6 @@ Schema::IndexField::operator!=(const IndexField &rhs) const
                _positions != rhs._positions ||
               _avgElemLen != rhs._avgElemLen;
 }
-
 
 Schema::FieldSet::FieldSet(const std::vector<vespalib::string> & lines) :
     _name(ConfigParser::parse<vespalib::string>("name", lines)),
@@ -221,12 +214,15 @@ Schema::FieldSet::operator!=(const FieldSet &rhs) const
 }
 
 void
-Schema::writeToStream(vespalib::asciistream &os) const
+Schema::writeToStream(vespalib::asciistream &os, bool saveToDisk) const
 {
     writeFields(os, "attributefield", _attributeFields);
     writeFields(os, "summaryfield", _summaryFields);
     writeFieldSets(os, "fieldset", _fieldSets);
     writeFields(os, "indexfield", _indexFields);
+    if (!saveToDisk) {
+        writeFields(os, "importedattributefields", _importedAttributeFields);
+    }
 }
 
 Schema::Schema()
@@ -234,10 +230,12 @@ Schema::Schema()
       _attributeFields(),
       _summaryFields(),
       _fieldSets(),
+      _importedAttributeFields(),
       _indexIds(),
       _attributeIds(),
       _summaryIds(),
-      _fieldSetIds()
+      _fieldSetIds(),
+      _importedAttributeIds()
 {
 }
 
@@ -261,6 +259,7 @@ Schema::loadFromFile(const vespalib::stringref & fileName)
     _attributeFields = ConfigParser::parseArray<AttributeField>("attributefield", lines);
     _summaryFields = ConfigParser::parseArray<SummaryField>("summaryfield", lines);
     _fieldSets = ConfigParser::parseArray<FieldSet>("fieldset", lines);
+    _importedAttributeFields.clear(); // NOTE: these are not persisted to disk
     _indexIds.clear();
     for (size_t i(0), m(_indexFields.size()); i < m; i++) {
         _indexIds[_indexFields[i].getName()] = i;
@@ -277,6 +276,7 @@ Schema::loadFromFile(const vespalib::stringref & fileName)
     for (size_t i(0), m(_fieldSets.size()); i < m; i++) {
         _fieldSetIds[_fieldSets[i].getName()] = i;
     }
+    _importedAttributeIds.clear();
     return true;
 }
 
@@ -284,7 +284,7 @@ bool
 Schema::saveToFile(const vespalib::stringref & fileName) const
 {
     vespalib::asciistream os;
-    writeToStream(os);
+    writeToStream(os, true);
     std::ofstream file(fileName.c_str());
     if (!file) {
         LOG(warning, "Could not open output file '%s' as part of saveToFile()", fileName.c_str());
@@ -321,7 +321,7 @@ vespalib::string
 Schema::toString() const
 {
     vespalib::asciistream os;
-    writeToStream(os);
+    writeToStream(os, false);
     return os.str();
 }
 
@@ -383,6 +383,12 @@ Schema::addSummaryField(const SummaryField &field)
 }
 
 Schema &
+Schema::addImportedAttributeField(const ImportedAttributeField &field)
+{
+    return addField(field, *this, _importedAttributeFields, _importedAttributeIds);
+}
+
+Schema &
 Schema::addFieldSet(const FieldSet &fieldSet)
 {
     return addField(fieldSet, *this, _fieldSets, _fieldSetIds);
@@ -406,13 +412,11 @@ Schema::getSummaryFieldId(const vespalib::stringref & name) const
     return getFieldId(name, _summaryIds);
 }
 
-
 uint32_t
 Schema::getFieldSetId(const vespalib::stringref &name) const
 {
     return getFieldId(name, _fieldSetIds);
 }
-
 
 void
 Schema::swap(Schema &rhs)
@@ -421,12 +425,13 @@ Schema::swap(Schema &rhs)
     _attributeFields.swap(rhs._attributeFields);
     _summaryFields.swap(rhs._summaryFields);
     _fieldSets.swap(rhs._fieldSets);
+    _importedAttributeFields.swap(rhs._importedAttributeFields);
     _indexIds.swap(rhs._indexIds);
     _attributeIds.swap(rhs._attributeIds);
     _summaryIds.swap(rhs._summaryIds);
     _fieldSetIds.swap(rhs._fieldSetIds);
+    _importedAttributeIds.swap(rhs._importedAttributeIds);
 }
-
 
 void
 Schema::clear()
@@ -435,12 +440,13 @@ Schema::clear()
     _attributeFields.clear();
     _summaryFields.clear();
     _fieldSets.clear();
+    _importedAttributeFields.clear();
     _indexIds.clear();
     _attributeIds.clear();
     _summaryIds.clear();
     _fieldSetIds.clear();
+    _importedAttributeIds.clear();
 }
-
 
 namespace {
 // Helper class allowing the is_matching specialization to access the schema.
@@ -579,31 +585,31 @@ bool
 Schema::operator==(const Schema &rhs) const
 {
     return _indexFields == rhs._indexFields &&
-       _attributeFields == rhs._attributeFields &&
-         _summaryFields == rhs._summaryFields &&
-             _fieldSets == rhs._fieldSets;
+            _attributeFields == rhs._attributeFields &&
+            _summaryFields == rhs._summaryFields &&
+            _fieldSets == rhs._fieldSets &&
+            _importedAttributeFields == rhs._importedAttributeFields;
 }
-
 
 bool
 Schema::operator!=(const Schema &rhs) const
 {
     return _indexFields != rhs._indexFields ||
-       _attributeFields != rhs._attributeFields ||
-         _summaryFields != rhs._summaryFields ||
-             _fieldSets != rhs._fieldSets;
+            _attributeFields != rhs._attributeFields ||
+            _summaryFields != rhs._summaryFields ||
+            _fieldSets != rhs._fieldSets ||
+            _importedAttributeFields != rhs._importedAttributeFields;
 }
-
 
 bool
 Schema::empty() const
 {
     return _indexFields.empty() &&
-        _attributeFields.empty() &&
-        _summaryFields.empty() &&
-        _fieldSets.empty();
+            _attributeFields.empty() &&
+            _summaryFields.empty() &&
+            _fieldSets.empty() &&
+            _importedAttributeFields.empty();
 }
-
 
 } // namespace search::index
 } // namespace search

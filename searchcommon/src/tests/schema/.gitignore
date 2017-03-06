@@ -2,6 +2,7 @@
 /Makefile
 /schema_test
 searchcommon_schema_test_app
+/schema-no-imported-fields.txt
 /schema-with-timestamps.txt
 /schema-without-timestamps.txt
 /schema.txt
