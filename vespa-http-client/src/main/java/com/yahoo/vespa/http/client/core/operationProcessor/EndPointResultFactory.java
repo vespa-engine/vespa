@@ -41,13 +41,13 @@ public final class EndPointResultFactory {
     }
 
     public static EndpointResult createError(
-            Endpoint endpoint, String operationId, Exception exception) {
-        return new EndpointResult(operationId, new Result.Detail(endpoint, false, false, null, exception));
+            Endpoint endpoint, String operationId, boolean isConditionNotMetError, Exception exception) {
+        return new EndpointResult(operationId, new Result.Detail(endpoint, false, false, isConditionNotMetError, null, exception));
     }
 
     public static EndpointResult createTransientError(
             Endpoint endpoint, String operationId, Exception exception) {
-        return new EndpointResult(operationId, new Result.Detail(endpoint, false, true, null, exception));
+        return new EndpointResult(operationId, new Result.Detail(endpoint, false, true, false, null, exception));
     }
 
     private static EndpointResult parseResult(String line, Endpoint endpoint) {
@@ -71,6 +71,7 @@ public final class EndPointResultFactory {
                     new Result.Detail(endpoint,
                             reply.errorCode.isSuccess(),
                             reply.errorCode.isTransient(),
+                            reply.isConditionNotMet,
                             reply.traceMessage,
                             exception));
         } catch (Throwable t) {

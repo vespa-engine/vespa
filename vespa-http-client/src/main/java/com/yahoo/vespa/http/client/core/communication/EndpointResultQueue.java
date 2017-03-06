@@ -104,7 +104,7 @@ class EndpointResultQueue {
     }
 
     private synchronized void failedOperationId(String operationId, Exception exception) {
-        EndpointResult endpointResult = EndPointResultFactory.createError(endpoint, operationId, exception);
+        EndpointResult endpointResult = EndPointResultFactory.createError(endpoint, operationId, false, exception);
         operationProcessor.resultReceived(endpointResult, clusterId);
     }
 

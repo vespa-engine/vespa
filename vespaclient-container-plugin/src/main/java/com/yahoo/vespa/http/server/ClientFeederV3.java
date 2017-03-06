@@ -154,7 +154,7 @@ class ClientFeederV3 {
                         + Exceptions.toMessageString(e), e);
             } finally {
                 try {
-                    replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, null));
+                    replies.add(createOperationStatus("-", "-", ErrorCode.END_OF_FEED, false, null));
                 } catch (InterruptedException e) {
                     // NOP, we are already exiting the thread
                 }
@@ -196,7 +196,7 @@ class ClientFeederV3 {
                     log.log(LogLevel.DEBUG, Exceptions.toMessageString(e), e);
                 }
                 repliesFromOldMessages.add(new OperationStatus(
-                        Exceptions.toMessageString(e), operationId.get(), ErrorCode.ERROR, ""));
+                        Exceptions.toMessageString(e), operationId.get(), ErrorCode.ERROR, false, ""));
 
                 continue;
             }
@@ -246,7 +246,7 @@ class ClientFeederV3 {
 
             } catch  (RuntimeException e) {
                 repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(), Exceptions.toMessageString(e),
-                        ErrorCode.ERROR, msg.get().getMessage()));
+                        ErrorCode.ERROR, false, msg.get().getMessage()));
                 continue;
             }
 
@@ -256,24 +256,25 @@ class ClientFeederV3 {
                 log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.get().getOperationId());
             } else if (!result.getError().isFatal()) {
                 repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(), result.getError().getMessage(),
-                        ErrorCode.TRANSIENT_ERROR, msg.get().getMessage()));
+                        ErrorCode.TRANSIENT_ERROR, false, msg.get().getMessage()));
                 continue;
             } else {
                 // should probably not happen, but everybody knows stuff that
                 // shouldn't happen, happens all the time
+                boolean isConditionNotMet = result.getError().getCode() == DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
                 repliesFromOldMessages.add(createOperationStatus(msg.get().getOperationId(), result.getError().getMessage(),
-                        ErrorCode.ERROR, msg.get().getMessage()));
+                        ErrorCode.ERROR, isConditionNotMet, msg.get().getMessage()));
                 continue;
             }
         }
     }
 
-    private OperationStatus createOperationStatus(String id, String message, ErrorCode code, Message msg)
+    private OperationStatus createOperationStatus(String id, String message, ErrorCode code, boolean isConditionNotMet, Message msg)
             throws InterruptedException {
         String traceMessage = msg != null && msg.getTrace() != null &&  msg.getTrace().getLevel() > 0
                 ? msg.getTrace().toString()
                 : "";
-        return new OperationStatus(message, id, code, traceMessage);
+        return new OperationStatus(message, id, code, isConditionNotMet, traceMessage);
     }
 
     // protected for mocking

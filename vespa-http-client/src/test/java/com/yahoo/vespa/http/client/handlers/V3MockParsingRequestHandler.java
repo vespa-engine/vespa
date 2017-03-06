@@ -42,7 +42,7 @@ public class V3MockParsingRequestHandler extends AbstractHandler {
         DISCONNECT_IMMEDIATELY, DONT_ACCEPT_VERSION, RETURN_UNEXPECTED_VERSION,
         INTERNAL_SERVER_ERROR, COULD_NOT_FEED, MBUS_RETURNED_ERROR,
         NEVER_RETURN_ANY_RESULTS, DELAYED_RESPONSE, BAD_REQUEST, SERVER_ERROR_TWICE_THEN_OK,
-        EXPECT_HIGHEST_PRIORITY_AND_TRACELEVEL_123
+        EXPECT_HIGHEST_PRIORITY_AND_TRACELEVEL_123, CONDITON_NOT_MET
     }
 
     public V3MockParsingRequestHandler() {
@@ -120,6 +120,9 @@ public class V3MockParsingRequestHandler extends AbstractHandler {
                 checkIfSessionThenHighPriorityAndTraceLevel123(request);
                 allOk(baseRequest, request, response);
                 break;
+            case CONDITON_NOT_MET:
+                conditionNotMetRequest(baseRequest, request, response);
+                break;
             default:
                 throw new IllegalArgumentException("Test scenario " + scenario + " not supported.");
         }
@@ -132,6 +135,24 @@ public class V3MockParsingRequestHandler extends AbstractHandler {
         }
     }
 
+    private void conditionNotMetRequest(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String sessionId = getSessionId(request);
+        setHeaders(response, sessionId);
+        response.setStatus(responseCode);
+        baseRequest.setHandled(true);
+        PrintWriter responseWriter = response.getWriter();
+        String operationId;
+        while ((operationId = readOperationId(request.getInputStream())) != null) {
+            long lengthToSkip = readByteLength(request.getInputStream());
+            while (lengthToSkip > 0) {
+                long skipped = request.getInputStream().skip(lengthToSkip);
+                lengthToSkip -= skipped;
+            }
+            respondConditionNotMet(responseWriter, operationId);
+        }
+        closeChannel(responseWriter);
+
+    }
     private void badRequest(Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
         if (badRequestScenarioShouldReturnBadRequest.get()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -353,24 +374,29 @@ public class V3MockParsingRequestHandler extends AbstractHandler {
 
     private void respondFailed(PrintWriter responseWriter, String docId) {
         final OperationStatus operationStatus =
-                new OperationStatus("mbus returned boom", docId, ErrorCode.ERROR, "trace");
+                new OperationStatus("mbus returned boom", docId, ErrorCode.ERROR, false, "trace");
         writeResponse(responseWriter, operationStatus);
     }
 
     private void respondTransientFailed(PrintWriter responseWriter, String docId) {
         final OperationStatus operationStatus = new OperationStatus(
-                "Could not put", docId, ErrorCode.TRANSIENT_ERROR, "");
+                "Could not put", docId, ErrorCode.TRANSIENT_ERROR, false, "");
         writeResponse(responseWriter, operationStatus);
     }
 
     private void respondFailedWithTransitiveErrorSeenFromClient(PrintWriter responseWriter, String docId) {
         final OperationStatus operationStatus =
-                new OperationStatus("NETWORK_ERROR", docId, ErrorCode.ERROR, "trace");
+                new OperationStatus("NETWORK_ERROR", docId, ErrorCode.ERROR, false, "trace");
         writeResponse(responseWriter, operationStatus);
     }
 
+    private void respondConditionNotMet(PrintWriter responseWriter, String docId) {
+        final OperationStatus operationStatus =
+                new OperationStatus("this is a test", docId, ErrorCode.ERROR, true, "trace");
+        writeResponse(responseWriter, operationStatus);
+    }
     private void respondOK(PrintWriter responseWriter, String docId) {
-        final OperationStatus operationStatus = new OperationStatus("Doc fed", docId, ErrorCode.OK, "Trace message");
+        final OperationStatus operationStatus = new OperationStatus("Doc fed", docId, ErrorCode.OK, false, "Trace message");
         writeResponse(responseWriter, operationStatus);
     }
 

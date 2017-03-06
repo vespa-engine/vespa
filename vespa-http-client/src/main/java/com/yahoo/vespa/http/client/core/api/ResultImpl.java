@@ -24,6 +24,7 @@ final public class ResultImpl extends Result {
     private final Document document;
     private final boolean success;
     private final boolean _transient;
+    private final boolean isConditionNotMet;
     private final List<Detail> details;
     private final String localTrace;
 
@@ -32,12 +33,15 @@ final public class ResultImpl extends Result {
         this.details = Collections.unmodifiableList(new ArrayList<>(values));
         boolean totalSuccess = true;
         boolean totalTransient = true;
+        boolean isConditionNotMet = true;
         for (Detail d : details) {
             if (!d.isSuccess()) {totalSuccess = false; }
             if (!d.isTransient()) {totalTransient = false; }
+            if (!d.isConditionNotMet()) { isConditionNotMet = false; }
         }
         this.success = totalSuccess;
         this._transient = totalTransient;
+        this.isConditionNotMet = isConditionNotMet;
         this.localTrace = localTrace == null ? null : localTrace.toString();
     }
 
@@ -65,6 +69,10 @@ final public class ResultImpl extends Result {
     public boolean isTransient() {
         return _transient;
     }
+
+    @Override
+    public boolean isConditionNotMet() { return isConditionNotMet; }
+
 
     @Override
     public List<Detail> getDetails() { return details; }

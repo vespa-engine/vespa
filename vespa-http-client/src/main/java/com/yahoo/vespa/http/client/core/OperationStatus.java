@@ -15,16 +15,19 @@ import java.util.Iterator;
  */
 @Beta
 public final class OperationStatus {
+    public static final String IS_CONDITION_NOT_MET = "IS-CONDITION-NOT-MET";
     public final String message;
     public final String operationId;
     public final ErrorCode errorCode;
     public final String traceMessage;
+    public final boolean isConditionNotMet;
 
     private static final char EOL = '\n';
     private static final char SEPARATOR = ' ';
     private static final Splitter spaceSep = Splitter.on(SEPARATOR);
 
-    public OperationStatus(String message, String operationId, ErrorCode errorCode, String traceMessage) {
+    public OperationStatus(String message, String operationId, ErrorCode errorCode, boolean isConditionNotMet, String traceMessage) {
+        this.isConditionNotMet = isConditionNotMet;
         this.message = message;
         this.operationId = operationId;
         this.errorCode = errorCode;
@@ -56,19 +59,25 @@ public final class OperationStatus {
                 .toString();
         errorCode = ErrorCode.valueOf(Encoder.decode(input.next(),
                 new StringBuilder()).toString());
+
         message = Encoder.decode(input.next(), new StringBuilder()).toString();
         // We are backwards compatible, meaning it is ok not to supply the last argument.
+        boolean isConditionNotMet = false;
+        if (message.startsWith(IS_CONDITION_NOT_MET)) {
+            message = message.replaceFirst(IS_CONDITION_NOT_MET, "");
+            isConditionNotMet = true;
+        }
         if (input.hasNext()) {
             traceMessage = Encoder.decode(input.next(), new StringBuilder()).toString();
         }
-        return new OperationStatus(message, operationId, errorCode, traceMessage);
+        return new OperationStatus(message, operationId, errorCode, isConditionNotMet, traceMessage);
     }
 
     public String render() {
         StringBuilder s = new StringBuilder();
         Encoder.encode(operationId, s).append(SEPARATOR);
         Encoder.encode(errorCode.toString(), s).append(SEPARATOR);
-        Encoder.encode(message, s).append(SEPARATOR);
+        Encoder.encode(isConditionNotMet ? IS_CONDITION_NOT_MET + message : message, s).append(SEPARATOR);
         Encoder.encode(traceMessage, s).append(EOL);
         return s.toString();
     }

@@ -52,6 +52,12 @@ public abstract class Result {
      */
     abstract public boolean isTransient();
 
+    /**
+     * Returns true if a error was caused by condition-not-met in the document operation.
+     * @return true if condition is not met.
+     */
+    abstract public boolean isConditionNotMet();
+
     abstract public List<Detail> getDetails();
 
     /**
@@ -71,14 +77,16 @@ public abstract class Result {
         private final Endpoint endpoint;
         private final boolean success;
         private final boolean _transient;
+        private final boolean isConditionNotMet;
         private final Exception exception;
         private final String traceMessage;
         private final long timeStampMillis = System.currentTimeMillis();
 
-        public Detail(Endpoint endpoint, boolean success, boolean _transient, String traceMessage, Exception e) {
+        public Detail(Endpoint endpoint, boolean success, boolean _transient, boolean isConditionNotMet, String traceMessage, Exception e) {
             this.endpoint = endpoint;
             this.success = success;
             this._transient = _transient;
+            this.isConditionNotMet = isConditionNotMet;
             this.exception = e;
             this.traceMessage = traceMessage;
         }
@@ -87,6 +95,7 @@ public abstract class Result {
             this.endpoint = endpoint;
             this.success = true;
             this._transient = true;
+            this.isConditionNotMet = false;
             this.exception = null;
             this.traceMessage = null;
         }
@@ -120,6 +129,14 @@ public abstract class Result {
         }
 
         /**
+         * Returns true if a condition in the document operation was not met.
+         * @return if condition not met in operation.
+         */
+        public boolean isConditionNotMet() {
+            return isConditionNotMet;
+        }
+
+        /**
          * Returns any exception related to this Detail, if unsuccessful. Might be null.
          *
          * @return any exception related to this Detail, if unsuccessful. Might be null.
@@ -143,6 +160,7 @@ public abstract class Result {
             b.append("success=").append(success).append(" ");
             if (!success) {
                 b.append("transient=").append(_transient).append(" ");
+                b.append("conditionNotMet=").append(isConditionNotMet).append(" ");
             }
             if (exception != null) {
                 b.append("exception='").append(Exceptions.toMessageString(exception)).append("' ");

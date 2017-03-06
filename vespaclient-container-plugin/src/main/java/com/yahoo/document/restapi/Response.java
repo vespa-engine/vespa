@@ -25,16 +25,18 @@ public class Response extends HttpResponse {
         jsonMessage = objectNode.toString();
     }
 
-    public static Response createErrorResponse(int code, String errorMessage) {
-        ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.putArray("errors").add(errorMessage);
-        return new Response(code, Optional.of(objectNode), Optional.<RestUri>empty());
+    public static Response createErrorResponse(int code, String errorMessage, RestUri.apiErrorCodes errorID) {
+        return createErrorResponse(code, errorMessage, null, errorID);
     }
 
-    public static Response createErrorResponse(int code, String errorMessage, RestUri restUri) {
+    public static Response createErrorResponse(int code, String errorMessage, RestUri restUri, RestUri.apiErrorCodes errorID) {
+        ObjectNode errorNode = objectMapper.createObjectNode();
+        errorNode.put("description", errorID.name() + " " + errorMessage);
+        errorNode.put("id", errorID.value);
+
         ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.putArray("errors").add(errorMessage);
-        return new Response(code, Optional.of(objectNode), Optional.of(restUri));
+        objectNode.putArray("errors").add(errorNode);
+        return new Response(code, Optional.of(objectNode), Optional.ofNullable(restUri));
     }
 
     @Override

@@ -96,7 +96,6 @@ public class RestApiTest {
         assertThat(x, is(post_test_response_cond));
     }
 
-    String post_test_empty_response = "{\"errors\":[\"Could not read document, no document?\"]";
     @Test
     public void testEmptyPost() throws Exception {
         Request request = new Request("http://localhost:" + getFirstListenPort() + post_test_uri);
@@ -104,7 +103,7 @@ public class RestApiTest {
         StringEntity entity = new StringEntity("", ContentType.create("application/json"));
         httpPost.setEntity(entity);
         String x  = doRest(httpPost);
-        assertThat(x, startsWith(post_test_empty_response));
+        assertThat(x, containsString("Could not read document, no document?"));
     }
 
     String update_test_uri = "/document/v1/namespace/testdocument/docid/c";

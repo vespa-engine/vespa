@@ -404,7 +404,7 @@ class IOThread implements Runnable, AutoCloseable {
 
         for (Document document : documentQueue.removeAllDocuments()) {
             EndpointResult endpointResult=
-                    EndPointResultFactory.createError(endpoint, document.getOperationId(), exception);
+                    EndPointResultFactory.createError(endpoint, document.getOperationId(), false, exception);
             resultQueue.failOperation(endpointResult, clusterId);
         }
     }

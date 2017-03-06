@@ -4,7 +4,6 @@ package com.yahoo.documentapi.messagebus;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.Result;
@@ -211,13 +210,21 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     private static Result toResult(long reqId, com.yahoo.messagebus.Result mbusResult) {
         if (mbusResult.isAccepted()) {
             return new Result(reqId);
-        } else if (mbusResult.getError().getCode() == ErrorCode.SEND_QUEUE_FULL) {
-            return new Result(Result.ResultType.TRANSIENT_ERROR,
-                              new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")"));
-        } else {
-            return new Result(Result.ResultType.FATAL_ERROR,
-                              new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")"));
         }
+        final Error error = new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")");
+        final Result.ResultType resultType;
+        switch (mbusResult.getError().getCode()) {
+            case ErrorCode.SEND_QUEUE_FULL:
+                resultType = Result.ResultType.TRANSIENT_ERROR;
+                break;
+            case DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED:
+                resultType = Result.ResultType.CONDITION_NOT_MET_ERROR;
+                break;
+            default:
+                resultType = Result.ResultType.FATAL_ERROR;
+                break;
+        }
+        return new Result(resultType, error);
     }
 
     private static Response toResponse(Reply reply) {

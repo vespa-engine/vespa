@@ -66,12 +66,26 @@ public class Result {
     public long getRequestId() { return requestId; }
 
     /**
+     * Deprecated: Use getResultType() instead.
      * Returns the type of result.
      *
-     * @return the type of result, typically if this is an error or a success, and what kind of error
+     * @return the type of result, typically if this is an error or a success, and what kind of error.
+     *          Does not return CONDITION_NOT_MET_ERROR for backward compatibility.
      * @see com.yahoo.documentapi.Result.ResultType
      */
-    public ResultType getType() { return type; }
+    @Deprecated
+    public ResultType getType() { return
+            type == ResultType.CONDITION_NOT_MET_ERROR
+                    ? ResultType.FATAL_ERROR
+                    : type;}
+
+    /**
+     * Returns the type of result.
+     *
+     * @return the type of result, typically if this is an error or a success, and what kind of error.
+     * @see com.yahoo.documentapi.Result.ResultType
+     */
+    public ResultType getResultType() { return type;}
 
     /** The types that a Result can have. */
     public enum ResultType {
@@ -80,6 +94,8 @@ public class Result {
         /** The request failed, but may be successful if retried at a later time. */
         TRANSIENT_ERROR,
         /** The request failed, and retrying is pointless. */
-        FATAL_ERROR
+        FATAL_ERROR,
+        /** Condition specified in operation not met error  */
+        CONDITION_NOT_MET_ERROR
     }
 }

@@ -57,7 +57,7 @@ public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
         TestUtils.writeDocuments(session, Collections.<TestDocument>singletonList(documents.get(0)));
     }
 
-    private void testServerWithMock(V3MockParsingRequestHandler serverMock, boolean failFast) throws Exception {
+    private void testServerWithMock(V3MockParsingRequestHandler serverMock, boolean failFast, boolean conditionNotMet) throws Exception {
         try (Server server = new Server(serverMock, 0);
              Session session = SessionFactory.create(
                      new SessionParams.Builder()
@@ -84,7 +84,9 @@ public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
             TestDocument document = documents.get(0);
             Result r = results.remove(document.getDocumentId());
             assertThat(r, not(nullValue()));
+            assertThat(r.isConditionNotMet(), is(conditionNotMet));
             assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
+            assertThat(r.getDetails().toString(), r.isConditionNotMet(), is(conditionNotMet));
             assertThat(results.isEmpty(), is(true));
         }
     }
@@ -109,33 +111,33 @@ public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
 
     @Test
     public void requireThatBadResponseCodeFails() throws Exception {
-        testServerWithMock(new V3MockParsingRequestHandler(401/*Unauthorized*/), true);
-        testServerWithMock(new V3MockParsingRequestHandler(403/*Forbidden*/), true);
-        testServerWithMock(new V3MockParsingRequestHandler(407/*Proxy Authentication Required*/), true);
+        testServerWithMock(new V3MockParsingRequestHandler(401/*Unauthorized*/), true, false);
+        testServerWithMock(new V3MockParsingRequestHandler(403/*Forbidden*/), true, false);
+        testServerWithMock(new V3MockParsingRequestHandler(407/*Proxy Authentication Required*/), true, false);
     }
 
     @Test
     public void requireThatUnexpectedVersionIsHandledProperly() throws Exception {
         testServerWithMock(new V3MockParsingRequestHandler(
-                200, V3MockParsingRequestHandler.Scenario.RETURN_UNEXPECTED_VERSION), true);
+                200, V3MockParsingRequestHandler.Scenario.RETURN_UNEXPECTED_VERSION), true, false);
     }
 
     @Test
     public void requireThatNonAcceptedVersionIsHandledProperly() throws Exception {
         testServerWithMock(new V3MockParsingRequestHandler(
-                200, V3MockParsingRequestHandler.Scenario.DONT_ACCEPT_VERSION), true);
+                200, V3MockParsingRequestHandler.Scenario.DONT_ACCEPT_VERSION), true, false);
     }
 
     @Test
     public void requireThatNon200OkIsHandledProperly() throws Exception {
         testServerWithMock(new V3MockParsingRequestHandler(
-                200, V3MockParsingRequestHandler.Scenario.INTERNAL_SERVER_ERROR), true);
+                200, V3MockParsingRequestHandler.Scenario.INTERNAL_SERVER_ERROR), true, false);
     }
 
     @Test
     public void requireThatMbusErrorIsHandledProperly() throws Exception {
         testServerWithMock(new V3MockParsingRequestHandler(
-                200, V3MockParsingRequestHandler.Scenario.MBUS_RETURNED_ERROR), false);
+                200, V3MockParsingRequestHandler.Scenario.MBUS_RETURNED_ERROR), false, false);
     }
 
     @Test
@@ -181,12 +183,17 @@ public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
     @Test
     public void requireThatCouldNotFeedErrorIsHandledProperly() throws Exception {
         testServerWithMock(new V3MockParsingRequestHandler(
-                200, V3MockParsingRequestHandler.Scenario.COULD_NOT_FEED), false);
+                200, V3MockParsingRequestHandler.Scenario.COULD_NOT_FEED), false, false);
     }
 
     @Test
     public void requireThatImmediateDisconnectIsHandledProperly() throws Exception {
         testServerWithMock(new V3MockParsingRequestHandler(
-                200, V3MockParsingRequestHandler.Scenario.DISCONNECT_IMMEDIATELY), true);
+                200, V3MockParsingRequestHandler.Scenario.DISCONNECT_IMMEDIATELY), true, false);
+    }
+    @Test
+    public void testConditionNotMet() throws Exception {
+        testServerWithMock(new V3MockParsingRequestHandler(
+                200, V3MockParsingRequestHandler.Scenario.CONDITON_NOT_MET), false, true);
     }
 }

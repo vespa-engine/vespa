@@ -45,7 +45,7 @@ public class MockedOperationHandler implements OperationHandler {
             String theLog = log.toString();
             log = new StringBuilder();
             deleteCount = 0;
-            throw new RestApiException(Response.createErrorResponse(666, theLog));
+            throw new RestApiException(Response.createErrorResponse(666, theLog, RestUri.apiErrorCodes.ERROR_ID_BASIC_USAGE));
         }
         log.append("DELETE: " + restUri.generateFullId());
     }

@@ -184,7 +184,7 @@ public class Feeder implements Runnable {
             requestReceived.countDown();
             putClient();
             try {
-                enqueue("-", "-", ErrorCode.END_OF_FEED, null);
+                enqueue("-", "-", ErrorCode.END_OF_FEED, false, null);
             } catch (InterruptedException e) {
                 // NOP, we are already exiting the thread
             }
@@ -252,7 +252,7 @@ public class Feeder implements Runnable {
                     }
                 } catch (RuntimeException e) {
                     enqueue(msg.first, Exceptions.toMessageString(e),
-                            ErrorCode.ERROR, msg.second);
+                            ErrorCode.ERROR, false, msg.second);
                     return;
                 }
                 if (result.isAccepted() || result.getError().getCode() != SEND_QUEUE_FULL) {
@@ -272,12 +272,13 @@ public class Feeder implements Runnable {
                 updateOpsPerSec();
                 log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.first);
             } else if (!result.getError().isFatal()) {
-                enqueue(msg.first, result.getError().getMessage(), ErrorCode.TRANSIENT_ERROR, msg.second);
+                enqueue(msg.first, result.getError().getMessage(), ErrorCode.TRANSIENT_ERROR, false, msg.second);
                 break;
             } else {
                 // should probably not happen, but everybody knows stuff that
                 // shouldn't happen, happens all the time
-                enqueue(msg.first, result.getError().getMessage(), ErrorCode.ERROR, msg.second);
+                boolean isConditionNotMet = result.getError().getCode() == DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
+                enqueue(msg.first, result.getError().getMessage(), ErrorCode.ERROR, isConditionNotMet, msg.second);
                 break;
             }
         }
@@ -487,12 +488,12 @@ public class Feeder implements Runnable {
         --numPending;
     }
 
-    private void enqueue(String id, String message, ErrorCode code, Message msg)
+    private void enqueue(String id, String message, ErrorCode code, boolean isConditionalNotMet, Message msg)
             throws InterruptedException {
         String traceMessage = msg != null && msg.getTrace() != null &&  msg.getTrace().getLevel() > 0
                 ? msg.getTrace().toString()
                 : "";
-        operations.put(new OperationStatus(message, id, code, traceMessage));
+        operations.put(new OperationStatus(message, id, code, isConditionalNotMet, traceMessage));
     }
 
     public void waitForRequestReceived() throws InterruptedException {

@@ -247,6 +247,7 @@ public class OperationProcessor {
                     EndPointResultFactory.createError(
                             eio.getEndpoint(),
                             document.getOperationId(),
+                            false,
                             eio),
                     clusterConnection.getClusterId());
         }

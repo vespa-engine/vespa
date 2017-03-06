@@ -31,7 +31,7 @@ public class DryRunGatewayConnection implements GatewayConnection {
     public InputStream writeOperations(List<Document> docs) throws ServerResponseException, IOException {
         StringBuilder result = new StringBuilder();
         for (Document doc : docs) {
-            OperationStatus operationStatus = new OperationStatus("ok", doc.getOperationId(), ErrorCode.OK, "");
+            OperationStatus operationStatus = new OperationStatus("ok", doc.getOperationId(), ErrorCode.OK, false, "");
             result.append(operationStatus.render());
         }
         return new ByteArrayInputStream(result.toString().getBytes(StandardCharsets.UTF_8));

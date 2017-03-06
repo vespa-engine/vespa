@@ -114,7 +114,7 @@ public class RestApi extends LoggingRequestHandler {
             if (threadsAvailableForApi.decrementAndGet() < 1) {
                 return Response.createErrorResponse(
                         429 /* Too Many Requests */,
-                        "Too many parallel requests, consider using http-vespa-java-client. Please try again later.");
+                        "Too many parallel requests, consider using http-vespa-java-client. Please try again later.", RestUri.apiErrorCodes.TOO_MANY_PARALLEL_REQUESTS);
             }
             return handleInternal(request);
         } finally {
@@ -130,13 +130,13 @@ public class RestApi extends LoggingRequestHandler {
         } catch (RestApiException e) {
             return e.getResponse();
         } catch (Exception e2) {
-            return Response.createErrorResponse(500, "Exception while parsing URI: " + e2.getMessage());
+            return Response.createErrorResponse(500, "Exception while parsing URI: " + e2.getMessage(), RestUri.apiErrorCodes.URL_PARSING);
         }
 
         Optional<Boolean> create = parseBoolean(CREATE_PARAMETER_NAME, request);
         if (create == null) {
             return Response.createErrorResponse(403, "Non valid value for 'create' parameter, must be empty, true, or " +
-                    "false: " + request.getProperty(CREATE_PARAMETER_NAME));
+                    "false: " + request.getProperty(CREATE_PARAMETER_NAME), RestUri.apiErrorCodes.INVALID_CREATE_VALUE);
         }
         String condition = request.getProperty(CONDITION_PARAMETER_NAME);
         Optional<String> route = Optional.ofNullable(request.getProperty(ROUTE_PARAMETER_NAME));
@@ -163,7 +163,7 @@ public class RestApi extends LoggingRequestHandler {
         } catch (Exception e2) {
             // We always blame the user. This might be a bit nasty, but the parser throws various kind of exception
             // types, but with nice descriptions.
-            return Response.createErrorResponse(400, e2.getMessage(), restUri);
+            return Response.createErrorResponse(400, e2.getMessage(), restUri, RestUri.apiErrorCodes.PARSER_ERROR);
         }
         return new Response(200, resultJson, Optional.of(restUri));
     }
@@ -221,7 +221,8 @@ public class RestApi extends LoggingRequestHandler {
                 return Response.createErrorResponse(
                         400,
                         "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.",
-                        restUri);
+                        restUri,
+                        RestUri.apiErrorCodes.GROUP_AND_EXPRESSION_ERROR);
             }
             RestUri.Group group = restUri.getGroup().get();
             if (group.name == 'n') {

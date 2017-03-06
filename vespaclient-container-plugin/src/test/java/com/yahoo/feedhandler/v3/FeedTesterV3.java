@@ -111,7 +111,7 @@ public class FeedTesterV3 {
                         Object[] args = invocation.getArguments();
                         PutDocumentMessage putDocumentMessage = (PutDocumentMessage) args[0];
                         ReplyContext replyContext = (ReplyContext)putDocumentMessage.getContext();
-                        replyContext.feedReplies.add(new OperationStatus("message", replyContext.docId, ErrorCode.OK, "trace"));
+                        replyContext.feedReplies.add(new OperationStatus("message", replyContext.docId, ErrorCode.OK, false, "trace"));
                         Result result = mock(Result.class);
                         when(result.isAccepted()).thenReturn(true);
                         return result;
