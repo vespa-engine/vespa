@@ -260,10 +260,10 @@ public:
         document::Document::SP xdoc(new document::Document(doc));
         PutOperation op(bucketId,
                         ts,
-                        xdoc,
-                        serialNum,
-                        dbdId,
-                        prevDbdId);
+                        xdoc);
+        op.setSerialNum(serialNum);
+        op.setDbDocumentId(dbdId);
+        op.setPrevDbDocumentId(prevDbdId);
         _ddb->getFeedHandler().storeOperation(op);
         SearchView *sv(dynamic_cast<SearchView *>
                        (_ddb->getReadySubDB()->getSearchView().get()));

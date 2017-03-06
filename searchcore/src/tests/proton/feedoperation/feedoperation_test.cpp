@@ -74,6 +74,31 @@ BucketId toBucket(const GlobalId &gid)
     return bucket;
 }
 
+uint32_t getDocSize(const Document &doc)
+{
+    vespalib::nbostream tstream;
+    doc.serialize(tstream);
+    uint32_t docSize = tstream.size();
+    assert(docSize != 0);
+    return docSize;
+}
+
+uint32_t getDocIdSize(const DocumentId &doc_id)
+{
+    return doc_id.toString().size() + 1;
+}
+
+void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t expDocSize)
+{
+    EXPECT_EQUAL(expBucket, op.getBucketId());
+    EXPECT_EQUAL(10, op.getTimestamp().getValue());
+    EXPECT_EQUAL(expDocSize, op.getSerializedDocSize());
+    EXPECT_EQUAL(1, op.getSubDbId());
+    EXPECT_EQUAL(2, op.getLid());
+    EXPECT_EQUAL(3, op.getPrevSubDbId());
+    EXPECT_EQUAL(4, op.getPrevLid());
+}
+
 DocumentTypeRepo::UP
 makeDocTypeRepo(void)
 {
@@ -108,7 +133,11 @@ public:
                        addUpdate(AssignValueUpdate(StringFieldValue("newval"))));
         return upd;
     }
-
+    auto makeDoc() {
+        auto doc(std::make_shared<Document>(_docType, docId));
+        doc->setValue("string", StringFieldValue("stringval"));
+        return doc;
+    }
 };
 
 TEST("require that toString() on derived classes are meaningful")
@@ -267,6 +296,73 @@ TEST_F("require that we can deserialize old update operations", Fixture)
         EXPECT_EQUAL(*upd, *op.getUpdate());
         EXPECT_EQUAL(bucket, op.getBucketId());
         EXPECT_EQUAL(10, op.getTimestamp().getValue());
+    }
+}
+
+TEST_F("require that we can serialize and deserialize put operations", Fixture)
+{
+    vespalib::nbostream stream;
+    BucketId bucket(toBucket(docId.getGlobalId()));
+    auto doc(f.makeDoc());
+    uint32_t expSerializedDocSize = getDocSize(*doc);
+    EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
+    {
+        PutOperation op(bucket, Timestamp(10), doc);
+        op.setDbDocumentId({1, 2});
+        op.setPrevDbDocumentId({3, 4});
+        EXPECT_EQUAL(0, op.getSerializedDocSize());
+        op.serialize(stream);
+        EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
+    }
+    {
+        PutOperation op;
+        op.deserialize(stream, *f._repo);
+        EXPECT_EQUAL(*doc, *op.getDocument());
+        TEST_DO(assertDocumentOperation(op, bucket, expSerializedDocSize));
+    }
+}
+
+TEST_F("require that we can serialize and deserialize move operations", Fixture)
+{
+    vespalib::nbostream stream;
+    BucketId bucket(toBucket(docId.getGlobalId()));
+    auto doc(f.makeDoc());
+    uint32_t expSerializedDocSize = getDocSize(*doc);
+    EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
+    {
+        MoveOperation op(bucket, Timestamp(10), doc, {3, 4}, 1);
+        op.setTargetLid(2);
+        EXPECT_EQUAL(0, op.getSerializedDocSize());
+        op.serialize(stream);
+        EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
+    }
+    {
+        MoveOperation op;
+        op.deserialize(stream, *f._repo);
+        EXPECT_EQUAL(*doc, *op.getDocument());
+        TEST_DO(assertDocumentOperation(op, bucket, expSerializedDocSize));
+    }
+}
+
+TEST_F("require that we can serialize and deserialize remove operations", Fixture)
+{
+    vespalib::nbostream stream;
+    BucketId bucket(toBucket(docId.getGlobalId()));
+    uint32_t expSerializedDocSize = getDocIdSize(docId);
+    EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
+    {
+        RemoveOperation op(bucket, Timestamp(10), docId);
+        op.setDbDocumentId({1, 2});
+        op.setPrevDbDocumentId({3, 4});
+        EXPECT_EQUAL(0, op.getSerializedDocSize());
+        op.serialize(stream);
+        EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
+    }
+    {
+        RemoveOperation op;
+        op.deserialize(stream, *f._repo);
+        EXPECT_EQUAL(docId, op.getDocumentId());
+        TEST_DO(assertDocumentOperation(op, bucket, expSerializedDocSize));
     }
 }
 

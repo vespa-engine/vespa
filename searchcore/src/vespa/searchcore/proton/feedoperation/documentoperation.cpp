@@ -20,7 +20,8 @@ DocumentOperation::DocumentOperation(Type type)
       _dbdId(),
       _prevDbdId(),
       _prevMarkedAsRemoved(false),
-      _prevTimestamp()
+      _prevTimestamp(),
+      _serializedDocSize(0)
 {
 }
 
@@ -34,28 +35,10 @@ DocumentOperation::DocumentOperation(Type type,
       _dbdId(),
       _prevDbdId(),
       _prevMarkedAsRemoved(false),
-      _prevTimestamp()
+      _prevTimestamp(),
+      _serializedDocSize(0)
 {
 }
-
-
-DocumentOperation::DocumentOperation(Type type,
-                                     const document::BucketId &bucketId,
-                                     const storage::spi::Timestamp &timestamp,
-                                     SerialNum serialNum,
-                                     DbDocumentId dbdId,
-                                     DbDocumentId prevDbdId)
-    : FeedOperation(type),
-      _bucketId(bucketId),
-      _timestamp(timestamp),
-      _dbdId(dbdId),
-      _prevDbdId(prevDbdId),
-      _prevMarkedAsRemoved(false),
-      _prevTimestamp()
-{
-    setSerialNum(serialNum);
-}
-
 
 void
 DocumentOperation::assertValidBucketId(const document::DocumentId &docId) const

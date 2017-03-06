@@ -14,12 +14,6 @@ public:
     RemoveOperation(const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
                     const document::DocumentId &docId);
-    RemoveOperation(const document::BucketId &bucketId,
-                    const storage::spi::Timestamp &timestamp,
-                    const document::DocumentId &docId,
-                    SerialNum serialNum,
-                    DbDocumentId dbdId,
-                    DbDocumentId prevDbdId);
     virtual ~RemoveOperation() {}
     const document::DocumentId &getDocumentId() const { return _docId; }
     virtual void serialize(vespalib::nbostream &os) const;
