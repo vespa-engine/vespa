@@ -24,4 +24,8 @@ public class JsonParserHelpers {
     public static void expectCompositeEnd(JsonToken token) {
         Preconditions.checkState(token.isStructEnd(), "Expected end of composite, got %s", token);
     }
+
+    public static void expectScalarValue(JsonToken token) {
+        Preconditions.checkState(token.isScalarValue(), "Expected to be scalar value, got %s", token);
+    }
 }

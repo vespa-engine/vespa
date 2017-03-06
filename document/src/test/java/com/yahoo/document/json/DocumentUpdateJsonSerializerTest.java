@@ -392,7 +392,7 @@ public class DocumentUpdateJsonSerializerTest {
                 "   'update': 'DOCUMENT_ID',",
                 "   'fields': {",
                 "       'int_array[5]': {",
-                "           'remove': {}",
+                "           'remove': 0",
                 "       }",
                 "   }",
                 "}"
@@ -440,7 +440,7 @@ public class DocumentUpdateJsonSerializerTest {
                 "           'assign': {",
                 "               'my_string_field': 'Some string'",
                 "           },",
-                "           'remove': {}",
+                "           'remove': 0",
                 "       }",
                 "   }",
                 "}"
