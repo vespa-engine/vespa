@@ -43,7 +43,7 @@ template <typename... Args>
 AttributePostingListIteratorT<PL>::
 AttributePostingListIteratorT(bool hasWeight, fef::TermFieldMatchData *matchData, Args &&... args)
     : AttributePostingListIterator(hasWeight, matchData),
-      _iterator(args...),
+      _iterator(std::forward<Args>(args)...),
       _postingInfo(1, 1),
       _postingInfoValid(false)
 {
@@ -67,7 +67,7 @@ template<typename... Args>
 FilterAttributePostingListIteratorT<PL>::
 FilterAttributePostingListIteratorT(fef::TermFieldMatchData *matchData, Args &&... args)
     : FilterAttributePostingListIterator(matchData),
-      _iterator(args...),
+      _iterator(std::forward<Args>(args)...),
       _postingInfo(1, 1),
       _postingInfoValid(false)
 {
