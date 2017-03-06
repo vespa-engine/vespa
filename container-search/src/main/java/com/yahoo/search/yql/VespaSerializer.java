@@ -62,6 +62,7 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -1096,6 +1097,7 @@ public class VespaSerializer {
         dispatchBuilder.put(AndSegmentItem.class, new AndSegmentSerializer());
         dispatchBuilder.put(DotProductItem.class, new DotProductSerializer());
         dispatchBuilder.put(EquivItem.class, new EquivSerializer());
+        dispatchBuilder.put(ExactStringItem.class, new WordSerializer());
         dispatchBuilder.put(IntItem.class, new NumberSerializer());
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());

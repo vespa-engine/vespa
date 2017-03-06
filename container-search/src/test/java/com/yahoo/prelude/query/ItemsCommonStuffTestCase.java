@@ -181,10 +181,10 @@ public class ItemsCommonStuffTestCase {
     public final void testIdStuff() {
         Item i;
         final String expected = "i";
-        i = new ExactstringItem(expected);
+        i = new ExactStringItem(expected);
         assertEquals(ItemType.EXACT, i.getItemType());
         assertEquals("EXACTSTRING", i.getName());
-        assertEquals(expected, ((ExactstringItem) i).stringValue());
+        assertEquals(expected, ((ExactStringItem) i).stringValue());
         i = new PrefixItem("p");
         assertEquals(ItemType.PREFIX, i.getItemType());
         assertEquals("PREFIX", i.getName());

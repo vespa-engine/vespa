@@ -8,6 +8,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PrefixItem;
@@ -287,6 +288,29 @@ public class YqlParserTestCase {
                                 "([ {\"stem\": true} ]\"colors\");").isStemmed());
         assertFalse(getRootWord("select foo from bar where baz contains " +
                                 "\"colors\";").isStemmed());
+    }
+
+    @Test
+    public void testRaw() {
+        Item root = parse("select foo from bar where baz contains (\"yoni jo dima\");").getRoot();
+        assertTrue(root instanceof WordItem);
+        assertFalse(root instanceof ExactStringItem);
+        assertEquals("yoni jo dima", ((WordItem)root).getWord());
+
+        root = parse("select foo from bar where baz contains ([{\"grammar\":\"raw\"}]\"yoni jo dima\");").getRoot();
+        assertTrue(root instanceof WordItem);
+        assertFalse(root instanceof ExactStringItem);
+        assertEquals("yoni jo dima", ((WordItem)root).getWord());
+
+        root = parse("select foo from bar where userInput(\"yoni jo dima\");").getRoot();
+        assertTrue(root instanceof AndItem);
+        AndItem andItem = (AndItem) root;
+        assertEquals(3, andItem.getItemCount());
+
+        root = parse("select foo from bar where [{\"grammar\":\"raw\"}]userInput(\"yoni jo dima\");").getRoot();
+        assertTrue(root instanceof WordItem);
+        assertTrue(root instanceof ExactStringItem);
+        assertEquals("yoni jo dima", ((WordItem)root).getWord());
     }
 
     @Test

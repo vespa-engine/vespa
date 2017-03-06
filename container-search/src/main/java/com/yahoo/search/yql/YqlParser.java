@@ -31,6 +31,7 @@ import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
@@ -660,9 +661,9 @@ public class YqlParser implements Parser {
         Language language = decideParsingLanguage(ast, wordData);
         Item item;
         if (USER_INPUT_RAW.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, language);
+            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
         } else if (USER_INPUT_SEGMENT.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, language);
+            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
         } else {
             item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotations(ast, item);
@@ -1255,14 +1256,15 @@ public class YqlParser implements Parser {
                                      OperatorNode<ExpressionOperator> ast, Class<?> parent,
                                      SegmentWhen segmentPolicy) {
         String wordData = getStringContents(ast);
-        return instantiateWordItem(field, wordData, ast, parent, segmentPolicy, decideParsingLanguage(ast, wordData));
+        return instantiateWordItem(field, wordData, ast, parent, segmentPolicy, false, decideParsingLanguage(ast, wordData));
     }
 
     @NonNull
     private Item instantiateWordItem(String field,
                                      String rawWord,
                                      OperatorNode<ExpressionOperator> ast, Class<?> parent,
-                                     SegmentWhen segmentPolicy, 
+                                     SegmentWhen segmentPolicy,
+                                     boolean exactMatch,
                                      Language language) {
         String wordData = rawWord;
         if (getAnnotation(ast, NFKC, Boolean.class, Boolean.TRUE,
@@ -1286,7 +1288,9 @@ public class YqlParser implements Parser {
         @NonNull
         final TaggableItem wordItem;
 
-        if (prefixMatch) {
+        if (exactMatch) {
+            wordItem = new ExactStringItem(wordData, fromQuery);
+        } else if (prefixMatch) {
             wordItem = new PrefixItem(wordData, fromQuery);
         } else if (suffixMatch) {
             wordItem = new SuffixItem(wordData, fromQuery);

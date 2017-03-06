@@ -2,16 +2,18 @@
 package com.yahoo.prelude.query;
 
 /**
+ * Used to signal that this term requires exact match if the backend supports it.
+ *
  * @author baldersheim
  */
-// TODO: baldersheim to fix javadoc
-public class ExactstringItem extends WordItem {
 
-    public ExactstringItem(String substring) {
+public class ExactStringItem extends WordItem {
+
+    public ExactStringItem(String substring) {
         this(substring, false);
     }
 
-    public ExactstringItem(String substring, boolean isFromQuery) {
+    public ExactStringItem(String substring, boolean isFromQuery) {
         super(substring, isFromQuery);
     }
 
