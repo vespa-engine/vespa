@@ -64,7 +64,8 @@ struct Fixture
     void put(vespalib::stringref docId, uint32_t lid) {
         bumpTimeStamp();
         const GlobalId gid(toGid(docId));
-        _dms->put(gid, toBucketId(gid), _timestamp, lid);
+        uint32_t docSize = 1;
+        _dms->put(gid, toBucketId(gid), _timestamp, docSize, lid);
         _dms->commit();
     }
 

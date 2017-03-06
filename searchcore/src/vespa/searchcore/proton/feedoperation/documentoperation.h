@@ -18,6 +18,7 @@ protected:
     DbDocumentId            _prevDbdId;
     bool                    _prevMarkedAsRemoved;
     storage::spi::Timestamp _prevTimestamp;
+    mutable uint32_t        _serializedDocSize; // Set by serialize()/deserialize()
 
     DocumentOperation(Type type);
 
@@ -25,15 +26,7 @@ protected:
                       const document::BucketId &bucketId,
                       const storage::spi::Timestamp &timestamp);
 
-    DocumentOperation(Type type,
-                      const document::BucketId &bucketId,
-                      const storage::spi::Timestamp &timestamp,
-                      SerialNum serialNum,
-                      DbDocumentId dbdId,
-                      DbDocumentId prevDbdId);
-
-    void
-    assertValidBucketId(const document::DocumentId &docId) const;
+    void assertValidBucketId(const document::DocumentId &docId) const;
     vespalib::string docArgsToString() const;
 
 public:
@@ -196,6 +189,8 @@ public:
     virtual void
     deserialize(vespalib::nbostream &is,
                 const document::DocumentTypeRepo &repo);
+
+    uint32_t getSerializedDocSize() const { return _serializedDocSize; }
 };
 
 } // namespace proton

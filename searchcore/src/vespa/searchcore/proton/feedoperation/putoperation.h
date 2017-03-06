@@ -15,12 +15,6 @@ public:
     PutOperation(const document::BucketId &bucketId,
                  const storage::spi::Timestamp &timestamp,
                  const DocumentSP &doc);
-    PutOperation(const document::BucketId &bucketId,
-                 const storage::spi::Timestamp &timestamp,
-                 const DocumentSP &doc,
-                 SerialNum serialNum,
-                 DbDocumentId dbdId,
-                 DbDocumentId prevDbdId);
     virtual ~PutOperation();
     const DocumentSP &getDocument() const { return _doc; }
     void assertValid() const;

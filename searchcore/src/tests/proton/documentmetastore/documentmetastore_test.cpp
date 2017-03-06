@@ -116,7 +116,8 @@ assertPut(const BucketId &bucketId,
 {
     Result inspect = dms.inspect(gid);
     PutRes putRes;
-    if (!EXPECT_TRUE((putRes = dms.put(gid, bucketId, timestamp, inspect.getLid())).
+    uint32_t docSize = 1;
+    if (!EXPECT_TRUE((putRes = dms.put(gid, bucketId, timestamp, docSize, inspect.getLid())).
             ok())) return false;
     return EXPECT_EQUAL(lid, putRes.getLid());
 }
@@ -257,18 +258,22 @@ Timestamp time2(2u);
 Timestamp time3(42u);
 Timestamp time4(82u);
 Timestamp time5(141u);
+uint32_t docSize1 = 1;
+uint32_t docSize4 = 1;
+uint32_t docSize5 = 1;
 
 uint32_t
-addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timestamp timestamp = Timestamp())
+addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timestamp timestamp)
 {
     Result inspect = dms.inspect(gid);
     PutRes putRes;
-    EXPECT_TRUE((putRes = dms.put(gid, bid, timestamp, inspect.getLid())).ok());
+    uint32_t docSize = 1;
+    EXPECT_TRUE((putRes = dms.put(gid, bid, timestamp, docSize, inspect.getLid())).ok());
     return putRes.getLid();
 }
 
 uint32_t
-addGid(DocumentMetaStore &dms, const GlobalId &gid, Timestamp timestamp = Timestamp())
+addGid(DocumentMetaStore &dms, const GlobalId &gid, Timestamp timestamp)
 {
     BucketId bid(minNumBits, gid.convertToBucketId().getRawId());
     return addGid(dms, gid, bid, timestamp);
@@ -278,7 +283,8 @@ void
 putGid(DocumentMetaStore &dms, const GlobalId &gid, uint32_t lid, Timestamp timestamp = Timestamp())
 {
     BucketId bid(minNumBits, gid.convertToBucketId().getRawId());
-    EXPECT_TRUE(dms.put(gid, bid, timestamp, lid).ok());
+    uint32_t docSize = 1;
+    EXPECT_TRUE(dms.put(gid, bid, timestamp, docSize, lid).ok());
 }
 
 TEST("require that removed documents are bucketized to bucket 0")
@@ -688,23 +694,23 @@ TEST("requireThatStatsAreUpdated")
 TEST("requireThatWeCanPutAndRemoveBeforeFreeListConstruct")
 {
     DocumentMetaStore dms(createBucketDB());
-    EXPECT_TRUE(dms.put(gid4, bucketId4, time4, 4).ok());
+    EXPECT_TRUE(dms.put(gid4, bucketId4, time4, docSize4, 4).ok());
     EXPECT_TRUE(assertLid(4, gid4, dms));
     EXPECT_TRUE(assertGid(gid4, 4, dms));
     EXPECT_EQUAL(1u, dms.getNumUsedLids());
     EXPECT_EQUAL(5u, dms.getNumDocs());
-    EXPECT_TRUE(dms.put(gid1, bucketId1, time1, 1).ok());
+    EXPECT_TRUE(dms.put(gid1, bucketId1, time1, docSize1, 1).ok());
     // already there, nothing changes
-    EXPECT_TRUE(dms.put(gid1, bucketId1, time1, 1).ok());
+    EXPECT_TRUE(dms.put(gid1, bucketId1, time1, docSize1, 1).ok());
     EXPECT_TRUE(assertLid(1, gid1, dms));
     EXPECT_TRUE(assertGid(gid1, 1, dms));
     EXPECT_EQUAL(2u, dms.getNumUsedLids());
     EXPECT_EQUAL(5u, dms.getNumDocs());
     // gid1 already there with lid 1
-    EXPECT_EXCEPTION(!dms.put(gid1, bucketId1, time1, 2).ok(),
+    EXPECT_EXCEPTION(!dms.put(gid1, bucketId1, time1, docSize1, 2).ok(),
                      vespalib::IllegalStateException,
                      "gid found, but using another lid");
-    EXPECT_EXCEPTION(!dms.put(gid5, bucketId5, time5, 1).ok(),
+    EXPECT_EXCEPTION(!dms.put(gid5, bucketId5, time5, docSize5, 1).ok(),
                      vespalib::IllegalStateException,
                      "gid not found, but lid is used by another gid");
     EXPECT_TRUE(assertLid(1, gid1, dms));
@@ -1191,14 +1197,18 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture
         bid32Gids = &bid3s[bid32];
     }
     void insertGids1() {
+        uint32_t docSize = 1;
         for (size_t i = 0; i < gids.size(); ++i) {
             EXPECT_TRUE(dms.put(gids[i].gid, gids[i].bid1, Timestamp(0),
+                                docSize,
                                 gids[i].lid).ok());
         }
     }
     void insertGids2() {
+        uint32_t docSize = 1;
         for (size_t i = 0; i < gids.size(); ++i) {
             EXPECT_TRUE(dms.put(gids[i].gid, gids[i].bid2, Timestamp(0),
+                                docSize,
                                 gids[i].lid).ok());
         }
     }
@@ -1206,20 +1216,22 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture
     void
     insertGids1Mostly(const BucketId &alt)
     {
+        uint32_t docSize = 1;
         for (size_t i = 0; i < gids.size(); ++i) {
             const GlobalIdEntry &g(gids[i]);
             BucketId b(g.bid3 == alt ? g.bid2 : g.bid1);
-            EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0),  g.lid).ok());
+            EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0), docSize, g.lid).ok());
         }
     }
 
     void
     insertGids2Mostly(const BucketId &alt)
     {
+        uint32_t docSize = 1;
         for (size_t i = 0; i < gids.size(); ++i) {
             const GlobalIdEntry &g(gids[i]);
             BucketId b(g.bid3 == alt ? g.bid1 : g.bid2);
-            EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0),  g.lid).ok());
+            EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0), docSize, g.lid).ok());
         }
     }
 };

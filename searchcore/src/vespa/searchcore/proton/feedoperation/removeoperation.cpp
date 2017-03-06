@@ -30,31 +30,15 @@ RemoveOperation::RemoveOperation(const BucketId &bucketId,
 {
 }
 
-
-RemoveOperation::RemoveOperation(const document::BucketId &bucketId,
-                                 const storage::spi::Timestamp &timestamp,
-                                 const document::DocumentId &docId,
-                                 SerialNum serialNum,
-                                 DbDocumentId dbdId,
-                                 DbDocumentId prevDbdId)
-    : DocumentOperation(FeedOperation::REMOVE,
-                        bucketId,
-                        timestamp,
-                        serialNum,
-                        dbdId,
-                        prevDbdId),
-      _docId(docId)
-{
-}
-
-
 void
 RemoveOperation::serialize(vespalib::nbostream &os) const
 {
     assertValidBucketId(_docId);
     DocumentOperation::serialize(os);
+    size_t oldSize = os.size();
     vespalib::string rawId = _docId.toString();
     os.write(rawId.c_str(), rawId.size() + 1);
+    _serializedDocSize = os.size() - oldSize;
 }
 
 
@@ -63,7 +47,9 @@ RemoveOperation::deserialize(vespalib::nbostream &is,
                           const DocumentTypeRepo &repo)
 {
     DocumentOperation::deserialize(is, repo);
+    size_t oldSize = is.size();
     _docId = DocumentId(is);
+    _serializedDocSize = oldSize - is.size();
 }
 
 vespalib::string RemoveOperation::toString() const {

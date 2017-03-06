@@ -19,17 +19,23 @@ struct RawDocumentMetaData
     using Timestamp = storage::spi::Timestamp;
     GlobalId  _gid;
     uint8_t   _bucketUsedBits;
+    uint8_t   _sizeLow;
+    uint16_t  _sizeHigh;
     Timestamp _timestamp;
 
     RawDocumentMetaData(void)
         : _gid(),
           _bucketUsedBits(BucketId::minNumBits),
+          _sizeLow(0),
+          _sizeHigh(0),
           _timestamp()
     { }
 
-    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp)
+    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t size)
         : _gid(gid),
           _bucketUsedBits(bucketId.getUsedBits()),
+          _sizeLow(size),
+          _sizeHigh(size >> 8),
           _timestamp(timestamp)
     {
         assert(bucketId.valid());
@@ -37,6 +43,10 @@ struct RawDocumentMetaData
         verId.setUsedBits(_bucketUsedBits);
         assert(bucketId.getRawId() == verId.getRawId() ||
                bucketId.getRawId() == verId.getId());
+        if (size >= (1u << 24)) {
+            _sizeLow = 0xff;
+            _sizeHigh = 0xffff;
+        }
     }
 
     bool operator<(const GlobalId &rhs) const { return _gid < rhs; }

@@ -159,10 +159,11 @@ struct Fixture {
         typedef DocumentMetaStore::Result Result;
         DocumentId id(make_string("groupdoc:test:foo:%d", expected_lid));
         Result inspect = meta_store->inspect(id.getGlobalId());
+        uint32_t docSize = 1;
         EXPECT_EQUAL(expected_lid,
                      meta_store->put(id.getGlobalId(),
                                      id.getGlobalId().convertToBucketId(),
-                                     Timestamp(10), inspect.getLid()).getLid());
+                                     Timestamp(10), docSize, inspect.getLid()).getLid());
     }
 
     void addDocsToMetaStore(int count) {
@@ -219,12 +220,13 @@ TEST_F("require that handleMove handles move within same subdb", Fixture)
 {
     Document::SP doc(new Document);
     DocumentId doc1id("groupdoc:test:foo:1");
+    uint32_t docSize = 1;
     f.runInMaster([&] () { f.meta_store->put(doc1id.getGlobalId(),
                       doc1id.getGlobalId().convertToBucketId(),
-                      Timestamp(9), 1); });
+                      Timestamp(9), docSize, 1); });
     f.runInMaster([&] () { f.meta_store->put(doc->getId().getGlobalId(),
                       doc->getId().getGlobalId().convertToBucketId(),
-                      Timestamp(10), 2); });
+                      Timestamp(10), docSize, 2); });
     f.runInMaster([&] () { f.meta_store->remove(1); });
     f.meta_store->removeComplete(1);
     MoveOperation op(doc->getId().getGlobalId().convertToBucketId(),

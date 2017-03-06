@@ -273,7 +273,8 @@ struct Fixture {
         typedef DocumentMetaStore::Result Result;
         meta_store.constructFreeList();
         Result inspect = meta_store.get().inspect(gid);
-        Result putRes(meta_store.get().put(gid, bucket_id, timestamp, inspect.getLid()));
+        uint32_t docSize = 1;
+        Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid()));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());
         schema::CollectionType ct = schema::SINGLE;

@@ -643,6 +643,7 @@ MyDocumentSubDB::handlePut(PutOperation &op)
         PutRes putRes(_metaStore.put(gid,
                                      op.getBucketId(),
                                      op.getTimestamp(),
+                                     op.getSerializedDocSize(),
                                      op.getLid()));
         assert(putRes.ok());
         assert(op.getLid() == putRes._lid);
@@ -684,6 +685,7 @@ MyDocumentSubDB::handleRemove(RemoveOperation &op)
         PutRes putRes(_metaStore.put(gid,
                                      op.getBucketId(),
                                      op.getTimestamp(),
+                                     op.getSerializedDocSize(),
                                      op.getLid()));
         assert(putRes.ok());
         assert(op.getLid() == putRes._lid);
@@ -741,6 +743,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
         PutRes putRes(_metaStore.put(gid,
                                      op.getBucketId(),
                                      op.getTimestamp(),
+                                     op.getSerializedDocSize(),
                                      op.getLid()));
         assert(putRes.ok());
         assert(op.getLid() == putRes._lid);

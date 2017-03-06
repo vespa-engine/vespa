@@ -241,9 +241,11 @@ public:
         const document::DocumentId &docId = doc.getId();
         typedef DocumentMetaStore::Result PutRes;
         IDocumentMetaStore &dms = _ddb->getReadySubDB()->getDocumentMetaStoreContext().get();
+        uint32_t docSize = 1;
         PutRes putRes(dms.put(docId.getGlobalId(),
                               BucketFactory::getBucketId(docId),
                               Timestamp(0u),
+                              docSize,
                               lid));
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().incSerialNum();
@@ -260,10 +262,10 @@ public:
         document::Document::SP xdoc(new document::Document(doc));
         PutOperation op(bucketId,
                         ts,
-                        xdoc,
-                        serialNum,
-                        dbdId,
-                        prevDbdId);
+                        xdoc);
+        op.setSerialNum(serialNum);
+        op.setDbDocumentId(dbdId);
+        op.setPrevDbDocumentId(prevDbdId);
         _ddb->getFeedHandler().storeOperation(op);
         SearchView *sv(dynamic_cast<SearchView *>
                        (_ddb->getReadySubDB()->getSearchView().get()));

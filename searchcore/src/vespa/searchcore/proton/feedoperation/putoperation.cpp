@@ -26,22 +26,6 @@ PutOperation::PutOperation(const BucketId &bucketId,
       _doc(doc)
 { }
 
-
-PutOperation::PutOperation(const document::BucketId &bucketId,
-                           const storage::spi::Timestamp &timestamp,
-                           const document::Document::SP &doc,
-                           SerialNum serialNum,
-                           DbDocumentId dbdId,
-                           DbDocumentId prevDbdId)
-    : DocumentOperation(FeedOperation::PUT,
-                        bucketId,
-                        timestamp,
-                        serialNum,
-                        dbdId,
-                        prevDbdId),
-      _doc(doc)
-{ }
-
 PutOperation::~PutOperation() { }
 
 void
@@ -49,7 +33,9 @@ PutOperation::serialize(vespalib::nbostream &os) const
 {
     assertValidBucketId(_doc->getId());
     DocumentOperation::serialize(os);
+    size_t oldSize = os.size();
     _doc->serialize(os);
+    _serializedDocSize = os.size() - oldSize;
 }
 
 
@@ -58,7 +44,9 @@ PutOperation::deserialize(vespalib::nbostream &is,
                           const DocumentTypeRepo &repo)
 {
     DocumentOperation::deserialize(is, repo);
+    size_t oldSize = is.size();
     _doc.reset(new Document(repo, is));
+    _serializedDocSize = oldSize - is.size();
 }
 
 vespalib::string

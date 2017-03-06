@@ -38,7 +38,9 @@ MoveOperation::serialize(vespalib::nbostream &os) const
     assertValidBucketId(_doc->getId());
     assert(movingLidIfInSameSubDb());
     DocumentOperation::serialize(os);
+    size_t oldSize = os.size();
     _doc->serialize(os);
+    _serializedDocSize = os.size() - oldSize;
 }
 
 
@@ -47,7 +49,9 @@ MoveOperation::deserialize(vespalib::nbostream &is,
                            const DocumentTypeRepo &repo)
 {
     DocumentOperation::deserialize(is, repo);
+    size_t oldSize = is.size();
     _doc.reset(new Document(repo, is));
+    _serializedDocSize = oldSize - is.size();
 }
 
 vespalib::string MoveOperation::toString() const {

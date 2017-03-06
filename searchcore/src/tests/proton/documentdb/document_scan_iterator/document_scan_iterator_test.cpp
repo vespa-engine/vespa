@@ -38,7 +38,8 @@ struct Fixture
         const GlobalId &gid = docId.getGlobalId();
         DMSResult res = _metaStore.inspect(gid);
         ASSERT_EQUAL(lid, res._lid);
-        _metaStore.put(gid, gid.convertToBucketId(), Timestamp(lid), lid);
+        uint32_t docSize = 1;
+        _metaStore.put(gid, gid.convertToBucketId(), Timestamp(lid), docSize, lid);
         return *this;
     }
     LidSet scan(uint32_t count, uint32_t compactLidLimit, uint32_t maxDocsToScan = 10) {
