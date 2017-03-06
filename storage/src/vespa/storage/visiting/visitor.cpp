@@ -656,6 +656,13 @@ Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
     }
 }
 
+bool
+Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
+    mbus::Trace tempTrace;
+    tempTrace.trace(level, message);
+    return _trace.add(tempTrace.getRoot());
+}
+
 void
 Visitor::handleDocumentApiReply(mbus::Reply::UP reply,
                         VisitorThreadMetrics& metrics)
@@ -970,6 +977,7 @@ Visitor::continueVisitor()
             if (isRunning()) {
                 LOG(debug, "Visitor '%s' has not been aborted", _id.c_str());
                 if (!_calledCompletedVisitor) {
+                    VISITOR_TRACE(7, "Visitor marked as complete, calling completedVisiting()");
                     _calledCompletedVisitor = true;
                     try{
                         completedVisiting(*_hitCounter);
@@ -978,6 +986,7 @@ Visitor::continueVisitor()
                             "callback.  As visitor is already complete, this "
                             "has been ignored: %s", _id.c_str(), e.what());
                     }
+                    VISITOR_TRACE(7, "completedVisiting() has finished");
 
                     // Visitor could create messages in completed visiting.
                     if (_messageSession->pending() > 0) {

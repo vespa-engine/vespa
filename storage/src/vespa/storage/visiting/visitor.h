@@ -345,6 +345,17 @@ protected:
     framework::MemoryManagerInterface* _memoryManager;
 
     bool isCompletedCalled() const { return _calledCompletedVisitor; }
+
+    uint32_t traceLevel() const noexcept { return _traceLevel; }
+
+    /**
+     * Attempts to add the given trace message to the internal, memory bounded
+     * trace tree. Message will not be added if the trace is already exceeding
+     * maximum memory limits.
+     *
+     * Returns true iff message was added to internal trace tree.
+     */
+    bool addBoundedTrace(uint32_t level, const vespalib::string& message);
 public:
     Visitor(StorageComponent& component);
     virtual ~Visitor();
@@ -579,6 +590,17 @@ private:
      */
     VisitorState transitionTo(VisitorState newState);
 };
+
+// Visitors use custom tracing logic to control the amount of memory used by
+// trace nodes. Wrap this in a somewhat more convenient macro to hide the details.
+// Can only be called by Visitor or its subclasses.
+#define VISITOR_TRACE(level, message) \
+    do { \
+        if (traceLevel() >= (level)) { \
+            addBoundedTrace(level, message); \
+        } \
+    } while (false);
+
 
 } // storage
 
