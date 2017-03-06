@@ -137,8 +137,7 @@ public class DocumentUpdateJsonSerializer
                 } else if (update instanceof AddFieldPathUpdate) {
                     ((AddFieldPathUpdate) update).getNewValues().serialize(null, this);
                 } else if (update instanceof RemoveFieldPathUpdate) {
-                    generator.writeStartObject();
-                    generator.writeEndObject();
+                    generator.writeNumber(0);
                 } else {
                     throw new RuntimeException("Unsupported fieldpath operation: " + update.getClass().getName());
                 }

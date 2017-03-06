@@ -2,7 +2,6 @@ package com.yahoo.document.json.readers;
 
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.base.Preconditions;
-import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
@@ -25,6 +24,7 @@ import static com.yahoo.document.json.readers.AddRemoveCreator.createRemoves;
 import static com.yahoo.document.json.readers.CompositeReader.populateComposite;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
 import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectScalarValue;
 import static com.yahoo.document.json.readers.MapReader.UPDATE_MATCH;
 import static com.yahoo.document.json.readers.MapReader.createMapUpdate;
 import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_ASSIGN;
@@ -170,8 +170,7 @@ public class VespaJsonDocumentReader {
     }
 
     private RemoveFieldPathUpdate readRemoveFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
-        expectObjectStart(buffer.currentToken());
-        expectObjectEnd(buffer.next());
+        expectScalarValue(buffer.currentToken());
         return new RemoveFieldPathUpdate(documentType, fieldPath);
     }
 
