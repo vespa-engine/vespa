@@ -100,7 +100,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
-            List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path));
+            List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path), "Failed through the nodes/v2 API");
             String failedHostnames = failedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
             return new MessageResponse("Moved " + failedHostnames + " to failed");
         }

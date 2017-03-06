@@ -75,16 +75,16 @@ public class NodeFailer extends Maintainer {
         for (Node node : readyNodesWhichAreDead( )) {
             // Docker hosts and nodes do not run Vespa services
             if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER || node.type() == NodeType.host) continue;
-            nodeRepository().fail(node.hostname());
+            nodeRepository().fail(node.hostname(), "Not receiving config requests from node");
         }
         for (Node node : readyNodesWithHardwareFailure())
-            nodeRepository().fail(node.hostname());
+            nodeRepository().fail(node.hostname(), "Node has hardware failure");
 
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
             if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node) && failAllowedFor(node.type()))
-                failActive(node);
+                failActive(node, "Node has been down longer than " + downTimeLimit);
         }
     }
 
@@ -215,7 +215,7 @@ public class NodeFailer extends Maintainer {
      *
      * @return whether node was successfully failed
      */
-    private boolean failActive(Node node) {
+    private boolean failActive(Node node, String reason) {
         Optional<Deployment> deployment =
             deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
         if ( ! deployment.isPresent()) return false; // this will be done at another config server
@@ -226,14 +226,14 @@ public class NodeFailer extends Maintainer {
             boolean allTenantNodesFailedOutSuccessfully = true;
             for (Node failingTenantNode : nodeRepository().getChildNodes(node.hostname())) {
                 if (failingTenantNode.state() == Node.State.active) {
-                    allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode);
+                    allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode, reason);
                 } else {
-                    nodeRepository().fail(failingTenantNode.hostname());
+                    nodeRepository().fail(failingTenantNode.hostname(), reason);
                 }
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            node = nodeRepository().fail(node.hostname());
+            node = nodeRepository().fail(node.hostname(), reason);
             try {
                 deployment.get().prepare();
                 deployment.get().activate();

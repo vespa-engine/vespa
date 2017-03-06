@@ -173,7 +173,7 @@ public class ProvisioningTester implements AutoCloseable {
 
     public void fail(HostSpec host) {
         int beforeFailCount = nodeRepository.getNode(host.hostname(), Node.State.active).get().status().failCount();
-        Node failedNode = nodeRepository.fail(host.hostname());
+        Node failedNode = nodeRepository.fail(host.hostname(), "Failing to unit test");
         assertTrue(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }

@@ -67,8 +67,8 @@ public class ApplicationMaintainerTest {
         fixture.activate();
 
         // Fail and park some nodes
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname());
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname());
+        nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), "Failing to unit test");
+        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname(), "Failing to unit test");
         nodeRepository.park(nodeRepository.getNodes(fixture.app2).get(4).hostname());
         int failedInApp1 = 1;
         int failedOrParkedInApp2 = 2;

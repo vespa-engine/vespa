@@ -121,9 +121,9 @@ public class FailedExpirerTest {
         assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
 
         // Fail the nodes
-        nodeRepository.fail("node1");
-        nodeRepository.fail("node2");
-        nodeRepository.fail("node3");
+        nodeRepository.fail("node1", "Failing to unit test");
+        nodeRepository.fail("node2", "Failing to unit test");
+        nodeRepository.fail("node3", "Failing to unit test");
         assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
 
         // Failure times out
