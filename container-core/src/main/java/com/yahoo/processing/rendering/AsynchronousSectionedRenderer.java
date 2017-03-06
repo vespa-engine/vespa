@@ -200,7 +200,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     private void shutdown(ThreadPoolExecutor executor) {
         executor.shutdown();
         try {
-            if (executor.awaitTermination(30, TimeUnit.SECONDS))
+            if ( ! executor.awaitTermination(30, TimeUnit.SECONDS))
                 throw new RuntimeException("Rendering thread pool did not shutdown in 30 seconds");
         }
         catch (InterruptedException e) {
