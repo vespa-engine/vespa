@@ -208,8 +208,13 @@ public class SearchHandler extends LoggingRequestHandler {
              executor, accessLog, queryProfileConfig, searchers);
     }
 
-    private void setupSearchChainRegistry(final ComponentRegistry<Searcher> searchers,
-                                          final ChainsConfig chainsConfig) {
+    @Override
+    protected void destroy() {
+        super.destroy();
+        rendererRegistry.deconstruct();
+    }
+
+    private void setupSearchChainRegistry(ComponentRegistry<Searcher> searchers, ChainsConfig chainsConfig) {
         ChainsModel chainsModel = ChainsModelBuilder.buildFromConfig(chainsConfig);
         ChainsConfigurer.prepareChainRegistry(searchChainRegistry, chainsModel, searchers);
         searchChainRegistry.freeze();
