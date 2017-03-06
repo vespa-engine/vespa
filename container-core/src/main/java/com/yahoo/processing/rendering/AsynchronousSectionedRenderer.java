@@ -114,6 +114,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     // We should complete any work we have already started so use an unbounded queue.
     // The executor SHOULD be reused across all instances having the same prototype
     private final Executor renderingExecutor;
+    // The executor may either be created (and thus owned) by this, or passed by injection
+    private final boolean renderingExecutorIsOwned;
 
     private static ThreadPoolExecutor createExecutor() {
         int threadCount = Runtime.getRuntime().availableProcessors();
@@ -150,7 +152,14 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      */
     public AsynchronousSectionedRenderer(Executor executor) {
         isInitialized = false;
-        renderingExecutor = executor==null ? createExecutor() : executor;
+        if (executor == null) {
+            renderingExecutor = createExecutor();
+            renderingExecutorIsOwned = true;
+        }
+        else {
+            renderingExecutor = executor;
+            renderingExecutorIsOwned = false;
+        }
     }
 
     /**
@@ -184,7 +193,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     @Override
     public void deconstruct() {
         super.deconstruct();
-        if (renderingExecutor instanceof ThreadPoolExecutor)
+        if (renderingExecutorIsOwned && renderingExecutor instanceof ThreadPoolExecutor)
             shutdown((ThreadPoolExecutor) renderingExecutor);
     }
     

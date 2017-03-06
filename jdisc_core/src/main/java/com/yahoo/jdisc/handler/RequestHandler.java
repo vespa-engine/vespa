@@ -13,12 +13,12 @@ import com.yahoo.jdisc.application.UriPattern;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>This interface defines a component that is capable of acting as a handler for a {@link Request}. To activate a
+ * This interface defines a component that is capable of acting as a handler for a {@link Request}. To activate a
  * RequestHandler it must be {@link BindingRepository#bind(String, Object) bound} to a {@link UriPattern} within a
  * {@link ContainerBuilder}, and that builder must be {@link ContainerActivator#activateContainer(ContainerBuilder)
- * activated}.</p>
-*
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * activated}.
+ *
+ * @author Simon Thoresen
  */
 public interface RequestHandler extends SharedResource {
 
@@ -39,7 +39,7 @@ public interface RequestHandler extends SharedResource {
      * @return The ContentChannel to write the Request content to. Notice that the ContentChannel itself also holds a
      *         Container reference, so failure to close this will prevent the Container from ever shutting down.
      */
-    public ContentChannel handleRequest(Request request, ResponseHandler handler);
+    ContentChannel handleRequest(Request request, ResponseHandler handler);
 
     /**
      * <p>This method is called by the {@link Container} when a {@link Request} that was previously accepted by {@link
@@ -58,5 +58,6 @@ public interface RequestHandler extends SharedResource {
      * @param handler The handler to pass the timeout {@link Response} to.
      * @see Response#dispatchTimeout(ResponseHandler)
      */
-    public void handleTimeout(Request request, ResponseHandler handler);
+    void handleTimeout(Request request, ResponseHandler handler);
+
 }

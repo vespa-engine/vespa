@@ -25,7 +25,7 @@ import com.yahoo.jdisc.Response;
  * }
  * </pre>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class AbstractRequestHandler extends com.yahoo.jdisc.AbstractResource implements RequestHandler {
 
@@ -33,4 +33,5 @@ public abstract class AbstractRequestHandler extends com.yahoo.jdisc.AbstractRes
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
         Response.dispatchTimeout(responseHandler);
     }
+
 }

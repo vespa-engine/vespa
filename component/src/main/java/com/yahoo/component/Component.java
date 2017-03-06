@@ -13,8 +13,9 @@ package com.yahoo.component;
 public interface Component extends Comparable<Component> {
 
     /** Initializes this. Always called from a constructor or the framework. Do not call. */
-    public void initId(ComponentId id);
+    void initId(ComponentId id);
 
     /** Returns the id of this component */
-    public ComponentId getId();
+    ComponentId getId();
+
 }

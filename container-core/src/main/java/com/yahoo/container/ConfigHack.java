@@ -14,6 +14,7 @@ import com.yahoo.container.config.StatisticsEmitter;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public final class ConfigHack {
+
     private volatile StatisticsEmitter statisticsEmitter = new StatisticsEmitter();
     public static final String TILED_TEMPLATE = "tiled";
 
@@ -26,4 +27,5 @@ public final class ConfigHack {
     public void setStatisticsEmitter(StatisticsEmitter statisticsEmitter) {
         this.statisticsEmitter = statisticsEmitter;
     }
+
 }

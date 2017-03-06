@@ -25,7 +25,7 @@ import java.util.concurrent.Executor;
  * A request handler base class extending the features of
  * ThreadedHttpRequestHandler with access logging.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 

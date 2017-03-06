@@ -26,6 +26,9 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public static final ComponentId xmlRendererId = ComponentId.fromString("DefaultRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
+    
+    private final ComponentId tiledRendererId;
+    private final ComponentId pageRendererId;
 
     /** Creates a registry containing the built-in renderers only */
     public RendererRegistry() {
@@ -65,19 +68,29 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         for (Renderer renderer : renderers)
             register(renderer.getId(), renderer);
 
-        // add legacy "templates" converted to renderers
-        addTemplateSet(new TiledTemplateSet());
-        addTemplateSet(new PageTemplateSet());
+        // add legacy "templates" converted to renderers // TODO: Remove on Vespa 7
+        tiledRendererId = addTemplateSet(new TiledTemplateSet());
+        pageRendererId = addTemplateSet(new PageTemplateSet());
 
         freeze();
     }
+    
+    /** Must be called when use of this is discontinued to free the resources it has allocated */
+    public void deconstruct() {
+        // deconstruct the renderers which was created by this
+        getRenderer(jsonRendererId.toSpecification()).deconstruct();
+        getRenderer(xmlRendererId.toSpecification()).deconstruct();
+        getRenderer(tiledRendererId.toSpecification()).deconstruct();
+        getRenderer(pageRendererId.toSpecification()).deconstruct();
+    }
 
     @SuppressWarnings({"deprecation", "unchecked"})
-    private void addTemplateSet(UserTemplate<?> templateSet) {
+    private ComponentId addTemplateSet(UserTemplate<?> templateSet) {
         Renderer renderer = new SearchRendererAdaptor(templateSet);
         ComponentId rendererId = new ComponentId(templateSet.getName());
         renderer.initId(rendererId);
         register(rendererId, renderer);
+        return rendererId;
     }
 
     /**

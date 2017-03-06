@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * all subclasses of {@link RequestHandler}, {@link ClientProvider} and {@link ServerProvider}. Once the reference count
  * of this resource reaches zero, the {@link #destroy()} method is called.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class AbstractResource implements SharedResource {
 

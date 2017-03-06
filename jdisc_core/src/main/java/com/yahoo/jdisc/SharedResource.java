@@ -23,11 +23,12 @@ import com.yahoo.jdisc.service.ServerProvider;
  * in terms of resource ownership. You retain a resource to prevent it from being destroyed while you are using it, and
  * you release a resource once you are done using it.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface SharedResource {
-    public static final String SYSTEM_PROPERTY_NAME_DEBUG = "jdisc.debug.resources";
-    public static final boolean DEBUG = Boolean.valueOf(System.getProperty(SYSTEM_PROPERTY_NAME_DEBUG));
+
+    String SYSTEM_PROPERTY_NAME_DEBUG = "jdisc.debug.resources";
+    boolean DEBUG = Boolean.valueOf(System.getProperty(SYSTEM_PROPERTY_NAME_DEBUG));
 
     /**
      * <p>Increments the reference count of this resource. You call this method to prevent an object from being
@@ -51,4 +52,5 @@ public interface SharedResource {
      * @see ResourceReference
      */
     void release();
+
 }
