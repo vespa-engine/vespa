@@ -229,8 +229,8 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             DocIt postings;
             postings.set(&_array[0], &_array[_array.size()]);
             return (_postingList._isFilter)
-                ? SearchIterator::UP(new FilterAttributePostingListIteratorT<DocIt>(postings, matchData))
-                : SearchIterator::UP(new AttributePostingListIteratorT<DocIt>(postings, _hasWeight, matchData));
+                ? SearchIterator::UP(new FilterAttributePostingListIteratorT<DocIt>(matchData, postings))
+                : SearchIterator::UP(new AttributePostingListIteratorT<DocIt>(_hasWeight, matchData, postings));
         }
         if (_arrayValid) {
             return SearchIterator::UP(new EmptySearch());
@@ -255,14 +255,14 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             const Posting *array = postingList.getKeyDataEntry(_pidx, clusterSize);
             postings.set(array, array + clusterSize);
             return (postingList._isFilter)
-                ? SearchIterator::UP(new FilterAttributePostingListIteratorT<DocIt>(postings, matchData))
-                : SearchIterator::UP(new AttributePostingListIteratorT<DocIt>(postings, _hasWeight, matchData));
+                ? SearchIterator::UP(new FilterAttributePostingListIteratorT<DocIt>(matchData, postings))
+                : SearchIterator::UP(new AttributePostingListIteratorT<DocIt>(_hasWeight, matchData, postings));
         }
-        typename PostingList::BTreeType::FrozenView frozenView(_frozenRoot, postingList.getAllocator());
-        PostingConstIterator postings = frozenView.begin();
+        typename PostingList::BTreeType::FrozenView frozen(_frozenRoot, postingList.getAllocator());
+
         return (_postingList._isFilter)
-            ? SearchIterator::UP(new FilterAttributePostingListIteratorT<PostingConstIterator> (postings, matchData))
-            : SearchIterator::UP(new AttributePostingListIteratorT<PostingConstIterator> (postings, _hasWeight, matchData));
+            ? SearchIterator::UP(new FilterAttributePostingListIteratorT<PostingConstIterator> (matchData, frozen.getRoot(), frozen.getAllocator()))
+            : SearchIterator::UP(new AttributePostingListIteratorT<PostingConstIterator> (_hasWeight, matchData, frozen.getRoot(), frozen.getAllocator()));
     }
     // returning nullptr will trigger fallback to filter iterator
     return SearchIterator::UP();
