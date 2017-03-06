@@ -84,7 +84,7 @@ public class NodeFailer extends Maintainer {
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
             if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node) && failAllowedFor(node.type()))
-                failActive(node, "Node is down");
+                failActive(node, "Node has been down longer than " + downTimeLimit);
         }
     }
 
