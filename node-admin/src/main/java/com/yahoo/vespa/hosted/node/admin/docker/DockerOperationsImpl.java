@@ -133,49 +133,8 @@ public class DockerOperationsImpl implements DockerOperations {
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
-    // Returns true if started
     @Override
-    public boolean startContainerIfNeeded(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
-        if (docker.getContainer(containerName).isPresent()) return false;
-
-        startContainer(containerName, nodeSpec);
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
-        return true;
-    }
-
-    // Returns true if scheduling download
-    @Override
-    public boolean shouldScheduleDownloadOfImage(final DockerImage dockerImage) {
-        return !docker.imageIsDownloaded(dockerImage);
-    }
-
-    @Override
-    public Optional<Container> getContainer(ContainerName containerName) {
-        return docker.getContainer(containerName);
-    }
-
-    /**
-     * Try to suspend node. Suspending a node means the node should be taken offline,
-     * such that maintenance can be done of the node (upgrading, rebooting, etc),
-     * and such that we will start serving again as soon as possible afterwards.
-     *
-     * Any failures are logged and ignored.
-     */
-    @Override
-    public void trySuspendNode(ContainerName containerName) {
-        try {
-            // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
-            executeCommandInContainer(containerName, SUSPEND_NODE_COMMAND);
-        } catch (RuntimeException e) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
-            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
-                   + Arrays.toString(SUSPEND_NODE_COMMAND), e);
-        }
-    }
-
-    private void startContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
+    public void startContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         logger.info("Starting container " + containerName);
@@ -233,6 +192,54 @@ public class DockerOperationsImpl implements DockerOperations {
         } catch (IOException e) {
             throw new RuntimeException("Failed to create container " + containerName.asString(), e);
         }
+
+        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
+    }
+
+    @Override
+    public void removeContainer(final Container existingContainer) {
+        final ContainerName containerName = existingContainer.name;
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+        if (existingContainer.state.isRunning()) {
+            logger.info("Stopping container " + containerName.asString());
+            docker.stopContainer(containerName);
+        }
+
+        logger.info("Deleting container " + containerName.asString());
+        docker.deleteContainer(containerName);
+        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
+    }
+
+    // Returns true if scheduling download
+    @Override
+    public boolean shouldScheduleDownloadOfImage(final DockerImage dockerImage) {
+        return !docker.imageIsDownloaded(dockerImage);
+    }
+
+    @Override
+    public Optional<Container> getContainer(ContainerName containerName) {
+        return docker.getContainer(containerName);
+    }
+
+    /**
+     * Try to suspend node. Suspending a node means the node should be taken offline,
+     * such that maintenance can be done of the node (upgrading, rebooting, etc),
+     * and such that we will start serving again as soon as possible afterwards.
+     *
+     * Any failures are logged and ignored.
+     */
+    @Override
+    public void trySuspendNode(ContainerName containerName) {
+        try {
+            // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
+            executeCommandInContainer(containerName, SUSPEND_NODE_COMMAND);
+        } catch (RuntimeException e) {
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
+            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
+            logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
+                   + Arrays.toString(SUSPEND_NODE_COMMAND), e);
+        }
     }
 
     /**
@@ -259,20 +266,6 @@ public class DockerOperationsImpl implements DockerOperations {
             assert nodeSpec.wantedDockerImage.get().equals(dockerImage);
             callback.run();
         });
-    }
-
-    @Override
-    public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer) {
-        final ContainerName containerName = existingContainer.name;
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        if (existingContainer.state.isRunning()) {
-            logger.info("Stopping container " + containerName.asString());
-            docker.stopContainer(containerName);
-        }
-
-        logger.info("Deleting container " + containerName.asString());
-        docker.deleteContainer(containerName);
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     ProcessResult executeCommandInContainer(ContainerName containerName, String[] command) {

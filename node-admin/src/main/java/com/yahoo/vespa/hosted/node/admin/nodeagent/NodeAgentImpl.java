@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
@@ -60,11 +61,12 @@ public class NodeAgentImpl implements NodeAgent {
     private final Optional<StorageMaintainer> storageMaintainer;
     private final MetricReceiverWrapper metricReceiver;
     private final Environment environment;
+    private final Optional<AclMaintainer> aclMaintainer;
 
     private final Object monitor = new Object();
 
-    private final LinkedList<String> debugMessages = new LinkedList<>();
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final LinkedList<String> debugMessages = new LinkedList<>();
 
     private long delaysBetweenEachTickMillis;
     private int numberOfUnhandledException = 0;
@@ -91,7 +93,8 @@ public class NodeAgentImpl implements NodeAgent {
             final DockerOperations dockerOperations,
             final Optional<StorageMaintainer> storageMaintainer,
             final MetricReceiverWrapper metricReceiver,
-            final Environment environment) {
+            final Environment environment,
+            final Optional<AclMaintainer> aclMaintainer) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
@@ -101,6 +104,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
         this.metricReceiver = metricReceiver;
         this.environment = environment;
+        this.aclMaintainer = aclMaintainer;
     }
 
     @Override
@@ -236,7 +240,10 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (dockerOperations.startContainerIfNeeded(containerName, nodeSpec)) {
+        Optional<Container> existingContainer = dockerOperations.getContainer(containerName);
+        if (!existingContainer.isPresent()) {
+            aclMaintainer.ifPresent(AclMaintainer::run);
+            dockerOperations.startContainer(containerName, nodeSpec);
             metricReceiver.unsetMetricsForContainer(hostname);
             lastCpuMetric = new CpuUsageReporter(Instant.now());
             vespaVersion = dockerOperations.getVespaVersion(containerName);
@@ -334,7 +341,7 @@ public class NodeAgentImpl implements NodeAgent {
                 stopServices(containerName);
             }
             vespaVersion = Optional.empty();
-            dockerOperations.removeContainer(nodeSpec, existingContainer.get());
+            dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
             return true;
         }
