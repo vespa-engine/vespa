@@ -20,23 +20,12 @@ import java.util.Collection;
 public interface Model {
 
     /**
-     * Resolves a config using a given def file, apply overrides and returns it.
-     *
-     * @param configKey The key of the config to retrieve.
-     * @param targetDef The config definition to use for applying defaults.
-     * @return override The global override to apply to the generated config.
-     */
-    // TODO: Remove when 6.76 is deployed everywhere
-    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override);
-
-
-    /**
      * Resolves config for a given key and config definition
      *
      * @param configKey    The key to resolve
-     * @param targetDef    The config definition to use for the schema
+     * @param configDefinition    The config definition to use for the schema
      */
-    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef);
+    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition configDefinition);
 
     /**
      * Produces a set of the valid config keys for this model.

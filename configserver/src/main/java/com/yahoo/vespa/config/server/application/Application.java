@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
@@ -174,12 +173,6 @@ public class Application implements ModelResult {
     // For testing only
     ConfigResponse resolveConfig(GetConfigRequest req) {
         return resolveConfig(req, new UncompressedConfigResponseFactory());
-    }
-
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, String configId) {
-        ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
-        ConfigPayload payload = model.getConfig(key, null);
-        return payload.toInstance(configClass, configId);
     }
 
     /**
