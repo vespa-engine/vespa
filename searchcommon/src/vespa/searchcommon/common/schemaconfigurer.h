@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-summary.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -38,22 +39,21 @@ public:
      *
      * @param indexCfg vespa::config::search::IndexschemaConfig to use
      */
-    static void
-    build(const vespa::config::search::IndexschemaConfig &cfg, Schema &schema);
+    static void build(const vespa::config::search::IndexschemaConfig &cfg, Schema &schema);
     /**
      * Build from attribute config.
      *
      * @param attributeCfg vespa::config::search::AttributesConfig to use
      **/
-    static void
-    build(const vespa::config::search::AttributesConfig &cfg, Schema &schema);
+    static void build(const vespa::config::search::AttributesConfig &cfg, Schema &schema);
     /**
      * Build from summary config.
      *
      * @param summaryCfg vespa::config::search::SummaryConfig to use
      **/
-    static void
-    build(const vespa::config::search::SummaryConfig &cfg, Schema &schema);
+    static void build(const vespa::config::search::SummaryConfig &cfg, Schema &schema);
+
+    static void build(const vespa::config::search::ImportedFieldsConfig &cfg, Schema &schema);
 };
 
 class SchemaConfigurer
@@ -63,6 +63,7 @@ private:
     void configure(const vespa::config::search::IndexschemaConfig & cfg);
     void configure(const vespa::config::search::AttributesConfig & cfg);
     void configure(const vespa::config::search::SummaryConfig & cfg);
+    void configure(const vespa::config::search::ImportedFieldsConfig &cfg);
 
 public:
     /**

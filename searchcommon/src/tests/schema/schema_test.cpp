@@ -13,6 +13,8 @@ using vespalib::string;
 namespace search {
 namespace index {
 
+using SIAF = Schema::ImportedAttributeField;
+
 void assertField(const Schema::Field & exp, const Schema::Field & act) {
     EXPECT_EQUAL(exp.getName(), act.getName());
     EXPECT_EQUAL(exp.getDataType(), act.getDataType());
@@ -84,7 +86,7 @@ TEST("testBasic") {
 
     s.addFieldSet(Schema::FieldSet("default").addField("foo").addField("bar"));
 
-    s.addImportedAttributeField(Schema::ImportedAttributeField("imported", schema::INT32));
+    s.addImportedAttributeField(SIAF("imported", schema::INT32));
 
     EXPECT_EQUAL(2u, s.getNumIndexFields());
     {
@@ -157,9 +159,7 @@ TEST("testBasic") {
     {
         const auto &imported = s.getImportedAttributeFields();
         EXPECT_EQUAL(1u, imported.size());
-        EXPECT_EQUAL("imported", imported[0].getName());
-        EXPECT_EQUAL(schema::INT32, imported[0].getDataType());
-        EXPECT_EQUAL(schema::SINGLE, imported[0].getCollectionType());
+        TEST_DO(assertField(SIAF("imported", schema::INT32, schema::SINGLE), imported[0]));
     }
 }
 
@@ -167,14 +167,13 @@ TEST("testLoadAndSave") {
     using SIF = Schema::IndexField;
     using SAF = Schema::AttributeField;
     using SSF = Schema::SummaryField;
-    using SIAF = Schema::ImportedAttributeField;
     using SDT = schema::DataType;
     using SCT = schema::CollectionType;
     typedef Schema::FieldSet SFS;
 
     { // load from config -> save to file -> load from file
         Schema s;
-        SchemaConfigurer configurer(s, "dir:" + TEST_PATH(""));
+        SchemaConfigurer configurer(s, "dir:" + TEST_PATH("load-save-cfg"));
         EXPECT_EQUAL(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));
@@ -409,6 +408,16 @@ TEST("require that imported attribute fields are not saved to disk")
         s.loadFromFile(fileName);
         EXPECT_EQUAL(0u, s.getNumImportedAttributeFields());
     }
+}
+
+TEST("require that schema can be built from imported-fields config")
+{
+    Schema s;
+    SchemaConfigurer configurer(s, "dir:" + TEST_PATH("imported-fields-cfg"));
+    const auto &imported = s.getImportedAttributeFields();
+    EXPECT_EQUAL(2u, imported.size());
+    TEST_DO(assertField(SIAF("imported_a", schema::STRING, schema::SINGLE), imported[0]));
+    TEST_DO(assertField(SIAF("imported_b", schema::STRING, schema::SINGLE), imported[1]));
 }
 
 }  // namespace index
