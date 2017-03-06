@@ -245,8 +245,14 @@ public class NodeAdminImpl implements NodeAdmin {
         if (nodeAgents.containsKey(nodeSpec.hostname)) {
             return;
         }
+
         final NodeAgent agent = nodeAgentFactory.apply(nodeSpec.hostname);
         agent.start(nodeAgentScanIntervalMillis);
         nodeAgents.put(nodeSpec.hostname, agent);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            logger.info("Interrupted while waiting between starting node-agents");
+        }
     }
 }
