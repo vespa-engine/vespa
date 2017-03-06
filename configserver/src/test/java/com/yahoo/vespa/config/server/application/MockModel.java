@@ -73,11 +73,6 @@ class MockModel implements Model {
     }
 
     @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Set<ConfigKey<?>> allConfigsProduced() {
         throw new UnsupportedOperationException();
     }

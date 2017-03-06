@@ -24,11 +24,6 @@ public class ModelStub implements Model {
     }
 
     @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef, ConfigPayload override) {
-        return null;
-    }
-
-    @Override
     public Set<ConfigKey<?>> allConfigsProduced() {
         return null;
     }
