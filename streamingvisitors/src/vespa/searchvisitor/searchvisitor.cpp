@@ -190,6 +190,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
 
 void SearchVisitor::init(const Parameters & params)
 {
+    VISITOR_TRACE(6, "About to lazily init VSM adapter");
     _attrMan.add(_documentIdAttributeBacking);
     _attrMan.add(_rankAttributeBacking);
     Parameters::ValueRef valueRef;
@@ -281,7 +282,8 @@ void SearchVisitor::init(const Parameters & params)
 
         Parameters::ValueRef queryBlob;
         if ( params.get("query", queryBlob) ) {
-            LOG(spam, "Received query blob of %zd bytes", queryBlob.size());
+            LOG(spam, "Received query blob of %zu bytes", queryBlob.size());
+            VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
             QueryTermDataFactory addOnFactory;
             _query = search::Query(addOnFactory, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
             LOG(debug, "Query tree: '%s'", _query.asString().c_str());
@@ -337,6 +339,7 @@ void SearchVisitor::init(const Parameters & params)
     } else {
         LOG(debug, "No unique specification received");
     }
+    VISITOR_TRACE(6, "Completed lazy VSM adapter initialization");
 }
 
 SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri)
