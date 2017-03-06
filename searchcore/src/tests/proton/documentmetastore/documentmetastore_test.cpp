@@ -110,13 +110,13 @@ createBucketDB()
 bool
 assertPut(const BucketId &bucketId,
           const Timestamp &timestamp,
-          uint32_t docSize,
           uint32_t lid,
           const GlobalId &gid,
           DocumentMetaStore &dms)
 {
     Result inspect = dms.inspect(gid);
     PutRes putRes;
+    uint32_t docSize = 1;
     if (!EXPECT_TRUE((putRes = dms.put(gid, bucketId, timestamp, docSize, inspect.getLid())).
             ok())) return false;
     return EXPECT_EQUAL(lid, putRes.getLid());
@@ -259,25 +259,24 @@ Timestamp time3(42u);
 Timestamp time4(82u);
 Timestamp time5(141u);
 uint32_t docSize1 = 1;
-uint32_t docSize2 = 1;
-uint32_t docSize3 = 1;
 uint32_t docSize4 = 1;
 uint32_t docSize5 = 1;
 
 uint32_t
-addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timestamp timestamp, uint32_t docSize)
+addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timestamp timestamp)
 {
     Result inspect = dms.inspect(gid);
     PutRes putRes;
+    uint32_t docSize = 1;
     EXPECT_TRUE((putRes = dms.put(gid, bid, timestamp, docSize, inspect.getLid())).ok());
     return putRes.getLid();
 }
 
 uint32_t
-addGid(DocumentMetaStore &dms, const GlobalId &gid, Timestamp timestamp, uint32_t docSize)
+addGid(DocumentMetaStore &dms, const GlobalId &gid, Timestamp timestamp)
 {
     BucketId bid(minNumBits, gid.convertToBucketId().getRawId());
-    return addGid(dms, gid, bid, timestamp, docSize);
+    return addGid(dms, gid, bid, timestamp);
 }
 
 void
@@ -297,9 +296,9 @@ TEST("require that removed documents are bucketized to bucket 0")
 
     vespalib::GenerationHandler::Guard guard = dms.getGuard();
     EXPECT_EQUAL(BucketId(), dms.getBucketOf(guard, 1));
-    EXPECT_TRUE(assertPut(bucketId1, time1, docSize1, 1, gid1, dms));
+    EXPECT_TRUE(assertPut(bucketId1, time1, 1, gid1, dms));
     EXPECT_EQUAL(bucketId1, dms.getBucketOf(guard, 1));
-    EXPECT_TRUE(assertPut(bucketId2, time2, docSize2, 2, gid2, dms));
+    EXPECT_TRUE(assertPut(bucketId2, time2, 2, gid2, dms));
     EXPECT_EQUAL(bucketId2, dms.getBucketOf(guard, 2));
     EXPECT_TRUE(dms.remove(1));
     EXPECT_EQUAL(BucketId(), dms.getBucketOf(guard, 1));
@@ -313,16 +312,16 @@ TEST("requireThatGidsCanBeInsertedAndRetrieved")
     // put()
     EXPECT_EQUAL(1u, dms.getNumDocs());
     EXPECT_EQUAL(0u, dms.getNumUsedLids());
-    EXPECT_TRUE(assertPut(bucketId1, time1, docSize1, 1, gid1, dms));
+    EXPECT_TRUE(assertPut(bucketId1, time1, 1, gid1, dms));
     EXPECT_EQUAL(2u, dms.getNumDocs());
     EXPECT_EQUAL(1u, dms.getNumUsedLids());
-    EXPECT_TRUE(assertPut(bucketId2, time2, docSize2, 2, gid2, dms));
+    EXPECT_TRUE(assertPut(bucketId2, time2, 2, gid2, dms));
     EXPECT_EQUAL(3u, dms.getNumDocs());
     EXPECT_EQUAL(2u, dms.getNumUsedLids());
     // gid1 already inserted
-    EXPECT_TRUE(assertPut(bucketId1, time1, docSize1, 1, gid1, dms));
+    EXPECT_TRUE(assertPut(bucketId1, time1, 1, gid1, dms));
     // gid2 already inserted
-    EXPECT_TRUE(assertPut(bucketId2, time2, docSize2, 2, gid2, dms));
+    EXPECT_TRUE(assertPut(bucketId2, time2, 2, gid2, dms));
 
 
     // getGid()
@@ -344,7 +343,7 @@ TEST("requireThatGidsCanBeCleared")
     GlobalId gid;
     uint32_t lid = 0u;
     dms.constructFreeList();
-    addGid(dms, gid1, bucketId1, time1, docSize1);
+    addGid(dms, gid1, bucketId1, time1);
     EXPECT_TRUE(assertGid(gid1, 1, dms));
     EXPECT_TRUE(assertLid(1, gid1, dms));
     EXPECT_EQUAL(1u, dms.getNumUsedLids());
@@ -354,7 +353,7 @@ TEST("requireThatGidsCanBeCleared")
     EXPECT_TRUE(!dms.getGid(1, gid));
     EXPECT_TRUE(!dms.getLid(gid1, lid));
     // reuse lid
-    addGid(dms, gid2, bucketId2, time2, docSize2);
+    addGid(dms, gid2, bucketId2, time2);
     EXPECT_TRUE(assertGid(gid2, 1, dms));
     EXPECT_TRUE(assertLid(1, gid2, dms));
     EXPECT_EQUAL(1u, dms.getNumUsedLids());
@@ -374,7 +373,7 @@ TEST("requireThatGenerationHandlingIsWorking")
     dms->constructFreeList();
     const GenerationHandler & gh = dms->getGenerationHandler();
     EXPECT_EQUAL(1u, gh.getCurrentGeneration());
-    addGid(*dms, gid1, bucketId1, time1, docSize1);
+    addGid(*dms, gid1, bucketId1, time1);
     EXPECT_EQUAL(2u, gh.getCurrentGeneration());
     EXPECT_EQUAL(0u, gh.getGenerationRefCount());
     {
@@ -516,10 +515,10 @@ TEST("requireThatLidAndGidSpaceIsReused")
     dms->constructFreeList();
     EXPECT_EQUAL(1u, dms->getNumDocs());
     EXPECT_EQUAL(0u, dms->getNumUsedLids());
-    EXPECT_TRUE(assertPut(bucketId1, time1, docSize1, 1, gid1, *dms)); // -> gen 1
+    EXPECT_TRUE(assertPut(bucketId1, time1, 1, gid1, *dms)); // -> gen 1
     EXPECT_EQUAL(2u, dms->getNumDocs());
     EXPECT_EQUAL(1u, dms->getNumUsedLids());
-    EXPECT_TRUE(assertPut(bucketId2, time2, docSize2, 2, gid2, *dms)); // -> gen 2
+    EXPECT_TRUE(assertPut(bucketId2, time2, 2, gid2, *dms)); // -> gen 2
     EXPECT_EQUAL(3u, dms->getNumDocs());
     EXPECT_EQUAL(2u, dms->getNumUsedLids());
     dms->remove(2); // -> gen 3
@@ -527,7 +526,7 @@ TEST("requireThatLidAndGidSpaceIsReused")
     EXPECT_EQUAL(3u, dms->getNumDocs());
     EXPECT_EQUAL(1u, dms->getNumUsedLids());
     // -> gen 5 (reuse of lid 2)
-    EXPECT_TRUE(assertPut(bucketId3, time3, docSize3, 2, gid3, *dms));
+    EXPECT_TRUE(assertPut(bucketId3, time3, 2, gid3, *dms));
     EXPECT_EQUAL(3u, dms->getNumDocs());
     EXPECT_EQUAL(2u, dms->getNumUsedLids()); // reuse
     EXPECT_TRUE(assertGid(gid3, 2, *dms));
@@ -537,16 +536,16 @@ TEST("requireThatLidAndGidSpaceIsReused")
         dms->removeComplete(2);
         EXPECT_EQUAL(3u, dms->getNumDocs());
         EXPECT_EQUAL(1u, dms->getNumUsedLids()); // lid 2 free but guarded
-        EXPECT_TRUE(assertPut(bucketId4, time4, docSize4, 3, gid4, *dms));
+        EXPECT_TRUE(assertPut(bucketId4, time4, 3, gid4, *dms));
         EXPECT_EQUAL(4u, dms->getNumDocs()); // generation guarded, new lid
         EXPECT_EQUAL(2u, dms->getNumUsedLids());
         EXPECT_TRUE(assertGid(gid4, 3, *dms));
     }
-    EXPECT_TRUE(assertPut(bucketId5, time5, docSize5, 4, gid5, *dms));
+    EXPECT_TRUE(assertPut(bucketId5, time5, 4, gid5, *dms));
     EXPECT_EQUAL(5u, dms->getNumDocs()); // reuse blocked by previous guard. released at end of put()
     EXPECT_EQUAL(3u, dms->getNumUsedLids());
     EXPECT_TRUE(assertGid(gid5, 4, *dms));
-    EXPECT_TRUE(assertPut(bucketId2, time2, docSize2, 2, gid2, *dms)); // reuse of lid 2
+    EXPECT_TRUE(assertPut(bucketId2, time2, 2, gid2, *dms)); // reuse of lid 2
     EXPECT_EQUAL(5u, dms->getNumDocs());
     EXPECT_EQUAL(4u, dms->getNumUsedLids());
     EXPECT_TRUE(assertGid(gid2, 2, *dms));
@@ -576,8 +575,7 @@ TEST("requireThatWeCanStoreBucketIdAndTimestamp")
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(numBucketBits);
-        uint32_t docSize = 1;
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias), docSize);
+        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQUAL(lid, addLid);
     }
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
@@ -604,8 +602,7 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(numBucketBits);
-        uint32_t docSize = 1;
-        uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + timestampBias), docSize);
+        uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQUAL(lid, addLid);
     }
     for (size_t i = 0; i < removeLids.size(); ++i) {
@@ -648,8 +645,7 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
         BucketId bucketId(numBucketBits,
                           gid.convertToBucketId().getRawId());
         // re-use removeLid[i]
-        uint32_t docSize = 1;
-        uint32_t addLid = addGid(dms2, gid, bucketId, Timestamp(43u + i), docSize);
+        uint32_t addLid = addGid(dms2, gid, bucketId, Timestamp(43u + i));
         EXPECT_EQUAL(removeLids[i], addLid);
         EXPECT_EQUAL(numLids + 1, dms2.getNumDocs());
         EXPECT_EQUAL(numLids - (3 - i), dms2.getNumUsedLids());
@@ -669,7 +665,7 @@ TEST("requireThatStatsAreUpdated")
     EXPECT_GREATER(lastUsed, perGidUsed);
 
     FastOS_Thread::Sleep(2200);
-    addGid(dms, gid1, bucketId1, time1, docSize1);
+    addGid(dms, gid1, bucketId1, time1);
     EXPECT_EQUAL(2u, dms.getStatus().getNumDocs());
     EXPECT_EQUAL(2u, dms.getStatus().getNumValues());
     EXPECT_GREATER_EQUAL(dms.getStatus().getAllocated(), lastAllocated);
@@ -679,7 +675,7 @@ TEST("requireThatStatsAreUpdated")
     lastAllocated = dms.getStatus().getAllocated();
     lastUsed = dms.getStatus().getUsed();
 
-    addGid(dms, gid2, bucketId2, time2, docSize2);
+    addGid(dms, gid2, bucketId2, time2);
     dms.commit(true);
     EXPECT_EQUAL(3u, dms.getStatus().getNumDocs());
     EXPECT_EQUAL(3u, dms.getStatus().getNumValues());
@@ -731,8 +727,8 @@ TEST("requireThatWeCanPutAndRemoveBeforeFreeListConstruct")
     dms.constructFreeList();
     EXPECT_EQUAL(1u, dms.getNumUsedLids());
     EXPECT_EQUAL(5u, dms.getNumDocs());
-    EXPECT_TRUE(assertPut(bucketId2, time2, docSize2, 2, gid2, dms));
-    EXPECT_TRUE(assertPut(bucketId3, time3, docSize3, 3, gid3, dms));
+    EXPECT_TRUE(assertPut(bucketId2, time2, 2, gid2, dms));
+    EXPECT_TRUE(assertPut(bucketId3, time3, 3, gid3, dms));
     EXPECT_EQUAL(3u, dms.getNumUsedLids());
     EXPECT_EQUAL(5u, dms.getNumDocs());
 }
@@ -754,10 +750,9 @@ TEST("requireThatWeCanSortGids")
         Timestamp oldTimestamp;
         BucketId bucketId(minNumBits,
                           gid.convertToBucketId().getRawId());
-        uint32_t docSize = 1;
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(0u), docSize);
+        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(0u));
         EXPECT_EQUAL(lid, addLid);
-        uint32_t addLid2 = addGid(rdms, gid, bucketId, Timestamp(0u), docSize);
+        uint32_t addLid2 = addGid(rdms, gid, bucketId, Timestamp(0u));
         EXPECT_EQUAL(lid, addLid2);
     }
     std::vector<uint32_t> lids;
@@ -788,8 +783,7 @@ TEST("requireThatBasicBucketInfoWorks")
         Timestamp oldTimestamp;
         BucketId bucketId(minNumBits,
                           gid.convertToBucketId().getRawId());
-        uint32_t docSize = 1;
-        uint32_t addLid = addGid(dms, gid, bucketId, timestamp, docSize);
+        uint32_t addLid = addGid(dms, gid, bucketId, timestamp);
         EXPECT_EQUAL(lid, addLid);
         m[std::make_pair(bucketId, gid)] = timestamp;
     }
@@ -799,8 +793,7 @@ TEST("requireThatBasicBucketInfoWorks")
         Timestamp oldTimestamp;
         BucketId bucketId(minNumBits,
                           gid.convertToBucketId().getRawId());
-        uint32_t docSize = 1;
-        uint32_t addLid = addGid(dms, gid, bucketId, timestamp, docSize);
+        uint32_t addLid = addGid(dms, gid, bucketId, timestamp);
         EXPECT_EQUAL(lid, addLid);
         m[std::make_pair(bucketId, gid)] = timestamp;
     }
@@ -857,8 +850,7 @@ TEST("requireThatWeCanRetrieveListOfLidsFromBucketId")
         GlobalId gid = createGid(lid);
         BucketId bucketId(bucketBits,
                           gid.convertToBucketId().getRawId());
-        uint32_t docSize = 1;
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(0), docSize);
+        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(0));
         EXPECT_EQUAL(lid, addLid);
         m[bucketId].push_back(lid);
     }
@@ -928,8 +920,7 @@ struct UserDocFixture {
         bid3 = BucketId(minNumBits, gids[7].convertToBucketId().getRawId());
     }
     void addGlobalId(const GlobalId &gid, uint32_t expLid, uint32_t timestampConst = 100) {
-        uint32_t docSize = 1;
-        uint32_t actLid = addGid(dms, gid, Timestamp(expLid + timestampConst), docSize);
+        uint32_t actLid = addGid(dms, gid, Timestamp(expLid + timestampConst));
         EXPECT_EQUAL(expLid, actLid);
     }
     void putGlobalId(const GlobalId &gid, uint32_t lid, uint32_t timestampConst = 100) {
@@ -1675,10 +1666,9 @@ TEST("requireThatRemoveChangedBucketWorks")
     GlobalIdEntry g(1);
     f.dms.constructFreeList();
     f._bucketDBHandler.handleCreateBucket(g.bid1);
-    uint32_t docSize = 1;
-    uint32_t addLid1 = addGid(f.dms, g.gid, g.bid1, Timestamp(0), docSize);
+    uint32_t addLid1 = addGid(f.dms, g.gid, g.bid1, Timestamp(0));
     EXPECT_EQUAL(1u, addLid1);
-    uint32_t addLid2 = addGid(f.dms, g.gid, g.bid2, Timestamp(0), docSize);
+    uint32_t addLid2 = addGid(f.dms, g.gid, g.bid2, Timestamp(0));
     EXPECT_TRUE(1u == addLid2);
     EXPECT_TRUE(f.dms.remove(1u));
     f.dms.removeComplete(1u);
@@ -1771,10 +1761,10 @@ TEST("requireThatMoveWorks")
     
     EXPECT_EQUAL(1u, dms.getNumDocs());
     EXPECT_EQUAL(0u, dms.getNumUsedLids());
-    EXPECT_TRUE(assertPut(bucketId1, time1, docSize1, 1u, gid1, dms));
+    EXPECT_TRUE(assertPut(bucketId1, time1, 1u, gid1, dms));
     EXPECT_EQUAL(2u, dms.getNumDocs());
     EXPECT_EQUAL(1u, dms.getNumUsedLids());
-    EXPECT_TRUE(assertPut(bucketId2, time2, docSize2, 2u, gid2, dms));
+    EXPECT_TRUE(assertPut(bucketId2, time2, 2u, gid2, dms));
     EXPECT_EQUAL(3u, dms.getNumDocs());
     EXPECT_EQUAL(2u, dms.getNumUsedLids());
     EXPECT_TRUE(dms.getGid(1u, gid));
@@ -1921,8 +1911,7 @@ addLid(DocumentMetaStore &dms, uint32_t lid)
     GlobalId gid = createGid(lid);
     BucketId bucketId(gid.convertToBucketId());
     bucketId.setUsedBits(numBucketBits);
-    uint32_t docSize = 1;
-    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias), docSize);
+    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
     EXPECT_EQUAL(lid, addedLid);
 }
 

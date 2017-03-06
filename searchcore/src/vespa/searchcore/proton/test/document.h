@@ -40,7 +40,7 @@ public:
     }
     search::DocumentIdT getLid() const { return _lid; }
     storage::spi::Timestamp getTimestamp() const { return _tstamp; }
-    uint32_t getSize() const { return 1; }
+    uint32_t getDocSize() const { return 1; }
 };
 
 typedef std::vector<Document> DocumentVector;

@@ -168,7 +168,7 @@ public:
     Result put(const GlobalId &gid,
                const BucketId &bucketId,
                const Timestamp &timestamp,
-               uint32_t size,
+               uint32_t docSize,
                DocId lid) override;
     bool updateMetaData(DocId lid,
                         const BucketId &bucketId,
