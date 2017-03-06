@@ -62,7 +62,7 @@ public class DockerTester implements AutoCloseable {
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
-                orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment);
+                orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment, Optional.empty());
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.of(storageMaintainer), 100, mr, Optional.empty());
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }

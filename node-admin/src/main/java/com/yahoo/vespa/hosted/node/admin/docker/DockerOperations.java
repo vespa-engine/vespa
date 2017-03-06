@@ -14,8 +14,9 @@ import java.util.Optional;
 public interface DockerOperations {
     Optional<String> getVespaVersion(ContainerName containerName);
 
-    // Returns true if started
-    boolean startContainerIfNeeded(ContainerName containerName, ContainerNodeSpec nodeSpec);
+    void startContainer(ContainerName containerName, ContainerNodeSpec nodeSpec);
+
+    void removeContainer(Container existingContainer);
 
     // Returns false if image is already downloaded
     boolean shouldScheduleDownloadOfImage(DockerImage dockerImage);
@@ -23,8 +24,6 @@ public interface DockerOperations {
     Optional<Container> getContainer(ContainerName containerName);
 
     void scheduleDownloadOfImage(ContainerName containerName, ContainerNodeSpec nodeSpec, Runnable callback);
-
-    void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer);
 
     ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String[] command);
 
