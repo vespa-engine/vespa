@@ -55,8 +55,8 @@ public class CuratorDatabaseClient {
     
     private final Zone zone;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
-        this.nodeSerializer = new NodeSerializer(flavors, nameResolver);
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone) {
+        this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
         jsonMapper.registerModule(new JodaModule());
         this.curatorDatabase = new CuratorDatabase(curator, root, /* useCache: */ false);

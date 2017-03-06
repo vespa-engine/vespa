@@ -221,8 +221,7 @@ public class ProvisioningTester implements AutoCloseable {
                                                 type));
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
-        return nodes;
+        return nodeRepository.setReady(nodes);
     }
 
     /** Creates a set of virtual docker nodes on a single docker host */

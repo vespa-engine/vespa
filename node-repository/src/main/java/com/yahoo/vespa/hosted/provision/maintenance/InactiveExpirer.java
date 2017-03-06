@@ -10,7 +10,8 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Maintenance job which moves inactive nodes to dirty after timeout.
+ * Maintenance job which moves inactive nodes to dirty or parked after timeout.
+ *
  * The timeout is in place for two reasons:
  * <ul>
  * <li>To ensure that the new application configuration has time to
@@ -20,7 +21,10 @@ import java.util.List;
  * they can be brought back to active and correct state faster than a new node.
  * </ul>
  *
+ * Nodes with the retired flag should not be reused and will be moved to parked instead of dirty.
+ *
  * @author bratseth
+ * @author mpolden
  */
 public class InactiveExpirer extends Expirer {
 
@@ -33,7 +37,13 @@ public class InactiveExpirer extends Expirer {
 
     @Override
     protected void expire(List<Node> expired) {
-        nodeRepository.setDirty(expired);
+        expired.forEach(node -> {
+            if (node.status().wantToRetire()) {
+                nodeRepository.park(node.hostname());
+            } else {
+                nodeRepository.setDirty(node);
+            }
+        });
     }
 
 }

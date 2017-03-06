@@ -35,5 +35,6 @@
   "convergedStateVersion": "5.104.142-2.1.2408",
   "failCount": 0,
   "hardwareFailure" : false,
+  "wantToRetire" : false,
   "history":[{"event":"readied","at":123},{"event":"reserved","at":123}]
 }

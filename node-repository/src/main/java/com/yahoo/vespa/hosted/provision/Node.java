@@ -136,10 +136,9 @@ public final class Node {
                .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.system)));
     }
 
-    /** Returns a copy of this node which is retired by the system if the flavor is retired, otherwise it's retired by
-     * the application */
+    /** Returns a copy of this node which is retired */
     public Node retire(Instant retiredAt) {
-        if (flavor.isRetired()) {
+        if (flavor.isRetired() || status.wantToRetire()) {
             return retireBySystem(retiredAt);
         }
         return retireByApplication(retiredAt);

@@ -42,8 +42,6 @@ public class NodeSerializer {
     /** The configured node flavors */
     private final NodeFlavors flavors;
 
-    private final NameResolver nameResolver;
-
     // Node fields
     private static final String hostnameKey = "hostname";
     private static final String ipAddressesKey = "ipAddresses";
@@ -59,6 +57,7 @@ public class NodeSerializer {
     private static final String failCountKey = "failCount";
     private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
+    private static final String wantToRetireKey = "wantToRetire";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -81,9 +80,8 @@ public class NodeSerializer {
 
     // ---------------- Serialization ----------------------------------------------------
 
-    public NodeSerializer(NodeFlavors flavors, NameResolver nameResolver) {
+    public NodeSerializer(NodeFlavors flavors) {
         this.flavors = flavors;
-        this.nameResolver = nameResolver;
     }
 
     public byte[] toJson(Node node) {
@@ -111,6 +109,7 @@ public class NodeSerializer {
         node.status().dockerImage().ifPresent(image -> object.setString(dockerImageKey, image));
         object.setLong(failCountKey, node.status().failCount());
         node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
+        object.setBool(wantToRetireKey, node.status().wantToRetire());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
@@ -152,7 +151,7 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(openStackIdKey).asString(),
-                        ipAddressesFromResolverOrSlime(object),
+                        ipAddressesFromSlime(object),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
@@ -170,7 +169,8 @@ public class NodeSerializer {
                           optionalString(object.field(stateVersionKey)),
                           optionalString(object.field(dockerImageKey)),
                           (int)object.field(failCountKey).asLong(),
-                          hardwareFailureFromSlime(object.field(hardwareFailureKey)));
+                          hardwareFailureFromSlime(object.field(hardwareFailureKey)),
+                          object.field(wantToRetireKey).asBool());
     }
 
     private Flavor flavorFromSlime(Inspector object) {
@@ -230,14 +230,10 @@ public class NodeSerializer {
             return Optional.empty();
     }
 
-    // TODO: Remove this and use the ipAddresses field directly after 6.55 has been deployed everywhere
-    private Set<String> ipAddressesFromResolverOrSlime(Inspector object) {
-        if (object.field(ipAddressesKey).valid()) {
-            ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
-            object.field(ipAddressesKey).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
-            return ipAddresses.build();
-        }
-        return nameResolver.getAllByNameOrThrow(object.field("hostname").asString());
+    private Set<String> ipAddressesFromSlime(Inspector object) {
+        ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
+        object.field(ipAddressesKey).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
+        return ipAddresses.build();
     }
     
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {

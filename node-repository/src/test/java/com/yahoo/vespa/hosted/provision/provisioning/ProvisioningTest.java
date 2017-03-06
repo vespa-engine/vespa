@@ -48,6 +48,7 @@ import static org.junit.Assert.fail;
  * Various allocation sequence scenarios
  *
  * @author bratseth
+ * @author mpolden
  */
 public class ProvisioningTest {
 
@@ -459,10 +460,26 @@ public class ProvisioningTest {
             prepare(application, 2, 0, 2, 0, flavorToRetire,
                     tester);
             fail("Expected exception");
-        } catch (OutOfCapacityException ignored) {}
+        } catch (OutOfCapacityException e) {
+            assertTrue(e.getMessage().startsWith("Could not satisfy request"));
+        }
+    }
 
-        NodeList retired = tester.getNodes(application).retired();
-        assertTrue("No nodes are retired", retired.asList().isEmpty());
+    @Test
+    public void out_of_capacity_all_nodes_want_to_retire() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId application = tester.makeApplicationId();
+        // Flag all nodes for retirement
+        List<Node> readyNodes = tester.makeReadyNodes(5, "default");
+        readyNodes.forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
+
+        try {
+            prepare(application, 2, 0, 2, 0, "default", tester);
+            fail("Expected exception");
+        } catch (OutOfCapacityException e) {
+            assertTrue(e.getMessage().startsWith("Could not satisfy request"));
+        }
     }
 
     @Test
@@ -561,20 +578,14 @@ public class ProvisioningTest {
             tester.activate(application, state.allHosts);
 
             // Nodes with retired flavor are retired
-            Predicate<Node> retiredBySystem = (node) -> node.history().event(History.Event.Type.retired)
-                    .filter(e -> e instanceof History.RetiredEvent)
-                    .map(e -> (History.RetiredEvent) e)
-                    .filter(e -> e.agent() == History.RetiredEvent.Agent.system)
-                    .isPresent();
-
             NodeList retired = tester.getNodes(application).retired();
             assertEquals(4, retired.size());
-            assertTrue("Nodes are retired by system", retired.asList().stream().allMatch(retiredBySystem));
+            assertTrue("Nodes are retired by system", retired.asList().stream().allMatch(retiredBy(History.RetiredEvent.Agent.system)));
         }
     }
 
     @Test
-    public void application_deployment_does_not_use_unallocated_nodes_having_retired_flavor() {
+    public void application_deployment_is_not_given_unallocated_nodes_having_retired_flavor() {
         String flavorToRetire = "default";
         String replacementFlavor = "new-default";
 
@@ -601,7 +612,36 @@ public class ProvisioningTest {
         assertTrue("Allocated nodes have flavor " + replacementFlavor,
                    nodes.stream().allMatch(n -> n.flavor().name().equals(replacementFlavor)));
     }
-    
+
+    @Test
+    public void application_deployment_retires_nodes_that_want_to_retire() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId application = tester.makeApplicationId();
+        tester.makeReadyNodes(10, "default");
+
+        // Deploy application
+        {
+            SystemState state = prepare(application, 2, 0, 2, 0,
+                                        "default", tester);
+            tester.activate(application, state.allHosts);
+            assertEquals(4, tester.getNodes(application, Node.State.active).size());
+        }
+
+        // Retire some nodes and redeploy
+        {
+            List<Node> nodesToRetire = tester.getNodes(application, Node.State.active).asList().subList(0, 2);
+            nodesToRetire.forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
+
+            SystemState state = prepare(application, 2, 0, 2, 0, "default", tester);
+            tester.activate(application, state.allHosts);
+
+            List<Node> retiredNodes = tester.getNodes(application).retired().asList();
+            assertEquals(2, retiredNodes.size());
+            assertTrue("Nodes are retired by system", retiredNodes.stream().allMatch(retiredBy(History.RetiredEvent.Agent.system)));
+        }
+    }
+
     private void assertCorrectFlavorPreferences(boolean largeIsStock) {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10).stock(largeIsStock);
@@ -765,6 +805,15 @@ public class ProvisioningTest {
             org.junit.Assert.assertEquals(this.content1, other.content1);
         }
 
+    }
+
+    /** A predicate that returns whether a node has been retired by the given agent */
+    private static Predicate<Node> retiredBy(History.RetiredEvent.Agent agent) {
+        return (node) -> node.history().event(History.Event.Type.retired)
+                .filter(e -> e instanceof History.RetiredEvent)
+                .map(e -> (History.RetiredEvent) e)
+                .filter(e -> e.agent() == agent)
+                .isPresent();
     }
 
 }
