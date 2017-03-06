@@ -116,7 +116,7 @@ public class ParseItemTestCase {
 
     @Test
     public void parse_exactString() throws ParseException {
-        ExactstringItem subStringItem = (ExactstringItem) parse("(EXACT 'word')");
+        ExactStringItem subStringItem = (ExactStringItem) parse("(EXACT 'word')");
         assertThat(subStringItem.getWord(), is("word"));
     }
 
