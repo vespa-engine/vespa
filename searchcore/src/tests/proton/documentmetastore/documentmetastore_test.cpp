@@ -1920,7 +1920,7 @@ assertSize(DocumentMetaStore &dms, uint32_t lid, uint32_t expSize)
 {
     EXPECT_TRUE(dms.validLid(lid));
     const auto &metaData = dms.getRawMetaData(lid);
-    EXPECT_EQUAL(expSize, metaData.getSize());
+    EXPECT_EQUAL(expSize, metaData.getDocSize());
 }
 
 void
@@ -1980,6 +1980,9 @@ TEST("require that document sizes are saved")
     TEST_DO(addLid(dms1, 1, 100));
     TEST_DO(addLid(dms1, 2, 10000));
     TEST_DO(addLid(dms1, 3, 100000000));
+    TEST_DO(assertSize(dms1, 1, 100));
+    TEST_DO(assertSize(dms1, 2, 10000));
+    TEST_DO(assertSize(dms1, 3, (1u << 24) - 1));
 
     TuneFileAttributes tuneFileAttributes;
     DummyFileHeaderContext fileHeaderContext;

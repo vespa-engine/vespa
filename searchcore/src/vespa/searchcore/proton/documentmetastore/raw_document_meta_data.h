@@ -19,23 +19,23 @@ struct RawDocumentMetaData
     using Timestamp = storage::spi::Timestamp;
     GlobalId  _gid;
     uint8_t   _bucketUsedBits;
-    uint8_t   _sizeLow;
-    uint16_t  _sizeHigh;
+    uint8_t   _docSizeLow;
+    uint16_t  _docSizeHigh;
     Timestamp _timestamp;
 
     RawDocumentMetaData(void)
         : _gid(),
           _bucketUsedBits(BucketId::minNumBits),
-          _sizeLow(0),
-          _sizeHigh(0),
+          _docSizeLow(0),
+          _docSizeHigh(0),
           _timestamp()
     { }
 
-    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t size)
+    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize)
         : _gid(gid),
           _bucketUsedBits(bucketId.getUsedBits()),
-          _sizeLow(size),
-          _sizeHigh(size >> 8),
+          _docSizeLow(docSize),
+          _docSizeHigh(docSize >> 8),
           _timestamp(timestamp)
     {
         assert(bucketId.valid());
@@ -43,9 +43,9 @@ struct RawDocumentMetaData
         verId.setUsedBits(_bucketUsedBits);
         assert(bucketId.getRawId() == verId.getRawId() ||
                bucketId.getRawId() == verId.getId());
-        if (size >= (1u << 24)) {
-            _sizeLow = 0xff;
-            _sizeHigh = 0xffff;
+        if (docSize >= (1u << 24)) {
+            _docSizeLow = 0xff;
+            _docSizeHigh = 0xffff;
         }
     }
 
@@ -84,8 +84,8 @@ struct RawDocumentMetaData
 
     void setTimestamp(const Timestamp &timestamp) { _timestamp = timestamp; }
 
-    uint32_t getSize() const { return _sizeLow + (static_cast<uint32_t>(_sizeHigh) << 8); }
-    void setSize(uint32_t size) { _sizeLow = size; _sizeHigh = size >> 8; }
+    uint32_t getDocSize() const { return _docSizeLow + (static_cast<uint32_t>(_docSizeHigh) << 8); }
+    void setDocSize(uint32_t docSize) { _docSizeLow = docSize; _docSizeHigh = docSize >> 8; }
 };
 
 } // namespace proton

@@ -2,6 +2,7 @@
 
 #include "documentmetastoresaver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
+#include "document_meta_store_versions.h"
 
 using vespalib::GenerationHandler;
 using search::IAttributeSaveTarget;
@@ -9,8 +10,6 @@ using search::IAttributeSaveTarget;
 namespace proton {
 
 namespace {
-
-constexpr uint32_t NO_DOCUMENT_SIZE_TRACKING_VERSION = 0u;
 
 /*
  * Functor class to write meta data for a single lid. Note that during
@@ -24,17 +23,17 @@ class WriteMetaData
     search::BufferWriter &_datWriter;
     const RawDocumentMetaData *_metaDataStore;
     uint32_t _metaDataStoreSize;
-    bool _writeSize;
+    bool _writeDocSize;
     using MetaDataStore = DocumentMetaStoreSaver::MetaDataStore;
     using GlobalId = documentmetastore::IStore::GlobalId;
     using BucketId = documentmetastore::IStore::BucketId;
     using Timestamp = documentmetastore::IStore::Timestamp;
 public:
-    WriteMetaData(search::BufferWriter &datWriter, const MetaDataStore &metaDataStore, bool writeSize)
+    WriteMetaData(search::BufferWriter &datWriter, const MetaDataStore &metaDataStore, bool writeDocSize)
         : _datWriter(datWriter),
           _metaDataStore(&metaDataStore[0]),
           _metaDataStoreSize(metaDataStore.size()),
-          _writeSize(writeSize)
+          _writeDocSize(writeDocSize)
     { }
 
     void operator()(uint32_t lid) {
@@ -50,13 +49,13 @@ public:
         datWriter.write(&lid, sizeof(lid));
         datWriter.write(gid.get(), GlobalId::LENGTH);
         datWriter.write(&bucketUsedBits, sizeof(bucketUsedBits));
-        if (_writeSize) {
-            uint32_t size = metaData.getSize();
-            assert(size < (1u << 24));
-            uint8_t sizeLow = size;
-            uint16_t sizeHigh = size >> 8;
-            datWriter.write(&sizeLow, sizeof(sizeLow));
-            datWriter.write(&sizeHigh, sizeof(sizeHigh));
+        if (_writeDocSize) {
+            uint32_t docSize = metaData.getDocSize();
+            assert(docSize < (1u << 24));
+            uint8_t docSizeLow = docSize;
+            uint16_t docSizeHigh = docSize >> 8;
+            datWriter.write(&docSizeLow, sizeof(docSizeLow));
+            datWriter.write(&docSizeHigh, sizeof(docSizeHigh));
         }
         datWriter.write(&timestamp, sizeof(timestamp));
     }
@@ -74,10 +73,10 @@ DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
     : AttributeSaver(std::move(guard), cfg),
       _gidIterator(gidIterator),
       _metaDataStore(metaDataStore),
-      _writeSize(true)
+      _writeDocSize(true)
 {
-    if (cfg.getVersion() == NO_DOCUMENT_SIZE_TRACKING_VERSION) {
-        _writeSize = false;
+    if (cfg.getVersion() == documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION) {
+        _writeDocSize = false;
     }
 }
 
@@ -91,7 +90,7 @@ DocumentMetaStoreSaver::onSave(IAttributeSaveTarget &saveTarget)
     // write <lid,gid> pairs, sorted on gid
     std::unique_ptr<search::BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());
-    _gidIterator.foreach_key(WriteMetaData(*datWriter, _metaDataStore, _writeSize));
+    _gidIterator.foreach_key(WriteMetaData(*datWriter, _metaDataStore, _writeDocSize));
     datWriter->flush();
     return true;
 }

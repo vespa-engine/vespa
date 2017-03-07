@@ -30,7 +30,7 @@ public:
 private:
     GidIterator _gidIterator; // iterator over frozen tree
     const MetaDataStore &_metaDataStore;
-    bool _writeSize;
+    bool _writeDocSize;
 
     virtual bool onSave(search::IAttributeSaveTarget &saveTarget) override;
 public:
