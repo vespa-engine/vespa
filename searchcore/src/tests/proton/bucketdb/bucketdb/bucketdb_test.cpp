@@ -24,6 +24,7 @@ const Timestamp TIME_1(1u);
 const Timestamp TIME_2(2u);
 const Timestamp TIME_3(3u);
 constexpr uint32_t DOCSIZE_1(4096u);
+constexpr uint32_t DOCSIZE_2(10000u);
 
 typedef BucketInfo::ReadyState RS;
 typedef SubDbType SDT;
@@ -51,6 +52,9 @@ assertDocSizes(size_t ready,
     EXPECT_EQUAL(ready, state.getReadyDocSizes());
     EXPECT_EQUAL(notReady, state.getNotReadyDocSizes());
     EXPECT_EQUAL(removed, state.getRemovedDocSizes());
+    BucketInfo info = state;
+    EXPECT_EQUAL(ready + notReady, info.getDocumentSize());
+    EXPECT_EQUAL(ready + notReady + removed, info.getUsedSize());
 }
 
 void
@@ -161,6 +165,16 @@ TEST_F("require that bucket can be cached", Fixture)
     // Must ensure empty bucket db before destruction.
     f.remove(TIME_1, SDT::READY);
     f.remove(TIME_2, SDT::NOTREADY);
+}
+
+TEST_F("require that bucket checksum ignores document sizes", Fixture)
+{
+    auto state1 = f.add(TIME_1, DOCSIZE_1, SDT::READY);
+    f.remove(TIME_1, DOCSIZE_1, SDT::READY);
+    auto state2 = f.add(TIME_1, DOCSIZE_2, SDT::READY);
+    f.remove(TIME_1, DOCSIZE_2, SDT::READY);
+    EXPECT_NOT_EQUAL(state1.getReadyDocSizes(), state2.getReadyDocSizes());
+    EXPECT_EQUAL(state1.getChecksum(), state2.getChecksum());
 }
 
 TEST("require that bucket db can be explored")
