@@ -28,11 +28,15 @@ public class Maintainer {
 
         ObjectMapper mapper = new ObjectMapper();
         List<MaintenanceJob> maintenanceJobs = mapper.readValue(args[0], new TypeReference<List<MaintenanceJob>>(){});
+        executeJobs(maintenanceJobs);
+    }
+
+    public static void executeJobs(List<MaintenanceJob> maintenanceJobs) {
         for (MaintenanceJob job : maintenanceJobs) {
             try {
                 executeJob(job);
             } catch (Exception e) {
-                throw new Exception("Failed to execute job " + job.jobName + " with arguments " +
+                throw new RuntimeException("Failed to execute job " + job.jobName + " with arguments " +
                         Arrays.toString(job.arguments.entrySet().toArray()), e);
             }
         }
@@ -89,7 +93,7 @@ public class Maintainer {
     /**
      * Should be equal to MaintainerExecutorJob in StorageMaintainer
      */
-    private static class MaintenanceJob {
+    public static class MaintenanceJob {
         private final String jobName;
         private final Map<String, Object> arguments;
 
