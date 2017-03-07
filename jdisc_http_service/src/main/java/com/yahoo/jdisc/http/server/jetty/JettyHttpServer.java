@@ -120,6 +120,15 @@ public class JettyHttpServer extends AbstractServerProvider {
     private final Server server;
     private final List<Integer> listenedPorts = new ArrayList<>();
 
+    private static String getDisplayName(List<Integer> ports) {
+        StringBuilder allPorts = new StringBuilder();
+        allPorts.append(ports.get(0));
+        for (int i = 1; i < ports.size(); i++) {
+            allPorts.append(":").append(ports.get(i));
+        }
+        return allPorts.toString();
+    }
+
     @Inject
     public JettyHttpServer(
             final CurrentContainer container,
@@ -272,6 +281,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private ServletContextHandler createServletContextHandler() {
         ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
         servletContextHandler.setContextPath("/");
+        servletContextHandler.setDisplayName(getDisplayName(listenedPorts));
         return servletContextHandler;
     }
 
