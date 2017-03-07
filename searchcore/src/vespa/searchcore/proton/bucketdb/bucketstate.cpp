@@ -52,10 +52,9 @@ BucketState::BucketState()
 }
 
 uint32_t
-BucketState::calcChecksum(const GlobalId &gid,
-                          const Timestamp &timestamp, uint32_t docSize)
+BucketState::calcChecksum(const GlobalId &gid, const Timestamp &timestamp)
 {
-    return gidChecksum(gid) + timestampChecksum(timestamp) + docSize;
+    return gidChecksum(gid) + timestampChecksum(timestamp);
 }
 
 
@@ -64,7 +63,7 @@ BucketState::add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSi
 {
     assert(subDbType < SubDbType::COUNT);
     if (subDbType != SubDbType::REMOVED) {
-        _checksum += calcChecksum(gid, timestamp, docSize);
+        _checksum += calcChecksum(gid, timestamp);
     }
     uint32_t subDbTypeIdx = toIdx(subDbType);
     ++_docCount[subDbTypeIdx];
@@ -80,7 +79,7 @@ BucketState::remove(const GlobalId &gid, const Timestamp &timestamp, uint32_t do
     assert(_docCount[subDbTypeIdx] > 0);
     assert(_docSizes[subDbTypeIdx] >= docSize);
     if (subDbType != SubDbType::REMOVED) {
-        _checksum -= calcChecksum(gid, timestamp, docSize);
+        _checksum -= calcChecksum(gid, timestamp);
     }
     --_docCount[subDbTypeIdx];
     _docSizes[subDbTypeIdx] -= docSize;
@@ -97,8 +96,8 @@ BucketState::modify(const Timestamp &oldTimestamp, uint32_t oldDocSize,
     assert(_docCount[subDbTypeIdx] > 0);
     assert(_docSizes[subDbTypeIdx] >= oldDocSize);
     if (subDbType != SubDbType::REMOVED) {
-        _checksum = _checksum - timestampChecksum(oldTimestamp) - oldDocSize +
-                    timestampChecksum(newTimestamp) + newDocSize;
+        _checksum = _checksum - timestampChecksum(oldTimestamp) +
+                    timestampChecksum(newTimestamp);
     }
     _docSizes[subDbTypeIdx] = _docSizes[subDbTypeIdx] + newDocSize - oldDocSize;
 }

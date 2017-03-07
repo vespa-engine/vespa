@@ -811,11 +811,10 @@ TEST("requireThatBasicBucketInfoWorks")
     uint32_t maxcnt = 0u;
     BucketDBOwner::Guard bucketDB = dms.getBucketDB().takeGuard();
     for (Map::const_iterator i = m.begin(), ie = m.end(); i != ie; ++i) {
-        uint32_t docSize = 1;
         if (i->first.first == prevBucket) {
             cksum = BucketChecksum(cksum +
                                    BucketState::calcChecksum(i->first.second,
-                                                             i->second, docSize));
+                                                             i->second));
             ++cnt;
         } else {
             BucketInfo bi = bucketDB->get(prevBucket);
@@ -823,7 +822,7 @@ TEST("requireThatBasicBucketInfoWorks")
             EXPECT_EQUAL(cksum, bi.getChecksum());
             prevBucket = i->first.first;
             cksum = BucketState::calcChecksum(i->first.second,
-                                              i->second, docSize);
+                                              i->second);
             maxcnt = std::max(maxcnt, cnt);
             cnt = 1u;
         }
