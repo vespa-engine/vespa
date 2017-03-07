@@ -272,6 +272,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private ServletContextHandler createServletContextHandler() {
         ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
         servletContextHandler.setContextPath("/");
+        servletContextHandler.setLogger(Log.getLogger(ServletContextHandler.class));
         return servletContextHandler;
     }
 
