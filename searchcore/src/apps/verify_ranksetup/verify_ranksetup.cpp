@@ -4,10 +4,14 @@
 LOG_SETUP("verify_ranksetup");
 
 #include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/legacy.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/proton/matching/error_constant_value.h>
@@ -15,9 +19,6 @@ LOG_SETUP("verify_ranksetup");
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value_cache/constant_value.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 
 using config::ConfigContext;
 using config::ConfigHandle;
@@ -27,6 +28,7 @@ using config::IConfigContext;
 using config::InvalidConfigException;
 using proton::matching::IConstantValueRepo;
 using vespa::config::search::AttributesConfig;
+using vespa::config::search::ImportedFieldsConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::core::RankingConstantsConfig;
@@ -50,7 +52,8 @@ public:
     bool verifyConfig(const RankProfilesConfig &rankCfg,
                       const IndexschemaConfig &schemaCfg,
                       const AttributesConfig &attributeCfg,
-                      const RankingConstantsConfig &constantsCfg);
+                      const RankingConstantsConfig &constantsCfg,
+                      const ImportedFieldsConfig &importedFieldsCfg);
 
     int usage();
     int Main();
@@ -103,12 +106,14 @@ bool
 App::verifyConfig(const RankProfilesConfig &rankCfg,
                   const IndexschemaConfig &schemaCfg,
                   const AttributesConfig &attributeCfg,
-                  const RankingConstantsConfig &constantsCfg)
+                  const RankingConstantsConfig &constantsCfg,
+                  const ImportedFieldsConfig &importedFieldsCfg)
 {
     bool ok = true;
     search::index::Schema schema;
     search::index::SchemaBuilder::build(schemaCfg, schema);
     search::index::SchemaBuilder::build(attributeCfg, schema);
+    search::index::SchemaBuilder::build(importedFieldsCfg, schema);
     DummyConstantValueRepo repo(constantsCfg);
     for(size_t i = 0; i < rankCfg.rankprofile.size(); i++) {
         search::fef::Properties properties;
@@ -154,12 +159,14 @@ App::Main()
         ConfigHandle<AttributesConfig>::UP attributesHandle = subscriber.subscribe<AttributesConfig>(cfgId);
         ConfigHandle<IndexschemaConfig>::UP schemaHandle = subscriber.subscribe<IndexschemaConfig>(cfgId);
         ConfigHandle<RankingConstantsConfig>::UP constantsHandle = subscriber.subscribe<RankingConstantsConfig>(cfgId);
+        ConfigHandle<ImportedFieldsConfig>::UP importedFieldsHandle = subscriber.subscribe<ImportedFieldsConfig>(cfgId);
 
         subscriber.nextConfig();
         ok = verifyConfig(*rankHandle->getConfig(),
                           *schemaHandle->getConfig(),
                           *attributesHandle->getConfig(),
-                          *constantsHandle->getConfig());
+                          *constantsHandle->getConfig(),
+                          *importedFieldsHandle->getConfig());
     } catch (ConfigRuntimeException & e) {
         LOG(error, "Unable to subscribe to config: %s", e.getMessage().c_str());
     } catch (InvalidConfigException & e) {
