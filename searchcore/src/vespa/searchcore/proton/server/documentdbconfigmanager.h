@@ -29,14 +29,10 @@ private:
     config::ConfigKeySet _extraConfigKeys;
 
     search::index::Schema::SP
-    buildNewSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
-                   const DocumentDBConfig::SummaryConfig & newSummaryConfig,
-                   const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
-
-    search::index::Schema::SP
     buildSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
                 const DocumentDBConfig::SummaryConfig & newSummaryConfig,
-                const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
+                const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig,
+                const DocumentDBConfig::ImportedFieldsConfig &newImportedFieldsConfig);
 public:
     DocumentDBConfigManager(const vespalib::string &configId,
                             const vespalib::string &docTypeName);

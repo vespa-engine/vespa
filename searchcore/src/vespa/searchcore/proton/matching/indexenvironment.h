@@ -32,6 +32,7 @@ private:
      * this index environment.
      **/
     void extractFields(const search::index::Schema &schema);
+    void insertField(const search::fef::FieldInfo &field);
 
 public:
     /**

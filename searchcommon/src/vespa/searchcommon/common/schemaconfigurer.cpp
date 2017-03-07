@@ -198,6 +198,15 @@ SchemaBuilder::build(const SummaryConfig &cfg, Schema &schema)
     }
 }
 
+void
+SchemaBuilder::build(const ImportedFieldsConfig &cfg, Schema &schema)
+{
+    for (const auto &attr : cfg.attribute) {
+        // TODO: Use correct datatype and collection type when available in config.
+        schema.addImportedAttributeField(Schema::ImportedAttributeField(attr.name,
+                                                                        schema::DataType::STRING));
+    }
+}
 
 void
 SchemaConfigurer::configure(const IndexschemaConfig &cfg)
@@ -205,13 +214,11 @@ SchemaConfigurer::configure(const IndexschemaConfig &cfg)
     SchemaBuilder::build(cfg, _schema);
 }
 
-
 void
 SchemaConfigurer::configure(const AttributesConfig &cfg)
 {
     SchemaBuilder::build(cfg, _schema);
 }
-
 
 void
 SchemaConfigurer::configure(const SummaryConfig & cfg)
@@ -219,6 +226,11 @@ SchemaConfigurer::configure(const SummaryConfig & cfg)
     SchemaBuilder::build(cfg, _schema);
 }
 
+void
+SchemaConfigurer::configure(const vespa::config::search::ImportedFieldsConfig &cfg)
+{
+    SchemaBuilder::build(cfg, _schema);
+}
 
 SchemaConfigurer::SchemaConfigurer(Schema &schema,
                                    const vespalib::string &configId)
@@ -230,9 +242,12 @@ SchemaConfigurer::SchemaConfigurer(Schema &schema,
         attributesSubscriber(*this, &SchemaConfigurer::configure);
     search::SubscriptionProxyNg<SchemaConfigurer, SummaryConfig>
         summarySubscriber(*this, &SchemaConfigurer::configure);
+    search::SubscriptionProxyNg<SchemaConfigurer, ImportedFieldsConfig>
+            importedFieldsSubscriber(*this, &SchemaConfigurer::configure);
     indexSchemaSubscriber.subscribe(configId.c_str());
     attributesSubscriber.subscribe(configId.c_str());
     summarySubscriber.subscribe(configId.c_str());
+    importedFieldsSubscriber.subscribe(configId.c_str());
 }
 
 

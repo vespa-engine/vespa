@@ -35,8 +35,7 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
                                          convertCollectionType(field.getCollectionType()),
                                          field.getName(), _fields.size());
         fieldInfo.set_data_type(field.getDataType());
-        _fieldNames[field.getName()] = _fields.size();
-        _fields.push_back(fieldInfo);
+        insertField(fieldInfo);
     }
     for (uint32_t i = 0; i < schema.getNumIndexFields(); ++i) {
         const SchemaField &field = schema.getIndexField(i);
@@ -59,9 +58,15 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
             shadow_field.addAttribute(); // tell ranking about the shadowed attribute
             _fields[itr->second] = shadow_field;
         } else {
-            _fieldNames[field.getName()] = _fields.size();
-            _fields.push_back(fieldInfo);
+            insertField(fieldInfo);
         }
+    }
+    for (const auto &attr : schema.getImportedAttributeFields()) {
+        search::fef::FieldInfo field(search::fef::FieldType::ATTRIBUTE,
+                                     convertCollectionType(attr.getCollectionType()),
+                                     attr.getName(), _fields.size());
+        field.set_data_type(attr.getDataType());
+        insertField(field);
     }
 
     //TODO: This is a kludge to get [documentmetastore] searchable
@@ -72,9 +77,16 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
                                          _fields.size());
         fieldInfo.set_data_type(FieldInfo::DataType::RAW);
         fieldInfo.setFilter(true);
-        _fieldNames[DocumentMetaStore::getFixedName()] = _fields.size();
-        _fields.push_back(fieldInfo);
+        insertField(fieldInfo);
     }
+}
+
+void
+IndexEnvironment::insertField(const search::fef::FieldInfo &field)
+{
+    assert(field.id() == _fields.size());
+    _fieldNames[field.name()] = _fields.size();
+    _fields.push_back(field);
 }
 
 IndexEnvironment::IndexEnvironment(const search::index::Schema &schema,

@@ -21,12 +21,11 @@ namespace index {
 class Schema
 {
 public:
-    typedef std::unique_ptr<Schema> UP;
-    typedef std::shared_ptr<Schema> SP;
-    typedef vespalib::PtrHolder<Schema> PH;
+    using UP = std::unique_ptr<Schema>;
+    using SP = std::shared_ptr<Schema>;
+    using PH = vespalib::PtrHolder<Schema>;
 
     using DataType = schema::DataType;
-
     using CollectionType = schema::CollectionType;
 
     /**
@@ -72,6 +71,7 @@ public:
         bool operator!=(const Field &rhs) const;
     };
 
+
     /**
      * A representation of an index field with extra information on
      * how the index should be generated.
@@ -111,8 +111,9 @@ public:
         bool operator!=(const IndexField &rhs) const;
     };
 
-    typedef Field AttributeField;
-    typedef Field SummaryField;
+    using AttributeField = Field;
+    using SummaryField = Field;
+    using ImportedAttributeField = Field;
 
     /**
      * A field collection has a name and a list of index field names,
@@ -153,13 +154,15 @@ private:
     std::vector<AttributeField>  _attributeFields;
     std::vector<SummaryField>    _summaryFields;
     std::vector<FieldSet> _fieldSets;
+    std::vector<ImportedAttributeField> _importedAttributeFields;
     using Name2IdMap = vespalib::hash_map<vespalib::string, uint32_t>;
     Name2IdMap _indexIds;
     Name2IdMap _attributeIds;
     Name2IdMap _summaryIds;
     Name2IdMap _fieldSetIds;
+    Name2IdMap _importedAttributeIds;
 
-    void writeToStream(vespalib::asciistream &os) const;
+    void writeToStream(vespalib::asciistream &os, bool saveToDisk) const;
 
 public:
     /**
@@ -224,6 +227,8 @@ public:
     Schema &
     addFieldSet(const FieldSet &collection);
 
+    Schema &addImportedAttributeField(const ImportedAttributeField &field);
+
     /**
      * Obtain the number of index fields in this schema.
      *
@@ -251,6 +256,8 @@ public:
      * @return number of field sets.
      **/
     uint32_t getNumFieldSets() const { return _fieldSets.size(); }
+
+    size_t getNumImportedAttributeFields() const { return _importedAttributeFields.size(); }
 
     /**
      * Get information about a specific index field using the given fieldId.
@@ -388,6 +395,10 @@ public:
      **/
     uint32_t
     getFieldSetId(const vespalib::stringref &name) const;
+
+    const std::vector<ImportedAttributeField> &getImportedAttributeFields() const {
+        return _importedAttributeFields;
+    }
 
     void swap(Schema &rhs);
     void clear();
