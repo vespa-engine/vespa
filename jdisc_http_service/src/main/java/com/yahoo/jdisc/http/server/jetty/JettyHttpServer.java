@@ -55,6 +55,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConnector;
 import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
@@ -119,15 +120,6 @@ public class JettyHttpServer extends AbstractServerProvider {
     private final Metric metric;
     private final Server server;
     private final List<Integer> listenedPorts = new ArrayList<>();
-
-    private static String getDisplayName(List<Integer> ports) {
-        StringBuilder allPorts = new StringBuilder();
-        allPorts.append(ports.get(0));
-        for (int i = 1; i < ports.size(); i++) {
-            allPorts.append(":").append(ports.get(i));
-        }
-        return allPorts.toString();
-    }
 
     @Inject
     public JettyHttpServer(
@@ -283,6 +275,10 @@ public class JettyHttpServer extends AbstractServerProvider {
         servletContextHandler.setContextPath("/");
         servletContextHandler.setDisplayName(getDisplayName(listenedPorts));
         return servletContextHandler;
+    }
+
+    private static String getDisplayName(List<Integer> ports) {
+        return ports.stream().map(Object::toString).collect(Collectors.joining(":"));
     }
 
     private ServerSocketChannel getChannelFromServiceLayer(int listenPort, BundleContext bundleContext) {
