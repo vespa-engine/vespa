@@ -6,7 +6,6 @@ import com.yahoo.io.IOUtils;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -113,33 +112,6 @@ public class LogFileHandlerTestCase {
       h.flush();
 
       new File(logFilePattern).deleteOnExit();
-    }
-
-    @Test
-    public void testDeleteDirDuringLogging() throws IOException {
-        //create logfilehandler
-        LogFileHandler h = new LogFileHandler();
-        h.setFilePattern("./testlogsG/delete/during/testlog");
-        h.setFormatter(new SimpleFormatter());
-        h.setRotationTimes("0 5 ...");
-
-        //write log
-        LogRecord lr = new LogRecord(Level.INFO, "testDeleteDirDuringLogging1");
-        h.publish(lr);
-        h.flush();
-
-        //delete log file and dir
-        deleteRecursive("./testlogsG");
-
-        //write log again
-        LogRecord lr2 = new LogRecord(Level.INFO, "testDeleteDirDuringLogging2");
-        h.publish(lr2);
-        h.flush();
-
-        deleteOnExit("./testlogsG");
-        deleteOnExit("./testlogsG/delete");
-        deleteOnExit("./testlogsG/delete/first");
-        deleteOnExit("./testlogsG/delete/first/testlog");
     }
 
     @Test
