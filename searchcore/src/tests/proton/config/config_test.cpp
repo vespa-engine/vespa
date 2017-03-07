@@ -71,7 +71,7 @@ struct ConfigTestFixture {
         addDocType("_alwaysthere_");
     }
 
-    void addDocType(const std::string & name)
+    DoctypeFixture::LP addDocType(const std::string & name)
     {
         DocumenttypesConfigBuilder::Documenttype dt;
         dt.bodystruct = -1270491200;
@@ -96,6 +96,7 @@ struct ConfigTestFixture {
         set.addBuilder(db.configid, &fixture->juniperrcBuilder);
         set.addBuilder(db.configid, &fixture->importedFieldsBuilder);
         dbConfig[name] = fixture;
+        return fixture;
     }
 
     void removeDocType(const std::string & name)
@@ -212,6 +213,22 @@ TEST_FF("require_that_documentdb_config_manager_subscribes_for_config",
     f2.forwardConfig(f1.getBootstrapConfig(1));
     f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
     ASSERT_TRUE(f1.configEqual("typea", f2.getConfig()));
+}
+
+TEST_FF("require that documentdb config manager builds schema with imported attribute fields",
+        ConfigTestFixture("search"),
+        DocumentDBConfigManager(f1.configId + "/typea", "typea"))
+{
+    auto docType = f1.addDocType("typea");
+    docType->importedFieldsBuilder.attribute.resize(1);
+    docType->importedFieldsBuilder.attribute[0].name = "imported";
+
+    ConfigRetriever retriever(f2.createConfigKeySet(), f1.context);
+    f2.forwardConfig(f1.getBootstrapConfig(1));
+    f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
+    const auto &schema = f2.getConfig()->getSchemaSP();
+    EXPECT_EQUAL(1u, schema->getNumImportedAttributeFields());
+    EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
 }
 
 TEST_FFF("require_that_protonconfigurer_follows_changes_to_bootstrap",

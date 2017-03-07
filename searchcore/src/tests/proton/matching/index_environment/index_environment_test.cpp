@@ -4,7 +4,6 @@
 
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
-#include <vespa/searchlib/fef/properties.h>
 
 using namespace proton::matching;
 using search::fef::FieldInfo;

@@ -45,45 +45,50 @@ DocumentDBConfigManager::createConfigKeySet() const
     return set;
 }
 
+namespace {
+
 Schema::SP
-DocumentDBConfigManager::
-buildNewSchema(const AttributesConfig & newAttributesConfig,
-               const SummaryConfig & newSummaryConfig,
-               const IndexschemaConfig & newIndexschemaConfig)
+buildNewSchema(const AttributesConfig &newAttributesConfig,
+               const SummaryConfig &newSummaryConfig,
+               const IndexschemaConfig &newIndexschemaConfig,
+               const ImportedFieldsConfig &newImportedFieldsConfig)
 {
-    // Called with lock held
-    Schema::SP schema(new Schema);
+    Schema::SP schema = std::make_shared<Schema>();
     SchemaBuilder::build(newAttributesConfig, *schema);
     SchemaBuilder::build(newSummaryConfig, *schema);
     SchemaBuilder::build(newIndexschemaConfig, *schema);
+    SchemaBuilder::build(newImportedFieldsConfig, *schema);
     return schema;
 }
 
+}
 
 Schema::SP
-DocumentDBConfigManager::
-buildSchema(const AttributesConfig & newAttributesConfig,
-            const SummaryConfig & newSummaryConfig,
-            const IndexschemaConfig & newIndexschemaConfig)
+DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig,
+                                     const SummaryConfig &newSummaryConfig,
+                                     const IndexschemaConfig &newIndexschemaConfig,
+                                     const ImportedFieldsConfig &newImportedFieldsConfig)
 {
     // Called with lock held
     Schema::SP oldSchema;
-    if (_pendingConfigSnapshot.get() != NULL)
+    if (_pendingConfigSnapshot.get() != NULL) {
         oldSchema = _pendingConfigSnapshot->getSchemaSP();
-    if (oldSchema.get() == NULL)
-        return buildNewSchema(newAttributesConfig,
-                              newSummaryConfig, newIndexschemaConfig);
+    }
+    if (oldSchema.get() == NULL) {
+        return buildNewSchema(newAttributesConfig, newSummaryConfig,
+                              newIndexschemaConfig, newImportedFieldsConfig);
+    }
     const DocumentDBConfig &old = *_pendingConfigSnapshot;
     if (old.getAttributesConfig() != newAttributesConfig ||
         old.getSummaryConfig() != newSummaryConfig ||
-        old.getIndexschemaConfig() != newIndexschemaConfig) {
-        Schema::SP schema(buildNewSchema(newAttributesConfig,
-                                  newSummaryConfig, newIndexschemaConfig));
+        old.getIndexschemaConfig() != newIndexschemaConfig)
+    {
+        Schema::SP schema(buildNewSchema(newAttributesConfig, newSummaryConfig,
+                                         newIndexschemaConfig, newImportedFieldsConfig));
         return (*oldSchema == *schema) ? oldSchema : schema;
     }
     return oldSchema;
 }
-
 
 static DocumentDBMaintenanceConfig::SP
 buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
@@ -250,7 +255,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 
     Schema::SP schema(buildSchema(*newAttributesConfig,
                                   *newSummaryConfig,
-                                  *newIndexschemaConfig));
+                                  *newIndexschemaConfig,
+                                  *newImportedFieldsConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig,
                                                   _docTypeName);
     if (newMaintenanceConfig.get() != NULL &&
