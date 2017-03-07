@@ -9,7 +9,7 @@
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
-#include <vespa/searchcore/proton/reference/document_db_referent.h>
+#include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -373,10 +373,10 @@ SearchableDocSubDB::close()
     Parent::close();
 }
 
-std::shared_ptr<IDocumentDBReferent>
-SearchableDocSubDB::getDocumentDBReferent()
+std::shared_ptr<IDocumentDBReference>
+SearchableDocSubDB::getDocumentDBReference()
 {
-    return std::make_shared<DocumentDBReferent>(getAttributeManager(), _dms, _gidToLidChangeHandler);
+    return std::make_shared<DocumentDBReference>(getAttributeManager(), _dms, _gidToLidChangeHandler);
 }
 
 void

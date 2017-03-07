@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/reference/i_document_db_referent.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_registrator.h>
 
 namespace search {
@@ -13,10 +13,10 @@ namespace proton {
 namespace test {
 
 /**
- * Mock of the IDocumentDBReferent interface used for unit testing.
+ * Mock of the IDocumentDBReference interface used for unit testing.
  */
-struct MockDocumentDBReferent : public IDocumentDBReferent {
-    using SP = std::shared_ptr<MockDocumentDBReferent>;
+struct MockDocumentDBReference : public IDocumentDBReference {
+    using SP = std::shared_ptr<MockDocumentDBReference>;
     virtual std::shared_ptr<search::AttributeVector> getAttribute(vespalib::stringref) override {
         return std::shared_ptr<search::AttributeVector>();
     }

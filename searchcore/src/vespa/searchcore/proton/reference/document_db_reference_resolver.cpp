@@ -4,8 +4,8 @@
 #include "document_db_reference_resolver.h"
 #include "gid_to_lid_change_listener.h"
 #include "gid_to_lid_change_registrator.h"
-#include "i_document_db_referent.h"
-#include "i_document_db_referent_registry.h"
+#include "i_document_db_reference.h"
+#include "i_document_db_reference_registry.h"
 #include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
@@ -85,7 +85,7 @@ DocumentDBReferenceResolver::getRegistrator(const vespalib::string &docTypeName)
     return *result;
 }
 
-IDocumentDBReferent::SP
+IDocumentDBReference::SP
 DocumentDBReferenceResolver::getTargetDocumentDB(const vespalib::string &refAttrName) const
 {
     return _registry.get(getTargetDocTypeName(refAttrName, _thisDocType));
@@ -97,7 +97,7 @@ DocumentDBReferenceResolver::connectReferenceAttributesToGidMapper(const IAttrib
     auto refAttrs(getReferenceAttributes(attrMgr));
     for (auto &attrSP : refAttrs) {
         auto &attr = *attrSP;
-        IDocumentDBReferent::SP targetDB = getTargetDocumentDB(attr.getName());
+        IDocumentDBReference::SP targetDB = getTargetDocumentDB(attr.getName());
         attr.setGidToLidMapperFactory(targetDB->getGidToLidMapperFactory());
     }
 }
@@ -110,9 +110,9 @@ DocumentDBReferenceResolver::detectOldListeners(const IAttributeManager &attrMgr
         vespalib::string docTypeName = getTargetDocTypeName(attrSP->getName(), _prevThisDocType);
         auto &registratorUP = _registrators[docTypeName];
         if (!registratorUP) {
-            auto referent = _registry.tryGet(docTypeName);
-            if (referent) {
-                registratorUP = referent->makeGidToLidChangeRegistrator(_thisDocType.getName());
+            auto reference = _registry.tryGet(docTypeName);
+            if (reference) {
+                registratorUP = reference->makeGidToLidChangeRegistrator(_thisDocType.getName());
             }
         }
     }
@@ -148,7 +148,7 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
     return result;
 }
 
-DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBReferentRegistry &registry,
+DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBReferenceRegistry &registry,
                                                          const DocumentType &thisDocType,
                                                          const ImportedFieldsConfig &importedFieldsCfg,
                                                          const document::DocumentType &prevThisDocType,

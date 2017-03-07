@@ -14,8 +14,8 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/reference/document_db_referent_registry.h>
-#include <vespa/searchcore/proton/reference/i_document_db_referent.h>
+#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
@@ -56,13 +56,13 @@ public:
 
 struct MyDBOwner : public DummyDBOwner
 {
-    std::shared_ptr<DocumentDBReferentRegistry> _registry;
+    std::shared_ptr<DocumentDBReferenceRegistry> _registry;
     MyDBOwner()
         : DummyDBOwner(),
-          _registry(std::make_shared<DocumentDBReferentRegistry>())
+          _registry(std::make_shared<DocumentDBReferenceRegistry>())
     {
     }
-    std::shared_ptr<IDocumentDBReferentRegistry> getDocumentDBReferentRegistry() const override {
+    std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override {
         return _registry;
     }
 };
@@ -234,12 +234,12 @@ TEST_F("require that session manager can be explored", Fixture)
     EXPECT_TRUE(DocumentDBExplorer(f._db).get_child("session").get() != nullptr);    
 }
 
-TEST_F("require that document db registers referent", Fixture)
+TEST_F("require that document db registers reference", Fixture)
 {
     auto &registry = f._myDBOwner._registry;
-    auto referent = registry->get("typea");
-    EXPECT_TRUE(referent.get() != nullptr);
-    auto attr = referent->getAttribute("attr1");
+    auto reference = registry->get("typea");
+    EXPECT_TRUE(reference.get() != nullptr);
+    auto attr = reference->getAttribute("attr1");
     EXPECT_TRUE(attr.get() != nullptr);
     EXPECT_EQUAL(search::attribute::BasicType::INT32, attr->getBasicType());
 }

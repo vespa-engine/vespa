@@ -12,8 +12,8 @@ namespace vespa { namespace config { namespace search { namespace internal { cla
 
 namespace proton {
 
-class IDocumentDBReferent;
-class IDocumentDBReferentRegistry;
+class IDocumentDBReference;
+class IDocumentDBReferenceRegistry;
 class ImportedAttributesRepo;
 class GidToLidChangeRegistrator;
 class MonitoredRefCount;
@@ -25,7 +25,7 @@ class MonitoredRefCount;
 class DocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
 private:
     using ImportedFieldsConfig = const vespa::config::search::internal::InternalImportedFieldsType;
-    const IDocumentDBReferentRegistry &_registry;
+    const IDocumentDBReferenceRegistry &_registry;
     const document::DocumentType &_thisDocType;
     const ImportedFieldsConfig &_importedFieldsCfg;
     const document::DocumentType &_prevThisDocType;
@@ -34,14 +34,14 @@ private:
     std::map<vespalib::string, std::unique_ptr<GidToLidChangeRegistrator>> _registrators;
 
     GidToLidChangeRegistrator &getRegistrator(const vespalib::string &docTypeName);
-    std::shared_ptr<IDocumentDBReferent> getTargetDocumentDB(const vespalib::string &refAttrName) const;
+    std::shared_ptr<IDocumentDBReference> getTargetDocumentDB(const vespalib::string &refAttrName) const;
     void connectReferenceAttributesToGidMapper(const search::IAttributeManager &attrMgr);
     std::unique_ptr<ImportedAttributesRepo> createImportedAttributesRepo(const search::IAttributeManager &attrMgr);
     void detectOldListeners(const search::IAttributeManager &attrMgr);
     void listenToGidToLidChanges(const search::IAttributeManager &attrMgr);
 
 public:
-    DocumentDBReferenceResolver(const IDocumentDBReferentRegistry &registry,
+    DocumentDBReferenceResolver(const IDocumentDBReferenceRegistry &registry,
                                 const document::DocumentType &thisDocType,
                                 const ImportedFieldsConfig &importedFieldsCfg,
                                 const document::DocumentType &prevThisDocType,

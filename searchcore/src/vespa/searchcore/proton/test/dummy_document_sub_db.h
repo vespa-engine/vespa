@@ -93,8 +93,8 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     matching::MatchingStats getMatcherStats(const vespalib::string &) const override {
         return matching::MatchingStats();
     }
-    virtual std::shared_ptr<IDocumentDBReferent> getDocumentDBReferent() override {
-        return std::shared_ptr<IDocumentDBReferent>();
+    virtual std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override {
+        return std::shared_ptr<IDocumentDBReference>();
     }
     virtual void tearDownReferences(IDocumentDBReferenceResolver &) override { }
 };
