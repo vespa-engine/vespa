@@ -83,12 +83,12 @@ struct MyModifiedHandler : public IBucketModifiedHandler
 
 
 bool
-expectEqual(uint32_t docCount, uint32_t metaCount, const BucketInfo &info)
+expectEqual(uint32_t docCount, uint32_t metaCount, size_t docSizes, size_t entrySizes, const BucketInfo &info)
 {
     if (!EXPECT_EQUAL(docCount, info.getDocumentCount())) return false;
     if (!EXPECT_EQUAL(metaCount, info.getEntryCount())) return false;
-    if (!EXPECT_EQUAL(docCount, info.getDocumentSize())) return false;
-    if (!EXPECT_EQUAL(metaCount, info.getUsedSize())) return false;
+    if (!EXPECT_EQUAL(docSizes, info.getDocumentSize())) return false;
+    if (!EXPECT_EQUAL(entrySizes, info.getUsedSize())) return false;
     return true;
 }
 
@@ -169,13 +169,13 @@ TEST_F("require that handleListBuckets() returns buckets from all sub dbs", Fixt
 }
 
 
-TEST_F("require that bucket is reported in handleGetBucketInfo() and size faked", Fixture)
+TEST_F("require that bucket is reported in handleGetBucketInfo()", Fixture)
 {
     f.handleGetBucketInfo(f._ready.bucket(3));
-    EXPECT_TRUE(expectEqual(3, 3, f._bucketInfo.getInfo()));
+    EXPECT_TRUE(expectEqual(3, 3, 3000, 3000, f._bucketInfo.getInfo()));
 
     f.handleGetBucketInfo(f._ready.bucket(2)); // bucket 2 also in removed sub db
-    EXPECT_TRUE(expectEqual(2, 6, f._bucketInfo.getInfo()));
+    EXPECT_TRUE(expectEqual(2, 6, 2000, 6000, f._bucketInfo.getInfo()));
 }
 
 
@@ -188,12 +188,12 @@ TEST_F("require that handleGetBucketInfo() can get cached bucket", Fixture)
         db->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::NOTREADY);
     }
     f.handleGetBucketInfo(BUCKET_1);
-    EXPECT_TRUE(expectEqual(1, 1, f._bucketInfo.getInfo()));
+    EXPECT_TRUE(expectEqual(1, 1, DOCSIZE_1, DOCSIZE_1, f._bucketInfo.getInfo()));
 
     f._bucketDB->takeGuard()->uncacheBucket();
 
     f.handleGetBucketInfo(BUCKET_1);
-    EXPECT_TRUE(expectEqual(2, 2, f._bucketInfo.getInfo()));
+    EXPECT_TRUE(expectEqual(2, 2, 2 * DOCSIZE_1, 2 * DOCSIZE_1, f._bucketInfo.getInfo()));
     {
         // Must ensure empty bucket db before destruction.
         BucketDBOwner::Guard db = f._bucketDB->takeGuard();

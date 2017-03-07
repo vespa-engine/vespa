@@ -167,14 +167,16 @@ BucketState::operator storage::spi::BucketInfo() const
     uint32_t notReady = getNotReadyCount();
     uint32_t documentCount = getReadyCount() + notReady;
     uint32_t entryCount = documentCount + getRemovedCount();
+    size_t docSizes = getReadyDocSizes() + getNotReadyDocSizes();
+    size_t entrySizes = docSizes + getRemovedDocSizes();
 
     using BucketInfo = storage::spi::BucketInfo;
 
     return BucketInfo(storage::spi::BucketChecksum(_checksum),
                       documentCount,
-                      0,
+                      docSizes,
                       entryCount,
-                      0,
+                      entrySizes,
                       notReady > 0 ? BucketInfo::NOT_READY : BucketInfo::READY,
                       _active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE);
 }
