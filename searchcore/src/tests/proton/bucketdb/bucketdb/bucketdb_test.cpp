@@ -176,7 +176,7 @@ TEST("require that bucket db can be explored")
             "  buckets: ["
             "    {"
             "      id: '0x2000000000000031',"
-            "      checksum: '0x9393a394',"
+            "      checksum: '0x93939394',"
             "      readyCount: 1,"
             "      notReadyCount: 0,"
             "      removedCount: 0,"

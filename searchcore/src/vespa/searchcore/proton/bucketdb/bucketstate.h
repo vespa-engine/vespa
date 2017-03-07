@@ -32,7 +32,7 @@ private:
 public:
     BucketState();
 
-    static uint32_t calcChecksum(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize);
+    static uint32_t calcChecksum(const GlobalId &gid, const Timestamp &timestamp);
 
     void
     add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
