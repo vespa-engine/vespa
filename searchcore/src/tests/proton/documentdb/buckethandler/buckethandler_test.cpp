@@ -169,7 +169,7 @@ TEST_F("require that handleListBuckets() returns buckets from all sub dbs", Fixt
 }
 
 
-TEST_F("require that bucket is reported in handleGetBucketInfo() and size faked", Fixture)
+TEST_F("require that bucket is reported in handleGetBucketInfo()", Fixture)
 {
     f.handleGetBucketInfo(f._ready.bucket(3));
     EXPECT_TRUE(expectEqual(3, 3, 3000, 3000, f._bucketInfo.getInfo()));
