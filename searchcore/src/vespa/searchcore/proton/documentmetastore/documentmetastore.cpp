@@ -18,6 +18,7 @@
 #include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/fastos/file.h>
+#include "document_meta_store_versions.h"
 
 
 using document::GlobalId;
@@ -44,6 +45,7 @@ namespace proton {
 namespace documentmetastore {
 
 vespalib::string DOCID_LIMIT("docIdLimit");
+vespalib::string VERSION("version");
 
 class Reader {
 private:
@@ -55,6 +57,7 @@ private:
     vespalib::FileHeader _header;
     uint32_t _headerLen;
     uint32_t _docIdLimit;
+    uint32_t _version;
     uint64_t _datFileSize;
 
 public:
@@ -75,6 +78,7 @@ public:
             abort();
         }
         _docIdLimit = _header.getTag(DOCID_LIMIT).asInteger();
+        _version = _header.getTag(VERSION).asInteger();
     }
 
     uint32_t getDocIdLimit() const { return _docIdLimit; }
@@ -99,11 +103,23 @@ public:
         return _timestampReader.readHostOrder();
     }
 
+    uint32_t getNextDocSize() {
+        if (_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) {
+            return 1;
+        }
+        uint8_t sizeLow;
+        uint16_t sizeHigh;
+        _datFile->ReadBuf(&sizeLow, sizeof(sizeLow));
+        _datFile->ReadBuf(&sizeHigh, sizeof(sizeHigh));
+        return sizeLow + (static_cast<uint32_t>(sizeHigh) << 8);
+    }
+
     size_t
     getNumElems() const {
         return (_datFileSize - _headerLen) /
                (sizeof(uint32_t) + sizeof(GlobalId) +
-                sizeof(uint8_t) + sizeof(Timestamp::Type));
+                sizeof(uint8_t) + sizeof(Timestamp::Type) +
+                ((_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) ? 0 : 3));
     }
 };
 
@@ -170,6 +186,7 @@ DocumentMetaStore::insert(DocId lid, const RawDocumentMetaData &metaData)
         _bucketDB->takeGuard()->add(metaData.getGid(),
                       metaData.getBucketId().stripUnused(),
                       metaData.getTimestamp(),
+                      metaData.getDocSize(),
                       _subDbType);
     _lidAlloc.updateActiveLids(lid, state.isActive());
     _lidAlloc.commitActiveLids();
@@ -229,6 +246,7 @@ DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, TreeType::Bui
     RawDocumentMetaData & meta = _metaDataStore[lid];
     meta.setGid(reader.getNextGid());
     meta.setBucketUsedBits(reader.getNextBucketUsedBits());
+    meta.setDocSize(reader.getNextDocSize());
     meta.setTimestamp(reader.getNextTimestamp());
     treeBuilder.insert(lid, BTreeNoLeafData());
     assert(!validLid(lid));
@@ -254,7 +272,7 @@ DocumentMetaStore::onLoad()
         const RawDocumentMetaData * meta = &_metaDataStore[lid];
         BucketId prevId(meta->getBucketId());
         BucketState state;
-        state.add(meta->getGid(), meta->getTimestamp(), _subDbType);
+        state.add(meta->getGid(), meta->getTimestamp(), meta->getDocSize(), _subDbType);
         for (size_t i = 1; i < numElems; ++i) {
             lid = readNextDoc(reader, treeBuilder);
             meta = &_metaDataStore[lid];
@@ -264,7 +282,7 @@ DocumentMetaStore::onLoad()
                 state = BucketState();
                 prevId = bucketId;
             }
-            state.add(meta->getGid(), meta->getTimestamp(), _subDbType);
+            state.add(meta->getGid(), meta->getTimestamp(), meta->getDocSize(), _subDbType);
         }
         _bucketDB->takeGuard()->add(prevId, state);
     }
@@ -362,11 +380,12 @@ DocumentMetaStore::updateMetaDataAndBucketDB(const GlobalId &gid,
     RawDocumentMetaData &oldMetaData = _metaDataStore[lid];
     _bucketDB->takeGuard()->modify(gid,
                      oldMetaData.getBucketId().stripUnused(),
-                     oldMetaData.getTimestamp(),
+                     oldMetaData.getTimestamp(), oldMetaData.getDocSize(),
                      newMetaData.getBucketId().stripUnused(),
-                     newMetaData.getTimestamp(),
+                     newMetaData.getTimestamp(), newMetaData.getDocSize(),
                      _subDbType);
     oldMetaData.setBucketId(newMetaData.getBucketId());
+    oldMetaData.setDocSize(newMetaData.getDocSize());
     std::atomic_thread_fence(std::memory_order_release);
     oldMetaData.setTimestamp(newMetaData.getTimestamp());
 }
@@ -406,7 +425,7 @@ DocumentMetaStore::unload()
             prevDelta = BucketState();
             prev = bucketId;
         }
-        prevDelta.add(metaData.getGid(), metaData.getTimestamp(),
+        prevDelta.add(metaData.getGid(), metaData.getTimestamp(), metaData.getDocSize(),
                       _subDbType);
     }
     unloadBucket(*_bucketDB, prev, prevDelta);
@@ -431,7 +450,8 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
       _gidCompare(gidCompare),
       _bucketDB(bucketDB),
       _shrinkLidSpaceBlockers(0),
-      _subDbType(subDbType)
+      _subDbType(subDbType),
+      _trackDocumentSizes(true)
 {
     ensureSpace(0);			// lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
@@ -558,8 +578,10 @@ DocumentMetaStore::updateMetaData(DocId lid,
     _bucketDB->takeGuard()->modify(metaData.getGid(),
                      metaData.getBucketId().stripUnused(),
                      metaData.getTimestamp(),
+                     metaData.getDocSize(),
                      bucketId.stripUnused(),
                      timestamp,
+                     metaData.getDocSize(),
                      _subDbType);
     metaData.setBucketId(bucketId);
     std::atomic_thread_fence(std::memory_order_release);
@@ -587,7 +609,7 @@ DocumentMetaStore::remove(DocId lid)
     RawDocumentMetaData &oldMetaData = _metaDataStore[lid];
     _bucketDB->takeGuard()->remove(oldMetaData.getGid(),
                      oldMetaData.getBucketId().stripUnused(),
-                     oldMetaData.getTimestamp(),
+                     oldMetaData.getTimestamp(), oldMetaData.getDocSize(),
                      _subDbType);
     return true;
 }
@@ -856,11 +878,13 @@ DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession &session)
                 metaData.setBucketUsedBits(target1.getUsedBits());
                 deltas._delta1.add(metaData.getGid(),
                                    metaData.getTimestamp(),
+                                   metaData.getDocSize(),
                                    _subDbType);
             } else if (target2.valid() && t2 == target2) {
                 metaData.setBucketUsedBits(target2.getUsedBits());
                 deltas._delta2.add(metaData.getGid(),
                                    metaData.getTimestamp(),
+                                   metaData.getDocSize(),
                                    _subDbType);
             }
         }
@@ -888,10 +912,10 @@ DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession &session)
         BucketId s(metaData.getBucketId());
         if (source1.valid() && s == source1) {
             metaData.setBucketUsedBits(target.getUsedBits());
-            deltas._delta1.add(metaData.getGid(), metaData.getTimestamp(), _subDbType);
+            deltas._delta1.add(metaData.getGid(), metaData.getTimestamp(), metaData.getDocSize(), _subDbType);
         } else if (source2.valid() && s == source2) {
             metaData.setBucketUsedBits(target.getUsedBits());
-            deltas._delta2.add(metaData.getGid(), metaData.getTimestamp(), _subDbType);
+            deltas._delta2.add(metaData.getGid(), metaData.getTimestamp(), metaData.getDocSize(), _subDbType);
         }
     }
     if (_subDbType == SubDbType::READY) {
@@ -1017,6 +1041,12 @@ DocumentMetaStore::getEstimatedSaveByteSize() const
 {
     uint32_t numDocs = getNumUsedLids();
     return minHeaderLen + numDocs * entrySize;
+}
+
+uint32_t
+DocumentMetaStore::getVersion() const
+{
+    return _trackDocumentSizes ? documentmetastore::DOCUMENT_SIZE_TRACKING_VERSION : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
 }
 
 }  // namespace proton

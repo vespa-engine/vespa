@@ -42,6 +42,9 @@ convertBucketsToSlime(const BucketDB &bucketDb, Cursor &array)
         object.setLong("readyCount", state.getReadyCount());
         object.setLong("notReadyCount", state.getNotReadyCount());
         object.setLong("removedCount", state.getRemovedCount());
+        object.setLong("readyDocSizes", state.getReadyDocSizes());
+        object.setLong("notReadyDocSizes", state.getNotReadyDocSizes());
+        object.setLong("removedDocSizes", state.getRemovedDocSizes());
         object.setBool("active", state.isActive());
     }
 }

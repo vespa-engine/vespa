@@ -263,11 +263,10 @@ uint32_t docSize4 = 1;
 uint32_t docSize5 = 1;
 
 uint32_t
-addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timestamp timestamp)
+addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timestamp timestamp, uint32_t docSize = 1)
 {
     Result inspect = dms.inspect(gid);
     PutRes putRes;
-    uint32_t docSize = 1;
     EXPECT_TRUE((putRes = dms.put(gid, bid, timestamp, docSize, inspect.getLid())).ok());
     return putRes.getLid();
 }
@@ -812,10 +811,11 @@ TEST("requireThatBasicBucketInfoWorks")
     uint32_t maxcnt = 0u;
     BucketDBOwner::Guard bucketDB = dms.getBucketDB().takeGuard();
     for (Map::const_iterator i = m.begin(), ie = m.end(); i != ie; ++i) {
+        uint32_t docSize = 1;
         if (i->first.first == prevBucket) {
             cksum = BucketChecksum(cksum +
                                    BucketState::calcChecksum(i->first.second,
-                                           i->second));
+                                                             i->second, docSize));
             ++cnt;
         } else {
             BucketInfo bi = bucketDB->get(prevBucket);
@@ -823,7 +823,7 @@ TEST("requireThatBasicBucketInfoWorks")
             EXPECT_EQUAL(cksum, bi.getChecksum());
             prevBucket = i->first.first;
             cksum = BucketState::calcChecksum(i->first.second,
-                    i->second);
+                                              i->second, docSize);
             maxcnt = std::max(maxcnt, cnt);
             cnt = 1u;
         }
@@ -1906,13 +1906,21 @@ TEST("requireThatShrinkViaFlushTargetWorks")
 namespace {
 
 void
-addLid(DocumentMetaStore &dms, uint32_t lid)
+addLid(DocumentMetaStore &dms, uint32_t lid, uint32_t docSize = 1)
 {
     GlobalId gid = createGid(lid);
     BucketId bucketId(gid.convertToBucketId());
     bucketId.setUsedBits(numBucketBits);
-    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
+    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias), docSize);
     EXPECT_EQUAL(lid, addedLid);
+}
+
+void
+assertSize(DocumentMetaStore &dms, uint32_t lid, uint32_t expSize)
+{
+    EXPECT_TRUE(dms.validLid(lid));
+    const auto &metaData = dms.getRawMetaData(lid);
+    EXPECT_EQUAL(expSize, metaData.getDocSize());
 }
 
 void
@@ -1963,6 +1971,39 @@ TEST("requireThatSecondShrinkWorksAfterCompactAndInactiveInsert")
     removeLid(dms, 2);
     TEST_DO(assertCompact(dms, 3, 3, 2, 1));
     TEST_DO(assertShrink(dms, 2, 1));
+}
+
+TEST("require that document sizes are saved")
+{
+    DocumentMetaStore dms1(createBucketDB());
+    dms1.constructFreeList();
+    TEST_DO(addLid(dms1, 1, 100));
+    TEST_DO(addLid(dms1, 2, 10000));
+    TEST_DO(addLid(dms1, 3, 100000000));
+    TEST_DO(assertSize(dms1, 1, 100));
+    TEST_DO(assertSize(dms1, 2, 10000));
+    TEST_DO(assertSize(dms1, 3, (1u << 24) - 1));
+
+    TuneFileAttributes tuneFileAttributes;
+    DummyFileHeaderContext fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
+    EXPECT_TRUE(dms1.saveAs("documentmetastore3", saveTarget));
+    dms1.setTrackDocumentSizes(false);
+    EXPECT_TRUE(dms1.saveAs("documentmetastore4", saveTarget));
+
+    DocumentMetaStore dms3(createBucketDB(), "documentmetastore3");
+    EXPECT_TRUE(dms3.load());
+    dms3.constructFreeList();
+    TEST_DO(assertSize(dms3, 1, 100));
+    TEST_DO(assertSize(dms3, 2, 10000));
+    TEST_DO(assertSize(dms3, 3, (1u << 24) - 1));
+
+    DocumentMetaStore dms4(createBucketDB(), "documentmetastore4");
+    EXPECT_TRUE(dms4.load());
+    dms4.constructFreeList();
+    TEST_DO(assertSize(dms4, 1, 1));
+    TEST_DO(assertSize(dms4, 2, 1));
+    TEST_DO(assertSize(dms4, 3, 1));
 }
 
 }

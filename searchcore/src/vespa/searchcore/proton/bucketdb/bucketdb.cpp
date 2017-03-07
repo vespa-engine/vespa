@@ -51,10 +51,11 @@ const bucketdb::BucketState &
 BucketDB::add(const GlobalId &gid,
               const BucketId &bucketId,
               const Timestamp &timestamp,
+              uint32_t docSize,
               SubDbType subDbType)
 {
     BucketState &state = _map[bucketId];
-    state.add(gid, timestamp, subDbType);
+    state.add(gid, timestamp, docSize, subDbType);
     return state;
 }
 
@@ -62,10 +63,11 @@ void
 BucketDB::remove(const GlobalId &gid,
                  const BucketId &bucketId,
                  const Timestamp &timestamp,
+                 uint32_t docSize,
                  SubDbType subDbType)
 {
     BucketState &state = _map[bucketId];
-    state.remove(gid, timestamp, subDbType);
+    state.remove(gid, timestamp, docSize, subDbType);
 }
 
 
@@ -73,16 +75,18 @@ void
 BucketDB::modify(const GlobalId &gid,
                  const BucketId &oldBucketId,
                  const Timestamp &oldTimestamp,
+                 uint32_t oldDocSize,
                  const BucketId &newBucketId,
                  const Timestamp &newTimestamp,
+                 uint32_t newDocSize,
                  SubDbType subDbType)
 {
     if (oldBucketId == newBucketId) {
         BucketState &state = _map[oldBucketId];
-        state.modify(oldTimestamp, newTimestamp, subDbType);
+        state.modify(oldTimestamp, oldDocSize, newTimestamp, newDocSize, subDbType);
     } else {
-        remove(gid, oldBucketId, oldTimestamp, subDbType);
-        add(gid, newBucketId, newTimestamp, subDbType);
+        remove(gid, oldBucketId, oldTimestamp, oldDocSize, subDbType);
+        add(gid, newBucketId, newTimestamp, newDocSize, subDbType);
     }
 }
 

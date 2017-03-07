@@ -22,6 +22,7 @@ const PartitionId PART_ID(0);
 const GlobalId GID_1("111111111111");
 const BucketId BUCKET_1(8, GID_1.convertToBucketId().getRawId());
 const Timestamp TIME_1(1u);
+const uint32_t DOCSIZE_1(4096u);
 
 struct MySubDb
 {
@@ -182,9 +183,9 @@ TEST_F("require that handleGetBucketInfo() can get cached bucket", Fixture)
 {
     {
         BucketDBOwner::Guard db = f._bucketDB->takeGuard();
-        db->add(GID_1, BUCKET_1, TIME_1, SubDbType::READY);
+        db->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::READY);
         db->cacheBucket(BUCKET_1);
-        db->add(GID_1, BUCKET_1, TIME_1, SubDbType::NOTREADY);
+        db->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::NOTREADY);
     }
     f.handleGetBucketInfo(BUCKET_1);
     EXPECT_TRUE(expectEqual(1, 1, f._bucketInfo.getInfo()));
@@ -196,8 +197,8 @@ TEST_F("require that handleGetBucketInfo() can get cached bucket", Fixture)
     {
         // Must ensure empty bucket db before destruction.
         BucketDBOwner::Guard db = f._bucketDB->takeGuard();
-        db->remove(GID_1, BUCKET_1, TIME_1, SubDbType::READY);
-        db->remove(GID_1, BUCKET_1, TIME_1, SubDbType::NOTREADY);
+        db->remove(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::READY);
+        db->remove(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::NOTREADY);
     }
 }
 

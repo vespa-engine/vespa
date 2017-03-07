@@ -23,6 +23,7 @@ const BucketId BUCKET_1(MIN_NUM_BITS, GID_1.convertToBucketId().getRawId());
 const Timestamp TIME_1(1u);
 const Timestamp TIME_2(2u);
 const Timestamp TIME_3(3u);
+constexpr uint32_t DOCSIZE_1(4096u);
 
 typedef BucketInfo::ReadyState RS;
 typedef SubDbType SDT;
@@ -42,6 +43,17 @@ assertDocCount(uint32_t ready,
 }
 
 void
+assertDocSizes(size_t ready,
+               size_t notReady,
+               size_t removed,
+               const BucketState &state)
+{
+    EXPECT_EQUAL(ready, state.getReadyDocSizes());
+    EXPECT_EQUAL(notReady, state.getNotReadyDocSizes());
+    EXPECT_EQUAL(removed, state.getRemovedDocSizes());
+}
+
+void
 assertReady(bool expReady,
             const BucketInfo &info)
 {
@@ -54,37 +66,55 @@ struct Fixture
     Fixture()
         : _db()
     {}
-    const BucketState &add(const Timestamp &timestamp,
-                           SubDbType subDbType) {
-        return _db.add(GID_1, BUCKET_1, timestamp, subDbType);
+    const BucketState &add(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
+        return _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
     }
-    BucketState remove(const Timestamp &timestamp,
-                SubDbType subDbType) {
-        _db.remove(GID_1, BUCKET_1, timestamp, subDbType);
+    const BucketState &add(const Timestamp &timestamp, SubDbType subDbType) {
+        return add(timestamp, DOCSIZE_1, subDbType);
+    }
+    BucketState remove(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
+        _db.remove(GID_1, BUCKET_1, timestamp, docSize, subDbType);
         return get();
+    }
+    BucketState remove(const Timestamp &timestamp, SubDbType subDbType) {
+        return remove(timestamp, DOCSIZE_1, subDbType);
     }
     BucketState get() const {
         return _db.get(BUCKET_1);
     }
-    BucketChecksum getChecksum(const Timestamp &timestamp,
-                               SubDbType subDbType) {
+    BucketChecksum getChecksum(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketDB db;
-        BucketChecksum retval = db.add(GID_1, BUCKET_1, timestamp, subDbType).getChecksum();
+        BucketChecksum retval = db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType).getChecksum();
         // Must ensure empty bucket db before destruction.
-        db.remove(GID_1, BUCKET_1, timestamp, subDbType);
+        db.remove(GID_1, BUCKET_1, timestamp, docSize, subDbType);
         return retval;
+    }
+    BucketChecksum getChecksum(const Timestamp &timestamp, SubDbType subDbType) {
+        return getChecksum(timestamp, DOCSIZE_1, subDbType);
     }
 };
 
 TEST_F("require that bucket db tracks doc counts per sub db type", Fixture)
 {
-    assertDocCount(0, 0, 0, f.get());
-    assertDocCount(1, 0, 0, f.add(TIME_1, SDT::READY));
-    assertDocCount(1, 1, 0, f.add(TIME_2, SDT::NOTREADY));
-    assertDocCount(1, 1, 1, f.add(TIME_3, SDT::REMOVED));
-    assertDocCount(0, 1, 1, f.remove(TIME_1, SDT::READY));
-    assertDocCount(0, 0, 1, f.remove(TIME_2, SDT::NOTREADY));
-    assertDocCount(0, 0, 0, f.remove(TIME_3, SDT::REMOVED));
+    TEST_DO(assertDocCount(0, 0, 0, f.get()));
+    TEST_DO(assertDocCount(1, 0, 0, f.add(TIME_1, SDT::READY)));
+    TEST_DO(assertDocCount(1, 1, 0, f.add(TIME_2, SDT::NOTREADY)));
+    TEST_DO(assertDocCount(1, 1, 1, f.add(TIME_3, SDT::REMOVED)));
+    TEST_DO(assertDocCount(0, 1, 1, f.remove(TIME_1, SDT::READY)));
+    TEST_DO(assertDocCount(0, 0, 1, f.remove(TIME_2, SDT::NOTREADY)));
+    TEST_DO(assertDocCount(0, 0, 0, f.remove(TIME_3, SDT::REMOVED)));
+}
+
+TEST_F("require that bucket db tracks doc sizes per sub db type", Fixture)
+{
+    constexpr size_t S = DOCSIZE_1;
+    TEST_DO(assertDocSizes(0, 0, 0, f.get()));
+    TEST_DO(assertDocSizes(S, 0, 0, f.add(TIME_1, DOCSIZE_1, SDT::READY)));
+    TEST_DO(assertDocSizes(S, S, 0, f.add(TIME_2, DOCSIZE_1, SDT::NOTREADY)));
+    TEST_DO(assertDocSizes(S, S, S, f.add(TIME_3, DOCSIZE_1, SDT::REMOVED)));
+    TEST_DO(assertDocSizes(0, S, S, f.remove(TIME_1, DOCSIZE_1, SDT::READY)));
+    TEST_DO(assertDocSizes(0, 0, S, f.remove(TIME_2, DOCSIZE_1, SDT::NOTREADY)));
+    TEST_DO(assertDocSizes(0, 0, 0, f.remove(TIME_3, DOCSIZE_1, SDT::REMOVED)));
 }
 
 TEST_F("require that bucket checksum is a combination of sub db types", Fixture)
@@ -120,13 +150,13 @@ TEST_F("require that bucket can be cached", Fixture)
     f._db.cacheBucket(BUCKET_1);
     EXPECT_TRUE(f._db.isCachedBucket(BUCKET_1));
 
-    assertDocCount(1, 0, 0, f._db.cachedGet(BUCKET_1));
+    TEST_DO(assertDocCount(1, 0, 0, f._db.cachedGet(BUCKET_1)));
     f.add(TIME_2, SDT::NOTREADY);
-    assertDocCount(1, 0, 0, f._db.cachedGet(BUCKET_1));
+    TEST_DO(assertDocCount(1, 0, 0, f._db.cachedGet(BUCKET_1)));
 
     f._db.uncacheBucket();
     EXPECT_FALSE(f._db.isCachedBucket(BUCKET_1));
-    assertDocCount(1, 1, 0, f._db.cachedGet(BUCKET_1));
+    TEST_DO(assertDocCount(1, 1, 0, f._db.cachedGet(BUCKET_1)));
 
     // Must ensure empty bucket db before destruction.
     f.remove(TIME_1, SDT::READY);
@@ -136,7 +166,7 @@ TEST_F("require that bucket can be cached", Fixture)
 TEST("require that bucket db can be explored")
 {
     BucketDBOwner db;
-    db.takeGuard()->add(GID_1, BUCKET_1, TIME_1, SDT::READY);
+    db.takeGuard()->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
     {
         BucketDBExplorer explorer(db.takeGuard());
         Slime expectSlime;
@@ -146,10 +176,13 @@ TEST("require that bucket db can be explored")
             "  buckets: ["
             "    {"
             "      id: '0x2000000000000031',"
-            "      checksum: '0x93939394',"
+            "      checksum: '0x9393a394',"
             "      readyCount: 1,"
             "      notReadyCount: 0,"
             "      removedCount: 0,"
+            "      readyDocSizes: 4096,"
+            "      notReadyDocSizes: 0,"
+            "      removedDocSizes: 0,"
             "      active: false"
             "    }"
             "  ]"
@@ -163,7 +196,7 @@ TEST("require that bucket db can be explored")
     }
 
     // Must ensure empty bucket db before destruction.
-    db.takeGuard()->remove(GID_1, BUCKET_1, TIME_1, SDT::READY);
+    db.takeGuard()->remove(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
