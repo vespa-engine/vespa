@@ -11,7 +11,7 @@
         <version>6-SNAPSHOT</version>
     </parent>
 
-    <artifactId>node-admin-maintenance</artifactId>
+    <artifactId>node-maintainer</artifactId>
     <version>6-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
@@ -20,6 +20,26 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespajlib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>jdisc_core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>jdisc_http_service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -68,7 +88,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
-                    <finalName>node-admin-maintenance</finalName>
+                    <finalName>node-maintainer</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>

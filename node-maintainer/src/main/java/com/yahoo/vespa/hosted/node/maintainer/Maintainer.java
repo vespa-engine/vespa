@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.maintenance;
+package com.yahoo.vespa.hosted.node.maintainer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -23,16 +23,20 @@ public class Maintainer {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
-            throw new RuntimeException("Expected only 1 argument - a JSON list of maintenance jobs to execute");
+            throw new RuntimeException("Expected only 1 argument - a JSON list of maintainer jobs to execute");
         }
 
         ObjectMapper mapper = new ObjectMapper();
         List<MaintenanceJob> maintenanceJobs = mapper.readValue(args[0], new TypeReference<List<MaintenanceJob>>(){});
+        executeJobs(maintenanceJobs);
+    }
+
+    public static void executeJobs(List<MaintenanceJob> maintenanceJobs) {
         for (MaintenanceJob job : maintenanceJobs) {
             try {
                 executeJob(job);
             } catch (Exception e) {
-                throw new Exception("Failed to execute job " + job.jobName + " with arguments " +
+                throw new RuntimeException("Failed to execute job " + job.jobName + " with arguments " +
                         Arrays.toString(job.arguments.entrySet().toArray()), e);
             }
         }
@@ -89,7 +93,7 @@ public class Maintainer {
     /**
      * Should be equal to MaintainerExecutorJob in StorageMaintainer
      */
-    private static class MaintenanceJob {
+    public static class MaintenanceJob {
         private final String jobName;
         private final Map<String, Object> arguments;
 
