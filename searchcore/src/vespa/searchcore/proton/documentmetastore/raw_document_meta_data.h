@@ -83,6 +83,9 @@ struct RawDocumentMetaData
     Timestamp getTimestamp(void) const { return _timestamp; }
 
     void setTimestamp(const Timestamp &timestamp) { _timestamp = timestamp; }
+
+    uint32_t getSize() const { return _sizeLow + (static_cast<uint32_t>(_sizeHigh) << 8); }
+    void setSize(uint32_t size) { _sizeLow = size; _sizeHigh = size >> 8; }
 };
 
 } // namespace proton

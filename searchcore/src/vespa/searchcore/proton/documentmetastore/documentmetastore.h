@@ -79,6 +79,7 @@ private:
     BucketDBOwner::SP   _bucketDB;
     uint32_t            _shrinkLidSpaceBlockers;
     const SubDbType     _subDbType;
+    bool                _trackDocumentSizes;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -275,6 +276,8 @@ public:
     void unblockShrinkLidSpace();
     void onShrinkLidSpace() override;
     uint64_t getEstimatedSaveByteSize() const override;
+    virtual uint32_t getVersion() const override;
+    void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
 };
 
 }

@@ -26,32 +26,23 @@ private:
     static constexpr uint32_t COUNTS = static_cast<uint32_t>(SubDbType::COUNT);
     uint32_t _docCount[COUNTS];
     uint32_t _checksum;
+    size_t   _docSizes[COUNTS];
     bool _active;
 
 public:
-    BucketState() :
-        _docCount(),
-        _checksum(0),
-        _active(false)
-    {
-        for (uint32_t i = 0; i < COUNTS; ++i) {
-            _docCount[i] = 0;
-        }
-    }
+    BucketState();
 
-    static uint32_t
-    calcChecksum(const GlobalId &gid,
-                 const Timestamp &timestamp);
+    static uint32_t calcChecksum(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize);
 
     void
-    add(const GlobalId &gid, const Timestamp &timestamp, SubDbType subDbType);
+    add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
 
     void
-    remove(const GlobalId &gid, const Timestamp &timestamp,
-           SubDbType subDbType);
+    remove(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
 
     void
-    modify(const Timestamp &oldTimestamp, const Timestamp &newTimestamp,
+    modify(const Timestamp &oldTimestamp, uint32_t oldDocSize,
+           const Timestamp &newTimestamp, uint32_t newDocSize,
            SubDbType subDbType);
 
     bool
@@ -84,6 +75,10 @@ public:
     {
         return _docCount[NOTREADY];
     }
+
+    size_t getReadyDocSizes() const { return _docSizes[READY]; }
+    size_t getRemovedDocSizes() const { return _docSizes[REMOVED]; }
+    size_t getNotReadyDocSizes() const { return _docSizes[NOTREADY]; }
 
     uint32_t
     getDocumentCount() const

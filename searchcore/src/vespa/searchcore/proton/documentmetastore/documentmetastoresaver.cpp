@@ -10,26 +10,31 @@ namespace proton {
 
 namespace {
 
+constexpr uint32_t NO_DOCUMENT_SIZE_TRACKING_VERSION = 0u;
+
 /*
  * Functor class to write meta data for a single lid. Note that during
- * a background save with active feeding, timestamp and bucketused
- * bits might reflect future values due to missing snapshot properties
- * in MetaDataStore.
+ * a background save with active feeding, timestamp, bucketused bits
+ * and size might reflect future values due to missing snapshot
+ * properties in MetaDataStore.  size might also reflect a mix between
+ * current ant future value due to non-atomic access.
  */
 class WriteMetaData
 {
     search::BufferWriter &_datWriter;
     const RawDocumentMetaData *_metaDataStore;
     uint32_t _metaDataStoreSize;
+    bool _writeSize;
     using MetaDataStore = DocumentMetaStoreSaver::MetaDataStore;
     using GlobalId = documentmetastore::IStore::GlobalId;
     using BucketId = documentmetastore::IStore::BucketId;
     using Timestamp = documentmetastore::IStore::Timestamp;
 public:
-    WriteMetaData(search::BufferWriter &datWriter, const MetaDataStore &metaDataStore)
+    WriteMetaData(search::BufferWriter &datWriter, const MetaDataStore &metaDataStore, bool writeSize)
         : _datWriter(datWriter),
           _metaDataStore(&metaDataStore[0]),
-          _metaDataStoreSize(metaDataStore.size())
+          _metaDataStoreSize(metaDataStore.size()),
+          _writeSize(writeSize)
     { }
 
     void operator()(uint32_t lid) {
@@ -45,6 +50,14 @@ public:
         datWriter.write(&lid, sizeof(lid));
         datWriter.write(gid.get(), GlobalId::LENGTH);
         datWriter.write(&bucketUsedBits, sizeof(bucketUsedBits));
+        if (_writeSize) {
+            uint32_t size = metaData.getSize();
+            assert(size < (1u << 24));
+            uint8_t sizeLow = size;
+            uint16_t sizeHigh = size >> 8;
+            datWriter.write(&sizeLow, sizeof(sizeLow));
+            datWriter.write(&sizeHigh, sizeof(sizeHigh));
+        }
         datWriter.write(&timestamp, sizeof(timestamp));
     }
 };
@@ -60,8 +73,13 @@ DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
                              const MetaDataStore &metaDataStore)
     : AttributeSaver(std::move(guard), cfg),
       _gidIterator(gidIterator),
-      _metaDataStore(metaDataStore)
-{ }
+      _metaDataStore(metaDataStore),
+      _writeSize(true)
+{
+    if (cfg.getVersion() == NO_DOCUMENT_SIZE_TRACKING_VERSION) {
+        _writeSize = false;
+    }
+}
 
 
 DocumentMetaStoreSaver::~DocumentMetaStoreSaver() { }
@@ -73,7 +91,7 @@ DocumentMetaStoreSaver::onSave(IAttributeSaveTarget &saveTarget)
     // write <lid,gid> pairs, sorted on gid
     std::unique_ptr<search::BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());
-    _gidIterator.foreach_key(WriteMetaData(*datWriter, _metaDataStore));
+    _gidIterator.foreach_key(WriteMetaData(*datWriter, _metaDataStore, _writeSize));
     datWriter->flush();
     return true;
 }

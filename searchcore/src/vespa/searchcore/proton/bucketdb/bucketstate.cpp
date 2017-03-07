@@ -39,51 +39,68 @@ inline uint32_t toIdx(SubDbType subDbType)
 
 }
 
+BucketState::BucketState()
+    : _docCount(),
+      _checksum(0),
+      _docSizes(),
+      _active(false)
+{
+    for (uint32_t i = 0; i < COUNTS; ++i) {
+        _docCount[i] = 0;
+        _docSizes[i] = 0;
+    }
+}
+
 uint32_t
 BucketState::calcChecksum(const GlobalId &gid,
-                          const Timestamp &timestamp)
+                          const Timestamp &timestamp, uint32_t docSize)
 {
-    return gidChecksum(gid) + timestampChecksum(timestamp);
+    return gidChecksum(gid) + timestampChecksum(timestamp) + docSize;
 }
 
 
 void
-BucketState::add(const GlobalId &gid, const Timestamp &timestamp,
-                 SubDbType subDbType)
+BucketState::add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType)
 {
     assert(subDbType < SubDbType::COUNT);
     if (subDbType != SubDbType::REMOVED) {
-        _checksum += calcChecksum(gid, timestamp);
+        _checksum += calcChecksum(gid, timestamp, docSize);
     }
-    ++_docCount[toIdx(subDbType)];
+    uint32_t subDbTypeIdx = toIdx(subDbType);
+    ++_docCount[subDbTypeIdx];
+    _docSizes[subDbTypeIdx] += docSize;
 }
 
 
 void
-BucketState::remove(const GlobalId &gid, const Timestamp &timestamp,
+BucketState::remove(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType)
+{
+    assert(subDbType < SubDbType::COUNT);
+    uint32_t subDbTypeIdx = toIdx(subDbType);
+    assert(_docCount[subDbTypeIdx] > 0);
+    assert(_docSizes[subDbTypeIdx] >= docSize);
+    if (subDbType != SubDbType::REMOVED) {
+        _checksum -= calcChecksum(gid, timestamp, docSize);
+    }
+    --_docCount[subDbTypeIdx];
+    _docSizes[subDbTypeIdx] -= docSize;
+}
+
+
+void
+BucketState::modify(const Timestamp &oldTimestamp, uint32_t oldDocSize,
+                    const Timestamp &newTimestamp, uint32_t newDocSize,
                     SubDbType subDbType)
 {
     assert(subDbType < SubDbType::COUNT);
     uint32_t subDbTypeIdx = toIdx(subDbType);
     assert(_docCount[subDbTypeIdx] > 0);
+    assert(_docSizes[subDbTypeIdx] >= oldDocSize);
     if (subDbType != SubDbType::REMOVED) {
-        _checksum -= calcChecksum(gid, timestamp);
+        _checksum = _checksum - timestampChecksum(oldTimestamp) - oldDocSize +
+                    timestampChecksum(newTimestamp) + newDocSize;
     }
-    --_docCount[subDbTypeIdx];
-}
-
-
-void
-BucketState::modify(const Timestamp &oldTimestamp,
-                    const Timestamp &newTimestamp,
-                    SubDbType subDbType)
-{
-    assert(subDbType < SubDbType::COUNT);
-    assert(_docCount[toIdx(subDbType)] > 0);
-    if (subDbType != SubDbType::REMOVED) {
-        _checksum = _checksum - timestampChecksum(oldTimestamp) +
-                    timestampChecksum(newTimestamp);
-    }
+    _docSizes[subDbTypeIdx] = _docSizes[subDbTypeIdx] + newDocSize - oldDocSize;
 }
 
 
@@ -94,6 +111,9 @@ BucketState::empty(void) const
         getNotReadyCount() != 0)
         return false;
     assert(_checksum == 0);
+    for (uint32_t i = 0; i < COUNTS; ++i) {
+        assert(_docSizes[i] == 0);
+    }
     return true;
 }
 
@@ -103,6 +123,9 @@ BucketState::operator+=(const BucketState &rhs)
 {
     for (uint32_t i = 0; i < COUNTS; ++i) {
         _docCount[i] += rhs._docCount[i];
+    }
+    for (uint32_t i = 0; i < COUNTS; ++i) {
+        _docSizes[i] += rhs._docSizes[i];
     }
     _checksum += rhs._checksum;
     return *this;
@@ -116,7 +139,13 @@ BucketState::operator-=(const BucketState &rhs)
         assert(_docCount[i] >= rhs._docCount[i]);
     }
     for (uint32_t i = 0; i < COUNTS; ++i) {
+        assert(_docSizes[i] >= rhs._docSizes[i]);
+    }
+    for (uint32_t i = 0; i < COUNTS; ++i) {
         _docCount[i] -= rhs._docCount[i];
+    }
+    for (uint32_t i = 0; i < COUNTS; ++i) {
+        _docSizes[i] -= rhs._docSizes[i];
     }
     _checksum -= rhs._checksum;
     return *this;
