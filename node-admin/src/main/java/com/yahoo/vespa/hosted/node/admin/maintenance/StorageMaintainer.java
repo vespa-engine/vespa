@@ -271,7 +271,7 @@ public class StorageMaintainer {
 
         ProcessResult execute() {
             String classPath = String.join(":",
-                    "/home/y/lib/jars/node-admin-maintenance-jar-with-dependencies.jar",
+                    "/home/y/lib/jars/node-maintainer-jar-with-dependencies.jar",
                     "/home/y/lib/jars/vespajlib.jar");
 
             String args;
@@ -281,7 +281,7 @@ public class StorageMaintainer {
                 throw new RuntimeException("Failed trasform list of maintenance jobs to JSON");
             }
 
-            String[] command = {"java", "-cp", classPath, "com.yahoo.vespa.hosted.node.maintenance.Maintainer", args};
+            String[] command = {"java", "-cp", classPath, "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
             ProcessResult result = runAsRoot ?  docker.executeInContainerAsRoot(executeIn, command) :
                                                 docker.executeInContainer(executeIn, command);
 

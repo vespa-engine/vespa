@@ -1154,7 +1154,7 @@
         <module>metrics</module>
         <module>node-repository</module>
         <module>node-admin</module>
-        <module>node-admin-maintenance</module>
+        <module>node-maintainer</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
         <module>persistence</module>
