@@ -50,7 +50,8 @@ struct Model {
     std::map<std::string,std::string>                         properties;
     std::map<std::string,std::string>                         constants;
     std::vector<bool>                                         extra_profiles;
-    Model() : indexes(), attributes(), properties(), extra_profiles() {
+    std::vector<std::string>                                  imported_attributes;
+    Model() : indexes(), attributes(), properties(), extra_profiles(), imported_attributes() {
         verify_dir();
     }
     void index(const std::string &name, schema::DataType data_type,
@@ -85,6 +86,9 @@ struct Model {
     }
     void bad_profile() {
         extra_profiles.push_back(false);
+    }
+    void imported_attribute(const std::string &name) {
+        imported_attributes.emplace_back(name);
     }
     void write_attributes(const Writer &out) {
         out.fmt("attribute[%zu]\n", attributes.size());
@@ -128,11 +132,21 @@ struct Model {
             ++idx;
         }
     }
+    void write_imported_attributes(const Writer &out) {
+        size_t idx = 0;
+        for (const auto &attr : imported_attributes) {
+            out.fmt("attribute[%zu].name \"%s\"\n", idx, attr.c_str());
+            out.fmt("attribute[%zu].referencefield \"%s_ref\"\n", idx, attr.c_str());
+            out.fmt("attribute[%zu].targetfield \"%s_target\"\n", idx, attr.c_str());
+            ++idx;
+        }
+    }
     void generate() {
         write_attributes(Writer(gen_dir + "/attributes.cfg"));
         write_indexschema(Writer(gen_dir + "/indexschema.cfg"));
         write_rank_profiles(Writer(gen_dir + "/rank-profiles.cfg"));
         write_ranking_constants(Writer(gen_dir + "/ranking-constants.cfg"));
+        write_imported_attributes(Writer(gen_dir + "/imported-fields.cfg"));
     }
     bool verify() {
         generate();
@@ -166,6 +180,7 @@ struct SimpleModel : Model {
         index("list", schema::STRING, schema::ARRAY);
         index("keywords", schema::STRING, schema::WEIGHTEDSET);
         attribute("date", schema::INT32, schema::SINGLE);
+        imported_attribute("imported_attr");
         constants["my_tensor"] = "tensor(x{},y{})";
     }
 };
@@ -278,6 +293,11 @@ TEST_F("require that tensor join is supported", SimpleModel()) {
 TEST_F("require that nested tensor join is not supported", SimpleModel()) {
     f.first_phase("rankingExpression(\\\"join(constant(my_tensor),attribute(date),f(t,d)(join(t,d,f(x,y)(x+y))))\\\")");
     EXPECT_TRUE(!f.verify());
+}
+
+TEST_F("require that imported attribute field can be used by rank feature", SimpleModel()) {
+    f.first_phase("attribute(imported_attr)");
+    EXPECT_TRUE(f.verify());
 }
 
 //-----------------------------------------------------------------------------
