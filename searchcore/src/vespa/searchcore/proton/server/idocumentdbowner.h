@@ -8,7 +8,7 @@
 namespace proton
 {
 
-class IDocumentDBReferentRegistry;
+class IDocumentDBReferenceRegistry;
 
 class IDocumentDBOwner
 {
@@ -20,7 +20,7 @@ public:
     virtual searchcorespi::IIndexManagerFactory::SP
     getIndexManagerFactory(const vespalib::stringref & name) const = 0;
     virtual uint32_t getDistributionKey() const = 0;
-    virtual std::shared_ptr<IDocumentDBReferentRegistry> getDocumentDBReferentRegistry() const = 0;
+    virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const = 0;
 };
 
 } // namespace proton

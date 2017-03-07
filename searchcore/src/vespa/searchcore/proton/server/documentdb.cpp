@@ -18,7 +18,7 @@
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
-#include <vespa/searchcore/proton/reference/i_document_db_referent_registry.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
@@ -211,14 +211,14 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     }
 }
 
-void DocumentDB::registerReferent()
+void DocumentDB::registerReference()
 {
     if (_state.getAllowReconfig()) {
-        auto registry = _owner.getDocumentDBReferentRegistry();
+        auto registry = _owner.getDocumentDBReferenceRegistry();
         if (registry) {
-            auto referent = _subDBs.getReadySubDB()->getDocumentDBReferent();
-            if (referent) {
-                registry->add(_docTypeName.getName(), referent);
+            auto reference = _subDBs.getReadySubDB()->getDocumentDBReference();
+            if (reference) {
+                registry->add(_docTypeName.getName(), reference);
             }
         }
     }
@@ -227,7 +227,7 @@ void DocumentDB::registerReferent()
 void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
                                  SerialNum serialNum, int64_t generation) {
     lock_guard guard(_configMutex);
-    registerReferent();
+    registerReference();
     _activeConfigSnapshot = config;
     assert(generation >= config->getGeneration());
     if (_activeConfigSnapshotGeneration < generation) {
@@ -394,7 +394,7 @@ DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
 void
 DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot, SerialNum serialNum, const ReconfigParams &params)
 {
-    auto registry = _owner.getDocumentDBReferentRegistry();
+    auto registry = _owner.getDocumentDBReferenceRegistry();
     auto oldRepo = _activeConfigSnapshot->getDocumentTypeRepoSP();
     auto oldDocType = oldRepo->getDocumentType(_docTypeName.getName());
     assert(oldDocType != nullptr);
@@ -577,7 +577,7 @@ void
 DocumentDB::tearDownReferences()
 {
     // Called by master executor thread
-    auto registry = _owner.getDocumentDBReferentRegistry();
+    auto registry = _owner.getDocumentDBReferenceRegistry();
     auto activeConfig = getActiveConfig();
     auto repo = activeConfig->getDocumentTypeRepoSP();
     auto docType = repo->getDocumentType(_docTypeName.getName());

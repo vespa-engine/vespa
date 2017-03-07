@@ -464,10 +464,10 @@ StoreOnlyDocSubDB::close()
     store.flush(syncToken);
 }
 
-std::shared_ptr<IDocumentDBReferent>
-StoreOnlyDocSubDB::getDocumentDBReferent()
+std::shared_ptr<IDocumentDBReference>
+StoreOnlyDocSubDB::getDocumentDBReference()
 {
-    return std::shared_ptr<IDocumentDBReferent>();
+    return std::shared_ptr<IDocumentDBReference>();
 }
 
 void

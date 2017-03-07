@@ -39,7 +39,7 @@ namespace proton {
 
 class DiskMemUsageSampler;
 class HwInfoSampler;
-class IDocumentDBReferentRegistry;
+class IDocumentDBReferenceRegistry;
 
 class Proton : public IBootstrapOwner,
                public search::engine::MonitorServer,
@@ -147,7 +147,7 @@ private:
     bool                            _initDocumentDbsInSequence;
     HwInfo                          _hwInfo;
     std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
-    std::shared_ptr<IDocumentDBReferentRegistry> _documentDBReferentRegistry;
+    std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
 
     bool performDataDirectoryUpgrade(const vespalib::string &baseDir);
     void loadLibrary(const vespalib::string &libName);
@@ -180,7 +180,7 @@ private:
     getIndexManagerFactory(const vespalib::stringref & name) const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
     BootstrapConfig::SP getActiveConfigSnapshot() const;
-    virtual std::shared_ptr<IDocumentDBReferentRegistry> getDocumentDBReferentRegistry() const override;
+    virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
 
 
 public:
