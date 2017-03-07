@@ -20,23 +20,6 @@ using vespalib::makeClosure;
 
 namespace proton {
 
-namespace {
-
-BucketInfo
-fakeSizeData(const BucketInfo &info)
-{
-    // TODO(geirst): consider if we should store document size and used size in bucket db.
-    return BucketInfo(info.getChecksum(),
-                      info.getDocumentCount(),
-                      info.getDocumentCount(),
-                      info.getEntryCount(),
-                      info.getEntryCount(),
-                      info.getReady(),
-                      info.getActive());
-}
-
-}
-
 void
 BucketHandler::performSetCurrentState(BucketId bucketId,
                                       storage::spi::BucketInfo::ActiveState newState,
@@ -133,7 +116,7 @@ BucketHandler::handleGetBucketInfo(const Bucket &bucket,
     // Called by SPI thread.
     // BucketDBOwner ensures synchronization between SPI thread and
     // master write thread in document database.
-    BucketInfo bucketInfo = fakeSizeData(_ready->getBucketDB().takeGuard()->cachedGet(bucket));
+    BucketInfo bucketInfo = _ready->getBucketDB().takeGuard()->cachedGet(bucket);
     LOG(spam, "handleGetBucketInfo(%s): %s",
         bucket.toString().c_str(), bucketInfo.toString().c_str());
     resultHandler.handle(BucketInfoResult(bucketInfo));
