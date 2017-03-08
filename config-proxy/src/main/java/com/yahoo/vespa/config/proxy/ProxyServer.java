@@ -85,19 +85,21 @@ public class ProxyServer implements Runnable {
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source) {
-        return createTestServer(source, null);
+        return createTestServer(source, null, new MemoryCache());
     }
 
-    static ProxyServer createTestServer(MapBackedConfigSource source) {
-        return createTestServer(source, source);
+    static ProxyServer createTestServer(MapBackedConfigSource source, MemoryCache memoryCache) {
+        return createTestServer(source, source, memoryCache);
     }
 
-    private static ProxyServer createTestServer(ConfigSource source, ConfigSourceClient configSourceClient) {
+    private static ProxyServer createTestServer(ConfigSource source,
+                                                ConfigSourceClient configSourceClient,
+                                                MemoryCache memoryCache) {
         final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
         final boolean delayedResponseHandling = false;
         return new ProxyServer(null, new DelayedResponses(statistics),
                                source, statistics, defaultTimingValues(), delayedResponseHandling,
-                               new MemoryCache(), configSourceClient);
+                               memoryCache, configSourceClient);
     }
 
     public void run() {
@@ -123,11 +125,7 @@ public class ProxyServer implements Runnable {
         // create a background thread that retrieves config from the server and
         // calls updateSubscribers when new config is returned from the config source.
         // In the last case the method below will return null.
-        RawConfig config = configClient.getConfig(RawConfig.createFromServerRequest(req), req);
-        if (configOrGenerationHasChanged(config, req)) {
-            memoryCache.put(config);
-        }
-        return config;
+        return configClient.getConfig(RawConfig.createFromServerRequest(req), req);
     }
 
     static boolean configOrGenerationHasChanged(RawConfig config, JRTServerConfigRequest request) {

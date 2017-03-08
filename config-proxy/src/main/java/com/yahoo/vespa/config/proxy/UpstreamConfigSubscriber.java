@@ -68,6 +68,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
                     "', generation=" + newConfig.getGeneration() +
                     ", payload=" + newConfig.getPayload());
         }
+        // memoryCache.put(); TODO: Add here later and remove in ClientUpdater
         clientUpdater.updateSubscribers(newConfig);
     }
 

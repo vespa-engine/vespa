@@ -17,6 +17,7 @@ import java.util.List;
  * @author hmusum
  * @since 5.1.10
  */
+// TODO Move to src/test/
 public class MapBackedConfigSource implements ConfigSource, ConfigSourceClient {
     private final HashMap<ConfigKey<?>, RawConfig> backing = new HashMap<>();
     private final ClientUpdater clientUpdater;
@@ -33,7 +34,9 @@ public class MapBackedConfigSource implements ConfigSource, ConfigSourceClient {
 
     @Override
     public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
-        return getConfig(input.getKey());
+        final RawConfig config = getConfig(input.getKey());
+        clientUpdater.getMemoryCache().put(config);
+        return config;
     }
 
     RawConfig getConfig(ConfigKey<?> configKey) {
