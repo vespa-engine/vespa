@@ -117,10 +117,11 @@ andIterators(BitVector::UP result, const Children &children, uint32_t begin_id, 
     return result;
 }
 
-template<typename Children>
+template<typename IT>
 BitVector::UP
-orIterators(BitVector::UP result, const Children &children, uint32_t begin_id, bool select_bitvector) {
-    for (auto & child : children) {
+orIterators(BitVector::UP result, IT begin, IT end, uint32_t begin_id, bool select_bitvector) {
+    for (IT it(begin); it != end; ++it) {
+        auto & child = *it;
         if (child->isBitVector() == select_bitvector) {
             if (!result) {
                 result = child->get_hits(begin_id);
@@ -130,6 +131,17 @@ orIterators(BitVector::UP result, const Children &children, uint32_t begin_id, b
         }
     }
     return result;
+}
+
+template<typename IT>
+void
+orIterators(BitVector & result, IT begin, IT end, uint32_t begin_id, bool select_bitvector) {
+    for (IT it(begin); it != end; ++it) {
+        auto & child = *it;
+        if (child->isBitVector() == select_bitvector) {
+            child->or_hits_into(result, begin_id);
+        }
+    }
 }
 
 }
@@ -146,7 +158,14 @@ SearchIterator::andChildren(const Children &children, uint32_t begin_id) {
 
 BitVector::UP
 SearchIterator::orChildren(BitVector::UP result, const Children &children, uint32_t begin_id) {
-    return orIterators(orIterators(std::move(result), children, begin_id, true), children, begin_id, false);
+    return orIterators(orIterators(std::move(result), children.begin(), children.end(), begin_id, true),
+                       children.begin(), children.end(), begin_id, false);
+}
+
+void
+SearchIterator::orChildren(BitVector & result, const Children &children, uint32_t begin_id) {
+    orIterators(result, children.begin(), children.end(), begin_id, true);
+    orIterators(result, children.begin(), children.end(), begin_id, false);
 }
 
 BitVector::UP
@@ -156,7 +175,8 @@ SearchIterator::orChildren(const Children &children, uint32_t begin_id) {
 
 BitVector::UP
 SearchIterator::orChildren(BitVector::UP result, const OwnedChildren &children, uint32_t begin_id) {
-    return orIterators(orIterators(std::move(result), children, begin_id, true), children, begin_id, false);
+    return orIterators(orIterators(std::move(result), children.begin(), children.end(), begin_id, true),
+                       children.begin(), children.end(), begin_id, false);
 }
 
 BitVector::UP

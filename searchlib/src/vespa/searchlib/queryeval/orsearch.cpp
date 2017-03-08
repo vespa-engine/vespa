@@ -89,9 +89,7 @@ OrSearch::and_hits_into(BitVector &result, uint32_t begin_id) {
 void
 OrSearch::or_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP dirty(&result);
-    dirty = orChildren(std::move(dirty), getChildren(), begin_id);
-    dirty.release(); // Yes I know, dirty...
+    orChildren(result, getChildren(), begin_id);
 }
 
 SearchIterator *
