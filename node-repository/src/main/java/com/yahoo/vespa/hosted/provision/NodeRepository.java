@@ -521,7 +521,7 @@ public class NodeRepository extends AbstractComponent {
                 .map(Node::parentHostname)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(hostName -> getNode(hostName, Node.State.values()))
+                .map(hostName -> getNode(hostName))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
