@@ -1,122 +1,32 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintainer;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.system.ProcessExecuter;
-import org.apache.http.impl.client.HttpClientBuilder;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import com.yahoo.container.logging.AccessLog;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Type;
+import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.node.maintainer.restapi.v1.MaintainerApiHandler;
 
 /**
  * @author freva
  */
 public class Maintainer {
-
-    @SuppressWarnings("unchecked")
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         if (args.length != 1) {
             throw new RuntimeException("Expected only 1 argument - a JSON list of maintainer jobs to execute");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        List<MaintenanceJob> maintenanceJobs = mapper.readValue(args[0], new TypeReference<List<MaintenanceJob>>(){});
-        executeJobs(maintenanceJobs);
-    }
-
-    public static void executeJobs(List<MaintenanceJob> maintenanceJobs) {
-        for (MaintenanceJob job : maintenanceJobs) {
-            try {
-                executeJob(job);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to execute job " + job.jobName + " with arguments " +
-                        Arrays.toString(job.arguments.entrySet().toArray()), e);
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void executeJob(MaintenanceJob job) throws IOException {
-        switch (job.getJobName()) {
-            case "delete-files":
-                DeleteOldAppData.deleteFiles(
-                        (String) job.getRequiredArgument("basePath"),
-                        (Integer) job.getRequiredArgument("maxAgeSeconds"),
-                        (String) job.getArgumentOrDefault("fileNameRegex", null),
-                        (boolean) job.getArgumentOrDefault("recursive", false));
-                break;
-
-            case "delete-directories":
-                DeleteOldAppData.deleteDirectories(
-                        (String) job.getRequiredArgument("basePath"),
-                        (Integer) job.getRequiredArgument("maxAgeSeconds"),
-                        (String) job.getArgumentOrDefault("dirNameRegex", null));
-                break;
-
-            case "recursive-delete":
-                DeleteOldAppData.recursiveDelete(
-                        (String) job.getRequiredArgument("path"));
-                break;
-
-            case "move-files":
-                Path from = Paths.get((String) job.getRequiredArgument("from"));
-                Path to = Paths.get((String) job.getRequiredArgument("to"));
-                if (Files.exists(from)) {
-                    Files.move(from, to);
-                }
-                break;
-
-            case "handle-core-dumps":
-                CoreCollector coreCollector = new CoreCollector(new ProcessExecuter());
-                CoredumpHandler coredumpHandler = new CoredumpHandler(HttpClientBuilder.create().build(), coreCollector);
-
-                Path containerCoredumpsPath = Paths.get((String) job.getRequiredArgument("containerCoredumpsPath"));
-                Path doneCoredumpsPath = Paths.get((String) job.getRequiredArgument("doneCoredumpsPath"));
-                Map<String, Object> attributesMap = (Map<String, Object>) job.getRequiredArgument("attributes");
-
-                coredumpHandler.removeJavaCoredumps(containerCoredumpsPath);
-                coredumpHandler.processAndReportCoredumps(containerCoredumpsPath, doneCoredumpsPath, attributesMap);
-                break;
-
-            default:
-                throw new RuntimeException("Unknown job: " + job.getJobName());
-        }
-    }
-
-    /**
-     * Should be equal to MaintainerExecutorJob in StorageMaintainer
-     */
-    public static class MaintenanceJob {
-        private final String jobName;
-        private final Map<String, Object> arguments;
-
-        private MaintenanceJob(@JsonProperty(value="jobName") String jobName,
-                               @JsonProperty(value="arguments") Map<String, Object> arguments) {
-            this.jobName = jobName;
-            this.arguments = arguments;
+        MaintainerApiHandler handler = new MaintainerApiHandler(Runnable::run, AccessLog.voidAccessLog());
+        Inspector object = SlimeUtils.jsonToSlime(args[0].getBytes()).get();
+        if (object.type() != Type.ARRAY) {
+            throw new IllegalArgumentException("Expected a list maintainer jobs to execute");
         }
 
-        String getJobName() {
-            return jobName;
-        }
-
-        Object getRequiredArgument(String argumentName) {
-            Object value = arguments.get(argumentName);
-            if (value == null) {
-                throw new IllegalArgumentException("Missing required argument " + argumentName);
-            }
-            return value;
-        }
-
-        Object getArgumentOrDefault(String argumentName, Object defaultValue) {
-            return arguments.getOrDefault(argumentName, defaultValue);
-        }
+        object.traverse((ArrayTraverser) (int i, Inspector item) -> {
+            String type = handler.getFieldOrFail(item, "type").asString();
+            Inspector arguments = handler.getFieldOrFail(item, "arguments");
+            handler.parseMaintenanceJob(type, arguments);
+        });
     }
 }
