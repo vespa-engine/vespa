@@ -6,4 +6,5 @@ vespa_add_library(searchcore_test STATIC
     documentdb_config_builder.cpp
     userdocumentsbuilder.cpp
     DEPENDS
+    searchcore_fconfig
 )
