@@ -41,6 +41,8 @@ private:
     SearchReply::UP   _reply;
 
 public:
+    LocalSearchClient();
+    ~LocalSearchClient();
     void searchDone(SearchReply::UP reply) {
         vespalib::MonitorGuard guard(_monitor);
         _reply = std::move(reply);
@@ -56,6 +58,9 @@ public:
         return std::move(_reply);
     }
 };
+
+LocalSearchClient::LocalSearchClient() {}
+LocalSearchClient::~LocalSearchClient() {}
 
 TEST("requireThatSearchesExecute")
 {

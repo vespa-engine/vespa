@@ -82,6 +82,8 @@ private:
     DocsumReply::UP   _reply;
 
 public:
+    MyDocsumClient();
+    ~MyDocsumClient();
     void getDocsumsDone(DocsumReply::UP reply) {
         vespalib::MonitorGuard guard(_monitor);
         _reply = std::move(reply);
@@ -97,6 +99,9 @@ public:
         return std::move(_reply);
     }
 };
+
+MyDocsumClient::MyDocsumClient() {}
+MyDocsumClient::~MyDocsumClient() {}
 
 class Test : public vespalib::TestApp {
 private:
@@ -297,16 +302,8 @@ protected:
 };
 class Server : public BaseServer {
 public:
-    Server() :
-        BaseServer(),
-        engine(2),
-        handler(new MySearchHandler("slime", stringref(buf.GetDrainPos(), buf.GetUsedLen()))),
-        docsumBySlime(engine),
-        docsumByRPC(docsumBySlime)
-    {
-        DocTypeName dtnvfoo("foo");
-        engine.putSearchHandler(dtnvfoo, handler);
-    };
+    Server();
+    ~Server();
 private:
     SummaryEngine       engine;
     ISearchHandler::SP  handler;
@@ -314,6 +311,18 @@ public:
     DocsumBySlime       docsumBySlime;
     DocsumByRPC         docsumByRPC;
 };
+
+Server::Server()
+    : BaseServer(),
+      engine(2),
+      handler(new MySearchHandler("slime", stringref(buf.GetDrainPos(), buf.GetUsedLen()))),
+      docsumBySlime(engine),
+      docsumByRPC(docsumBySlime)
+{
+    DocTypeName dtnvfoo("foo");
+    engine.putSearchHandler(dtnvfoo, handler);
+}
+Server::~Server() {}
 
 vespalib::string
 getAnswer(size_t num)

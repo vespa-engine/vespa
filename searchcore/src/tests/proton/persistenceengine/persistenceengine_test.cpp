@@ -334,14 +334,17 @@ struct HandlerSet {
     IPersistenceHandler::SP phandler2;
     MyHandler              &handler1;
     MyHandler              &handler2;
-    HandlerSet() :
-        phandler1(new MyHandler()),
-        phandler2(new MyHandler()),
-        handler1(static_cast<MyHandler &>(*phandler1.get())),
-        handler2(static_cast<MyHandler &>(*phandler2.get()))
-    {}
+    HandlerSet();
+    ~HandlerSet();
 };
 
+HandlerSet::HandlerSet()
+    : phandler1(new MyHandler()),
+      phandler2(new MyHandler()),
+      handler1(static_cast<MyHandler &>(*phandler1.get())),
+      handler2(static_cast<MyHandler &>(*phandler2.get()))
+{}
+HandlerSet::~HandlerSet() {}
 
 DocumentType type1(createDocType("type1", 1));
 DocumentType type2(createDocType("type2", 2));

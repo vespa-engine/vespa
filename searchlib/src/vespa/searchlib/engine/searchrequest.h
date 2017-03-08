@@ -72,6 +72,7 @@ public:
     std::vector<char> sessionId;
 
     SearchRequest();
+    ~SearchRequest();
 };
 
 } // namespace engine

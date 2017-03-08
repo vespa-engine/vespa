@@ -13,8 +13,9 @@ SearchRequest::SearchRequest()
       sortSpec(),
       groupSpec(),
       sessionId()
-{
-}
+{ }
+
+SearchRequest::~SearchRequest() {}
 
 void SearchRequest::Source::lazyDecode() const
 {
