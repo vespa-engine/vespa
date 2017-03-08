@@ -5,7 +5,6 @@
 #include "isearchcontext.h"
 #include <vespa/searchcorespi/index/fakeindexsearchable.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
-#include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <algorithm>
 #include <map>
@@ -27,7 +26,6 @@ private:
     vespalib::Clock                        _clock;
     vespalib::Doom                         _doom;
     search::queryeval::ISourceSelector::SP _selector;
-    search::attribute::IAttributeContext  *_attrCtx;
     IndexCollection::SP                    _indexes;
     FakeSearchable                         _attrSearchable;
     uint32_t                               _docIdLimit;
@@ -37,7 +35,6 @@ public:
         : _clock(),
           _doom(_clock, -1),
           _selector(new search::FixedSourceSelector(0, "fs", initialNumDocs)),
-          _attrCtx(NULL),
           _indexes(new IndexCollection(_selector)),
           _attrSearchable(),
           _docIdLimit(initialNumDocs) {}

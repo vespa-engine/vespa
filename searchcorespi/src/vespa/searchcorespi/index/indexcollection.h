@@ -4,10 +4,6 @@
 
 #include "isearchableindexcollection.h"
 #include <vespa/searchlib/util/searchable_stats.h>
-#include <memory>
-#include <set>
-#include <utility>
-#include <vector>
 
 namespace searchcorespi {
 
@@ -21,9 +17,9 @@ class IndexCollection : public ISearchableIndexCollection
         uint32_t id;
         IndexSearchable::SP source_wrapper;
 
-        SourceWithId(uint32_t id_in,
-                     const IndexSearchable::SP &source_in)
-            : id(id_in), source_wrapper(source_in) {}
+        SourceWithId(uint32_t id_in, const IndexSearchable::SP &source_in)
+            : id(id_in), source_wrapper(source_in)
+        {}
         SourceWithId() : id(0), source_wrapper() {}
     };
 
@@ -34,8 +30,7 @@ class IndexCollection : public ISearchableIndexCollection
 
 public:
     IndexCollection(const ISourceSelectorSP & selector);
-    IndexCollection(const ISourceSelectorSP & selector,
-                    const ISearchableIndexCollection &sources);
+    IndexCollection(const ISourceSelectorSP & selector, const ISearchableIndexCollection &sources);
 
     void append(uint32_t id, const IndexSearchable::SP &source) override;
     void replace(uint32_t id, const IndexSearchable::SP &source) override;
@@ -51,22 +46,16 @@ public:
 
     // Implements IndexSearchable
     Blueprint::UP
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpec &field,
-                    const Node &term) override;
+    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override;
     Blueprint::UP
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpecList &fields,
-                    const Node &term) override;
+    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override;
     search::SearchableStats getSearchableStats() const  override;
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;
 
-    static ISearchableIndexCollection::UP replaceAndRenumber(
-            const ISourceSelectorSP & selector,
-            const ISearchableIndexCollection &fsc,
-            uint32_t id_diff,
-            const IndexSearchable::SP &new_source);
+    static ISearchableIndexCollection::UP
+    replaceAndRenumber(const ISourceSelectorSP & selector, const ISearchableIndexCollection &fsc,
+                       uint32_t id_diff, const IndexSearchable::SP &new_source);
 };
 
 }  // namespace searchcorespi
