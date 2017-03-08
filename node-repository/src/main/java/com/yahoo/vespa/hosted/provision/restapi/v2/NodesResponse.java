@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 
 /**
 * @author bratseth
@@ -172,6 +173,7 @@ class NodesResponse extends HttpResponse {
         node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", toString(failure)));
         object.setBool("wantToRetire", node.status().wantToRetire());
         toSlime(node.history(), object.setArray("history"));
+        ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
     }
 
     private String toString(NodeType type) {
@@ -203,6 +205,12 @@ class NodesResponse extends HttpResponse {
             Cursor object = array.addObject();
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());
+        }
+    }
+
+    private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {
+        for (String ip : ipAddresses) {
+           array.addString(ip);
         }
     }
 

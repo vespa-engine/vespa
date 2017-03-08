@@ -34,5 +34,6 @@
   "failCount": 0,
   "hardwareFailure" : false,
   "wantToRetire" : false,
-  "history":[{"event":"readied","at":123},{"event":"reserved","at":123}]
+  "history":[{"event":"readied","at":123},{"event":"reserved","at":123}],
+  "ipAddresses":["2001:4998:c:2974::1029", "127.0.0.1"]
 }

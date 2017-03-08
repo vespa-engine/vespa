@@ -51,5 +51,6 @@
       "event": "rebooted",
       "at": 123
     }
-  ]
+  ],
+  "ipAddresses":["127.0.0.1", "::1"]
 }
