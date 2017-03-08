@@ -14,7 +14,7 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.node.maintainer.CoreCollector;
 import com.yahoo.vespa.hosted.node.maintainer.CoredumpHandler;
-import com.yahoo.vespa.hosted.node.maintainer.DeleteOldAppData;
+import com.yahoo.vespa.hosted.node.maintainer.FileHelper;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -121,7 +121,7 @@ public class MaintainerApiHandler extends LoggingRequestHandler {
         Optional<String> fileNameRegex = SlimeUtils.optionalString(getFieldOrFail(arguments, "fileNameRegex"));
         boolean recursive = getFieldOrFail(arguments, "recursive").asBool();
         try {
-            DeleteOldAppData.deleteFiles(basePath, maxAge, fileNameRegex, recursive);
+            FileHelper.deleteFiles(basePath, maxAge, fileNameRegex, recursive);
         } catch (IOException e) {
             throw new RuntimeException("Failed deleting files under " + basePath.toAbsolutePath() +
                     fileNameRegex.map(regex -> ", matching '" + regex + "'").orElse("") +
@@ -135,7 +135,7 @@ public class MaintainerApiHandler extends LoggingRequestHandler {
         Duration maxAge = Duration.ofSeconds(getFieldOrFail(arguments, "maxAgeSeconds").asLong());
         Optional<String> dirNameRegex = SlimeUtils.optionalString(getFieldOrFail(arguments, "dirNameRegex"));
         try {
-            DeleteOldAppData.deleteDirectories(basePath, maxAge, dirNameRegex);
+            FileHelper.deleteDirectories(basePath, maxAge, dirNameRegex);
         } catch (IOException e) {
             throw new RuntimeException("Failed deleting directories under " + basePath.toAbsolutePath() +
                     dirNameRegex.map(regex -> ", matching '" + regex + "'").orElse("") +
@@ -146,7 +146,7 @@ public class MaintainerApiHandler extends LoggingRequestHandler {
     private void parseRecursiveDelete(Inspector arguments) {
         Path basePath = Paths.get(getFieldOrFail(arguments, "path").asString());
         try {
-            DeleteOldAppData.recursiveDelete(basePath);
+            FileHelper.recursiveDelete(basePath);
         } catch (IOException e) {
             throw new RuntimeException("Failed deleting " + basePath.toAbsolutePath(), e);
         }
@@ -157,7 +157,7 @@ public class MaintainerApiHandler extends LoggingRequestHandler {
         Path to = Paths.get(getFieldOrFail(arguments, "to").asString());
 
         try {
-            DeleteOldAppData.moveIfExists(from, to);
+            FileHelper.moveIfExists(from, to);
         } catch (IOException e) {
             throw new RuntimeException("Failed moving from " + from.toAbsolutePath() + ", to " + to.toAbsolutePath(), e);
         }

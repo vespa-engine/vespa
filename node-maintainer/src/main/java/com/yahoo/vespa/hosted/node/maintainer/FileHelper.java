@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
  * @author freva
  */
 
-public class DeleteOldAppData {
-    private static final Logger logger = Logger.getLogger(DeleteOldAppData.class.getSimpleName());
+public class FileHelper {
+    private static final Logger logger = Logger.getLogger(FileHelper.class.getSimpleName());
 
     /**
      * (Recursively) deletes files if they match all the criteria, also deletes empty directories.
@@ -64,7 +64,7 @@ public class DeleteOldAppData {
 
         List<Path> pathsInDeleteDir = Files.list(basePath)
                 .filter(Files::isRegularFile)
-                .sorted(Comparator.comparing(DeleteOldAppData::getLastModifiedTime))
+                .sorted(Comparator.comparing(FileHelper::getLastModifiedTime))
                 .skip(nMostRecentToKeep)
                 .collect(Collectors.toList());
 
@@ -138,7 +138,7 @@ public class DeleteOldAppData {
     private static Optional<Path> getMostRecentlyModifiedFileIn(Path basePath) {
         return listContentsOfDirectory(basePath).stream()
                 .filter(Files::isRegularFile)
-                .max(Comparator.comparing(DeleteOldAppData::getLastModifiedTime));
+                .max(Comparator.comparing(FileHelper::getLastModifiedTime));
     }
 
     private static boolean isTimeSinceLastModifiedMoreThan(Path path, Duration duration) {

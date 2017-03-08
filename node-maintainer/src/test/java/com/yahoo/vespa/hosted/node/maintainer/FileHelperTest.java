@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author freva
  */
-public class DeleteOldAppDataTest {
+public class FileHelperTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
@@ -51,42 +51,42 @@ public class DeleteOldAppDataTest {
 
     @Test
     public void testDeleteAll() throws IOException {
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.empty(), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.empty(), false);
 
         assertEquals(0, getContentsOfDirectory(folder.getRoot()).length);
     }
 
     @Test
     public void testDeletePrefix() throws IOException {
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_"), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_"), false);
 
         assertEquals(6, getContentsOfDirectory(folder.getRoot()).length); // 5 abc files + 1 week_old_file
     }
 
     @Test
     public void testDeleteSuffix() throws IOException {
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of(".json$"), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of(".json$"), false);
 
         assertEquals(7, getContentsOfDirectory(folder.getRoot()).length);
     }
 
     @Test
     public void testDeletePrefixAndSuffix() throws IOException {
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_.*\\.json$"), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_.*\\.json$"), false);
 
         assertEquals(13, getContentsOfDirectory(folder.getRoot()).length); // 5 abc files + 7 test_*_file.test files + week_old_file
     }
 
     @Test
     public void testDeleteOld() throws IOException {
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ofSeconds(600), Optional.empty(), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ofSeconds(600), Optional.empty(), false);
 
         assertEquals(13, getContentsOfDirectory(folder.getRoot()).length); // All 23 - 6 (from test_*_.json) - 3 (from test_*_file.test) - 1 week old file
     }
 
     @Test
     public void testDeleteWithAllParameters() throws IOException {
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ofSeconds(200), Optional.of("^test_.*\\.json$"), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ofSeconds(200), Optional.of("^test_.*\\.json$"), false);
 
         assertEquals(15, getContentsOfDirectory(folder.getRoot()).length); // All 23 - 8 (from test_*_.json)
     }
@@ -94,7 +94,7 @@ public class DeleteOldAppDataTest {
     @Test
     public void testDeleteWithSubDirectoriesNoRecursive() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_.*\\.json$"), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_.*\\.json$"), false);
 
         // 6 test_*.json from test_folder1/
         // + 9 test_*.json and 4 abc_*.json from test_folder2/
@@ -107,7 +107,7 @@ public class DeleteOldAppDataTest {
     @Test
     public void testDeleteWithSubDirectoriesRecursive() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_.*\\.json$"), true);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_.*\\.json$"), true);
 
         // 4 abc_*.json from test_folder2/
         // + 7 test_*_file.test and 5 *-abc.json and 1 week_old_file from root
@@ -119,7 +119,7 @@ public class DeleteOldAppDataTest {
     public void testDeleteFilesWhereFilenameRegexAlsoMatchesDirectories() throws IOException {
         initSubDirectories();
 
-        DeleteOldAppData.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_"), false);
+        FileHelper.deleteFiles(folder.getRoot().toPath(), Duration.ZERO, Optional.of("^test_"), false);
 
         assertEquals(8, getContentsOfDirectory(folder.getRoot()).length); // 5 abc files + 1 week_old_file + 2 directories
     }
@@ -127,17 +127,17 @@ public class DeleteOldAppDataTest {
     @Test
     public void testGetContentsOfNonExistingDirectory() throws IOException {
         Path fakePath = Paths.get("/some/made/up/dir/");
-        assertEquals(Collections.emptyList(), DeleteOldAppData.listContentsOfDirectory(fakePath));
+        assertEquals(Collections.emptyList(), FileHelper.listContentsOfDirectory(fakePath));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testDeleteFilesExceptNMostRecentWithNegativeN() throws IOException {
-        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().toPath(), -5);
+        FileHelper.deleteFilesExceptNMostRecent(folder.getRoot().toPath(), -5);
     }
 
     @Test
     public void testDeleteFilesExceptFiveMostRecent() throws IOException {
-        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().toPath(), 5);
+        FileHelper.deleteFilesExceptNMostRecent(folder.getRoot().toPath(), 5);
 
         assertEquals(5, getContentsOfDirectory(folder.getRoot()).length);
 
@@ -154,7 +154,7 @@ public class DeleteOldAppDataTest {
     public void testDeleteFilesExceptNMostRecentWithLargeN() throws IOException {
         String[] filesPreDelete = folder.getRoot().list();
 
-        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().toPath(), 50);
+        FileHelper.deleteFilesExceptNMostRecent(folder.getRoot().toPath(), 50);
 
         assertArrayEquals(filesPreDelete, folder.getRoot().list());
     }
@@ -172,7 +172,7 @@ public class DeleteOldAppDataTest {
         File temp3 = new File(folder.getRoot(), "test_folder1/some_other_file");
         writeNBytesToFile(temp3, 75);
 
-        DeleteOldAppData.deleteFilesLargerThan(folder.getRoot().toPath(), 10);
+        FileHelper.deleteFilesLargerThan(folder.getRoot().toPath(), 10);
 
         assertEquals(58, getNumberOfFilesAndDirectoriesIn(folder.getRoot()));
         assertFalse(temp1.exists() || temp2.exists() || temp3.exists());
@@ -182,7 +182,7 @@ public class DeleteOldAppDataTest {
     public void testDeleteDirectories() throws IOException {
         initSubDirectories();
 
-        DeleteOldAppData.deleteDirectories(folder.getRoot().toPath(), Duration.ZERO, Optional.of(".*folder2"));
+        FileHelper.deleteDirectories(folder.getRoot().toPath(), Duration.ZERO, Optional.of(".*folder2"));
 
         //23 files in root
         // + 6 in test_folder1 + test_folder1 itself
@@ -193,7 +193,7 @@ public class DeleteOldAppDataTest {
     public void testDeleteDirectoriesBasedOnAge() throws IOException {
         initSubDirectories();
 
-        DeleteOldAppData.deleteDirectories(folder.getRoot().toPath(), Duration.ofSeconds(50), Optional.of(".*folder.*"));
+        FileHelper.deleteDirectories(folder.getRoot().toPath(), Duration.ofSeconds(50), Optional.of(".*folder.*"));
 
         //23 files in root
         // + 13 in test_folder2
@@ -205,7 +205,7 @@ public class DeleteOldAppDataTest {
     @Test
     public void testRecursivelyDeleteDirectory() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.recursiveDelete(folder.getRoot().toPath());
+        FileHelper.recursiveDelete(folder.getRoot().toPath());
         assertFalse(folder.getRoot().exists());
     }
 
@@ -214,7 +214,7 @@ public class DeleteOldAppDataTest {
         File file = folder.newFile();
         assertTrue(file.exists());
         assertTrue(file.isFile());
-        DeleteOldAppData.recursiveDelete(file.toPath());
+        FileHelper.recursiveDelete(file.toPath());
         assertFalse(file.exists());
     }
 
@@ -222,7 +222,7 @@ public class DeleteOldAppDataTest {
     public void testRecursivelyDeleteNonExistingFile() throws IOException {
         File file = folder.getRoot().toPath().resolve("non-existing-file.json").toFile();
         assertFalse(file.exists());
-        DeleteOldAppData.recursiveDelete(file.toPath());
+        FileHelper.recursiveDelete(file.toPath());
         assertFalse(file.exists());
     }
 

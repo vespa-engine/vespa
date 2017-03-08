@@ -50,7 +50,7 @@ public class CoredumpHandler {
 
     public void removeJavaCoredumps(Path javaCoredumpsPath) throws IOException {
         if (! javaCoredumpsPath.toFile().isDirectory()) return;
-        DeleteOldAppData.deleteFiles(javaCoredumpsPath, Duration.ZERO, Optional.of("^java_pid.*\\.hprof$"), false);
+        FileHelper.deleteFiles(javaCoredumpsPath, Duration.ZERO, Optional.of("^java_pid.*\\.hprof$"), false);
     }
 
     Path processCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {
