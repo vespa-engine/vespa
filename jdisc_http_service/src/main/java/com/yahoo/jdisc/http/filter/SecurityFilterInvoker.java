@@ -9,12 +9,9 @@ import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.jdisc.http.servlet.ServletResponse;
 import com.yahoo.jdisc.http.server.jetty.FilterInvoker;
 
-import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -83,17 +80,6 @@ public class SecurityFilterInvoker implements FilterInvoker {
         @Override
         public Object getAttribute(String name) {
             return request.getAttribute(name);
-        }
-
-
-        @Nonnull @Override
-        public List<String> getHeaders(String name) {
-            return Collections.unmodifiableList(Collections.list(request.getHeaders(name)));
-        }
-
-        @Override
-        public Optional<String> getFirstHeader(String name) {
-            return getHeaders(name).stream().findFirst();
         }
 
         @Override

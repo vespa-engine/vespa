@@ -3,9 +3,7 @@ package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 
-import javax.annotation.Nonnull;
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,26 +20,13 @@ public interface RequestView {
      * @see com.yahoo.jdisc.Request#context()
      * @return the named data associated with the request that are private to this runtime (not exposed to the client)
      */
-    Object getAttribute(String name);
-
-    /**
-     * Returns an immutable view of all values of a named header field.
-     * Returns an empty list if no such header is present.
-     */
-    @Nonnull
-    List<String> getHeaders(String name);
-
-    /**
-     * Convenience method for retrieving the first value of a named header field.
-     * Returns empty if the header is not set, or if the value list is empty.
-     */
-    Optional<String> getFirstHeader(String name);
+    public Object getAttribute(String name);
 
     /**
      * Returns the Http method. Only present if the underlying request has http-like semantics.
      */
-    Optional<Method> getMethod();
+    public Optional<Method> getMethod();
 
-    URI getUri();
+    public URI getUri();
 
 }
