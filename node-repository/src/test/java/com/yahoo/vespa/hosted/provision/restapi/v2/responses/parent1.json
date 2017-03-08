@@ -22,5 +22,6 @@
       "event": "readied",
       "at": 123
     }
-  ]
+  ],
+  "ipAddresses":["::1", "127.0.0.1"]
 }

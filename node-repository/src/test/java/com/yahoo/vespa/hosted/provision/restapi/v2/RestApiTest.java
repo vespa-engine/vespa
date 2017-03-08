@@ -70,10 +70,10 @@ public class RestApiTest {
 
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   ("[" + asNodeJson("host8.yahoo.com", "default") + "," +
-                                          asNodeJson("host9.yahoo.com", "large-variant") + "," +
-                                          asHostJson("parent2.yahoo.com", "large-variant") + "," +
-                                          asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com") + "]").
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "," + // test with only 1 ip address
+                                          asNodeJson("host9.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
+                                          asHostJson("parent2.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
+                                          asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", "127.0.0.1", "::1") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
                         "{\"message\":\"Added 4 nodes to the provisioned state\"}");
@@ -423,12 +423,27 @@ public class RestApiTest {
     @After
     public void stopContainer() { container.close(); }
 
-    private String asDockerNodeJson(String hostname, String parentHostname) {
-        return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname +
-                "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"docker\"}";
+    private String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
+        return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
+                createIpAddresses(ipAddress) +
+                "\"openStackId\":\"" + hostname + "\",\"flavor\":\"docker\"}";
     }
 
     private String asNodeJson(String hostname, String flavor, String... ipAddress) {
+        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
+                createIpAddresses(ipAddress) +
+                "\"flavor\":\"" + flavor + "\"}";
+    }
+
+    private String asHostJson(String hostname, String flavor, String... ipAddress) {
+        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
+                createIpAddresses(ipAddress) +
+                "\"flavor\":\"" + flavor + "\"" +
+                ", \"type\":\"host\"}";
+    }
+
+    // TODO: Simplify when ipAddress is not used anymore (see NodesApiHandler.createNode())
+    private String createIpAddresses(String... ipAddress) {
         final String ipAddressJsonPart;
         switch (ipAddress.length) {
             case 0:
@@ -441,18 +456,11 @@ public class RestApiTest {
             default:
                 ipAddressJsonPart = "\"ipAddresses\":[" +
                         Arrays.stream(ipAddress)
-                                .map(ip -> "\"" + ip + "\"")
-                                .collect(Collectors.joining(",")) +
+                              .map(ip -> "\"" + ip + "\"")
+                              .collect(Collectors.joining(",")) +
                         "],";
         }
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
-                ipAddressJsonPart +
-                "\"flavor\":\"" + flavor + "\"}";
-    }
-
-    private String asHostJson(String hostname, String flavor) {
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"" +
-                ", \"type\":\"host\"}";
+        return ipAddressJsonPart;
     }
 
 
