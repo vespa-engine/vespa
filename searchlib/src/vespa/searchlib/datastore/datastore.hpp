@@ -12,7 +12,7 @@ namespace search {
 namespace datastore {
 
 template <typename RefT>
-DataStoreT<RefT>::DataStoreT(void)
+DataStoreT<RefT>::DataStoreT()
     : DataStoreBase(RefType::numBuffers(),
                     RefType::offsetSize() / RefType::align(1))
 {
@@ -20,7 +20,7 @@ DataStoreT<RefT>::DataStoreT(void)
 
 
 template <typename RefT>
-DataStoreT<RefT>::~DataStoreT(void)
+DataStoreT<RefT>::~DataStoreT()
 {
 }
 
@@ -30,7 +30,7 @@ void
 DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
 {
     RefType intRef(ref);
-    BufferState &state = _states[intRef.bufferId()];
+    BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
         if (state.freeListList() != NULL && len == state.getClusterSize()) {
             if (state.freeList().empty()) {
@@ -42,7 +42,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
         assert(state.isOnHold());
     }
     state.incDeadElems(len);
-    state.cleanHold(_buffers[intRef.bufferId()],
+    state.cleanHold(getBuffer(intRef.bufferId()),
                     (intRef.offset() / RefType::align(1)) *
                     state.getClusterSize(), len);
 }
@@ -54,7 +54,7 @@ DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len, size_t extraBytes)
 {
     RefType intRef(ref);
     uint64_t alignedLen = RefType::align(len);
-    BufferState &state = _states[intRef.bufferId()];
+    BufferState &state = getBufferState(intRef.bufferId());
     assert(state.isActive());
     if (state.hasDisabledElemHoldList()) {
         state.incDeadElems(alignedLen);
@@ -79,7 +79,7 @@ DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
         if (static_cast<sgeneration_t>(it->_generation - usedGen) >= 0)
             break;
         RefType intRef(it->_ref);
-        BufferState &state = _states[intRef.bufferId()];
+        BufferState &state = getBufferState(intRef.bufferId());
         freeElem(it->_ref, it->_len);
         state.decHoldElems(it->_len);
         ++freed;
@@ -92,7 +92,7 @@ DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
 
 template <typename RefT>
 void
-DataStoreT<RefT>::clearElemHoldList(void)
+DataStoreT<RefT>::clearElemHoldList()
 {
     ElemHold2List &elemHold2List = _elemHold2List;
 
@@ -100,7 +100,7 @@ DataStoreT<RefT>::clearElemHoldList(void)
     ElemHold2List::iterator ite(elemHold2List.end());
     for (; it != ite; ++it) {
         RefType intRef(it->_ref);
-        BufferState &state = _states[intRef.bufferId()];
+        BufferState &state = getBufferState(intRef.bufferId());
         freeElem(it->_ref, it->_len);
         state.decHoldElems(it->_len);
     }
@@ -134,7 +134,7 @@ DataStoreT<RefT>::rawAllocator(uint32_t typeId)
 
 
 template <typename EntryType, typename RefT>
-DataStore<EntryType, RefT>::DataStore(void)
+DataStore<EntryType, RefT>::DataStore()
     : ParentType(),
       _type(1, RefType::offsetSize(), RefType::offsetSize())
 {
@@ -143,7 +143,7 @@ DataStore<EntryType, RefT>::DataStore(void)
 }
 
 template <typename EntryType, typename RefT>
-DataStore<EntryType, RefT>::~DataStore(void)
+DataStore<EntryType, RefT>::~DataStore()
 {
     dropBuffers();	// Drop buffers before type handlers are dropped
 }
@@ -154,10 +154,9 @@ DataStore<EntryType, RefT>::addEntry(const EntryType &e)
 {
     ensureBufferCapacity(0, 1);
     uint32_t activeBufferId = _activeBufferIds[0];
-    BufferState &state = _states[activeBufferId];
+    BufferState &state = this->getBufferState(activeBufferId);
     size_t oldSize = state.size();
-    EntryType *be = static_cast<EntryType *>(_buffers[activeBufferId]) +
-                    oldSize;
+    EntryType *be = static_cast<EntryType *>(this->getBuffer(activeBufferId)) + oldSize;
     new (static_cast<void *>(be)) EntryType(e);
     RefType ref(oldSize, activeBufferId);
     state.pushed_back(1);

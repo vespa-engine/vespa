@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("datastore_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/vespalib/test/insertion_operators.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("datastore_test");
 
 namespace search {
 namespace datastore {
@@ -13,8 +14,6 @@ namespace datastore {
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
     typedef DataStore<int, EntryRefT<3, 2> > ParentType;
-    using ParentType::_buffers;
-    using ParentType::_states;
     using ParentType::_activeBufferIds;
 public:
     MyStore() {}
@@ -55,8 +54,6 @@ public:
     {
         ParentType::switchActiveBuffer(0, 0u);
     }
-    std::vector<void *> & buffers() { return _buffers; }
-    std::vector<BufferState> &statesVec() { return _states; }
     size_t activeBufferId() const { return _activeBufferIds[0]; }
 };
 
@@ -293,24 +290,24 @@ Test::requireThatWeCanHoldAndTrimBuffers()
     s.holdBuffer(3); // hold current buffer
     s.transferHoldLists(40);
 
-    EXPECT_TRUE(s.statesVec()[0].size() != 0);
-    EXPECT_TRUE(s.statesVec()[1].size() != 0);
-    EXPECT_TRUE(s.statesVec()[2].size() != 0);
-    EXPECT_TRUE(s.statesVec()[3].size() != 0);
+    EXPECT_TRUE(s.getBufferState(0).size() != 0);
+    EXPECT_TRUE(s.getBufferState(1).size() != 0);
+    EXPECT_TRUE(s.getBufferState(2).size() != 0);
+    EXPECT_TRUE(s.getBufferState(3).size() != 0);
     s.trimHoldLists(11);
-    EXPECT_TRUE(s.statesVec()[0].size() == 0);
-    EXPECT_TRUE(s.statesVec()[1].size() != 0);
-    EXPECT_TRUE(s.statesVec()[2].size() != 0);
-    EXPECT_TRUE(s.statesVec()[3].size() != 0);
+    EXPECT_TRUE(s.getBufferState(0).size() == 0);
+    EXPECT_TRUE(s.getBufferState(1).size() != 0);
+    EXPECT_TRUE(s.getBufferState(2).size() != 0);
+    EXPECT_TRUE(s.getBufferState(3).size() != 0);
 
     s.switchActiveBuffer();
     EXPECT_EQUAL(0u, s.activeBufferId());
     EXPECT_EQUAL(0u, MyRef(s.addEntry(5)).bufferId());
     s.trimHoldLists(41);
-    EXPECT_TRUE(s.statesVec()[0].size() != 0);
-    EXPECT_TRUE(s.statesVec()[1].size() == 0);
-    EXPECT_TRUE(s.statesVec()[2].size() == 0);
-    EXPECT_TRUE(s.statesVec()[3].size() == 0);
+    EXPECT_TRUE(s.getBufferState(0).size() != 0);
+    EXPECT_TRUE(s.getBufferState(1).size() == 0);
+    EXPECT_TRUE(s.getBufferState(2).size() == 0);
+    EXPECT_TRUE(s.getBufferState(3).size() == 0);
 }
 
 void

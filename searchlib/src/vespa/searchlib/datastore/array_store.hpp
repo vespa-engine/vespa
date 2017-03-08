@@ -46,11 +46,11 @@ ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg)
 
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg)
-    : _store(),
+    : _largeArrayTypeId(0),
       _maxSmallArraySize(cfg.maxSmallArraySize()),
+      _store(),
       _smallArrayTypes(),
-      _largeArrayType(cfg.specForSize(0)),
-      _largeArrayTypeId()
+      _largeArrayType(cfg.specForSize(0))
 {
     initArrayTypes(cfg);
     _store.initActiveBuffers();
@@ -98,41 +98,6 @@ ArrayStore<EntryT, RefT>::addLargeArray(const ConstArrayRef &array)
     new (static_cast<void *>(buf)) LargeArray(array.cbegin(), array.cend());
     state.pushed_back(1, sizeof(EntryT) * array.size());
     return RefT(oldBufferSize, activeBufferId);
-}
-
-template <typename EntryT, typename RefT>
-typename ArrayStore<EntryT, RefT>::ConstArrayRef
-ArrayStore<EntryT, RefT>::get(EntryRef ref) const
-{
-    if (!ref.valid()) {
-        return ConstArrayRef();
-    }
-    RefT internalRef(ref);
-    uint32_t typeId = _store.getTypeId(internalRef.bufferId());
-    if (typeId != _largeArrayTypeId) {
-        size_t arraySize = getArraySize(typeId);
-        return getSmallArray(internalRef, arraySize);
-    } else {
-        return getLargeArray(internalRef);
-    }
-}
-
-template <typename EntryT, typename RefT>
-typename ArrayStore<EntryT, RefT>::ConstArrayRef
-ArrayStore<EntryT, RefT>::getSmallArray(RefT ref, size_t arraySize) const
-{
-    size_t bufferOffset = ref.offset() * arraySize;
-    const EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), bufferOffset);
-    return ConstArrayRef(buf, arraySize);
-}
-
-template <typename EntryT, typename RefT>
-typename ArrayStore<EntryT, RefT>::ConstArrayRef
-ArrayStore<EntryT, RefT>::getLargeArray(RefT ref) const
-{
-    const LargeArray *buf = _store.template getBufferEntry<LargeArray>(ref.bufferId(), ref.offset());
-    assert(buf->size() > 0);
-    return ConstArrayRef(&(*buf)[0], buf->size());
 }
 
 template <typename EntryT, typename RefT>

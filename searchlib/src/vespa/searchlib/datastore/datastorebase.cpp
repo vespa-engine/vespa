@@ -46,7 +46,7 @@ DataStoreBase::FallbackHold::FallbackHold(size_t size,
 }
 
 
-DataStoreBase::FallbackHold::~FallbackHold(void)
+DataStoreBase::FallbackHold::~FallbackHold()
 {
     _typeHandler->destroyElements(_buffer.get(), _usedElems);
 }
@@ -68,15 +68,14 @@ public:
     }
 
     virtual
-    ~BufferHold(void)
+    ~BufferHold()
     {
         _dsb.doneHoldBuffer(_bufferId);
     }
 };
 
 
-DataStoreBase::DataStoreBase(uint32_t numBuffers,
-                             size_t maxClusters)
+DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxClusters)
     : _buffers(numBuffers),
       _activeBufferIds(),
       _states(numBuffers),
@@ -93,7 +92,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers,
 }
 
 
-DataStoreBase::~DataStoreBase(void)
+DataStoreBase::~DataStoreBase()
 {
     disableFreeLists();
 
@@ -133,7 +132,7 @@ DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
 
 
 void
-DataStoreBase::initActiveBuffers(void)
+DataStoreBase::initActiveBuffers()
 {
     uint32_t numTypes = _activeBufferIds.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
@@ -160,18 +159,6 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
     return typeId;
 }
 
-uint32_t
-DataStoreBase::getNumActiveBuffers() const
-{
-    uint32_t result = 0;
-    for (const auto &state : _states) {
-        if (state.isActive()) {
-            ++result;
-        }
-    }
-    return result;
-}
-
 void
 DataStoreBase::transferElemHoldList(generation_t generation)
 {
@@ -195,7 +182,7 @@ DataStoreBase::transferHoldLists(generation_t generation)
 void
 DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 {
-    _states[bufferId].onFree(_buffers[bufferId]);
+    _states[bufferId].onFree(_buffers[bufferId].getBuffer());
 }
 
 
@@ -209,7 +196,7 @@ DataStoreBase::trimHoldLists(generation_t usedGen)
 
 
 void
-DataStoreBase::clearHoldLists(void)
+DataStoreBase::clearHoldLists()
 {
     transferElemHoldList(0);
     clearElemHoldList();
@@ -218,18 +205,18 @@ DataStoreBase::clearHoldLists(void)
 
 
 void
-DataStoreBase::dropBuffers(void)
+DataStoreBase::dropBuffers()
 {
     uint32_t numBuffers = _buffers.size();
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
-        _states[bufferId].dropBuffer(_buffers[bufferId]);
+        _states[bufferId].dropBuffer(_buffers[bufferId].getBuffer());
     }
     _genHolder.clearHoldLists();
 }
 
 
 MemoryUsage
-DataStoreBase::getMemoryUsage(void) const
+DataStoreBase::getMemoryUsage() const
 {
     MemStats stats = getMemStats();
     MemoryUsage usage;
@@ -252,7 +239,7 @@ DataStoreBase::holdBuffer(uint32_t bufferId)
 
 
 void
-DataStoreBase::enableFreeLists(void)
+DataStoreBase::enableFreeLists()
 {
     for (BufferState & bState : _states) {
         if (!bState.isActive() || bState.getCompacting()) {
@@ -265,7 +252,7 @@ DataStoreBase::enableFreeLists(void)
 
 
 void
-DataStoreBase::disableFreeLists(void)
+DataStoreBase::disableFreeLists()
 {
     for (BufferState & bState : _states) {
         bState.setFreeListList(nullptr);
@@ -294,7 +281,7 @@ DataStoreBase::disableFreeList(uint32_t bufferId)
 
 
 void
-DataStoreBase::disableElemHoldList(void)
+DataStoreBase::disableElemHoldList()
 {
     for (auto &state : _states) {
         if (!state.isFree()) {
@@ -305,7 +292,7 @@ DataStoreBase::disableElemHoldList(void)
 
 
 DataStoreBase::MemStats
-DataStoreBase::getMemStats(void) const
+DataStoreBase::getMemStats() const
 {
     MemStats stats;
 
@@ -348,7 +335,7 @@ DataStoreBase::getMemStats(void) const
 }
 
 AddressSpace
-DataStoreBase::getAddressSpaceUsage(void) const
+DataStoreBase::getAddressSpaceUsage() const
 {
     size_t usedClusters = 0;
     size_t deadClusters = 0;
@@ -373,16 +360,16 @@ DataStoreBase::getAddressSpaceUsage(void) const
 }
 
 void
-DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId,
-                        size_t sizeNeeded)
+DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
+    _buffers[bufferId].setTypeId(typeId);
     BufferState &state = _states[bufferId];
     state.onActive(bufferId, typeId,
                    _typeHandlers[typeId],
                    sizeNeeded,
-                   _buffers[bufferId]);
+                   _buffers[bufferId].getBuffer());
     enableFreeList(bufferId);
 }
 
@@ -422,9 +409,8 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
     size_t oldUsedElems = state.size();
     size_t oldAllocElems = state.capacity();
     size_t elementSize = state.getTypeHandler()->elementSize();
-    state.fallbackResize(bufferId,
-                         sizeNeeded,
-                         _buffers[bufferId],
+    state.fallbackResize(bufferId, sizeNeeded,
+                         _buffers[bufferId].getBuffer(),
                          toHoldBuffer);
     GenerationHeldBase::UP
         hold(new FallbackHold(oldAllocElems * elementSize,
