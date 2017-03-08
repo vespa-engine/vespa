@@ -12,6 +12,7 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -117,6 +118,11 @@ public class RankSetupValidator extends Validator {
             RankingConstantsConfig.Producer.class.cast(producer).getConfig(rccb);
             RankingConstantsConfig rcc = new RankingConstantsConfig(rccb);
             writeConfig(dir, rcc.getDefName() + ".cfg", rcc);
+
+            ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
+            ImportedFieldsConfig.Producer.class.cast(producer).getConfig(ifcb);
+            ImportedFieldsConfig ifc = new ImportedFieldsConfig(ifcb);
+            writeConfig(dir, ifc.getDefName() + ".cfg", ifc);
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
