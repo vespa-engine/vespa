@@ -208,13 +208,6 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
             Enumeration<String> e = LogManager.getLogManager().getLoggerNames();
             while (e.hasMoreElements()) {
                 String name = e.nextElement();
-
-                // Temporary fix for VESPA-6667 (do not write these to logcontrol file
-                // since they have a name consisting of pacakge name + class + class loader,
-                // where the latter changes all the time and makes the logcontrol file grow without limits)
-                if (name.startsWith("org.eclipse.jetty.ContextHandler.")) {
-                    continue;
-                }
                 LevelController ctrl = getLevelControl(name);
                 ctrl.checkBack();
             }
