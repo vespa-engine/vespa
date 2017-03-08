@@ -442,27 +442,13 @@ public class RestApiTest {
                 ", \"type\":\"host\"}";
     }
 
-    // TODO: Simplify when ipAddress is not used anymore (see NodesApiHandler.createNode())
     private String createIpAddresses(String... ipAddress) {
-        final String ipAddressJsonPart;
-        switch (ipAddress.length) {
-            case 0:
-                ipAddressJsonPart = "";
-                break;
-            case 1:
-                // Old format
-                ipAddressJsonPart = "\"ipAddress\":\"" + ipAddress[0] + "\",";
-                break;
-            default:
-                ipAddressJsonPart = "\"ipAddresses\":[" +
-                        Arrays.stream(ipAddress)
-                              .map(ip -> "\"" + ip + "\"")
-                              .collect(Collectors.joining(",")) +
-                        "],";
-        }
-        return ipAddressJsonPart;
+        return "\"ipAddresses\":[" +
+                Arrays.stream(ipAddress)
+                      .map(ip -> "\"" + ip + "\"")
+                      .collect(Collectors.joining(",")) +
+                "],";
     }
-
 
     /** Asserts a particular response and 200 as response status */
     private void assertResponse(Request request, String responseMessage) throws IOException {
