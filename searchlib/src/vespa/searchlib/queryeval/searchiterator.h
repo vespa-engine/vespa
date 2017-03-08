@@ -345,11 +345,10 @@ public:
     static void andChildren(BitVector & result, const Children & children, uint32_t begin_id);
     static BitVectorUP andChildren(const Children & children, uint32_t begin_id);
 
-    static BitVectorUP orChildren(const Children & children, uint32_t begin_id);
-    static BitVectorUP orChildren(const OwnedChildren & children, uint32_t begin_id);
-
-    static BitVectorUP orChildren(BitVectorUP result, const Children & children, uint32_t begin_id);
-    static BitVectorUP orChildren(BitVectorUP result, const OwnedChildren & children, uint32_t begin_id);
+    template <typename IT>
+    static BitVectorUP orChildren(IT from, IT to, uint32_t begin_id);
+    template <typename IT>
+    static BitVectorUP orChildren(BitVectorUP result, IT from, IT to, uint32_t begin_id);
     template <typename IT>
     static void orChildren(BitVector & result, IT from, IT to, uint32_t begin_id);
 

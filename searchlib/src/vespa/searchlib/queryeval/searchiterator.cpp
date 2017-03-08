@@ -171,34 +171,29 @@ SearchIterator::andChildren(const Children &children, uint32_t begin_id) {
     return andChildren(BitVector::UP(), children, begin_id);
 }
 
+template<typename IT>
 BitVector::UP
-SearchIterator::orChildren(BitVector::UP result, const Children &children, uint32_t begin_id) {
-    return orIterators(orIterators(std::move(result), children.begin(), children.end(), begin_id, true),
-                       children.begin(), children.end(), begin_id, false);
+SearchIterator::orChildren(BitVector::UP result, IT from, IT to, uint32_t begin_id) {
+    return orIterators(orIterators(std::move(result), from, to, begin_id, true),
+                       from, to, begin_id, false);
 }
 
-template <typename IT>
+template<typename IT>
 void SearchIterator::orChildren(BitVector & result, IT from, IT to, uint32_t begin_id) {
     orIterators(result, from, to, begin_id, true);
     orIterators(result, from, to, begin_id, false);
 }
 
+template<typename IT>
 BitVector::UP
-SearchIterator::orChildren(const Children &children, uint32_t begin_id) {
-    return orChildren(BitVector::UP(), children, begin_id);
+SearchIterator::orChildren(IT from, IT to, uint32_t begin_id) {
+    return orChildren(BitVector::UP(), from, to, begin_id);
 }
 
-BitVector::UP
-SearchIterator::orChildren(BitVector::UP result, const OwnedChildren &children, uint32_t begin_id) {
-    return orIterators(orIterators(std::move(result), children.begin(), children.end(), begin_id, true),
-                       children.begin(), children.end(), begin_id, false);
-}
-
-BitVector::UP
-SearchIterator::orChildren(const OwnedChildren &children, uint32_t begin_id) {
-    return orChildren(BitVector::UP(), children, begin_id);
-}
-
+template BitVector::UP SearchIterator::orChildren(Children::const_iterator from, Children::const_iterator to, uint32_t begin_id);
+template BitVector::UP SearchIterator::orChildren(OwnedChildren::const_iterator from, OwnedChildren::const_iterator to, uint32_t begin_id);
+template BitVector::UP SearchIterator::orChildren(BitVector::UP result, Children::const_iterator from, Children::const_iterator to, uint32_t begin_id);
+template BitVector::UP SearchIterator::orChildren(BitVector::UP result, OwnedChildren::const_iterator from, OwnedChildren::const_iterator to, uint32_t begin_id);
 template void SearchIterator::orChildren(BitVector & result, Children::const_iterator from, Children::const_iterator to, uint32_t begin_id);
 template void SearchIterator::orChildren(BitVector & result, OwnedChildren::const_iterator from, OwnedChildren::const_iterator to, uint32_t begin_id);
 

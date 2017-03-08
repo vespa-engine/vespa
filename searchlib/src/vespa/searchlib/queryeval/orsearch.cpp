@@ -78,7 +78,7 @@ private:
 
 BitVector::UP
 OrSearch::get_hits(uint32_t begin_id) {
-    return orChildren(getChildren(), begin_id);
+    return orChildren(getChildren().begin(), getChildren().end(), begin_id);
 }
 
 void
