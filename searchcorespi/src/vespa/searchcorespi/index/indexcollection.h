@@ -37,32 +37,32 @@ public:
     IndexCollection(const ISourceSelectorSP & selector,
                     const ISearchableIndexCollection &sources);
 
-    virtual void append(uint32_t id, const IndexSearchable::SP &source);
-    virtual void replace(uint32_t id, const IndexSearchable::SP &source);
-    virtual IndexSearchable::SP getSearchableSP(uint32_t i) const;
-    virtual void setSource(uint32_t docId);
+    void append(uint32_t id, const IndexSearchable::SP &source) override;
+    void replace(uint32_t id, const IndexSearchable::SP &source) override;
+    IndexSearchable::SP getSearchableSP(uint32_t i) const override;
+    void setSource(uint32_t docId)  override;
 
 
     // Implements IIndexCollection
-    virtual const ISourceSelector &getSourceSelector() const;
-    virtual size_t getSourceCount() const;
-    virtual IndexSearchable &getSearchable(uint32_t i) const;
-    virtual uint32_t getSourceId(uint32_t i) const;
+    const ISourceSelector &getSourceSelector() const override;
+    size_t getSourceCount() const override;
+    IndexSearchable &getSearchable(uint32_t i) const override;
+    uint32_t getSourceId(uint32_t i) const override;
 
     // Implements IndexSearchable
-    virtual Blueprint::UP
+    Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
                     const Node &term,
-                    const IAttributeContext &attrCtx);
-    virtual Blueprint::UP
+                    const IAttributeContext &attrCtx) override;
+    Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpecList &fields,
                     const Node &term,
-                    const IAttributeContext &attrCtx);
-    virtual search::SearchableStats getSearchableStats() const;
-    virtual search::SerialNum getSerialNum() const override;
-    virtual void accept(IndexSearchableVisitor &visitor) const override;
+                    const IAttributeContext &attrCtx) override;
+    search::SearchableStats getSearchableStats() const  override;
+    search::SerialNum getSerialNum() const override;
+    void accept(IndexSearchableVisitor &visitor) const override;
 
     static ISearchableIndexCollection::UP replaceAndRenumber(
             const ISourceSelectorSP & selector,

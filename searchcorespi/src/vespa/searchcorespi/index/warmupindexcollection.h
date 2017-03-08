@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchcorespi/index/isearchableindexcollection.h>
+#include "isearchableindexcollection.h"
+#include "warmupconfig.h"
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include "warmupconfig.h"
 
 namespace searchcorespi {
 

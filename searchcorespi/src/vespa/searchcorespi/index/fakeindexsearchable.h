@@ -15,26 +15,23 @@ private:
     search::queryeval::FakeSearchable _fake;
 
 public:
-    FakeIndexSearchable()
-        : _fake()
-    {
-    }
+    FakeIndexSearchable() : _fake() { }
 
     search::queryeval::FakeSearchable &getFake() { return _fake; }
     
     /**
      * Implements IndexSearchable
      */
-    virtual Blueprint::UP
+    Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
                     const Node &term,
-                    const IAttributeContext &)
+                    const IAttributeContext &) override
     {
         return _fake.createBlueprint(requestContext, field, term);
     }
 
-    virtual search::SearchableStats getSearchableStats() const {
+    search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats();
     }
 
