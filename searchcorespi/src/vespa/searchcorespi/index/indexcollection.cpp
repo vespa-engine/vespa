@@ -163,7 +163,6 @@ class CreateBlueprintVisitor : public search::query::QueryVisitor {
 private:
     const IIndexCollection  &_indexes;
     const FieldSpecList     &_fields;
-    const IAttributeContext &_attrCtx;
     const IRequestContext   &_requestContext;
     Blueprint::UP            _result;
 
@@ -171,7 +170,7 @@ private:
     void visitTerm(NodeType &n) {
         Mixer mixer(_indexes.getSourceSelector());
         for (size_t i = 0; i < _indexes.getSourceCount(); ++i) {
-            Blueprint::UP blueprint = _indexes.getSearchable(i).createBlueprint(_requestContext, _fields, n, _attrCtx);
+            Blueprint::UP blueprint = _indexes.getSearchable(i).createBlueprint(_requestContext, _fields, n);
             blueprint->setSourceId(_indexes.getSourceId(i));
             mixer.addIndex(std::move(blueprint));
         }
@@ -204,11 +203,9 @@ private:
 public:
     CreateBlueprintVisitor(const IIndexCollection &indexes,
                            const FieldSpecList &fields,
-                           const IAttributeContext &attrCtx,
                            const IRequestContext & requestContext)
         : _indexes(indexes),
           _fields(fields),
-          _attrCtx(attrCtx),
           _requestContext(requestContext),
           _result() {}
 
@@ -220,21 +217,19 @@ public:
 Blueprint::UP
 IndexCollection::createBlueprint(const IRequestContext & requestContext,
                                  const FieldSpec &field,
-                                 const Node &term,
-                                 const IAttributeContext &attrCtx)
+                                 const Node &term)
 {
     FieldSpecList fields;
     fields.add(field);
-    return createBlueprint(requestContext, fields, term, attrCtx);
+    return createBlueprint(requestContext, fields, term);
 }
 
 Blueprint::UP
 IndexCollection::createBlueprint(const IRequestContext & requestContext,
                                  const FieldSpecList &fields,
-                                 const Node &term,
-                                 const IAttributeContext &attrCtx)
+                                 const Node &term)
 {
-    CreateBlueprintVisitor visitor(*this, fields, attrCtx, requestContext);
+    CreateBlueprintVisitor visitor(*this, fields, requestContext);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
 }

@@ -17,8 +17,9 @@ namespace proton {
  */
 class MemoryIndexWrapper : public searchcorespi::index::IMemoryIndex {
 private:
+    using SerialNum = search::SerialNum;
     search::memoryindex::MemoryIndex _index;
-    std::atomic<search::SerialNum> _serialNum;
+    std::atomic<SerialNum> _serialNum;
     const search::common::FileHeaderContext &_fileHeaderContext;
     const search::TuneFileIndexing _tuneFileIndexing;
 
@@ -28,70 +29,65 @@ public:
                        const search::TuneFileIndexing &tuneFileIndexing,
                        searchcorespi::index::IThreadingService &
                        threadingService,
-                       search::SerialNum serialNum);
+                       SerialNum serialNum);
 
     /**
      * Implements searchcorespi::IndexSearchable
      */
-    virtual search::queryeval::Blueprint::UP
+    search::queryeval::Blueprint::UP
     createBlueprint(const search::queryeval::IRequestContext & requestContext,
                     const search::queryeval::FieldSpec &field,
-                    const search::query::Node &term,
-                    const search::attribute::IAttributeContext &) override
+                    const search::query::Node &term) override
     {
         return _index.createBlueprint(requestContext, field, term);
     }
-    virtual search::queryeval::Blueprint::UP
+    search::queryeval::Blueprint::UP
     createBlueprint(const search::queryeval::IRequestContext & requestContext,
                     const search::queryeval::FieldSpecList &fields,
-                    const search::query::Node &term,
-                    const search::attribute::IAttributeContext &) override
+                    const search::query::Node &term) override
     {
         return _index.createBlueprint(requestContext, fields, term);
     }
-    virtual search::SearchableStats getSearchableStats() const override {
+    search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats()
             .memoryUsage(getMemoryUsage())
             .docsInMemory(_index.getNumDocs())
             .sizeOnDisk(0);
     }
 
-    virtual search::SerialNum getSerialNum() const override;
+    SerialNum getSerialNum() const override;
 
-    virtual void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
+    void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
 
     /**
      * Implements proton::IMemoryIndex
      */
-    virtual bool hasReceivedDocumentInsert() const override {
+    bool hasReceivedDocumentInsert() const override {
         return _index.getDocIdLimit() > 1u;
     }
-    virtual search::index::Schema::SP getWipeTimeSchema() const override {
+    search::index::Schema::SP getWipeTimeSchema() const override {
         return _index.getWipeTimeSchema();
     }
-    virtual search::MemoryUsage getMemoryUsage() const override {
+    search::MemoryUsage getMemoryUsage() const override {
         return _index.getMemoryUsage();
     }
-    virtual void insertDocument(uint32_t lid, const document::Document &doc) override {
+    void insertDocument(uint32_t lid, const document::Document &doc) override {
         _index.insertDocument(lid, doc);
     }
-    virtual void removeDocument(uint32_t lid) override {
+    void removeDocument(uint32_t lid) override {
         _index.removeDocument(lid);
     }
     uint64_t getStaticMemoryFootprint() const override {
         return _index.getStaticMemoryFootprint();
     }
-    virtual void commit(OnWriteDoneType onWriteDone,
-                        search::SerialNum serialNum) override {
+    void commit(OnWriteDoneType onWriteDone, SerialNum serialNum) override {
         _index.commit(onWriteDone);
         _serialNum.store(serialNum, std::memory_order_relaxed);
     }
-    virtual void wipeHistory(const search::index::Schema &schema)  override{
+    void wipeHistory(const search::index::Schema &schema)  override {
         _index.wipeHistory(schema);
     }
-    virtual void flushToDisk(const vespalib::string &flushDir,
-                             uint32_t docIdLimit,
-                             search::SerialNum serialNum) override;
+    void flushToDisk(const vespalib::string &flushDir, uint32_t docIdLimit, SerialNum serialNum) override;
 };
 
 } // namespace proton

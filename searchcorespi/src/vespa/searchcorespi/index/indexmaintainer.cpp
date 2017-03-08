@@ -97,35 +97,35 @@ public:
     /**
      * Implements searchcorespi::IndexSearchable
      */
-    virtual Blueprint::UP
+    Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
-                    const Node &term,
-                    const IAttributeContext &attrCtx)
+                    const Node &term) override
     {
-        return _index->createBlueprint(requestContext, field, term, attrCtx);
+        FieldSpecList fsl;
+        fsl.add(field);
+        return _index->createBlueprint(requestContext, fsl, term);
     }
-    virtual Blueprint::UP
+    Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpecList &fields,
-                    const Node &term,
-                    const IAttributeContext &attrCtx)
+                    const Node &term) override
     {
-        return _index->createBlueprint(requestContext, fields, term, attrCtx);
+        return _index->createBlueprint(requestContext, fields, term);
     }
-    virtual search::SearchableStats getSearchableStats() const { return _index->getSearchableStats(); }
-    virtual search::SerialNum getSerialNum() const override {
+    search::SearchableStats getSearchableStats() const override { return _index->getSearchableStats(); }
+    search::SerialNum getSerialNum() const override {
         return _index->getSerialNum();
     }
-    virtual void accept(IndexSearchableVisitor &visitor) const override {
+    void accept(IndexSearchableVisitor &visitor) const override {
         _index->accept(visitor);
     }
 
     /**
      * Implements IDiskIndex
      */
-    virtual const vespalib::string &getIndexDir() const { return _index->getIndexDir(); }
-    virtual const search::index::Schema &getSchema() const { return _index->getSchema(); }
+    const vespalib::string &getIndexDir() const override { return _index->getIndexDir(); }
+    const search::index::Schema &getSchema() const override { return _index->getSchema(); }
 
 };
 

@@ -142,32 +142,21 @@ WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
 Blueprint::UP
 WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
                                        const FieldSpec &field,
-                                       const Node &term,
-                                       const IAttributeContext &attrCtx)
+                                       const Node &term)
 {
-    if ( _warmupEndTime == 0) {
-        // warmup done
-        return _next->createBlueprint(requestContext, field, term, attrCtx);
-    }
-    if ( ! handledBefore(field.getFieldId(), term) ) {
-        MatchDataLayout mdl;
-        FieldSpec fs(field.getName(), field.getFieldId(), mdl.allocTermField(field.getFieldId()), field.isFilter());
-        Task::UP task(new WarmupTask(mdl.createMatchData(), *this));
-        static_cast<WarmupTask &>(*task).createBlueprint(fs, term, attrCtx);
-        fireWarmup(std::move(task));
-    }
-    return _prev->createBlueprint(requestContext, field, term, attrCtx);
+    FieldSpecList fsl;
+    fsl.add(field);
+    return createBlueprint(requestContext, fsl,term);
 }
 
 Blueprint::UP
 WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
                                        const FieldSpecList &fields,
-                                       const Node &term,
-                                       const IAttributeContext &attrCtx)
+                                       const Node &term)
 {
     if ( _warmupEndTime == 0) {
         // warmup done
-        return _next->createBlueprint(requestContext, fields, term, attrCtx);
+        return _next->createBlueprint(requestContext, fields, term);
     }
     MatchDataLayout mdl;
     FieldSpecList fsl;
@@ -180,10 +169,10 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
     }
     if (needWarmUp) {
         Task::UP task(new WarmupTask(mdl.createMatchData(), *this));
-        static_cast<WarmupTask &>(*task).createBlueprint(fsl, term, attrCtx);
+        static_cast<WarmupTask &>(*task).createBlueprint(fsl, term);
         fireWarmup(std::move(task));
     }
-    return _prev->createBlueprint(requestContext, fields, term, attrCtx);
+    return _prev->createBlueprint(requestContext, fields, term);
 }
 
 search::SearchableStats
