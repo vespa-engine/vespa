@@ -77,7 +77,7 @@ public:
         }
     }
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id, uint32_t end_id);
-    void or_hits_into(BitVector &result, uint32_t begin_id);
+    void or_hits_into(BitVector &result, uint32_t begin_id) const;
 };
 
 } // namespace queryevel

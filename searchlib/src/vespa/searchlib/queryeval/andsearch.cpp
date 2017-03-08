@@ -20,9 +20,7 @@ AndSearch::or_hits_into(BitVector &result, uint32_t begin_id) {
 void
 AndSearch::and_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP dirty(&result);
-    dirty = andChildren(std::move(dirty), getChildren(), begin_id);
-    dirty.release(); // Yes I know, dirty...
+    andChildren(result, getChildren(), begin_id);
 }
 
 SearchIterator::UP AndSearch::andWith(UP filter, uint32_t estimate_)

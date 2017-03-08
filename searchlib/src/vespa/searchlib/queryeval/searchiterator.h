@@ -30,6 +30,7 @@ namespace queryeval {
 class SearchIterator
 {
 private:
+    using BitVectorUP = std::unique_ptr<BitVector>;
     /**
      * The current document id for this search object. This variable
      * will have a value that is either @ref beginId, @ref endId or a
@@ -131,7 +132,7 @@ public:
      * @param begin_id the lowest document id that may be a hit
      *                 (we do not remember beginId from initRange)
      **/
-    virtual std::unique_ptr<BitVector> get_hits(uint32_t begin_id);
+    virtual BitVectorUP get_hits(uint32_t begin_id);
 
     /**
      * Find all hits in the currently searched range (specified by
@@ -340,16 +341,17 @@ public:
     using Children = std::vector<SearchIterator *>;
     using OwnedChildren = std::vector<std::unique_ptr<SearchIterator>>;
 
-    static std::unique_ptr<BitVector> andChildren(const Children & children, uint32_t begin_id);
-    static std::unique_ptr<BitVector> orChildren(const Children & children, uint32_t begin_id);
-    static std::unique_ptr<BitVector> orChildren(const OwnedChildren & children, uint32_t begin_id);
-    static std::unique_ptr<BitVector> andChildren(std::unique_ptr<BitVector> result,
-                                                  const Children & children, uint32_t begin_id);
-    static std::unique_ptr<BitVector> orChildren(std::unique_ptr<BitVector> result,
-                                                 const Children & children, uint32_t begin_id);
-    static std::unique_ptr<BitVector> orChildren(std::unique_ptr<BitVector> result,
-                                                 const OwnedChildren & children, uint32_t begin_id);
-    static void orChildren(BitVector & result, const Children & children, uint32_t begin_id);
+    static BitVectorUP andChildren(BitVectorUP result, const Children & children, uint32_t begin_id);
+    static void andChildren(BitVector & result, const Children & children, uint32_t begin_id);
+    static BitVectorUP andChildren(const Children & children, uint32_t begin_id);
+
+    static BitVectorUP orChildren(const Children & children, uint32_t begin_id);
+    static BitVectorUP orChildren(const OwnedChildren & children, uint32_t begin_id);
+
+    static BitVectorUP orChildren(BitVectorUP result, const Children & children, uint32_t begin_id);
+    static BitVectorUP orChildren(BitVectorUP result, const OwnedChildren & children, uint32_t begin_id);
+    template <typename IT>
+    static void orChildren(BitVector & result, IT from, IT to, uint32_t begin_id);
 
 
 };

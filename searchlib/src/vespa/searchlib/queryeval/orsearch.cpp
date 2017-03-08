@@ -89,7 +89,7 @@ OrSearch::and_hits_into(BitVector &result, uint32_t begin_id) {
 void
 OrSearch::or_hits_into(BitVector &result, uint32_t begin_id)
 {
-    orChildren(result, getChildren(), begin_id);
+    orChildren(result, getChildren().begin(), getChildren().end(), begin_id);
 }
 
 SearchIterator *
