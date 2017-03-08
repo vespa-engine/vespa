@@ -215,6 +215,7 @@ private:
     void initRange(uint32_t begin, uint32_t end) override;
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
+    void and_hits_into(BitVector &result, uint32_t begin_id) override;
 
 public:
     template <typename... Args>
@@ -230,6 +231,7 @@ private:
 public:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
+    void and_hits_into(BitVector &result, uint32_t begin_id) override;
 
 private:
     queryeval::MinMaxPostingInfo           _postingInfo;
@@ -264,52 +266,52 @@ getWeight()
     return 1;	// default weight 1 for single value attributes
 }
 
-    template <>
-    void
-    AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated,
-                                  std::less<uint32_t>, btree::BTreeDefaultTraits> >::
-    doUnpack(uint32_t docId);
+template <>
+void
+AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated,
+                              std::less<uint32_t>, btree::BTreeDefaultTraits> >::
+doUnpack(uint32_t docId);
 
 
-    template <>
-    void
-    AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, int32_t, btree::MinMaxAggregated,
-                                  std::less<uint32_t>, btree::BTreeDefaultTraits> >::
-    doUnpack(uint32_t docId);
+template <>
+void
+AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, int32_t, btree::MinMaxAggregated,
+                              std::less<uint32_t>, btree::BTreeDefaultTraits> >::
+doUnpack(uint32_t docId);
 
 
-    template <>
-    void
-    AttributePostingListIteratorT<InnerAttributePostingListIterator>::setupPostingInfo();
+template <>
+void
+AttributePostingListIteratorT<InnerAttributePostingListIterator>::setupPostingInfo();
 
 
-    template <>
-    void
-    AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::setupPostingInfo();
+template <>
+void
+AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::setupPostingInfo();
 
 
-    template <>
-    void
-    AttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::setupPostingInfo();
+template <>
+void
+AttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::setupPostingInfo();
 
 
-    template <>
-    void
-    AttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::setupPostingInfo();
+template <>
+void
+AttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::setupPostingInfo();
 
-    template <>
-    void
-    FilterAttributePostingListIteratorT<InnerAttributePostingListIterator>::setupPostingInfo();
-
-
-    template <>
-    void
-    FilterAttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::setupPostingInfo();
+template <>
+void
+FilterAttributePostingListIteratorT<InnerAttributePostingListIterator>::setupPostingInfo();
 
 
-    template <>
-    void
-    FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::setupPostingInfo();
+template <>
+void
+FilterAttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::setupPostingInfo();
+
+
+template <>
+void
+FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::setupPostingInfo();
 
 /**
  * This class acts as an iterator over a flag attribute.

@@ -2,20 +2,18 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include "dociditerator.h"
 #include "attributeiterators.h"
-#include <vespa/searchlib/common/bitvectoriterator.h>
 #include "diversity.h"
+#include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/common/bitvectoriterator.h>
 
-namespace search
-{
+namespace search {
 
 using queryeval::EmptySearch;
 using queryeval::SearchIterator;
 
-namespace attribute
-{
+namespace attribute {
 
 template <typename DataT>
 PostingListSearchContextT<DataT>::

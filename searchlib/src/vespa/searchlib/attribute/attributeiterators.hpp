@@ -25,6 +25,7 @@ AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t 
     result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
 }
 
+
 template <typename SC>
 std::unique_ptr<BitVector>
 AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
@@ -120,6 +121,12 @@ AttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t beg
 }
 
 template <typename PL>
+void
+AttributePostingListIteratorT<PL>::and_hits_into(BitVector &result, uint32_t begin_id) {
+    result.andWith(*get_hits(begin_id));
+}
+
+template <typename PL>
 std::unique_ptr<BitVector>
 FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     BitVector::UP result(BitVector::create(begin_id, getEndId()));
@@ -138,6 +145,13 @@ FilterAttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32
             result.setBit(_iterator.getKey());
         }
     }
+}
+
+
+template <typename PL>
+void
+FilterAttributePostingListIteratorT<PL>::and_hits_into(BitVector &result, uint32_t begin_id) {
+    result.andWith(*get_hits(begin_id));
 }
 
 template <typename PL>
@@ -393,11 +407,11 @@ AttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
     AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
 }
 
-
 template <typename SC>
 void
 FilterAttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
     AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
 }
+
 
 } // namespace search

@@ -9,9 +9,18 @@ namespace queryeval {
 
 BitVector::UP
 AndSearch::get_hits(uint32_t begin_id) {
-    const Children &children = getChildren();
-    BitVector::UP result = andChildren(children, begin_id);
-    return result;
+    return andChildren(getChildren(), begin_id);
+}
+
+void
+AndSearch::or_hits_into(BitVector &result, uint32_t begin_id) {
+    result.orWith(*get_hits(begin_id));
+}
+
+void
+AndSearch::and_hits_into(BitVector &result, uint32_t begin_id)
+{
+    andChildren(result, getChildren(), begin_id);
 }
 
 SearchIterator::UP AndSearch::andWith(UP filter, uint32_t estimate_)

@@ -46,17 +46,36 @@ SearchIterator::andWith(UP filter, uint32_t estimate)
 void
 SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP tmp = get_hits(begin_id);
-    const BitVector &rhs = *tmp;
-    result.orWith(rhs);
+    uint32_t docid = std::max(begin_id, getDocId());
+    while (!isAtEnd(docid)) {
+        docid = result.getNextFalseBit(docid);
+        if (!isAtEnd(docid) && seek(docid)) {
+            result.setBit(docid);
+//            printf("bit %d is hit, _docId=%d, _endId=%d\n", docid, getDocId(), getEndId());
+        }
+        docid = std::max(docid + 1, getDocId());
+    }
 }
 
 void
 SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 {
-    BitVector::UP tmp = get_hits(begin_id);
-    const BitVector &rhs = *tmp;
-    result.andWith(rhs);
+    uint32_t docidA = begin_id - 1;
+    uint32_t docidB = result.getNextTrueBit(begin_id);
+    while (!isAtEnd(docidB)) {
+        if (docidA < docidB) {
+            if (seek(docidB)) {
+                docidA = docidB;
+            } else {
+                docidA = std::max(docidB+1, getDocId());
+            }
+        } else if (docidA > docidB) {
+            result.clearInterval(docidB, docidA);
+            docidB = (! isAtEnd(docidA)) ? result.getNextTrueBit(docidA) : getEndId();
+        } else {
+            docidB = result.getNextTrueBit(docidB+1);
+        }
+    }
 }
 
 vespalib::string
@@ -98,10 +117,20 @@ andIterators(BitVector::UP result, const Children &children, uint32_t begin_id, 
     return result;
 }
 
-template<typename Children>
+void
+andIterators(BitVector & result, const Children &children, uint32_t begin_id, bool select_bitvector) {
+    for (SearchIterator *child : children) {
+        if (child->isBitVector() == select_bitvector) {
+            child->and_hits_into(result, begin_id);
+        }
+    }
+}
+
+template<typename IT>
 BitVector::UP
-orIterators(BitVector::UP result, const Children &children, uint32_t begin_id, bool select_bitvector) {
-    for (auto & child : children) {
+orIterators(BitVector::UP result, IT begin, IT end, uint32_t begin_id, bool select_bitvector) {
+    for (IT it(begin); it != end; ++it) {
+        auto & child = *it;
         if (child->isBitVector() == select_bitvector) {
             if (!result) {
                 result = child->get_hits(begin_id);
@@ -113,22 +142,60 @@ orIterators(BitVector::UP result, const Children &children, uint32_t begin_id, b
     return result;
 }
 
+template<typename IT>
+void
+orIterators(BitVector & result, IT begin, IT end, uint32_t begin_id, bool select_bitvector) {
+    for (IT it(begin); it != end; ++it) {
+        auto & child = *it;
+        if (child->isBitVector() == select_bitvector) {
+            child->or_hits_into(result, begin_id);
+        }
+    }
+}
+
+}
+
+BitVector::UP
+SearchIterator::andChildren(BitVector::UP result, const Children &children, uint32_t begin_id) {
+    return andIterators(andIterators(std::move(result), children, begin_id, true), children, begin_id, false);
+}
+
+void
+SearchIterator::andChildren(BitVector & result, const Children &children, uint32_t begin_id) {
+    andIterators(result, children, begin_id, true);
+    andIterators(result, children, begin_id, false);
 }
 
 BitVector::UP
 SearchIterator::andChildren(const Children &children, uint32_t begin_id) {
-    return andIterators(andIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
+    return andChildren(BitVector::UP(), children, begin_id);
 }
 
+template<typename IT>
 BitVector::UP
-SearchIterator::orChildren(const Children &children, uint32_t begin_id) {
-    return orIterators(orIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
+SearchIterator::orChildren(BitVector::UP result, IT from, IT to, uint32_t begin_id) {
+    return orIterators(orIterators(std::move(result), from, to, begin_id, true),
+                       from, to, begin_id, false);
 }
 
-BitVector::UP
-SearchIterator::orChildren(const OwnedChildren &children, uint32_t begin_id) {
-    return orIterators(orIterators(BitVector::UP(), children, begin_id, true), children, begin_id, false);
+template<typename IT>
+void SearchIterator::orChildren(BitVector & result, IT from, IT to, uint32_t begin_id) {
+    orIterators(result, from, to, begin_id, true);
+    orIterators(result, from, to, begin_id, false);
 }
+
+template<typename IT>
+BitVector::UP
+SearchIterator::orChildren(IT from, IT to, uint32_t begin_id) {
+    return orChildren(BitVector::UP(), from, to, begin_id);
+}
+
+template BitVector::UP SearchIterator::orChildren(Children::const_iterator from, Children::const_iterator to, uint32_t begin_id);
+template BitVector::UP SearchIterator::orChildren(OwnedChildren::const_iterator from, OwnedChildren::const_iterator to, uint32_t begin_id);
+template BitVector::UP SearchIterator::orChildren(BitVector::UP result, Children::const_iterator from, Children::const_iterator to, uint32_t begin_id);
+template BitVector::UP SearchIterator::orChildren(BitVector::UP result, OwnedChildren::const_iterator from, OwnedChildren::const_iterator to, uint32_t begin_id);
+template void SearchIterator::orChildren(BitVector & result, Children::const_iterator from, Children::const_iterator to, uint32_t begin_id);
+template void SearchIterator::orChildren(BitVector & result, OwnedChildren::const_iterator from, OwnedChildren::const_iterator to, uint32_t begin_id);
 
 } // namespace queryeval
 } // namespace search

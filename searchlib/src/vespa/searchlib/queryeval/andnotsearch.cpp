@@ -148,15 +148,15 @@ BitVector::UP
 AndNotSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
     BitVector::UP result = children.front()->get_hits(begin_id);
-    if (children.size() > 1) {
-        BitVector::UP not_result = children[1]->get_hits(begin_id);
-        for (size_t i = 2; i < children.size(); ++i) {
-            children[i]->or_hits_into(*not_result, begin_id);
-        }
-        const BitVector &rhs = *not_result;
-        result->andNotWith(rhs);
-    }
+    result->notSelf();
+    result = orChildren(std::move(result), children.begin()+1, children.end(), begin_id);
+    result->notSelf();
     return result;
+}
+
+void
+AndNotSearch::or_hits_into(BitVector &result, uint32_t begin_id) {
+    result.orWith(*get_hits(begin_id));
 }
 
 }  // namespace queryeval

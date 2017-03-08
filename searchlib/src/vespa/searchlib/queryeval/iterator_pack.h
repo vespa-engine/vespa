@@ -4,51 +4,32 @@
 
 #include "searchiterator.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/matchdata.h>
 
 namespace search {
+
+namespace fef { class MatchData; }
+
 namespace queryeval {
 
 class SearchIteratorPack
 {
 private:
+    using MatchDataUP = std::unique_ptr<fef::MatchData>;
     std::vector<SearchIterator::UP>        _children;
     std::vector<fef::TermFieldMatchData*>  _childMatch;
-    fef::MatchData::UP                     _md;
+    MatchDataUP                            _md;
 
 public:
-    SearchIteratorPack() : _children(), _childMatch(), _md() {}
-    SearchIteratorPack(SearchIteratorPack &&rhs)
-        : _children(std::move(rhs._children)),
-          _childMatch(std::move(rhs._childMatch)),
-          _md(std::move(rhs._md)) {}
-
-    SearchIteratorPack &operator=(SearchIteratorPack &&rhs) {
-        _children = std::move(rhs._children);
-        _childMatch = std::move(rhs._childMatch);
-        _md = std::move(rhs._md);
-        return *this;
-    }
+    SearchIteratorPack();
+    ~SearchIteratorPack();
+    SearchIteratorPack(SearchIteratorPack &&rhs);
+    SearchIteratorPack &operator=(SearchIteratorPack &&rhs);
 
     SearchIteratorPack(const std::vector<SearchIterator*> &children,
                        const std::vector<fef::TermFieldMatchData*> &childMatch,
-                       fef::MatchData::UP md)
-        : _children(),
-          _childMatch(childMatch),
-          _md(std::move(md))
-    {
-        _children.reserve(children.size());
-        for (auto child: children) {
-            _children.emplace_back(child);
-        }
-        assert((_children.size() == _childMatch.size()) ||
-               (_childMatch.empty() && (_md.get() == nullptr)));
-    }
+                       MatchDataUP md);
 
-    explicit SearchIteratorPack(const std::vector<SearchIterator*> &children)
-        : SearchIteratorPack(children,
-                             std::vector<fef::TermFieldMatchData*>(),
-                             fef::MatchData::UP()) {}
+    explicit SearchIteratorPack(const std::vector<SearchIterator*> &children);
 
     uint32_t get_docid(uint32_t ref) const {
         return _children[ref]->getDocId();
@@ -76,7 +57,8 @@ public:
             child->initRange(begin, end);
         }
     }
-    std::unique_ptr<BitVector> get_hits(uint32_t begin_id, uint32_t end_id);
+    std::unique_ptr<BitVector> get_hits(uint32_t begin_id, uint32_t end_id) const;
+    void or_hits_into(BitVector &result, uint32_t begin_id) const;
 };
 
 } // namespace queryevel
