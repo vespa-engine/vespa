@@ -24,36 +24,27 @@ public:
     /**
      * Implements searchcorespi::IndexSearchable
      */
-    virtual search::queryeval::Blueprint::UP
-    createBlueprint(const search::queryeval::IRequestContext & requestContext,
-                    const search::queryeval::FieldSpec &field,
-                    const search::query::Node &term,
-                    const search::attribute::IAttributeContext &)
-    {
+    Blueprint::UP
+    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override {
         return _index.createBlueprint(requestContext, field, term);
     }
-    virtual search::queryeval::Blueprint::UP
-    createBlueprint(const search::queryeval::IRequestContext & requestContext,
-                    const search::queryeval::FieldSpecList &fields,
-                    const search::query::Node &term,
-                    const search::attribute::IAttributeContext &)
-    {
+    Blueprint::UP
+    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override {
         return _index.createBlueprint(requestContext, fields, term);
     }
-    virtual search::SearchableStats getSearchableStats() const {
-        return search::SearchableStats()
-            .sizeOnDisk(_index.getSize());
+    search::SearchableStats getSearchableStats() const override {
+        return search::SearchableStats().sizeOnDisk(_index.getSize());
     }
 
-    virtual search::SerialNum getSerialNum() const override;
+    search::SerialNum getSerialNum() const override;
 
-    virtual void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
+    void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
 
     /**
      * Implements proton::IDiskIndex
      */
-    virtual const vespalib::string &getIndexDir() const { return _index.getIndexDir(); }
-    virtual const search::index::Schema &getSchema() const { return _index.getSchema(); }
+    const vespalib::string &getIndexDir() const override { return _index.getIndexDir(); }
+    const search::index::Schema &getSchema() const override { return _index.getSchema(); }
 };
 
 }  // namespace proton

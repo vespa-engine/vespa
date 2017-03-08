@@ -25,8 +25,7 @@ public:
     Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
-                    const Node &term,
-                    const IAttributeContext &) override
+                    const Node &term) override
     {
         return _fake.createBlueprint(requestContext, field, term);
     }
@@ -35,8 +34,8 @@ public:
         return search::SearchableStats();
     }
 
-    virtual search::SerialNum getSerialNum() const override { return 0; }
-    virtual void accept(IndexSearchableVisitor &visitor) const override {
+    search::SerialNum getSerialNum() const override { return 0; }
+    void accept(IndexSearchableVisitor &visitor) const override {
         (void) visitor;
     }
 

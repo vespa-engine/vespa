@@ -43,13 +43,11 @@ public:
     Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
-                    const Node &term,
-                    const IAttributeContext &attrCtx) override;
+                    const Node &term) override;
     Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpecList &fields,
-                    const Node &term,
-                    const IAttributeContext &attrCtx);
+                    const Node &term);
     search::SearchableStats getSearchableStats() const override;
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;
@@ -75,20 +73,12 @@ private:
             _bluePrint(),
             _requestContext()
         { }
-        WarmupTask &
-        createBlueprint(const FieldSpec &field,
-                        const Node &term,
-                        const IAttributeContext &attrCtx)
-        {
-            _bluePrint = _warmup.createBlueprint(_requestContext, field, term, attrCtx);
+        WarmupTask &createBlueprint(const FieldSpec &field, const Node &term) {
+            _bluePrint = _warmup.createBlueprint(_requestContext, field, term);
             return *this;
         }
-        WarmupTask &
-        createBlueprint(const FieldSpecList &fields,
-                        const Node &term,
-                        const IAttributeContext &attrCtx)
-        {
-            _bluePrint = _warmup.createBlueprint(_requestContext, fields, term, attrCtx);
+        WarmupTask &createBlueprint(const FieldSpecList &fields, const Node &term) {
+            _bluePrint = _warmup.createBlueprint(_requestContext, fields, term);
             return *this;
         }
     private:

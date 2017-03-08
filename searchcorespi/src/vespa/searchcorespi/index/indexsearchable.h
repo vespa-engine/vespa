@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
@@ -25,51 +26,17 @@ class IndexSearchableVisitor;
  * that let the components access a per query attribute context that expose
  * attribute vectors that can be utilized during query evaluation.
  **/
-class IndexSearchable
+class IndexSearchable : public search::queryeval::Searchable
 {
 protected:
-    typedef search::queryeval::IRequestContext IRequestContext;
-    typedef search::queryeval::FieldSpec FieldSpec;
-    typedef search::queryeval::FieldSpecList FieldSpecList;
-    typedef search::query::Node Node;
-    typedef search::attribute::IAttributeContext IAttributeContext;
-    typedef search::queryeval::Blueprint Blueprint;
+    using IRequestContext = search::queryeval::IRequestContext;
+    using FieldSpec = search::queryeval::FieldSpec;
+    using FieldSpecList = search::queryeval::FieldSpecList;
+    using Node = search::query::Node;
+    using IAttributeContext = search::attribute::IAttributeContext;
+    using Blueprint = search::queryeval::Blueprint;
 public:
     typedef std::shared_ptr<IndexSearchable> SP;
-
-    IndexSearchable() {}
-
-    virtual ~IndexSearchable() {}
-
-    /**
-     * Create a blueprint searching a single field.
-     *
-     * @return blueprint
-     * @param field the field to search
-     * @param term the query tree term
-     * @param attrCtx the per query attribute context
-     **/
-    virtual Blueprint::UP
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpec &field,
-                    const Node &term,
-                    const IAttributeContext &attrCtx) = 0;
-
-    /**
-     * Create a blueprint searching a set of fields. The default
-     * implementation of this function will create blueprints for
-     * individual fields and combine them with an OR blueprint.
-     *
-     * @return blueprint
-     * @param fields the set of fields to search
-     * @param term the query tree term
-     * @param attrCtx the per query attribute context
-     **/
-    virtual Blueprint::UP
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpecList &fields,
-                    const Node &term,
-                    const IAttributeContext &attrCtx);
 
     /**
      * Returns the searchable stats for this index searchable.

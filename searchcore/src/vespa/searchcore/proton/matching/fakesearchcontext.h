@@ -3,7 +3,6 @@
 #pragma once
 
 #include "isearchcontext.h"
-#include <vespa/searchcore/proton/common/indexsearchabletosearchableadapter.h>
 #include <vespa/searchcorespi/index/fakeindexsearchable.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
@@ -30,7 +29,6 @@ private:
     search::queryeval::ISourceSelector::SP _selector;
     search::attribute::IAttributeContext  *_attrCtx;
     IndexCollection::SP                    _indexes;
-    IndexSearchableToSearchableAdapter     _searchableAdapter;
     FakeSearchable                         _attrSearchable;
     uint32_t                               _docIdLimit;
 
@@ -41,7 +39,6 @@ public:
           _selector(new search::FixedSourceSelector(0, "fs", initialNumDocs)),
           _attrCtx(NULL),
           _indexes(new IndexCollection(_selector)),
-          _searchableAdapter(_indexes, *_attrCtx),
           _attrSearchable(),
           _docIdLimit(initialNumDocs) {}
 
@@ -64,15 +61,15 @@ public:
     search::queryeval::ISourceSelector &selector() { return *_selector; }
 
     // Implements ISearchContext
-    virtual search::queryeval::Searchable &getIndexes() {
-        return _searchableAdapter;
+    search::queryeval::Searchable &getIndexes() override {
+        return *_indexes;
     }
 
-    virtual search::queryeval::Searchable &getAttributes() {
+    search::queryeval::Searchable &getAttributes() override {
         return _attrSearchable;
     }
 
-    virtual uint32_t getDocIdLimit() {
+    uint32_t getDocIdLimit() override {
         return _docIdLimit;
     }
     virtual const vespalib::Doom & getDoom() const { return _doom; }

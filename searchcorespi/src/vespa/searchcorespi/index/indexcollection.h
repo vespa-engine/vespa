@@ -53,13 +53,11 @@ public:
     Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
-                    const Node &term,
-                    const IAttributeContext &attrCtx) override;
+                    const Node &term) override;
     Blueprint::UP
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpecList &fields,
-                    const Node &term,
-                    const IAttributeContext &attrCtx) override;
+                    const Node &term) override;
     search::SearchableStats getSearchableStats() const  override;
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;
