@@ -181,15 +181,15 @@ public class LocalZoneUtils {
      * Adds numberOfNodes to node-repo and returns a set of node hostnames.
      */
     public static Set<String> provisionNodes(String parentHostname, int numberOfNodes) {
-        List<Map<String, String>> nodesToAdd = new ArrayList<>();
+        List<Map<String, Object>> nodesToAdd = new ArrayList<>();
         for (int i = 1; i <= numberOfNodes; i++) {
             final String hostname = APP_HOSTNAME_PREFIX + i;
-            Map<String, String> provisionNodeRequest = new HashMap<>();
+            Map<String, Object> provisionNodeRequest = new HashMap<>();
             provisionNodeRequest.put("parentHostname", parentHostname);
             provisionNodeRequest.put("type", "tenant");
             provisionNodeRequest.put("flavor", "docker");
             provisionNodeRequest.put("hostname", hostname);
-            provisionNodeRequest.put("ipAddress", "172.18.2." + i);
+            provisionNodeRequest.put("ipAddresses", Collections.singletonList("172.18.2." + i));
             provisionNodeRequest.put("openStackId", "fake-" + hostname);
             nodesToAdd.add(provisionNodeRequest);
         }
@@ -199,7 +199,7 @@ public class LocalZoneUtils {
         } catch (RuntimeException e) {
             if (! e.getMessage().contains("A node with this name already exists")) throw e;
         }
-        return nodesToAdd.stream().map(i -> i.get("hostname")).collect(Collectors.toSet());
+        return nodesToAdd.stream().map(i -> (String) i.get("hostname")).collect(Collectors.toSet());
     }
 
     public static void setState(Node.State state, String hostname) {
