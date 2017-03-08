@@ -23,15 +23,13 @@ public class RequestViewImplTest {
         HeaderFields parentHeaders = new HeaderFields();
         parentHeaders.add(HEADER, "value");
 
-        Request request = mock(Request.class);
-        when(request.headers()).thenReturn(parentHeaders);
-
-        RequestView requestView = new RequestViewImpl(request);
+        RequestView requestView = newRequestView(parentHeaders);
 
         assertEquals(requestView.getFirstHeader(HEADER).get(), "value");
         assertEquals(requestView.getHeaders(HEADER).size(), 1);
         assertEquals(requestView.getHeaders(HEADER).get(0), "value");
     }
+
 
     @Test
     public void multi_value_header_from_the_parent_request_is_available() throws Exception {
@@ -40,10 +38,7 @@ public class RequestViewImplTest {
         HeaderFields parentHeaders = new HeaderFields();
         parentHeaders.add(HEADER, Lists.newArrayList("one", "two"));
 
-        Request request = mock(Request.class);
-        when(request.headers()).thenReturn(parentHeaders);
-
-        RequestView requestView = new RequestViewImpl(request);
+        RequestView requestView = newRequestView(parentHeaders);
 
         assertEquals(requestView.getHeaders(HEADER).size(), 2);
         assertEquals(requestView.getHeaders(HEADER).get(0), "one");
@@ -51,4 +46,12 @@ public class RequestViewImplTest {
 
         assertEquals(requestView.getFirstHeader(HEADER).get(), "one");
     }
+
+    private static RequestView newRequestView(HeaderFields parentHeaders) {
+        Request request = mock(Request.class);
+        when(request.headers()).thenReturn(parentHeaders);
+
+        return new RequestViewImpl(request);
+    }
+
 }
