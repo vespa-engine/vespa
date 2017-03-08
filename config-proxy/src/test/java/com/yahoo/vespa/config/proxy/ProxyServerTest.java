@@ -21,8 +21,9 @@ import static org.junit.Assert.*;
  */
 public class ProxyServerTest {
 
-    private final MapBackedConfigSource source = new MapBackedConfigSource(UpstreamConfigSubscriberTest.MockClientUpdater.create());
-    private ProxyServer proxy = ProxyServer.createTestServer(source);
+    MemoryCache memoryCache = new MemoryCache();
+    private final MapBackedConfigSource source = new MapBackedConfigSource(UpstreamConfigSubscriberTest.MockClientUpdater.create(memoryCache));
+    private ProxyServer proxy = ProxyServer.createTestServer(source, memoryCache);
 
     static final RawConfig fooConfig = Helper.fooConfigV2;
 
@@ -40,7 +41,7 @@ public class ProxyServerTest {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
         source.put(errorConfigKey, createConfigWithNextConfigGeneration(fooConfig, ErrorCode.UNKNOWN_DEFINITION));
-        proxy = ProxyServer.createTestServer(source);
+        proxy = ProxyServer.createTestServer(source, memoryCache);
     }
 
     @After
@@ -78,26 +79,6 @@ public class ProxyServerTest {
         assertTrue(proxy.getMode().isDefault());
 
         proxy.stop();
-    }
-
-    /**
-     * Tests that the proxy server can be tested with a MapBackedConfigSource,
-     * which is a simple hash map with configs
-     */
-    @Test
-    public void testRawConfigSetBasics() {
-        ConfigTester tester = new ConfigTester();
-        JRTServerConfigRequest errorConfigRequest = tester.createRequest(errorConfig);
-
-        assertTrue(proxy.getMode().isDefault());
-        RawConfig config = proxy.resolveConfig(Helper.fooConfigRequest);
-        assertThat(config, is(createConfigWithNextConfigGeneration(Helper.fooConfig, 0)));
-
-        config = proxy.resolveConfig(Helper.barConfigRequest);
-        assertNull(config);
-
-        config = proxy.resolveConfig(errorConfigRequest);
-        assertThat(config.errorCode(), is(ErrorCode.UNKNOWN_DEFINITION));
     }
 
     /**

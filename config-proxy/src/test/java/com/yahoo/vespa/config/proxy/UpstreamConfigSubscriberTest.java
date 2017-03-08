@@ -43,7 +43,7 @@ public class UpstreamConfigSubscriberTest {
 
     @Before
     public void setup() {
-        clientUpdater = MockClientUpdater.create();
+        clientUpdater = MockClientUpdater.create(new MemoryCache());
         sourceResponses = new MapBackedConfigSource(clientUpdater);
 
         ConfigPayload payload = getConfigPayload("bar", "value");
@@ -147,14 +147,14 @@ public class UpstreamConfigSubscriberTest {
     static class MockClientUpdater extends ClientUpdater {
         private RawConfig lastConfig;
 
-        private MockClientUpdater(ConfigProxyStatistics statistics, Mode mode) {
-            super(new MemoryCache(), new MockRpcServer(), statistics, new DelayedResponses(statistics), mode);
+        private MockClientUpdater(ConfigProxyStatistics statistics, Mode mode, MemoryCache memoryCache) {
+            super(memoryCache, new MockRpcServer(), statistics, new DelayedResponses(statistics), mode);
         }
 
-        public static MockClientUpdater create() {
+        static MockClientUpdater create(MemoryCache memoryCache) {
             Mode mode = new Mode();
             ConfigProxyStatistics statistics = new ConfigProxyStatistics();
-            return new MockClientUpdater(statistics, mode);
+            return new MockClientUpdater(statistics, mode, memoryCache);
         }
 
         @Override

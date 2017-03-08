@@ -104,4 +104,9 @@ class ClientUpdater {
             log.log(LogLevel.DEBUG, "Finished updating config for " + config.getKey() + "," + config.getGeneration());
         }
     }
+
+    // TODO: Remove, temporary until MapBackedConfigSource has been refactored
+    public MemoryCache getMemoryCache() {
+        return memoryCache;
+    }
 }

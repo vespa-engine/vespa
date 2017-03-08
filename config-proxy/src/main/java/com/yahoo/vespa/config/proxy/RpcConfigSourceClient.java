@@ -112,33 +112,36 @@ class RpcConfigSourceClient implements ConfigSourceClient {
      */
     @Override
     public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
-        long start = System.currentTimeMillis();
-        RawConfig ret = null;
+        // Always add to delayed responses (we remove instead if we find config in cache)
+        // This is to avoid a race where we might end up not adding to delayed responses
+        // nor subscribing to config if another request for the same config
+        // happens at the same time
+        DelayedResponse delayedResponse = new DelayedResponse(request);
+        delayedResponses.add(delayedResponse);
+
         final ConfigCacheKey configCacheKey = new ConfigCacheKey(input.getKey(), input.getDefMd5());
         RawConfig cachedConfig = memoryCache.get(configCacheKey);
         boolean needToGetConfig = true;
 
+        RawConfig ret = null;
         if (cachedConfig != null) {
             log.log(LogLevel.DEBUG, "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
                     ",configmd5=" + cachedConfig.getConfigMd5());
             if (log.isLoggable(LogLevel.SPAM)) {
                 log.log(LogLevel.SPAM, "input config=" + input + ",cached config=" + cachedConfig);
             }
-            // equals() also takes generation into account
-            if (!cachedConfig.equals(input)) {
+            if (ProxyServer.configOrGenerationHasChanged(cachedConfig, request)) {
                 log.log(LogLevel.SPAM, "Cached config is not equal to requested, will return it");
                 ret = cachedConfig;
+
+                // Someone else has replied
+                if (! delayedResponses.remove(delayedResponse)) {
+                    ret = null;
+                }
             }
             if (!cachedConfig.isError()) {
                 needToGetConfig = false;
             }
-        }
-        if (!ProxyServer.configOrGenerationHasChanged(ret, request)) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Delaying response " + request.getShortDescription() + " (" +
-                        (System.currentTimeMillis() - start) + " ms)");
-            }
-            delayedResponses.add(new DelayedResponse(request));
         }
         if (needToGetConfig) {
             subscribeToConfig(input, configCacheKey);
