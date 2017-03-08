@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("bitvector_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchlib/common/growablebitvector.h>
@@ -139,10 +137,14 @@ assertBV(const std::string & exp, const BitVector & act)
 }
 
 void
-fill(BitVector & bv, const std::vector<uint32_t> & bits, uint32_t offset)
+fill(BitVector & bv, const std::vector<uint32_t> & bits, uint32_t offset, bool fill=true)
 {
     for (uint32_t bit : bits) {
-        bv.setBit(bit + offset);
+        if (fill) {
+            bv.setBit(bit + offset);
+        } else {
+            bv.clearBit(bit + offset);
+        }
     }
 }
 
@@ -244,6 +246,18 @@ testAndNot(uint32_t offset)
     EXPECT_TRUE(assertBV(fill({7,103}, offset), *v3));
 }
 
+void
+testNot(uint32_t offset)
+{
+    uint32_t end = offset + 128;
+    BitVector::UP v1(BitVector::create(offset, end));
+    v1->setInterval(offset, end);
+    fill(*v1, A, offset, false);
+
+    v1->notSelf();
+    EXPECT_TRUE(assertBV(fill(A, offset), *v1));
+}
+
 TEST("requireThatSequentialOperationsOnPartialWorks")
 {
     PartialBitVector p1(717,919);
@@ -305,6 +319,13 @@ TEST("requireThatOrWorks") {
 TEST("requireThatAndNotWorks") {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAndNot(offset);
+    }
+}
+
+
+TEST("requireThatNotWorks") {
+    for (uint32_t offset(0); offset < 100; offset++) {
+        testNot(offset);
     }
 }
 
@@ -537,5 +558,6 @@ TEST("requireThatGrowWorks")
     g.transferHoldLists(1);
     g.trimHoldLists(2);
 }
+
 
 TEST_MAIN() { TEST_RUN_ALL(); }
