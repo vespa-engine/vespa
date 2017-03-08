@@ -19,5 +19,5 @@
   "hardwareFailure":false,
   "wantToRetire":false,
   "history":[],
-  "ipAddresses":["2001:4998:c:2974::1029", "127.0.0.1"]
+  "ipAddresses":["::1", "127.0.0.1"]
 }

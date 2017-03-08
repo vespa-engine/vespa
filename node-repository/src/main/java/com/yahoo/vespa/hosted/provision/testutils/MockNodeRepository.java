@@ -60,7 +60,7 @@ public class MockNodeRepository extends NodeRepository {
 
         List<Node> nodes = new ArrayList<>();
 
-        final List<String> ipAddressesForAllHost = Arrays.asList("127.0.0.1", "2001:4998:c:2974::1029");
+        final List<String> ipAddressesForAllHost = Arrays.asList("127.0.0.1", "::1");
         Collections.sort(ipAddressesForAllHost);
         final HashSet<String> ipAddresses = new HashSet<>(ipAddressesForAllHost);
 

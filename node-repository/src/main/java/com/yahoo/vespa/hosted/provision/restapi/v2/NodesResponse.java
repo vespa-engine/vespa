@@ -209,9 +209,7 @@ class NodesResponse extends HttpResponse {
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {
-        for (String ip : ipAddresses) {
-           array.addString(ip);
-        }
+        ipAddresses.forEach(array::addString);
     }
 
     private String lastElement(String path) {

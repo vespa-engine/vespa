@@ -19,5 +19,5 @@
   "hardwareFailure": false,
   "wantToRetire": false,
   "history":[{"event":"readied","at":123},{"event":"failed","at":123}],
-  "ipAddresses":["2001:4998:c:2974::1029", "127.0.0.1"]
+  "ipAddresses":["::1", "127.0.0.1"]
 }
