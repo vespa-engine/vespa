@@ -122,12 +122,8 @@ protected:
 public:
     AttributeUpdater(const AttributePtr & attrPtr, const std::vector<T> & values,
                      RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
-                     uint32_t minValueCount, uint32_t maxValueCount) :
-        _attrPtr(attrPtr), _attrVec(*(static_cast<Vector *>(attrPtr.get()))),
-        _values(values), _buffer(), _getBuffer(), _rndGen(rndGen), _expected(), _timer(), _status(), _validator(),
-        _validate(validate), _commitFreq(commitFreq), _minValueCount(minValueCount), _maxValueCount(maxValueCount)
-    {
-    }
+                     uint32_t minValueCount, uint32_t maxValueCount);
+    ~AttributeUpdater();
     void resetStatus() {
         _status.reset();
     }
@@ -142,6 +138,18 @@ public:
 };
 
 template <typename Vector, typename T, typename BT>
+AttributeUpdater<Vector, T, BT>::AttributeUpdater(const AttributePtr & attrPtr, const std::vector<T> & values,
+                 RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
+                 uint32_t minValueCount, uint32_t maxValueCount)
+    :_attrPtr(attrPtr), _attrVec(*(static_cast<Vector *>(attrPtr.get()))), _values(values), _buffer(),
+     _getBuffer(), _rndGen(rndGen), _expected(), _timer(), _status(), _validator(), _validate(validate),
+     _commitFreq(commitFreq), _minValueCount(minValueCount), _maxValueCount(maxValueCount)
+{}
+
+template <typename Vector, typename T, typename BT>
+AttributeUpdater<Vector, T, BT>::~AttributeUpdater() {}
+
+template <typename Vector, typename T, typename BT>
 class AttributeUpdaterThread : public AttributeUpdater<Vector, T, BT>, public Runnable
 {
 private:
@@ -150,12 +158,21 @@ private:
 public:
     AttributeUpdaterThread(const AttributePtr & attrPtr, const std::vector<T> & values,
                            RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
-                           uint32_t minValueCount, uint32_t maxValueCount) :
-        AttributeUpdater<Vector, T, BT>(attrPtr, values, rndGen, validate, commitFreq, minValueCount, maxValueCount),
-        Runnable(0) {}
+                           uint32_t minValueCount, uint32_t maxValueCount);
+    ~AttributeUpdaterThread();
 
     virtual void doRun();
 };
+
+template <typename Vector, typename T, typename BT>
+AttributeUpdaterThread<Vector, T, BT>::AttributeUpdaterThread(const AttributePtr & attrPtr, const std::vector<T> & values,
+                                               RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
+                                               uint32_t minValueCount, uint32_t maxValueCount)
+    : AttributeUpdater<Vector, T, BT>(attrPtr, values, rndGen, validate, commitFreq, minValueCount, maxValueCount),
+      Runnable(0)
+{}
+template <typename Vector, typename T, typename BT>
+AttributeUpdaterThread<Vector, T, BT>::~AttributeUpdaterThread() { }
 
 
 template <typename Vector, typename T, typename BT>

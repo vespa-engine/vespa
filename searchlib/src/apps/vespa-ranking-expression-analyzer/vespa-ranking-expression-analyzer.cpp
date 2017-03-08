@@ -263,19 +263,8 @@ struct State {
     std::vector<vespalib::string> options;
     std::vector<double> options_us;
 
-    explicit State(const vespalib::string &file_name,
-                   vespalib::string expression_in)
-        : name(strip_name(file_name)),
-          expression(std::move(expression_in)),
-          function(Function::parse(expression, FeatureNameExtractor())),
-          fun_info(function),
-          compiled_function(),
-          llvm_compile_s(0.0),
-          llvm_execute_us(0.0),
-          options(),
-          options_us()
-    {
-    }
+    State(const vespalib::string &file_name, vespalib::string expression_in);
+    ~State();
 
     void benchmark_llvm_compile() {
         BenchmarkTimer timer(1.0);
@@ -322,6 +311,21 @@ struct State {
         fflush(stdout);
     }
 };
+
+State::State(const vespalib::string &file_name, vespalib::string expression_in)
+    : name(strip_name(file_name)),
+      expression(std::move(expression_in)),
+      function(Function::parse(expression, FeatureNameExtractor())),
+      fun_info(function),
+      compiled_function(),
+      llvm_compile_s(0.0),
+      llvm_execute_us(0.0),
+      options(),
+      options_us()
+{
+}
+
+State::~State() {}
 
 //-----------------------------------------------------------------------------
 

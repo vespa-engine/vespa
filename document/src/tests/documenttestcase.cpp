@@ -104,20 +104,26 @@ void DocumentTest::testFieldPath()
     }
 }
 
+class Handler : public FieldValue::IteratorHandler {
+public:
+    Handler();
+    ~Handler();
+    const std::string & getResult() const { return _result; }
+private:
+    virtual void onPrimitive(const Content&)       { _result += 'P'; }
+    virtual void onCollectionStart(const Content&) { _result += '['; }
+    virtual void onCollectionEnd(const Content&)   { _result += ']'; }
+    virtual void onStructStart(const Content&)     { _result += '<'; }
+    virtual void onStructEnd(const Content&)       { _result += '>'; }
+    std::string _result;
+};
+
+Handler::Handler() { }
+Handler::~Handler() { }
+
+
 void DocumentTest::testTraversing()
 {
-    class Handler : public FieldValue::IteratorHandler {
-    public:
-        const std::string & getResult() const { return _result; }
-    private:
-        virtual void onPrimitive(const Content&)       { _result += 'P'; }
-        virtual void onCollectionStart(const Content&) { _result += '['; }
-        virtual void onCollectionEnd(const Content&)   { _result += ']'; }
-        virtual void onStructStart(const Content&)     { _result += '<'; }
-        virtual void onStructEnd(const Content&)       { _result += '>'; }
-        std::string _result;
-    };
-
     Field primitive1("primitive1", 1, *DataType::INT, true);
     Field primitive2("primitive2", 2, *DataType::INT, true);
     StructDataType struct1("struct1");
@@ -180,6 +186,8 @@ void DocumentTest::testTraversing()
 
 class VariableIteratorHandler : public FieldValue::IteratorHandler {
 public:
+    VariableIteratorHandler();
+    ~VariableIteratorHandler();
     std::string retVal;
 
     virtual void onPrimitive(const Content & fv) {
@@ -189,6 +197,9 @@ public:
         retVal += " - " + fv.getValue().toString() + "\n";
     };
 };
+
+VariableIteratorHandler::VariableIteratorHandler() {}
+VariableIteratorHandler::~VariableIteratorHandler() {}
 
 void
 DocumentTest::testVariables()

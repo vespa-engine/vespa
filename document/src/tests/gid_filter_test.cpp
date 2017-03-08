@@ -17,12 +17,8 @@ class GidFilterTest : public CppUnit::TestFixture {
         BucketIdFactory _id_factory;
         std::unique_ptr<Node> _root;
         
-        Fixture(vespalib::stringref selection)
-            : _repo(),
-              _id_factory(),
-              _root(Parser(_repo.getTypeRepo(), _id_factory).parse(selection))
-        {
-        }
+        Fixture(vespalib::stringref selection);
+        ~Fixture();
 
         Fixture(Fixture&&) = default;
         Fixture& operator=(Fixture&&) = default;
@@ -86,6 +82,13 @@ public:
     void composite_user_comparison_sub_expressions_not_supported();
     void composite_group_comparison_sub_expressions_not_supported();
 };
+
+GidFilterTest::Fixture::Fixture(vespalib::stringref selection)
+    : _repo(),
+      _id_factory(),
+      _root(Parser(_repo.getTypeRepo(), _id_factory).parse(selection))
+{ }
+GidFilterTest::Fixture::~Fixture() { }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(GidFilterTest);
 

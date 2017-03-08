@@ -169,16 +169,8 @@ TEST_F("require that string iterators are created correctly", StringFixture) {
 
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier() :
-        _attr(make_attribute(BasicType::INT64, CollectionType::WSET, true))
-    {
-        add_docs(_attr, getDocIdLimit());
-        auto docids = getExpectedDocIds();
-        IntegerAttribute *int_attr = static_cast<IntegerAttribute *>(_attr.get());
-        for (auto docid: docids) {
-            set_doc(int_attr, docid, int64_t(123), 1);
-        }
-    }
+    Verifier();
+    ~Verifier();
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
         const IDocumentWeightAttribute *api(_attr->asDocumentWeightAttribute());
@@ -191,6 +183,19 @@ private:
     mutable fef::TermFieldMatchData _tfmd;
     AttributeVector::SP _attr;
 };
+
+Verifier::Verifier()
+    : _attr(make_attribute(BasicType::INT64, CollectionType::WSET, true))
+{
+    add_docs(_attr, getDocIdLimit());
+    auto docids = getExpectedDocIds();
+    IntegerAttribute *int_attr = static_cast<IntegerAttribute *>(_attr.get());
+    for (auto docid: docids) {
+        set_doc(int_attr, docid, int64_t(123), 1);
+    }
+}
+Verifier::~Verifier() {}
+
 TEST("verify document weight search iterator") {
     Verifier verifier;
     verifier.verify();

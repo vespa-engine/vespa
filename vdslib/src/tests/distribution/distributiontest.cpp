@@ -318,15 +318,8 @@ namespace {
         const char* _upStates;
         uint16_t _redundancy;
 
-        Test()
-            : _nodeType(&NodeType::STORAGE),
-              _state("distributor:10 storage:10"),
-              _distribution(new Distribution(Distribution::getDefaultDistributionConfig(3, 10))),
-              _bucketsToTest(100),
-              _upStates("uir"),
-              _redundancy(2)
-        {
-        }
+        Test();
+        ~Test();
 
         Test& state(const std::string& s) {
             _state = s;
@@ -388,6 +381,16 @@ namespace {
             return result;
         }
     };
+
+    Test::Test()
+        : _nodeType(&NodeType::STORAGE),
+          _state("distributor:10 storage:10"),
+          _distribution(new Distribution(Distribution::getDefaultDistributionConfig(3, 10))),
+          _bucketsToTest(100),
+          _upStates("uir"),
+          _redundancy(2)
+    { }
+    Test::~Test() { }
 
     std::vector<uint16_t> createNodeCountList(const std::string& source,
                                               std::vector<uint16_t>& vals) {

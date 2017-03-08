@@ -30,6 +30,7 @@ public:
 
 public:
     TestData();
+    ~TestData();
     bool start();
 };
 
@@ -64,6 +65,8 @@ TestData::TestData() :
 {
     // empty
 }
+
+TestData::~TestData() {}
 
 bool
 TestData::start()

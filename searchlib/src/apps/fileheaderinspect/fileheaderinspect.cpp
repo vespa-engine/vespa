@@ -27,6 +27,7 @@ private:
 
 public:
     Application();
+    ~Application();
     int Main();
 };
 
@@ -34,9 +35,9 @@ Application::Application() :
     _fileName(""),
     _delimiter(';'),
     _quiet(false)
-{
-    // empty
-}
+{ }
+
+Application::~Application() {}
 
 
 void
