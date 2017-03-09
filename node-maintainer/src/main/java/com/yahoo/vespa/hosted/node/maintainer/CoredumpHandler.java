@@ -13,8 +13,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,14 +43,14 @@ public class CoredumpHandler {
         this.coreCollector = coreCollector;
     }
 
-    void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath, Map<String, Object> nodeAttributes) throws IOException {
+    public void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath, Map<String, Object> nodeAttributes) throws IOException {
         Path processingCoredumps = processCoredumps(coredumpsPath, nodeAttributes);
         reportCoredumps(processingCoredumps, doneCoredumpPath);
     }
 
-    void removeJavaCoredumps(Path javaCoredumpsPath) {
+    public void removeJavaCoredumps(Path javaCoredumpsPath) throws IOException {
         if (! javaCoredumpsPath.toFile().isDirectory()) return;
-        DeleteOldAppData.deleteFiles(javaCoredumpsPath.toString(), 0, "^java_pid.*\\.hprof$", false);
+        FileHelper.deleteFiles(javaCoredumpsPath, Duration.ZERO, Optional.of("^java_pid.*\\.hprof$"), false);
     }
 
     Path processCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {

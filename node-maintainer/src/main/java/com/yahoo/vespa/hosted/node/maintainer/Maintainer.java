@@ -1,122 +1,166 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintainer;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Type;
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.config.SlimeUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author freva
  */
 public class Maintainer {
+    private static final CoreCollector coreCollector = new CoreCollector(new ProcessExecuter());
+    private static final CoredumpHandler coredumpHandler = new CoredumpHandler(HttpClientBuilder.create().build(), coreCollector);
 
-    @SuppressWarnings("unchecked")
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         if (args.length != 1) {
             throw new RuntimeException("Expected only 1 argument - a JSON list of maintainer jobs to execute");
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        List<MaintenanceJob> maintenanceJobs = mapper.readValue(args[0], new TypeReference<List<MaintenanceJob>>(){});
-        executeJobs(maintenanceJobs);
-    }
-
-    public static void executeJobs(List<MaintenanceJob> maintenanceJobs) {
-        for (MaintenanceJob job : maintenanceJobs) {
-            try {
-                executeJob(job);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to execute job " + job.jobName + " with arguments " +
-                        Arrays.toString(job.arguments.entrySet().toArray()), e);
-            }
+        Inspector object = SlimeUtils.jsonToSlime(args[0].getBytes()).get();
+        if (object.type() != Type.ARRAY) {
+            throw new IllegalArgumentException("Expected a list maintainer jobs to execute");
         }
+
+        object.traverse((ArrayTraverser) (int i, Inspector item) -> {
+            String type = getFieldOrFail(item, "type").asString();
+            Inspector arguments = getFieldOrFail(item, "arguments");
+            parseMaintenanceJob(type, arguments);
+        });
     }
 
-    @SuppressWarnings("unchecked")
-    private static void executeJob(MaintenanceJob job) throws IOException {
-        switch (job.getJobName()) {
+    private static void parseMaintenanceJob(String type, Inspector arguments) {
+        if (arguments.type() != Type.OBJECT) {
+            throw new IllegalArgumentException("Expected a 'arguments' to be an object");
+        }
+
+        switch (type) {
             case "delete-files":
-                DeleteOldAppData.deleteFiles(
-                        (String) job.getRequiredArgument("basePath"),
-                        (Integer) job.getRequiredArgument("maxAgeSeconds"),
-                        (String) job.getArgumentOrDefault("fileNameRegex", null),
-                        (boolean) job.getArgumentOrDefault("recursive", false));
+                parseDeleteFilesJob(arguments);
                 break;
 
             case "delete-directories":
-                DeleteOldAppData.deleteDirectories(
-                        (String) job.getRequiredArgument("basePath"),
-                        (Integer) job.getRequiredArgument("maxAgeSeconds"),
-                        (String) job.getArgumentOrDefault("dirNameRegex", null));
+                parseDeleteDirectoriesJob(arguments);
                 break;
 
             case "recursive-delete":
-                DeleteOldAppData.recursiveDelete(
-                        (String) job.getRequiredArgument("path"));
+                parseRecursiveDelete(arguments);
                 break;
 
             case "move-files":
-                Path from = Paths.get((String) job.getRequiredArgument("from"));
-                Path to = Paths.get((String) job.getRequiredArgument("to"));
-                if (Files.exists(from)) {
-                    Files.move(from, to);
-                }
+                parseMoveFiles(arguments);
                 break;
 
             case "handle-core-dumps":
-                CoreCollector coreCollector = new CoreCollector(new ProcessExecuter());
-                CoredumpHandler coredumpHandler = new CoredumpHandler(HttpClientBuilder.create().build(), coreCollector);
-
-                Path containerCoredumpsPath = Paths.get((String) job.getRequiredArgument("containerCoredumpsPath"));
-                Path doneCoredumpsPath = Paths.get((String) job.getRequiredArgument("doneCoredumpsPath"));
-                Map<String, Object> attributesMap = (Map<String, Object>) job.getRequiredArgument("attributes");
-
-                coredumpHandler.removeJavaCoredumps(containerCoredumpsPath);
-                coredumpHandler.processAndReportCoredumps(containerCoredumpsPath, doneCoredumpsPath, attributesMap);
+                parseHandleCoreDumps(arguments);
                 break;
 
             default:
-                throw new RuntimeException("Unknown job: " + job.getJobName());
+                throw new IllegalArgumentException("Unknown job: " + type);
         }
     }
 
-    /**
-     * Should be equal to MaintainerExecutorJob in StorageMaintainer
-     */
-    public static class MaintenanceJob {
-        private final String jobName;
-        private final Map<String, Object> arguments;
-
-        private MaintenanceJob(@JsonProperty(value="jobName") String jobName,
-                               @JsonProperty(value="arguments") Map<String, Object> arguments) {
-            this.jobName = jobName;
-            this.arguments = arguments;
+    private static void parseDeleteFilesJob(Inspector arguments) {
+        Path basePath = Paths.get(getFieldOrFail(arguments, "basePath").asString());
+        Duration maxAge = Duration.ofSeconds(getFieldOrFail(arguments, "maxAgeSeconds").asLong());
+        Optional<String> fileNameRegex = SlimeUtils.optionalString(getFieldOrFail(arguments, "fileNameRegex"));
+        boolean recursive = getFieldOrFail(arguments, "recursive").asBool();
+        try {
+            FileHelper.deleteFiles(basePath, maxAge, fileNameRegex, recursive);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed deleting files under " + basePath.toAbsolutePath() +
+                    fileNameRegex.map(regex -> ", matching '" + regex + "'").orElse("") +
+                    ", " + (recursive ? "" : "not ") + "recursively" +
+                    " and older than " + maxAge, e);
         }
+    }
 
-        String getJobName() {
-            return jobName;
+    private static void parseDeleteDirectoriesJob(Inspector arguments) {
+        Path basePath = Paths.get(getFieldOrFail(arguments, "basePath").asString());
+        Duration maxAge = Duration.ofSeconds(getFieldOrFail(arguments, "maxAgeSeconds").asLong());
+        Optional<String> dirNameRegex = SlimeUtils.optionalString(getFieldOrFail(arguments, "dirNameRegex"));
+        try {
+            FileHelper.deleteDirectories(basePath, maxAge, dirNameRegex);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed deleting directories under " + basePath.toAbsolutePath() +
+                    dirNameRegex.map(regex -> ", matching '" + regex + "'").orElse("") +
+                    " and older than " + maxAge, e);
         }
+    }
 
-        Object getRequiredArgument(String argumentName) {
-            Object value = arguments.get(argumentName);
-            if (value == null) {
-                throw new IllegalArgumentException("Missing required argument " + argumentName);
+    private static void parseRecursiveDelete(Inspector arguments) {
+        Path basePath = Paths.get(getFieldOrFail(arguments, "path").asString());
+        try {
+            FileHelper.recursiveDelete(basePath);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed deleting " + basePath.toAbsolutePath(), e);
+        }
+    }
+
+    private static void parseMoveFiles(Inspector arguments) {
+        Path from = Paths.get(getFieldOrFail(arguments, "from").asString());
+        Path to = Paths.get(getFieldOrFail(arguments, "to").asString());
+
+        try {
+            FileHelper.moveIfExists(from, to);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed moving from " + from.toAbsolutePath() + ", to " + to.toAbsolutePath(), e);
+        }
+    }
+
+    private static void parseHandleCoreDumps(Inspector arguments) {
+        Path coredumpsPath = Paths.get(getFieldOrFail(arguments, "coredumpsPath").asString());
+        Path doneCoredumpsPath = Paths.get(getFieldOrFail(arguments, "doneCoredumpsPath").asString());
+        Map<String, Object> attributesMap = parseMap(getFieldOrFail(arguments, "attributes"));
+
+        try {
+            coredumpHandler.removeJavaCoredumps(coredumpsPath);
+            coredumpHandler.processAndReportCoredumps(coredumpsPath, doneCoredumpsPath, attributesMap);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed processing coredumps at " + coredumpsPath.toAbsolutePath() +
+                    ", moving fished dumps to " + doneCoredumpsPath.toAbsolutePath(), e);
+        }
+    }
+
+    private static Map<String, Object> parseMap(Inspector object) {
+        Map<String, Object> map = new HashMap<>();
+        getFieldOrFail(object, "attributes").traverse((String key, Inspector value) -> {
+            switch (value.type()) {
+                case BOOL:
+                    map.put(key, value.asBool());
+                    break;
+                case LONG:
+                    map.put(key, value.asLong());
+                    break;
+                case DOUBLE:
+                    map.put(key, value.asDouble());
+                    break;
+                case STRING:
+                    map.put(key, value.asString());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid attribute for key '" + key + "', value " + value);
             }
-            return value;
-        }
+        });
+        return map;
+    }
 
-        Object getArgumentOrDefault(String argumentName, Object defaultValue) {
-            return arguments.getOrDefault(argumentName, defaultValue);
+    private static Inspector getFieldOrFail(Inspector object, String key) {
+        Inspector out = object.field(key);
+        if (out.type() == Type.NIX) {
+            throw new IllegalArgumentException("Key '" + key + "' was not found!");
         }
+        return out;
     }
 }

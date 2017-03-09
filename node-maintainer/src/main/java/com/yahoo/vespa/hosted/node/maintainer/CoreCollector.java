@@ -32,7 +32,7 @@ public class CoreCollector {
     private static final Logger logger = Logger.getLogger(CoreCollector.class.getName());
     private final ProcessExecuter processExecuter;
 
-    CoreCollector(ProcessExecuter processExecuter) {
+    public CoreCollector(ProcessExecuter processExecuter) {
         this.processExecuter = processExecuter;
     }
     

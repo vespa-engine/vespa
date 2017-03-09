@@ -182,7 +182,7 @@ public class StorageMaintainer {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
         maintainerExecutor.addJob("handle-core-dumps")
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
-                .withArgument("containerCoredumpsPath", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/crash"))
+                .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/crash"))
                 .withArgument("attributes", attributes);
         maintainerExecutor.execute();
     }
@@ -286,23 +286,22 @@ public class StorageMaintainer {
                                                 docker.executeInContainer(executeIn, command);
 
             if (! result.isSuccess()) {
-                PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, executeIn);
-                logger.warning("Failed to run maintenance jobs: " + args + result);
                 numberOfNodeAdminMaintenanceFails.add();
+                throw new RuntimeException("Failed to run maintenance jobs: " + args + result);
             }
             return result;
         }
     }
 
     private class MaintainerExecutorJob {
-        @JsonProperty(value="jobName")
-        private final String jobName;
+        @JsonProperty(value="type")
+        private final String type;
 
         @JsonProperty(value="arguments")
         private final Map<String, Object> arguments = new HashMap<>();
 
-        MaintainerExecutorJob(String jobName) {
-            this.jobName = jobName;
+        MaintainerExecutorJob(String type) {
+            this.type = type;
         }
 
         MaintainerExecutorJob withArgument(String argument, Object value) {
