@@ -38,7 +38,7 @@
  * vespalib::Atomic	
  * <BR> vespalib::ReferenceCounter	
  *
- * Simple smart pointers
+ * Simple smart pointers (deprecated)
  *
  * \ref vespalib::SharedPtr&lt;T&gt;	
  * <BR> \ref vespalib::LinkedPtr&lt;T&gt;

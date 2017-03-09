@@ -123,7 +123,7 @@ SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Strategy strategy)
             _hook = std::move(hook);
         } else {
             size_t signal_idx = (strategy == USE_BROADCAST) ? 0 : (i - 1);
-            _workers.push_back(Worker::LP(new Worker(_signals[signal_idx], std::move(hook))));
+            _workers.push_back(std::make_unique<Worker>(_signals[signal_idx], std::move(hook)));
         }
     }
 }
