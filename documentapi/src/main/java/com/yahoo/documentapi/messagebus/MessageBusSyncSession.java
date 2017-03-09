@@ -77,7 +77,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
             msg.setContext(monitor);
             msg.pushHandler(this); // store monitor
             Result result = null;
-            while (result == null || result.getType() == Result.ResultType.TRANSIENT_ERROR) {
+            while (result == null || result.type() == Result.ResultType.TRANSIENT_ERROR) {
                 result = session.send(msg);
                 if (result != null && result.isSuccess()) {
                     break;

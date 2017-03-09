@@ -25,6 +25,30 @@ public class RestUri {
     public static final String V_1 = "v1";
     public static final String ID = "id:";
 
+    public enum apiErrorCodes {
+        ERROR_ID_BASIC_USAGE(-1),
+        ERROR_ID_DECODING_PATH(-2),
+        VISITOR_ERROR(-3),
+        NO_ROUTE_WHEN_NOT_PART_OF_MESSAGEBUS(-4),
+        SEVERAL_CLUSTERS(-5),
+        URL_PARSING(-6),
+        INVALID_CREATE_VALUE(-7),
+        TOO_MANY_PARALLEL_REQUESTS(-8),
+        MISSING_CLUSTER(-9), INTERNAL_EXCEPTION(-9),
+        DOCUMENT_CONDITION_NOT_MET(-10),
+        DOCUMENT_EXCPETION(-11),
+        PARSER_ERROR(-11),
+        GROUP_AND_EXPRESSION_ERROR(-12),
+        TIME_OUT(-13),
+        INTERRUPTED(-14),
+        UNSPECIFIED(-15);
+
+        public final long value;
+        apiErrorCodes(long value) {
+            this.value = value;
+        }
+    }
+
     /**
      * Represents the "grouping" part of document id which can be used with streaming model.
      */
@@ -69,6 +93,7 @@ public class RestUri {
     }
 
     static class PathParser {
+        public static final long ERROR_ID_DECODING_PATH = -10L;
         final List<String> rawParts;
         final String originalPath;
         int readPos = 0;
@@ -88,7 +113,7 @@ public class RestUri {
             try {
                 return URLDecoder.decode(rawId, StandardCharsets.UTF_8.name());
             } catch (UnsupportedEncodingException e) {
-                throw new RestApiException(Response.createErrorResponse(BAD_REQUEST,"Problems decoding the URI: " + e.getMessage()));
+                throw new RestApiException(Response.createErrorResponse(BAD_REQUEST,"Problems decoding the URI: " + e.getMessage(), apiErrorCodes.ERROR_ID_DECODING_PATH));
             }
         }
     }
@@ -119,9 +144,9 @@ public class RestUri {
 
     private static void throwUsage(String inputPath) throws RestApiException {
         throw new RestApiException(Response.createErrorResponse(BAD_REQUEST,
-                "Expected:\n" +
-                        ".../{namespace}/{document-type}/group/{name}/[{user-specified}]\n" +
-                        ".../{namespace}/{document-type}/docid/[{user-specified}]\n: but got " + inputPath));
+                "Expected: " +
+                        ".../{namespace}/{document-type}/group/{name}/[{user-specified}]   " +
+                        ".../{namespace}/{document-type}/docid/[{user-specified}]  : but got " + inputPath, apiErrorCodes.ERROR_ID_BASIC_USAGE));
     }
 
 }

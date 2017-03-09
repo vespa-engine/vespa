@@ -3,7 +3,6 @@ package com.yahoo.vespa.http.client.core.operationProcessor;
 
 import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.core.Document;
-import com.yahoo.vespa.http.client.core.api.ResultImpl;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +45,7 @@ class DocumentSendInfo {
     }
 
     public Result createResult() {
-        return new ResultImpl(document, detailByClusterId.values(), localTrace);
+        return new Result(document, detailByClusterId.values(), localTrace);
     }
 
     int incRetries(int clusterId, Result.Detail detail) {

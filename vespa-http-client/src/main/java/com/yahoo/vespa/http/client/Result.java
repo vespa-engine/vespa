@@ -2,9 +2,13 @@
 package com.yahoo.vespa.http.client;
 
 import com.yahoo.vespa.http.client.config.Endpoint;
+import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.Exceptions;
 import net.jcip.annotations.Immutable;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,49 +20,90 @@ import java.util.List;
  * @since 5.1.20
  */
 // This should be an interface, but in order to be binary compatible during refactoring we made it abstract.
-public abstract class Result {
+public class Result {
+    public enum ResultType {
+        OPERATION_EXECUTED,
+        TRANSITIVE_ERROR,
+        CONDITION_NOT_MET,
+        FATAL_ERROR
+    }
+
+    private final Document document;
+    private final boolean success;
+    private final boolean _transient;
+    private final List<Detail> details;
+    private final String localTrace;
+
+    public Result(Document document, Collection<Detail> values, StringBuilder localTrace) {
+        this.document = document;
+        this.details = Collections.unmodifiableList(new ArrayList<>(values));
+        boolean totalSuccess = true;
+        boolean totalTransient = true;
+        for (Detail d : details) {
+            if (d.getResultType() != ResultType.OPERATION_EXECUTED) {totalSuccess = false; }
+            if (d.getResultType() != ResultType.TRANSITIVE_ERROR) {totalTransient = false; }
+        }
+        this.success = totalSuccess;
+        this._transient = totalTransient;
+        this.localTrace = localTrace == null ? null : localTrace.toString();
+    }
+
+
     /**
      * Returns the document ID that this Result is for.
      *
      * @return the document ID that this Result is for.
      */
-    abstract public String getDocumentId();
+    public String getDocumentId() {
+        return document.getDocumentId();
+    }
 
     /**
      * Returns the document data.
      * @return data as bytebuffer.
      */
-    abstract public CharSequence getDocumentDataAsCharSequence();
+    public CharSequence getDocumentDataAsCharSequence() {
+        return document.getDataAsString();
+    }
 
     /**
      * Returns the context of the object if any.
      * @return context.
      */
-    abstract public Object getContext();
+    public Object getContext() {
+        return document.getContext();
+    }
 
     /**
-     * Returns true if the operation was successful. If at least one {@link Detail}
+     * Returns true if the operation(s) was successful. If at least one {@link Detail}
      * in {@link #getDetails()} is unsuccessful, this will return false.
      *
      * @return true if the operation was successful.
      */
-    abstract public boolean isSuccess();
-
+    public boolean isSuccess() {
+        return success;
+    }
     /**
+     * @deprecated use resultType on items getDetails() to check  operations.
      * Returns true if an error is transient, false if it is permanent. Irrelevant
      * if {@link #isSuccess()} is true (returns true in those cases).
      *
      * @return true if an error is transient (or there is no error), false otherwise.
      */
-    abstract public boolean isTransient();
+    @Deprecated
+    public boolean isTransient() {
+        return _transient;
+    }
 
-    abstract public List<Detail> getDetails();
+    public List<Detail> getDetails() { return details; }
 
     /**
      * Checks if operation has been set up with local tracing.
      * @return true if operation has local trace.
      */
-    abstract public boolean hasLocalTrace();
+    public boolean hasLocalTrace() {
+        return localTrace != null;
+    }
 
     /**
      * Information in a Result for a single operation sent to a single endpoint.
@@ -68,25 +113,22 @@ public abstract class Result {
      */
     @Immutable
     public static final class Detail {
+        private final ResultType resultType;
         private final Endpoint endpoint;
-        private final boolean success;
-        private final boolean _transient;
         private final Exception exception;
         private final String traceMessage;
         private final long timeStampMillis = System.currentTimeMillis();
 
-        public Detail(Endpoint endpoint, boolean success, boolean _transient, String traceMessage, Exception e) {
+        public Detail(Endpoint endpoint, ResultType resultType, String traceMessage, Exception e) {
             this.endpoint = endpoint;
-            this.success = success;
-            this._transient = _transient;
+            this.resultType = resultType;
             this.exception = e;
             this.traceMessage = traceMessage;
         }
 
         public Detail(Endpoint endpoint) {
             this.endpoint = endpoint;
-            this.success = true;
-            this._transient = true;
+            this.resultType = ResultType.OPERATION_EXECUTED;
             this.exception = null;
             this.traceMessage = null;
         }
@@ -101,22 +143,33 @@ public abstract class Result {
         }
 
         /**
+         * @deprecated use getResultType.
          * Returns true if the operation was successful.
          *
          * @return true if the operation was successful.
          */
+        @Deprecated
         public boolean isSuccess() {
-            return success;
+            return resultType == ResultType.OPERATION_EXECUTED;
         }
 
         /**
+         * @deprecated use getResultType.
          * Returns true if an error is transient, false if it is permanent. Irrelevant
          * if {@link #isSuccess()} is true (returns true in those cases).
          *
          * @return true if an error is transient (or there is no error), false otherwise.
          */
+        @Deprecated
         public boolean isTransient() {
-            return _transient;
+            return resultType == ResultType.TRANSITIVE_ERROR || resultType == ResultType.OPERATION_EXECUTED;
+        }
+
+        /**
+         * Returns the result of the operation.
+         */
+        public ResultType getResultType() {
+            return resultType;
         }
 
         /**
@@ -140,10 +193,7 @@ public abstract class Result {
         public String toString() {
             StringBuilder b = new StringBuilder();
             b.append("Detail ");
-            b.append("success=").append(success).append(" ");
-            if (!success) {
-                b.append("transient=").append(_transient).append(" ");
-            }
+            b.append("resultType=").append(resultType);
             if (exception != null) {
                 b.append("exception='").append(Exceptions.toMessageString(exception)).append("' ");
             }

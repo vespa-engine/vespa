@@ -3,6 +3,7 @@ package com.yahoo.vespa.http.server;
 
 import java.util.logging.Logger;
 
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Reply;
@@ -38,17 +39,19 @@ public class FeedReplyReader implements ReplyHandler {
                 null);
         if (reply.hasErrors()) {
             metric.add(MetricNames.FAILED, 1, null);
-            enqueue(context, reply.getError(0).getMessage(), ErrorCode.ERROR, reply.getTrace());
+            enqueue(context, reply.getError(0).getMessage(), ErrorCode.ERROR,
+                    reply.getError(0).getCode() == DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED, reply.getTrace());
         } else {
             metric.add(MetricNames.SUCCEEDED, 1, null);
-            enqueue(context, "Document processed.", ErrorCode.OK, reply.getTrace());
+            enqueue(context, "Document processed.", ErrorCode.OK, false, reply.getTrace());
         }
     }
 
-    private void enqueue(ReplyContext context, String message, ErrorCode status, Trace trace) {
+    private void enqueue(ReplyContext context, String message, ErrorCode status, boolean isConditionNotMet, Trace trace) {
         try {
             String traceMessage = (trace != null && trace.getLevel() > 0) ? trace.toString() : "";
-            context.feedReplies.put(new OperationStatus(message, context.docId, status, traceMessage));
+
+            context.feedReplies.put(new OperationStatus(message, context.docId, status, isConditionNotMet, traceMessage));
         } catch (InterruptedException e) {
             log.log(LogLevel.WARNING, 
                     "Interrupted while enqueueing result from putting document with id: " + context.docId);

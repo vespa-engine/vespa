@@ -42,12 +42,29 @@ public final class EndPointResultFactory {
 
     public static EndpointResult createError(
             Endpoint endpoint, String operationId, Exception exception) {
-        return new EndpointResult(operationId, new Result.Detail(endpoint, false, false, null, exception));
+        return new EndpointResult(operationId, new Result.Detail(
+                endpoint,  Result.ResultType.FATAL_ERROR, null, exception));
     }
 
     public static EndpointResult createTransientError(
             Endpoint endpoint, String operationId, Exception exception) {
-        return new EndpointResult(operationId, new Result.Detail(endpoint, false, true, null, exception));
+        return new EndpointResult(operationId, new Result.Detail(
+                endpoint, Result.ResultType.TRANSITIVE_ERROR, null, exception));
+    }
+
+    private static Result.ResultType replyToResultType(OperationStatus reply) {
+        final Result.ResultType resultType;
+        // The ordering below is important, e.g. if success, it is never a transient error even if isTransient is true.
+        if (reply.errorCode.isSuccess()) {
+            return Result.ResultType.OPERATION_EXECUTED;
+        }
+        if (reply.isConditionNotMet) {
+            return Result.ResultType.CONDITION_NOT_MET;
+        }
+        if (reply.errorCode.isTransient()) {
+            return Result.ResultType.TRANSITIVE_ERROR;
+        }
+        return Result.ResultType.FATAL_ERROR;
     }
 
     private static EndpointResult parseResult(String line, Endpoint endpoint) {
@@ -69,8 +86,7 @@ public final class EndPointResultFactory {
             return new EndpointResult(
                     reply.operationId,
                     new Result.Detail(endpoint,
-                            reply.errorCode.isSuccess(),
-                            reply.errorCode.isTransient(),
+                            replyToResultType(reply),
                             reply.traceMessage,
                             exception));
         } catch (Throwable t) {

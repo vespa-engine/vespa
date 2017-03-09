@@ -19,6 +19,7 @@ import static com.yahoo.vespa.http.client.TestUtils.getResults;
 import static com.yahoo.vespa.http.client.V3HttpAPITest.documents;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Only runs on screwdriver to save time!
@@ -129,11 +130,7 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 assertThat(r, not(nullValue()));
                 assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
                 assertThat(r.getDetails().size(), is(2));
-                // One of the details should be true and one false.
-                assertThat(
-                        r.getDetails().toString(),
-                        r.getDetails().get(0).isSuccess() ^ r.getDetails().get(1).isSuccess(),
-                        is(true));
+                assert(r.getDetails().get(0).getResultType() != r.getDetails().get(1).getResultType());
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -224,9 +221,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -281,9 +278,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -339,10 +336,10 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isTransient(), is(true));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -398,9 +395,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -454,9 +451,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -506,11 +503,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 details.put(detail.getEndpoint(), detail);
             }
             Result.Detail failed = details.remove(Endpoint.create("localhost", serverC.getPort(), false));
-            assertThat(failed.toString(), failed.isSuccess(), is(false));
-            assertThat(failed.toString(), failed.isTransient(), is(true));
+            assertThat(failed.getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             for (Result.Detail detail : details.values()) {
-                assertThat(detail.toString(), detail.isSuccess(), is(true));
-                assertThat(detail.toString(), detail.isTransient(), is(true));
+                assertThat(detail.getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
             }
         }
     }
@@ -562,9 +557,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -617,9 +612,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -665,8 +660,7 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
             assertThat(r, not(nullValue()));
             assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
             for (Result.Detail detail : r.getDetails()) {
-                assertThat(detail.toString(), detail.isSuccess(), is(false));
-                assertThat(detail.toString(), detail.isTransient(), is(true));
+                assertThat(detail.getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
         }
     }
@@ -715,11 +709,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 details.put(detail.getEndpoint(), detail);
             }
             Result.Detail failed = details.remove(Endpoint.create("localhost", serverC.getPort(), false));
-            assertThat(failed.toString(), failed.isSuccess(), is(false));
-            assertThat(failed.toString(), failed.isTransient(), is(true));
+            assertThat(failed.getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             for (Result.Detail detail : details.values()) {
-                assertThat(detail.toString(), detail.isSuccess(), is(true));
-                assertThat(detail.toString(), detail.isTransient(), is(true));
+                assertThat(detail.getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
             }
         }
     }
@@ -764,8 +756,7 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
             assertThat(r, not(nullValue()));
             assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
             for (Result.Detail detail : r.getDetails()) {
-                assertThat(detail.toString(), detail.isSuccess(), is(false));
-                assertThat(detail.toString(), detail.isTransient(), is(true));
+                assertThat(detail.getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
         }
     }
@@ -815,9 +806,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -868,9 +859,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -929,9 +920,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(true));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(true));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
 
             }
             assertThat(results.isEmpty(), is(true));
@@ -987,9 +978,9 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
                 for (Result.Detail detail : r.getDetails()) {
                     details.put(detail.getEndpoint(), detail);
                 }
-                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(false));
-                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).isSuccess(), is(false));
+                assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.FATAL_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.FATAL_ERROR));
+                assertThat(details.get(Endpoint.create("localhost", serverC.getPort(), false)).getResultType(), is(Result.ResultType.FATAL_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }
@@ -1040,8 +1031,8 @@ public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
             for (Result.Detail detail : r.getDetails()) {
                 details.put(detail.getEndpoint(), detail);
             }
-            assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).isSuccess(), is(false));
-            assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).isSuccess(), is(true));
+            assertThat(details.get(Endpoint.create("localhost", serverA.getPort(), false)).getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
+            assertThat(details.get(Endpoint.create("localhost", serverB.getPort(), false)).getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
 
 
             //Set B in bad state => B returns bad request.

@@ -70,16 +70,25 @@ public class OperationHandlerImpl implements OperationHandler {
 
     private static final int HTTP_STATUS_BAD_REQUEST = 400;
     private static final int HTTP_STATUS_INSUFFICIENT_STORAGE = 507;
+    private static final int HTTP_PRE_CONDIDTION_FAILED = 412;
 
-    private static int getHTTPStatusCode(Set<Integer> errorCodes) {
-        if (errorCodes.size() == 1 && errorCodes.contains(DocumentProtocol.ERROR_NO_SPACE)) {
+    private static int getHTTPStatusCode(DocumentAccessException documentException) {
+        if (documentException.getErrorCodes().size() == 1 && documentException.getErrorCodes().contains(DocumentProtocol.ERROR_NO_SPACE)) {
             return HTTP_STATUS_INSUFFICIENT_STORAGE;
+        }
+        if (documentException.hasConditionNotMetError()) {
+            return HTTP_PRE_CONDIDTION_FAILED;
         }
         return HTTP_STATUS_BAD_REQUEST;
     }
 
     private static Response createErrorResponse(DocumentAccessException documentException, RestUri restUri) {
-        return Response.createErrorResponse(getHTTPStatusCode(documentException.getErrorCodes()), documentException.getMessage(), restUri);
+        if (documentException.hasConditionNotMetError()) {
+            return Response.createErrorResponse(getHTTPStatusCode(documentException), "Condition did not match document.",
+                    restUri, RestUri.apiErrorCodes.DOCUMENT_CONDITION_NOT_MET);
+        }
+        return Response.createErrorResponse(getHTTPStatusCode(documentException), documentException.getMessage(), restUri,
+                RestUri.apiErrorCodes.DOCUMENT_EXCPETION);
     }
 
     @Override
@@ -105,7 +114,8 @@ public class OperationHandlerImpl implements OperationHandler {
             throw new RestApiException(Response.createErrorResponse(
                     500,
                     "Failed during parsing of arguments for visiting: " + ExceptionUtils.getStackTrace(e),
-                    restUri));
+                    restUri,
+                    RestUri.apiErrorCodes.VISITOR_ERROR));
         }
         try {
             return doVisit(visitorControlHandler, localDataVisitorHandler, restUri);
@@ -120,13 +130,13 @@ public class OperationHandlerImpl implements OperationHandler {
             RestUri restUri) throws RestApiException {
         try {
             if (! visitorControlHandler.waitUntilDone(VISIT_TIMEOUT_MS)) {
-                throw new RestApiException(Response.createErrorResponse(500, "Timed out", restUri));
+                throw new RestApiException(Response.createErrorResponse(500, "Timed out", restUri, RestUri.apiErrorCodes.TIME_OUT));
             }
             if (visitorControlHandler.getResult().code != VisitorControlHandler.CompletionCode.SUCCESS) {
-                throw new RestApiException(Response.createErrorResponse(400, visitorControlHandler.getResult().toString()));
+                throw new RestApiException(Response.createErrorResponse(400, visitorControlHandler.getResult().toString(), RestUri.apiErrorCodes.VISITOR_ERROR));
             }
         } catch (InterruptedException e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERRUPTED));
         }
         if (localDataVisitorHandler.getErrors().isEmpty()) {
             final Optional<String> continuationToken;
@@ -138,14 +148,14 @@ public class OperationHandlerImpl implements OperationHandler {
             }
             return new VisitResult(continuationToken, localDataVisitorHandler.getCommaSeparatedJsonDocuments());
         }
-        throw new RestApiException(Response.createErrorResponse(500, localDataVisitorHandler.getErrors(), restUri));
+        throw new RestApiException(Response.createErrorResponse(500, localDataVisitorHandler.getErrors(), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
     }
 
     private void setRoute(SyncSession session, Optional<String> route) throws RestApiException {
         if (! (session instanceof MessageBusSyncSession)) {
             // Not sure if this ever could happen but better be safe.
             throw new RestApiException(Response.createErrorResponse(
-                    400, "Can not set route since the API is not using message bus."));
+                    400, "Can not set route since the API is not using message bus.", RestUri.apiErrorCodes.NO_ROUTE_WHEN_NOT_PART_OF_MESSAGEBUS));
         }
         ((MessageBusSyncSession) session).setRoute(route.orElse("default"));
     }
@@ -161,7 +171,7 @@ public class OperationHandlerImpl implements OperationHandler {
         } catch (DocumentAccessException documentException) {
             throw new RestApiException(createErrorResponse(documentException, restUri));
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION));
         } finally {
             syncSessions.free(syncSession);
         }
@@ -176,7 +186,7 @@ public class OperationHandlerImpl implements OperationHandler {
         } catch (DocumentAccessException documentException) {
             throw new RestApiException(createErrorResponse(documentException, restUri));
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION));
         } finally {
             syncSessions.free(syncSession);
         }
@@ -194,9 +204,13 @@ public class OperationHandlerImpl implements OperationHandler {
             }
             syncSession.remove(documentRemove);
         } catch (DocumentAccessException documentException) {
-            throw new RestApiException(Response.createErrorResponse(400, documentException.getMessage(), restUri));
+            if (documentException.hasConditionNotMetError()) {
+                throw new RestApiException(Response.createErrorResponse(412, "Condition not met: " + documentException.getMessage(),
+                        restUri, RestUri.apiErrorCodes.DOCUMENT_CONDITION_NOT_MET));
+            }
+            throw new RestApiException(Response.createErrorResponse(400, documentException.getMessage(), restUri, RestUri.apiErrorCodes.DOCUMENT_EXCPETION));
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
         } finally {
             syncSessions.free(syncSession);
         }
@@ -218,7 +232,7 @@ public class OperationHandlerImpl implements OperationHandler {
             return Optional.of(outputStream.toString(StandardCharsets.UTF_8.name()));
 
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
         } finally {
             syncSessions.free(syncSession);
         }
@@ -238,7 +252,7 @@ public class OperationHandlerImpl implements OperationHandler {
         if (! wantedCluster.isPresent()) {
             if (clusters.size() != 1) {
                 new RestApiException(Response.createErrorResponse(400, "Several clusters exist: " +
-                        clusterListToString(clusters) + " you must specify one.. "));
+                        clusterListToString(clusters) + " you must specify one. ", RestUri.apiErrorCodes.SEVERAL_CLUSTERS));
             }
             return clusterDefToRoute(clusters.get(0));
         }
@@ -249,7 +263,7 @@ public class OperationHandlerImpl implements OperationHandler {
             }
         }
         throw new RestApiException(Response.createErrorResponse(400, "Your vespa cluster contains the content clusters " +
-                clusterListToString(clusters) + " not " + wantedCluster.get() + ". Please select a valid vespa cluster."));
+                clusterListToString(clusters) + " not " + wantedCluster.get() + ". Please select a valid vespa cluster.", RestUri.apiErrorCodes.MISSING_CLUSTER));
 
     }
 
@@ -304,7 +318,7 @@ public class OperationHandlerImpl implements OperationHandler {
             try {
                 params.setResumeToken(ContinuationHit.getToken(continuation.get()));
             } catch (Exception e) {
-                throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri));
+                throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
             }
         }
         return params;

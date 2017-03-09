@@ -110,7 +110,7 @@ public class OperationProcessor {
     private boolean retriedThis(EndpointResult endpointResult, DocumentSendInfo documentSendInfo, int clusterId) {
         final Result.Detail detail = endpointResult.getDetail();
         // If success, no retries to do.
-        if (detail.isSuccess()) {
+        if (detail.getResultType() == Result.ResultType.OPERATION_EXECUTED) {
             return false;
         }
 
@@ -125,7 +125,8 @@ public class OperationProcessor {
         }
         // TODO: Return proper error code in structured data in next version of internal API.
         // Error codes from messagebus/src/cpp/messagebus/errorcode.h
-        boolean retryThisOperation = detail.isTransient() ||
+        boolean retryThisOperation =
+                detail.getResultType() == Result.ResultType.TRANSITIVE_ERROR ||
                 exceptionMessage.contains("SEND_QUEUE_CLOSED") ||
                 exceptionMessage.contains("ILLEGAL_ROUTE") ||
                 exceptionMessage.contains("NO_SERVICES_FOR_ROUTE") ||

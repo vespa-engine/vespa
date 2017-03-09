@@ -66,8 +66,9 @@ public class OperationHandlerImplTest {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             e.getResponse().render(stream);
             String errorMsg = new String( stream.toByteArray());
-            assertThat(errorMsg, is("{\"errors\":[\"Your vespa cluster contains the content clusters foo2 " +
-                    "(configId2), foo (configId), foo3 (configId2),  not wrong. Please select a valid vespa cluster.\"]}"));
+            assertThat(errorMsg, is("{\"errors\":[{\"description\":" +
+                    "\"MISSING_CLUSTER Your vespa cluster contains the content clusters foo2 (configId2), foo (configId)," +
+                    " foo3 (configId2),  not wrong. Please select a valid vespa cluster.\",\"id\":-9}]}"));
             return;
         }
         fail("Expected exception");

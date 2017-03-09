@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+
 import java.util.Set;
 import java.util.HashSet;
 
@@ -28,6 +30,10 @@ public class DocumentAccessException extends RuntimeException {
     public DocumentAccessException(String message, Set<Integer> errorCodes) {
         super(message);
         this.errorCodes = errorCodes;
+    }
+
+    public boolean hasConditionNotMetError(){
+        return errorCodes.contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED);
     }
 
     public DocumentAccessException(String message, Throwable cause) {
