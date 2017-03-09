@@ -13,9 +13,9 @@
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <algorithm>
+#include <future>
 #include <map>
 #include <memory>
-#include <thread>
 #include <vector>
 
 namespace search {
@@ -225,10 +225,7 @@ void reset_with_wset_value_reference_mappings(
 }
 
 bool has_active_enum_guards(AttributeVector &attr) {
-    bool result;
-    std::thread thread([&result, &attr]() { result = attr.hasActiveEnumGuards(); });
-    thread.join();
-    return result;
+    return std::async(std::launch::async, [&attr] { return attr.hasActiveEnumGuards(); }).get();
 }
 
 TEST_F("Accessors return expected attributes", Fixture) {
