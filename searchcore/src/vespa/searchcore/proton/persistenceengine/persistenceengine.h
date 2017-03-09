@@ -7,7 +7,8 @@
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/rwlock.h>
+#include <mutex>
+#include <shared_mutex>
 
 namespace proton {
 
@@ -87,7 +88,7 @@ private:
     const IResourceWriteFilter             &_writeFilter;
     ClusterState::SP                        _clusterState;
     mutable BucketIdListResultV             _extraModifiedBuckets;
-    mutable vespalib::RWLock                _rwLock;
+    mutable std::shared_timed_mutex         _rwMutex;
 
     HandlerSnapshot::UP getHandlerSnapshot() const;
     HandlerSnapshot::UP getHandlerSnapshot(const document::DocumentId &) const;
@@ -135,9 +136,8 @@ public:
     void propagateSavedClusterState(IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(IPersistenceHandler &handler);
     void populateInitialBucketDB(IPersistenceHandler &targetHandler);
-    vespalib::RWLockReader getRLock(void) const;
-    vespalib::RWLockWriter getWLock(void) const;
+    std::shared_lock<std::shared_timed_mutex> getRLock(void) const;
+    std::unique_lock<std::shared_timed_mutex> getWLock(void) const;
 };
 
 }
-

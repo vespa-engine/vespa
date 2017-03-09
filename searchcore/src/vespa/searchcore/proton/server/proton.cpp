@@ -42,7 +42,6 @@ using document::DocumentTypeRepo;
 using vespalib::FileHeader;
 using vespalib::IllegalStateException;
 using vespalib::MonitorGuard;
-using vespalib::RWLockWriter;
 using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
@@ -760,7 +759,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     _documentDBMap[docTypeName] = ret;
     if (_persistenceEngine.get() != NULL) {
         // Not allowed to get to service layer to call pause().
-        RWLockWriter persistenceWGuard(_persistenceEngine->getWLock());
+        std::unique_lock<std::shared_timed_mutex> persistenceWGuard(_persistenceEngine->getWLock());
         PersistenceHandlerProxy::SP
             persistenceHandler(new PersistenceHandlerProxy(ret));
         if (!_isInitializing) {
@@ -799,7 +798,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     if (_persistenceEngine) {
         {
             // Not allowed to get to service layer to call pause().
-            RWLockWriter persistenceWguard(_persistenceEngine->getWLock());
+            std::unique_lock<std::shared_timed_mutex> persistenceWguard(_persistenceEngine->getWLock());
             IPersistenceHandler::SP oldHandler;
             oldHandler = _persistenceEngine->removeHandler(docTypeName);
             if (_initComplete && oldHandler) {

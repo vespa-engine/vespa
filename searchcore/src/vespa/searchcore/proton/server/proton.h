@@ -31,7 +31,6 @@
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/net/state_server.h>
-#include <vespa/vespalib/util/rwlock.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
 #include <shared_mutex>
