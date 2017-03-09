@@ -9,7 +9,7 @@ LOG_SETUP("imported_attributes_context_test");
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <thread>
+#include <future>
 
 using namespace proton;
 using search::AttributeVector;
@@ -42,10 +42,7 @@ addDoc(AttributeVector &attr)
 bool
 hasActiveEnumGuards(AttributeVector &attr)
 {
-    bool result;
-    std::thread thread([&result,&attr]() { result = attr.hasActiveEnumGuards(); });
-    thread.join();
-    return result;
+    return std::async(std::launch::async, [&attr] { return attr.hasActiveEnumGuards(); }).get();
 }
 
 void

@@ -12,10 +12,11 @@
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <memory>
-#include <map>
-#include <vector>
 #include <algorithm>
+#include <future>
+#include <map>
+#include <memory>
+#include <vector>
 
 namespace search {
 namespace attribute {
@@ -228,6 +229,10 @@ void reset_with_wset_value_reference_mappings(
     f.reset_with_wset_value_reference_mappings<AttrVecType, WeightedValueType>(type, mappings);
 }
 
+bool has_active_enum_guards(AttributeVector &attr) {
+    return std::async(std::launch::async, [&attr] { return attr.hasActiveEnumGuards(); }).get();
+}
+
 TEST_F("Accessors return expected attributes", Fixture) {
     EXPECT_EQUAL(f.imported_attr->getReferenceAttribute().get(),
                  f.reference_attr.get());
@@ -290,11 +295,6 @@ TEST_F("acquireEnumGuard() acquires enum guard on target and regular guard on re
     add_n_docs_with_undefined_values(*f.target_attr, 2);
     {
         auto guard = f.imported_attr->acquireEnumGuard();
-        // We can add docs, but not mutate enum values. That would deadlock the test, as the
-        // attribute enum guard already holds a shared lock. Could test the mutex itself to
-        // verify that it is indeed locked, but that's a private member in AttributeVector,
-        // so would be Very Dirty(tm).
-        // TODO find a robust way to test this.
         add_n_docs_with_undefined_values(*f.target_attr, 1);
         add_n_docs_with_undefined_values(*f.reference_attr, 1);
 
@@ -303,12 +303,14 @@ TEST_F("acquireEnumGuard() acquires enum guard on target and regular guard on re
 
         EXPECT_EQUAL(3u, f.target_attr->getFirstUsedGeneration());
         EXPECT_EQUAL(1u, f.reference_attr->getFirstUsedGeneration());
+        EXPECT_TRUE(has_active_enum_guards(*f.target_attr));
     }
     // Force a generation handler update
     add_n_docs_with_undefined_values(*f.reference_attr, 1);
     add_n_docs_with_undefined_values(*f.target_attr, 1);
     EXPECT_EQUAL(7u, f.target_attr->getFirstUsedGeneration());
     EXPECT_EQUAL(3u, f.reference_attr->getFirstUsedGeneration());
+    EXPECT_FALSE(has_active_enum_guards(*f.target_attr));
 }
 
 TEST_F("Single-valued integer attribute values can be retrieved via reference", Fixture) {
