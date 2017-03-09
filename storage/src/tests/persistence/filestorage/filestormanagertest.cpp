@@ -683,8 +683,8 @@ public:
     bool _done;
     bool _threadDone;
 
-    MessagePusherThread(FileStorHandler& handler, Document::SP doc)
-        : _handler(handler), _doc(doc), _done(false), _threadDone(false) {}
+    MessagePusherThread(FileStorHandler& handler, Document::SP doc);
+    ~MessagePusherThread();
 
     void run() {
         while (!_done) {
@@ -701,6 +701,11 @@ public:
         _threadDone = true;
     }
 };
+
+MessagePusherThread::MessagePusherThread(FileStorHandler& handler, Document::SP doc)
+    : _handler(handler), _doc(doc), _done(false), _threadDone(false)
+{}
+MessagePusherThread::~MessagePusherThread() {}
 
 class MessageFetchingThread : public document::Runnable {
 public:

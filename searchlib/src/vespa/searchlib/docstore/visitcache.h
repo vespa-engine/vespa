@@ -74,6 +74,7 @@ public:
     CompressedBlobSet & operator=(CompressedBlobSet && rhs) = default;
     CompressedBlobSet(const CompressedBlobSet & rhs) = default;
     CompressedBlobSet & operator=(const CompressedBlobSet & rhs) = default;
+    ~CompressedBlobSet();
     size_t size() const;
     bool empty() const { return _positions.empty(); }
     BlobSet getBlobSet() const;

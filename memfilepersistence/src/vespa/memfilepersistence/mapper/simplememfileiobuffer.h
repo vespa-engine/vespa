@@ -157,10 +157,8 @@ public:
     public:
         static const size_t DEFAULT_STREAM_ALLOC_SIZE = 5 * 2014;
 
-        HeaderChunkEncoder(const document::DocumentId& docId)
-            : _serializedDoc(DEFAULT_STREAM_ALLOC_SIZE),
-              _docId(docId.toString())
-        { }
+        HeaderChunkEncoder(const document::DocumentId& docId);
+        ~HeaderChunkEncoder();
 
         /**
          * Serializes header chunk to buf, which must have at least a size

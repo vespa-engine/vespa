@@ -202,6 +202,7 @@ public:
 
 public:
     TestData();
+    ~TestData();
     bool start();
 };
 
@@ -233,6 +234,8 @@ TestData::TestData() :
 {
     _retryPolicy->setBaseDelay(0);
 }
+
+TestData::~TestData() {}
 
 bool
 TestData::start()

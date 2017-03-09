@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".queryeval.weak_and_heap");
+
 #include "weak_and_heap.h"
-#include <limits>
 
 namespace search {
 namespace queryeval {
@@ -15,6 +12,8 @@ SharedWeakAndPriorityQueue::SharedWeakAndPriorityQueue(uint32_t scoresToTrack) :
 {
     _bestScores.reserve(scoresToTrack);
 }
+
+SharedWeakAndPriorityQueue::~SharedWeakAndPriorityQueue() { }
 
 void
 SharedWeakAndPriorityQueue::adjust(score_t *begin, score_t *end)

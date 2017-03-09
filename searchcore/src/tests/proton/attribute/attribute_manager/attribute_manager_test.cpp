@@ -128,18 +128,21 @@ struct ImportedAttributesRepoBuilder {
 struct BaseFixture
 {
     test::DirectoryHandler _dirHandler;
-    DummyFileHeaderContext   _fileHeaderContext;
-    ForegroundTaskExecutor   _attributeFieldWriter;
-    HwInfo                   _hwInfo;
-    BaseFixture()
-        : _dirHandler(test_dir),
-          _fileHeaderContext(),
-          _attributeFieldWriter(),
-          _hwInfo()
-    {
-    }
+    DummyFileHeaderContext _fileHeaderContext;
+    ForegroundTaskExecutor _attributeFieldWriter;
+    HwInfo                 _hwInfo;
+    BaseFixture();
+    ~BaseFixture();
 };
 
+BaseFixture::BaseFixture()
+    : _dirHandler(test_dir),
+      _fileHeaderContext(),
+      _attributeFieldWriter(),
+      _hwInfo()
+{
+}
+BaseFixture::~BaseFixture() {}
 
 struct AttributeManagerFixture
 {
@@ -147,15 +150,8 @@ struct AttributeManagerFixture
     proton::AttributeManager &_m;
     AttributeWriter _aw;
     ImportedAttributesRepoBuilder _builder;
-    AttributeManagerFixture(BaseFixture &bf)
-        : _msp(std::make_shared<proton::AttributeManager>
-               (test_dir, "test.subdb", TuneFileAttributes(), bf._fileHeaderContext,
-                bf._attributeFieldWriter, bf._hwInfo)),
-          _m(*_msp),
-          _aw(_msp),
-          _builder()
-    {
-    }
+    AttributeManagerFixture(BaseFixture &bf);
+    ~AttributeManagerFixture();
     AttributeVector::SP addAttribute(const vespalib::string &name) {
         return _m.addAttribute(name, INT32_SINGLE, createSerialNum);
     }
@@ -166,6 +162,15 @@ struct AttributeManagerFixture
         _m.setImportedAttributes(_builder.build());
     }
 };
+
+AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
+    : _msp(std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
+                                                      bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
+      _m(*_msp),
+      _aw(_msp),
+      _builder()
+{}
+AttributeManagerFixture::~AttributeManagerFixture() {}
 
 struct Fixture : public BaseFixture, public AttributeManagerFixture
 {
@@ -205,28 +210,31 @@ struct ParallelAttributeManager
     std::shared_ptr<AttributeManager::SP> mgr;
     AttributeManagerInitializer::SP initializer;
 
-    ParallelAttributeManager(search::SerialNum configSerialNum,
-                             AttributeManager::SP baseAttrMgr,
-                             const AttributesConfig &attrCfg,
-                             uint32_t docIdLimit)
-        : documentMetaStoreInitTask(std::make_shared<DummyInitializerTask>()),
-          bucketDbOwner(std::make_shared<BucketDBOwner>()),
-          documentMetaStore(std::make_shared<DocumentMetaStore>(bucketDbOwner)),
-          attributeGrow(),
-          attributeGrowNumDocs(1),
-          fastAccessAttributesOnly(false),
-          mgr(std::make_shared<AttributeManager::SP>()),
-          initializer(std::make_shared<AttributeManagerInitializer>
-                              (configSerialNum, documentMetaStoreInitTask, documentMetaStore, baseAttrMgr, attrCfg,
-                               attributeGrow, attributeGrowNumDocs, fastAccessAttributesOnly, mgr))
-    {
-        documentMetaStore->setCommittedDocIdLimit(docIdLimit);
-        vespalib::ThreadStackExecutor executor(3, 128 * 1024);
-        initializer::TaskRunner taskRunner(executor);
-        taskRunner.runTask(initializer);
-    }
+    ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
+                             const AttributesConfig &attrCfg, uint32_t docIdLimit);
+    ~ParallelAttributeManager();
 };
 
+ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
+                                                   const AttributesConfig &attrCfg, uint32_t docIdLimit)
+    : documentMetaStoreInitTask(std::make_shared<DummyInitializerTask>()),
+      bucketDbOwner(std::make_shared<BucketDBOwner>()),
+      documentMetaStore(std::make_shared<DocumentMetaStore>(bucketDbOwner)),
+      attributeGrow(),
+      attributeGrowNumDocs(1),
+      fastAccessAttributesOnly(false),
+      mgr(std::make_shared<AttributeManager::SP>()),
+      initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
+                                                                documentMetaStore, baseAttrMgr, attrCfg,
+                                                                attributeGrow, attributeGrowNumDocs,
+                                                                fastAccessAttributesOnly, mgr))
+{
+    documentMetaStore->setCommittedDocIdLimit(docIdLimit);
+    vespalib::ThreadStackExecutor executor(3, 128 * 1024);
+    initializer::TaskRunner taskRunner(executor);
+    taskRunner.runTask(initializer);
+}
+ParallelAttributeManager::~ParallelAttributeManager() {}
 
 TEST_F("require that attributes are added", Fixture)
 {

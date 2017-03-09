@@ -34,12 +34,8 @@ private:
     std::set<uint32_t> _data;
 
 public:
-    MyTerm(const std::set<uint32_t> &doc,
-           const std::set<uint32_t> &pos)
-        : _docs(doc),
-          _data(pos)
-    {
-    }
+    MyTerm(const std::set<uint32_t> &doc, const std::set<uint32_t> &pos);
+    ~MyTerm();
 
     search::queryeval::Blueprint::UP
     make_blueprint(uint32_t fieldId, search::fef::TermFieldHandle handle) const
@@ -62,6 +58,12 @@ public:
     }
 };
 
+MyTerm::MyTerm(const std::set<uint32_t> &doc, const std::set<uint32_t> &pos)
+    : _docs(doc),
+      _data(pos)
+{}
+MyTerm::~MyTerm() {}
+
 class MyQuery {
 private:
     std::vector<MyTerm*> _terms;
@@ -69,12 +71,8 @@ private:
     uint32_t             _window;
 
 public:
-    MyQuery(bool ordered, uint32_t window) :
-        _terms(),
-        _ordered(ordered),
-        _window(window) {
-        // empty
-    }
+    MyQuery(bool ordered, uint32_t window);
+    ~MyQuery();
 
     MyQuery &addTerm(MyTerm &term) {
         _terms.push_back(&term);
@@ -97,6 +95,13 @@ public:
         return _window;
     }
 };
+
+MyQuery::MyQuery(bool ordered, uint32_t window)
+    : _terms(),
+      _ordered(ordered),
+      _window(window)
+{}
+MyQuery::~MyQuery() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 //

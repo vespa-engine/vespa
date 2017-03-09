@@ -79,6 +79,7 @@ public:
     SearchRequest::UP     request;
 
     SearchReply();
+    ~SearchReply();
     SearchReply(const SearchReply &rhs); // for test only
     
     void setDistributionKey(uint32_t key) { _distributionKey = key; }

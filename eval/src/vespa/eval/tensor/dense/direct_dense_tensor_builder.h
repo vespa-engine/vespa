@@ -22,6 +22,7 @@ private:
 
 public:
     DirectDenseTensorBuilder(const eval::ValueType &type_in);
+    ~DirectDenseTensorBuilder();
     void insertCell(const Address &address, double cellValue);
     Tensor::UP build();
 };

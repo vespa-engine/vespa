@@ -205,11 +205,8 @@ public:
     MTree _tree;
     MRTree _rtree;
 
-    MockTree()
-        : _tree(),
-          _rtree()
-    {
-    }
+    MockTree();
+    ~MockTree();
 
 
     void
@@ -239,6 +236,12 @@ public:
     }
 };
 
+
+MockTree::MockTree()
+    : _tree(),
+      _rtree()
+{}
+MockTree::~MockTree() {}
 
 class MyTreeForceApplyStore : public MyTreeStore
 {

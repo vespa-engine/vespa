@@ -19,6 +19,7 @@ private:
 
 public:
     TransportLatch(uint32_t cnt);
+    ~TransportLatch();
     virtual void send(mbus::Reply::UP reply,
                       ResultUP result,
                       bool documentWasFound,

@@ -10,6 +10,7 @@ struct MyBuffer : public Output {
     std::vector<char> data;
     size_t            used;
     MyBuffer() : data(1024 * 1024), used(0) {}
+    ~MyBuffer();
     WritableMemory reserve(size_t bytes) override {
         assert(data.size() >= (used + bytes));
         return WritableMemory(&data[used], data.size() - used);
@@ -19,6 +20,8 @@ struct MyBuffer : public Output {
         return *this;
     }
 };
+
+MyBuffer::~MyBuffer() { }
 
 std::string make_name(size_t idx) {
     return make_string("summary_feature_%zu", idx);

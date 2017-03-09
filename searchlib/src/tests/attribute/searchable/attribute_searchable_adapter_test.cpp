@@ -79,17 +79,11 @@ class MyAttributeManager : public IAttributeManager {
     AttributeVector::SP _other;
 
 public:
-    MyAttributeManager(MyAttributeManager && rhs) :
-        IAttributeManager(),
-        _attribute_vector(std::move(rhs._attribute_vector)),
-        _other(std::move(rhs._other))
-    {
-    }
-    explicit MyAttributeManager(AttributeVector *attr)
-        : _attribute_vector(attr), _other() {}
+    MyAttributeManager(MyAttributeManager && rhs);
+    explicit MyAttributeManager(AttributeVector *attr);
 
-    explicit MyAttributeManager(AttributeVector::SP attr)
-        : _attribute_vector(attr), _other() {}
+    explicit MyAttributeManager(AttributeVector::SP attr);
+    ~MyAttributeManager();
 
     void set_other(AttributeVector::SP attr) {
         _other = attr;
@@ -143,11 +137,8 @@ struct Result {
     std::vector<Hit> hits;
     vespalib::string iterator_dump;
 
-    Result(size_t est_hits_in, bool est_empty_in)
-        : est_hits(est_hits_in), est_empty(est_empty_in),
-          has_minmax(false), min_weight(0), max_weight(0),
-          wand_hits(0), wand_initial_threshold(0), wand_boost_factor(0.0),
-          hits(), iterator_dump() {}
+    Result(size_t est_hits_in, bool est_empty_in);
+    ~Result();
 
     void set_minmax(int32_t min, int32_t max) {
         has_minmax = true;
@@ -155,6 +146,31 @@ struct Result {
         max_weight = max;
     }
 };
+
+Result::Result(size_t est_hits_in, bool est_empty_in)
+    : est_hits(est_hits_in), est_empty(est_empty_in), has_minmax(false), min_weight(0), max_weight(0), wand_hits(0),
+      wand_initial_threshold(0), wand_boost_factor(0.0), hits(), iterator_dump()
+{}
+
+Result::~Result() {}
+
+
+MyAttributeManager::MyAttributeManager(MyAttributeManager && rhs)
+    : IAttributeManager(),
+      _attribute_vector(std::move(rhs._attribute_vector)),
+      _other(std::move(rhs._other))
+{}
+MyAttributeManager::MyAttributeManager(AttributeVector *attr)
+    : _attribute_vector(attr),
+      _other()
+{}
+
+MyAttributeManager::MyAttributeManager(AttributeVector::SP attr)
+    : _attribute_vector(std::move(attr)),
+      _other()
+{}
+
+MyAttributeManager::~MyAttributeManager() {}
 
 void extract_posting_info(Result &result, const PostingInfo *postingInfo) {
     if (postingInfo != NULL) {

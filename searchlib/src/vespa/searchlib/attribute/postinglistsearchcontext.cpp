@@ -2,9 +2,10 @@
 
 #include "postinglistsearchcontext.h"
 #include "postinglistsearchcontext.hpp"
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
 #include "attributeiterators.hpp"
+#include "diversity.hpp"
+#include <vespa/searchlib/btree/btreeiterator.hpp>
+
 
 
 namespace search {
@@ -41,7 +42,7 @@ PostingListSearchContext(const Dictionary &dictionary,
 }
 
 
-PostingListSearchContext::~PostingListSearchContext(void)
+PostingListSearchContext::~PostingListSearchContext()
 {
 }
 
@@ -72,7 +73,7 @@ PostingListSearchContext::lookupRange(const EnumStoreComparator &low,
 
 
 void
-PostingListSearchContext::lookupSingle(void)
+PostingListSearchContext::lookupSingle()
 {
     if (_lowerDictItr.valid()) {
         _pidx = _lowerDictItr.getData();

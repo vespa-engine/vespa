@@ -22,7 +22,7 @@ class DistributorProcess : public Process {
 
 public:
     DistributorProcess(const config::ConfigUri & configUri);
-    ~DistributorProcess() { shutdown(); }
+    ~DistributorProcess();
 
     virtual void shutdown();
 

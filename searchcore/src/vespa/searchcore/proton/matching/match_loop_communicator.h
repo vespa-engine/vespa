@@ -42,8 +42,8 @@ private:
     RangeCover             _rangeCover;
 
 public:
-    MatchLoopCommunicator(size_t threads, size_t topN)
-        : _estimate_match_frequency(threads), _selectBest(threads, topN), _rangeCover(threads) {}
+    MatchLoopCommunicator(size_t threads, size_t topN);
+    ~MatchLoopCommunicator();
 
     virtual double estimate_match_frequency(const Matches &matches) {
         return _estimate_match_frequency.rendezvous(matches);

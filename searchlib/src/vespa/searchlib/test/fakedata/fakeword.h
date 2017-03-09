@@ -12,27 +12,18 @@
 #include <vespa/searchlib/diskindex/fieldreader.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 
-namespace search
-{
+namespace search {
 
-namespace fakedata
-{
+namespace fakedata {
 
 
 class CheckPointCallback
 {
 public:
-    CheckPointCallback(void)
-    {
-    }
+    CheckPointCallback() {}
+    virtual ~CheckPointCallback() {}
 
-    virtual
-    ~CheckPointCallback(void)
-    {
-    }
-
-    virtual void
-    checkPoint(void) = 0;
+    virtual void checkPoint() = 0;
 };
 
 /*
@@ -52,16 +43,14 @@ public:
         int32_t _elementWeight;
         uint32_t _elementLen;
 
-        inline bool
-        operator<(const DocWordPosFeature &rhs) const
-        {
+        bool operator<(const DocWordPosFeature &rhs) const {
             if (_elementId != rhs._elementId)
                 return _elementId < rhs._elementId;
             return _wordPos < rhs._wordPos;
         }
 
-        DocWordPosFeature(void);
-        ~DocWordPosFeature(void);
+        DocWordPosFeature();
+        ~DocWordPosFeature();
     };
 
     typedef std::vector<DocWordPosFeature> DocWordPosFeatureList;
@@ -69,8 +58,8 @@ public:
     class DocWordCollapsedFeature
     {
     public:
-        DocWordCollapsedFeature(void);
-        ~DocWordCollapsedFeature(void);
+        DocWordCollapsedFeature();
+        ~DocWordCollapsedFeature();
     };
 
     class DocWordFeature
@@ -81,8 +70,8 @@ public:
         uint32_t _positions;
         uint32_t _accPositions;	// accumulated positions for previous words
 
-        DocWordFeature(void);
-        ~DocWordFeature(void);
+        DocWordFeature();
+        ~DocWordFeature();
     };
 
     typedef std::vector<DocWordFeature> DocWordFeatureList;
@@ -93,57 +82,32 @@ public:
         uint32_t _random;
         int32_t _ref;
 
-        Randomizer(void)
-            : _random(0),
-              _ref(0)
-        {
-        }
+        Randomizer() : _random(0), _ref(0) {}
 
-        bool
-        operator<(const Randomizer &rhs) const
-        {
+        bool operator<(const Randomizer &rhs) const {
             if (_random != rhs._random)
                 return _random < rhs._random;
             return _ref < rhs._ref;
         }
 
-        bool
-        operator==(const Randomizer &rhs) const
-        {
+        bool operator==(const Randomizer &rhs) const {
             return _random == rhs._random && _ref == rhs._ref;
         }
 
-        bool
-        isExtra(void) const
-        {
-            return _ref < 0;
-        }
+        bool isExtra() const { return _ref < 0; }
 
-        bool
-        isRemove(void) const
-        {
-            return isExtra() && (_ref & 1) == 0;
-        }
-
-        uint32_t
-        extraIdx(void) const
-        {
-            return (~_ref) >> 1;
-        }
-
+        bool isRemove() const { return isExtra() && (_ref & 1) == 0; }
+        uint32_t extraIdx() const { return (~_ref) >> 1; }
     };
 
     class RandomizedWriter
     {
     public:
-        virtual
-        ~RandomizedWriter(void);
+        virtual~RandomizedWriter();
 
-        virtual void
-        add(uint32_t wordIdx, index::DocIdAndFeatures &features) = 0;
+        virtual void add(uint32_t wordIdx, index::DocIdAndFeatures &features) = 0;
 
-        virtual void
-        remove(uint32_t wordIdx, uint32_t docId) = 0;
+        virtual void remove(uint32_t wordIdx, uint32_t docId) = 0;
     };
 
     class RandomizedReader
@@ -156,10 +120,8 @@ public:
         std::vector<Randomizer>::const_iterator _re;
         index::DocIdAndPosOccFeatures _features;
     public:
-        RandomizedReader(void);
-
-        void
-        read(void);
+        RandomizedReader();
+        void read();
 
         void
         write(RandomizedWriter &writer)
@@ -174,11 +136,7 @@ public:
             }
         }
 
-        bool
-        isValid(void) const
-        {
-            return _valid;
-        }
+        bool isValid() const { return _valid; }
 
         bool operator<(const RandomizedReader &rhs) const
         {
@@ -189,9 +147,7 @@ public:
             return _wordIdx < rhs._wordIdx;
         }
 
-        void
-        setup(const FakeWord *fw,
-              uint32_t wordIdx);
+        void setup(const FakeWord *fw, uint32_t wordIdx);
     };
 
     DocWordFeatureList _postings;
@@ -215,8 +171,7 @@ public:
                 uint32_t docIdLimit,
                 uint32_t tempWordDocs);
 
-    void
-    setupRandomizer(search::Rand48 &rnd);
+    void setupRandomizer(search::Rand48 &rnd);
 
     const DocWordFeature &
     getDocWordFeature(const Randomizer &r) const
@@ -283,7 +238,7 @@ public:
              const PosOccFieldsParams &fieldsParams,
              uint32_t packedIndex);
 
-    ~FakeWord(void);
+    ~FakeWord();
 
     bool
     validate(search::queryeval::SearchIterator *iterator,
@@ -296,9 +251,7 @@ public:
              const fef::TermFieldMatchDataArray &matchData,
              bool verbose) const;
 
-    bool
-    validate(search::queryeval::SearchIterator *iterator,
-             bool verbose) const;
+    bool validate(search::queryeval::SearchIterator *iterator, bool verbose) const;
 
     bool
     validate(std::shared_ptr<search::diskindex::FieldReader> &fieldReader,
@@ -309,11 +262,8 @@ public:
              uint32_t checkPointInterval,
              CheckPointCallback *const checkPointCallback) const;
 
-    void
-    validate(const std::vector<uint32_t> &docIds) const;
-
-    void
-    validate(const BitVector &bv) const;
+    void validate(const std::vector<uint32_t> &docIds) const;
+    void validate(const BitVector &bv) const;
 
     bool
     dump(std::shared_ptr<search::diskindex::FieldWriter> &fieldWriter,
@@ -322,31 +272,11 @@ public:
          uint32_t checkPointInterval,
          CheckPointCallback *checkPointCallback) const;
 
-    const std::string &getName(void) const
-    {
-        return _name;
-    }
-
-    uint32_t
-    getDocIdLimit(void) const
-    {
-        return _docIdLimit;
-    }
-
-    const PosOccFieldsParams &
-    getFieldsParams(void) const
-    {
-        return _fieldsParams;
-    }
-
-    uint32_t
-    getPackedIndex(void) const
-    {
-        return _packedIndex;
-    }
-
-    void
-    addDocIdBias(uint32_t docIdBias);
+    const std::string &getName() const { return _name; }
+    uint32_t getDocIdLimit() const { return _docIdLimit; }
+    const PosOccFieldsParams &getFieldsParams() const { return _fieldsParams; }
+    uint32_t getPackedIndex() const { return _packedIndex; }
+    void addDocIdBias(uint32_t docIdBias);
 };
 
 } // namespace fakedata

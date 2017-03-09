@@ -17,6 +17,12 @@ LOG_SETUP(".vdslib.nodestate");
 namespace storage {
 namespace lib {
 
+NodeState::NodeState(const NodeState &) = default;
+NodeState & NodeState::operator = (const NodeState &) = default;
+NodeState::NodeState(NodeState &&) = default;
+NodeState & NodeState::operator = (NodeState &&) = default;
+NodeState::~NodeState() { }
+
 NodeState::NodeState()
     : _type(0),
       _state(0),

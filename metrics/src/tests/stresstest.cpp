@@ -22,58 +22,72 @@ struct StressTest : public CppUnit::TestFixture {
 CPPUNIT_TEST_SUITE_REGISTRATION(StressTest);
 
 namespace {
-    struct InnerMetricSet : public MetricSet {
-        const LoadTypeSet& _loadTypes;
-        LongCountMetric _count;
-        LongAverageMetric _value1;
-        LongAverageMetric _value2;
-        SumMetric<LongAverageMetric> _valueSum;
-        LoadMetric<LongAverageMetric> _load;
+struct InnerMetricSet : public MetricSet {
+    const LoadTypeSet& _loadTypes;
+    LongCountMetric _count;
+    LongAverageMetric _value1;
+    LongAverageMetric _value2;
+    SumMetric<LongAverageMetric> _valueSum;
+    LoadMetric<LongAverageMetric> _load;
 
-        InnerMetricSet(const char* name, const LoadTypeSet& lt,
-                       MetricSet* owner = 0)
-            : MetricSet(name, "", "", owner),
-              _loadTypes(lt),
-              _count("count", "", "", this),
-              _value1("value1", "", "", this),
-              _value2("value2", "", "", this),
-              _valueSum("valuesum", "", "", this),
-              _load(lt, LongAverageMetric("load", "", ""), this)
-        {
-            _valueSum.addMetricToSum(_value1);
-            _valueSum.addMetricToSum(_value2);
-        }
+    InnerMetricSet(const char* name, const LoadTypeSet& lt, MetricSet* owner = 0);
+    ~InnerMetricSet();
 
-        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
-                      MetricSet* owner, bool includeUnused) const override
-        {
-            if (copyType != CLONE) {
-                return MetricSet::clone(ownerList, copyType, owner, includeUnused);
-            }
-            InnerMetricSet * myset = new InnerMetricSet(getName().c_str(), _loadTypes, owner);
-            myset->assignValues(*this);
-            return myset;
-        }
-    };
-    struct OuterMetricSet : public MetricSet {
-        InnerMetricSet _inner1;
-        InnerMetricSet _inner2;
-        SumMetric<InnerMetricSet> _innerSum;
-        InnerMetricSet _tmp;
-        LoadMetric<InnerMetricSet> _load;
+    MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                  MetricSet* owner, bool includeUnused) const override;
+};
 
-        OuterMetricSet(const LoadTypeSet& lt, MetricSet* owner = 0)
-            : MetricSet("outer", "", "", owner),
-              _inner1("inner1", lt, this),
-              _inner2("inner2", lt, this),
-              _innerSum("innersum", "", "", this),
-              _tmp("innertmp", lt, 0),
-              _load(lt, _tmp, this)
-        {
-            _innerSum.addMetricToSum(_inner1);
-            _innerSum.addMetricToSum(_inner2);
-        }
-    };
+InnerMetricSet::InnerMetricSet(const char* name, const LoadTypeSet& lt, MetricSet* owner)
+    : MetricSet(name, "", "", owner),
+      _loadTypes(lt),
+      _count("count", "", "", this),
+      _value1("value1", "", "", this),
+      _value2("value2", "", "", this),
+      _valueSum("valuesum", "", "", this),
+      _load(lt, LongAverageMetric("load", "", ""), this)
+{
+    _valueSum.addMetricToSum(_value1);
+    _valueSum.addMetricToSum(_value2);
+}
+InnerMetricSet::~InnerMetricSet() { }
+
+    MetricSet*
+    InnerMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                     MetricSet* owner, bool includeUnused) const
+{
+    if (copyType != CLONE) {
+    return MetricSet::clone(ownerList, copyType, owner, includeUnused);
+}
+    InnerMetricSet * myset = new InnerMetricSet(getName().c_str(), _loadTypes, owner);
+    myset->assignValues(*this);
+    return myset;
+}
+
+struct OuterMetricSet : public MetricSet {
+    InnerMetricSet _inner1;
+    InnerMetricSet _inner2;
+    SumMetric<InnerMetricSet> _innerSum;
+    InnerMetricSet _tmp;
+    LoadMetric<InnerMetricSet> _load;
+
+    OuterMetricSet(const LoadTypeSet& lt, MetricSet* owner = 0);
+    ~OuterMetricSet();
+};
+
+OuterMetricSet::OuterMetricSet(const LoadTypeSet& lt, MetricSet* owner)
+        : MetricSet("outer", "", "", owner),
+          _inner1("inner1", lt, this),
+          _inner2("inner2", lt, this),
+          _innerSum("innersum", "", "", this),
+          _tmp("innertmp", lt, 0),
+          _load(lt, _tmp, this)
+{
+    _innerSum.addMetricToSum(_inner1);
+    _innerSum.addMetricToSum(_inner2);
+}
+
+OuterMetricSet::~OuterMetricSet() { }
+
     struct Hammer : public document::Runnable {
         typedef vespalib::LinkedPtr<Hammer> LP;
 

@@ -174,6 +174,8 @@ private:
         : public HandlerInvoker
     {
     public:
+        HandleGetBucketDiffReplyInvoker();
+        ~HandleGetBucketDiffReplyInvoker();
         void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
         void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
         std::string afterInvoke(MergeHandlerTest&, MergeHandler&);
@@ -196,11 +198,8 @@ private:
         : public MultiPositionHandlerInvoker
     {
     public:
-        HandleApplyBucketDiffReplyInvoker()
-            : _counter(0),
-              _stub(),
-              _applyCmd()
-        {}
+        HandleApplyBucketDiffReplyInvoker();
+        ~HandleApplyBucketDiffReplyInvoker();
         void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
         void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
         std::string afterInvoke(MergeHandlerTest&, MergeHandler&);
@@ -218,6 +217,16 @@ private:
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(MergeHandlerTest);
+
+
+MergeHandlerTest::HandleGetBucketDiffReplyInvoker::HandleGetBucketDiffReplyInvoker() {}
+MergeHandlerTest::HandleGetBucketDiffReplyInvoker::~HandleGetBucketDiffReplyInvoker() {}
+MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::HandleApplyBucketDiffReplyInvoker()
+    : _counter(0),
+      _stub(),
+      _applyCmd()
+{}
+MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::~HandleApplyBucketDiffReplyInvoker() {}
 
 void
 MergeHandlerTest::setUp() {

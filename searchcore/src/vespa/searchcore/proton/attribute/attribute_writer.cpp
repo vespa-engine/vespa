@@ -195,6 +195,8 @@ AttributeWriter::AttributeWriter(const proton::IAttributeManager::SP &mgr)
 {
 }
 
+AttributeWriter::~AttributeWriter() {}
+
 std::vector<search::AttributeVector *>
 AttributeWriter::getWritableAttributes() const
 {

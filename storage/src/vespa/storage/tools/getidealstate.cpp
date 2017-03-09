@@ -25,42 +25,8 @@ struct Options : public vespalib::ProgramOptions {
     bool bucketsOnStdIn;
     bool verbose;
 
-    Options(int argc, const char* const* argv)
-        : vespalib::ProgramOptions(argc, argv)
-    {
-        setSyntaxMessage(
-                "Utility program for calculating the ideal state of "
-                "buckets. Useful to verify correctness of distribution "
-                "operations."
-        );
-        addOption("h help", showSyntaxPage, false,
-                  "Shows this help page");
-        addOption("s clusterstate", clusterState, std::string(""),
-                  "The state of the cluster to calculate position in");
-        addOption("n diskcount", diskCount, uint32_t(0),
-                  "The number of disks on each node");
-        addOption("r redundancy", redundancy, uint32_t(2),
-                  "The redundancy to keep for each bucket");
-        addOption("diskdistribution", diskDistribution,
-                  std::string("MODULO_BID"),
-                  "Disk distribution algorithm used");
-        addOption("u upstates", upStates, std::string("uims"),
-                  "States to consider as up in ideal state calculations");
-        addOption("i stdin", bucketsOnStdIn, false,
-                  "Read stdin to get buckets to calculate ideal position for");
-        addOption("v verbose", verbose, false,
-                  "Print extra information while running");
-        addArgument("bucket", bucket, std::string(""),
-                    "Bucket for which to calculate ideal state");
-
-        addOptionHeader(
-                "By default, it will be assumed that all nodes are in one top "
-                "group, and no config will be read to calculate bucket "
-                "positions. If a cluster name is specified, config will be "
-                "read to get group hierarchy correctly for cluster.");
-        addOption("c clustername", clusterName, std::string(""),
-                  "Name of the cluster to get config from");
-    }
+    Options(int argc, const char* const* argv);
+    ~Options();
 
     bool useConfig() const { return !clusterName.empty(); }
 
@@ -70,6 +36,39 @@ struct Options : public vespalib::ProgramOptions {
         return ost.str();
     }
 };
+
+Options::Options(int argc, const char* const* argv)
+    : vespalib::ProgramOptions(argc, argv)
+{
+    setSyntaxMessage("Utility program for calculating the ideal state of buckets."
+                     " Useful to verify correctness of distribution operations.");
+    addOption("h help", showSyntaxPage, false,
+              "Shows this help page");
+    addOption("s clusterstate", clusterState, std::string(""),
+              "The state of the cluster to calculate position in");
+    addOption("n diskcount", diskCount, uint32_t(0),
+              "The number of disks on each node");
+    addOption("r redundancy", redundancy, uint32_t(2),
+              "The redundancy to keep for each bucket");
+    addOption("diskdistribution", diskDistribution, std::string("MODULO_BID"),
+              "Disk distribution algorithm used");
+    addOption("u upstates", upStates, std::string("uims"),
+              "States to consider as up in ideal state calculations");
+    addOption("i stdin", bucketsOnStdIn, false,
+              "Read stdin to get buckets to calculate ideal position for");
+    addOption("v verbose", verbose, false,
+              "Print extra information while running");
+    addArgument("bucket", bucket, std::string(""),
+                "Bucket for which to calculate ideal state");
+    addOptionHeader("By default, it will be assumed that all nodes are in one top "
+                    "group, and no config will be read to calculate bucket "
+                    "positions. If a cluster name is specified, config will be "
+                    "read to get group hierarchy correctly for cluster.");
+    addOption("c clustername", clusterName, std::string(""),
+              "Name of the cluster to get config from");
+}
+Options::~Options() {}
+
 
 void processBucket(const lib::Distribution& distribution,
                    const lib::ClusterState& clusterState,

@@ -282,18 +282,11 @@ struct TestFieldPathUpdate : FieldPathUpdate
 
     mutable std::string _str;
 
-    TestFieldPathUpdate(const DocumentTypeRepo& repo,
-                        const DataType *type,
-                        const std::string& fieldPath,
-                        const std::string& whereClause)
-        : FieldPathUpdate(repo, *type, fieldPath, whereClause)
-    {
-    }
+    ~TestFieldPathUpdate();
+    TestFieldPathUpdate(const DocumentTypeRepo& repo, const DataType *type,
+                        const std::string& fieldPath, const std::string& whereClause);
 
-    TestFieldPathUpdate(const TestFieldPathUpdate& other)
-        : FieldPathUpdate(other)
-    {
-    }
+    TestFieldPathUpdate(const TestFieldPathUpdate& other);
 
     std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const
     {
@@ -311,6 +304,18 @@ struct TestFieldPathUpdate : FieldPathUpdate
     void accept(UpdateVisitor & visitor) const override { (void) visitor; }
     uint8_t getSerializedType() const override { assert(false); return 7; }
 };
+
+TestFieldPathUpdate::~TestFieldPathUpdate() { }
+TestFieldPathUpdate::TestFieldPathUpdate(const DocumentTypeRepo& repo, const DataType *type,
+                                         const std::string& fieldPath, const std::string& whereClause)
+    : FieldPathUpdate(repo, *type, fieldPath, whereClause)
+{
+}
+
+TestFieldPathUpdate::TestFieldPathUpdate(const TestFieldPathUpdate& other)
+    : FieldPathUpdate(other)
+{
+}
 
 void
 FieldPathUpdateTestCase::setUp()
@@ -851,8 +856,12 @@ struct Keys {
     vespalib::string key1;
     vespalib::string key2;
     vespalib::string key3;
-    Keys() : key1("foo"), key2("bar"), key3("zoo") {}
+    Keys();
+    ~Keys();
 };
+
+Keys::Keys() : key1("foo"), key2("bar"), key3("zoo") {}
+Keys::~Keys() {}
 
 struct Fixture {
     Document::UP doc;
@@ -864,32 +873,36 @@ struct Fixture {
                 doc_type.getField("structmap").getDataType());
     }
 
-    Fixture(const DocumentType &doc_type, const Keys &k)
-        : doc(new Document(doc_type, DocumentId("doc:planet:express"))),
-          mfv(getMapType(doc_type)),
-          fv1(getMapType(doc_type).getValueType()),
-          fv2(getMapType(doc_type).getValueType()),
-          fv3(getMapType(doc_type).getValueType()),
-          fv4(getMapType(doc_type).getValueType()) {
-
-        fv1.setValue("title", StringFieldValue("fry"));
-        fv1.setValue("rating", IntFieldValue(30));
-        mfv.put(StringFieldValue(k.key1), fv1);
-
-        fv2.setValue("title", StringFieldValue("farnsworth"));
-        fv2.setValue("rating", IntFieldValue(60));
-        mfv.put(StringFieldValue(k.key2), fv2);
-
-        fv3.setValue("title", StringFieldValue("zoidberg"));
-        fv3.setValue("rating", IntFieldValue(-20));
-        mfv.put(StringFieldValue(k.key3), fv3);
-
-        doc->setValue("structmap", mfv);
-
-        fv4.setValue("title", StringFieldValue("farnsworth"));
-        fv4.setValue("rating", IntFieldValue(48));
-    }
+    ~Fixture();
+    Fixture(const DocumentType &doc_type, const Keys &k);
 };
+
+Fixture::~Fixture() { }
+Fixture::Fixture(const DocumentType &doc_type, const Keys &k)
+    : doc(new Document(doc_type, DocumentId("doc:planet:express"))),
+      mfv(getMapType(doc_type)),
+      fv1(getMapType(doc_type).getValueType()),
+      fv2(getMapType(doc_type).getValueType()),
+      fv3(getMapType(doc_type).getValueType()),
+      fv4(getMapType(doc_type).getValueType())
+{
+    fv1.setValue("title", StringFieldValue("fry"));
+    fv1.setValue("rating", IntFieldValue(30));
+    mfv.put(StringFieldValue(k.key1), fv1);
+
+    fv2.setValue("title", StringFieldValue("farnsworth"));
+    fv2.setValue("rating", IntFieldValue(60));
+    mfv.put(StringFieldValue(k.key2), fv2);
+
+    fv3.setValue("title", StringFieldValue("zoidberg"));
+    fv3.setValue("rating", IntFieldValue(-20));
+    mfv.put(StringFieldValue(k.key3), fv3);
+
+    doc->setValue("structmap", mfv);
+
+    fv4.setValue("title", StringFieldValue("farnsworth"));
+    fv4.setValue("rating", IntFieldValue(48));
+}
 
 }  // namespace
 

@@ -61,6 +61,7 @@ class VisitorThread : public framework::Runnable,
         Event(api::VisitorId visitor, mbus::Reply::UP reply);
         Event(api::VisitorId visitor,
                      const std::shared_ptr<api::StorageMessage>& msg);
+        ~Event();
 
         bool empty() const noexcept {
             return (_type == NONE);

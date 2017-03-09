@@ -29,6 +29,7 @@ public:
      * Constructs a new instance of this parameter object with default values for all members.
      */
     MessageBusParams();
+    ~MessageBusParams();
 
     /**
      * Returns the retry policy for the resender.

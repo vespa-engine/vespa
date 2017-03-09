@@ -34,7 +34,9 @@ public:
         const ITR &get() const { return _lower; }
         ~Next() { ++_lower; }
     };
-    ForwardRange(const ITR &lower, const ITR &upper) : _lower(lower), _upper(upper) {}
+    ForwardRange(const ForwardRange &);
+    ForwardRange(const ITR &lower, const ITR &upper);
+    ~ForwardRange();
     bool has_next() const { return _lower != _upper; }
 };
 
@@ -53,7 +55,9 @@ public:
         explicit Next(ReverseRange &range) : _upper(range._upper) { --_upper; }
         const ITR &get() const { return _upper; }
     };
-    ReverseRange(const ITR &lower, const ITR &upper) : _lower(lower), _upper(upper) {}
+    ReverseRange(const ReverseRange &);
+    ReverseRange(const ITR &lower, const ITR &upper);
+    ~ReverseRange();
     bool has_next() const { return _lower != _upper; }
 };
 

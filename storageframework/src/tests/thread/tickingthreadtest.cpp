@@ -57,17 +57,8 @@ struct MyApp : public TickingThread {
     std::vector<Context> _context;
     TickingThreadPool::UP _threadPool;
 
-    MyApp(int threadCount, bool doCritOverlapTest = false)
-        : _critOverlapCounter(0),
-          _doCritOverlapTest(doCritOverlapTest),
-          _critOverlap(false),
-          _threadPool(TickingThreadPool::createDefault("testApp"))
-    {
-        for (int i=0; i<threadCount; ++i) {
-            _threadPool->addThread(*this);
-            _context.push_back(Context());
-        }
-    }
+    MyApp(int threadCount, bool doCritOverlapTest = false);
+    ~MyApp();
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
@@ -122,6 +113,20 @@ struct MyApp : public TickingThread {
         { return getTotalCritTicks() + getTotalNonCritTicks(); }
     bool hasCritOverlap() { return _critOverlap; }
 };
+
+MyApp::MyApp(int threadCount, bool doCritOverlapTest)
+    : _critOverlapCounter(0),
+      _doCritOverlapTest(doCritOverlapTest),
+      _critOverlap(false),
+      _threadPool(TickingThreadPool::createDefault("testApp"))
+{
+    for (int i=0; i<threadCount; ++i) {
+        _threadPool->addThread(*this);
+        _context.push_back(Context());
+    }
+}
+
+MyApp::~MyApp() { }
 
 }
 
@@ -304,12 +309,8 @@ struct BroadcastApp : public TickingThread {
     TickingThreadPool::UP _threadPool;
 
     // Set a huge wait time by default to ensure we have to notify
-    BroadcastApp()
-        : _threadPool(TickingThreadPool::createDefault(
-                        "testApp", MilliSecTime(300000)))
-    {
-        _threadPool->addThread(*this);
-    }
+    BroadcastApp();
+    ~BroadcastApp();
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
@@ -342,6 +343,13 @@ struct BroadcastApp : public TickingThread {
         guard.broadcast();
     }
 };
+
+BroadcastApp::BroadcastApp()
+    : _threadPool(TickingThreadPool::createDefault("testApp", MilliSecTime(300000)))
+{
+    _threadPool->addThread(*this);
+}
+BroadcastApp::~BroadcastApp() {}
 
 }
 

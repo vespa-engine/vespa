@@ -32,6 +32,7 @@ class PredicateTreeAnalyzer {
 
 public:
     PredicateTreeAnalyzer(const vespalib::slime::Inspector &in);
+    ~PredicateTreeAnalyzer();
 
     int getMinFeature() const { return _min_feature; }
     int getSize() const { return _size; }

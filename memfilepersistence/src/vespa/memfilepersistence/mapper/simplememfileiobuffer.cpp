@@ -154,6 +154,12 @@ SimpleMemFileIOBuffer::HeaderChunkEncoder::bufferDocument(const Document& doc)
     doc.serializeHeader(_serializedDoc);
 }
 
+SimpleMemFileIOBuffer::HeaderChunkEncoder::HeaderChunkEncoder(const document::DocumentId& docId)
+    : _serializedDoc(DEFAULT_STREAM_ALLOC_SIZE),
+      _docId(docId.toString())
+{ }
+SimpleMemFileIOBuffer::HeaderChunkEncoder::~HeaderChunkEncoder() {}
+
 /**
  * Buffer is comprised of the following:
  * - Document header blob (n bytes)

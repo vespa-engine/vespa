@@ -27,6 +27,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
         metrics::LongValueMetric diskUsage;
 
         IndexMetrics(metrics::MetricSet *parent);
+        ~IndexMetrics();
     };
 
     struct DocstoreMetrics : metrics::MetricSet {
@@ -38,6 +39,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
         metrics::LongValueMetric cacheMemoryUsed;
 
         DocstoreMetrics(metrics::MetricSet *parent);
+        ~DocstoreMetrics();
     };
 
     struct MatchingMetrics : metrics::MetricSet {
@@ -59,6 +61,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
 
                 typedef vespalib::LinkedPtr<DocIdPartition> LP;
                 DocIdPartition(const std::string &name, metrics::MetricSet *parent);
+                ~DocIdPartition();
                 void update(const matching::MatchingStats::Partition &stats);
             };
             typedef std::vector<DocIdPartition::LP> DocIdPartitions;
@@ -75,6 +78,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
             RankProfileMetrics(const std::string &name,
                                size_t numDocIdPartitions,
                                metrics::MetricSet *parent);
+            ~RankProfileMetrics();
             void update(const matching::MatchingStats &stats);
 
         };
@@ -83,6 +87,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
 
         void update(const matching::MatchingStats &stats);
         MatchingMetrics(metrics::MetricSet *parent);
+        ~MatchingMetrics();
     };
 
     struct SubDBMetrics : metrics::MetricSet
@@ -97,11 +102,13 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
             metrics::DoubleValueMetric lidFragmentationFactor;
 
             DocumentMetaStoreMetrics(metrics::MetricSet *parent);
+            ~DocumentMetaStoreMetrics();
         };
 
         LegacyAttributeMetrics attributes;
         DocumentMetaStoreMetrics docMetaStore;
         SubDBMetrics(const vespalib::string &name, metrics::MetricSet *parent);
+        ~SubDBMetrics();
     };
 
     IndexMetrics                                 index;
@@ -125,6 +132,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
     size_t                                      _maxNumThreads;
 
     LegacyDocumentDBMetrics(const std::string &docTypeName, size_t maxNumThreads);
+    ~LegacyDocumentDBMetrics();
 };
 
 } // namespace proton

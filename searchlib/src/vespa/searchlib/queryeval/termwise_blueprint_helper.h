@@ -23,6 +23,7 @@ struct TermwiseBlueprintHelper {
 
     TermwiseBlueprintHelper(const IntermediateBlueprint &self,
                             const MultiSearch::Children &subSearches, UnpackInfo &unpackInfo);
+    ~TermwiseBlueprintHelper();
 
     void insert_termwise(SearchIterator::UP search, bool strict);
 };

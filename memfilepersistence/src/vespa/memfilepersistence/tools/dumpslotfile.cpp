@@ -46,48 +46,53 @@ namespace {
         std::string docId;
 //        bool useConstructor;
 
-        CmdOptions(int argc, const char* const* argv)
-            : vespalib::ProgramOptions(argc, argv),
-              showSyntaxPage(false)
-        {
-            setSyntaxMessage(
-                    "Utility program for showing the contents of the slotfiles "
-                    "used by Vespa Document Storage in a user readable format. "
-                    "Intended for debugging purposes."
-            );
-            addOption("h help", showSyntaxPage, false,
-                      "Shows this help page");
-            addOption("n noheader", printHeader, true,
-                      "If given, the header block content is not shown");
-            addOption("N nobody", printBody, true,
-                      "If given, the body block content is not shown");
-            addOption("f friendly", userFriendlyOutput, false,
-                      "Gives less compact, but more user friendly output");
-            addOption("x toxml", toXml, false,
-                      "Print document XML of contained documents");
-            addOption("b tobinary", toBinary, false,
-                      "Print binary representations of contained documents");
-            addOption("includeremoveddocs", includeRemovedDocs, false,
-                      "When showing XML, include documents that are still in "
-                      "the file, but have been removed.");
-            addOption("includeremoveentries", includeRemoveEntries, false,
-                      "When showing XML, include remove entries.");
-            addOption("c documentconfig", documentManConfigId,
-                      std::string("client"),
-                      "The document config to use, needed if deserializing "
-                      "documents.");
+        CmdOptions(int argc, const char* const* argv);
+        ~CmdOptions();
+
+    };
+
+    CmdOptions::CmdOptions(int argc, const char* const* argv)
+        : vespalib::ProgramOptions(argc, argv),
+          showSyntaxPage(false)
+    {
+        setSyntaxMessage(
+                "Utility program for showing the contents of the slotfiles "
+                        "used by Vespa Document Storage in a user readable format. "
+                        "Intended for debugging purposes."
+        );
+        addOption("h help", showSyntaxPage, false,
+                  "Shows this help page");
+        addOption("n noheader", printHeader, true,
+                  "If given, the header block content is not shown");
+        addOption("N nobody", printBody, true,
+                  "If given, the body block content is not shown");
+        addOption("f friendly", userFriendlyOutput, false,
+                  "Gives less compact, but more user friendly output");
+        addOption("x toxml", toXml, false,
+                  "Print document XML of contained documents");
+        addOption("b tobinary", toBinary, false,
+                  "Print binary representations of contained documents");
+        addOption("includeremoveddocs", includeRemovedDocs, false,
+                  "When showing XML, include documents that are still in "
+                          "the file, but have been removed.");
+        addOption("includeremoveentries", includeRemoveEntries, false,
+                  "When showing XML, include remove entries.");
+        addOption("c documentconfig", documentManConfigId,
+                  std::string("client"),
+                  "The document config to use, needed if deserializing "
+                          "documents.");
 //            addOption("s sort", metaDataSort, std::string("none"),
 //                      "How to sort metadatalist. Valid arguments: "
 //                      "bodypos, headerpos & none.");
-            addOption("t time", timestampToShow, uint64_t(0),
-                      "If set, only present data related to this timestamp, "
-                      "when outputting XML or binary data.");
-            addOption("docid", docId, std::string(""),
-                      "Retrieve single document using get semantics");
+        addOption("t time", timestampToShow, uint64_t(0),
+                  "If set, only present data related to this timestamp, "
+                          "when outputting XML or binary data.");
+        addOption("docid", docId, std::string(""),
+                  "Retrieve single document using get semantics");
 //            addOption("useconstructor", useConstructor, false, "Debug option");
-            addArgument("slotfile", filename, "The slotfile to dump.");
-        }
-    };
+        addArgument("slotfile", filename, "The slotfile to dump.");
+    }
+    CmdOptions::~CmdOptions() { }
 
     void printDoc(document::Document& doc, CmdOptions& o) {
         if (o.toXml) {
@@ -154,47 +159,51 @@ namespace {
         std::unique_ptr<Environment> _env;
 
         EnvironmentImpl(config::ConfigUri& externalConfig,
-                        const char* documentConfigId)
-            : _compReg(),
-              _component(_compReg, "dumpslotfile"),
-              _clock(),
-              _metrics(_component),
-              _threadMetrics(_metrics.addThreadMetrics()),
-              _cache(),
-              _mapper(*this),
-              _deviceManager(DeviceMapper::UP(new SimpleDeviceMapper), _clock),
-              _docType("foo", 1)
-        {
-            _compReg.setClock(_clock);
-            _compReg.setMemoryManager(_memoryMan);
-            _cache.reset(new MemFileCache(_compReg, _metrics._cache));
-            if (documentConfigId == 0) {
-                _repo.reset(new DocumentTypeRepo(_docType));
-            } else {
-                config::ConfigUri uri(
-                        externalConfig.createWithNewId(documentConfigId));
-                std::unique_ptr<document::DocumenttypesConfig> config(
-                        ConfigGetter<DocumenttypesConfig>::getConfig(
-                            uri.getConfigId(), uri.getContext()));
-                _repo.reset(new DocumentTypeRepo(*config));
-            }
-            _deviceConfig.rootFolder = ".";
-            std::string configId("defaultId");
-            _configSet.addBuilder(configId, &_memFileConfig);
-            _configSet.addBuilder(configId, &_persistenceConfig);
-            _configSet.addBuilder(configId, &_deviceConfig);
-            _configContext.reset(new config::ConfigContext(_configSet));
-            _internalConfig.reset(
-                    new config::ConfigUri(configId, _configContext));
-            _env.reset(new Environment(
-                    *_internalConfig, *_cache, _mapper, *_repo, _clock, true));
-        }
+                        const char* documentConfigId);
+        ~EnvironmentImpl();
 
         MemFilePersistenceThreadMetrics& getMetrics() const {
             return *_threadMetrics;
         }
 
     };
+
+    EnvironmentImpl::EnvironmentImpl(config::ConfigUri& externalConfig, const char* documentConfigId)
+        : _compReg(),
+        _component(_compReg, "dumpslotfile"),
+        _clock(),
+        _metrics(_component),
+        _threadMetrics(_metrics.addThreadMetrics()),
+        _cache(),
+        _mapper(*this),
+        _deviceManager(DeviceMapper::UP(new SimpleDeviceMapper), _clock),
+        _docType("foo", 1)
+    {
+        _compReg.setClock(_clock);
+        _compReg.setMemoryManager(_memoryMan);
+        _cache.reset(new MemFileCache(_compReg, _metrics._cache));
+        if (documentConfigId == 0) {
+            _repo.reset(new DocumentTypeRepo(_docType));
+        } else {
+            config::ConfigUri uri(
+                    externalConfig.createWithNewId(documentConfigId));
+            std::unique_ptr<document::DocumenttypesConfig> config(
+                    ConfigGetter<DocumenttypesConfig>::getConfig(
+                            uri.getConfigId(), uri.getContext()));
+            _repo.reset(new DocumentTypeRepo(*config));
+        }
+        _deviceConfig.rootFolder = ".";
+        std::string configId("defaultId");
+        _configSet.addBuilder(configId, &_memFileConfig);
+        _configSet.addBuilder(configId, &_persistenceConfig);
+        _configSet.addBuilder(configId, &_deviceConfig);
+        _configContext.reset(new config::ConfigContext(_configSet));
+        _internalConfig.reset(
+                new config::ConfigUri(configId, _configContext));
+        _env.reset(new Environment(
+                *_internalConfig, *_cache, _mapper, *_repo, _clock, true));
+    }
+    EnvironmentImpl::~EnvironmentImpl() {}
 
 }
 

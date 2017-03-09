@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include <experimental/filesystem>
-#include <vespa/vespalib/util/process_memory_stats.h>
-#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
-#include <mutex>
-#include <atomic>
 #include "i_disk_mem_usage_notifier.h"
 #include "disk_mem_usage_state.h"
+#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
+#include <vespa/vespalib/util/process_memory_stats.h>
+#include <mutex>
+#include <atomic>
+#include <experimental/filesystem>
+
 
 namespace proton {
 
@@ -29,28 +30,23 @@ public:
         double _memoryLimit;
         double _diskLimit;
 
-        Config()
-            : _memoryLimit(1.0),
-              _diskLimit(1.0)
-        {
-        }
+        Config() : Config(1.0, 1.0) { }
 
         Config(double memoryLimit_in, double diskLimit_in)
             : _memoryLimit(memoryLimit_in),
               _diskLimit(diskLimit_in)
-        {
-        }
+        { }
     };
 
 private:
     mutable Mutex _lock; // protect _memoryStats, _diskStats, _config, _state
     vespalib::ProcessMemoryStats _memoryStats;
-    uint64_t _physicalMemory;
-    space_info _diskStats;
-    Config _config;
-    State _state;
-    std::atomic<bool> _acceptWrite;
-    DiskMemUsageState _dmstate;
+    uint64_t                     _physicalMemory;
+    space_info                   _diskStats;
+    Config                       _config;
+    State                        _state;
+    std::atomic<bool>            _acceptWrite;
+    DiskMemUsageState            _dmstate;
     std::vector<IDiskMemUsageListener *> _listeners;
 
     void recalcState(const Guard &guard); // called with _lock held
@@ -60,6 +56,7 @@ private:
 
 public:
     DiskMemUsageFilter(uint64_t physicalMememory_in);
+    ~DiskMemUsageFilter();
     void setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in);
     void setDiskStats(space_info diskStats_in);
     void setConfig(Config config);
@@ -69,10 +66,10 @@ public:
     uint64_t getPhysicalMemory() const { return _physicalMemory; }
     double getMemoryUsedRatio() const;
     double getDiskUsedRatio() const;
-    virtual bool acceptWriteOperation() const override;
-    virtual State getAcceptState() const override;
-    virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
-    virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override;
+    bool acceptWriteOperation() const override;
+    State getAcceptState() const override;
+    void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
+    void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override;
 };
 
 

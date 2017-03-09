@@ -24,6 +24,8 @@ HttpUrlPath::HttpUrlPath(const vespalib::string& urlpath,
     init();
 }
 
+HttpUrlPath::~HttpUrlPath() {}
+
 void
 HttpUrlPath::init()
 {

@@ -35,6 +35,8 @@ calculateCellAddress(const Address &address, const ValueType &type)
 
 }
 
+DirectDenseTensorBuilder::~DirectDenseTensorBuilder() { }
+
 DirectDenseTensorBuilder::DirectDenseTensorBuilder(const ValueType &type_in)
     : _type(type_in),
       _cells(calculateCellsSize(_type))

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <errno.h>
 #include <iostream>
 #include <sys/vfs.h>
 #include <vespa/vespalib/util/programoptions.h>
@@ -11,18 +9,23 @@ struct Options : public vespalib::ProgramOptions {
     bool showSyntaxPage;
     std::string _filename;
 
-    Options(int argc, const char* const* argv)
-        : vespalib::ProgramOptions(argc, argv),
-          showSyntaxPage(false)
-        {
-            setSyntaxMessage(
-                    "Utility program for checking output of statfs."
-            );
-            addOption("h help", showSyntaxPage, false,
-                      "Shows this help page");
-            addArgument("file", _filename, "File to use when calling statfs()");
-        }
-    };
+    Options(int argc, const char* const* argv);
+    ~Options();
+};
+
+Options::Options(int argc, const char* const* argv)
+    : vespalib::ProgramOptions(argc, argv),
+      showSyntaxPage(false)
+{
+    setSyntaxMessage(
+            "Utility program for checking output of statfs."
+    );
+    addOption("h help", showSyntaxPage, false,
+              "Shows this help page");
+    addArgument("file", _filename, "File to use when calling statfs()");
+}
+Options::~Options() {}
+
 
 int main(int argc, char** argv) {
     Options o(argc, argv);

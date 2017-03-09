@@ -87,12 +87,8 @@ struct WandTestSpec : public WandSpec
     MatchParams matchParams;
 
     WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdjustFrequency = 1,
-                 score_t scoreThreshold = 0, double thresholdBoostFactor = 1)
-        : WandSpec(),
-          heap(scoresToTrack),
-          rootMatchData(),
-          matchParams(heap, scoreThreshold, thresholdBoostFactor, scoresAdjustFrequency)
-    {}
+                 score_t scoreThreshold = 0, double thresholdBoostFactor = 1);
+    ~WandTestSpec();
     SearchIterator *create() {
         MatchData::UP childrenMatchData = createMatchData();
         MatchData *tmp = childrenMatchData.get();
@@ -103,6 +99,18 @@ struct WandTestSpec : public WandSpec
                         true));
     }
 };
+
+template <typename HeapType>
+WandTestSpec<HeapType>::WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdjustFrequency,
+                                     score_t scoreThreshold, double thresholdBoostFactor)
+    : WandSpec(),
+      heap(scoresToTrack),
+      rootMatchData(),
+      matchParams(heap, scoreThreshold, thresholdBoostFactor, scoresAdjustFrequency)
+{}
+
+template <typename HeapType>
+WandTestSpec<HeapType>::~WandTestSpec() {}
 
 typedef WandTestSpec<TestHeap> WandSpecWithTestHeap;
 typedef WandTestSpec<SharedWeakAndPriorityQueue> WandSpecWithRealHeap;
@@ -403,7 +411,8 @@ struct BlueprintFixtureBase
 {
     WandBlueprintSpec spec;
     FakeSearchable    searchable;
-    BlueprintFixtureBase() : spec(), searchable() {}
+    BlueprintFixtureBase();
+    ~BlueprintFixtureBase();
     Blueprint::UP blueprint(const search::query::Node &term) {
         return spec.blueprint(searchable, "field", term);
     }
@@ -417,6 +426,9 @@ struct BlueprintFixtureBase
         return spec.search(searchable, "field");
     }
 };
+
+BlueprintFixtureBase::BlueprintFixtureBase() : spec(), searchable() {}
+BlueprintFixtureBase::~BlueprintFixtureBase() {}
 
 struct BlueprintHitsFixture : public BlueprintFixtureBase
 {

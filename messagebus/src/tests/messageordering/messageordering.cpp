@@ -88,51 +88,60 @@ class VerifyReplyReceptor : public IReplyHandler
     std::string _failure;
     int _replyCount;
 public:
-    VerifyReplyReceptor()
-        : _mon(),
-          _failure(),
-          _replyCount(0)
-    {}
-    void handleReply(Reply::UP reply)
-    {
-        vespalib::MonitorGuard lock(_mon);
-        if (reply->hasErrors()) {
-            std::ostringstream ss;
-            ss << "Reply failed with "
-               << reply->getError(0).getMessage()
-               << "\n"
-               << reply->getTrace().toString();
+    ~VerifyReplyReceptor();
+    VerifyReplyReceptor();
+    void handleReply(Reply::UP reply);
+    void waitUntilDone(int waitForCount) const;
+    const std::string& getFailure() const { return _failure; }
+};
+
+VerifyReplyReceptor::~VerifyReplyReceptor() {}
+VerifyReplyReceptor::VerifyReplyReceptor()
+    : _mon(),
+      _failure(),
+      _replyCount(0)
+{}
+
+void
+VerifyReplyReceptor::handleReply(Reply::UP reply)
+{
+    vespalib::MonitorGuard lock(_mon);
+    if (reply->hasErrors()) {
+        std::ostringstream ss;
+        ss << "Reply failed with "
+           << reply->getError(0).getMessage()
+           << "\n"
+           << reply->getTrace().toString();
+        if (_failure.empty()) {
+            _failure = ss.str();
+        }
+        LOG(warning, "%s", ss.str().c_str());
+    } else {
+        vespalib::string expected(vespalib::make_vespa_string("%d", _replyCount));
+        SimpleReply& simpleReply(static_cast<SimpleReply&>(*reply));
+        if (simpleReply.getValue() != expected) {
+            std::stringstream ss;
+            ss << "Received out-of-sequence reply! Expected "
+               << expected
+               << ", but got "
+               << simpleReply.getValue();
+            LOG(warning, "%s", ss.str().c_str());
             if (_failure.empty()) {
                 _failure = ss.str();
             }
-            LOG(warning, "%s", ss.str().c_str());
-        } else {
-            vespalib::string expected(vespalib::make_vespa_string("%d", _replyCount));
-            SimpleReply& simpleReply(static_cast<SimpleReply&>(*reply));
-            if (simpleReply.getValue() != expected) {
-                std::stringstream ss;
-                ss << "Received out-of-sequence reply! Expected "
-                   << expected
-                   << ", but got "
-                   << simpleReply.getValue();
-                LOG(warning, "%s", ss.str().c_str());
-                if (_failure.empty()) {
-                    _failure = ss.str();
-                }
-            }
-        }
-        ++_replyCount;
-        lock.broadcast();
-    }
-    void waitUntilDone(int waitForCount) const
-    {
-        vespalib::MonitorGuard lock(_mon);
-        while (_replyCount < waitForCount) {
-            lock.wait(1000);
         }
     }
-    const std::string& getFailure() const { return _failure; }
-};
+    ++_replyCount;
+    lock.broadcast();
+}
+void
+VerifyReplyReceptor::waitUntilDone(int waitForCount) const
+{
+    vespalib::MonitorGuard lock(_mon);
+    while (_replyCount < waitForCount) {
+        lock.wait(1000);
+    }
+}
 
 int
 Test::Main()

@@ -124,18 +124,22 @@ struct factory<LogDataStore> : DioTune
     vespalib::ThreadStackExecutor _executor;
     transactionlog::NoSyncProxy _noTlSyncer;
     LogDataStore _datastore;
-    factory(std::string dir)
-        : DioTune(),
-          _fileHeaderContext(),
-          _config(),
-          _executor(_config.getNumThreads(), 128*1024),
-          _noTlSyncer(),
-          _datastore(_executor, dir, _config, GrowStrategy(), tuning,
-                     _fileHeaderContext, _noTlSyncer, NULL)
-    {}
+    factory(std::string dir);
+    ~factory();
     IDataStore & operator() () { return _datastore; }
 
 };
+
+factory<LogDataStore>::factory(std::string dir)
+    : DioTune(),
+      _fileHeaderContext(),
+      _config(),
+      _executor(_config.getNumThreads(), 128*1024),
+      _noTlSyncer(),
+      _datastore(_executor, dir, _config, GrowStrategy(), tuning, _fileHeaderContext, _noTlSyncer, NULL)
+{}
+
+factory<LogDataStore>::~factory() {}
 
 template <typename DS>
 void

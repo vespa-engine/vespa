@@ -1,12 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "call_nodes.h"
 #include "node_visitor.h"
 
 namespace vespalib {
 namespace eval {
 namespace nodes {
+
+Call::~Call() { }
+
 
 template <typename T> void CallHelper<T>::accept(NodeVisitor &visitor) const {
     visitor.visit(static_cast<const T&>(*this));

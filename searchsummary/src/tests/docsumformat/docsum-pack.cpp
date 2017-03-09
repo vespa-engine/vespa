@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2001-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("docsum-pack");
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchsummary/docsummary/urlresult.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
+#include <vespa/fastos/app.h>
+#include <vespa/log/log.h>
+LOG_SETUP("docsum-pack");
 
 using namespace search::docsummary;
 
@@ -27,13 +24,8 @@ private:
     search::docsummary::ResultPacker _packer;
 
 public:
-    MyApp()
-        : _rc(false),
-          _cnt(0u),
-          _config(),
-          _packer(&_config)
-    {
-    }
+    MyApp();
+    ~MyApp();
 
     // log test results
     void ReportTestResult(uint32_t line, bool rc);
@@ -74,6 +66,13 @@ public:
     int Main();
 };
 
+MyApp::MyApp()
+    : _rc(false),
+      _cnt(0u),
+      _config(),
+      _packer(&_config)
+{}
+MyApp::~MyApp() {}
 
 void
 MyApp::ReportTestResult(uint32_t line, bool rc)

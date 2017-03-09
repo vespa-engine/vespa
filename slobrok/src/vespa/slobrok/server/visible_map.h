@@ -44,6 +44,8 @@ public:
 
     struct MapDiff
     {
+        MapDiff();
+        ~MapDiff();
         std::vector<std::string> removed;
         RpcSrvlist               updated;
     };
@@ -83,12 +85,7 @@ public:
 
     MapDiff history(const vespalib::GenCnt& gen) const;
 
-    VisibleMap()
-        : _map(NULL),
-          _waitList(),
-          _genCnt(1)
-    {
-    }
+    VisibleMap();
     ~VisibleMap();
 };
 

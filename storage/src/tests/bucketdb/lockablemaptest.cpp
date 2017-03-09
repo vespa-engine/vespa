@@ -204,9 +204,9 @@ namespace {
         mutable std::vector<std::string> log;
         mutable std::vector<Map::Decision> behaviour;
 
-        EntryProcessor() : count(0), log(), behaviour() {}
-        EntryProcessor(const std::vector<Map::Decision>& decisions)
-            : count(0), log(), behaviour(decisions) {}
+        EntryProcessor();
+        EntryProcessor(const std::vector<Map::Decision>& decisions);
+        ~EntryProcessor();
 
         Map::Decision operator()(uint64_t key, A& a) const {
             std::ostringstream ost;
@@ -229,6 +229,11 @@ namespace {
         }
     };
 }
+
+EntryProcessor::EntryProcessor() : count(0), log(), behaviour() {}
+EntryProcessor::EntryProcessor(const std::vector<Map::Decision>& decisions)
+        : count(0), log(), behaviour(decisions) {}
+EntryProcessor::~EntryProcessor() {}
 
 void
 LockableMapTest::testIterating() {

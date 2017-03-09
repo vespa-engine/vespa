@@ -55,6 +55,7 @@ public:
     Receptor                       _dstHandler;
 
 public:
+    ~TestData();
     TestData();
     bool start();
 };
@@ -88,9 +89,9 @@ TestData::TestData() :
                RPCNetworkParams().setIdentity(Identity("dst")).setSlobrokConfig(_slobrok.config())),
     _dstSession(),
     _dstHandler()
-{
-    // empty
-}
+{ }
+
+TestData::~TestData() {}
 
 bool
 TestData::start()

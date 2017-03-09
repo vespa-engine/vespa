@@ -206,12 +206,18 @@ private:
 
 public:
     FeederThread(const std::string & tlsSpec, const std::string & domain,
-                 const EntryGenerator & generator, uint32_t feedRate, size_t packetSize) :
-        _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec), _session(),
-        _generator(generator), _feedRate(feedRate), _packet(packetSize), _current(1), _lastCommited(1), _timer() {}
+                 const EntryGenerator & generator, uint32_t feedRate, size_t packetSize);
+    ~FeederThread();
     virtual void doRun();
     SerialNumRange getRange() const { return SerialNumRange(1, _lastCommited); }
 };
+
+FeederThread::FeederThread(const std::string & tlsSpec, const std::string & domain,
+                           const EntryGenerator & generator, uint32_t feedRate, size_t packetSize)
+    : _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec), _session(),
+      _generator(generator), _feedRate(feedRate), _packet(packetSize), _current(1), _lastCommited(1), _timer()
+{}
+FeederThread::~FeederThread() {}
 
 void
 FeederThread::commitPacket()
@@ -543,20 +549,8 @@ private:
 public:
     ControllerThread(const std::string & tlsSpec, const std::string & domain,
                      const EntryGenerator & generator, uint32_t numSubscribers, uint32_t numVisitors,
-                     uint64_t visitorInterval, uint64_t pruneInterval) :
-        _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec.c_str()), _session(),
-        _generator(generator), _subscribers(), _visitors(), _rndVisitors(), _visitorInterval(visitorInterval),
-        _pruneInterval(pruneInterval), _pruneTimer(), _begin(0), _end(0), _count(0)
-    {
-        for (uint32_t i = 0; i < numSubscribers; ++i) {
-            _subscribers.push_back(std::shared_ptr<SubscriberAgent>
-                                  (new SubscriberAgent(tlsSpec, domain, generator, 0, i, true)));
-        }
-
-        for (uint32_t i = 0; i < numVisitors; ++i) {
-            _visitors.push_back(std::shared_ptr<VisitorAgent>(new VisitorAgent(tlsSpec, domain, generator, i, true)));
-        }
-    }
+                     uint64_t visitorInterval, uint64_t pruneInterval);
+    ~ControllerThread();
     void startSubscribers();
     uint32_t runningVisitors();
     std::vector<std::shared_ptr<SubscriberAgent> > & getSubscribers() { return _subscribers; }
@@ -564,6 +558,23 @@ public:
     virtual void doRun();
 
 };
+
+ControllerThread::ControllerThread(const std::string & tlsSpec, const std::string & domain,
+                                   const EntryGenerator & generator, uint32_t numSubscribers, uint32_t numVisitors,
+                                   uint64_t visitorInterval, uint64_t pruneInterval)
+    : _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec.c_str()), _session(),
+      _generator(generator), _subscribers(), _visitors(), _rndVisitors(), _visitorInterval(visitorInterval),
+      _pruneInterval(pruneInterval), _pruneTimer(), _begin(0), _end(0), _count(0)
+{
+    for (uint32_t i = 0; i < numSubscribers; ++i) {
+        _subscribers.push_back(std::make_shared<SubscriberAgent>(tlsSpec, domain, generator, 0, i, true));
+    }
+
+    for (uint32_t i = 0; i < numVisitors; ++i) {
+        _visitors.push_back(std::make_shared<VisitorAgent>(tlsSpec, domain, generator, i, true));
+    }
+}
+ControllerThread::~ControllerThread() {}
 
 void
 ControllerThread::getStatus()

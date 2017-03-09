@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/bucketdb/judyarray.h>
-#include <stdio.h>
 #include <iomanip>
 #include <iostream>
-#include <vespa/vespalib/util/programoptions.h>
 #include <vespa/config-stor-distribution.h>
 
 namespace storage {
@@ -30,34 +26,8 @@ namespace storage {
         uint32_t skipNodeCountsBelow;
         uint32_t startAtNodeCount;
 
-        Options(int argc, const char* const* argv)
-            : vespalib::ProgramOptions(argc, argv)
-        {
-            setSyntaxMessage(
-                    "Utility program for calculating skew of buckets stored on "
-                    "storage nodes."
-            );
-            addOption("r redundancy", redundancy, 2u,
-                      "Number of copies stored on the nodes.");
-            addOption("b maxbit", maxBit, 32u,
-                      "Maximum distribution bit count to calculate for.");
-            addOption("h hide", hideUtilizationAbove, 0.3,
-                      "Hide utilizations worse than this.");
-            addOption("s skip", skipGood, false,
-                      "Attempt to skip computations for node counts that "
-                      "already have good distributions");
-            addOption("highrange", highRange, false,
-                      "Compute distribution for large systems instead of small "
-                      "systems");
-            addOption("html", printHtml, false,
-                      "Print result as an HTML table");
-            addOption("skipbitsbelow", skipBitsBelow, 0u,
-                      "Skip calculating for bits below given value");
-            addOption("skipnodecountsbelow", skipNodeCountsBelow, 0u,
-                      "Skip calculating for node counts below given value");
-            addOption("startatnodecount", startAtNodeCount, 0u,
-                      "Start calculating for first bit at given node count");
-        }
+        Options(int argc, const char* const* argv);
+        ~Options();
 
         void finalize() {
             if (highRange) {
@@ -117,6 +87,32 @@ namespace storage {
             return ((double) wastedArea) / maxArea;
         }
     }
+
+
+Options::Options(int argc, const char* const* argv)
+    : vespalib::ProgramOptions(argc, argv)
+{
+    setSyntaxMessage("Utility program for calculating skew of buckets stored on storage nodes.");
+    addOption("r redundancy", redundancy, 2u,
+              "Number of copies stored on the nodes.");
+    addOption("b maxbit", maxBit, 32u,
+              "Maximum distribution bit count to calculate for.");
+    addOption("h hide", hideUtilizationAbove, 0.3,
+              "Hide utilizations worse than this.");
+    addOption("s skip", skipGood, false,
+              "Attempt to skip computations for node counts that already have good distributions");
+    addOption("highrange", highRange, false,
+              "Compute distribution for large systems instead of small systems");
+    addOption("html", printHtml, false,
+              "Print result as an HTML table");
+    addOption("skipbitsbelow", skipBitsBelow, 0u,
+              "Skip calculating for bits below given value");
+    addOption("skipnodecountsbelow", skipNodeCountsBelow, 0u,
+              "Skip calculating for node counts below given value");
+    addOption("startatnodecount", startAtNodeCount, 0u,
+              "Start calculating for first bit at given node count");
+}
+Options::~Options() {}
 
 } // storage
 

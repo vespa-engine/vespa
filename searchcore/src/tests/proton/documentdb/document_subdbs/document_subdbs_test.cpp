@@ -139,33 +139,25 @@ struct MyStoreOnlyContext
 	StoreOnlyContext _ctx;
 	MyStoreOnlyContext(IThreadingService &writeService,
 	                   ThreadStackExecutorBase &summaryExecutor,
-                           std::shared_ptr<BucketDBOwner> bucketDB,
-                           IBucketDBHandlerInitializer &
-                           bucketDBHandlerInitializer)
-	    : _owner(),
-	      _syncProxy(),
-	      _getSerialNum(),
-	      _fileHeader(),
-	      _metrics(DOCTYPE_NAME, 1),
-	      _configMutex(),
-              _hwInfo(),
-	      _ctx(_owner,
-               _syncProxy,
-               _getSerialNum,
-               _fileHeader,
-               writeService,
-               summaryExecutor,
-                   bucketDB,
-                   bucketDBHandlerInitializer,
-               _metrics,
-               _configMutex,
-               _hwInfo)
-	{
-	}
+                       std::shared_ptr<BucketDBOwner> bucketDB,
+                       IBucketDBHandlerInitializer &
+                       bucketDBHandlerInitializer);
+	~MyStoreOnlyContext();
 	const MySubDBOwner &getOwner() const {
 	    return _owner;
 	}
 };
+
+MyStoreOnlyContext::MyStoreOnlyContext(IThreadingService &writeService, ThreadStackExecutorBase &summaryExecutor,
+                                       std::shared_ptr<BucketDBOwner> bucketDB,
+                                       IBucketDBHandlerInitializer &bucketDBHandlerInitializer)
+    : _owner(), _syncProxy(), _getSerialNum(), _fileHeader(),
+      _metrics(DOCTYPE_NAME, 1), _configMutex(), _hwInfo(),
+      _ctx(_owner, _syncProxy, _getSerialNum, _fileHeader, writeService, summaryExecutor, bucketDB,
+           bucketDBHandlerInitializer, _metrics, _configMutex, _hwInfo)
+{
+}
+MyStoreOnlyContext::~MyStoreOnlyContext() {}
 
 template <bool FastAccessAttributesOnly>
 struct MyFastAccessConfig
@@ -187,18 +179,9 @@ struct MyFastAccessContext
 	FastAccessContext _ctx;
 	MyFastAccessContext(IThreadingService &writeService,
 	                    ThreadStackExecutorBase &summaryExecutor,
-                            std::shared_ptr<BucketDBOwner> bucketDB,
-                            IBucketDBHandlerInitializer &
-                            bucketDBHandlerInitializer)
-	    : _storeOnlyCtx(writeService, summaryExecutor, bucketDB,
-                            bucketDBHandlerInitializer),
-	      _attributeMetrics(NULL),
-		  _legacyAttributeMetrics(NULL),
-		  _attributeMetricsCollection(_attributeMetrics, _legacyAttributeMetrics),
-	      _wireService(),
-	      _ctx(_storeOnlyCtx._ctx, _attributeMetricsCollection, NULL, _wireService)
-	{
-	}
+                        std::shared_ptr<BucketDBOwner> bucketDB,
+                        IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
+    ~MyFastAccessContext();
 	const MyMetricsWireService &getWireService() const {
 	    return _wireService;
 	}
@@ -206,6 +189,17 @@ struct MyFastAccessContext
 	    return _storeOnlyCtx.getOwner();
 	}
 };
+
+MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService, ThreadStackExecutorBase &summaryExecutor,
+                                         std::shared_ptr<BucketDBOwner> bucketDB,
+                                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
+    : _storeOnlyCtx(writeService, summaryExecutor, bucketDB, bucketDBHandlerInitializer),
+      _attributeMetrics(NULL), _legacyAttributeMetrics(NULL),
+      _attributeMetricsCollection(_attributeMetrics, _legacyAttributeMetrics),
+      _wireService(),
+      _ctx(_storeOnlyCtx._ctx, _attributeMetricsCollection, NULL, _wireService)
+{}
+MyFastAccessContext::~MyFastAccessContext() {}
 
 struct MySearchableConfig
 {
@@ -224,19 +218,9 @@ struct MySearchableContext
 	SearchableContext _ctx;
 	MySearchableContext(IThreadingService &writeService,
 	                    ThreadStackExecutorBase &executor,
-                            std::shared_ptr<BucketDBOwner> bucketDB,
-                            IBucketDBHandlerInitializer &
-                            bucketDBHandlerInitializer)
-	    : _fastUpdCtx(writeService, executor, bucketDB,
-                          bucketDBHandlerInitializer),
-	      _queryLimiter(),
-	      _clock(),
-	      _ctx(_fastUpdCtx._ctx,
-	    	   _queryLimiter,
-	    	   _clock,
-	    	   executor)
-	{
-	}
+                        std::shared_ptr<BucketDBOwner> bucketDB,
+                        IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
+    ~MySearchableContext();
 	const MyMetricsWireService &getWireService() const {
 	    return _fastUpdCtx.getWireService();
 	}
@@ -244,6 +228,16 @@ struct MySearchableContext
 	    return _fastUpdCtx.getOwner();
 	}
 };
+
+
+MySearchableContext::MySearchableContext(IThreadingService &writeService, ThreadStackExecutorBase &executor,
+                                         std::shared_ptr<BucketDBOwner> bucketDB,
+                                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
+    : _fastUpdCtx(writeService, executor, bucketDB, bucketDBHandlerInitializer),
+      _queryLimiter(), _clock(),
+      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock, executor)
+{}
+MySearchableContext::~MySearchableContext() {}
 
 struct OneAttrSchema : public Schema
 {

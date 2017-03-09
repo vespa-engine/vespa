@@ -24,7 +24,10 @@ struct Pair {
           value(v)
     {
     }
+    ~Pair();
 };
+
+Pair::~Pair() {}
 
 }
 

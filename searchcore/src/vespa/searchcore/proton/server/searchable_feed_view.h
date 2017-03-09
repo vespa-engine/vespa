@@ -107,7 +107,7 @@ public:
                        const FastAccessFeedView::Context &fastUpdateCtx,
                        Context ctx);
 
-    virtual ~SearchableFeedView() {}
+    virtual ~SearchableFeedView();
     const IIndexWriter::SP &getIndexWriter() const { return _indexWriter; }
     const std::shared_ptr<IGidToLidChangeHandler> &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
     void sync() override;

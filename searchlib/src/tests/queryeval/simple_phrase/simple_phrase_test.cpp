@@ -105,17 +105,8 @@ private:
     bool                    _strict;
 
 public:
-    PhraseSearchTest(bool expiredDoom=false) :
-        _requestContext(nullptr, expiredDoom ? 0 : std::numeric_limits<int64_t>::max()),
-        _index(),
-        _phrase_fs(field, fieldId, phrase_handle),
-        _phrase(_phrase_fs, _requestContext),
-        _children(),
-        _md(MatchData::makeTestInstance(100, 10)),
-        _order(),
-        _pos(1),
-        _strict(false)
-    {}
+    PhraseSearchTest(bool expiredDoom=false);
+    ~PhraseSearchTest();
 
     TermFieldHandle childHandle(uint32_t idx) const { return (10 * idx + 11); }
 
@@ -185,6 +176,19 @@ public:
         return search.release();
     }
 };
+
+PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
+    : _requestContext(nullptr, expiredDoom ? 0 : std::numeric_limits<int64_t>::max()),
+      _index(),
+      _phrase_fs(field, fieldId, phrase_handle),
+      _phrase(_phrase_fs, _requestContext),
+      _children(),
+      _md(MatchData::makeTestInstance(100, 10)),
+      _order(),
+      _pos(1),
+      _strict(false)
+{}
+PhraseSearchTest::~PhraseSearchTest() {}
 
 void Test::requireThatIteratorFindsSimplePhrase(bool useBlueprint) {
     PhraseSearchTest test;

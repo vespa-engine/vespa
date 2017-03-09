@@ -66,6 +66,7 @@ private:
 public:
     /** Null member variables. */
     Application();
+    ~Application();
 
     // Inherit doc from FastOS_Application.
     int Main();

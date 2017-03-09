@@ -21,19 +21,23 @@ struct SetupResult {
     RankingExpressionBlueprint rank;
     DummyDependencyHandler deps;
     bool setup_ok;
-    SetupResult(const TypeMap &object_inputs,
-                const vespalib::string &expression)
-        : index_env(), rank(), deps(rank), setup_ok(false)
-    {
-        rank.setName("self");
-        index_env.getProperties().add("self.rankingScript", expression);
-        for (const auto &input: object_inputs) {
-            deps.define_object_input(input.first, ValueType::from_spec(input.second));
-        }
-        setup_ok = rank.setup(index_env, {});
-        EXPECT_TRUE(!deps.accept_type_mismatch);
-    }
+    SetupResult(const TypeMap &object_inputs, const vespalib::string &expression);
+    ~SetupResult();
 };
+
+SetupResult::SetupResult(const TypeMap &object_inputs,
+                         const vespalib::string &expression)
+    : index_env(), rank(), deps(rank), setup_ok(false)
+{
+    rank.setName("self");
+    index_env.getProperties().add("self.rankingScript", expression);
+    for (const auto &input: object_inputs) {
+        deps.define_object_input(input.first, ValueType::from_spec(input.second));
+    }
+    setup_ok = rank.setup(index_env, {});
+    EXPECT_TRUE(!deps.accept_type_mismatch);
+}
+SetupResult::~SetupResult() {}
 
 void verify_output_type(const TypeMap &object_inputs,
                         const vespalib::string &expression, const FeatureType &expect)

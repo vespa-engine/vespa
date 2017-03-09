@@ -16,6 +16,9 @@ public:
     typedef std::shared_ptr<SearchView> SP;
 
     SearchView(const ISummaryManager::ISummarySetup::SP &summarySetup, const MatchView::SP &matchView);
+    SearchView(SearchView &&) = default;
+    SearchView &operator=(SearchView &&) = default;
+    ~SearchView();
 
     const ISummaryManager::ISummarySetup::SP & getSummarySetup() const { return _summarySetup; }
     const MatchView::SP & getMatchView() const { return _matchView; }

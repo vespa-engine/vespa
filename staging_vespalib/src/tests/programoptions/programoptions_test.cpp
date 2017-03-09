@@ -52,40 +52,44 @@ struct MyOptions : public ProgramOptions {
     std::map<std::string, std::string> properties;
     int anotherOptionalArg;
 
-    MyOptions(int argc, const char* const* argv)
-        : ProgramOptions(argc, argv)
-    {
-            // Required options
-        addOption("uintopt u", uintOpt, "Sets an unsigned int");
-            // Optional options
-        addOption("b bool", boolOpt, "Enables a flag");
-        addOption("boolwithdef", boolWithDefOpt, true, "If set turns to false");
-
-        addOption("intopt i", intOpt, 5, "Sets a signed int");
-        addOption("floatopt", floatOpt, 4.0f, "Sets a float\nMultiline baby");
-        addOption("string s", stringOpt, std::string("ballalaika"),
-                  "Sets a string value. This is a very long description that "
-                  "should be broken down into multiple lines in some sensible "
-                  "way.");
-        addOptionHeader("Advanced options");
-        addOption("p properties", properties, "Property map");
-        addHiddenIdentifiers("prop");
-        setArgumentTypeName("key");
-        setArgumentTypeName("value", 1);
-
-        addArgument("argString", argString, "Required string argument.");
-        addArgument("argInt", argInt, "Required int argument.");
-        addArgument("argOptionalString", argOptionalString, std::string("foo"),
-                    "Optional string argument with a long description so we "
-                    "can see that it will be broken correctly.");
-        addArgument("argSecondOptional", anotherOptionalArg, 3,
-                    "Yet another optional argument");
-
-        setSyntaxMessage("A test program to see if this utility works.");
-        setSyntaxPageMaxLeftColumnSize(25);
-    }
-
+    MyOptions(int argc, const char *const *argv);
+    ~MyOptions();
 };
+
+MyOptions::MyOptions(int argc, const char* const* argv)
+    : ProgramOptions(argc, argv)
+{
+        // Required options
+    addOption("uintopt u", uintOpt, "Sets an unsigned int");
+        // Optional options
+    addOption("b bool", boolOpt, "Enables a flag");
+    addOption("boolwithdef", boolWithDefOpt, true, "If set turns to false");
+
+    addOption("intopt i", intOpt, 5, "Sets a signed int");
+    addOption("floatopt", floatOpt, 4.0f, "Sets a float\nMultiline baby");
+    addOption("string s", stringOpt, std::string("ballalaika"),
+              "Sets a string value. This is a very long description that "
+              "should be broken down into multiple lines in some sensible "
+              "way.");
+    addOptionHeader("Advanced options");
+    addOption("p properties", properties, "Property map");
+    addHiddenIdentifiers("prop");
+    setArgumentTypeName("key");
+    setArgumentTypeName("value", 1);
+
+    addArgument("argString", argString, "Required string argument.");
+    addArgument("argInt", argInt, "Required int argument.");
+    addArgument("argOptionalString", argOptionalString, std::string("foo"),
+                "Optional string argument with a long description so we "
+                "can see that it will be broken correctly.");
+    addArgument("argSecondOptional", anotherOptionalArg, 3,
+                "Yet another optional argument");
+
+    setSyntaxMessage("A test program to see if this utility works.");
+    setSyntaxPageMaxLeftColumnSize(25);
+}
+
+MyOptions::~MyOptions() { }
 
 void Test::testSyntaxPage() {
     AppOptions opts("myapp");

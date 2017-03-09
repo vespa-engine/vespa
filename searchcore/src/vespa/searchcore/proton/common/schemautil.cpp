@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "schemautil.h"
 
 #include <vespa/log/log.h>
@@ -9,8 +8,7 @@ using namespace search::index;
 
 namespace proton {
 
-namespace
-{
+namespace {
 
 class FieldQuad
 {
@@ -23,13 +21,8 @@ public:
     FieldQuad(const vespalib::string &name,
               const vespalib::string &dataType,
               const vespalib::string &collectionType,
-              const vespalib::string &location)
-        : _name(name),
-          _dataType(dataType),
-          _collectionType(collectionType),
-          _location(location)
-    {
-    }
+              const vespalib::string &location);
+    ~FieldQuad();
 
     bool
     operator<(const FieldQuad &rhs) const
@@ -43,6 +36,18 @@ public:
         return _location < rhs._location;
     }
 };
+
+FieldQuad::FieldQuad(const vespalib::string &name,
+          const vespalib::string &dataType,
+          const vespalib::string &collectionType,
+          const vespalib::string &location)
+        : _name(name),
+          _dataType(dataType),
+          _collectionType(collectionType),
+          _location(location)
+{
+}
+FieldQuad::~FieldQuad() {}
 
 }
 

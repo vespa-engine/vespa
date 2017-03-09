@@ -88,8 +88,9 @@ FastAccessFeedView::FastAccessFeedView(const StoreOnlyFeedView::Context &storeOn
     : Parent(storeOnlyCtx, params),
       _attributeWriter(ctx._attrWriter),
       _docIdLimit(ctx._docIdLimit)
-{
-}
+{}
+
+FastAccessFeedView::~FastAccessFeedView() {}
 
 void
 FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
@@ -106,9 +107,7 @@ FastAccessFeedView::forceCommit(SerialNum serialNum,
                                 OnForceCommitDoneType onCommitDone)
 {
     _attributeWriter->commit(serialNum, onCommitDone);
-    onCommitDone->
-        registerCommittedDocIdLimit(_metaStore.getCommittedDocIdLimit(),
-                                    &_docIdLimit);
+    onCommitDone->registerCommittedDocIdLimit(_metaStore.getCommittedDocIdLimit(), &_docIdLimit);
     Parent::forceCommit(serialNum, onCommitDone);
 }
 

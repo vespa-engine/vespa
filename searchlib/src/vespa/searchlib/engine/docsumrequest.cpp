@@ -10,6 +10,8 @@ DocsumRequest::DocsumRequest()
     : DocsumRequest(false)
 { }
 
+DocsumRequest::~DocsumRequest() {}
+
 DocsumRequest::DocsumRequest(bool useRootSlime_)
     : _flags(0u),
       resultClassName(),

@@ -40,10 +40,16 @@ protected:
     vespalib::Lock           _lock;
     vespalib::CountDownLatch _latch;
 public:
-    ResultHandlerBase(uint32_t waitCnt) : _lock(), _latch(waitCnt) {}
+    ResultHandlerBase(uint32_t waitCnt);
+    ~ResultHandlerBase();
     void await() { _latch.await(); }
 };
 
+ResultHandlerBase::ResultHandlerBase(uint32_t waitCnt)
+    : _lock(),
+      _latch(waitCnt)
+{}
+ResultHandlerBase::~ResultHandlerBase() { }
 
 class GenericResultHandler : public ResultHandlerBase, public IGenericResultHandler {
 private:
@@ -53,7 +59,8 @@ public:
         ResultHandlerBase(waitCnt),
         _result()
     { }
-    virtual void handle(const Result &result) {
+    ~GenericResultHandler();
+    void handle(const Result &result) override {
         if (result.hasError()) {
             vespalib::LockGuard guard(_lock);
             if (_result.hasError()) {
@@ -67,6 +74,7 @@ public:
     const Result &getResult() const { return _result; }
 };
 
+GenericResultHandler::~GenericResultHandler() {}
 
 class BucketIdListResultHandler : public IBucketIdListResultHandler
 {
@@ -77,6 +85,7 @@ public:
     BucketIdListResultHandler()
         : _bucketSet()
     { }
+    ~BucketIdListResultHandler();
     virtual void handle(const BucketIdListResult &result) {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
@@ -94,6 +103,8 @@ public:
 };
 
 
+BucketIdListResultHandler::~BucketIdListResultHandler() {}
+
 class SynchronizedBucketIdListResultHandler : public ResultHandlerBase,
                                               public BucketIdListResultHandler
 {
@@ -102,6 +113,7 @@ public:
         : ResultHandlerBase(waitCnt),
           BucketIdListResultHandler()
     { }
+    ~SynchronizedBucketIdListResultHandler();
     virtual void handle(const BucketIdListResult &result) {
         {
             vespalib::LockGuard guard(_lock);
@@ -111,6 +123,7 @@ public:
     }
 };
 
+SynchronizedBucketIdListResultHandler::~SynchronizedBucketIdListResultHandler() {}
 
 class BucketInfoResultHandler : public IBucketInfoResultHandler {
 private:
@@ -122,6 +135,7 @@ public:
         _first(true)
     {
     }
+    ~BucketInfoResultHandler();
     virtual void handle(const BucketInfoResult &result) {
         if (_first) {
             _result = result;
@@ -146,6 +160,8 @@ public:
     }
     const BucketInfoResult &getResult() const { return _result; }
 };
+
+BucketInfoResultHandler::~BucketInfoResultHandler() {}
 
 }
 

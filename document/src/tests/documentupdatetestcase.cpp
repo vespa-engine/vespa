@@ -488,17 +488,8 @@ struct WeightedSetAutoCreateFixture
     const Field& field;
     DocumentUpdate update;
 
-    WeightedSetAutoCreateFixture()
-        : repo(makeConfig()),
-          docType(repo.getDocumentType("test")),
-          doc(*docType, DocumentId("doc::testdoc")),
-          field(docType->getField("strwset")),
-          update(*docType, DocumentId("doc::testdoc"))
-    {
-        update.addUpdate(FieldUpdate(field)
-                  .addUpdate(MapValueUpdate(StringFieldValue("foo"),
-                       ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1))));
-    }
+    ~WeightedSetAutoCreateFixture();
+    WeightedSetAutoCreateFixture();
 
     void applyUpdateToDocument() {
         update.applyTo(doc);
@@ -518,6 +509,18 @@ struct WeightedSetAutoCreateFixture
     }
 };
 
+WeightedSetAutoCreateFixture::~WeightedSetAutoCreateFixture() {}
+WeightedSetAutoCreateFixture::WeightedSetAutoCreateFixture()
+    : repo(makeConfig()),
+      docType(repo.getDocumentType("test")),
+      doc(*docType, DocumentId("doc::testdoc")),
+      field(docType->getField("strwset")),
+      update(*docType, DocumentId("doc::testdoc"))
+{
+    update.addUpdate(FieldUpdate(field)
+                             .addUpdate(MapValueUpdate(StringFieldValue("foo"),
+                                                       ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1))));
+}
 } // anon ns
 
 void
@@ -1048,17 +1051,21 @@ struct CreateIfNonExistentFixture
     TestDocMan docMan;
     Document::UP document;
     DocumentUpdate::UP update;
-    CreateIfNonExistentFixture()
-        : docMan(),
-          document(docMan.createDocument()),
-          update(new DocumentUpdate(*document->getDataType(),
-                                    document->getId()))
-    {
-        update->addUpdate(FieldUpdate(document->getField("headerval"))
-                          .addUpdate(AssignValueUpdate(IntFieldValue(1))));
-        update->setCreateIfNonExistent(true);
-    }
+    ~CreateIfNonExistentFixture();
+    CreateIfNonExistentFixture();
 };
+
+CreateIfNonExistentFixture::~CreateIfNonExistentFixture() {}
+CreateIfNonExistentFixture::CreateIfNonExistentFixture()
+    : docMan(),
+      document(docMan.createDocument()),
+      update(new DocumentUpdate(*document->getDataType(),
+                                document->getId()))
+{
+    update->addUpdate(FieldUpdate(document->getField("headerval"))
+                              .addUpdate(AssignValueUpdate(IntFieldValue(1))));
+    update->setCreateIfNonExistent(true);
+}
 
 void
 DocumentUpdateTest::testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50()

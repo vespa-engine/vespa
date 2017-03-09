@@ -137,14 +137,8 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
 public:
     FileDistributor(const FileDistributor &) = delete;
     FileDistributor & operator = (const FileDistributor &) = delete;
-    FileDistributor()
-        : _configMutex(),
-          _completeReconfigurationNeeded(false),
-          _zooKeepersConfig(),
-          _fileDistributorConfig(),
-          _rpcConfig(),
-          _components()
-    { }
+    FileDistributor();
+    ~FileDistributor();
 
     void notifyGenerationChange(int64_t generation) {
         if (_components && ! completeReconfigurationNeeded()) {
@@ -231,6 +225,16 @@ public:
         _components.reset();
     }
 };
+
+FileDistributor::FileDistributor()
+    : _configMutex(),
+      _completeReconfigurationNeeded(false),
+      _zooKeepersConfig(),
+      _fileDistributorConfig(),
+      _rpcConfig(),
+      _components()
+{ }
+FileDistributor::~FileDistributor() { }
 
 class FileDistributorApplication : public FastOS_Application {
     const config::ConfigUri _configUri;

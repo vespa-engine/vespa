@@ -85,6 +85,9 @@ struct StorageServerTest : public CppUnit::TestFixture {
     std::unique_ptr<vdstestlib::DirConfig> storConfig;
     std::unique_ptr<SlobrokMirror> slobrokMirror;
 
+    StorageServerTest();
+    ~StorageServerTest();
+
     void setUp();
     void tearDown();
 
@@ -117,6 +120,9 @@ struct StorageServerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_DISABLED(testStatusPages);
     CPPUNIT_TEST_SUITE_END();
 };
+
+StorageServerTest::StorageServerTest() {}
+StorageServerTest::~StorageServerTest() {}
 
 CPPUNIT_TEST_SUITE_REGISTRATION(StorageServerTest);
 
@@ -157,12 +163,8 @@ namespace {
     struct Distributor : public Node {
         DistributorProcess _process;
 
-        Distributor(vdstestlib::DirConfig& config)
-            : _process(config.getConfigId())
-        {
-            _process.setupConfig(60000);
-            _process.createNode();
-        }
+        Distributor(vdstestlib::DirConfig& config);
+        ~Distributor();
 
         virtual StorageNode& getNode() { return _process.getNode(); }
         virtual StorageNodeContext& getContext()
@@ -173,13 +175,8 @@ namespace {
         MemFileServiceLayerProcess _process;
         StorageComponent::UP _component;
 
-        Storage(vdstestlib::DirConfig& config) : _process(config.getConfigId())
-        {
-            _process.setupConfig(60000);
-            _process.createNode();
-            _component.reset(new StorageComponent(
-                    getContext().getComponentRegister(), "test"));
-        }
+        Storage(vdstestlib::DirConfig& config);
+        ~Storage();
 
         virtual StorageNode& getNode() { return _process.getNode(); }
         virtual StorageNodeContext& getContext()
@@ -189,6 +186,25 @@ namespace {
         uint16_t getDiskCount() { return getPartitions().size(); }
         StorageComponent& getComponent() { return *_component; }
     };
+
+Distributor::Distributor(vdstestlib::DirConfig& config)
+    : _process(config.getConfigId())
+{
+    _process.setupConfig(60000);
+    _process.createNode();
+}
+Distributor::~Distributor() {}
+
+Storage::Storage(vdstestlib::DirConfig& config)
+    : _process(config.getConfigId())
+{
+    _process.setupConfig(60000);
+    _process.createNode();
+    _component.reset(new StorageComponent(
+    getContext().getComponentRegister(), "test"));
+}
+Storage::~Storage() {}
+
 }
 
 void

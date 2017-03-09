@@ -90,7 +90,8 @@ private:
         }
     }
 public:
-    ContextBuilder() : _list(), _handler(new MyFlushHandler("myhandler")) {}
+    ContextBuilder();
+    ~ContextBuilder();
     void addTls(const vespalib::string &name,
                 const flushengine::TlsStats &tlsStats) {
         _map[name] = tlsStats;
@@ -110,6 +111,12 @@ public:
         return flushengine::TlsStatsMap(std::move(map));
     }
 };
+
+
+ContextBuilder::ContextBuilder()
+    : _list(), _handler(new MyFlushHandler("myhandler"))
+{}
+ContextBuilder::~ContextBuilder() {}
 
 MyFlushTarget::SP
 createTargetM(const vespalib::string &name, MemoryGain memoryGain)

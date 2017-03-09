@@ -51,6 +51,8 @@ HttpServer::HttpServer(int port_in)
     _server->SetKeepAlive(false);
 }
 
+HttpServer::~HttpServer() { }
+
 void
 HttpServer::start()
 {

@@ -57,15 +57,18 @@ public:
 struct MyDBOwner : public DummyDBOwner
 {
     std::shared_ptr<DocumentDBReferenceRegistry> _registry;
-    MyDBOwner()
-        : DummyDBOwner(),
-          _registry(std::make_shared<DocumentDBReferenceRegistry>())
-    {
-    }
+    MyDBOwner();
+    ~MyDBOwner();
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override {
         return _registry;
     }
 };
+
+MyDBOwner::MyDBOwner()
+    : DummyDBOwner(),
+      _registry(std::make_shared<DocumentDBReferenceRegistry>())
+{}
+MyDBOwner::~MyDBOwner() {}
 
 struct Fixture {
     DummyWireService _dummy;
@@ -79,6 +82,7 @@ struct Fixture {
     vespalib::Clock _clock;
 
     Fixture();
+    ~Fixture();
 };
 
 Fixture::Fixture()
@@ -118,6 +122,8 @@ Fixture::Fixture()
     _db->start();
     _db->waitForOnlineState();
 }
+
+Fixture::~Fixture() {}
 
 const IFlushTarget *
 extractRealFlushTarget(const IFlushTarget *target)

@@ -43,6 +43,7 @@ public:
         Entry(Logger::LogLevel level, const char* file, int line,
               const std::string& token, const std::string& message,
               uint64_t timestamp, Logger&);
+        ~Entry();
 
         bool operator==(const Entry& entry) const;
         bool operator<(const Entry& entry) const;
@@ -138,6 +139,8 @@ BackingBuffer::Entry::Entry(Logger::LogLevel level, const char* file, int line,
       _logger(&l)
 {
 }
+
+BackingBuffer::Entry::~Entry() { }
 
 bool
 BackingBuffer::Entry::operator==(const Entry& entry) const

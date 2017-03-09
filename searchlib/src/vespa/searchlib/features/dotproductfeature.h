@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/attribute/multivalue.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
@@ -39,9 +40,11 @@ public:
     typedef std::vector<Element>                    Vector;
     typedef vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator> HashMap;
 protected:
+    VectorBase();
     Vector _vector;
     HashMap _dimMap; // dimension -> component
 public:
+    ~VectorBase();
     const Vector & getVector() const { return _vector; }
     void syncMap() {
         Converter<DimensionVType, DimensionHType> conv;
@@ -69,6 +72,7 @@ public:
  **/
 class StringVector : public VectorBase<vespalib::string, const char *, feature_t, ConstCharComparator> {
 public:
+    ~StringVector();
     void insert(const vespalib::stringref & label, const vespalib::stringref & value) {
         _vector.push_back(std::make_pair(label, util::strToNum<feature_t>(value)));
     }
@@ -126,6 +130,7 @@ private:
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count);
 public:
     DotProductExecutor(const A * attribute, const V & vector);
+    ~DotProductExecutor();
     virtual void execute(uint32_t docId);
 };
 
@@ -134,6 +139,7 @@ class DotProductByCopyExecutor : public DotProductExecutor<A> {
 public:
     typedef typename DotProductExecutor<A>::V V;
     DotProductByCopyExecutor(const A * attribute, const V & vector);
+    ~DotProductByCopyExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count);
@@ -146,6 +152,7 @@ public:
     typedef std::vector<uint32_t> IV;
     typedef typename DotProductExecutor<A>::V V;
     SparseDotProductExecutor(const A * attribute, const V & vector, const IV & indexes);
+    ~SparseDotProductExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count);
@@ -160,6 +167,7 @@ public:
     typedef std::vector<uint32_t> IV;
     typedef typename DotProductExecutor<A>::V V;
     SparseDotProductByCopyExecutor(const A * attribute, const V & vector, const IV & indexes);
+    ~SparseDotProductByCopyExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count);

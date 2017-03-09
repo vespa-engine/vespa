@@ -22,6 +22,7 @@ struct ContentProtonMetrics : metrics::MetricSet
     ResourceUsageMetrics resourceUsage;
 
     ContentProtonMetrics();
+    ~ContentProtonMetrics();
 
 };
 

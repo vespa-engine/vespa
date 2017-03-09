@@ -160,10 +160,15 @@ float PredicateTreeAnalyzer::findMinFeature(const Inspector &in) {
     return 0.0f;
 }
 
-PredicateTreeAnalyzer::PredicateTreeAnalyzer(const Inspector &in) : _has_not(false), _negated(false) {
+PredicateTreeAnalyzer::PredicateTreeAnalyzer(const Inspector &in)
+    : _has_not(false),
+      _negated(false)
+{
     traverseTree(in);
     _min_feature = static_cast<int>(std::ceil(float(findMinFeature(in)) + (_has_not? 1.0 : 0.0)));
 }
+
+PredicateTreeAnalyzer::~PredicateTreeAnalyzer() { }
 
 }  // namespace predicate
 }  // namespace search

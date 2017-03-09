@@ -30,6 +30,8 @@ class NodeMaintenanceStatsTracker
     std::unordered_map<uint16_t, NodeMaintenanceStats> _stats;
     static const NodeMaintenanceStats _emptyStats;
 public:
+    NodeMaintenanceStatsTracker();
+    ~NodeMaintenanceStatsTracker();
     void incMovingOut(uint16_t node) {
         ++_stats[node].movingOut;
     }

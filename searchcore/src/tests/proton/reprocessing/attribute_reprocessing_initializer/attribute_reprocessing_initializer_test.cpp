@@ -57,17 +57,8 @@ struct MyConfig
     AttributeManager::SP _mgr;
     search::index::Schema _schema;
     MyDocTypeInspector::SP _inspector;
-    MyConfig()
-        : _fileHeaderContext(),
-          _attributeFieldWriter(),
-          _hwInfo(),
-          _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
-                                    _fileHeaderContext,
-                                    _attributeFieldWriter, _hwInfo)),
-          _schema(),
-          _inspector(new MyDocTypeInspector())
-    {
-    }
+    MyConfig();
+    ~MyConfig();
     void addFields(const StringVector &fields) {
         for (auto field : fields) {
             _inspector->_fields.insert(field);
@@ -91,6 +82,18 @@ struct MyConfig
         _schema.addIndexField(Schema::IndexField(name, schema::STRING));
     }
 };
+
+MyConfig::MyConfig()
+    : _fileHeaderContext(),
+      _attributeFieldWriter(),
+      _hwInfo(),
+      _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
+                                _fileHeaderContext,
+                                _attributeFieldWriter, _hwInfo)),
+      _schema(),
+      _inspector(new MyDocTypeInspector())
+{}
+MyConfig::~MyConfig() {}
 
 struct Fixture
 {

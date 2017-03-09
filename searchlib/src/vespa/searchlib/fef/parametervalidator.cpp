@@ -44,6 +44,8 @@ ParameterValidator::Result::Result(size_t tag) :
 {
 }
 
+ParameterValidator::Result::~Result() { }
+
 void
 ParameterValidator::validateField(ParameterType::Enum type, ParameterCollection::Enum collection,
                                   size_t i, Result & result)

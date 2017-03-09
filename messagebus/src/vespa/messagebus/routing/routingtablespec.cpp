@@ -8,9 +8,9 @@ RoutingTableSpec::RoutingTableSpec(const string &protocol) :
     _protocol(protocol),
     _hops(),
     _routes()
-{
-    // empty
-}
+{ }
+
+RoutingTableSpec::~RoutingTableSpec() {}
 
 HopSpec
 RoutingTableSpec::removeHop(uint32_t i)

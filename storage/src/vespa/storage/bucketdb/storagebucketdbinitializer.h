@@ -98,6 +98,7 @@ class StorageBucketDBInitializer : public StorageLink,
         metrics::LongAverageMetric _initLatency;
 
         Metrics(framework::Component&);
+        ~Metrics();
     };
     struct GlobalState {
         vespalib::hash_map<api::StorageMessage::Id, ReadBucketList::SP> _lists;

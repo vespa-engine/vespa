@@ -217,6 +217,8 @@ struct StateCheckersTest : public CppUnit::TestFixture,
         uint32_t _minSplitBits {0};
         bool _includeMessagePriority {false};
         bool _includeSchedulingPriority {false};
+        CheckerParams();
+        ~CheckerParams();
 
         CheckerParams& expect(const std::string& e) {
             _expect = e;
@@ -334,6 +336,11 @@ struct StateCheckersTest : public CppUnit::TestFixture,
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(StateCheckersTest);
+
+
+StateCheckersTest::CheckerParams::CheckerParams() {}
+StateCheckersTest::CheckerParams::~CheckerParams() {}
+
 
 const StateCheckersTest::PendingMessage
 StateCheckersTest::CheckerParams::NO_OP_BLOCKER;
@@ -1729,10 +1736,9 @@ class StateCheckerRunner
     NodeMaintenanceStatsTracker _statsTracker;
     std::string _result;
 public:
-    StateCheckerRunner(StateCheckersTest& fixture)
-        : _fixture(fixture)
-    {
-    }
+    StateCheckerRunner(StateCheckersTest& fixture);
+    ~StateCheckerRunner();
+
 
     StateCheckerRunner& addToDb(const document::BucketId& bid,
                                 const std::string& bucketInfo)
@@ -1766,6 +1772,13 @@ public:
         return _statsTracker;
     }
 };
+
+template <typename Checker>
+StateCheckerRunner<Checker>::StateCheckerRunner(StateCheckersTest& fixture)
+    : _fixture(fixture)
+{}
+template <typename Checker>
+StateCheckerRunner<Checker>::~StateCheckerRunner() {}
 
 } // anon ns
 

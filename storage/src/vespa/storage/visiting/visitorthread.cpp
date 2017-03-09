@@ -31,6 +31,8 @@ VisitorThread::Event::Event(Event&& other)
 {
 }
 
+VisitorThread::Event::~Event() {}
+
 VisitorThread::Event&
 VisitorThread::Event::operator= (Event&& other)
 {

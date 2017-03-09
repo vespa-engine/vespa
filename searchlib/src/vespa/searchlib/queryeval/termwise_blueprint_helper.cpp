@@ -32,6 +32,8 @@ TermwiseBlueprintHelper::TermwiseBlueprintHelper(const IntermediateBlueprint &se
     }
 }
 
+TermwiseBlueprintHelper::~TermwiseBlueprintHelper() { }
+
 void
 TermwiseBlueprintHelper::insert_termwise(SearchIterator::UP search, bool strict)
 {

@@ -29,6 +29,7 @@ vespa_add_library(searchlib_attribute OBJECT
     createsinglefastsearch.cpp
     createsinglestd.cpp
     defines.cpp
+    diversity.cpp
     dociditerator.cpp
     enumattribute.cpp
     enumattributesaver.cpp

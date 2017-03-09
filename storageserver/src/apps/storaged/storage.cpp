@@ -65,6 +65,7 @@ class StorageApp : public FastOS_Application,
 
 public:
     StorageApp();
+    ~StorageApp();
 
     void handleSignal(int signal) {
         LOG(info, "Got signal %d, waiting for lock", signal);
@@ -100,6 +101,8 @@ StorageApp::StorageApp()
         "Maximum amount of milliseconds we allow proper shutdown to run before "
         "abruptly killing the process.");
 }
+
+StorageApp::~StorageApp() {}
 
 bool StorageApp::Init()
 {

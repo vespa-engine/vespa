@@ -9,9 +9,9 @@ MessageBusParams::MessageBusParams() :
     _retryPolicy(new RetryTransientErrorsPolicy()),
     _maxPendingCount(1024),
     _maxPendingSize(128 * 1024 * 1024)
-{
-    // empty
-}
+{ }
+
+MessageBusParams::~MessageBusParams() {}
 
 uint32_t
 MessageBusParams::getNumProtocols() const

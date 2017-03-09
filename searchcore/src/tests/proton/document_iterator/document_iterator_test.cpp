@@ -108,13 +108,10 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     DocumentIdT                docid;
     DocumentIdT                docIdLimit;
 
-    UnitDR()
-        : repo(), document(new Document(*DataType::DOCUMENT, DocumentId())),
-          timestamp(0), bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max()) {}
-    UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r)
-        : repo(), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt), docIdLimit(std::numeric_limits<uint32_t>::max()) {}
-    UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r)
-        : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt), docIdLimit(std::numeric_limits<uint32_t>::max()) {}
+    UnitDR();
+    UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r);
+    UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r);
+    ~UnitDR();
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
@@ -150,6 +147,21 @@ struct UnitDR : DocumentRetrieverBaseForTest {
 
     static void reset() { _docidCnt = 2; }
 };
+
+UnitDR::UnitDR()
+    : repo(), document(new Document(*DataType::DOCUMENT, DocumentId())), timestamp(0),
+      bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max())
+{}
+UnitDR::UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r)
+    : repo(), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
+      docIdLimit(std::numeric_limits<uint32_t>::max())
+{}
+UnitDR::UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r)
+    : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
+      docIdLimit(std::numeric_limits<uint32_t>::max())
+{}
+UnitDR::~UnitDR() {}
+
 
 struct VisitRecordingUnitDR : UnitDR {
     using VisitedLIDs = std::unordered_set<DocumentIdT>;

@@ -10,16 +10,8 @@ struct MySource : public DualMergeDirector::Source {
     std::string data;
     std::string diff;
 
-    MySource(bool a, size_t num_sources, size_t source_id)
-        : typeA(a),
-          data(num_sources, '0'),
-          diff(num_sources, '5')
-    {
-        if (source_id < num_sources) {
-            data[source_id] = '1';
-            diff[source_id] = '6';
-        }
-    }
+    MySource(bool a, size_t num_sources, size_t source_id);
+    ~MySource();
     virtual void merge(Source &mt) {
         MySource &rhs = static_cast<MySource&>(mt);
         ASSERT_EQUAL(typeA, rhs.typeA);
@@ -39,6 +31,18 @@ struct MySource : public DualMergeDirector::Source {
         EXPECT_EQUAL(std::string(diff.size(), '5'), diff);
     }
 };
+
+MySource::MySource(bool a, size_t num_sources, size_t source_id)
+    : typeA(a),
+      data(num_sources, '0'),
+      diff(num_sources, '5')
+{
+    if (source_id < num_sources) {
+        data[source_id] = '1';
+        diff[source_id] = '6';
+    }
+}
+MySource::~MySource() {}
 
 TEST_MT_F("require that merging works", 64, std::unique_ptr<DualMergeDirector>()) {
     for (size_t use_threads = 1; use_threads <= num_threads; ++use_threads) {

@@ -37,6 +37,7 @@ public:
          * Creates a result for the parameter description with the given tag.
          */
         Result(size_t tag = 0);
+        ~Result();
         Result & addParameter(const Parameter & param) { _params.push_back(param); return *this; }
         Result & setError(const vespalib::stringref & str) {
             _errorStr = str;

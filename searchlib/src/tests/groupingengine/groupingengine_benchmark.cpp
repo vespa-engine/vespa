@@ -114,7 +114,8 @@ private:
     AggregationContext &operator=(const AggregationContext &);
 
 public:
-    AggregationContext() : _attrMan(), _result(), _attrCtx(_attrMan.createContext()) {}
+    AggregationContext();
+    ~AggregationContext();
     ResultBuilder &result() { return _result; }
     void add(AttributeVector::SP attr) {
         _attrMan.add(attr);
@@ -124,6 +125,11 @@ public:
     }
 };
 
+
+AggregationContext::AggregationContext()
+    : _attrMan(), _result(), _attrCtx(_attrMan.createContext())
+{}
+AggregationContext::~AggregationContext() {}
 //-----------------------------------------------------------------------------
 
 class Test : public TestApp

@@ -50,6 +50,7 @@ public:
     TwoPhaseUpdateOperation(DistributorComponent& manager,
                             const std::shared_ptr<api::UpdateCommand> & msg,
                             DistributorMetricSet& metrics);
+    ~TwoPhaseUpdateOperation();
 
     void onStart(DistributorMessageSender& sender);
 

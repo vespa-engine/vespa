@@ -89,8 +89,8 @@ private:
         IndexVector _indices;
         ExpectedVector _expected;
         Reader(uint32_t generation, const IndexVector & indices,
-               const ExpectedVector & expected) :
-            _generation(generation), _indices(indices), _expected(expected) {}
+               const ExpectedVector & expected);
+        ~Reader();
     };
 
     void
@@ -102,6 +102,11 @@ public:
     EnumStoreTest() {}
     int Main();
 };
+
+EnumStoreTest::Reader::Reader(uint32_t generation, const IndexVector & indices, const ExpectedVector & expected)
+    : _generation(generation), _indices(indices), _expected(expected)
+{}
+EnumStoreTest::Reader::~Reader() { }
 
 void
 EnumStoreTest::testIndex()

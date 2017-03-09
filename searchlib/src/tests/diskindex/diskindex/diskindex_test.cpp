@@ -68,9 +68,8 @@ public:
 
 class Verifier : public SearchIteratorVerifier {
 public:
-    Verifier(FakePosting::SP fp) :
-        _fp(std::move(fp))
-    { }
+    Verifier(FakePosting::SP fp);
+    ~Verifier();
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
         return SearchIterator::UP(_fp->createIterator(_tfmda));
@@ -79,6 +78,11 @@ private:
     mutable TermFieldMatchDataArray _tfmda;
     FakePosting::SP _fp;
 };
+
+    Verifier::Verifier(FakePosting::SP fp) :
+    _fp(std::move(fp))
+            { }
+    Verifier::~Verifier() {}
 
 void
 Test::requireThatSearchIteratorsConforms()

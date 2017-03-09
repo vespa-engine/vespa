@@ -84,12 +84,8 @@ private:
 public:
     ConfigFactory(const DocumentTypeRepo::SP &repo,
                   const DocumenttypesConfigSP &typeCfg,
-                  const SchemaConfigFactory::SP &schemaFactory) :
-        _repo(repo),
-        _typeCfg(typeCfg),
-        _schemaFactory(schemaFactory)
-    {
-    }
+                  const SchemaConfigFactory::SP &schemaFactory);
+    ~ConfigFactory();
     const DocumentTypeRepo::SP getTypeRepo() const { return _repo; }
     const DocumenttypesConfigSP getTypeCfg() const { return _typeCfg; }
     DocTypeVector getDocTypes() const {
@@ -131,6 +127,15 @@ public:
     }
 };
 
+
+ConfigFactory::ConfigFactory(const DocumentTypeRepo::SP &repo, const DocumenttypesConfigSP &typeCfg,
+                             const SchemaConfigFactory::SP &schemaFactory)
+    : _repo(repo),
+      _typeCfg(typeCfg),
+      _schemaFactory(schemaFactory)
+{}
+ConfigFactory::~ConfigFactory() {}
+
 class DocumentDBFactory : public DummyDBOwner {
 private:
     vespalib::string          _baseDir;
@@ -144,17 +149,8 @@ private:
     vespalib::ThreadStackExecutor _summaryExecutor;
 
 public:
-    DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort) :
-        _baseDir(baseDir),
-        _fileHeaderContext(),
-        _tls("tls", tlsListenPort, baseDir, _fileHeaderContext),
-        _tlsSpec(vespalib::make_string("tcp/localhost:%d", tlsListenPort)),
-        _queryLimiter(),
-        _clock(),
-        _metricsWireService(),
-        _summaryExecutor(8, 128 * 1024)
-    {
-    }
+    DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort);
+    ~DocumentDBFactory();
     DocumentDB::SP create(const DocTypeName &docType,
                           const ConfigFactory &factory) {
         DocumentDBConfig::SP snapshot = factory.create(docType);
@@ -198,6 +194,18 @@ public:
     }
 };
 
+
+DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort)
+    : _baseDir(baseDir),
+      _fileHeaderContext(),
+      _tls("tls", tlsListenPort, baseDir, _fileHeaderContext),
+      _tlsSpec(vespalib::make_string("tcp/localhost:%d", tlsListenPort)),
+      _queryLimiter(),
+      _clock(),
+      _metricsWireService(),
+      _summaryExecutor(8, 128 * 1024)
+{}
+DocumentDBFactory::~DocumentDBFactory() {}
 
 class DocumentDBRepo {
 private:

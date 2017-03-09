@@ -32,47 +32,54 @@ private:
     size_t _numBoundCells;
     std::vector<uint32_t> _unboundDimSizes;
 public:
-    TensorReader(AttributeVector &attr)
-        : ReaderBase(attr),
-          _tensorType(vespalib::eval::ValueType::from_spec(getDatHeader().getTag(tensorTypeTag).asString())),
-          _numUnboundDims(0),
-          _numBoundCells(1),
-          _unboundDimSizes()
-    {
-        for (const auto & dim : _tensorType.dimensions()) {
-            if (dim.is_bound()) {
-                _numBoundCells *= dim.size;
-            } else {
-                ++_numUnboundDims;
-            }
-        }
-        _unboundDimSizes.resize(_numUnboundDims);
-    }
-    size_t getNumCells() {
-        unsigned char detect;
-        _datFile->ReadBuf(&detect, sizeof(detect));
-        if (detect == tensorIsNotPresent) {
-            return 0u;
-        }
-        if (detect != tensorIsPresent) {
-            abort();
-        }
-        size_t numCells = _numBoundCells;
-        if (_numUnboundDims != 0) {
-            _datFile->ReadBuf(&_unboundDimSizes[0],
-                              _numUnboundDims * sizeof(uint32_t));
-            for (auto i = 0u; i < _numUnboundDims; ++i) {
-                assert(_unboundDimSizes[i] != 0u);
-                numCells *= _unboundDimSizes[i];
-                // TODO: sanity check numCells
-            }
-        }
-        return numCells;
-    }
+    TensorReader(AttributeVector &attr);
+    ~TensorReader();
+    size_t getNumCells();
     const vespalib::eval::ValueType &tensorType() const { return _tensorType; }
     const std::vector<uint32_t> &getUnboundDimSizes() const { return _unboundDimSizes; }
     void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
 };
+
+TensorReader::TensorReader(AttributeVector &attr)
+    : ReaderBase(attr),
+    _tensorType(vespalib::eval::ValueType::from_spec(getDatHeader().getTag(tensorTypeTag).asString())),
+    _numUnboundDims(0),
+    _numBoundCells(1),
+    _unboundDimSizes()
+{
+    for (const auto & dim : _tensorType.dimensions()) {
+        if (dim.is_bound()) {
+            _numBoundCells *= dim.size;
+        } else {
+            ++_numUnboundDims;
+        }
+    }
+    _unboundDimSizes.resize(_numUnboundDims);
+}
+TensorReader::~TensorReader() { }
+
+size_t
+TensorReader::getNumCells() {
+    unsigned char detect;
+    _datFile->ReadBuf(&detect, sizeof(detect));
+    if (detect == tensorIsNotPresent) {
+        return 0u;
+    }
+    if (detect != tensorIsPresent) {
+        abort();
+    }
+    size_t numCells = _numBoundCells;
+    if (_numUnboundDims != 0) {
+        _datFile->ReadBuf(&_unboundDimSizes[0],
+                          _numUnboundDims * sizeof(uint32_t));
+        for (auto i = 0u; i < _numUnboundDims; ++i) {
+            assert(_unboundDimSizes[i] != 0u);
+            numCells *= _unboundDimSizes[i];
+            // TODO: sanity check numCells
+        }
+    }
+    return numCells;
+}
 
 }
 

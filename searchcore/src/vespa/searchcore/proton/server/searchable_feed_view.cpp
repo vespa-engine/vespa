@@ -1,20 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchable_feed_view.h"
-#include "ireplayconfig.h"
 #include "forcecommitcontext.h"
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
-#include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
-#include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchable_feed_view");
 
@@ -36,13 +32,9 @@ using search::makeLambdaTask;
 
 namespace proton {
 
+namespace {
 
-namespace
-{
-
-bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone,
-                 uint32_t traceLevel)
-{
+bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone, uint32_t traceLevel) {
     return onWriteDone && onWriteDone->shouldTrace(traceLevel);
 }
 
@@ -52,13 +44,10 @@ SearchableFeedView::Context::Context(const IIndexWriter::SP &indexWriter,
                                      const std::shared_ptr<IGidToLidChangeHandler> &gidToLidChangeHandler)
     : _indexWriter(indexWriter),
       _gidToLidChangeHandler(gidToLidChangeHandler)
-{
-}
+{}
 
 
-SearchableFeedView::Context::~Context()
-{
-}
+SearchableFeedView::Context::~Context() {}
 
 SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
                                        const PersistentParams &params,
@@ -68,9 +57,9 @@ SearchableFeedView::SearchableFeedView(const StoreOnlyFeedView::Context &storeOn
       _indexWriter(ctx._indexWriter),
       _hasIndexedFields(_schema->getNumIndexFields() > 0),
       _gidToLidChangeHandler(ctx._gidToLidChangeHandler)
-{
-}
+{ }
 
+SearchableFeedView::~SearchableFeedView() {}
 
 void
 SearchableFeedView::performSync()

@@ -78,7 +78,10 @@ struct ViewPtrs
 {
     SearchView::SP sv;
     SearchableFeedView::SP fv;
+    ~ViewPtrs();
 };
+
+ViewPtrs::~ViewPtrs() {}
 
 struct ViewSet
 {
@@ -97,24 +100,8 @@ struct ViewSet
     VarHolder<SearchView::SP> searchView;
     VarHolder<SearchableFeedView::SP> feedView;
     HwInfo _hwInfo;
-    ViewSet()
-        : _reconfigurer(),
-          _fileHeaderContext(),
-          _writeService(),
-          serialNum(1),
-          repo(createRepo()),
-          _docTypeName(DOC_TYPE),
-          _docIdLimit(0u),
-          _noTlSyncer(),
-          _summaryMgr(),
-          _dmsc(),
-          _lidReuseDelayer(),
-          _commitTimeTracker(TimeStamp()),
-          searchView(),
-          feedView(),
-          _hwInfo()
-    {
-    }
+    ViewSet();
+    ~ViewSet();
 
     ViewPtrs getViewPtrs() {
         ViewPtrs ptrs;
@@ -123,6 +110,26 @@ struct ViewSet
         return ptrs;
     }
 };
+
+
+ViewSet::ViewSet()
+    : _reconfigurer(),
+      _fileHeaderContext(),
+      _writeService(),
+      serialNum(1),
+      repo(createRepo()),
+      _docTypeName(DOC_TYPE),
+      _docIdLimit(0u),
+      _noTlSyncer(),
+      _summaryMgr(),
+      _dmsc(),
+      _lidReuseDelayer(),
+      _commitTimeTracker(TimeStamp()),
+      searchView(),
+      feedView(),
+      _hwInfo()
+{ }
+ViewSet::~ViewSet() {}
 
 struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
     virtual vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
@@ -147,32 +154,34 @@ struct Fixture
     ViewSet _views;
     MyDocumentDBReferenceResolver _resolver;
     ConfigurerUP _configurer;
-    Fixture()
-        : _clock(),
-          _queryLimiter(),
-          _constantValueFactory(),
-          _constantValueRepo(_constantValueFactory),
-          _summaryExecutor(8, 128*1024),
-          _views(),
-          _resolver(),
-          _configurer()
-    {
-        vespalib::rmdir(BASE_DIR, true);
-        vespalib::mkdir(BASE_DIR);
-        initViewSet(_views);
-        _configurer.reset(new Configurer(_views._summaryMgr,
-                                         _views.searchView,
-                                         _views.feedView,
-                                         _queryLimiter,
-                                         _constantValueRepo,
-                                         _clock,
-                                         "test",
-                                         0));
-    }
-    ~Fixture() {
-    }
+    Fixture();
+    ~Fixture();
     void initViewSet(ViewSet &views);
 };
+
+Fixture::Fixture()
+    : _clock(),
+      _queryLimiter(),
+      _constantValueFactory(),
+      _constantValueRepo(_constantValueFactory),
+      _summaryExecutor(8, 128*1024),
+      _views(),
+      _resolver(),
+      _configurer()
+{
+    vespalib::rmdir(BASE_DIR, true);
+    vespalib::mkdir(BASE_DIR);
+    initViewSet(_views);
+    _configurer.reset(new Configurer(_views._summaryMgr,
+                                     _views.searchView,
+                                     _views.feedView,
+                                     _queryLimiter,
+                                     _constantValueRepo,
+                                     _clock,
+                                     "test",
+                                     0));
+}
+Fixture::~Fixture() {}
 
 void
 Fixture::initViewSet(ViewSet &views)
@@ -334,7 +343,8 @@ struct SearchViewComparer
 {
     SearchView::SP _old;
     SearchView::SP _new;
-    SearchViewComparer(SearchView::SP old, SearchView::SP new_) : _old(old), _new(new_) {}
+    SearchViewComparer(SearchView::SP old, SearchView::SP new_);
+    ~SearchViewComparer();
     void expect_equal() {
         EXPECT_EQUAL(_old.get(), _new.get());
     }
@@ -379,11 +389,19 @@ struct SearchViewComparer
     }
 };
 
+SearchViewComparer::SearchViewComparer(SearchView::SP old, SearchView::SP new_)
+    : _old(std::move(old)),
+      _new(std::move(new_))
+{}
+SearchViewComparer::~SearchViewComparer() {}
+
+
 struct FeedViewComparer
 {
     SearchableFeedView::SP _old;
     SearchableFeedView::SP _new;
-    FeedViewComparer(SearchableFeedView::SP old, SearchableFeedView::SP new_) : _old(old), _new(new_) {}
+    FeedViewComparer(SearchableFeedView::SP old, SearchableFeedView::SP new_);
+    ~FeedViewComparer();
     void expect_equal() {
         EXPECT_EQUAL(_old.get(), _new.get());
     }
@@ -410,13 +428,18 @@ struct FeedViewComparer
     }
 };
 
+FeedViewComparer::FeedViewComparer(SearchableFeedView::SP old, SearchableFeedView::SP new_)
+    : _old(std::move(old)),
+      _new(std::move(new_))
+{}
+FeedViewComparer::~FeedViewComparer() {}
+
 struct FastAccessFeedViewComparer
 {
     FastAccessFeedView::SP _old;
     FastAccessFeedView::SP _new;
-    FastAccessFeedViewComparer(FastAccessFeedView::SP old, FastAccessFeedView::SP new_)
-        : _old(old), _new(new_)
-    {}
+    FastAccessFeedViewComparer(FastAccessFeedView::SP old, FastAccessFeedView::SP new_);
+    ~FastAccessFeedViewComparer();
     void expect_not_equal() {
         EXPECT_NOT_EQUAL(_old.get(), _new.get());
     }
@@ -430,6 +453,12 @@ struct FastAccessFeedViewComparer
         EXPECT_NOT_EQUAL(_old->getSchema().get(), _new->getSchema().get());
     }
 };
+
+FastAccessFeedViewComparer::FastAccessFeedViewComparer(FastAccessFeedView::SP old, FastAccessFeedView::SP new_)
+    : _old(std::move(old)),
+      _new(std::move(new_))
+{}
+FastAccessFeedViewComparer::~FastAccessFeedViewComparer() {}
 
 TEST_F("require that we can reconfigure index searchable", Fixture)
 {

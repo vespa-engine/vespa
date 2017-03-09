@@ -124,7 +124,11 @@ struct Domain {
         : dimension(dimension_in), size(size_in), keys() {}
     Domain(const vespalib::string &dimension_in, const std::vector<vespalib::string> &keys_in)
         : dimension(dimension_in), size(0), keys(keys_in) {}
+    ~Domain();
 };
+
+Domain::~Domain() { }
+
 using Layout = std::vector<Domain>;
 
 Domain x() { return Domain("x", {}); }

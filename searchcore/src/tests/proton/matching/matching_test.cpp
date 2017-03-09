@@ -128,18 +128,8 @@ struct MyWorld {
     QueryLimiter            queryLimiter;
     EmptyConstantValueRepo  constantValueRepo;
 
-    MyWorld()
-        : schema(),
-          config(),
-          searchContext(),
-          attributeContext(),
-          sessionManager(),
-          metaStore(std::make_shared<BucketDBOwner>()),
-          matchingStats(),
-          clock(),
-          queryLimiter()
-    {
-    }
+    MyWorld();
+    ~MyWorld();
 
     void basicSetup(size_t heapSize=10, size_t arraySize=100) {
         // schema
@@ -360,6 +350,18 @@ struct MyWorld {
 
 };
 
+MyWorld::MyWorld()
+    : schema(),
+      config(),
+      searchContext(),
+      attributeContext(),
+      sessionManager(),
+      metaStore(std::make_shared<BucketDBOwner>()),
+      matchingStats(),
+      clock(),
+      queryLimiter()
+{}
+MyWorld::~MyWorld() {}
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 

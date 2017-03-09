@@ -35,6 +35,7 @@ private:
 
 public:
     AttributeWriter(const proton::IAttributeManager::SP &mgr);
+    ~AttributeWriter();
 
     /**
      * Implements IAttributeWriter.

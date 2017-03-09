@@ -4,7 +4,8 @@
 
 #include "input.h"
 #include "output.h"
-#include <ostream>
+#include <iosfwd>
+#include <vector>
 
 namespace vespalib {
 
@@ -24,6 +25,7 @@ private:
 
 public:
     SimpleBuffer();
+    ~SimpleBuffer();
     Memory obtain() override;
     Input &evict(size_t bytes) override;
     WritableMemory reserve(size_t bytes) override;

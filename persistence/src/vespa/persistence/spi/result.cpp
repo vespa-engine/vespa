@@ -8,6 +8,8 @@ namespace storage {
 
 namespace spi {
 
+Result::~Result() { }
+
 vespalib::string
 Result::toString() const {
     vespalib::asciistream os;

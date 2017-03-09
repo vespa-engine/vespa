@@ -52,11 +52,9 @@ struct TestJob {
     TestLog::UP _log;
     InitializerTask::SP _root;
 
-    TestJob(TestLog::UP log, InitializerTask::SP root)
-        : _log(std::move(log)),
-          _root(std::move(root))
-    {
-    }
+    TestJob(TestLog::UP log, InitializerTask::SP root);
+    TestJob(TestJob &&) = default;
+    ~TestJob();
 
     static TestJob setupCDependsOnAandB()
     {
@@ -83,6 +81,12 @@ struct TestJob {
         return TestJob(std::move(log), std::move(C));
     }
 };
+
+TestJob::TestJob(TestLog::UP log, InitializerTask::SP root)
+    : _log(std::move(log)),
+      _root(std::move(root))
+{ }
+TestJob::~TestJob() {}
 
 
 struct Fixture

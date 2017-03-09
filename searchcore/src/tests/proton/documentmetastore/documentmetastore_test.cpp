@@ -898,26 +898,8 @@ struct UserDocFixture {
     BucketId bid2;
     BucketId bid3;
     bucketdb::BucketDBHandler _bucketDBHandler;
-    UserDocFixture()
-        : _bucketDB(createBucketDB()),
-          dms(_bucketDB), gids(), bid1(), bid2(), bid3(),
-          _bucketDBHandler(*_bucketDB)
-    {
-        _bucketDBHandler.addDocumentMetaStore(&dms, 0);
-        gids.push_back(createGid(10, 1));
-        gids.push_back(createGid(10, 2));
-        gids.push_back(createGid(20, 3));
-        gids.push_back(createGid(10, 4));
-        gids.push_back(createGid(10, 5));
-        gids.push_back(createGid(20, 6));
-        gids.push_back(createGid(20, 7));
-        gids.push_back(createGid(30, 8)); // extra
-        gids.push_back(createGid(10, 9)); // extra
-        // 3 users -> 3 buckets
-        bid1 = BucketId(minNumBits, gids[0].convertToBucketId().getRawId());
-        bid2 = BucketId(minNumBits, gids[2].convertToBucketId().getRawId());
-        bid3 = BucketId(minNumBits, gids[7].convertToBucketId().getRawId());
-    }
+    UserDocFixture();
+    ~UserDocFixture();
     void addGlobalId(const GlobalId &gid, uint32_t expLid, uint32_t timestampConst = 100) {
         uint32_t actLid = addGid(dms, gid, Timestamp(expLid + timestampConst));
         EXPECT_EQUAL(expLid, actLid);
@@ -927,6 +909,28 @@ struct UserDocFixture {
     }
     void addGlobalIds(size_t numGids=7) __attribute__((noinline));
 };
+
+UserDocFixture::UserDocFixture()
+    : _bucketDB(createBucketDB()),
+      dms(_bucketDB), gids(), bid1(), bid2(), bid3(),
+      _bucketDBHandler(*_bucketDB)
+{
+    _bucketDBHandler.addDocumentMetaStore(&dms, 0);
+    gids.push_back(createGid(10, 1));
+    gids.push_back(createGid(10, 2));
+    gids.push_back(createGid(20, 3));
+    gids.push_back(createGid(10, 4));
+    gids.push_back(createGid(10, 5));
+    gids.push_back(createGid(20, 6));
+    gids.push_back(createGid(20, 7));
+    gids.push_back(createGid(30, 8)); // extra
+    gids.push_back(createGid(10, 9)); // extra
+    // 3 users -> 3 buckets
+    bid1 = BucketId(minNumBits, gids[0].convertToBucketId().getRawId());
+    bid2 = BucketId(minNumBits, gids[2].convertToBucketId().getRawId());
+    bid3 = BucketId(minNumBits, gids[7].convertToBucketId().getRawId());
+}
+UserDocFixture::~UserDocFixture() {}
 
 void
 UserDocFixture::addGlobalIds(size_t numGids) {
@@ -1142,22 +1146,25 @@ struct SplitAndJoinEmptyFixture
     BucketId          bid36; // contained in bid10 and bid22
     bucketdb::BucketDBHandler _bucketDBHandler;
 
-    SplitAndJoinEmptyFixture(void)
-        : dms(createBucketDB()),
-          bid10(1, 0), bid11(1, 1),
-          bid20(2, 0), bid21(2, 1), bid22(2, 2), bid23(2, 3),
-          bid30(3, 0), bid32(3, 2), bid34(3, 4), bid36(3, 6),
-          _bucketDBHandler(dms.getBucketDB())
-    {
-        _bucketDBHandler.addDocumentMetaStore(&dms, 0);
-    }
+    SplitAndJoinEmptyFixture();
+    ~SplitAndJoinEmptyFixture();
 
-    BucketInfo
-    getInfo(const BucketId &bid) const
-    {
+    BucketInfo getInfo(const BucketId &bid) const {
         return dms.getBucketDB().takeGuard()->get(bid);
     }
 };
+
+SplitAndJoinEmptyFixture::SplitAndJoinEmptyFixture()
+    : dms(createBucketDB()),
+      bid10(1, 0), bid11(1, 1),
+      bid20(2, 0), bid21(2, 1), bid22(2, 2), bid23(2, 3),
+      bid30(3, 0), bid32(3, 2), bid34(3, 4), bid36(3, 6),
+      _bucketDBHandler(dms.getBucketDB())
+{
+    _bucketDBHandler.addDocumentMetaStore(&dms, 0);
+}
+SplitAndJoinEmptyFixture::~SplitAndJoinEmptyFixture() {}
+
 
 struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture
 {
@@ -1172,29 +1179,8 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture
     const GlobalIdVector *bid23Gids;
     const GlobalIdVector *bid30Gids;
     const GlobalIdVector *bid32Gids;
-    SplitAndJoinFixture()
-        : SplitAndJoinEmptyFixture(),
-          gids(),
-          bid1s(), bid2s(), bid3s(),
-          bid10Gids(), bid11Gids(), bid21Gids(), bid23Gids(),
-          bid30Gids(), bid32Gids()
-    {
-        for (uint32_t i = 1; i <= 31; ++i) {
-            gids.push_back(GlobalIdEntry(i));
-            bid1s[gids.back().bid1].push_back(gids.back());
-            bid2s[gids.back().bid2].push_back(gids.back());
-            bid3s[gids.back().bid3].push_back(gids.back());
-        }
-        ASSERT_EQUAL(2u, bid1s.size());
-        ASSERT_EQUAL(4u, bid2s.size());
-        ASSERT_EQUAL(8u, bid3s.size());
-        bid10Gids = &bid1s[bid10];
-        bid11Gids = &bid1s[bid11];
-        bid21Gids = &bid2s[bid21];
-        bid23Gids = &bid2s[bid23];
-        bid30Gids = &bid3s[bid30];
-        bid32Gids = &bid3s[bid32];
-    }
+    SplitAndJoinFixture();
+    ~SplitAndJoinFixture();
     void insertGids1() {
         uint32_t docSize = 1;
         for (size_t i = 0; i < gids.size(); ++i) {
@@ -1235,6 +1221,30 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture
     }
 };
 
+SplitAndJoinFixture::SplitAndJoinFixture()
+    : SplitAndJoinEmptyFixture(),
+      gids(),
+      bid1s(), bid2s(), bid3s(),
+      bid10Gids(), bid11Gids(), bid21Gids(), bid23Gids(),
+      bid30Gids(), bid32Gids()
+{
+    for (uint32_t i = 1; i <= 31; ++i) {
+        gids.push_back(GlobalIdEntry(i));
+        bid1s[gids.back().bid1].push_back(gids.back());
+        bid2s[gids.back().bid2].push_back(gids.back());
+        bid3s[gids.back().bid3].push_back(gids.back());
+    }
+    ASSERT_EQUAL(2u, bid1s.size());
+    ASSERT_EQUAL(4u, bid2s.size());
+    ASSERT_EQUAL(8u, bid3s.size());
+    bid10Gids = &bid1s[bid10];
+    bid11Gids = &bid1s[bid11];
+    bid21Gids = &bid2s[bid21];
+    bid23Gids = &bid2s[bid23];
+    bid30Gids = &bid3s[bid30];
+    bid32Gids = &bid3s[bid32];
+}
+SplitAndJoinFixture::~SplitAndJoinFixture() {}
 
 BoolVector
 getBoolVector(const GlobalIdVector &gids, size_t sz)
@@ -1640,17 +1650,8 @@ struct RemovedFixture
     DocumentMetaStore dms;
     bucketdb::BucketDBHandler _bucketDBHandler;
 
-    RemovedFixture(void)
-        : _bucketDB(createBucketDB()),
-          dms(_bucketDB,
-              DocumentMetaStore::getFixedName(),
-              search::GrowStrategy(),
-              DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare),
-              SubDbType::REMOVED),
-          _bucketDBHandler(dms.getBucketDB())
-    {
-        _bucketDBHandler.addDocumentMetaStore(&dms, 0);
-    }
+    RemovedFixture();
+    ~RemovedFixture();
 
     BucketInfo
     getInfo(const BucketId &bid) const
@@ -1658,6 +1659,19 @@ struct RemovedFixture
         return dms.getBucketDB().takeGuard()->get(bid);
     }
 };
+
+RemovedFixture::RemovedFixture()
+    : _bucketDB(createBucketDB()),
+      dms(_bucketDB,
+          DocumentMetaStore::getFixedName(),
+          search::GrowStrategy(),
+          DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare),
+          SubDbType::REMOVED),
+      _bucketDBHandler(dms.getBucketDB())
+{
+    _bucketDBHandler.addDocumentMetaStore(&dms, 0);
+}
+RemovedFixture::~RemovedFixture() {}
 
 TEST("requireThatRemoveChangedBucketWorks")
 {

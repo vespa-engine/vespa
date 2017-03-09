@@ -77,30 +77,11 @@ class MyDocumentSubDB
     const DocTypeName &_docTypeName;
 
 public:
-    MyDocumentSubDB(uint32_t subDBId,
-                    SubDbType subDbType,
-                    const document::DocumentTypeRepo::SP &repo,
-                    std::shared_ptr<BucketDBOwner> bucketDB,
-                    const DocTypeName &docTypeName)
-        : _docs(),
-          _subDBId(subDBId),
-          _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB,
-                       DocumentMetaStore::getFixedName(),
-                       search::GrowStrategy(),
-                       DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare),
-                       subDbType)),
-          _metaStore(*_metaStoreSP),
-          _repo(repo),
-          _docTypeName(docTypeName)
-    {
-        _metaStore.constructFreeList();
-    }
+    MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const document::DocumentTypeRepo::SP &repo,
+                    std::shared_ptr<BucketDBOwner> bucketDB, const DocTypeName &docTypeName);
+    ~MyDocumentSubDB();
 
-    uint32_t
-    getSubDBId(void) const
-    {
-        return _subDBId;
-    }
+    uint32_t getSubDBId(void) const { return _subDBId; }
 
     Document::UP
     getDocument(DocumentIdT lid) const
@@ -113,44 +94,36 @@ public:
         }
     }
 
-    MaintenanceDocumentSubDB
-    getSubDB(void);
-
-    void
-    handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &op);
-
-    void
-    handlePut(PutOperation &op);
-
-    void
-    handleRemove(RemoveOperation &op);
-
-    void
-    prepareMove(MoveOperation &op);
-
-    void
-    handleMove(const MoveOperation &op);
-
-    uint32_t
-    getNumUsedLids(void) const;
-
-    uint32_t
-    getDocumentCount(void) const
-    {
-        return _docs.size();
-    }
+    MaintenanceDocumentSubDB getSubDB(void);
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &op);
+    void handlePut(PutOperation &op);
+    void handleRemove(RemoveOperation &op);
+    void prepareMove(MoveOperation &op);
+    void handleMove(const MoveOperation &op);
+    uint32_t getNumUsedLids(void) const;
+    uint32_t getDocumentCount(void) const { return _docs.size(); }
 
     void setBucketState(const BucketId &bucket, bool active) {
         _metaStore.setBucketState(bucket, active);
     }
 
-    const IDocumentMetaStore &
-    getMetaStore() const
-    {
-        return _metaStore;
-    }
+    const IDocumentMetaStore &getMetaStore() const { return _metaStore; }
 };
 
+MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const document::DocumentTypeRepo::SP &repo,
+                                 std::shared_ptr<BucketDBOwner> bucketDB, const DocTypeName &docTypeName)
+    : _docs(),
+      _subDBId(subDBId),
+      _metaStoreSP(std::make_shared<DocumentMetaStore>(
+              bucketDB, DocumentMetaStore::getFixedName(), search::GrowStrategy(),
+              DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare), subDbType)),
+      _metaStore(*_metaStoreSP),
+      _repo(repo),
+      _docTypeName(docTypeName)
+{
+    _metaStore.constructFreeList();
+}
+MyDocumentSubDB::~MyDocumentSubDB() {}
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {

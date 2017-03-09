@@ -81,6 +81,7 @@ public:
     std::vector<char> sessionId;
 
     DocsumRequest();
+    ~DocsumRequest();
     explicit DocsumRequest(bool useRootSlime_);
 
     bool useRootSlime() const { return _useRootSlime; }

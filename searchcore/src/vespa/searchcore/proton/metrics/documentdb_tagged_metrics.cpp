@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.metrics.documentdb_tagged_metrics");
 #include "documentdb_tagged_metrics.h"
 #include <vespa/vespalib/util/stringfmt.h>
-
-using vespalib::make_string;
 
 namespace proton {
 
@@ -25,17 +20,18 @@ DocumentDBTaggedMetrics::JobMetrics::JobMetrics(metrics::MetricSet* parent)
       removedDocumentsPrune("removed_documents_prune", "",
               "Pruning of removed documents in 'removed' sub database", this),
       total("total", "", "The job load average total of all job metrics", this)
-{
-}
+{ }
 
-DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name,
-                                                    MetricSet *parent)
+DocumentDBTaggedMetrics::JobMetrics::~JobMetrics() { }
+
+DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name, MetricSet *parent)
     : MetricSet(name, "", "Sub database metrics", parent),
       lidSpace(this),
       documentStore(this),
       attributes(this)
-{
-}
+{ }
+
+DocumentDBTaggedMetrics::SubDBMetrics::~SubDBMetrics() { }
 
 DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSet *parent)
     : MetricSet("lid_space", "", "Local document id (lid) space metrics for this document sub DB", parent),
@@ -48,8 +44,9 @@ DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSe
       lidFragmentationFactor("lid_fragmentation_factor", "",
               "The fragmentation factor of this lid space, indicating the amount of holes in the currently used part of the lid space "
               "((highest_used_lid - used_lids) / highest_used_lid)", this)
-{
-}
+{ }
+
+DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::~LidSpaceMetrics() { }
 
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetrics(MetricSet *parent)
     : MetricSet("document_store", "", "document store metrics for this document sub DB", parent),
@@ -57,14 +54,16 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetric
       diskBloat("disk_bloat", "", "Disk space bloat in bytes", this),
       maxBucketSpread("max_bucket_spread", "", "Max bucket spread in underlying files (sum(unique buckets in each chunk)/unique buckets in file)", this),
       memoryUsage(this)
-{
-}
+{ }
+
+DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetrics() { }
 
 DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
     : MetricSet("attribute", "", "Attribute vector metrics for this document db", parent),
       resourceUsage(this)
-{
-}
+{ }
+
+DocumentDBTaggedMetrics::AttributeMetrics::~AttributeMetrics() { }
 
 DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMetrics(MetricSet *parent)
     : MetricSet("resource_usage", "", "Usage metrics for various attribute vector resources", parent),
@@ -76,11 +75,14 @@ DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMe
 {
 }
 
+DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::~ResourceUsageMetrics() { }
+
 DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
     : MetricSet("index", "", "Index metrics (memory and disk) for this document db", parent),
       memoryUsage(this)
-{
-}
+{ }
+
+DocumentDBTaggedMetrics::IndexMetrics::~IndexMetrics() { }
 
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
@@ -90,7 +92,8 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       ready("ready", this),
       notReady("notready", this),
       removed("removed", this)
-{
-}
+{ }
+
+DocumentDBTaggedMetrics::~DocumentDBTaggedMetrics() { }
 
 } // namespace proton

@@ -26,11 +26,12 @@ Application::Application() :
     _net(),
     _mbus(),
     _params()
-{
-    // empty
-}
+{ }
 
-int
+Application::~Application() {}
+
+
+    int
 Application::Main()
 {
     try {

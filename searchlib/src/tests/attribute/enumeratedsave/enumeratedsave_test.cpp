@@ -102,13 +102,8 @@ private:
 public:
     typedef std::shared_ptr<MemAttr> SP;
 
-    MemAttr(void)
-        : _datWriter(),
-          _idxWriter(),
-          _weightWriter(),
-          _udatWriter()
-    {
-    }
+    MemAttr();
+    ~MemAttr();
 
     // Implements IAttributeSaveTarget
     virtual bool setup() { return true; }
@@ -126,6 +121,14 @@ public:
     bool
     operator==(const MemAttr &rhs) const;
 };
+
+MemAttr::MemAttr()
+        : _datWriter(),
+          _idxWriter(),
+          _weightWriter(),
+          _udatWriter()
+{ }
+MemAttr::~MemAttr() {}
 
 class EnumeratedSaveTest
 {

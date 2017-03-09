@@ -36,27 +36,8 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     std::unique_ptr<DynamicDocsumWriter> writer;
     std::unique_ptr<ResultPacker> packer;
     GetDocsumsState state;
-    DocsumFixture() : writer(), packer(), state(*this) {
-        ResultConfig *config = new ResultConfig();
-        ResultClass *cfg = config->AddResultClass("default", 0);
-        EXPECT_TRUE(cfg != 0);
-        EXPECT_TRUE(cfg->AddConfigEntry("int_field", RES_INT));
-        EXPECT_TRUE(cfg->AddConfigEntry("short_field", RES_SHORT));
-        EXPECT_TRUE(cfg->AddConfigEntry("byte_field", RES_BYTE));
-        EXPECT_TRUE(cfg->AddConfigEntry("float_field", RES_FLOAT));
-        EXPECT_TRUE(cfg->AddConfigEntry("double_field", RES_DOUBLE));
-        EXPECT_TRUE(cfg->AddConfigEntry("int64_field", RES_INT64));
-        EXPECT_TRUE(cfg->AddConfigEntry("string_field", RES_STRING));
-        EXPECT_TRUE(cfg->AddConfigEntry("data_field", RES_DATA));
-        EXPECT_TRUE(cfg->AddConfigEntry("longstring_field", RES_LONG_STRING));
-        EXPECT_TRUE(cfg->AddConfigEntry("longdata_field", RES_LONG_DATA));
-        EXPECT_TRUE(cfg->AddConfigEntry("xmlstring_field", RES_XMLSTRING));
-        EXPECT_TRUE(cfg->AddConfigEntry("jsonstring_field", RES_JSONSTRING));
-        EXPECT_TRUE(cfg->AddConfigEntry("bad_jsonstring_field", RES_JSONSTRING));
-        config->CreateEnumMaps();
-        writer.reset(new DynamicDocsumWriter(config, 0));
-        packer.reset(new ResultPacker(writer->GetResultConfig()));
-    }
+    DocsumFixture();
+    ~DocsumFixture();
     void getDocsum(Slime &slime) {
         uint32_t classId;
         search::RawBuf buf(4096);
@@ -101,6 +82,32 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void ParseLocation(GetDocsumsState *) override { }
 };
+
+
+DocsumFixture::DocsumFixture()
+    : writer(), packer(), state(*this)
+{
+    ResultConfig *config = new ResultConfig();
+    ResultClass *cfg = config->AddResultClass("default", 0);
+    EXPECT_TRUE(cfg != 0);
+    EXPECT_TRUE(cfg->AddConfigEntry("int_field", RES_INT));
+    EXPECT_TRUE(cfg->AddConfigEntry("short_field", RES_SHORT));
+    EXPECT_TRUE(cfg->AddConfigEntry("byte_field", RES_BYTE));
+    EXPECT_TRUE(cfg->AddConfigEntry("float_field", RES_FLOAT));
+    EXPECT_TRUE(cfg->AddConfigEntry("double_field", RES_DOUBLE));
+    EXPECT_TRUE(cfg->AddConfigEntry("int64_field", RES_INT64));
+    EXPECT_TRUE(cfg->AddConfigEntry("string_field", RES_STRING));
+    EXPECT_TRUE(cfg->AddConfigEntry("data_field", RES_DATA));
+    EXPECT_TRUE(cfg->AddConfigEntry("longstring_field", RES_LONG_STRING));
+    EXPECT_TRUE(cfg->AddConfigEntry("longdata_field", RES_LONG_DATA));
+    EXPECT_TRUE(cfg->AddConfigEntry("xmlstring_field", RES_XMLSTRING));
+    EXPECT_TRUE(cfg->AddConfigEntry("jsonstring_field", RES_JSONSTRING));
+    EXPECT_TRUE(cfg->AddConfigEntry("bad_jsonstring_field", RES_JSONSTRING));
+    config->CreateEnumMaps();
+    writer.reset(new DynamicDocsumWriter(config, 0));
+    packer.reset(new ResultPacker(writer->GetResultConfig()));
+}
+DocsumFixture::~DocsumFixture() {}
 
 } // namespace <unnamed>
 

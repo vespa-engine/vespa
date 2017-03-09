@@ -34,15 +34,18 @@ struct FixtureBase
 {
     DocumentReprocessingHandler _handler;
     DocBuilder _docBuilder;
-    FixtureBase(uint32_t docIdLimit)
-        : _handler(docIdLimit),
-          _docBuilder(Schema())
-    {
-    }
+    FixtureBase(uint32_t docIdLimit);
+    ~FixtureBase();
     Document::UP createDoc() {
         return _docBuilder.startDocument(DOC_ID).endDocument();
     }
 };
+
+FixtureBase::FixtureBase(uint32_t docIdLimit)
+    : _handler(docIdLimit),
+      _docBuilder(Schema())
+{ }
+FixtureBase::~FixtureBase() {}
 
 struct ReaderFixture : public FixtureBase
 {

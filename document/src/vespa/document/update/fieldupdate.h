@@ -13,8 +13,8 @@
  */
 #pragma once
 
+#include "valueupdate.h"
 #include <vespa/document/base/field.h>
-#include <vespa/document/update/valueupdate.h>
 #include <vespa/document/util/serializable.h>
 
 namespace document {
@@ -34,6 +34,7 @@ public:
     typedef vespalib::CloneablePtr<FieldUpdate> CP;
 
     FieldUpdate(const Field& field);
+    ~FieldUpdate();
 
     /**
      * This is a convenience function to construct a field update directly from

@@ -22,6 +22,8 @@ SearchReply::SearchReply()
       request()
 { }
 
+SearchReply::~SearchReply() {}
+
 SearchReply::SearchReply(const SearchReply &rhs) :
     valid        (rhs.valid),
     offset       (rhs.offset),

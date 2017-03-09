@@ -61,13 +61,17 @@ using fef::TermFieldMatchDataPosition;
 class DocSet : public std::set<uint32_t>
 {
 public:
-    DocSet() : std::set<uint32_t>() {}
+    DocSet();
+    ~DocSet();
     DocSet(const uint32_t *b, const uint32_t *e) : std::set<uint32_t>(b, e) {}
     DocSet & put(const uint32_t &v) {
         insert(v);
         return *this;
     }
 };
+
+DocSet::DocSet() : std::set<uint32_t>() {}
+DocSet::~DocSet() {}
 
 template <typename V, typename T>
 class PostingList
@@ -78,7 +82,8 @@ private:
     DocSet _hits;
 
 public:
-    PostingList(V & vec, T value) : _vec(&vec), _value(value), _hits() {}
+    PostingList(V & vec, T value);
+    ~PostingList();
     const V & getAttribute() const { return *_vec; }
     V & getAttribute() { return *_vec; }
     const T & getValue() const { return _value; }
@@ -86,6 +91,12 @@ public:
     const DocSet & getHits() const { return _hits; }
     uint32_t getHitCount() const { return _hits.size(); }
 };
+
+template <typename V, typename T>
+PostingList<V, T>::PostingList(V & vec, T value) : _vec(&vec), _value(value), _hits() {}
+
+template <typename V, typename T>
+PostingList<V, T>::~PostingList() {}
 
 class DocRange
 {
@@ -608,20 +619,8 @@ void SearchContextTest::testSearch(const ConfigMap & cfgs) {
 template<typename T, typename A>
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg) :
-            _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
-            _sc()
-    {
-        SearchContextTest::addDocs(*_attribute, getDocIdLimit());
-        for (uint32_t doc : getExpectedDocIds()) {
-            EXPECT_TRUE(nullptr != dynamic_cast<A *>(_attribute.get()));
-            EXPECT_TRUE(dynamic_cast<A *>(_attribute.get())->update(doc, key));
-        }
-        _attribute->commit(true);
-        _sc = SearchContextTest::getSearch(*_attribute, keyAsString);
-        ASSERT_TRUE(_sc->valid());
-        _sc->fetchPostings(true);
-    }
+    Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg);
+    ~Verifier();
     SearchIterator::UP create(bool strict) const override {
         return _sc->createIterator(&_dummy, strict);
     }
@@ -630,6 +629,25 @@ private:
     AttributePtr _attribute;
     SearchContextPtr _sc;
 };
+
+template<typename T, typename A>
+Verifier<T, A>::Verifier(T key, const vespalib::string & keyAsString, const vespalib::string & name, const Config & cfg)
+    :_attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
+     _sc()
+{
+    SearchContextTest::addDocs(*_attribute, getDocIdLimit());
+    for (uint32_t doc : getExpectedDocIds()) {
+        EXPECT_TRUE(nullptr != dynamic_cast<A *>(_attribute.get()));
+        EXPECT_TRUE(dynamic_cast<A *>(_attribute.get())->update(doc, key));
+    }
+    _attribute->commit(true);
+    _sc = SearchContextTest::getSearch(*_attribute, keyAsString);
+    ASSERT_TRUE(_sc->valid());
+    _sc->fetchPostings(true);
+}
+
+template<typename T, typename A>
+Verifier<T, A>::~Verifier() {}
 
 template<typename T, typename A>
 void SearchContextTest::testSearchIterator(T key, const vespalib::string &keyAsString, const ConfigMap &cfgs) {

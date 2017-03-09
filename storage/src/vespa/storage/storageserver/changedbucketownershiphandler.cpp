@@ -87,6 +87,23 @@ allDistributorsDownInState(const lib::ClusterState& state) {
 
 }
 
+ChangedBucketOwnershipHandler::Metrics::Metrics(metrics::MetricSet* owner)
+    : metrics::MetricSet("changedbucketownershiphandler", "", "", owner),
+      averageAbortProcessingTime("avg_abort_processing_time", "", "Average time spent aborting operations for changed buckets", this),
+      idealStateOpsAborted("ideal_state_ops_aborted", "", "Number of outdated ideal state operations aborted", this),
+      externalLoadOpsAborted("external_load_ops_aborted", "", "Number of outdated external load operations aborted", this)
+{}
+ChangedBucketOwnershipHandler::Metrics::~Metrics() { }
+
+ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const lib::Distribution::SP& distribution,
+                                                              const lib::ClusterState::CSP& state)
+    : _distribution(distribution),
+      _state(state)
+{
+}
+ChangedBucketOwnershipHandler::OwnershipState::~OwnershipState() {}
+
+
 uint16_t
 ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
         const document::BucketId& bucket) const

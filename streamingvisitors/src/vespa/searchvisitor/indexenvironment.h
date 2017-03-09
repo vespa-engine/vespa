@@ -32,6 +32,7 @@ private:
 
 public:
     IndexEnvironment(const search::fef::ITableManager & tableManager);
+    ~IndexEnvironment();
 
     // inherit documentation
     virtual const search::fef::Properties & getProperties() const override { return _properties; }

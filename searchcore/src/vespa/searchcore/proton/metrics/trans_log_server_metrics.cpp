@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "trans_log_server_metrics.h"
 
 using search::transactionlog::DomainInfo;
@@ -16,6 +15,8 @@ TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
       diskUsage("disk_usage", "", "The disk usage (in bytes) of the transaction log", this)
 {
 }
+
+TransLogServerMetrics::DomainMetrics::~DomainMetrics() {}
 
 void
 TransLogServerMetrics::DomainMetrics::update(const DomainInfo &stats)
@@ -61,6 +62,8 @@ TransLogServerMetrics::TransLogServerMetrics(metrics::MetricSet *parent)
     : _parent(parent)
 {
 }
+
+TransLogServerMetrics::~TransLogServerMetrics() { }
 
 void
 TransLogServerMetrics::update(const DomainStats &stats)

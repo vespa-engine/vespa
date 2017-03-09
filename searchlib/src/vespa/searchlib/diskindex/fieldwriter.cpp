@@ -36,6 +36,7 @@ FieldWriter::FieldWriter(uint32_t docIdLimit,
 {
 }
 
+FieldWriter::~FieldWriter() { }
 
 void
 FieldWriter::earlyOpen(const vespalib::string &prefix,

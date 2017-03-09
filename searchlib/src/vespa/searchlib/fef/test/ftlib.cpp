@@ -29,6 +29,8 @@ FtQueryEnvironment::FtQueryEnvironment(search::fef::test::IndexEnvironment &env)
     // empty
 }
 
+FtQueryEnvironment::~FtQueryEnvironment() { }
+
 FtDumpFeatureVisitor::FtDumpFeatureVisitor() :
     _features()
 {

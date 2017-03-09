@@ -76,15 +76,8 @@ struct MyHandler : public ILidSpaceCompactionHandler
     uint32_t _wantedLidLimit;
     mutable uint32_t _iteratorCnt;
 
-    MyHandler()
-        : _stats(),
-          _moveFromLid(0),
-          _moveToLid(0),
-          _handleMoveCnt(0),
-          _wantedSubDbId(0),
-          _wantedLidLimit(0),
-          _iteratorCnt(0)
-    {}
+    MyHandler();
+    ~MyHandler();
     virtual vespalib::string getName() const {
         return "myhandler";
     }
@@ -112,6 +105,17 @@ struct MyHandler : public ILidSpaceCompactionHandler
         _wantedLidLimit = op.getLidLimit();
     }
 };
+
+MyHandler::MyHandler()
+    : _stats(),
+      _moveFromLid(0),
+      _moveToLid(0),
+      _handleMoveCnt(0),
+      _wantedSubDbId(0),
+      _wantedLidLimit(0),
+      _iteratorCnt(0)
+{}
+MyHandler::~MyHandler() {}
 
 struct MyStorer : public IOperationStorer
 {
@@ -203,17 +207,21 @@ struct MySummaryManager : public test::DummySummaryManager
 struct MySubDb : public test::DummyDocumentSubDb
 {
     DocumentTypeRepo::SP _repo;
-    MySubDb(const DocumentTypeRepo::SP &repo,
-            std::shared_ptr<BucketDBOwner> bucketDB)
-        : test::DummyDocumentSubDb(bucketDB, SUBDB_ID),
-          _repo(repo)
-    {
-        _summaryManager.reset(new MySummaryManager());
-    }
+    MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB);
+    ~MySubDb();
     virtual IFeedView::SP getFeedView() const {
         return IFeedView::SP(new MyFeedView(_repo));
     }
 };
+
+
+MySubDb::MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB)
+    : test::DummyDocumentSubDb(bucketDB, SUBDB_ID),
+      _repo(repo)
+{
+    _summaryManager.reset(new MySummaryManager());
+}
+MySubDb::~MySubDb() {}
 
 struct MyJobRunner : public IMaintenanceJobRunner
 {

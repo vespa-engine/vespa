@@ -15,6 +15,7 @@ class NumericEntryType;
 class IntegerAttribute : public NumericAttribute
 {
 public:
+    ~IntegerAttribute();
     DECLARE_IDENTIFIABLE_ABSTRACT(IntegerAttribute);
     bool update(DocId doc, largeint_t v) {
         return AttributeVector::update(_changes, doc, NumericChangeData<largeint_t>(v));

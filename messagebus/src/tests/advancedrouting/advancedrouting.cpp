@@ -32,6 +32,7 @@ public:
 
 public:
     TestData();
+    ~TestData();
     bool start();
 };
 
@@ -47,6 +48,7 @@ public:
 
 TEST_APPHOOK(Test);
 
+TestData::~TestData() {}
 TestData::TestData() :
     _slobrok(),
     _retryPolicy(new RetryTransientErrorsPolicy()),

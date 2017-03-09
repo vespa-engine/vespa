@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
+#include "attributefactory.h"
 #include "defines.h"
+
+#include "attributevector.hpp"
+#include "multivalueattribute.hpp"
+#include "multinumericattribute.hpp"
+#include "multistringattribute.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".createarraystd");
-
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/multivalueattribute.hpp>
-#include <vespa/searchlib/attribute/multinumericattribute.hpp>
-#include <vespa/searchlib/attribute/multistringattribute.h>
 
 namespace search {
 

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("feedview_test");
+
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/documentreply.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
@@ -33,7 +31,8 @@ LOG_SETUP("feedview_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <mutex>
-
+#include <vespa/log/log.h>
+LOG_SETUP("feedview_test");
 
 using document::BucketId;
 using document::DataType;
@@ -131,22 +130,20 @@ struct ParamsContext
     PerDocTypeFeedMetrics                _metrics;
     SearchableFeedView::PersistentParams _params;
 
-    ParamsContext(const vespalib::string &docType,
-                  const vespalib::string &baseDir)
-        : _docTypeName(docType),
-          _feedMetrics(),
-          _metrics(&_feedMetrics),
-          _params(0,
-                  0,
-                  _docTypeName,
-                  _metrics,
-                  subdb_id,
-                  SubDbType::READY)
-    {
-        (void) baseDir;
-    }
+    ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir);
+    ~ParamsContext();
     const SearchableFeedView::PersistentParams &getParams() const { return _params; }
 };
+
+ParamsContext::ParamsContext(const vespalib::string &docType, const vespalib::string &baseDir)
+    : _docTypeName(docType),
+      _feedMetrics(),
+      _metrics(&_feedMetrics),
+      _params(0, 0, _docTypeName, _metrics, subdb_id, SubDbType::READY)
+{
+    (void) baseDir;
+}
+ParamsContext::~ParamsContext() {}
 
 struct MyIndexWriter : public test::MockIndexWriter
 {
@@ -270,8 +267,7 @@ struct MySummaryAdapter : public test::MockSummaryAdapter
         : _sumMgr(new MySummaryManager()),
           _store(static_cast<MyDocumentStore &>(_sumMgr->getBackingStore())),
           _removes()
-    {
-    }
+    {}
     virtual void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid) override {
         (void) serialNum;
         _store.write(serialNum, doc, lid);
@@ -309,41 +305,13 @@ struct MyAttributeWriter : public IAttributeWriter
     int _heartBeatCount;
     uint32_t _commitCount;
     uint32_t _wantedLidLimit;
-    using AttrMap = std::map<vespalib::string,
-                             std::shared_ptr<AttributeVector>>;
+    using AttrMap = std::map<vespalib::string, std::shared_ptr<AttributeVector>>;
     AttrMap _attrMap;
     std::set<vespalib::string> _attrs;
     proton::IAttributeManager::SP _mgr;
     MyTracer &_tracer;
-    MyAttributeWriter(MyTracer &tracer)
-        : _removes(),
-          _putSerial(0),
-          _putDocId(),
-          _putLid(0),
-          _updateSerial(0),
-          _updateDocId(),
-          _updateLid(0),
-          _removeSerial(0),
-          _removeLid(0),
-          _heartBeatCount(0),
-          _commitCount(0),
-          _wantedLidLimit(0),
-          _attrMap(),
-          _attrs(),
-          _mgr(),
-          _tracer(tracer)
-    {
-        search::attribute::Config cfg(search::attribute::BasicType::INT32);
-        _attrMap["a1"] = search::AttributeFactory::createAttribute("test", cfg);
-        search::attribute::Config
-            cfg2(search::attribute::BasicType::PREDICATE);
-        _attrMap["a2"] = search::AttributeFactory::createAttribute("test2",
-                                                                   cfg2);
-        search::attribute::Config cfg3(search::attribute::BasicType::TENSOR);
-        cfg3.setTensorType(ValueType::from_spec("tensor(x[10])"));
-        _attrMap["a3"] = search::AttributeFactory::createAttribute("test3",
-                                                                   cfg3);
-    }
+    MyAttributeWriter(MyTracer &tracer);
+    ~MyAttributeWriter();
     virtual std::vector<AttributeVector *>
     getWritableAttributes() const override {
         return std::vector<AttributeVector *>();
@@ -407,12 +375,30 @@ struct MyAttributeWriter : public IAttributeWriter
     }
 };
 
+MyAttributeWriter::MyAttributeWriter(MyTracer &tracer)
+    : _removes(), _putSerial(0), _putDocId(), _putLid(0),
+      _updateSerial(0), _updateDocId(), _updateLid(0),
+      _removeSerial(0), _removeLid(0), _heartBeatCount(0),
+      _commitCount(0), _wantedLidLimit(0),
+      _attrMap(), _attrs(), _mgr(), _tracer(tracer)
+{
+    search::attribute::Config cfg(search::attribute::BasicType::INT32);
+    _attrMap["a1"] = search::AttributeFactory::createAttribute("test", cfg);
+    search::attribute::Config cfg2(search::attribute::BasicType::PREDICATE);
+    _attrMap["a2"] = search::AttributeFactory::createAttribute("test2", cfg2);
+    search::attribute::Config cfg3(search::attribute::BasicType::TENSOR);
+    cfg3.setTensorType(ValueType::from_spec("tensor(x[10])"));
+    _attrMap["a3"] = search::AttributeFactory::createAttribute("test3", cfg3);
+}
+MyAttributeWriter::~MyAttributeWriter() {}
+
 struct MyTransport : public FeedToken::ITransport
 {
     ResultUP lastResult;
     vespalib::Gate _gate;
     MyTracer &_tracer;
-    MyTransport(MyTracer &tracer) : lastResult(), _gate(), _tracer(tracer) {}
+    MyTransport(MyTracer &tracer);
+    ~MyTransport();
     virtual void send(mbus::Reply::UP reply,
                       ResultUP result,
                       bool documentWasFound,
@@ -425,6 +411,8 @@ struct MyTransport : public FeedToken::ITransport
     void await() { _gate.await(); }
 };
 
+MyTransport::MyTransport(MyTracer &tracer) : lastResult(), _gate(), _tracer(tracer) {}
+MyTransport::~MyTransport() {}
 
 struct MyResultHandler : public IGenericResultHandler
 {
@@ -440,19 +428,24 @@ struct SchemaContext
 {
     Schema::SP                _schema;
     std::unique_ptr<DocBuilder> _builder;
-    SchemaContext() :
-        _schema(new Schema()),
-        _builder()
-    {
-        _schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
-        _schema->addAttributeField(Schema::AttributeField("a1", schema::STRING, schema::SINGLE));
-        _schema->addAttributeField(Schema::AttributeField("a2", schema::BOOLEANTREE, schema::SINGLE));
-        _schema->addAttributeField(Schema::AttributeField("a3", schema::TENSOR, schema::SINGLE));
-        _schema->addSummaryField(Schema::SummaryField("s1", schema::STRING, schema::SINGLE));
-        _builder.reset(new DocBuilder(*_schema));
-    }
+    SchemaContext();
+    ~SchemaContext();
     const document::DocumentTypeRepo::SP &getRepo() const { return _builder->getDocumentTypeRepo(); }
 };
+
+SchemaContext::SchemaContext() :
+    _schema(new Schema()),
+    _builder()
+{
+    _schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a1", schema::STRING, schema::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a2", schema::BOOLEANTREE, schema::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a3", schema::TENSOR, schema::SINGLE));
+    _schema->addSummaryField(Schema::SummaryField("s1", schema::STRING, schema::SINGLE));
+    _builder.reset(new DocBuilder(*_schema));
+}
+SchemaContext::~SchemaContext() {}
+
 
 struct DocumentContext
 {
@@ -461,24 +454,22 @@ struct DocumentContext
     BucketId           bid;
     Timestamp          ts;
     typedef std::vector<DocumentContext> List;
-    DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder) :
-        doc(builder.startDocument(docId)
-                   .startSummaryField("s1").addStr(docId).endField()
-                   .endDocument().release()),
-        upd(new DocumentUpdate(builder.getDocumentType(), doc->getId())),
-        bid(BucketFactory::getNumBucketBits(),
-            doc->getId().getGlobalId().convertToBucketId().getRawId()),
-        ts(timestamp)
-    {
-    }
-    void addFieldUpdate(DocBuilder &builder,
-                        const vespalib::string &fieldName) {
-        const document::Field &field =
-            builder.getDocumentType().getField(fieldName);
+    DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder);
+    ~DocumentContext();
+    void addFieldUpdate(DocBuilder &builder, const vespalib::string &fieldName) {
+        const document::Field &field = builder.getDocumentType().getField(fieldName);
         upd->addUpdate(document::FieldUpdate(field));
     }
     document::GlobalId gid() const { return doc->getId().getGlobalId(); }
 };
+
+DocumentContext::DocumentContext(const vespalib::string &docId, uint64_t timestamp, DocBuilder &builder)
+    : doc(builder.startDocument(docId).startSummaryField("s1").addStr(docId).endField().endDocument().release()),
+      upd(new DocumentUpdate(builder.getDocumentType(), doc->getId())),
+      bid(BucketFactory::getNumBucketBits(), doc->getId().getGlobalId().convertToBucketId().getRawId()),
+      ts(timestamp)
+{}
+DocumentContext::~DocumentContext() {}
 
 namespace {
 
@@ -502,12 +493,14 @@ struct FeedTokenContext
     FeedToken   ft;
     typedef std::shared_ptr<FeedTokenContext> SP;
     typedef std::vector<SP> List;
-    FeedTokenContext(MyTracer &tracer, MessageType mtype) :
-        mt(tracer),
-        ft(mt, createReply(mtype))
-    {
-    }
+    FeedTokenContext(MyTracer &tracer, MessageType mtype);
+    ~FeedTokenContext();
 };
+
+FeedTokenContext::FeedTokenContext(MyTracer &tracer, MessageType mtype)
+    : mt(tracer), ft(mt, createReply(mtype))
+{}
+FeedTokenContext::~FeedTokenContext() {}
 
 struct FixtureBase
 {
@@ -529,33 +522,9 @@ struct FixtureBase
     CommitTimeTracker     _commitTimeTracker;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
-    FixtureBase(TimeStamp visibilityDelay) :
-        _tracer(),
-        iw(new MyIndexWriter(_tracer)),
-        sa(new MySummaryAdapter),
-        aw(new MyAttributeWriter(_tracer)),
-        miw(static_cast<MyIndexWriter&>(*iw)),
-        msa(static_cast<MySummaryAdapter&>(*sa)),
-        maw(static_cast<MyAttributeWriter&>(*aw)),
-        sc(),
-        _docIdLimit(0u),
-        _dmscReal(new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>())),
-        _dmsc(new test::DocumentMetaStoreContextObserver(*_dmscReal)),
-        pc(sc._builder->getDocumentType().getName(), "fileconfig_test"),
-        _writeServiceReal(),
-        _writeService(_writeServiceReal),
-        _lidReuseDelayer(_writeService, _dmsc->get()),
-        _commitTimeTracker(visibilityDelay),
-        serial(0),
-        _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
-    {
-        _dmsc->constructFreeList();
-        _lidReuseDelayer.setImmediateCommit(visibilityDelay == 0);
-    }
+    FixtureBase(TimeStamp visibilityDelay);
 
-    virtual ~FixtureBase() {
-        _writeServiceReal.sync();
-    }
+    virtual ~FixtureBase();
 
     void syncMaster() {
         _writeService.master().sync();
@@ -720,6 +689,34 @@ struct FixtureBase
     }
 };
 
+
+FixtureBase::FixtureBase(TimeStamp visibilityDelay)
+    : _tracer(),
+      iw(new MyIndexWriter(_tracer)),
+      sa(new MySummaryAdapter),
+      aw(new MyAttributeWriter(_tracer)),
+      miw(static_cast<MyIndexWriter&>(*iw)),
+      msa(static_cast<MySummaryAdapter&>(*sa)),
+      maw(static_cast<MyAttributeWriter&>(*aw)),
+      sc(),
+      _docIdLimit(0u),
+      _dmscReal(new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>())),
+      _dmsc(new test::DocumentMetaStoreContextObserver(*_dmscReal)),
+      pc(sc._builder->getDocumentType().getName(), "fileconfig_test"),
+      _writeServiceReal(),
+      _writeService(_writeServiceReal),
+      _lidReuseDelayer(_writeService, _dmsc->get()),
+      _commitTimeTracker(visibilityDelay),
+      serial(0),
+      _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
+{
+    _dmsc->constructFreeList();
+    _lidReuseDelayer.setImmediateCommit(visibilityDelay == 0);
+}
+
+FixtureBase::~FixtureBase() {
+    _writeServiceReal.sync();
+}
 struct SearchableFeedViewFixture : public FixtureBase
 {
     SearchableFeedView fv;
@@ -786,10 +783,8 @@ assertLidVector(const MyLidVector &exp, const MyLidVector &act)
 }
 
 void
-assertAttributeUpdate(SerialNum serialNum,
-                      const document::DocumentId &docId,
-                      DocumentIdT lid,
-                      MyAttributeWriter adapter)
+assertAttributeUpdate(SerialNum serialNum, const document::DocumentId &docId,
+                      DocumentIdT lid, const MyAttributeWriter & adapter)
 {
     EXPECT_EQUAL(serialNum, adapter._updateSerial);
     EXPECT_EQUAL(docId, adapter._updateDocId);
