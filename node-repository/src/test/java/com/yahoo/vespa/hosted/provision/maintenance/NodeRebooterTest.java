@@ -27,7 +27,7 @@ public class NodeRebooterTest {
         
         NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, rebootInterval);
 
-        maintenanceIterations(rebooter, tester, 1);
+        maintenanceIntervals(rebooter, tester, 1);
         assertEquals("All tenant nodes have reboot scheduled",
                      15,
                      withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
@@ -38,17 +38,19 @@ public class NodeRebooterTest {
                      15,
                      withCurrentRebootGeneration(1L, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready)).size());
 
-        maintenanceIterations(rebooter, tester, 11);
-        assertEquals("Reboot interval is 10x iteration interval, so the same number of nodes are now rebooted twice",
+        maintenanceIntervals(rebooter, tester, 11);
+        assertEquals("Reboot interval is 10x iteration interval, so most nodes are now rebooted twice",
                      15,
                      withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
     }
     
-    private void maintenanceIterations(NodeRebooter rebooter, MaintenanceTester tester, int iterations) {
+    private void maintenanceIntervals(NodeRebooter rebooter, MaintenanceTester tester, int iterations) {
         for (int i = 0; i < iterations; i++) {
             tester.clock.advance(Duration.ofMinutes(25));
-            rebooter.maintain();
-            simulateReboot(tester);
+            for (int j = 0; j < 30; j++) { // multiple runs to remove effects from the probabilistic smoothing in the reboot maintainer
+                rebooter.maintain();
+                simulateReboot(tester);
+            }
         }
     }
     
