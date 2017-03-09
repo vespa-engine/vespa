@@ -132,11 +132,9 @@ class RpcConfigSourceClient implements ConfigSourceClient {
             }
             if (ProxyServer.configOrGenerationHasChanged(cachedConfig, request)) {
                 log.log(LogLevel.SPAM, "Cached config is not equal to requested, will return it");
-                ret = cachedConfig;
-
-                // Someone else has replied
-                if (! delayedResponses.remove(delayedResponse)) {
-                    ret = null;
+                if (delayedResponses.remove(delayedResponse)) {
+                    // unless another thread already did it
+                    ret = cachedConfig;
                 }
             }
             if (!cachedConfig.isError()) {
