@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.dotproduct");
@@ -252,24 +253,31 @@ create(const IAttributeVector * attribute, const Property & prop, vespalib::Stas
     if (values.empty()) {
         return stash.create<SingleZeroValueExecutor>();
     }
-    const A & iattr = dynamic_cast<const A &>(*attribute);
+    const A * iattr = dynamic_cast<const A *>(attribute);
     if (indexes.empty()) {
         try {
-            const multivalue::Value<typename A::BaseType> * tmp;
-            iattr.getRawValues(0, tmp);
-            return stash.create<dotproduct::array::DotProductExecutor<A>>(&iattr, values);
+            using T = typename A::BaseType;
+            using VT = multivalue::Value<T>;
+            const VT * tmp;
+            iattr->getRawValues(0, tmp);
+            using ExactA = MultiValueNumericAttribute<A, VT>;
+            const ExactA * exactA = dynamic_cast<const ExactA *>(iattr);
+            if (exactA != nullptr) {
+                return stash.create<dotproduct::array::DotProductExecutor<ExactA>>(exactA, values);
+            }
+            return stash.create<dotproduct::array::DotProductExecutor<A>>(iattr, values);
         } catch (const std::runtime_error & e) {
             (void) e;
-            return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(&iattr, values);
+            return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(iattr, values);
         }
     } else {
         try {
             const multivalue::Value<typename A::BaseType> * tmp;
-            iattr.getRawValues(0, tmp);
-            return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(&iattr, values, indexes);
+            iattr->getRawValues(0, tmp);
+            return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(iattr, values, indexes);
         } catch (const std::runtime_error & e) {
             (void) e;
-            return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(&iattr, values, indexes);
+            return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(iattr, values, indexes);
         }
     }
     return stash.create<SingleZeroValueExecutor>();
