@@ -170,13 +170,13 @@ SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId, const AT *
 
 }
 
-
 DotProductBlueprint::DotProductBlueprint() :
     Blueprint("dotProduct"),
     _defaultAttribute(),
     _queryVector()
-{
-}
+{ }
+
+DotProductBlueprint::~DotProductBlueprint() {}
 
 vespalib::string
 DotProductBlueprint::getAttribute(const IQueryEnvironment & env) const
@@ -202,6 +202,11 @@ DotProductBlueprint::setup(const IIndexEnvironment & env, const ParameterList & 
                              "and the vector sent down with the query");
     env.hintAttributeAccess(_defaultAttribute);
     return true;
+}
+
+ParameterDescriptions
+DotProductBlueprint::getDescriptions() const {
+    return ParameterDescriptions().desc().attribute(ParameterCollection::ANY).string();
 }
 
 Blueprint::UP
