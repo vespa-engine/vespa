@@ -28,16 +28,16 @@ public:
 };
 
 /**
- * A ProtonConfigurer monitors all config in proton and document dbs for change
+ * A ProtonConfigFetcher monitors all config in proton and document dbs for change
  * and starts proton reconfiguration if config has been reloaded.
  */
-class ProtonConfigurer : public FastOS_Runnable
+class ProtonConfigFetcher : public FastOS_Runnable
 {
 public:
     using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
-    ProtonConfigurer(const config::ConfigUri & configUri, IBootstrapOwner * owner, uint64_t subscribeTimeout);
-    ~ProtonConfigurer();
+    ProtonConfigFetcher(const config::ConfigUri & configUri, IBootstrapOwner * owner, uint64_t subscribeTimeout);
+    ~ProtonConfigFetcher();
     /**
      * Register a new document db that should receive config updates.
      */

@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "protonconfigurer.h"
+#include "proton_config_fetcher.h"
 #include "bootstrapconfig.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <thread>
@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 namespace proton {
 
-ProtonConfigurer::ProtonConfigurer(const config::ConfigUri & configUri, IBootstrapOwner * owner, uint64_t subscribeTimeout)
+ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IBootstrapOwner * owner, uint64_t subscribeTimeout)
     : _bootstrapConfigManager(configUri.getConfigId()),
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
       _bootstrapOwner(owner),
@@ -25,13 +25,13 @@ ProtonConfigurer::ProtonConfigurer(const config::ConfigUri & configUri, IBootstr
 {
 }
 
-ProtonConfigurer::~ProtonConfigurer()
+ProtonConfigFetcher::~ProtonConfigFetcher()
 {
     close();
 }
 
 void
-ProtonConfigurer::Run(FastOS_ThreadInterface * thread, void *arg)
+ProtonConfigFetcher::Run(FastOS_ThreadInterface * thread, void *arg)
 {
     (void) arg;
     (void) thread;
@@ -46,7 +46,7 @@ ProtonConfigurer::Run(FastOS_ThreadInterface * thread, void *arg)
 }
 
 const ConfigKeySet
-ProtonConfigurer::pruneManagerMap(const BootstrapConfig::SP & config)
+ProtonConfigFetcher::pruneManagerMap(const BootstrapConfig::SP & config)
 {
     const ProtonConfig & protonConfig = config->getProtonConfig();
     DBManagerMap newMap;
@@ -72,7 +72,7 @@ ProtonConfigurer::pruneManagerMap(const BootstrapConfig::SP & config)
 }
 
 void
-ProtonConfigurer::reconfigureBootstrap(const ConfigSnapshot & snapshot)
+ProtonConfigFetcher::reconfigureBootstrap(const ConfigSnapshot & snapshot)
 {
     assert(_bootstrapOwner != NULL);
     _bootstrapConfigManager.update(snapshot);
@@ -80,7 +80,7 @@ ProtonConfigurer::reconfigureBootstrap(const ConfigSnapshot & snapshot)
 }
 
 void
-ProtonConfigurer::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstrapConfig, const ConfigSnapshot & snapshot)
+ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstrapConfig, const ConfigSnapshot & snapshot)
 {
     lock_guard guard(_mutex);
     for (DBManagerMap::iterator it(_dbManagerMap.begin()), mt(_dbManagerMap.end());
@@ -92,7 +92,7 @@ ProtonConfigurer::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstrapC
 }
 
 void
-ProtonConfigurer::reconfigureDocumentDBs()
+ProtonConfigFetcher::reconfigureDocumentDBs()
 {
     lock_guard guard(_mutex);
     for (DocumentDBOwnerMap::iterator it(_documentDBOwnerMap.begin()), mt(_documentDBOwnerMap.end());
@@ -110,7 +110,7 @@ ProtonConfigurer::reconfigureDocumentDBs()
 }
 
 void
-ProtonConfigurer::fetchConfigs()
+ProtonConfigFetcher::fetchConfigs()
 {
     LOG(debug, "Waiting for new config generation");
     bool configured = false;
@@ -157,13 +157,13 @@ ProtonConfigurer::fetchConfigs()
 }
 
 int64_t
-ProtonConfigurer::getGeneration() const
+ProtonConfigFetcher::getGeneration() const
 {
     return _retriever.getGeneration();
 }
 
 void
-ProtonConfigurer::start()
+ProtonConfigFetcher::start()
 {
     fetchConfigs();
     if (_threadPool.NewThread(this, NULL) == NULL) {
@@ -173,7 +173,7 @@ ProtonConfigurer::start()
 }
 
 void
-ProtonConfigurer::close()
+ProtonConfigFetcher::close()
 {
     if (!_retriever.isClosed()) {
         _retriever.close();
@@ -182,7 +182,7 @@ ProtonConfigurer::close()
 }
 
 void
-ProtonConfigurer::registerDocumentDB(const DocTypeName & docTypeName, IDocumentDBConfigOwner * owner)
+ProtonConfigFetcher::registerDocumentDB(const DocTypeName & docTypeName, IDocumentDBConfigOwner * owner)
 {
     lock_guard guard(_mutex);
     assert(_documentDBOwnerMap.find(docTypeName) == _documentDBOwnerMap.end());
@@ -191,7 +191,7 @@ ProtonConfigurer::registerDocumentDB(const DocTypeName & docTypeName, IDocumentD
 }
 
 void
-ProtonConfigurer::unregisterDocumentDB(const DocTypeName & docTypeName)
+ProtonConfigFetcher::unregisterDocumentDB(const DocTypeName & docTypeName)
 {
     lock_guard guard(_mutex);
     LOG(debug, "Removing document db from checker");
@@ -200,7 +200,7 @@ ProtonConfigurer::unregisterDocumentDB(const DocTypeName & docTypeName)
 }
 
 DocumentDBConfig::SP
-ProtonConfigurer::getDocumentDBConfig(const DocTypeName & docTypeName) const
+ProtonConfigFetcher::getDocumentDBConfig(const DocTypeName & docTypeName) const
 {
     lock_guard guard(_mutex);
     DBManagerMap::const_iterator it(_dbManagerMap.find(docTypeName));
