@@ -31,9 +31,9 @@
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/net/state_server.h>
-#include <vespa/vespalib/util/rwlock.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
+#include <shared_mutex>
 
 namespace proton {
 
@@ -100,7 +100,7 @@ private:
     ProtonConfigurer                _protonConfigurer;
     const config::ConfigUri         _configUri;
     vespalib::string                _dbFile;
-    mutable vespalib::RWLock        _lock;
+    mutable std::shared_timed_mutex _mutex;
     MetricsUpdateHook               _metricsHook;
     MetricsEngine::UP               _metricsEngine;
     ProtonFileHeaderContext         _fileHeaderContext;

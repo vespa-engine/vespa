@@ -42,8 +42,6 @@ using document::DocumentTypeRepo;
 using vespalib::FileHeader;
 using vespalib::IllegalStateException;
 using vespalib::MonitorGuard;
-using vespalib::RWLockReader;
-using vespalib::RWLockWriter;
 using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
@@ -163,7 +161,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       ComponentConfigProducer(),
       _protonConfigurer(configUri, this, subscribeTimeout),
       _configUri(configUri),
-      _lock(),
+      _mutex(),
       _metricsHook(*this),
       _metricsEngine(),
       _fileHeaderContext(*this, progName),
@@ -489,7 +487,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot,
     typedef std::set<DocTypeName> DocTypeSet;
     DocTypeSet oldDocTypes;
     {
-        RWLockReader guard(_lock);
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
         for (const auto &kv : _documentDBMap) {
             const DocTypeName &docTypeName = kv.first;
             oldDocTypes.insert(docTypeName);
@@ -632,7 +630,7 @@ Proton::~Proton()
 size_t Proton::getNumDocs() const
 {
     size_t numDocs(0);
-    RWLockReader guard(_lock);
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
         numDocs += kv.second->getNumDocs();
     }
@@ -642,7 +640,7 @@ size_t Proton::getNumDocs() const
 size_t Proton::getNumActiveDocs() const
 {
     size_t numDocs(0);
-    RWLockReader guard(_lock);
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
         numDocs += kv.second->getNumActiveDocs();
     }
@@ -655,7 +653,7 @@ Proton::getBadConfigs(void) const
 {
     std::ostringstream res;
     bool first = true;
-    RWLockReader guard(_lock);
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
         if (kv.second->getRejectedConfig()) {
             if (!first) {
@@ -672,7 +670,7 @@ StatusReport::List
 Proton::getStatusReports() const
 {
     StatusReport::List reports;
-    RWLockReader guard(_lock);
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     reports.push_back(StatusReport::SP(_matchEngine->
                                        reportStatus().release()));
     for (const auto &kv : _documentDBMap) {
@@ -686,7 +684,7 @@ Proton::getStatusReports() const
 DocumentDB::SP
 Proton::getDocumentDB(const document::DocumentType &docType)
 {
-    RWLockReader guard(_lock);
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     DocTypeName docTypeName(docType.getName());
     DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
     if (it != _documentDBMap.end()) {
@@ -702,7 +700,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
 {
     const ProtonConfig &config(*configSnapshot->getProtonConfigSP());
 
-    RWLockWriter guard(_lock);
+    std::lock_guard<std::shared_timed_mutex> guard(_mutex);
     DocTypeName docTypeName(docType.getName());
     DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
     if (it != _documentDBMap.end()) {
@@ -761,7 +759,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     _documentDBMap[docTypeName] = ret;
     if (_persistenceEngine.get() != NULL) {
         // Not allowed to get to service layer to call pause().
-        RWLockWriter persistenceWGuard(_persistenceEngine->getWLock());
+        std::unique_lock<std::shared_timed_mutex> persistenceWGuard(_persistenceEngine->getWLock());
         PersistenceHandlerProxy::SP
             persistenceHandler(new PersistenceHandlerProxy(ret));
         if (!_isInitializing) {
@@ -788,7 +786,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     DocumentDB::SP old;
     _protonConfigurer.unregisterDocumentDB(docTypeName);
     {
-        RWLockWriter guard(_lock);
+        std::lock_guard<std::shared_timed_mutex> guard(_mutex);
         DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
         if (it == _documentDBMap.end())
             return;
@@ -800,7 +798,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     if (_persistenceEngine) {
         {
             // Not allowed to get to service layer to call pause().
-            RWLockWriter persistenceWguard(_persistenceEngine->getWLock());
+            std::unique_lock<std::shared_timed_mutex> persistenceWguard(_persistenceEngine->getWLock());
             IPersistenceHandler::SP oldHandler;
             oldHandler = _persistenceEngine->removeHandler(docTypeName);
             if (_initComplete && oldHandler) {
@@ -880,7 +878,7 @@ Proton::wipeHistory()
 {
     DocumentDBMap dbs;
     {
-        RWLockReader guard(_lock);
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
         dbs = _documentDBMap;
     }
     for (const auto &kv : dbs) {
@@ -894,7 +892,7 @@ Proton::listDocTypes(std::vector<vespalib::string> &documentTypes)
 {
     DocumentDBMap dbs;
     {
-        RWLockReader guard(_lock);
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
         dbs = _documentDBMap;
     }
     for (const auto &kv : dbs) {
@@ -916,7 +914,7 @@ Proton::listSchema(const vespalib::string &documentType,
     DocumentDB::SP ddb;
     DocTypeName docTypeName(documentType);
     {
-        RWLockReader guard(_lock);
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
         DocumentDBMap::const_iterator it = _documentDBMap.find(docTypeName);
         if (it != _documentDBMap.end())
             ddb = it->second;
@@ -981,7 +979,7 @@ const std::string config_id_tag = "CONFIG ID";
 void
 Proton::waitForInitDone()
 {
-    RWLockReader guard(_lock);
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
         kv.second->waitForInitDone();
     }
@@ -990,7 +988,7 @@ Proton::waitForInitDone()
 void
 Proton::waitForOnlineState()
 {
-    RWLockReader guard(_lock);
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
         kv.second->waitForOnlineState();
     }
@@ -1002,7 +1000,7 @@ Proton::getComponentConfig(Consumer &consumer)
     _componentConfig.getComponentConfig(consumer);
     std::vector<DocumentDB::SP> dbs;
     {
-        RWLockReader guard(_lock);
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
         for (const auto &kv : _documentDBMap) {
             dbs.push_back(kv.second);
         }
@@ -1029,7 +1027,7 @@ Proton::getConfigGeneration(void)
         g = _activeConfigSnapshot->getGeneration();
     }
     {
-        RWLockReader guard(_lock);
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
         for (const auto &kv : _documentDBMap) {
             dbs.push_back(kv.second);
         }
@@ -1071,12 +1069,12 @@ struct StateExplorerProxy : vespalib::StateExplorer {
 struct DocumentDBMapExplorer : vespalib::StateExplorer {
     typedef std::map<DocTypeName, DocumentDB::SP> DocumentDBMap;
     const DocumentDBMap &documentDBMap;
-    vespalib::RWLock &lock;
-    DocumentDBMapExplorer(const DocumentDBMap &documentDBMap_in, vespalib::RWLock &lock_in)
-        : documentDBMap(documentDBMap_in), lock(lock_in) {}
+    std::shared_timed_mutex &mutex;
+    DocumentDBMapExplorer(const DocumentDBMap &documentDBMap_in, std::shared_timed_mutex &mutex_in)
+        : documentDBMap(documentDBMap_in), mutex(mutex_in) {}
     virtual void get_state(const vespalib::slime::Inserter &, bool) const override {}
     virtual std::vector<vespalib::string> get_children_names() const override {
-        RWLockReader guard(lock);
+        std::shared_lock<std::shared_timed_mutex> guard(mutex);
         std::vector<vespalib::string> names;
         for (const auto &item: documentDBMap) {
             names.push_back(item.first.getName());
@@ -1085,7 +1083,7 @@ struct DocumentDBMapExplorer : vespalib::StateExplorer {
     }
     virtual std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override {
         typedef std::unique_ptr<StateExplorer> Explorer_UP;
-        RWLockReader guard(lock);
+        std::shared_lock<std::shared_timed_mutex> guard(mutex);
         auto result = documentDBMap.find(DocTypeName(vespalib::string(name)));
         if (result == documentDBMap.end()) {
             return Explorer_UP(nullptr);
@@ -1115,7 +1113,7 @@ Proton::get_child(vespalib::stringref name) const
     if (name == MATCH_ENGINE && _matchEngine) {
         return std::make_unique<StateExplorerProxy>(*_matchEngine);
     } else if (name == DOCUMENT_DB) {
-        return std::make_unique<DocumentDBMapExplorer>(_documentDBMap, _lock);
+        return std::make_unique<DocumentDBMapExplorer>(_documentDBMap, _mutex);
     } else if (name == FLUSH_ENGINE && _flushEngine) {
         return std::make_unique<FlushEngineExplorer>(*_flushEngine);
     } else if (name == TLS_NAME && _tls) {
