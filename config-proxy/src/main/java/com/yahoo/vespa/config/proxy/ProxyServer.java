@@ -88,13 +88,10 @@ public class ProxyServer implements Runnable {
         return createTestServer(source, null, new MemoryCache());
     }
 
-    static ProxyServer createTestServer(MapBackedConfigSource source, MemoryCache memoryCache) {
-        return createTestServer(source, source, memoryCache);
-    }
-
-    private static ProxyServer createTestServer(ConfigSource source,
-                                                ConfigSourceClient configSourceClient,
-                                                MemoryCache memoryCache) {
+    static ProxyServer createTestServer(ConfigSource source,
+                                        ConfigSourceClient configSourceClient,
+                                        MemoryCache memoryCache)
+    {
         final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
         final boolean delayedResponseHandling = false;
         return new ProxyServer(null, new DelayedResponses(statistics),

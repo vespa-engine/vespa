@@ -17,7 +17,6 @@ import java.util.List;
  * @author hmusum
  * @since 5.1.10
  */
-// TODO Move to src/test/
 public class MapBackedConfigSource implements ConfigSource, ConfigSourceClient {
     private final HashMap<ConfigKey<?>, RawConfig> backing = new HashMap<>();
     private final ClientUpdater clientUpdater;

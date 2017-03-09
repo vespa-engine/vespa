@@ -23,7 +23,7 @@ public class ProxyServerTest {
 
     MemoryCache memoryCache = new MemoryCache();
     private final MapBackedConfigSource source = new MapBackedConfigSource(UpstreamConfigSubscriberTest.MockClientUpdater.create(memoryCache));
-    private ProxyServer proxy = ProxyServer.createTestServer(source, memoryCache);
+    private ProxyServer proxy = ProxyServer.createTestServer(source, source, memoryCache);
 
     static final RawConfig fooConfig = Helper.fooConfigV2;
 
@@ -41,7 +41,7 @@ public class ProxyServerTest {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
         source.put(errorConfigKey, createConfigWithNextConfigGeneration(fooConfig, ErrorCode.UNKNOWN_DEFINITION));
-        proxy = ProxyServer.createTestServer(source, memoryCache);
+        proxy = ProxyServer.createTestServer(source, source, memoryCache);
     }
 
     @After
