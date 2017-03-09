@@ -34,7 +34,7 @@ ReconfigParams::shouldIndexManagerChange() const
 bool
 ReconfigParams::shouldAttributeManagerChange() const
 {
-    return _res.attributesChanged;
+    return _res.attributesChanged || _res._importedFieldsChanged;
 }
 
 bool
