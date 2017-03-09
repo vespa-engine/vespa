@@ -14,6 +14,8 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 
+import javax.annotation.Nonnull;
+
 /**
  * Implementation of TypedFilterChain for DiscFilterResponse
  * @author tejalk
@@ -58,7 +60,7 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
         return Collections.unmodifiableList(filters);
     }
 
-    private static class RequestViewImpl implements RequestView {
+    static class RequestViewImpl implements RequestView {
 
         private final Request request;
         private final Optional<HttpRequest.Method> method;
@@ -73,6 +75,17 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
         @Override
         public Object getAttribute(String name) {
             return request.context().get(name);
+        }
+
+        @Nonnull @Override
+        public List<String> getHeaders(String name) {
+            List<String> headers = request.headers().get(name);
+            return headers == null ? Collections.emptyList() : Collections.unmodifiableList(headers);
+        }
+
+        @Override
+        public Optional<String> getFirstHeader(String name) {
+            return getHeaders(name).stream().findFirst();
         }
 
         @Override
