@@ -107,7 +107,7 @@ public:
 
 private:
     struct Worker : Runnable, noncopyable {
-        typedef LinkedPtr<Worker> LP;
+        using UP = std::unique_ptr<Worker>;
         Thread thread;
         Signal &signal;
         Runnable::UP hook;
@@ -123,7 +123,7 @@ private:
 
     Work                    _work;
     std::vector<Signal>     _signals;
-    std::vector<Worker::LP> _workers;
+    std::vector<Worker::UP> _workers;
     Runnable::UP            _hook;
 
 public:
