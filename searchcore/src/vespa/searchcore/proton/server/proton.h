@@ -7,7 +7,7 @@
 #include "bootstrapconfigmanager.h"
 #include "documentdb.h"
 #include "memory_flush_config_updater.h"
-#include "protonconfigurer.h"
+#include "proton_config_fetcher.h"
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
 #include <vespa/persistence/proxy/providerstub.h>
@@ -97,7 +97,7 @@ private:
     };
 
     config::IConfigContext::SP      _configContext;
-    ProtonConfigurer                _protonConfigurer;
+    ProtonConfigFetcher             _protonConfigFetcher;
     const config::ConfigUri         _configUri;
     vespalib::string                _dbFile;
     mutable std::shared_timed_mutex _mutex;

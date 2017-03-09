@@ -11,7 +11,7 @@
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
-#include <vespa/searchcore/proton/server/protonconfigurer.h>
+#include <vespa/searchcore/proton/server/proton_config_fetcher.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/linkedptr.h>
@@ -185,7 +185,7 @@ TEST_F("require that bootstrap config manager creats correct key set", Bootstrap
     ASSERT_TRUE(set.find(dtKey) != set.end());
 }
 
-TEST_FFF("require_that_bootstrap_config_manager_updates_config", ConfigTestFixture("search"),
+TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixture("search"),
                                                                  BootstrapConfigManager(f1.configId),
                                                                  ConfigRetriever(f2.createConfigKeySet(), f1.context)) {
     f2.update(f3.getBootstrapConfigs());
@@ -203,7 +203,7 @@ TEST_FFF("require_that_bootstrap_config_manager_updates_config", ConfigTestFixtu
     ASSERT_TRUE(f1.configEqual(f2.getConfig()));
 }
 
-TEST_FF("require_that_documentdb_config_manager_subscribes_for_config",
+TEST_FF("require that documentdb config manager subscribes for config",
         ConfigTestFixture("search"),
         DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
     f1.addDocType("typea");
@@ -231,10 +231,10 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
     EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
 }
 
-TEST_FFF("require_that_protonconfigurer_follows_changes_to_bootstrap",
+TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          BootstrapOwner(),
-         ProtonConfigurer(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
     f3.start();
     ASSERT_TRUE(f2.configured);
     ASSERT_TRUE(f1.configEqual(f2.config.get()));
@@ -246,10 +246,10 @@ TEST_FFF("require_that_protonconfigurer_follows_changes_to_bootstrap",
     f3.close();
 }
 
-TEST_FFF("require_that_protonconfigurer_follows_changes_to_doctypes",
+TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          BootstrapOwner(),
-         ProtonConfigurer(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
     f3.start();
 
     f2.configured = false;
@@ -266,10 +266,10 @@ TEST_FFF("require_that_protonconfigurer_follows_changes_to_doctypes",
     f3.close();
 }
 
-TEST_FFF("require_that_protonconfigurer_reconfigures_dbowners",
+TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          BootstrapOwner(),
-         ProtonConfigurer(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
     f3.start();
 
     DBOwner dbA;

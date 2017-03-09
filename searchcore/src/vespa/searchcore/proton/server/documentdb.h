@@ -14,7 +14,7 @@
 #include "ireplayconfig.h"
 #include "iwipeoldremovedfieldshandler.h"
 #include "maintenancecontroller.h"
-#include "protonconfigurer.h"
+#include "proton_config_fetcher.h"
 #include "searchable_doc_subdb_configurer.h"
 #include "searchabledocsubdb.h"
 #include "summaryadapter.h"

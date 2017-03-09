@@ -8,7 +8,7 @@
 #include "persistencehandlerproxy.h"
 #include "persistenceproviderproxy.h"
 #include "proton.h"
-#include "protonconfigurer.h"
+#include "proton_config_fetcher.h"
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
@@ -159,7 +159,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       PersistenceProviderFactory(),
       IPersistenceEngineOwner(),
       ComponentConfigProducer(),
-      _protonConfigurer(configUri, this, subscribeTimeout),
+      _protonConfigFetcher(configUri, this, subscribeTimeout),
       _configUri(configUri),
       _mutex(),
       _metricsHook(*this),
@@ -223,7 +223,7 @@ Proton::init()
     if (_threadPool.NewThread(&_clock, NULL) == NULL) {
         throw IllegalStateException("Failed starting thread for the cheap clock");
     }
-    _protonConfigurer.start();
+    _protonConfigFetcher.start();
     BootstrapConfig::SP configSnapshot = _pendingConfigSnapshot.get();
     assert(configSnapshot.get() != NULL);
 
@@ -569,7 +569,7 @@ Proton::~Proton()
     if ( ! _initComplete ) {
         LOG(warning, "Initialization of proton was halted. Shutdown sequence has been initiated.");
     }
-    _protonConfigurer.close();
+    _protonConfigFetcher.close();
     {
         lock_guard guard(_configMutex);
         _allowReconfig = false;
@@ -708,7 +708,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     }
 
     DocumentDBConfig::SP dbConfig =
-        _protonConfigurer.getDocumentDBConfig(docTypeName);
+        _protonConfigFetcher.getDocumentDBConfig(docTypeName);
     vespalib::string db_dir = config.basedir + "/documents/" + docTypeName.toString();
     vespalib::mkdir(db_dir, false); // Assume parent is created.
     ConfigStore::UP config_store(
@@ -739,7 +739,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                       std::move(config_store),
                                       initializeThreads,
                                       _hwInfo));
-    _protonConfigurer.registerDocumentDB(docTypeName, ret.get());
+    _protonConfigFetcher.registerDocumentDB(docTypeName, ret.get());
     try {
         ret->start();
     } catch (vespalib::Exception &e) {
@@ -784,7 +784,7 @@ void
 Proton::removeDocumentDB(const DocTypeName &docTypeName)
 {
     DocumentDB::SP old;
-    _protonConfigurer.unregisterDocumentDB(docTypeName);
+    _protonConfigFetcher.unregisterDocumentDB(docTypeName);
     {
         std::lock_guard<std::shared_timed_mutex> guard(_mutex);
         DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
