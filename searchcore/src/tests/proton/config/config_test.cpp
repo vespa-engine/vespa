@@ -34,7 +34,7 @@ using vespalib::LinkedPtr;
 using vespalib::VarHolder;
 
 struct DoctypeFixture {
-    typedef vespalib::LinkedPtr<DoctypeFixture> LP;
+    using UP = std::unique_ptr<DoctypeFixture>;
     AttributesConfigBuilder attributesBuilder;
     RankProfilesConfigBuilder rankProfilesBuilder;
     RankingConstantsConfigBuilder rankingConstantsBuilder;
@@ -50,7 +50,7 @@ struct ConfigTestFixture {
     ProtonConfigBuilder protonBuilder;
     DocumenttypesConfigBuilder documenttypesBuilder;
     FiledistributorrpcConfigBuilder filedistBuilder;
-    map<std::string, DoctypeFixture::LP> dbConfig;
+    map<std::string, DoctypeFixture::UP> dbConfig;
     ConfigSet set;
     IConfigContext::SP context;
     int idcounter;
@@ -71,8 +71,7 @@ struct ConfigTestFixture {
         addDocType("_alwaysthere_");
     }
 
-    DoctypeFixture::LP addDocType(const std::string & name)
-    {
+    DoctypeFixture *addDocType(const std::string & name) {
         DocumenttypesConfigBuilder::Documenttype dt;
         dt.bodystruct = -1270491200;
         dt.headerstruct = 306916075;
@@ -86,7 +85,7 @@ struct ConfigTestFixture {
         db.configid = configId + "/" + name;
         protonBuilder.documentdb.push_back(db);
 
-        DoctypeFixture::LP fixture(new DoctypeFixture());
+        DoctypeFixture::UP fixture = std::make_unique<DoctypeFixture>();
         set.addBuilder(db.configid, &fixture->attributesBuilder);
         set.addBuilder(db.configid, &fixture->rankProfilesBuilder);
         set.addBuilder(db.configid, &fixture->rankingConstantsBuilder);
@@ -95,8 +94,7 @@ struct ConfigTestFixture {
         set.addBuilder(db.configid, &fixture->summarymapBuilder);
         set.addBuilder(db.configid, &fixture->juniperrcBuilder);
         set.addBuilder(db.configid, &fixture->importedFieldsBuilder);
-        dbConfig[name] = fixture;
-        return fixture;
+        return dbConfig.emplace(std::make_pair(name, std::move(fixture))).first->second.get();
     }
 
     void removeDocType(const std::string & name)
@@ -123,7 +121,9 @@ struct ConfigTestFixture {
     }
 
     bool configEqual(const std::string & name, DocumentDBConfig::SP dbc) {
-        DoctypeFixture::LP fixture(dbConfig[name]);
+        auto itr = dbConfig.find(name);
+        ASSERT_TRUE(itr != dbConfig.end());
+        const auto *fixture = itr->second.get();
         return (fixture->attributesBuilder == dbc->getAttributesConfig() &&
                 fixture->rankProfilesBuilder == dbc->getRankProfilesConfig() &&
                 fixture->indexschemaBuilder == dbc->getIndexschemaConfig() &&
@@ -219,7 +219,7 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
         ConfigTestFixture("search"),
         DocumentDBConfigManager(f1.configId + "/typea", "typea"))
 {
-    auto docType = f1.addDocType("typea");
+    auto *docType = f1.addDocType("typea");
     docType->importedFieldsBuilder.attribute.resize(1);
     docType->importedFieldsBuilder.attribute[0].name = "imported";
 
