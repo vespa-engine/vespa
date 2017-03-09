@@ -597,6 +597,14 @@ TEST_F("require that we can reconfigure matchers", Fixture)
     }
 }
 
+TEST("require that attribute manager should change when imported fields has changed")
+{
+    DocumentDBConfig::ComparisonResult result;
+    result._importedFieldsChanged = true;
+    ReconfigParams params(result);
+    EXPECT_TRUE(params.shouldAttributeManagerChange());
+}
+
 TEST_MAIN()
 {
     TEST_RUN_ALL();
