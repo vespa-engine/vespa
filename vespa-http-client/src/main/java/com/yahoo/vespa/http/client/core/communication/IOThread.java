@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.client.core.communication;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
@@ -245,8 +246,7 @@ class IOThread implements Runnable, AutoCloseable {
         statusReceivedCounter.addAndGet(endpointResults.size());
         int transientErrors = 0;
         for (EndpointResult endpointResult : endpointResults) {
-            if (! endpointResult.getDetail().isSuccess() &&
-                    endpointResult.getDetail().isTransient()) {
+            if (endpointResult.getDetail().getResultType() == Result.ResultType.TRANSITIVE_ERROR) {
                 transientErrors++;
             }
             resultQueue.resultReceived(endpointResult, clusterId);
@@ -404,7 +404,7 @@ class IOThread implements Runnable, AutoCloseable {
 
         for (Document document : documentQueue.removeAllDocuments()) {
             EndpointResult endpointResult=
-                    EndPointResultFactory.createError(endpoint, document.getOperationId(), false, exception);
+                    EndPointResultFactory.createError(endpoint, document.getOperationId(), exception);
             resultQueue.failOperation(endpointResult, clusterId);
         }
     }

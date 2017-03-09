@@ -84,9 +84,10 @@ public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
             TestDocument document = documents.get(0);
             Result r = results.remove(document.getDocumentId());
             assertThat(r, not(nullValue()));
-            assertThat(r.isConditionNotMet(), is(conditionNotMet));
+            if (conditionNotMet) {
+                assertThat(r.getDetails().iterator().next().getResultType(), is(Result.ResultType.CONDITION_NOT_MET));
+            }
             assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
-            assertThat(r.getDetails().toString(), r.isConditionNotMet(), is(conditionNotMet));
             assertThat(results.isEmpty(), is(true));
         }
     }
@@ -174,7 +175,7 @@ public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
                 Result r = results.remove(document.getDocumentId());
                 assertThat(r, not(nullValue()));
                 assertThat(r.getDetails().toString(), r.isSuccess(), is(false));
-                assertThat(r.isTransient(), is(true));
+                assertThat(r.getDetails().iterator().next().getResultType(), is(Result.ResultType.TRANSITIVE_ERROR));
             }
             assertThat(results.isEmpty(), is(true));
         }

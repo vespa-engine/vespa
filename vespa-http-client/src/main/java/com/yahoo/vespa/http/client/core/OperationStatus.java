@@ -8,7 +8,7 @@ import java.util.Iterator;
 
 
 /**
- * Wrapper to represent the result of a single operation fed to Vespa.
+ * Serialization/deserialization class for the result of a single document operation against Vespa.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @since 5.1
@@ -26,6 +26,14 @@ public final class OperationStatus {
     private static final char SEPARATOR = ' ';
     private static final Splitter spaceSep = Splitter.on(SEPARATOR);
 
+    /**
+     * Constructor
+     * @param message some human readable information what happened
+     * @param operationId the doc ID for the operation
+     * @param errorCode if it is success, transitive, or fatal
+     * @param isConditionNotMet if error is due to condition not met
+     * @param traceMessage any tracemessage
+     */
     public OperationStatus(String message, String operationId, ErrorCode errorCode, boolean isConditionNotMet, String traceMessage) {
         this.isConditionNotMet = isConditionNotMet;
         this.message = message;
@@ -35,7 +43,7 @@ public final class OperationStatus {
     }
 
     /**
-     * Parse a single rendered OperationStatus. White space may be padded after
+     * Parse a single rendered OperationStatus string. White space may be padded after
      * and before the given status.
      *
      * @param singleLine
@@ -73,6 +81,9 @@ public final class OperationStatus {
         return new OperationStatus(message, operationId, errorCode, isConditionNotMet, traceMessage);
     }
 
+    /**
+     * @return a string representing the status.
+     */
     public String render() {
         StringBuilder s = new StringBuilder();
         Encoder.encode(operationId, s).append(SEPARATOR);

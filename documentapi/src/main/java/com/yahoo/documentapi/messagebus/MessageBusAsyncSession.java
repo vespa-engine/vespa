@@ -207,24 +207,21 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         return errorCodes;
     }
 
+    private static Result.ResultType messageBusErrorToResultType(int messageBusError) {
+        switch (messageBusError) {
+            case ErrorCode.SEND_QUEUE_FULL: return Result.ResultType.TRANSIENT_ERROR;
+            case DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED: return Result.ResultType.CONDITION_NOT_MET_ERROR;
+            default: return Result.ResultType.FATAL_ERROR;
+        }
+    }
+
     private static Result toResult(long reqId, com.yahoo.messagebus.Result mbusResult) {
         if (mbusResult.isAccepted()) {
             return new Result(reqId);
         }
-        final Error error = new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")");
-        final Result.ResultType resultType;
-        switch (mbusResult.getError().getCode()) {
-            case ErrorCode.SEND_QUEUE_FULL:
-                resultType = Result.ResultType.TRANSIENT_ERROR;
-                break;
-            case DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED:
-                resultType = Result.ResultType.CONDITION_NOT_MET_ERROR;
-                break;
-            default:
-                resultType = Result.ResultType.FATAL_ERROR;
-                break;
-        }
-        return new Result(resultType, error);
+        return new Result(
+                messageBusErrorToResultType(mbusResult.getError().getCode()),
+                new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")"));
     }
 
     private static Response toResponse(Reply reply) {

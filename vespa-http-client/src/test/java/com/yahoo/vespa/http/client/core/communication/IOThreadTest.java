@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
+import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.V3HttpAPITest;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.EndpointResult;
@@ -45,10 +46,11 @@ public class IOThreadTest {
         doAnswer(invocation -> {
             EndpointResult endpointResult = (EndpointResult) invocation.getArguments()[0];
             assertThat(endpointResult.getOperationId(), is(expectedDocIdFail));
-            assertThat(endpointResult.getDetail().isSuccess(), is(false));
             assertThat(endpointResult.getDetail().getException().toString(),
                     containsString(expectedException));
-            assertThat(endpointResult.getDetail().isTransient(), is(isTransient));
+            assertThat(endpointResult.getDetail().getResultType(), is(
+                    isTransient ? Result.ResultType.TRANSITIVE_ERROR : Result.ResultType.FATAL_ERROR));
+
             latch.countDown();
             return null;
         }).when(endpointResultQueue).failOperation(anyObject(), eq(0));
@@ -56,8 +58,7 @@ public class IOThreadTest {
         doAnswer(invocation -> {
             EndpointResult endpointResult = (EndpointResult) invocation.getArguments()[0];
             assertThat(endpointResult.getOperationId(), is(expectedDocIdOk));
-            assertThat(endpointResult.getDetail().isSuccess(), is(true));
-            assertThat(endpointResult.getDetail().isTransient(), is(isTransient));
+            assertThat(endpointResult.getDetail().getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
             latch.countDown();
             return null;
         }).when(endpointResultQueue).resultReceived(anyObject(), eq(0));

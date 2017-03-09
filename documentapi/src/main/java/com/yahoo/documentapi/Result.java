@@ -66,7 +66,7 @@ public class Result {
     public long getRequestId() { return requestId; }
 
     /**
-     * Deprecated: Use getResultType() instead.
+     * @deprecated use type() instead.
      * Returns the type of result.
      *
      * @return the type of result, typically if this is an error or a success, and what kind of error.
@@ -85,7 +85,7 @@ public class Result {
      * @return the type of result, typically if this is an error or a success, and what kind of error.
      * @see com.yahoo.documentapi.Result.ResultType
      */
-    public ResultType getResultType() { return type;}
+    public ResultType type() { return type;}
 
     /** The types that a Result can have. */
     public enum ResultType {

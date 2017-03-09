@@ -252,7 +252,7 @@ public class OperationHandlerImpl implements OperationHandler {
         if (! wantedCluster.isPresent()) {
             if (clusters.size() != 1) {
                 new RestApiException(Response.createErrorResponse(400, "Several clusters exist: " +
-                        clusterListToString(clusters) + " you must specify one.. ", RestUri.apiErrorCodes.SEVERAL_CLUSTERS));
+                        clusterListToString(clusters) + " you must specify one. ", RestUri.apiErrorCodes.SEVERAL_CLUSTERS));
             }
             return clusterDefToRoute(clusters.get(0));
         }
