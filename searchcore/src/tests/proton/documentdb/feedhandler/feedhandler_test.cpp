@@ -188,22 +188,8 @@ struct MyFeedView : public test::DummyFeedView {
     int prune_removed_count;
     int update_count;
     SerialNum update_serial;
-    MyFeedView(const DocumentTypeRepo::SP &dtr) :
-        test::DummyFeedView(dtr),
-        putRdz(),
-        usePutRdz(false),
-        putLatch(),
-        metaStore(),
-        put_count(0),
-        put_serial(0),
-        heartbeat_count(0),
-        remove_count(0),
-        move_count(0),
-        prune_removed_count(0),
-        update_count(0),
-        update_serial(0)
-    {
-    }
+    MyFeedView(const DocumentTypeRepo::SP &dtr);
+    ~MyFeedView();
     void resetPutLatch(uint32_t count) { putLatch.reset(new vespalib::CountDownLatch(count)); }
     virtual void preparePut(PutOperation &op) {
         prepareDocumentOperation(op, op.getDocument()->getId().getGlobalId());
@@ -250,6 +236,23 @@ struct MyFeedView : public test::DummyFeedView {
     }
 };
 
+MyFeedView::MyFeedView(const DocumentTypeRepo::SP &dtr)
+    : test::DummyFeedView(dtr),
+      putRdz(),
+      usePutRdz(false),
+      putLatch(),
+      metaStore(),
+      put_count(0),
+      put_serial(0),
+      heartbeat_count(0),
+      remove_count(0),
+      move_count(0),
+      prune_removed_count(0),
+      update_count(0),
+      update_serial(0)
+{}
+MyFeedView::~MyFeedView() {}
+
 
 struct SchemaContext {
     Schema::SP                schema;
@@ -294,13 +297,17 @@ struct MyTransport : public FeedToken::ITransport {
     vespalib::Gate gate;
     ResultUP result;
     bool documentWasFound;
-    MyTransport() : gate(), result(), documentWasFound(false) {}
+    MyTransport();
+    ~MyTransport();
     virtual void send(Reply::UP, ResultUP res, bool documentWasFound_, double) {
         result = std::move(res);
         documentWasFound = documentWasFound_;
         gate.countDown();
     }
 };
+
+MyTransport::MyTransport() : gate(), result(), documentWasFound(false) {}
+MyTransport::~MyTransport() {}
 
 Reply::UP getReply(uint32_t type) {
     if (type == DocumentProtocol::REPLY_REMOVEDOCUMENT) {
@@ -316,14 +323,9 @@ struct FeedTokenContext {
     FeedToken::UP token_ap;
     FeedToken &token;
 
-    FeedTokenContext(uint32_t type = 0) :
-        transport(),
-        token_ap(new FeedToken(transport, getReply(type))),
-        token(*token_ap) {
-        token.getReply().getTrace().setLevel(9);
-    }
-    bool await(uint32_t timeout = 80000)
-    { return transport.gate.await(timeout); }
+    FeedTokenContext(uint32_t type = 0);
+    ~FeedTokenContext();
+    bool await(uint32_t timeout = 80000) { return transport.gate.await(timeout); }
     const Result *getResult() {
         if (transport.result.get()) {
             return transport.result.get();
@@ -332,6 +334,14 @@ struct FeedTokenContext {
     }
 };
 
+FeedTokenContext::FeedTokenContext(uint32_t type)
+    : transport(),
+      token_ap(new FeedToken(transport, getReply(type))),
+      token(*token_ap)
+{
+    token.getReply().getTrace().setLevel(9);
+}
+FeedTokenContext::~FeedTokenContext() {}
 
 struct PutContext {
     FeedTokenContext tokenCtx;

@@ -85,87 +85,8 @@ struct Options : public vespalib::ProgramOptions {
     std::string _doc;
     uint32_t _slobrokTimeout;
 
-    Options(Mode mode) : _mode(mode), _cluster("", ""), _nodeIndex(0xffffffff), _nonfriendlyOutput(false), _slobrokTimeout(0) {
-        _doc = "https://yahoo.github.io/vespa/";
-        if (_mode == SETNODESTATE) {
-            setSyntaxMessage(
-                "Set the wanted node state of a storage node. This will "
-                "override the state the node is in in the cluster state, if "
-                "the current state is \"better\" than the wanted state. "
-                "For instance, a node that is currently in initializing state "
-                "can be forced into down state, while a node that is currently"
-                " down can not be forced into retired state, but can be forced"
-                " into maintenance state.\n\n"
-                "For more info on states refer to\n" + _doc
-            );
-        } else if (_mode == GETCLUSTERSTATE) {
-            setSyntaxMessage(
-                "Get the cluster state of a given cluster.\n\n"
-                "For more info on states refer to\n" + _doc
-            );
-        } else {
-            setSyntaxMessage(
-                "Retrieve the state of a one or more storage services from the "
-                "fleet controller. Will list the state of the locally running "
-                "services, possibly restricted to less by options.\n\n"
-                "The result will show the slobrok address of the service, and "
-                "three states. The first state will show how the state of that "
-                "given service looks in the current cluster state. This state "
-                "is the state the fleetcontroller is reporting to all nodes "
-                "in the cluster this service is in. The second state is the "
-                "reported state, which is the state the given node is reporting"
-                " to be in itself. The third state is the wanted state, which "
-                "is the state we want the node to be in. In most cases this "
-                "should be the up state, but in some cases the fleet controller"
-                " or an administrator may have set the wanted state otherwise, "
-                "in order to get problem nodes out of the cluster.\n\n"
-                "For more info on states refer to\n" + _doc
-            );
-        }
-        addOption("h help", _showSyntax, false,
-                  "Show this help page.");
-
-        addOption("c cluster", _clusterName, std::string("storage"),
-                  "Which cluster to connect to. By default it will attempt to "
-                  "connect to cluster named 'storage'.");
-        if (_mode != GETCLUSTERSTATE) {
-            addOption("t type", _nodeType, std::string(""),
-                      "Node type to query. This can either be 'storage' or "
-                      "'distributor'. If not specified, the operation will "
-                      "affect both types.");
-            addOption("i index", _nodeIndex, uint32_t(0xffffffff),
-                      "The node index of the distributor or storage node to "
-                      "contact. If not specified, all indexes running locally "
-                      "on this node will be queried");
-        }
-        if (_mode != SETNODESTATE) {
-            addOption("r raw", _nonfriendlyOutput, false,
-                      "Show the serialized state formats directly instead of "
-                      "reformatting them to look more user friendly.");
-        }
-        if (_mode == SETNODESTATE) {
-            addArgument("Wanted state", _state, "Wanted state to set node in. "
-                        "This must be one of up, down or maintenance. Or if "
-                        "it's not a distributor it can also be retired.");
-            addArgument("Reason", _message, std::string(""),
-                        "Give a reason for why you're altering the wanted "
-                        "state, which will show up in various admin tools. "
-                        "(Use double quotes to give a reason with whitespace "
-                        "in it)");
-        }
-        addOptionHeader("Advanced options. Not needed for most usecases");
-        addOption("l slobrokconfig", _slobrokConfigId,
-                  std::string("admin/slobrok.0"),
-                  "Config id of slobrok. Will use the default config id of "
-                  "admin/slobrok.0 if not specified.");
-        addOption("p slobrokspec", _slobrokConnectionSpec, std::string(""),
-                  "Slobrok connection spec. By setting this, this application "
-                  "will not need config at all, but will use the given "
-                  "connection spec to talk with slobrok.");
-        addOption("s slobroktimeout", _slobrokTimeout, uint32_t(5 * 60),
-                  "Seconds to wait for slobrok client to connect to a slobrok "
-                  "server before failing.");
-    }
+    Options(Mode mode);
+    ~Options();
 
     bool validate() {
         if (_nodeType != ""
@@ -210,6 +131,90 @@ struct Options : public vespalib::ProgramOptions {
         return true;
     }
 };
+
+Options::Options(Mode mode)
+    : _mode(mode), _cluster("", ""), _nodeIndex(0xffffffff), _nonfriendlyOutput(false), _slobrokTimeout(0)
+{
+    _doc = "https://yahoo.github.io/vespa/";
+    if (_mode == SETNODESTATE) {
+        setSyntaxMessage(
+                "Set the wanted node state of a storage node. This will "
+                "override the state the node is in in the cluster state, if "
+                "the current state is \"better\" than the wanted state. "
+                "For instance, a node that is currently in initializing state "
+                "can be forced into down state, while a node that is currently"
+                " down can not be forced into retired state, but can be forced"
+                " into maintenance state.\n\n"
+                "For more info on states refer to\n" + _doc
+        );
+    } else if (_mode == GETCLUSTERSTATE) {
+        setSyntaxMessage(
+                "Get the cluster state of a given cluster.\n\n"
+                "For more info on states refer to\n" + _doc
+        );
+    } else {
+        setSyntaxMessage(
+                "Retrieve the state of a one or more storage services from the "
+                "fleet controller. Will list the state of the locally running "
+                "services, possibly restricted to less by options.\n\n"
+                "The result will show the slobrok address of the service, and "
+                "three states. The first state will show how the state of that "
+                "given service looks in the current cluster state. This state "
+                "is the state the fleetcontroller is reporting to all nodes "
+                "in the cluster this service is in. The second state is the "
+                "reported state, which is the state the given node is reporting"
+                " to be in itself. The third state is the wanted state, which "
+                "is the state we want the node to be in. In most cases this "
+                "should be the up state, but in some cases the fleet controller"
+                " or an administrator may have set the wanted state otherwise, "
+                "in order to get problem nodes out of the cluster.\n\n"
+                "For more info on states refer to\n" + _doc
+        );
+    }
+    addOption("h help", _showSyntax, false,
+              "Show this help page.");
+
+    addOption("c cluster", _clusterName, std::string("storage"),
+              "Which cluster to connect to. By default it will attempt to connect to cluster named 'storage'.");
+    if (_mode != GETCLUSTERSTATE) {
+        addOption("t type", _nodeType, std::string(""),
+                  "Node type to query. This can either be 'storage' or "
+                  "'distributor'. If not specified, the operation will "
+                  "affect both types.");
+        addOption("i index", _nodeIndex, uint32_t(0xffffffff),
+                  "The node index of the distributor or storage node to "
+                  "contact. If not specified, all indexes running locally "
+                  "on this node will be queried");
+    }
+    if (_mode != SETNODESTATE) {
+        addOption("r raw", _nonfriendlyOutput, false,
+                  "Show the serialized state formats directly instead of "
+                  "reformatting them to look more user friendly.");
+    }
+    if (_mode == SETNODESTATE) {
+        addArgument("Wanted state", _state,
+                    "Wanted state to set node in. "
+                    "This must be one of up, down or maintenance. Or if "
+                    "it's not a distributor it can also be retired.");
+        addArgument("Reason", _message, std::string(""),
+                    "Give a reason for why you're altering the wanted "
+                    "state, which will show up in various admin tools. "
+                    "(Use double quotes to give a reason with whitespace "
+                    "in it)");
+    }
+    addOptionHeader("Advanced options. Not needed for most usecases");
+    addOption("l slobrokconfig", _slobrokConfigId,
+              std::string("admin/slobrok.0"),
+              "Config id of slobrok. Will use the default config id of admin/slobrok.0 if not specified.");
+    addOption("p slobrokspec", _slobrokConnectionSpec, std::string(""),
+              "Slobrok connection spec. By setting this, this application "
+              "will not need config at all, but will use the given "
+              "connection spec to talk with slobrok.");
+    addOption("s slobroktimeout", _slobrokTimeout, uint32_t(5 * 60),
+              "Seconds to wait for slobrok client to connect to a slobrok server before failing.");
+}
+Options::~Options() {}
+
 
 struct StateApp : public FastOS_Application {
     Options _options;

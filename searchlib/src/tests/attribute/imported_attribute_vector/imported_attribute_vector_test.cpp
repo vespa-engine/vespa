@@ -73,14 +73,8 @@ struct Fixture {
     std::shared_ptr<ImportedAttributeVector>   imported_attr;
     std::shared_ptr<MockGidToLidMapperFactory> mapper_factory;
 
-    Fixture()
-        : target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
-          reference_attr(create_reference_attribute()),
-          imported_attr(create_attribute_vector_from_members()),
-          mapper_factory(std::make_shared<MockGidToLidMapperFactory>())
-    {
-        reference_attr->setGidToLidMapperFactory(mapper_factory);
-    }
+    Fixture();
+    ~Fixture();
 
     void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
         assert(from_lid < reference_attr->getNumDocs());
@@ -177,6 +171,17 @@ struct Fixture {
         });
     }
 };
+
+Fixture::Fixture()
+    : target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
+      reference_attr(create_reference_attribute()),
+      imported_attr(create_attribute_vector_from_members()),
+      mapper_factory(std::make_shared<MockGidToLidMapperFactory>())
+{
+    reference_attr->setGidToLidMapperFactory(mapper_factory);
+}
+
+Fixture::~Fixture() {}
 
 template <typename AttrValueType, typename PredicateType>
 void assert_multi_value_matches(const Fixture& f,

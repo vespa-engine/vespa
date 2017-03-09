@@ -14,6 +14,10 @@ DistributorProcess::DistributorProcess(const config::ConfigUri & configUri)
 {
 }
 
+DistributorProcess::~DistributorProcess() {
+    shutdown();
+}
+
 void
 DistributorProcess::shutdown()
 {

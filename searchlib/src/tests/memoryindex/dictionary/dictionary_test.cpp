@@ -733,17 +733,8 @@ TEST_F("requireThatFeaturesAreInPostingLists", Fixture)
 
 class Verifier : public SearchIteratorVerifier {
 public:
-    Verifier(const Schema & schema) :
-        _tfmd(),
-        _dictionary(schema)
-    {
-        WrapInserter inserter(_dictionary, 0);
-        inserter.word("a");
-        for (uint32_t docId : getExpectedDocIds()) {
-            inserter.add(docId);
-        }
-        inserter.flush();
-    }
+    Verifier(const Schema & schema);
+    ~Verifier();
 
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
@@ -756,6 +747,20 @@ private:
     mutable TermFieldMatchData _tfmd;
     Dictionary                 _dictionary;
 };
+
+
+Verifier::Verifier(const Schema & schema)
+    : _tfmd(),
+      _dictionary(schema)
+{
+    WrapInserter inserter(_dictionary, 0);
+    inserter.word("a");
+    for (uint32_t docId : getExpectedDocIds()) {
+        inserter.add(docId);
+    }
+    inserter.flush();
+}
+Verifier::~Verifier() {}
 
 TEST_F("require that postingiterator conforms", Fixture) {
     Verifier verifier(f.getSchema());

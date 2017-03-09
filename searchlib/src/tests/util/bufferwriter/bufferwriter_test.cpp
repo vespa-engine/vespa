@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("bufferwriter_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/util/bufferwriter.h>
@@ -12,8 +9,7 @@ LOG_SETUP("bufferwriter_test");
 namespace search
 {
 
-namespace
-{
+namespace {
 
 class StoreBufferWriter : public BufferWriter
 {
@@ -25,15 +21,11 @@ public:
     static constexpr size_t BUFFER_SIZE = 262144;
 
     StoreBufferWriter();
+    ~StoreBufferWriter();
 
-    virtual ~StoreBufferWriter() = default;
-
-    virtual void flush() override;
-
+    void flush() override;
     size_t getBytesWritten() const { return _bytesWritten; }
-
     std::vector<char> getSingleBuffer() const;
-
 };
 
 
@@ -46,6 +38,8 @@ StoreBufferWriter::StoreBufferWriter()
     _buf.resize(BUFFER_SIZE);
     setup(&_buf[0], _buf.size());
 }
+
+StoreBufferWriter::~StoreBufferWriter() {}
 
 
 void

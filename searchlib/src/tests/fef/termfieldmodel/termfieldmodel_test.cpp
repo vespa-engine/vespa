@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("termfieldmodel_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
@@ -18,12 +16,16 @@ struct State {
     TermFieldMatchData     *f7;
     TermFieldMatchDataArray array;
 
-    State() : term(), md(), f3(0), f5(0), f7(0), array() {}
+    State();
+    ~State();
 
     void setArray(TermFieldMatchDataArray value) {
         array = value;
     }
 };
+
+State::State() : term(), md(), f3(0), f5(0), f7(0), array() {}
+State::~State() {}
 
 void testInvalidId() {
     const TermFieldMatchData empty;

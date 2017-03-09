@@ -23,41 +23,39 @@ struct Options : public vespalib::ProgramOptions {
     double redundancy;
     std::string testdir;
 
-    Options(int argc, const char* const* argv)
-        : vespalib::ProgramOptions(argc, argv),
-          showSyntaxPage(false),
-          systemState(""),
-          numDisks(0),
-          diskDistribution(1),
-          redundancy(2.0)
-    {
-        setSyntaxMessage(
-                "Analyzes distribution from a real cluster. "
-                "This tool reads gzipped files containing directory "
-                "listings from a live system and analyze how current "
-                "distribution and ideal distribution is in that cluster."
-                "The tool is typically run from the perl check_cluster script "
-                "to create raw data for further analysis of cluster "
-                "distribution."
-        );
-        addOption("h help", showSyntaxPage, false,
-                  "Shows this help page");
-        addOption("v verbose", verbose, false,
-                  "Show verbose progress");
-        addOption("c clusterstate", systemState,
-                  "Cluster state to use for ideal state calculations");
-        addOption("n numdisks", numDisks,
-                  "The number of disks on each node");
-        addOption("r redundancy", redundancy, 2.0,
-                  "The redundancy used");
-        addOption("d distribution", diskDistribution, 1,
-                  "The disk distribution to use (0 = MODULO, 1 = "
-                  "MODULO_INDEX, 2 = MODULO_KNUTH, 3 = MODULO_BID");
-        addArgument("Test directory", testdir, std::string("."),
-                    "The directory within to find gzipped file listings named "
-                    "storage.*.shell.filelist.gz");
-    }
+    Options(int argc, const char* const* argv);
+    ~Options();
 };
+
+Options::Options(int argc, const char* const* argv)
+    : vespalib::ProgramOptions(argc, argv),
+      showSyntaxPage(false),
+      systemState(""),
+      numDisks(0),
+      diskDistribution(1),
+      redundancy(2.0)
+{
+    setSyntaxMessage("Analyzes distribution from a real cluster. "
+                     "This tool reads gzipped files containing directory "
+                     "listings from a live system and analyze how current "
+                     "distribution and ideal distribution is in that cluster."
+                     "The tool is typically run from the perl check_cluster script "
+                     "to create raw data for further analysis of cluster "
+                     "distribution."
+    );
+    addOption("h help", showSyntaxPage, false, "Shows this help page");
+    addOption("v verbose", verbose, false, "Show verbose progress");
+    addOption("c clusterstate", systemState, "Cluster state to use for ideal state calculations");
+    addOption("n numdisks", numDisks, "The number of disks on each node");
+    addOption("r redundancy", redundancy, 2.0, "The redundancy used");
+    addOption("d distribution", diskDistribution, 1,
+              "The disk distribution to use (0 = MODULO, 1 = MODULO_INDEX, 2 = MODULO_KNUTH, 3 = MODULO_BID");
+    addArgument("Test directory", testdir, std::string("."),
+                "The directory within to find gzipped file listings named storage.*.shell.filelist.gz");
+}
+Options::~Options() {}
+
+
 
 struct Disk {
     struct Count {
@@ -111,16 +109,8 @@ struct Node {
     std::vector<Disk> disks;
     Disk::Count distributor;
 
-    Node(const lib::NodeState& dstate, const lib::NodeState& sstate,
-         uint32_t diskCount)
-        : distributorState(dstate),
-          storageState(sstate),
-          disks()
-    {
-        for (uint32_t i=0; i<diskCount; ++i) {
-            disks.push_back(Disk(storageState.getDiskState(i)));
-        }
-    }
+    Node(const lib::NodeState& dstate, const lib::NodeState& sstate, uint32_t diskCount);
+    ~Node();
 
     void print(std::ostream& out, uint32_t nodeIndex) {
         if (distributorState.getState().oneOf("ui")) {
@@ -133,6 +123,17 @@ struct Node {
         }
     }
 };
+
+Node::Node(const lib::NodeState& dstate, const lib::NodeState& sstate, uint32_t diskCount)
+    : distributorState(dstate),
+      storageState(sstate),
+      disks()
+{
+    for (uint32_t i=0; i<diskCount; ++i) {
+        disks.push_back(Disk(storageState.getDiskState(i)));
+    }
+}
+Node::~Node() {}
 
 struct Distribution {
     std::vector<Node> nodes;

@@ -100,6 +100,7 @@ public:
 
 public:
     TestData();
+    ~TestData();
     bool start();
 };
 
@@ -127,9 +128,9 @@ TestData::TestData() :
                mbus::RPCNetworkParams().setIdentity(mbus::Identity("dst")).setSlobrokConfig(_slobrok.config())),
     _dstSession(),
     _dstHandler()
-{
-    // empty
-}
+{ }
+
+TestData::~TestData() {}
 
 bool
 TestData::start()

@@ -229,40 +229,36 @@ const string test_dir = "flush";
 
 struct BaseFixture
 {
-    test::DirectoryHandler _dirHandler;
+    test::DirectoryHandler   _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriter;
     HwInfo                   _hwInfo;
-    BaseFixture()
+    BaseFixture();
+    BaseFixture(const HwInfo &hwInfo);
+    ~BaseFixture();
+};
+
+BaseFixture::BaseFixture()
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
           _hwInfo()
-    {
-    }
-    BaseFixture(const HwInfo &hwInfo)
+{ }
+BaseFixture::BaseFixture(const HwInfo &hwInfo)
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
           _hwInfo(hwInfo)
-    {
-    }
-};
-
+{}
+BaseFixture::~BaseFixture() {}
 
 struct AttributeManagerFixture
 {
     AttributeManager::SP _msp;
     AttributeManager &_m;
     AttributeWriter _aw;
-    AttributeManagerFixture(BaseFixture &bf)
-        : _msp(std::make_shared<AttributeManager>
-               (test_dir, "test.subdb", TuneFileAttributes(), bf._fileHeaderContext,
-                bf._attributeFieldWriter, bf._hwInfo)),
-          _m(*_msp),
-          _aw(_msp)
-    {
-    }
+    AttributeManagerFixture(BaseFixture &bf);
+    ~AttributeManagerFixture();
     AttributeVector::SP addAttribute(const vespalib::string &name) {
         return _m.addAttribute(name, getInt32Config(), createSerialNum);
     }
@@ -272,6 +268,14 @@ struct AttributeManagerFixture
         return _m.addAttribute(name, cfg, createSerialNum);
     }
 };
+
+AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
+    : _msp(std::make_shared<AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
+                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._hwInfo)),
+      _m(*_msp),
+      _aw(_msp)
+{}
+AttributeManagerFixture::~AttributeManagerFixture() {}
 
 struct Fixture : public BaseFixture, public AttributeManagerFixture
 {

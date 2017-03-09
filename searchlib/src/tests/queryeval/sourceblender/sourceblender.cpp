@@ -143,16 +143,8 @@ using search::test::SearchIteratorVerifier;
 
 class Verifier : public SearchIteratorVerifier {
 public:
-    Verifier() :
-        _indexes(3),
-        _selector(getDocIdLimit())
-    {
-        for (uint32_t docId : getExpectedDocIds()) {
-            const size_t indexId = docId % _indexes.size();
-            _selector.set(docId, indexId);
-            _indexes[indexId].push_back(docId);
-        }
-    }
+    Verifier();
+    ~Verifier();
     SearchIterator::UP create(bool strict) const override {
         return SearchIterator::UP(SourceBlenderSearch::create(_selector.createIterator(),
                                                               createChildren(strict),
@@ -170,6 +162,18 @@ private:
     std::vector<DocIds> _indexes;
     MySelector _selector;
 };
+
+Verifier::Verifier() :
+    _indexes(3),
+    _selector(getDocIdLimit())
+{
+    for (uint32_t docId : getExpectedDocIds()) {
+        const size_t indexId = docId % _indexes.size();
+        _selector.set(docId, indexId);
+        _indexes[indexId].push_back(docId);
+    }
+}
+Verifier::~Verifier() {}
 
 TEST("Test that source blender iterator adheres to SearchIterator requirements") {
     Verifier searchIteratorVerifier;

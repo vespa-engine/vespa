@@ -72,6 +72,7 @@ public:
     FastAccessFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
                        const PersistentParams &params,
                        const Context &ctx);
+    ~FastAccessFeedView();
 
     virtual const IAttributeWriter::SP &getAttributeWriter() const {
         return _attributeWriter;

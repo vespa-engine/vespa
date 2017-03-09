@@ -68,9 +68,8 @@ public:
     QueryNodeResultFactory   eqnr;
     std::vector<QueryTerm> qtv;
     QueryTermList          qtl;
-    Query(const StringList & terms) : eqnr(), qtv(), qtl() {
-        setupQuery(terms);
-    }
+    Query(const StringList & terms);
+    ~Query();
     static ParsedQueryTerm parseQueryTerm(const std::string & queryTerm) {
         size_t i = queryTerm.find(':');
         if (i != std::string::npos) {
@@ -91,23 +90,30 @@ public:
     }
 };
 
+Query::Query(const StringList & terms) : eqnr(), qtv(), qtl() {
+    setupQuery(terms);
+}
+Query::~Query() {}
+
 struct SnippetModifierSetup
 {
     Query                            query;
     UTF8SubstringSnippetModifier::SP searcher;
     SharedSearcherBuf                buf;
     SnippetModifier                  modifier;
-    explicit SnippetModifierSetup(const StringList & terms) :
-        query(terms),
-        searcher(new UTF8SubstringSnippetModifier()),
-        buf(new SearcherBuf(8)),
-        modifier(searcher)
-    {
-        searcher->prepare(query.qtl, buf);
-    }
+    explicit SnippetModifierSetup(const StringList & terms);
+    ~SnippetModifierSetup();
 };
 
-
+SnippetModifierSetup::SnippetModifierSetup(const StringList & terms)
+    : query(terms),
+      searcher(new UTF8SubstringSnippetModifier()),
+      buf(new SearcherBuf(8)),
+      modifier(searcher)
+{
+    searcher->prepare(query.qtl, buf);
+}
+SnippetModifierSetup::~SnippetModifierSetup() {}
 
 // helper functions
 ArrayFieldValue getFieldValue(const StringList &fv);

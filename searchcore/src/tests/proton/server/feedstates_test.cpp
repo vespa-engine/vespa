@@ -37,13 +37,17 @@ struct MyFeedView : public test::DummyFeedView {
     DocumentTypeRepo::SP repo_sp;
     int remove_handled;
 
-    MyFeedView() : repo_sp(repo.getTypeRepoSp()), remove_handled(0) {}
+    MyFeedView();
+    ~MyFeedView();
 
     virtual const DocumentTypeRepo::SP &getDocumentTypeRepo() const
     { return repo_sp; }
     virtual void handleRemove(FeedToken *, const RemoveOperation &)
     { ++remove_handled; }
 };
+
+MyFeedView::MyFeedView() : repo_sp(repo.getTypeRepoSp()), remove_handled(0) {}
+MyFeedView::~MyFeedView() {}
 
 struct MyReplayConfig : IReplayConfig {
     virtual void replayConfig(SerialNum) {}
@@ -68,19 +72,23 @@ struct Fixture
     bucketdb::BucketDBHandler _bucketDBHandler;
     ReplayTransactionLogState state;
 
-    Fixture()
-        : feed_view1(),
-          feed_view2(),
-          feed_view_ptr(&feed_view1),
-          replay_config(),
-          config_store(),
-          _bucketDB(),
-          _bucketDBHandler(_bucketDB),
-          state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config,
-                  config_store)
-    {
-    }
+    Fixture();
+    ~Fixture();
 };
+
+Fixture::Fixture()
+    : feed_view1(),
+      feed_view2(),
+      feed_view_ptr(&feed_view1),
+      replay_config(),
+      config_store(),
+      _bucketDB(),
+      _bucketDBHandler(_bucketDB),
+      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store)
+{
+}
+Fixture::~Fixture() {}
+
 
 struct RemoveOperationContext
 {
@@ -89,19 +97,21 @@ struct RemoveOperationContext
     nbostream str;
     std::unique_ptr<Packet> packet;
 
-    RemoveOperationContext(search::SerialNum serial)
-        : doc_id("doc:foo:bar"),
-          op(BucketFactory::getBucketId(doc_id), Timestamp(10), doc_id),
-          str(),
-          packet()
-    {
-        op.serialize(str);
-        ConstBufferRef buf(str.c_str(), str.wp());
-        packet.reset(new Packet());
-        packet->add(Packet::Entry(serial, FeedOperation::REMOVE, buf));
-    }
+    RemoveOperationContext(search::SerialNum serial);
+    ~RemoveOperationContext();
 };
 
+RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
+    : doc_id("doc:foo:bar"),
+      op(BucketFactory::getBucketId(doc_id), Timestamp(10), doc_id),
+      str(), packet()
+{
+    op.serialize(str);
+    ConstBufferRef buf(str.c_str(), str.wp());
+    packet.reset(new Packet());
+    packet->add(Packet::Entry(serial, FeedOperation::REMOVE, buf));
+}
+RemoveOperationContext::~RemoveOperationContext() {}
 TEST_F("require that active FeedView can change during replay", Fixture)
 {
     RemoveOperationContext opCtx(10);

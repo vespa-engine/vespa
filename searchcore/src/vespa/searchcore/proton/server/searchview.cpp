@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "searchcontext.h"
 #include "searchview.h"
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
-#include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchview");
@@ -114,6 +112,8 @@ SearchView::SearchView(const ISummaryManager::ISummarySetup::SP & summarySetup,
       _summarySetup(summarySetup),
       _matchView(matchView)
 { }
+
+SearchView::~SearchView() {}
 
 DocsumReply::UP
 SearchView::getDocsums(const DocsumRequest & req)

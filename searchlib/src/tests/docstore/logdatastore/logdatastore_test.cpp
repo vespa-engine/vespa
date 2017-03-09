@@ -435,21 +435,8 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
 
 class VisitCacheStore {
 public:
-    VisitCacheStore() :
-        _myDir("visitcache"),
-        _repo(makeDocTypeRepoConfig()),
-        _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
-                LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,CompressionConfig::LZ4,
-                    WriteableFileChunk::Config(CompressionConfig(), 16384))),
-        _fileHeaderContext(),
-        _executor(_config.getLogConfig().getNumThreads(), 128*1024),
-        _tlSyncer(),
-        _datastore(_executor, _myDir.getDir(), _config,
-                           GrowStrategy(), TuneFileSummary(),
-                           _fileHeaderContext, _tlSyncer, NULL),
-        _inserted(),
-        _serial(1)
-    { }
+    VisitCacheStore();
+    ~VisitCacheStore();
     IDocumentStore & getStore() { return _datastore; }
     void write(uint32_t id) {
         write(id, makeDoc(_repo, id, true));
@@ -481,19 +468,8 @@ public:
 private:
     class VerifyVisitor : public IDocumentVisitor {
     public:
-        VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching) :
-            _vcs(vcs),
-            _expected(),
-            _actual(),
-            _allowVisitCaching(allowCaching)
-        {
-            for (uint32_t lid : lids) {
-                _expected.insert(lid);
-            }
-        }
-        ~VerifyVisitor() {
-            EXPECT_EQUAL(_expected.size(), _actual.size());
-        }
+        VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching);
+        ~VerifyVisitor();
         void visit(uint32_t lid, Document::UP doc) override {
             EXPECT_TRUE(_expected.find(lid) != _expected.end());
             EXPECT_TRUE(_actual.find(lid) == _actual.end());
@@ -517,6 +493,34 @@ private:
     std::map<uint32_t, Document::UP> _inserted;
     SerialNum                        _serial;
 };
+
+VisitCacheStore::VerifyVisitor::VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching)
+        : _vcs(vcs), _expected(), _actual(), _allowVisitCaching(allowCaching)
+{
+    for (uint32_t lid : lids) {
+        _expected.insert(lid);
+    }
+}
+VisitCacheStore::VerifyVisitor::~VerifyVisitor() {
+    EXPECT_EQUAL(_expected.size(), _actual.size());
+}
+
+VisitCacheStore::VisitCacheStore() :
+    _myDir("visitcache"),
+    _repo(makeDocTypeRepoConfig()),
+    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
+            LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,CompressionConfig::LZ4,
+                                 WriteableFileChunk::Config(CompressionConfig(), 16384))),
+    _fileHeaderContext(),
+    _executor(_config.getLogConfig().getNumThreads(), 128*1024),
+    _tlSyncer(),
+    _datastore(_executor, _myDir.getDir(), _config,
+               GrowStrategy(), TuneFileSummary(),
+               _fileHeaderContext, _tlSyncer, NULL),
+    _inserted(),
+    _serial(1)
+{ }
+VisitCacheStore::~VisitCacheStore() {}
 
 void
 verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, size_t memory_used) {

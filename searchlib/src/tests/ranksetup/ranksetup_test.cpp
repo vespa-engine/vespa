@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("ranksetup_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <map>
@@ -98,13 +96,19 @@ private:
     RankProgram::UP _secondPhaseProgram;
 
 public:
-    RankExecutor(const vespalib::string &initRank,
-                 const vespalib::string &finalRank, const RankEnvironment &rankEnv) :
-        _initRank(initRank), _finalRank(finalRank), _rankEnv(rankEnv), _layout(),
-        _rs(), _firstPhaseProgram(), _secondPhaseProgram() {}
+    RankExecutor(const vespalib::string &initRank, const vespalib::string &finalRank, const RankEnvironment &rankEnv);
+    ~RankExecutor();
     bool setup();
     RankResult execute(uint32_t docId = 1);
 };
+
+RankExecutor::RankExecutor(const vespalib::string &initRank, const vespalib::string &finalRank,
+                           const RankEnvironment &rankEnv)
+    : _initRank(initRank), _finalRank(finalRank), _rankEnv(rankEnv), _layout(),
+      _rs(), _firstPhaseProgram(), _secondPhaseProgram()
+{}
+
+RankExecutor::~RankExecutor() {}
 
 bool
 RankExecutor::setup()
@@ -158,17 +162,21 @@ private:
     RankProgram::UP _rankProgram;
 
 public:
-    FeatureDumper(const RankEnvironment & rankEnv) :
-        _rankEnv(rankEnv),
-        _setup(_rankEnv.factory(), _rankEnv.indexEnvironment()),
-        _layout(),
-        _rankProgram() {}
+    FeatureDumper(const RankEnvironment & rankEnv);
+    ~FeatureDumper();
     void addDumpFeature(const vespalib::string &name);
     void configure();
     bool setup();
     RankResult dump();
 };
 
+FeatureDumper::FeatureDumper(const RankEnvironment & rankEnv)
+    : _rankEnv(rankEnv),
+      _setup(_rankEnv.factory(), _rankEnv.indexEnvironment()),
+      _layout(),
+      _rankProgram()
+{}
+FeatureDumper::~FeatureDumper() {}
 void
 FeatureDumper::addDumpFeature(const vespalib::string &name)
 {

@@ -163,29 +163,18 @@ public:
                       bool dynamicK,
                       uint32_t numWordIds,
                       uint32_t docIdLimit);
+    ~WrappedFieldWriter();
 
-    virtual void
-    checkPoint(void) override;
-
-    void
-    earlyOpen(void);
-
-    void
-    lateOpen(void);
-
-    void
-    open(void);
-
-    void
-    close(void);
-
-    void
-    writeCheckPoint(void);
-
-    void
-    readCheckPoint(bool first);
+    void checkPoint() override;
+    void earlyOpen();
+    void lateOpen();
+    void open();
+    void close();
+    void writeCheckPoint();
+    void readCheckPoint(bool first);
 };
 
+WrappedFieldWriter::~WrappedFieldWriter() {}
 
 WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
                                        bool dynamicK,

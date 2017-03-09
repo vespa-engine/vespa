@@ -50,12 +50,16 @@ public:
     int lastOk;
     int meanwaitms;
 
-    Messaging(int meanwait) : lastOk(0), meanwaitms(meanwait) {};
+    Messaging(int meanwait);
+    ~Messaging();
 
     void sendMessage(const Message& m);
     void print();
     void run();
 };
+
+Messaging::Messaging(int meanwait) : lastOk(0), meanwaitms(meanwait) {}
+Messaging::~Messaging() {}
 
 class Client : public document::Runnable {
 public:
@@ -74,10 +78,14 @@ public:
     virtual void run();
     virtual void print(double timenow);
 
-    Client(Messaging& msgng, double windowSize, int to) :
-        ok(0), failed(0), busy(0), pending(0), windowsize(windowSize), messaging(msgng), timeout(to), max_diff(0) {}
+    Client(Messaging& msgng, double windowSize, int to);
+    ~Client();
 };
 
+Client::Client(Messaging& msgng, double windowSize, int to)
+    : ok(0), failed(0), busy(0), pending(0), windowsize(windowSize), messaging(msgng), timeout(to), max_diff(0)
+{}
+Client::~Client() {}
 
 class FixedClient : public Client {
 public:

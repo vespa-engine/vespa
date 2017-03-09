@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("documentbucketmover_test");
+
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/bucketmovejob.h>
@@ -112,23 +110,9 @@ struct MySubDb
     MaintenanceDocumentSubDB _subDb;
     test::UserDocuments        _docs;
     bucketdb::BucketDBHandler _bucketDBHandler;
-    MySubDb(const DocumentTypeRepo::SP &repo,
-            std::shared_ptr<BucketDBOwner> bucketDB,
-            uint32_t subDbId,
-            SubDbType subDbType)
-        : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB,
-                       DocumentMetaStore::getFixedName(),
-                       search::GrowStrategy(),
-                       documentmetastore::IGidCompare::SP(new documentmetastore::DefaultGidCompare),
-                       subDbType)),
-          _metaStore(*_metaStoreSP),
-          _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
-          _retriever(_realRetriever),
-          _subDb(_metaStoreSP, _retriever, subDbId), _docs(),
-          _bucketDBHandler(*bucketDB)
-    {
-        _bucketDBHandler.addDocumentMetaStore(_metaStoreSP.get(), 0);
-    }
+    MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB,
+            uint32_t subDbId, SubDbType subDbType);
+    ~MySubDb();
     void insertDocs(const test::UserDocuments &docs_) {
         for (test::UserDocuments::Iterator itr = docs_.begin(); itr != docs_.end(); ++itr) {
             const test::BucketDocuments &bucketDocs = itr->second;
@@ -171,6 +155,22 @@ struct MySubDb
 
 };
 
+MySubDb::MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB,
+                 uint32_t subDbId, SubDbType subDbType)
+    : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB,
+                                                       DocumentMetaStore::getFixedName(),
+                                                       search::GrowStrategy(),
+                                                       documentmetastore::IGidCompare::SP(new documentmetastore::DefaultGidCompare),
+                                                       subDbType)),
+      _metaStore(*_metaStoreSP),
+      _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
+      _retriever(_realRetriever),
+      _subDb(_metaStoreSP, _retriever, subDbId), _docs(),
+      _bucketDBHandler(*bucketDB)
+{
+    _bucketDBHandler.addDocumentMetaStore(_metaStoreSP.get(), 0);
+}
+MySubDb::~MySubDb() {}
 
 struct MySubDbTwoBuckets : public MySubDb
 {
@@ -295,29 +295,26 @@ struct ScanFixtureBase
     std::shared_ptr<BucketDBOwner> _bucketDB;
     MySubDb                    _ready;
     MySubDb                    _notReady;
-    ScanFixtureBase()
-        : _builder(),
-          _bucketDB(std::make_shared<BucketDBOwner>()),
-          _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
-          _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY)
-    {
-    }
+    ScanFixtureBase();
+    ~ScanFixtureBase();
 
-    ScanItr
-    getItr(void)
-    {
+    ScanItr getItr() {
         return ScanItr(_bucketDB->takeGuard(), BucketId());
     }
 
-    ScanItr
-    getItr(BucketId bucket,
-             BucketId endBucket = BucketId(),
-             uint32_t pass = FIRST_SCAN_PASS)
-    {
+    ScanItr getItr(BucketId bucket, BucketId endBucket = BucketId(), uint32_t pass = FIRST_SCAN_PASS) {
         return ScanItr(_bucketDB->takeGuard(), pass,
                        bucket, endBucket);
     }
 };
+
+ScanFixtureBase::ScanFixtureBase()
+    : _builder(),
+      _bucketDB(std::make_shared<BucketDBOwner>()),
+      _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
+      _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY)
+{}
+ScanFixtureBase::~ScanFixtureBase() {}
 
 
 struct ScanFixture : public ScanFixtureBase
@@ -539,23 +536,8 @@ struct ControllerFixtureBase
     MyFrozenBucketHandler       _fbh;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
     BucketMoveJob               _bmj;
-    ControllerFixtureBase(double resourceLimitFactor)
-        : _builder(),
-          _calc(new test::BucketStateCalculator),
-          _bucketHandler(),
-          _modifiedHandler(),
-          _bucketDB(std::make_shared<BucketDBOwner>()),
-          _moveHandler(*_bucketDB),
-          _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
-          _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
-          _fbh(),
-          _diskMemUsageNotifier(),
-          _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
-               _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
-               _diskMemUsageNotifier, resourceLimitFactor,
-               "test")
-    {
-    }
+    ControllerFixtureBase(double resourceLimitFactor);
+    ~ControllerFixtureBase();
     ControllerFixtureBase &addReady(const BucketId &bucket) {
         _calc->addReady(bucket);
         return *this;
@@ -605,7 +587,23 @@ struct ControllerFixtureBase
     }
 };
 
-
+ControllerFixtureBase::ControllerFixtureBase(double resourceLimitFactor)
+    : _builder(),
+      _calc(new test::BucketStateCalculator),
+      _bucketHandler(),
+      _modifiedHandler(),
+      _bucketDB(std::make_shared<BucketDBOwner>()),
+      _moveHandler(*_bucketDB),
+      _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
+      _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
+      _fbh(),
+      _diskMemUsageNotifier(),
+      _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
+           _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
+           _diskMemUsageNotifier, resourceLimitFactor,
+           "test")
+{}
+ControllerFixtureBase::~ControllerFixtureBase() {}
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 
 struct ControllerFixture : public ControllerFixtureBase

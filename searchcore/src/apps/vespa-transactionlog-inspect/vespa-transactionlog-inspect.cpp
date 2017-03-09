@@ -137,13 +137,17 @@ struct DummyStreamHandler : public NewConfigOperation::IStreamHandler {
 struct DocTypeRepo {
     DocumenttypesConfigSP docTypeCfg;
     DocumentTypeRepo docTypeRepo;
-    DocTypeRepo(const std::string &configDir)
-        : docTypeCfg(config::ConfigGetter<DocumenttypesConfig>::
-                     getConfig("", config::DirSpec(configDir)).release()),
-          docTypeRepo(*docTypeCfg)
-    {
-    }
+    DocTypeRepo(const std::string &configDir);
+    ~DocTypeRepo();
 };
+
+DocTypeRepo::DocTypeRepo(const std::string &configDir)
+    : docTypeCfg(config::ConfigGetter<DocumenttypesConfig>::getConfig("", config::DirSpec(configDir)).release()),
+      docTypeRepo(*docTypeCfg)
+{
+}
+
+DocTypeRepo::~DocTypeRepo() {}
 
 
 /**
@@ -340,14 +344,8 @@ public:
     std::string tlsName;
     int         listenPort;
     typedef std::unique_ptr<BaseOptions> UP;
-    BaseOptions(int argc, const char* const* argv)
-        : _opts(argc, argv)
-    {
-        _opts.addOption("tlsdir", tlsDir, "Tls directory");
-        _opts.addOption("tlsname", tlsName, std::string("tls"), "Name of the tls");
-        _opts.addOption("listenport", listenPort, 13701, "Tcp listen port");
-    }
-    virtual ~BaseOptions() {}
+    BaseOptions(int argc, const char* const* argv);
+    virtual ~BaseOptions();
     void usage() { _opts.writeSyntaxPage(std::cout); }
     virtual void parse() { _opts.parse(); }
     virtual std::string toString() const {
@@ -356,6 +354,15 @@ public:
     }
     virtual Utility::UP createUtility() const = 0;
 };
+
+BaseOptions::BaseOptions(int argc, const char* const* argv)
+    : _opts(argc, argv)
+{
+    _opts.addOption("tlsdir", tlsDir, "Tls directory");
+    _opts.addOption("tlsname", tlsName, std::string("tls"), "Name of the tls");
+    _opts.addOption("listenport", listenPort, 13701, "Tcp listen port");
+}
+BaseOptions::~BaseOptions() {}
 
 /**
  * Base class for a utility with tls server and tls client.
@@ -439,15 +446,8 @@ struct DumpOperationsOptions : public BaseOptions
     SerialNum   firstSerialNum;
     SerialNum   lastSerialNum;
     std::string configDir;
-    DumpOperationsOptions(int argc, const char* const* argv)
-        : BaseOptions(argc, argv)
-    {
-        _opts.addOption("domain", domainName, "Name of the domain");
-        _opts.addOption("first", firstSerialNum, "Serial number of first operation");
-        _opts.addOption("last", lastSerialNum, "Serial number of last operation");
-        _opts.addOption("configdir", configDir, "Config directory (with documenttypes.cfg)");
-        _opts.setSyntaxMessage("Utility to dump a range of operations ([first,last]) in a tls domain");
-    }
+    DumpOperationsOptions(int argc, const char* const* argv);
+    ~DumpOperationsOptions();
     static std::string command() { return "dumpoperations"; }
     virtual std::string toString() const {
         return vespalib::make_string("%s, domain=%s, first=%" PRIu64 ", last=%" PRIu64 ", configdir=%s",
@@ -457,6 +457,18 @@ struct DumpOperationsOptions : public BaseOptions
     }
     virtual Utility::UP createUtility() const;
 };
+
+DumpOperationsOptions::DumpOperationsOptions(int argc, const char* const* argv)
+    : BaseOptions(argc, argv)
+{
+    _opts.addOption("domain", domainName, "Name of the domain");
+    _opts.addOption("first", firstSerialNum, "Serial number of first operation");
+    _opts.addOption("last", lastSerialNum, "Serial number of last operation");
+    _opts.addOption("configdir", configDir, "Config directory (with documenttypes.cfg)");
+    _opts.setSyntaxMessage("Utility to dump a range of operations ([first,last]) in a tls domain");
+}
+DumpOperationsOptions::~DumpOperationsOptions() {}
+
 
 /**
  * Utility to dump a range of operations in a tls domain.
@@ -513,13 +525,8 @@ struct DumpDocumentsOptions : public DumpOperationsOptions
 {
     std::string format;
     bool verbose;
-    DumpDocumentsOptions(int argc, const char* const* argv)
-        : DumpOperationsOptions(argc, argv)
-    {
-        _opts.addOption("format", format, std::string("xml"), "Format in which the document operations should be dumped ('xml' or 'text')");
-        _opts.addOption("verbose", verbose, false, "Whether the document operations should be dumped verbosely");
-        _opts.setSyntaxMessage("Utility to dump a range of document operations ([first,last]) in a tls domain");
-    }
+    DumpDocumentsOptions(int argc, const char* const* argv);
+    ~DumpDocumentsOptions();
     static std::string command() { return "dumpdocuments"; }
     virtual void parse() {
         DumpOperationsOptions::parse();
@@ -534,6 +541,16 @@ struct DumpDocumentsOptions : public DumpOperationsOptions
     }
     virtual Utility::UP createUtility() const;
 };
+
+DumpDocumentsOptions::DumpDocumentsOptions(int argc, const char* const* argv)
+    : DumpOperationsOptions(argc, argv)
+{
+    _opts.addOption("format", format, std::string("xml"), "Format in which the document operations should be dumped ('xml' or 'text')");
+    _opts.addOption("verbose", verbose, false, "Whether the document operations should be dumped verbosely");
+    _opts.setSyntaxMessage("Utility to dump a range of document operations ([first,last]) in a tls domain");
+}
+DumpDocumentsOptions::~DumpDocumentsOptions() {}
+
 
 /**
  * Utility to dump a range of document operations in a tls domain.
@@ -596,38 +613,46 @@ private:
     }
 
 public:
-    int Main() {
-        _programName = _argv[0];
-        if (_argc < 2) {
-            usage();
-            return 1;
-        }
-        BaseOptions::UP opts;
-        if (strcmp(_argv[1], ListDomainsOptions::command().c_str()) == 0) {
-            combineFirstArgs();
-            opts.reset(new ListDomainsOptions(_argc-1, _argv+1));
-        } else if (strcmp(_argv[1], DumpOperationsOptions::command().c_str()) == 0) {
-            combineFirstArgs();
-            opts.reset(new DumpOperationsOptions(_argc-1, _argv+1));
-        } else if (strcmp(_argv[1], DumpDocumentsOptions::command().c_str()) == 0) {
-            combineFirstArgs();
-            opts.reset(new DumpDocumentsOptions(_argc-1, _argv+1));
-        }
-        if (opts.get() != NULL) {
-            try {
-                opts->parse();
-            } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
-                std::cerr << "Error parsing program options: " << e.getMessage() << std::endl;
-                usageHeader();
-                opts->usage();
-                return 1;
-            }
-            return opts->createUtility()->run();
-        }
+    App();
+    ~App();
+    int Main();
+};
+
+App::App() {}
+App::~App() {}
+
+int
+App::Main() {
+    _programName = _argv[0];
+    if (_argc < 2) {
         usage();
         return 1;
     }
-};
+    BaseOptions::UP opts;
+    if (strcmp(_argv[1], ListDomainsOptions::command().c_str()) == 0) {
+        combineFirstArgs();
+        opts.reset(new ListDomainsOptions(_argc-1, _argv+1));
+    } else if (strcmp(_argv[1], DumpOperationsOptions::command().c_str()) == 0) {
+        combineFirstArgs();
+        opts.reset(new DumpOperationsOptions(_argc-1, _argv+1));
+    } else if (strcmp(_argv[1], DumpDocumentsOptions::command().c_str()) == 0) {
+        combineFirstArgs();
+        opts.reset(new DumpDocumentsOptions(_argc-1, _argv+1));
+    }
+    if (opts.get() != NULL) {
+        try {
+            opts->parse();
+        } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
+            std::cerr << "Error parsing program options: " << e.getMessage() << std::endl;
+            usageHeader();
+            opts->usage();
+            return 1;
+        }
+        return opts->createUtility()->run();
+    }
+    usage();
+    return 1;
+}
 
 int
 main(int argc, char **argv)

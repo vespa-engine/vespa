@@ -81,12 +81,15 @@ struct MyBlueprint : SimpleLeafBlueprint {
         setEstimate(HitEstimate(hits.size(), hits.empty()));
         set_allow_termwise_eval(allow_termwise_eval);
     }
+    ~MyBlueprint();
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &,
                                         bool strict) const override
     {
         return SearchIterator::UP(new MyTerm(hits, strict));
     }
 };
+
+MyBlueprint::~MyBlueprint() {}
 
 struct MyOr : OrBlueprint {
     bool use_my_value;

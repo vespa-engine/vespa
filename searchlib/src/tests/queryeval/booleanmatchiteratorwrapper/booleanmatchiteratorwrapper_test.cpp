@@ -121,12 +121,15 @@ TEST("mostly everything") {
 
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
+    ~Verifier();
     SearchIterator::UP create(bool strict) const override {
         return std::make_unique<BooleanMatchIteratorWrapper>(createIterator(getExpectedDocIds(), strict), _tfmda);;
     }
 private:
     mutable TermFieldMatchDataArray _tfmda;
 };
+
+Verifier::~Verifier() {}
 
 TEST("Test that boolean wrapper iterators adheres to SearchIterator requirements") {
     Verifier searchIteratorVerifier;

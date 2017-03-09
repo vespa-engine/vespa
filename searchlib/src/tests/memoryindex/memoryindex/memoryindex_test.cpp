@@ -54,17 +54,8 @@ struct Index {
     uint32_t     docid;
     std::string  currentField;
 
-    Index(const Setup &setup)
-        : schema(setup.schema),
-          _executor(1, 128 * 1024),
-          _invertThreads(2),
-          _pushThreads(2),
-          index(schema, _invertThreads, _pushThreads),
-          builder(schema),
-          docid(1),
-          currentField()
-    {
-    }
+    Index(const Setup &setup);
+    ~Index();
     void closeField() {
         if (!currentField.empty()) {
             builder.endField();
@@ -111,6 +102,19 @@ private:
     Index &operator=(const Index &index);
 };
 
+
+Index::Index(const Setup &setup)
+    : schema(setup.schema),
+      _executor(1, 128 * 1024),
+      _invertThreads(2),
+      _pushThreads(2),
+      index(schema, _invertThreads, _pushThreads),
+      builder(schema),
+      docid(1),
+      currentField()
+{
+}
+Index::~Index() {}
 //-----------------------------------------------------------------------------
 
 std::string toString(SearchIterator & search)
