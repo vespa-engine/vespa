@@ -27,7 +27,7 @@ typedef EnumStoreDataStoreType::RefType EnumStoreIndex;
 typedef vespalib::Array<EnumStoreIndex> EnumStoreIndexVector;
 typedef vespalib::Array<uint32_t> EnumStoreEnumVector;
 
-typedef btree::BTreeTraits<32, 32, 7, true> EnumTreeTraits;
+typedef btree::BTreeTraits<16, 16, 10, true> EnumTreeTraits;
 
 typedef btree::BTree<EnumStoreIndex, btree::BTreeNoLeafData,
                      btree::NoAggregated,
