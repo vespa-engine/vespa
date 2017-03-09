@@ -205,4 +205,14 @@ public class Result {
             return b.toString();
         }
     }
+
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append("Result for '").append(document.getDocumentId());
+        if (localTrace != null) {
+            b.append(localTrace);
+        }
+        return b.toString();
+    }
 }
