@@ -20,6 +20,9 @@ operator<<(std::ostream& os, const NodeMaintenanceStats& stats)
     return os;
 }
 
+NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker() {}
+NodeMaintenanceStatsTracker::~NodeMaintenanceStatsTracker() {}
+
 } // distributor
 } // storage
 

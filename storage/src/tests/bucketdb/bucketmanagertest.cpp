@@ -976,12 +976,19 @@ BucketManagerTest::testQueuedRepliesOnlyDispatchedWhenAllProcessingDone()
     const type & name() const { return _ ## name; }
 
 struct TestParams {
+    TestParams();
+    TestParams(const TestParams &);
+    ~TestParams();
     BUILDER_PARAM(document::BucketId, bucket);
     BUILDER_PARAM(document::BucketId, remappedTo);
     BUILDER_PARAM(api::StorageCommand::SP, documentMutation);
     BUILDER_PARAM(api::StorageCommand::SP, treeMutation);
     BUILDER_PARAM(std::vector<const api::MessageType*>, expectedOrdering);
 };
+
+TestParams::TestParams() { }
+TestParams::TestParams(const TestParams &) = default;
+TestParams::~TestParams() {}
 
 void
 BucketManagerTest::doTestMutationOrdering(

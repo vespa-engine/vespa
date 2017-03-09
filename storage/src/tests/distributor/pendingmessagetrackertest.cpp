@@ -119,19 +119,8 @@ class Fixture
     document::TestDocMan _testDocMan;
 public:
 
-    Fixture()
-        : _compReg(),
-          _clock(),
-          _tracker(),
-          _testDocMan()
-    {
-        _compReg.setClock(_clock);
-        _clock.setAbsoluteTimeInSeconds(1);
-        // Have to set clock in compReg before constructing tracker, or it'll
-        // flip out and die on an explicit nullptr check.
-        _tracker = std::unique_ptr<PendingMessageTracker>(
-                new PendingMessageTracker(_compReg));
-    }
+    Fixture();
+    ~Fixture();
 
     std::shared_ptr<api::PutCommand> sendPut(const RequestBuilder& builder) {
         assignMockedTime(builder.atTime());
@@ -224,6 +213,20 @@ private:
     }
 };
 
+Fixture::Fixture()
+    : _compReg(),
+      _clock(),
+      _tracker(),
+      _testDocMan()
+{
+    _compReg.setClock(_clock);
+    _clock.setAbsoluteTimeInSeconds(1);
+    // Have to set clock in compReg before constructing tracker, or it'll
+    // flip out and die on an explicit nullptr check.
+    _tracker = std::unique_ptr<PendingMessageTracker>(
+            new PendingMessageTracker(_compReg));
+}
+Fixture::~Fixture() {}
 
 }
 
