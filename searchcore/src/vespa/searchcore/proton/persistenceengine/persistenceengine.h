@@ -136,7 +136,6 @@ public:
     void propagateSavedClusterState(IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(IPersistenceHandler &handler);
     void populateInitialBucketDB(IPersistenceHandler &targetHandler);
-    std::shared_lock<std::shared_timed_mutex> getRLock(void) const;
     std::unique_lock<std::shared_timed_mutex> getWLock(void) const;
 };
 
