@@ -286,9 +286,8 @@ public class StorageMaintainer {
                                                 docker.executeInContainer(executeIn, command);
 
             if (! result.isSuccess()) {
-                PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, executeIn);
-                logger.warning("Failed to run maintenance jobs: " + args + result);
                 numberOfNodeAdminMaintenanceFails.add();
+                throw new RuntimeException("Failed to run maintenance jobs: " + args + result);
             }
             return result;
         }
