@@ -280,6 +280,9 @@ struct MyFastAccessFeedView
     {
         init();
     }
+
+    ~MyFastAccessFeedView() { }
+
     void init() {
         ISummaryAdapter::SP summaryAdapter(new MySummaryAdapter());
         Schema::SP schema(new Schema());
