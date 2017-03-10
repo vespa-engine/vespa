@@ -60,7 +60,9 @@ protected:
     }
 
 public:
-    virtual uint32_t getRawValues(DocId doc, const WType * & values) const final;
+    virtual uint32_t getRawValues(DocId doc, const WType * & values) const final {
+        return get(doc, values);
+    }
     /*
      * Specialization of SearchContext for weighted set type
      */

@@ -107,7 +107,7 @@ private:
 
 public:
     DotProductExecutor(const search::attribute::IAttributeVector * attribute, const Vector & vector);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 }
@@ -131,7 +131,7 @@ private:
 public:
     DotProductExecutor(const A * attribute, const V & vector);
     ~DotProductExecutor();
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 template <typename A>
@@ -142,7 +142,7 @@ public:
     ~DotProductByCopyExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
-    virtual size_t getAttributeValues(uint32_t docid, const AT * & count);
+    size_t getAttributeValues(uint32_t docid, const AT * & count) final override;
     std::vector<typename A::BaseType> _copy;
 };
 
@@ -155,7 +155,7 @@ public:
     ~SparseDotProductExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
-    virtual size_t getAttributeValues(uint32_t docid, const AT * & count);
+    size_t getAttributeValues(uint32_t docid, const AT * & count) override;
 protected:
     IV              _indexes;
     std::vector<AT> _scratch;
@@ -170,7 +170,7 @@ public:
     ~SparseDotProductByCopyExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
-    virtual size_t getAttributeValues(uint32_t docid, const AT * & count);
+    size_t getAttributeValues(uint32_t docid, const AT * & count) final override;
     std::vector<typename A::BaseType> _copy;
 };
 
@@ -190,31 +190,16 @@ private:
     vespalib::string getAttribute(const fef::IQueryEnvironment & env) const;
 
 public:
-    /**
-     * Constructs a blueprint.
-     */
     DotProductBlueprint();
+    ~DotProductBlueprint();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const fef::IIndexEnvironment & env,
-                                   fef::IDumpFeatureVisitor & visitor) const;
+    fef::ParameterDescriptions getDescriptions() const override;
 
-    // Inherit doc from Blueprint.
-    virtual fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual fef::ParameterDescriptions getDescriptions() const {
-        return fef::ParameterDescriptions().desc().attribute(fef::ParameterCollection::ANY).string();
-    }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const fef::IIndexEnvironment & env,
-                       const fef::ParameterList & params);
-
-    virtual void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const;
-
-    // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 };
 

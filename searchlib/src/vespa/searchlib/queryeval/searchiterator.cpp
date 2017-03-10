@@ -51,7 +51,6 @@ SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
         docid = result.getNextFalseBit(docid);
         if (!isAtEnd(docid) && seek(docid)) {
             result.setBit(docid);
-//            printf("bit %d is hit, _docId=%d, _endId=%d\n", docid, getDocId(), getEndId());
         }
         docid = std::max(docid + 1, getDocId());
     }

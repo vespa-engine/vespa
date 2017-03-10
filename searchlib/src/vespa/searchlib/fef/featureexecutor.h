@@ -2,14 +2,11 @@
 
 #pragma once
 
-#include <vector>
-#include <vespa/vespalib/util/linkedptr.h>
 #include "handle.h"
 #include "matchdata.h"
-#include <cassert>
 #include <memory>
-#include <vespa/vespalib/util/array.h>
 #include "number_or_object.h"
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace search {
 namespace fef {
