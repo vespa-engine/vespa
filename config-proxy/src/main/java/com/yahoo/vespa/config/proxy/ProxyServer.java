@@ -116,7 +116,7 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    public RawConfig resolveConfig(JRTServerConfigRequest req) {
+    RawConfig resolveConfig(JRTServerConfigRequest req) {
         statistics.incProcessedRequests();
         // Calling getConfig() will either return with an answer immediately or
         // create a background thread that retrieves config from the server and
@@ -247,12 +247,12 @@ public class ProxyServer implements Runnable {
 
     // Cancels all config instances and flushes the cache. When this method returns,
     // the cache will not be updated again before someone calls getConfig().
-    synchronized void flush() {
+    private synchronized void flush() {
         memoryCache.clear();
         configClient.cancel();
     }
 
-    public void stop() {
+    void stop() {
         Event.stopping("configproxy", "shutdown");
         if (rpcServer != null) rpcServer.shutdown();
         if (delayedResponseScheduler != null) delayedResponseScheduler.cancel(true);
@@ -274,7 +274,7 @@ public class ProxyServer implements Runnable {
         return configClient.getSourceConnections();
     }
 
-    public void updateSourceConnections(List<String> sources) {
+    void updateSourceConnections(List<String> sources) {
         configSource = new ConfigSourceSet(sources);
         flush();
         configClient = createRpcClient();
