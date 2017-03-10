@@ -338,21 +338,6 @@ public:
 
     virtual Trinary is_strict() const { return Trinary::Undefined; }
 
-    using Children = std::vector<SearchIterator *>;
-    using OwnedChildren = std::vector<std::unique_ptr<SearchIterator>>;
-
-    static BitVectorUP andChildren(BitVectorUP result, const Children & children, uint32_t begin_id);
-    static void andChildren(BitVector & result, const Children & children, uint32_t begin_id);
-    static BitVectorUP andChildren(const Children & children, uint32_t begin_id);
-
-    template <typename IT>
-    static BitVectorUP orChildren(IT from, IT to, uint32_t begin_id);
-    template <typename IT>
-    static BitVectorUP orChildren(BitVectorUP result, IT from, IT to, uint32_t begin_id);
-    template <typename IT>
-    static void orChildren(BitVector & result, IT from, IT to, uint32_t begin_id);
-
-
 };
 
 } // namespace queryeval
