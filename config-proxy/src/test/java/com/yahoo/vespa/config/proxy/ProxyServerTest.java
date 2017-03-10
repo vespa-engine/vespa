@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
  */
 public class ProxyServerTest {
 
-    MemoryCache memoryCache = new MemoryCache();
+    private final MemoryCache memoryCache = new MemoryCache();
     private final MapBackedConfigSource source = new MapBackedConfigSource(UpstreamConfigSubscriberTest.MockClientUpdater.create(memoryCache));
     private ProxyServer proxy = ProxyServer.createTestServer(source, source, memoryCache);
 

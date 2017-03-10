@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 /**
  * The run method of this class is executed periodically to return delayed responses
- * (long polling requests that are about to time out and needs to be returned).
+ * (requests use long polling, so config proxy needs to return a response when they time out).
  *
  * @author hmusum
  */

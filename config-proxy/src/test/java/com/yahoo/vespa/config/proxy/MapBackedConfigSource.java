@@ -51,7 +51,7 @@ public class MapBackedConfigSource implements ConfigSource, ConfigSourceClient {
     public void shutdownSourceConnections() {
     }
 
-    public void clear() {
+    void clear() {
         backing.clear();
     }
 

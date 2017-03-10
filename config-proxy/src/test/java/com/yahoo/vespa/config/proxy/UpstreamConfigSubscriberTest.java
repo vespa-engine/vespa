@@ -34,7 +34,6 @@ public class UpstreamConfigSubscriberTest {
     private static RawConfig errorConfig;
     private static ConfigKey<?> errorConfigKey;
     private static Payload fooPayload;
-    private static Payload errorPayload;
     private long generation = 1;
 
 
@@ -51,7 +50,7 @@ public class UpstreamConfigSubscriberTest {
         fooConfig = new RawConfig(Helper.fooConfig.getKey(), Helper.fooConfig.getDefMd5(), fooPayload, ConfigUtils.getMd5(payload), generation, 0, Helper.fooConfig.getDefContent(), Optional.empty());
 
         payload = new ConfigPayload(new Slime());
-        errorPayload = Payload.from(payload);
+        Payload errorPayload = Payload.from(payload);
         errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
         errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(), errorPayload, ConfigUtils.getMd5(payload), generation, ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
 
@@ -61,16 +60,9 @@ public class UpstreamConfigSubscriberTest {
         mockConnection = new MockConnection(sourceResponses);
     }
 
-    private ConfigPayload getConfigPayload(String key, String value) {
-        Slime slime = new Slime();
-        slime.setObject().setString(key, value);
-        return new ConfigPayload(slime);
-    }
-
     @Test
     public void basic() {
-        final UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
-        new Thread(subscriber).start();
+        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber();
         waitForConfigGeneration(clientUpdater, generation);
         assertThat(clientUpdater.getLastConfig(), is(fooConfig));
         subscriber.cancel();
@@ -78,9 +70,7 @@ public class UpstreamConfigSubscriberTest {
 
     @Test
     public void require_that_reconfiguration_works() {
-        final UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
-
-        new Thread(subscriber).start();
+        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber();
         waitForConfigGeneration(clientUpdater, generation);
         assertThat(clientUpdater.getLastConfig(), is(fooConfig));
 
@@ -99,9 +89,7 @@ public class UpstreamConfigSubscriberTest {
     @Test
     public void require_that_error_response_is_handled() {
         sourceResponses.put(errorConfigKey, errorConfig);
-        final UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
-
-        new Thread(subscriber).start();
+        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber();
         waitForConfigGeneration(clientUpdater, generation);
         RawConfig lastConfig = clientUpdater.getLastConfig();
         assertThat(lastConfig, is(errorConfig));
@@ -166,4 +154,18 @@ public class UpstreamConfigSubscriberTest {
             return lastConfig;
         }
     }
+
+    private UpstreamConfigSubscriber createUpstreamConfigSubscriber() {
+        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
+        subscriber.subscribe();
+        new Thread(subscriber).start();
+        return subscriber;
+    }
+
+    private ConfigPayload getConfigPayload(String key, String value) {
+        Slime slime = new Slime();
+        slime.setObject().setString(key, value);
+        return new ConfigPayload(slime);
+    }
+
 }
