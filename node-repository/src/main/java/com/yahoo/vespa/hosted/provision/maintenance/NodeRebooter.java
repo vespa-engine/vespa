@@ -4,7 +4,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Clock;
@@ -50,7 +49,7 @@ public class NodeRebooter extends Maintainer {
         if (lastReboot.isPresent() && lastReboot.get().at().plus(rebootInterval).isAfter(clock.instant()))
             return false;
         else // schedule with a probability such that reboots of nodes are spread roughly over the reboot interval
-            return random.nextDouble() < (double)rate().getSeconds() / (double)rebootInterval.getSeconds();
+            return random.nextDouble() < (double) interval().getSeconds() / (double)rebootInterval.getSeconds();
     }
 
     @Override

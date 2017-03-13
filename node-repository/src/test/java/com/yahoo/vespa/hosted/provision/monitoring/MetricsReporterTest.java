@@ -9,11 +9,13 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.maintenance.MetricsReporter;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +27,14 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author oyving
  */
-public class ProvisionMetricsTest {
+public class MetricsReporterTest {
 
-    @Test(timeout = 10_000L)
+    @Test
     public void test_registered_metric() throws InterruptedException {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
-                new MockNameResolver().mockAnyLookup());
+                                                           new MockNameResolver().mockAnyLookup());
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
@@ -48,36 +50,28 @@ public class ProvisionMetricsTest {
         expectedMetrics.put("hostedVespa.dirtyHosts", 0);
         expectedMetrics.put("hostedVespa.failedHosts", 0);
 
-        TestMetric metric = new TestMetric(expectedMetrics.size());
-        ProvisionMetrics provisionMetrics = new ProvisionMetrics(metric, nodeRepository);
+        TestMetric metric = new TestMetric();
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, Duration.ofMinutes(1));
+        metricsReporter.maintain();
 
-        metric.latch.await();
         assertEquals(expectedMetrics, metric.values);
-
-        provisionMetrics.deconstruct();
     }
 
     private static class TestMetric implements Metric {
-        public CountDownLatch latch;
+
         public Map<String, Number> values = new HashMap<>();
         public Map<String, Context> context = new HashMap<>();
-
-        public TestMetric(int latchNumber) {
-            this.latch = new CountDownLatch(latchNumber);
-        }
 
         @Override
         public void set(String key, Number val, Context ctx) {
             values.put(key, val);
             context.put(key, ctx);
-            countDownAboveZero();
         }
 
         @Override
         public void add(String key, Number val, Context ctx) {
             values.put(key, val);
             context.put(key, ctx);
-            countDownAboveZero();
         }
 
         @Override
@@ -85,13 +79,6 @@ public class ProvisionMetricsTest {
             return null;
         }
 
-        private void countDownAboveZero() {
-            if (latch.getCount() == 0) {
-                throw new AssertionError("Countdown latch too low - check metric.set metric.add calls");
-            }
-
-            latch.countDown();
-        }
     }
 
 }

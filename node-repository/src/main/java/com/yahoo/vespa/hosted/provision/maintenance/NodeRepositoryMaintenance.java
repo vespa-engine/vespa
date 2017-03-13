@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -32,17 +33,18 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final FailedExpirer failedExpirer;
     private final DirtyExpirer dirtyExpirer;
     private final NodeRebooter nodeRebooter;
+    private final MetricsReporter metricsReporter;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
-                                     Zone zone, Orchestrator orchestrator) {
-        this(nodeRepository, deployer, curator, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(), orchestrator);
+                                     Zone zone, Orchestrator orchestrator, Metric metric) {
+        this(nodeRepository, deployer, curator, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(), orchestrator, metric);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
-                                     Zone zone, Clock clock, Orchestrator orchestrator) {
+                                     Zone zone, Clock clock, Orchestrator orchestrator, Metric metric) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, fromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator);
         applicationMaintainer = new ApplicationMaintainer(deployer, nodeRepository, fromEnv("redeploy_frequency").orElse(defaults.redeployFrequency));
@@ -53,6 +55,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer = new FailedExpirer(nodeRepository, zone, clock, fromEnv("failed_expiry").orElse(defaults.failedExpiry));
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, fromEnv("dirty_expiry").orElse(defaults.dirtyExpiry));
         nodeRebooter = new NodeRebooter(nodeRepository, clock, fromEnv("reboot_interval").orElse(defaults.rebootInterval));
+        metricsReporter = new MetricsReporter(nodeRepository, metric, fromEnv("metrics_interval").orElse(defaults.metricsInterval));
     }
 
     private Optional<Duration> fromEnv(String envVariable) {
@@ -71,6 +74,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer.deconstruct();
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
+        metricsReporter.deconstruct();
     }
 
     private static class DefaultTimes {
@@ -89,6 +93,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration failedExpiry;
         private final Duration dirtyExpiry;
         private final Duration rebootInterval;
+        private final Duration metricsInterval;
 
         DefaultTimes(Environment environment) {
             if (environment.equals(Environment.prod)) {
@@ -102,7 +107,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 retiredExpiry = Duration.ofDays(4); // enough time to migrate data
                 failedExpiry = Duration.ofDays(4); // enough time to recover data even if it happens friday night
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
-                rebootInterval = Duration.ofDays(30); 
+                rebootInterval = Duration.ofDays(30);
+                metricsInterval = Duration.ofMinutes(1);
             } else {
                 // These values ensure tests and development is not delayed due to nodes staying around
                 // Use non-null values as these also determine the maintenance interval
@@ -115,6 +121,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 failedExpiry = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofMinutes(30);
                 rebootInterval = Duration.ofDays(30);
+                metricsInterval = Duration.ofMinutes(1);
             }
         }
 
