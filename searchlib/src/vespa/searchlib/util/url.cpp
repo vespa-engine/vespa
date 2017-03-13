@@ -144,11 +144,11 @@ URL::IsTokenChar(unsigned char c) // According to FAST URL tokenization
             c == '_' || c == '-');
 }
 
+template <bool (*IsPartChar)(unsigned char c)>
 unsigned char *
 URL::ParseURLPart(unsigned char *src,
 			unsigned char *dest,
-			unsigned int destsize,
-			bool (*IsPartChar)(unsigned char c))
+			unsigned int destsize)
 {
     unsigned char *p = src;
     unsigned int len = 0;
@@ -279,7 +279,7 @@ URL::SetURL(const unsigned char *url, size_t length)
         if (p[0] == '/' && p[1] == '/')
             p += 2;
         _startHost = p;
-        p = ParseURLPart(p, _host, sizeof(_host), IsHostChar);
+        p = ParseURLPart<IsHostChar>(p, _host, sizeof(_host));
 
         // Locate siteowner. eg. 'www.sony.com' => 'sony'
         if (_host[0] != '\0') {
@@ -341,7 +341,7 @@ URL::SetURL(const unsigned char *url, size_t length)
         if (*p == ':') {
             p++;
             _startPort = p;
-            p = ParseURLPart(p, _port, sizeof(_port), IsDigitChar);
+            p = ParseURLPart<IsDigitChar>(p, _port, sizeof(_port));
         }
     }
 
@@ -351,7 +351,7 @@ URL::SetURL(const unsigned char *url, size_t length)
 
         // Parse path, filename, extension.
         _startPath = p;
-        p = ParseURLPart(p, _path, sizeof(_path), IsPathChar);
+        p = ParseURLPart<IsPathChar>(p, _path, sizeof(_path));
 
         filename = _path;
         if (IsFileNameChar(*filename))
@@ -363,7 +363,7 @@ URL::SetURL(const unsigned char *url, size_t length)
                     _pathDepth++;
             }
         _startFileName = _startPath + (filename - _path);
-        ParseURLPart(filename, _filename, sizeof(_filename), IsFileNameChar);
+        ParseURLPart<IsFileNameChar>(filename, _filename, sizeof(_filename));
 
         extension = reinterpret_cast<unsigned char *>
                     (strrchr(reinterpret_cast<char *>(_filename), '.'));
@@ -379,21 +379,21 @@ URL::SetURL(const unsigned char *url, size_t length)
              (strchr(reinterpret_cast<char *>(_path), ';'))) != NULL) {
             ptmp++;
             _startParams = _startPath + (ptmp - _path);
-            ParseURLPart(ptmp, _params, sizeof(_params), IsParamsChar);
+            ParseURLPart<IsParamsChar>(ptmp, _params, sizeof(_params));
         }
 
         // Parse query part.
         if (*p == '?') {
             p++;
             _startQuery = p;
-            p = ParseURLPart(p, _query, sizeof(_query), IsQueryChar);
+            p = ParseURLPart<IsQueryChar>(p, _query, sizeof(_query));
         }
 
         // Parse fragment part
         if (*p == '#') {
             p++;
             _startFragment = p;
-            p = ParseURLPart(p, _fragment, sizeof(_fragment), IsFragmentChar);
+            p = ParseURLPart<IsFragmentChar>(p, _fragment, sizeof(_fragment));
         }
 
         // stuff the rest into address

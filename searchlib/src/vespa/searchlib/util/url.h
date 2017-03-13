@@ -89,32 +89,32 @@ protected:
 
     void Reset(void);
 
-    static inline unsigned char *ParseURLPart(unsigned char *url,
+    template <bool (*IsPartChar)(unsigned char c)>
+    static unsigned char *ParseURLPart(unsigned char *url,
                                               unsigned char *buf,
-                                              unsigned int bufsize,
-                                              bool (*IsPartChar)(unsigned char c));
+                                              unsigned int bufsize);
 
 public:
-    static inline bool IsAlphaChar(unsigned char c);
-    static inline bool IsDigitChar(unsigned char c);
-    static inline bool IsMarkChar(unsigned char c);
-    static inline bool IsUnreservedChar(unsigned char c);
-    static inline bool IsEscapedChar(unsigned char c);
-    static inline bool IsReservedChar(unsigned char c);
-    static inline bool IsUricChar(unsigned char c);
-    static inline bool IsPChar(unsigned char c);
+    static bool IsAlphaChar(unsigned char c);
+    static bool IsDigitChar(unsigned char c);
+    static bool IsMarkChar(unsigned char c);
+    static bool IsUnreservedChar(unsigned char c);
+    static bool IsEscapedChar(unsigned char c);
+    static bool IsReservedChar(unsigned char c);
+    static bool IsUricChar(unsigned char c);
+    static bool IsPChar(unsigned char c);
 
-    static inline bool IsSchemeChar(unsigned char c);
-    static inline bool IsHostChar(unsigned char c);
-    static inline bool IsPortChar(unsigned char c);
-    static inline bool IsPathChar(unsigned char c);
-    static inline bool IsFileNameChar(unsigned char c);
-    static inline bool IsParamsChar(unsigned char c);
-    static inline bool IsParamChar(unsigned char c);
-    static inline bool IsQueryChar(unsigned char c);
-    static inline bool IsFragmentChar(unsigned char c);
+    static bool IsSchemeChar(unsigned char c);
+    static bool IsHostChar(unsigned char c);
+    static bool IsPortChar(unsigned char c);
+    static bool IsPathChar(unsigned char c);
+    static bool IsFileNameChar(unsigned char c);
+    static bool IsParamsChar(unsigned char c);
+    static bool IsParamChar(unsigned char c);
+    static bool IsQueryChar(unsigned char c);
+    static bool IsFragmentChar(unsigned char c);
 
-    static inline bool IsTokenChar(unsigned char c);
+    static bool IsTokenChar(unsigned char c);
 
     /**
      * Defautl constructor. Optionally, the URL to be parsed may be given
