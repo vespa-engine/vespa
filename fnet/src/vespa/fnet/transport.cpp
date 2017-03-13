@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "transport.h"
-#include "connect_thread.h"
 #include "transport_thread.h"
 #include "iocomponent.h"
+#include <chrono>
 #include <vespa/vespalib/xxhash/xxhash.h>
 
 namespace {
