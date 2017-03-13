@@ -110,6 +110,8 @@ public:
         _array.reserve(_bitVectorLimit);
     }
 
+    ~BitVectorCandidate();
+
     void
     clear(void)
     {

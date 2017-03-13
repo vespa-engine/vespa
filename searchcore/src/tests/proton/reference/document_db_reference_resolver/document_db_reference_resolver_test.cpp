@@ -140,6 +140,7 @@ struct DocumentModel {
     {
         initChildDocType();
     }
+    ~DocumentModel();
     void initChildDocType() {
         childDocType.addField(Field("ref", refDataType, true));
         childDocType.addField(Field("other_ref", refDataType, true));
@@ -147,6 +148,9 @@ struct DocumentModel {
         childDocType.addField(Field("parent3_ref", refDataType3, true));
     }
 };
+
+DocumentModel::~DocumentModel() {
+}
 
 void
 set(const vespalib::string &name,

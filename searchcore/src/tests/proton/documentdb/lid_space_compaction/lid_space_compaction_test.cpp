@@ -253,6 +253,7 @@ struct JobFixture
           _jobRunner(_job)
     {
     }
+    ~JobFixture();
     JobFixture &addStats(uint32_t docIdLimit,
                          const LidVector &usedLids,
                          const LidPairVector &usedFreePairs) {
@@ -291,6 +292,9 @@ struct JobFixture
         return *this;
     }
 };
+
+JobFixture::~JobFixture() {
+}
 
 struct HandlerFixture
 {

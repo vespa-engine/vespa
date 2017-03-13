@@ -49,6 +49,7 @@ public:
      * @param indent indent size in number of spaces
      **/
     ObjectDumper(int indent = 4);
+    ~ObjectDumper();
 
     /**
      * Obtain the created object string representation. This object

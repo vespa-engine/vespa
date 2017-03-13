@@ -256,7 +256,12 @@ namespace {
             _maxProcTickTimeSeen._alignment = Column::LEFT;
             _maxWaitTickTimeSeen._alignment = Column::LEFT;
         }
+        ~ThreadTable();
     };
+
+    ThreadTable::~ThreadTable() {
+    }
+
     struct ThreadStatusWriter : public DeadLockDetector::ThreadVisitor {
         ThreadTable& _table;
         framework::MilliSecTime _time;

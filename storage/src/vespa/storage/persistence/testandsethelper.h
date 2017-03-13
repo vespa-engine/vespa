@@ -33,6 +33,7 @@ class TestAndSetHelper {
 
 public:
     TestAndSetHelper(PersistenceThread & thread, const api::TestAndSetCommand & cmd);
+    ~TestAndSetHelper();
     api::ReturnCode retrieveAndMatch();
 };
 

@@ -7,5 +7,11 @@
 LOG_SETUP(".searchlib.attribute.iattributesavetarget");
 namespace search {
 
+IAttributeSaveTarget::Config::~Config() {
+}
+
+IAttributeSaveTarget::~IAttributeSaveTarget() {
+}
+
 } // namespace search
 

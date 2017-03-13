@@ -25,6 +25,9 @@ ExecutorThreadingService::ExecutorThreadingService(uint32_t threads,
 {
 }
 
+ExecutorThreadingService::~ExecutorThreadingService() {
+}
+
 vespalib::Syncable &
 ExecutorThreadingService::sync()
 {

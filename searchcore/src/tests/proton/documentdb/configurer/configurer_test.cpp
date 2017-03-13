@@ -281,7 +281,7 @@ struct MyFastAccessFeedView
         init();
     }
 
-    ~MyFastAccessFeedView() { }
+    ~MyFastAccessFeedView();
 
     void init() {
         ISummaryAdapter::SP summaryAdapter(new MySummaryAdapter());
@@ -307,6 +307,9 @@ struct MyFastAccessFeedView
                 params, fastUpdateCtx)));;
     }
 };
+
+MyFastAccessFeedView::~MyFastAccessFeedView() {
+}
 
 struct FastAccessFixture
 {

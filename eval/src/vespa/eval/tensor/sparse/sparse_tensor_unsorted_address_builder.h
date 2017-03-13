@@ -63,6 +63,7 @@ class SparseTensorUnsortedAddressBuilder
 
 public:
     SparseTensorUnsortedAddressBuilder();
+    ~SparseTensorUnsortedAddressBuilder();
     bool empty() const { return _elementStrings.empty(); }
     void add(vespalib::stringref dimension, vespalib::stringref label)
     {
