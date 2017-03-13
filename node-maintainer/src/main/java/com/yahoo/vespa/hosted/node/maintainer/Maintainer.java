@@ -122,7 +122,7 @@ public class Maintainer {
     private static void parseHandleCoreDumps(Inspector arguments) {
         Path coredumpsPath = Paths.get(getFieldOrFail(arguments, "coredumpsPath").asString());
         Path doneCoredumpsPath = Paths.get(getFieldOrFail(arguments, "doneCoredumpsPath").asString());
-        Map<String, Object> attributesMap = parseMap(getFieldOrFail(arguments, "attributes"));
+        Map<String, Object> attributesMap = parseMap(arguments);
 
         try {
             coredumpHandler.removeJavaCoredumps(coredumpsPath);
