@@ -351,7 +351,7 @@ FNET_TransportThread::Connect(const char *spec, FNET_IPacketStreamer *streamer,
                                                     connContext, mysocket, spec);
         if (conn->Init()) {
             conn->AddRef_NoLock();
-            owner().connect_later(conn);
+            Add(conn, /* needRef = */ false);
             return conn;
         } else {
             delete conn;

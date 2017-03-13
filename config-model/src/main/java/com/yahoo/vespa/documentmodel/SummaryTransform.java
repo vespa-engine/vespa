@@ -18,7 +18,6 @@ public enum SummaryTransform {
     POSITIONS("positions"),
     RANKFEATURES("rankfeatures"),
     SUMMARYFEATURES("summaryfeatures"),
-    TEXTEXTRACTOR("textextractor"),
     GEOPOS("geopos");
 
     private String name;

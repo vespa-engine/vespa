@@ -97,8 +97,7 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
                     frt.getTransform().equals(SummaryTransform.ATTRIBUTE) ||
                     frt.getTransform().equals(SummaryTransform.DISTANCE) ||
                     frt.getTransform().equals(SummaryTransform.GEOPOS) ||
-                    frt.getTransform().equals(SummaryTransform.POSITIONS) ||
-                    frt.getTransform().equals(SummaryTransform.TEXTEXTRACTOR))
+                    frt.getTransform().equals(SummaryTransform.POSITIONS))
                 {
                     oB.arguments(frt.getArgument());
                 } else {

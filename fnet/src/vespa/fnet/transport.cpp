@@ -23,8 +23,7 @@ struct HashState {
 } // namespace <unnamed>
 
 FNET_Transport::FNET_Transport(size_t num_threads)
-    : _threads(),
-      _connect_thread(std::make_unique<fnet::ConnectThread>())
+    : _threads()
 {
     assert(num_threads >= 1);
     for (size_t i = 0; i < num_threads; ++i) {
@@ -33,10 +32,6 @@ FNET_Transport::FNET_Transport(size_t num_threads)
 }
 
 FNET_Transport::~FNET_Transport() { }
-
-void FNET_Transport::connect_later(fnet::ExtConnectable *conn) {
-    _connect_thread->connect_later(conn);
-}
 
 FNET_TransportThread *
 FNET_Transport::select_thread(const void *key, size_t key_len) const
