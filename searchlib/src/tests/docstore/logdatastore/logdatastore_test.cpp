@@ -833,7 +833,6 @@ public:
 private:
     uint32_t _lastLid;
     BucketId _lastBucketId;
-    uint32_t _lastUser;
     vespalib::hash_set<uint32_t> _uniqueUser;
     vespalib::hash_set<uint64_t> _uniqueBucket;
 };
@@ -854,6 +853,52 @@ TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
     sbb.drain(vbo);
 }
 
+TEST("test that LidInfo has 8 bytes size and that it can represent the numbers correctly.")
+{
+    EXPECT_EQUAL(8, sizeof(LidInfo));
+    LidInfo a(0,0,0);
+    EXPECT_EQUAL(0u, a.getFileId());
+    EXPECT_EQUAL(0u, a.getChunkId());
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_TRUE(a.valid());
+    EXPECT_TRUE(a.empty());
+    a = LidInfo(1,1,1);
+    EXPECT_EQUAL(1u, a.getFileId());
+    EXPECT_EQUAL(1u, a.getChunkId());
+    EXPECT_EQUAL(64u, a.size());
+    EXPECT_TRUE(a.valid());
+    EXPECT_FALSE(a.empty());
+    a = LidInfo(1,1,63);
+    EXPECT_EQUAL(1u, a.getFileId());
+    EXPECT_EQUAL(1u, a.getChunkId());
+    EXPECT_EQUAL(64u, a.size());
+    EXPECT_TRUE(a.valid());
+    EXPECT_FALSE(a.empty());
+    a = LidInfo(1,1,64);
+    EXPECT_EQUAL(1u, a.getFileId());
+    EXPECT_EQUAL(1u, a.getChunkId());
+    EXPECT_EQUAL(64u, a.size());
+    EXPECT_TRUE(a.valid());
+    EXPECT_FALSE(a.empty());
+    a = LidInfo(1,1,65);
+    EXPECT_EQUAL(1u, a.getFileId());
+    EXPECT_EQUAL(1u, a.getChunkId());
+    EXPECT_EQUAL(128u, a.size());
+    EXPECT_TRUE(a.valid());
+    EXPECT_FALSE(a.empty());
+    a = LidInfo(0xffff,0x3fffff,0xffffff80u);
+    EXPECT_EQUAL(0xffff, a.getFileId());
+    EXPECT_EQUAL(0x3fffff, a.getChunkId());
+    EXPECT_EQUAL(0xffffff80u, a.size());
+    EXPECT_TRUE(a.valid());
+    EXPECT_FALSE(a.empty());
+    EXPECT_EXCEPTION(a = LidInfo(0x10000,0x3fffff,1), std::runtime_error,
+                     "LidInfo(fileId=65536, chunkId=4194303, size=1) has invalid fileId larger than 65535");
+    EXPECT_EXCEPTION(a = LidInfo(0xffff,0x400000,1), std::runtime_error,
+                     "LidInfo(fileId=65535, chunkId=4194304, size=1) has invalid chunkId larger than 4194303");
+    EXPECT_EXCEPTION(a = LidInfo(0xffff,0x3fffff,0xffffff81u), std::runtime_error,
+                     "LidInfo(fileId=65535, chunkId=4194303, size=4294967169) has too large size larger than 4294967168");
+}
 TEST_MAIN() {
     DummyFileHeaderContext::setCreator("logdatastore_test");
     TEST_RUN_ALL();
