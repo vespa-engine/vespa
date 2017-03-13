@@ -65,7 +65,7 @@ VisitorThread::Event::Event(
 }
 
 namespace {
-    vespalib::stringref getThreadName(uint32_t i) {
+    vespalib::string getThreadName(uint32_t i) {
         vespalib::asciistream name;
         name << "Visitor thread " << i;
         return name.str();
