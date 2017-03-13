@@ -124,7 +124,6 @@ void
 FNET_TransportThread::AddDeleteComponent(FNET_IOComponent *comp)
 {
     assert(!comp->_flags._ioc_delete);
-    comp->_flags._ioc_added = false;
     comp->_flags._ioc_delete = true;
     comp->_ioc_prev = nullptr;
     comp->_ioc_next = _deleteList;
@@ -576,14 +575,9 @@ FNET_TransportThread::EventLoopIteration()
 
                 switch (packet->GetCommand()) {
                 case FNET_ControlPacket::FNET_CMD_IOC_ADD:
-                    if (context._value.IOC->_flags._ioc_want_close) {
-                        context._value.IOC->Close();
-                        context._value.IOC->SubRef();
-                    } else {
-                        AddComponent(context._value.IOC);
-                        context._value.IOC->_flags._ioc_added = true;
-                        context._value.IOC->SetSocketEvent(&_socketEvent);
-                    }
+                    AddComponent(context._value.IOC);
+                    context._value.IOC->_flags._ioc_added = true;
+                    context._value.IOC->SetSocketEvent(&_socketEvent);
                     break;
                 case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_READ:
                     context._value.IOC->EnableReadEvent(true);
@@ -604,12 +598,10 @@ FNET_TransportThread::EventLoopIteration()
                 case FNET_ControlPacket::FNET_CMD_IOC_CLOSE:
                     if (context._value.IOC->_flags._ioc_added) {
                         RemoveComponent(context._value.IOC);
-                        context._value.IOC->Close();
-                        AddDeleteComponent(context._value.IOC);
-                    } else {
-                        context._value.IOC->_flags._ioc_want_close = true;
+                        context._value.IOC->SubRef();
                     }
-                    context._value.IOC->SubRef();
+                    context._value.IOC->Close();
+                    AddDeleteComponent(context._value.IOC);
                     break;
                 case FNET_ControlPacket::FNET_CMD_EXECUTE:
                     context._value.EXECUTABLE->execute();
