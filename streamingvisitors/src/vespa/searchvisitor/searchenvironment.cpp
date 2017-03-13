@@ -76,12 +76,9 @@ SearchEnvironment::Env & SearchEnvironment::getEnv(const vespalib::string & sear
         vespalib::LockGuard guard(_lock);
         EnvMap::iterator found = _envMap.find(searchCluster);
         if (found == _envMap.end()) {
-            LOG(debug, "Init VSMAdapter in map %p for %p with config id = '%s'",
-                &_envMap, this, searchCluster.c_str());
+            LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());
             _envMap[searchCluster].reset(new Env("*", searchClusterUri, _wordFolder));
             found = _envMap.find(searchCluster);
-            Env *ptr = found->second.get();
-            LOG(debug, "_envMap[%s] = %p", searchCluster.c_str(), ptr);
         }
         _localEnvMap->insert(*found);
         localFound = _localEnvMap->find(searchCluster);
