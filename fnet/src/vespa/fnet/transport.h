@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "ext_connectable.h"
 #include "context.h"
 #include <memory>
 #include <vector>
@@ -16,11 +15,6 @@ class FNET_IServerAdapter;
 class FNET_IPacketHandler;
 class FNET_Scheduler;
 
-namespace fnet {
-    class ConnectThread;
-    class ExtConnectable;
-}
-
 /**
  * This class represents the transport layer and handles a collection
  * of transport threads. Note: remember to shut down your transport
@@ -33,7 +27,6 @@ private:
     using Threads = std::vector<Thread>;
 
     Threads _threads;
-    std::unique_ptr<fnet::ConnectThread> _connect_thread;
 
 public:
     /**
@@ -45,13 +38,6 @@ public:
      **/
     FNET_Transport(size_t num_threads = 1);
     ~FNET_Transport();
-
-    /**
-     * Calling this function gives away 1 reference to 'conn' and
-     * ensures that the 'ext_connect' function will be called on it
-     * from another thread some time in the future.
-     **/
-    void connect_later(fnet::ExtConnectable *conn);
 
     /**
      * Select one of the underlying transport threads. The selection

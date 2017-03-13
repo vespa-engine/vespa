@@ -4,7 +4,6 @@ vespa_add_library(fnet
     channel.cpp
     channellookup.cpp
     config.cpp
-    connect_thread.cpp
     connection.cpp
     connector.cpp
     context.cpp

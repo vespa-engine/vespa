@@ -87,7 +87,7 @@ FNET_Connector::HandleReadEvent()
         FNET_Transport &transport = Owner()->owner();
         FNET_TransportThread *thread = transport.select_thread(newSocket, sizeof(FastOS_Socket));
         conn = new FNET_Connection(thread, _streamer, _serverAdapter, newSocket, GetSpec());
-        if (newSocket->SetSoBlocking(false) && conn->Init()) {
+        if (conn->Init()) {
             conn->Owner()->Add(conn, false);
         } else {
             LOG(debug, "Connector(%s): failed to init incoming connection",
