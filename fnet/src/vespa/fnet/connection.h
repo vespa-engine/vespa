@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "ext_connectable.h"
 #include "iocomponent.h"
 #include "databuffer.h"
 #include "context.h"
@@ -46,8 +45,7 @@ public:
  * connection. Only the client side may open new channels on the
  * connection.
  **/
-class FNET_Connection : public FNET_IOComponent,
-                        public fnet::ExtConnectable
+class FNET_Connection : public FNET_IOComponent
 {
 public:
     enum State {
@@ -318,13 +316,6 @@ public:
      * @return success(true)/failure(false)
      **/
     bool Init();
-
-    /**
-     * Performs sync socket connect, sync connect post-setup and adds
-     * this connection to the event loop. Calling this function
-     * implicitly gives away 1 reference to this object.
-     **/
-    void ext_connect() override;
 
     /**
      * Register a cleanup handler to be invoked when this connection is

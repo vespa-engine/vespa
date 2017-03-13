@@ -480,12 +480,29 @@ FNET_Connection::~FNET_Connection()
 bool
 FNET_Connection::Init()
 {
-    bool rc = _socket->TuneTransport();
+    bool rc = _socket->SetSoBlocking(false)
+              && _socket->TuneTransport();
+
     if (rc) {
         if (GetConfig()->_tcpNoDelay)
             _socket->SetNoDelay(true);
         EnableReadEvent(true);
-        EnableWriteEvent(true);
+
+        if (IsClient()) {
+            if (_socket->Connect()) {
+                SetState(FNET_CONNECTED);
+            } else {
+                int error = FastOS_Socket::GetLastError();
+
+                if (error == FastOS_Socket::ERR_INPROGRESS ||
+                    error == FastOS_Socket::ERR_WOULDBLOCK) {
+                    EnableWriteEvent(true);
+                } else {
+                    rc = false;
+                    LOG(debug, "Connection(%s): connect error: %d", GetSpec(), error);
+                }
+            }
+        }
     }
 
     // init server admin channel
@@ -501,19 +518,6 @@ FNET_Connection::Init()
     return (rc && _state <= FNET_CONNECTED);
 }
 
-void
-FNET_Connection::ext_connect()
-{
-    bool rc = _socket->Connect() // NB: sync connect
-              && _socket->SetSoBlocking(false);
-    if (rc) {
-        SetState(FNET_CONNECTED);
-        Owner()->Add(this, /* needRef = */ false);
-    } else {
-        Owner()->Add(this, /* needRef = */ true);
-        Owner()->Close(this, /* needRef = */ false);
-    }
-}
 
 void
 FNET_Connection::SetCleanupHandler(FNET_IConnectionCleanupHandler *handler)
@@ -710,10 +714,27 @@ FNET_Connection::HandleReadEvent()
 bool
 FNET_Connection::HandleWriteEvent()
 {
+    int  error;           // socket error code
     bool broken = false;  // is connection broken ?
 
     switch(_state) {
-    case FNET_CONNECTING: // ignore write events while connecting
+    case FNET_CONNECTING:
+        error = _socket->GetSoError();
+        if (error == 0) { // connect ok
+            Lock();
+            _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
+            LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
+                GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
+            bool writePending = (_writeWork > 0);
+            Unlock();
+            if (!writePending)
+                EnableWriteEvent(false);
+        } else {
+            LOG(debug, "Connection(%s): connect error: %d", GetSpec(), error);
+
+            SetState(FNET_CLOSED); // connect failed.
+            broken = true;
+        }
         break;
     case FNET_CONNECTED:
         Lock();
