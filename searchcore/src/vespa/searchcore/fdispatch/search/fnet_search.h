@@ -272,6 +272,7 @@ private:
     void ConnectDocsumNodes(bool ignoreRow);
     uint32_t getNextFixedRow();
     uint32_t getFixedRowCandidate();
+    uint32_t getHashedRow() const;
 
     void Lock()   { _lock.Lock();   }
     void Unlock() { _lock.Unlock(); }

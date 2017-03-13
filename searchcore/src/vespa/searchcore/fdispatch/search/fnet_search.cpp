@@ -1,29 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fnet_search");
-#include <vespa/fnet/fnet.h>
-#include <vespa/searchlib/util/rand48.h>
-
-#include <vespa/searchlib/common/mapnames.h>
-#include <vespa/searchlib/common/packets.h>
+#include "datasetcollection.h"
+#include "fnet_dataset.h"
+#include "fnet_engine.h"
+#include "fnet_search.h"
+#include "mergehits.h"
 #include <vespa/searchlib/engine/packetconverter.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchcore/util/log.h>
-#include <vespa/searchcore/fdispatch/search/datasetcollection.h>
-#include <vespa/searchcore/fdispatch/search/configdesc.h>
-#include <vespa/searchcore/fdispatch/search/fnet_dataset.h>
-#include <vespa/searchcore/fdispatch/search/fnet_engine.h>
-#include <vespa/searchcore/fdispatch/search/fnet_search.h>
-#include <vespa/searchcore/fdispatch/search/mergehits.h>
-#include <vespa/searchcore/util/eventloop.h>
+#include <vespa/vespalib/xxhash/xxhash.h>
 
-#include <set>
-#include <stdexcept>
-#include <atomic>
+#include <vespa/log/log.h>
+LOG_SETUP(".fnet_search");
 
 #define IS_MLD_PART(part)		((part) > mldpartidmask)
 #define MLD_PART_TO_PARTID(part)	((part) & mldpartidmask)
@@ -317,6 +304,24 @@ FastS_FNET_Search::connectNodes(const EngineNodeMap & engines)
     _nodesConnected = true;
 }
 
+uint32_t
+FastS_FNET_Search::getHashedRow() const {
+    uint32_t hash = XXH32(&_queryArgs->sessionId[0], _queryArgs->sessionId.size(), 0);
+    std::vector<uint32_t> rowIds;
+    rowIds.reserve(_dataset->getNumRows());
+    for (uint32_t rowId(0); rowId < _dataset->getNumRows(); rowId++) {
+        rowIds.push_back(rowId);
+    }
+    while (!rowIds.empty()) {
+        uint32_t index = hash % rowIds.size();
+        uint32_t fixedRow = rowIds[index];
+        if (_dataset->isGoodRow(fixedRow)) {
+            return fixedRow;
+        }
+        rowIds.erase(rowIds.begin() + index);
+    }
+    return 0;
+}
 void
 FastS_FNET_Search::ConnectQueryNodes()
 {
@@ -325,7 +330,7 @@ FastS_FNET_Search::ConnectQueryNodes()
 
     uint32_t fixedRow(0);
     if (_dataset->useFixedRowDistribution()) {
-        fixedRow = getNextFixedRow();
+        fixedRow = (_queryArgs->sessionId.empty()) ? getNextFixedRow() : getHashedRow();
         _fixedRow = fixedRow;
     }
     EngineNodeMap engines;
