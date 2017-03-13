@@ -245,6 +245,19 @@ public class FileHelperTest {
         assertTrue(subSubFolder2.toFile().isDirectory());
     }
 
+    @Test
+    public void testDoesNotFailOnLastModifiedOnSymLink() throws IOException {
+        Path symPath = folder.getRoot().toPath().resolve("symlink");
+        Path fakePath = Paths.get("/some/not/existant/file");
+
+        Files.createSymbolicLink(symPath, fakePath);
+        assertTrue(Files.isSymbolicLink(symPath));
+        assertFalse(Files.exists(fakePath));
+
+        // Not possible to set modified time on symlink in java, so just check that it doesn't crash
+        FileHelper.getLastModifiedTime(symPath).toInstant();
+    }
+
     private void initSubDirectories() throws IOException {
         File subFolder1 = folder.newFolder("test_folder1");
         File subFolder2 = folder.newFolder("test_folder2");
