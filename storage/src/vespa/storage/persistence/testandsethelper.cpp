@@ -49,6 +49,9 @@ TestAndSetHelper::TestAndSetHelper(PersistenceThread & thread, const api::TestAn
     parseDocumentSelection();
 }
 
+TestAndSetHelper::~TestAndSetHelper() {
+}
+
 api::ReturnCode TestAndSetHelper::retrieveAndMatch() {
     // Walk document selection tree to build a minimal field set 
     FieldVisitor fieldVisitor(*_docTypePtr);

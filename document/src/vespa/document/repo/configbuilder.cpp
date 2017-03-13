@@ -12,5 +12,12 @@ int32_t createFieldId(const vespalib::string &name, int32_t type) {
 
 int32_t DatatypeConfig::id_counter = 100;
 
+DatatypeConfig::DatatypeConfig() {
+    id = ++id_counter;
+}
+
+DatatypeConfig::DatatypeConfig(const DatatypeConfig&) = default;
+DatatypeConfig& DatatypeConfig::operator=(const DatatypeConfig&) = default;
+
 }  // namespace config_builder
 }  // namespace document

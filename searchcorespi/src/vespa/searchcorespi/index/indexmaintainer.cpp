@@ -134,6 +134,12 @@ DiskIndexWithDestructorClosure::~DiskIndexWithDestructorClosure() {}
 
 }  // namespace
 
+IndexMaintainer::FusionArgs::~FusionArgs() {
+}
+
+IndexMaintainer::SetSchemaArgs::~SetSchemaArgs() {
+}
+
 uint32_t
 IndexMaintainer::getNewAbsoluteId()
 {

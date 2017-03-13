@@ -341,6 +341,7 @@ public:
                            GrowStrategy(), TuneFileSummary(),
                            _fileHeaderContext, _tlSyncer, NULL)
     { }
+    ~VisitStore();
     IDataStore & getStore() { return _datastore; }
 private:
     TmpDirectory                  _myDir;
@@ -350,6 +351,9 @@ private:
     MyTlSyncer                    _tlSyncer;
     LogDataStore                  _datastore;
 };
+
+VisitStore::~VisitStore() {
+}
 
 TEST("test visit cache does not cache empty ones and is able to access some backing store.") {
     const char * A7 = "aAaAaAa";

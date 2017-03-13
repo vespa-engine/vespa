@@ -22,6 +22,9 @@ DocumentRemover::DocumentRemover(const WordStore &wordStore)
 {
 }
 
+DocumentRemover::~DocumentRemover() {
+}
+
 void
 DocumentRemover::remove(uint32_t docId, IDocumentRemoveListener &listener)
 {

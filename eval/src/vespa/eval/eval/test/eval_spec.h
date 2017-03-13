@@ -34,25 +34,9 @@ private:
         Expression(std::initializer_list<vespalib::string> param_names_in, vespalib::string expression_in)
             : param_names(param_names_in), expression(expression_in) {}
 
-        Expression &add_case(std::initializer_list<double> param_values, double expected_result) {
-            assert(param_values.size() == param_names.size());
-            cases.emplace_back(param_values, expected_result);
-            return *this;
-        }
-        Expression &add_cases(std::initializer_list<double> a_values, fun_1_ref fun) {
-            for (double a: a_values) {
-                add_case({a}, fun(a));
-            }
-            return *this;
-        }
-        Expression &add_cases(std::initializer_list<double> a_values, std::initializer_list<double> b_values, fun_2_ref fun) {
-            for (double a: a_values) {
-                for (double b: b_values) {
-                    add_case({a, b}, fun(a, b));
-                }
-            }
-            return *this;
-        }
+        Expression &add_case(std::initializer_list<double> param_values, double expected_result);
+        Expression &add_cases(std::initializer_list<double> a_values, fun_1_ref fun);
+        Expression &add_cases(std::initializer_list<double> a_values, std::initializer_list<double> b_values, fun_2_ref fun);
     };
     std::vector<Expression> expressions;
 
@@ -86,24 +70,9 @@ private:
         }
     };
 
-    void add_rule(const ParamSpec &a_spec, const vespalib::string &expression, fun_1_ref ref) {
-        Expression &expr = add_expression({a_spec.name}, expression);
-        std::vector<double> a_values = a_spec.expand(7);
-        for (double a: a_values) {
-            expr.add_case({a}, ref(a));
-        }
-    }
+    void add_rule(const ParamSpec &a_spec, const vespalib::string &expression, fun_1_ref ref);
 
-    void add_rule(const ParamSpec &a_spec, const ParamSpec &b_spec, const vespalib::string &expression, fun_2_ref ref) {
-        Expression &expr = add_expression({a_spec.name, b_spec.name}, expression);
-        std::vector<double> a_values = a_spec.expand(5);
-        std::vector<double> b_values = b_spec.expand(5);
-        for (double a: a_values) {
-            for (double b: b_values) {
-                expr.add_case({a, b}, ref(a, b));
-            }
-        }
-    }
+    void add_rule(const ParamSpec &a_spec, const ParamSpec &b_spec, const vespalib::string &expression, fun_2_ref ref);
 
 public:
     struct EvalTest {

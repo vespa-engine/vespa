@@ -32,6 +32,8 @@ TransactionLogManager::TransactionLogManager(const vespalib::string &tlsSpec,
 {
 }
 
+TransactionLogManager::~TransactionLogManager() {
+}
 
 void
 TransactionLogManager::init(SerialNum oldestConfigSerial,

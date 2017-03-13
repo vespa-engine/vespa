@@ -34,6 +34,8 @@ AttributeFileSaveTarget(const TuneFileAttributes &tuneFileAttributes,
 {
 }
 
+AttributeFileSaveTarget::~AttributeFileSaveTarget() {
+}
 
 bool
 AttributeFileSaveTarget::setup()

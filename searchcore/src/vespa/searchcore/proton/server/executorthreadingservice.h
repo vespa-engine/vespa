@@ -34,6 +34,7 @@ public:
     ExecutorThreadingService(uint32_t threads = 1,
                              uint32_t stackSize = 128 * 1024,
                              uint32_t taskLimit = 1000);
+    ~ExecutorThreadingService();
 
     /**
      * Implements vespalib::Syncable

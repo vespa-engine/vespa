@@ -17,6 +17,9 @@ static FieldBase _G_summaryField("summary");
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, VdsHit, Hit);
 
+VdsHit::~VdsHit() {
+}
+
 Serializer &
 VdsHit::onSerialize(Serializer &os) const
 {

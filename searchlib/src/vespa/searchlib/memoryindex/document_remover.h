@@ -49,6 +49,7 @@ private:
 
 public:
     DocumentRemover(const WordStore &wordStore);
+    ~DocumentRemover();
     void remove(uint32_t docId, IDocumentRemoveListener &inverter);
     CompactDocumentWordsStore &getStore() { return _store; }
     const CompactDocumentWordsStore &getStore() const { return _store; }

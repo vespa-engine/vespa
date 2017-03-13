@@ -249,6 +249,32 @@ DocumentDB::internalInit()
                                            &DocumentDB::initManagers)));
 }
 
+class InitDoneTask : public vespalib::Executor::Task {
+    DocumentDB::InitializeThreads _initializeThreads;
+    std::shared_ptr<TaskRunner>   _taskRunner;
+    DocumentDBConfig::SP          _configSnapshot;
+    DocumentDB&                   _self;
+public:
+    InitDoneTask(DocumentDB::InitializeThreads initializeThreads,
+                 std::shared_ptr<TaskRunner> taskRunner,
+                 DocumentDBConfig::SP configSnapshot,
+                 DocumentDB& self)
+        : _initializeThreads(std::move(initializeThreads)),
+          _taskRunner(std::move(taskRunner)),
+          _configSnapshot(std::move(configSnapshot)),
+          _self(self)
+    {
+    }
+
+    ~InitDoneTask();
+
+    void run() override {
+        _self.initFinish(std::move(_configSnapshot));
+    }
+};
+
+InitDoneTask::~InitDoneTask() {
+}
 
 void
 DocumentDB::initManagers()
@@ -264,13 +290,10 @@ DocumentDB::initManagers()
     _initializeThreads.reset();
     std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>
                                            (*initializeThreads));
-    // Note: explicit listing in lambda to keep variables live
-    auto doneTask = makeLambdaTask([initializeThreads, taskRunner,
-                                    configSnapshot, this]()
-                                   { initFinish(configSnapshot); });
+    auto doneTask = std::make_unique<InitDoneTask>(std::move(initializeThreads), taskRunner,
+                                                   std::move(configSnapshot), *this);
     taskRunner->runTask(rootTask, _writeService.master(), std::move(doneTask));
 }
-
 
 void
 DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)

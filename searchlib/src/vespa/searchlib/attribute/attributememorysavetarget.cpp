@@ -21,6 +21,9 @@ AttributeMemorySaveTarget::AttributeMemorySaveTarget()
 {
 }
 
+AttributeMemorySaveTarget::~AttributeMemorySaveTarget() {
+}
+
 
 IAttributeFileWriter &
 AttributeMemorySaveTarget::datWriter()

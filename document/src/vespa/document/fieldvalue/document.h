@@ -59,6 +59,7 @@ public:
              ByteBuffer& header,
              ByteBuffer& body,
              const DataType *anticipatedType = 0);
+    ~Document();
 
     void setRepo(const DocumentTypeRepo & repo);
     const DocumentTypeRepo * getRepo() const { return _fields.getRepo(); }

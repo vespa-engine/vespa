@@ -202,6 +202,8 @@ BitVectorFileWrite::close(void)
     Parent::close();
 }
 
+BitVectorCandidate::~BitVectorCandidate() {
+}
 
 void
 BitVectorCandidate::checkPointWrite(nbostream &out)

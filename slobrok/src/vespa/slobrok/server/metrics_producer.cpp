@@ -103,6 +103,9 @@ MetricsProducer::MetricsProducer(const RPCHooks &hooks,
 {
 }
 
+MetricsProducer::~MetricsProducer() {
+}
+
 vespalib::string
 MetricsProducer::getMetrics(const vespalib::string &consumer)
 {

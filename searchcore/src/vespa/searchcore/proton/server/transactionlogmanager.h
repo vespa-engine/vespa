@@ -30,6 +30,7 @@ public:
      **/
     TransactionLogManager(const vespalib::string &tlsSpec,
                           const vespalib::string &domainName);
+    ~TransactionLogManager();
 
     /**
      * Init the transaction log.

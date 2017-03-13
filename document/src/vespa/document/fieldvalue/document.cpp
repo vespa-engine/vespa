@@ -141,6 +141,9 @@ Document::Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer&
     deserializeBody(repo, body);
 }
 
+Document::~Document() {
+}
+
 void
 Document::swap(Document & rhs)
 {

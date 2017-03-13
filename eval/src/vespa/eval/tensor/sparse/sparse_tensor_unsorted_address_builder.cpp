@@ -15,6 +15,8 @@ SparseTensorUnsortedAddressBuilder::SparseTensorUnsortedAddressBuilder()
 {
 }
 
+SparseTensorUnsortedAddressBuilder::~SparseTensorUnsortedAddressBuilder() {
+}
 
 void
 SparseTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &

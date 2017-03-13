@@ -246,6 +246,7 @@ class IndexMaintainer : public IIndexManager,
               _wtSchema(),
               _old_source_list()
         { }
+        ~FusionArgs();
     };
 
     IFlushTarget::SP getFusionTarget();
@@ -271,6 +272,7 @@ class IndexMaintainer : public IIndexManager,
               _oldIndex(),
               _oldSourceList()
         { }
+        ~SetSchemaArgs();
     };
 
     void doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex);

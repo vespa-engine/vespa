@@ -77,6 +77,8 @@ public:
               _version(version)
         {
         }
+        ~Config();
+
         const vespalib::string & getFileName() const { return _fileName; }
 
         const vespalib::string &
@@ -154,7 +156,7 @@ public:
     virtual IAttributeFileWriter &weightWriter() = 0;
     virtual IAttributeFileWriter &udatWriter() = 0;
 
-    virtual ~IAttributeSaveTarget() {}
+    virtual ~IAttributeSaveTarget();
 };
 
 } // namespace search

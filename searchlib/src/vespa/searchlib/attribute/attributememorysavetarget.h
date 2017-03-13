@@ -33,6 +33,7 @@ private:
 
 public:
     AttributeMemorySaveTarget();
+    ~AttributeMemorySaveTarget();
 
     /**
      * Write the underlying buffer(s) to file(s).

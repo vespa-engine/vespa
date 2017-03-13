@@ -17,6 +17,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     VdsHit() : Hit(), _docId(), _summary() {}
     VdsHit(DocId docId, HitRank rank) : Hit(rank), _docId(docId), _summary() {}
+    ~VdsHit();
     virtual VdsHit *clone() const { return new VdsHit(*this); }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     const   DocId &   getDocId() const { return _docId; }

@@ -23,6 +23,7 @@ public:
     AttributeFileSaveTarget(const TuneFileAttributes &tuneFileAttributes,
                             const search::common::FileHeaderContext &
                             fileHeaderContext);
+    ~AttributeFileSaveTarget();
 
     // Implements IAttributeSaveTarget
     /** Setups this saveTarget by opening the relevant files **/

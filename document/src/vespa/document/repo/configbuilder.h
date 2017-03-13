@@ -17,9 +17,11 @@ struct DatatypeConfig : DocumenttypesConfig::Documenttype::Datatype {
     static int32_t id_counter;
     std::vector<DatatypeConfig> nested_types;
 
-    DatatypeConfig() {
-        id = ++id_counter;
-    }
+    DatatypeConfig();
+
+    DatatypeConfig(const DatatypeConfig&);
+    DatatypeConfig& operator=(const DatatypeConfig&);
+
     DatatypeConfig &setId(int32_t i) { id = i; return *this; }
     void addNestedType(const TypeOrId &t);
 };
