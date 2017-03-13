@@ -74,7 +74,7 @@ public class Maintainer {
     private static void parseDeleteFilesJob(Inspector arguments) {
         Path basePath = Paths.get(getFieldOrFail(arguments, "basePath").asString());
         Duration maxAge = Duration.ofSeconds(getFieldOrFail(arguments, "maxAgeSeconds").asLong());
-        Optional<String> fileNameRegex = SlimeUtils.optionalString(getFieldOrFail(arguments, "fileNameRegex"));
+        Optional<String> fileNameRegex = SlimeUtils.optionalString(arguments.field("fileNameRegex"));
         boolean recursive = getFieldOrFail(arguments, "recursive").asBool();
         try {
             FileHelper.deleteFiles(basePath, maxAge, fileNameRegex, recursive);
@@ -89,7 +89,7 @@ public class Maintainer {
     private static void parseDeleteDirectoriesJob(Inspector arguments) {
         Path basePath = Paths.get(getFieldOrFail(arguments, "basePath").asString());
         Duration maxAge = Duration.ofSeconds(getFieldOrFail(arguments, "maxAgeSeconds").asLong());
-        Optional<String> dirNameRegex = SlimeUtils.optionalString(getFieldOrFail(arguments, "dirNameRegex"));
+        Optional<String> dirNameRegex = SlimeUtils.optionalString(arguments.field("dirNameRegex"));
         try {
             FileHelper.deleteDirectories(basePath, maxAge, dirNameRegex);
         } catch (IOException e) {
