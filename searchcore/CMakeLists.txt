@@ -120,6 +120,7 @@ vespa_define_module(
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
     src/tests/proton/proton
+    src/tests/proton/proton_configurer
     src/tests/proton/reference/gid_to_lid_change_handler
     src/tests/proton/reference/gid_to_lid_change_listener
     src/tests/proton/reference/gid_to_lid_change_registrator
