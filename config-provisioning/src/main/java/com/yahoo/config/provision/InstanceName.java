@@ -11,6 +11,7 @@ import java.util.Objects;
  * @since 5.25
  */
 public class InstanceName implements Comparable<InstanceName> {
+
     private final String instanceName;
 
     private InstanceName(String instanceName) {
@@ -51,4 +52,5 @@ public class InstanceName implements Comparable<InstanceName> {
     public int compareTo(InstanceName instance) {
         return instanceName.compareTo(instance.instanceName);
     }
+
 }

@@ -29,13 +29,13 @@ public class ApplicationMaintainer extends Maintainer {
     private final Deployer deployer;
     private final Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter;
 
-    public ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration rate) {
-        this(deployer, nodeRepository, rate, ApplicationMaintainer::getActiveApplications);
+    public ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
+        this(deployer, nodeRepository, interval, ApplicationMaintainer::getActiveApplications);
     }
 
-    ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration rate,
+    ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
                           Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
-        super(nodeRepository, rate);
+        super(nodeRepository, interval);
         this.deployer = deployer;
         this.activeApplicationsGetter = activeApplicationsGetter;
     }

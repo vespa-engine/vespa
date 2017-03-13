@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,16 +21,16 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     protected static final Logger log = Logger.getLogger(Maintainer.class.getName());
 
     private final NodeRepository nodeRepository;
-    private final Duration rate;
+    private final Duration interval;
 
     private final ScheduledExecutorService service;
 
-    public Maintainer(NodeRepository nodeRepository, Duration rate) {
+    public Maintainer(NodeRepository nodeRepository, Duration interval) {
         this.nodeRepository = nodeRepository;
-        this.rate = rate;
+        this.interval = interval;
 
         this.service = new ScheduledThreadPoolExecutor(1);
-        this.service.scheduleAtFixedRate(this, rate.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
+        this.service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     /** Returns the node repository */
@@ -41,8 +40,8 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         return a.toMillis() < b.toMillis() ? a : b;
     }
 
-    /** Returns the rate at which this job is set to run */
-    protected Duration rate() { return rate; }
+    /** Returns the interval at which this job is set to run */
+    protected Duration interval() { return interval; }
 
     @Override
     public void run() {
@@ -50,7 +49,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
             maintain();
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + rate.toMinutes() + " minutes", e);
+            log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         }
     }
 
