@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "andnotsearch.h"
+#include "termwise_helper.h"
 #include <vespa/searchlib/common/bitvector.h>
 
 namespace search {
@@ -149,7 +150,7 @@ AndNotSearch::get_hits(uint32_t begin_id) {
     const Children &children = getChildren();
     BitVector::UP result = children.front()->get_hits(begin_id);
     result->notSelf();
-    result = orChildren(std::move(result), children.begin()+1, children.end(), begin_id);
+    result = TermwiseHelper::orChildren(std::move(result), children.begin()+1, children.end(), begin_id);
     result->notSelf();
     return result;
 }

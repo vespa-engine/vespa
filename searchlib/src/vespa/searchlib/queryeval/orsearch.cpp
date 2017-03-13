@@ -2,6 +2,7 @@
 
 #include "orsearch.h"
 #include "orlikesearch.h"
+#include "termwise_helper.h"
 #include <vespa/searchlib/common/bitvector.h>
 
 namespace search {
@@ -78,7 +79,7 @@ private:
 
 BitVector::UP
 OrSearch::get_hits(uint32_t begin_id) {
-    return orChildren(getChildren().begin(), getChildren().end(), begin_id);
+    return TermwiseHelper::orChildren(getChildren().begin(), getChildren().end(), begin_id);
 }
 
 void
@@ -89,7 +90,7 @@ OrSearch::and_hits_into(BitVector &result, uint32_t begin_id) {
 void
 OrSearch::or_hits_into(BitVector &result, uint32_t begin_id)
 {
-    orChildren(result, getChildren().begin(), getChildren().end(), begin_id);
+    TermwiseHelper::orChildren(result, getChildren().begin(), getChildren().end(), begin_id);
 }
 
 SearchIterator *
