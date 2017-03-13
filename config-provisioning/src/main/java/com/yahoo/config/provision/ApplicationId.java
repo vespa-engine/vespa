@@ -85,6 +85,11 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         return "tenant '" + tenant + "', application '" + application + "', instance '" + instance + "'";
     }
 
+    public String toShortString(ApplicationId id) {
+        return id.tenant().value() + "." + id.application().value() +
+               ( id.instance().isDefault() ? "" : "." + id.instance().value() );
+    }
+
     private String toSerializedForm() {
         return tenant + ":" + application + ":" + instance;
     }
