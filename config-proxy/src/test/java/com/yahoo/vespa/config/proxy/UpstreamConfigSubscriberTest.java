@@ -127,7 +127,7 @@ public class UpstreamConfigSubscriberTest {
                 }
             }
             i++;
-        } while (i < 1000);
+        } while (i < 5000);
         assertNotNull(lastConfig);
         assertThat(lastConfig.getGeneration(), is(expectedGeneration));
     }
