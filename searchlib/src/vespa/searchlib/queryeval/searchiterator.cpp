@@ -61,7 +61,7 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 {
     uint32_t docidA = begin_id - 1;
     uint32_t docidB = result.getNextTrueBit(begin_id);
-    while (!isAtEnd(docidB)) {
+    while (!isAtEnd(docidB) && !isAtEnd(docidA)) {
         if (docidA < docidB) {
             if (seek(docidB)) {
                 docidA = docidB;
@@ -70,11 +70,12 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
             }
         } else if (docidA > docidB) {
             result.clearInterval(docidB, docidA);
-            docidB = (! isAtEnd(docidA)) ? result.getNextTrueBit(docidA) : getEndId();
+            docidB = result.getNextTrueBit(docidA);
         } else {
             docidB = result.getNextTrueBit(docidB+1);
         }
     }
+    result.clearInterval(docidB, result.size());
 }
 
 vespalib::string
