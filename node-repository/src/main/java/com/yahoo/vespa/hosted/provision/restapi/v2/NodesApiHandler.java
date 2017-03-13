@@ -194,9 +194,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Node createNode(Inspector inspector) {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
-        Optional<String> ipAddress = optionalString(inspector.field("ipAddress"));
         Set<String> ipAddresses = new HashSet<>();
-        ipAddress.ifPresent(ipAddresses::add);
         inspector.field("ipAddresses").traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
 
         return nodeRepository.createNode(
