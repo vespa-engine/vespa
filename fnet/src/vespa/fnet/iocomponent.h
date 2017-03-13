@@ -31,15 +31,13 @@ class FNET_IOComponent
             _ioc_writeEnabled(false),
             _ioc_shouldTimeOut(shouldTimeout),
             _ioc_added(false),
-            _ioc_delete(false),
-            _ioc_want_close(false)
+            _ioc_delete(false)
         { }
         bool  _ioc_readEnabled;   // read event enabled ?
         bool  _ioc_writeEnabled;  // write event enabled ?
         bool  _ioc_shouldTimeOut; // component should timeout ?
         bool  _ioc_added;         // was added to event loop
         bool  _ioc_delete;        // going down...
-        bool  _ioc_want_close;    // closed while not added to event loop
     };
 protected:
     FNET_IOComponent        *_ioc_next;          // next in list

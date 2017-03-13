@@ -1,4 +1,3 @@
-tests/connect_thread
 tests/connection_spread
 tests/databuffer
 tests/examples

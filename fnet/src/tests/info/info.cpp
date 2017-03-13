@@ -73,7 +73,7 @@ TEST("size of important objects")
     EXPECT_EQUAL(184u, sizeof(FNET_IOComponent));
     EXPECT_EQUAL(32u, sizeof(FNET_Channel));
     EXPECT_EQUAL(40u, sizeof(FNET_PacketQueue_NoLock));
-    EXPECT_EQUAL(480u, sizeof(FNET_Connection));
+    EXPECT_EQUAL(472u, sizeof(FNET_Connection));
     EXPECT_EQUAL(96u, sizeof(FastOS_Cond));
     EXPECT_EQUAL(56u, sizeof(FNET_DataBuffer));
     EXPECT_EQUAL(24u, sizeof(FastOS_Time));
