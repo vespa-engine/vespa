@@ -253,6 +253,9 @@ private:
     template <typename FunctionType>
     inline void masterExecute(FunctionType &&function);
 
+    // Invokes initFinish() on self
+    friend class InitDoneTask;
+
 public:
     typedef std::unique_ptr<DocumentDB> UP;
     typedef std::shared_ptr<DocumentDB> SP;
