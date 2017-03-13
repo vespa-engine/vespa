@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.maintainer;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -164,9 +165,9 @@ public class FileHelper {
         }
     }
 
-    private static FileTime getLastModifiedTime(Path path) {
+    static FileTime getLastModifiedTime(Path path) {
         try {
-            return Files.getLastModifiedTime(path);
+            return Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS);
         } catch (IOException e) {
             throw new RuntimeException("Failed to get last modified time of " + path.toAbsolutePath(), e);
         }
