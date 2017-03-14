@@ -56,8 +56,8 @@ LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
       _bucketizer(bucketizer)
 {
     // Reserve space for 1TB summary in order to avoid locking.
-    _fileChunks.reserve(LidInfo::getMaxFileNum());
-    _holdFileChunks.resize(LidInfo::getMaxFileNum());
+    _fileChunks.reserve(LidInfo::getFileIdLimit());
+    _holdFileChunks.resize(LidInfo::getFileIdLimit());
 
     preload();
     updateLidMap();

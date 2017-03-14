@@ -1,8 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".monitor");
 
 #include "monitor.h"
 
@@ -29,7 +25,7 @@ Monitor::~Monitor()
 void
 Monitor::enable(FRT_Target *monitorTarget)
 {
-    LOG_ASSERT(monitorTarget != NULL);
+    assert(monitorTarget != NULL);
     Unschedule();
     disconnect();
     _enabled = true;
