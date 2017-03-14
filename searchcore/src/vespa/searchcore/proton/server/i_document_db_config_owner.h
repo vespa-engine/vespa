@@ -8,6 +8,9 @@ namespace proton {
 
 class DocumentDBConfig;
 
+/*
+ * Interface class defining reconfigure method for a document db.
+ */
 class IDocumentDBConfigOwner
 {
 public:
