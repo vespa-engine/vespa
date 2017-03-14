@@ -55,7 +55,7 @@ ProtonConfigurer::getPendingConfigSnapshot()
 }
 
 std::shared_ptr<ProtonConfigSnapshot>
-ProtonConfigurer::getActiveConfigSnapshot()
+ProtonConfigurer::getActiveConfigSnapshot() const
 {
     std::lock_guard<std::mutex> guard(_mutex);
     return _activeConfigSnapshot;

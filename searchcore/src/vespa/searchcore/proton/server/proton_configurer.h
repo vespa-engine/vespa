@@ -29,7 +29,7 @@ class ProtonConfigurer
     DocumentDBs _documentDBs;
     std::shared_ptr<ProtonConfigSnapshot> _pendingConfigSnapshot;
     std::shared_ptr<ProtonConfigSnapshot> _activeConfigSnapshot;
-    std::mutex _mutex;
+    mutable std::mutex _mutex;
     bool _allowReconfig;
 
     void performReconfigure();
@@ -48,7 +48,7 @@ public:
 
     std::shared_ptr<ProtonConfigSnapshot> getPendingConfigSnapshot();
 
-    std::shared_ptr<ProtonConfigSnapshot> getActiveConfigSnapshot();
+    std::shared_ptr<ProtonConfigSnapshot> getActiveConfigSnapshot() const;
 
     void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot);
 
