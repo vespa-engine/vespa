@@ -47,6 +47,7 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(bucketActivationConfigIsPropagatedToDistributorConfiguration);
     CPPUNIT_TEST(max_clock_skew_config_is_propagated_to_distributor_config);
     CPPUNIT_TEST(configured_safe_time_point_rejection_works_end_to_end);
+    CPPUNIT_TEST(sequencing_config_is_propagated_to_distributor_config);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -73,6 +74,7 @@ protected:
     void bucketActivationConfigIsPropagatedToDistributorConfiguration();
     void max_clock_skew_config_is_propagated_to_distributor_config();
     void configured_safe_time_point_rejection_works_end_to_end();
+    void sequencing_config_is_propagated_to_distributor_config();
 
 public:
     void setUp() override {
@@ -176,6 +178,7 @@ private:
     void sendDownDummyRemoveCommand();
     void assertSingleBouncedRemoveReplyPresent();
     void assertNoMessageBounced();
+    void configure_mutation_sequencing(bool enabled);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Distributor_Test);
@@ -791,6 +794,31 @@ Distributor_Test::configured_safe_time_point_rejection_works_end_to_end() {
 
     sendDownDummyRemoveCommand();
     assertNoMessageBounced();
+}
+
+void Distributor_Test::configure_mutation_sequencing(bool enabled) {
+    using namespace vespa::config::content::core;
+    using ConfigBuilder = StorDistributormanagerConfigBuilder;
+
+    ConfigBuilder builder;
+    builder.sequenceMutatingOperations = enabled;
+    getConfig().configure(builder);
+    _distributor->enableNextConfig();
+}
+
+void Distributor_Test::sequencing_config_is_propagated_to_distributor_config() {
+    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+
+    // Should be enabled by default
+    CPPUNIT_ASSERT(getConfig().getSequenceMutatingOperations());
+
+    // Explicitly disabled.
+    configure_mutation_sequencing(false);
+    CPPUNIT_ASSERT(!getConfig().getSequenceMutatingOperations());
+
+    // Explicitly enabled.
+    configure_mutation_sequencing(true);
+    CPPUNIT_ASSERT(getConfig().getSequenceMutatingOperations());
 }
 
 }

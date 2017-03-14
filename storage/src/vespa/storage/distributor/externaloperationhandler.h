@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "operation_sequencer.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -53,6 +54,7 @@ public:
 
 private:
     const MaintenanceOperationGenerator& _operationGenerator;
+    OperationSequencer _mutationSequencer;
     Operation::SP _op;
     TimePoint _rejectFeedBeforeTimeReached;
 
@@ -62,6 +64,10 @@ private:
             api::StorageCommand& cmd,
             const document::BucketId& bucket,
             PersistenceOperationMetricSet& persistenceMetrics);
+    std::shared_ptr<api::StorageMessage> makeConcurrentMutationRejectionReply(
+            api::StorageCommand& cmd,
+            const document::DocumentId& docId) const;
+    bool allowMutation(const SequencingHandle& handle) const;
 
     DistributorMetricSet& getMetrics() { return getDistributor().getMetrics(); }
 };

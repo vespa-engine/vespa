@@ -4,6 +4,7 @@
 #include <set>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
+#include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/document/update/documentupdate.h>
 
 namespace document {
@@ -44,12 +45,13 @@ namespace distributor {
 */
 
 
-class TwoPhaseUpdateOperation : public Operation
+class TwoPhaseUpdateOperation : public SequencedOperation
 {
 public:
     TwoPhaseUpdateOperation(DistributorComponent& manager,
                             const std::shared_ptr<api::UpdateCommand> & msg,
-                            DistributorMetricSet& metrics);
+                            DistributorMetricSet& metrics,
+                            SequencingHandle sequencingHandle = SequencingHandle());
     ~TwoPhaseUpdateOperation();
 
     void onStart(DistributorMessageSender& sender) override;

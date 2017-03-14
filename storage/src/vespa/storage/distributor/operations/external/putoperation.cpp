@@ -21,8 +21,9 @@ using namespace storage;
 
 PutOperation::PutOperation(DistributorComponent& manager,
                            const std::shared_ptr<api::PutCommand> & msg,
-                           PersistenceOperationMetricSet& metric)
-    : Operation(),
+                           PersistenceOperationMetricSet& metric,
+                           SequencingHandle sequencingHandle)
+    : SequencedOperation(std::move(sequencingHandle)),
       _trackerInstance(metric,
                std::shared_ptr<api::BucketInfoReply>(new api::PutReply(*msg)),
                manager,

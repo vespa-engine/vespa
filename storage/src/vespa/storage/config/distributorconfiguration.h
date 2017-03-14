@@ -230,6 +230,13 @@ public:
     std::chrono::seconds getMaxClusterClockSkew() const noexcept {
         return _maxClusterClockSkew;
     }
+
+    bool getSequenceMutatingOperations() const noexcept {
+        return _sequenceMutatingOperations;
+    }
+    void setSequenceMutatingOperations(bool sequenceMutations) noexcept {
+        _sequenceMutatingOperations = sequenceMutations;
+    }
     
 private:
     DistributorConfiguration(const DistributorConfiguration& other);
@@ -268,6 +275,7 @@ private:
     bool _enableInconsistentJoin;
     bool _enableHostInfoReporting;
     bool _disableBucketActivation;
+    bool _sequenceMutatingOperations;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     

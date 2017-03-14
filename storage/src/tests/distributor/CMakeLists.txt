@@ -40,6 +40,7 @@ vespa_add_library(storage_testdistributor TEST
     distributor_host_info_reporter_test.cpp
     ownership_transfer_safe_time_point_calculator_test.cpp
     persistence_metrics_set_test.cpp
+    operation_sequencer_test.cpp
     DEPENDS
     storage_distributor
     storage_testcommon
