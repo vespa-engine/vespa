@@ -8,6 +8,7 @@
 #include <vespa/config/config.h>
 #include "bootstrapconfigmanager.h"
 #include "documentdbconfigmanager.h"
+#include "i_document_db_config_owner.h"
 
 namespace proton {
 
@@ -18,13 +19,6 @@ class IBootstrapOwner
 public:
     virtual ~IBootstrapOwner() { }
     virtual void reconfigure(const std::shared_ptr<BootstrapConfig> & config) = 0;
-};
-
-class IDocumentDBConfigOwner
-{
-public:
-    virtual ~IDocumentDBConfigOwner() { }
-    virtual void reconfigure(const DocumentDBConfig::SP & config) = 0;
 };
 
 /**
