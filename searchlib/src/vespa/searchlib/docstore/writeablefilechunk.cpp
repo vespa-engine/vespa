@@ -630,7 +630,7 @@ int32_t WriteableFileChunk::flushLastIfNonEmpty(bool force)
     if ( force || ! _active->empty()) {
         chunkId = _active->getId();
         _chunkMap[chunkId] = std::move(_active);
-        assert(_nextChunkId < LidInfo::getMaxChunkNum());
+        assert(_nextChunkId < LidInfo::getChunkIdLimit());
         _active.reset(new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes())));
     }
     return chunkId;

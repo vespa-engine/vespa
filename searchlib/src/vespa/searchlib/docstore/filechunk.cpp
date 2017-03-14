@@ -39,24 +39,24 @@ FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSer
 
 LidInfo::LidInfo(uint32_t fileId, uint32_t chunkId, uint32_t sz)
 {
-    if (fileId >= getMaxFileNum()) {
+    if (fileId >= getFileIdLimit()) {
         throw std::runtime_error(
                 make_string("LidInfo(fileId=%u, chunkId=%u, size=%u) has invalid fileId larger than %d",
-                            fileId, chunkId, sz, getMaxFileNum() - 1));
+                            fileId, chunkId, sz, getFileIdLimit() - 1));
     }
-    if (chunkId >= getMaxChunkNum()) {
+    if (chunkId >= getChunkIdLimit()) {
         throw std::runtime_error(
                 make_string("LidInfo(fileId=%u, chunkId=%u, size=%u) has invalid chunkId larger than %d",
-                            fileId, chunkId, sz, getMaxChunkNum() - 1));
+                            fileId, chunkId, sz, getChunkIdLimit() - 1));
     }
-    if (sz > (std::numeric_limits<uint32_t>::max() - ((2<<SIZE_SHIFT) - 1))) {
+    if (sz >= getSizeLimit()) {
         throw std::runtime_error(
                 make_string("LidInfo(fileId=%u, chunkId=%u, size=%u) has too large size larger than %u",
-                            fileId, chunkId, sz, std::numeric_limits<uint32_t>::max() - ((2<<SIZE_SHIFT)-1)));
+                            fileId, chunkId, sz, getSizeLimit() - 1));
     }
     _value.v.fileId = fileId;
     _value.v.chunkId = chunkId;
-    _value.v.size = (sz+((1<<SIZE_SHIFT)-1)) >> SIZE_SHIFT;
+    _value.v.size = computeAlignedSize(sz);
 }
 
 vespalib::string
