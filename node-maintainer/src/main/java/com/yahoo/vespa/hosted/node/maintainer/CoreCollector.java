@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -34,6 +35,24 @@ public class CoreCollector {
 
     public CoreCollector(ProcessExecuter processExecuter) {
         this.processExecuter = processExecuter;
+    }
+
+    List<String> readYinstState(Path yinstStatePath) throws IOException {
+        Pair<Integer, String> result = processExecuter.exec(new String[]{"cat", yinstStatePath.toString()});
+
+        if (result.getFirst() != 0) {
+            throw new RuntimeException("Failed to read yinst state file at: " + yinstStatePath + ", result: " + result);
+        }
+        return Arrays.asList(result.getSecond().split("\n"));
+    }
+
+    List<String> readRpmPackages() throws IOException {
+        Pair<Integer, String> result = processExecuter.exec(new String[]{"rpm", "-qa"});
+
+        if (result.getFirst() != 0) {
+            throw new RuntimeException("Failed to read RPM packages " + result);
+        }
+        return Arrays.asList(result.getSecond().split("\n"));
     }
     
     Path readBinPathFallback(Path coredumpPath) throws IOException, InterruptedException {
@@ -77,19 +96,42 @@ public class CoreCollector {
         return Arrays.asList(result.getSecond().split("\n"));
     }
 
-    public Map<String, Object> collect(Path coredumpPath) {
+    Map<String, Object> collect(Path coredumpPath, Optional<Path> yinstStatePath) {
         Map<String, Object> data = new LinkedHashMap<>();
         try {
             coredumpPath = compressCoredump(coredumpPath);
+        } catch (IOException | InterruptedException e) {
+            logger.log(Level.WARNING, "Failed compressing/decompressing core dump", e);
+        }
+
+        try {
             Path binPath = readBinPath(coredumpPath);
 
             data.put("bin_path", binPath.toString());
             data.put("backtrace", readBacktrace(coredumpPath, binPath, false));
             data.put("backtrace_all_threads", readBacktrace(coredumpPath, binPath, true));
-
-            deleteDecompressedCoredump(coredumpPath);
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "Failed to collect core dump data", e);
+            logger.log(Level.WARNING, "Failed to extrect backtrace", e);
+        }
+
+        yinstStatePath.ifPresent(yinstState -> {
+            try {
+                data.put("yinst_state", readYinstState(yinstState));
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to read yinst state", e);
+            }
+
+            try {
+                data.put("rpm_packages", readRpmPackages());
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to read RPM packages", e);
+            }
+        });
+
+        try {
+            deleteDecompressedCoredump(coredumpPath);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to deleting compressed core dump", e);
         }
         return data;
     }
@@ -134,6 +176,7 @@ public class CoreCollector {
     }
 
     private boolean diskSpaceAvailable(Path path) throws IOException {
+        // TODO: If running inside container, check against container memory size, not for the enitre host
         String memInfo = new String(Files.readAllBytes(Paths.get("/proc/meminfo")));
         return path.toFile().getFreeSpace() > parseTotalMemorySize(memInfo);
     }

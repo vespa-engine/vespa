@@ -74,7 +74,7 @@ public class CoredumpHandlerTest {
         crashPath = folder.newFolder("crash").toPath();
         donePath = folder.newFolder("done").toPath();
 
-        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, donePath, attributes);
+        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, donePath, attributes, Optional.empty());
     }
 
     @Test
@@ -108,7 +108,7 @@ public class CoredumpHandlerTest {
 
     @Test
     public void coredumpMetadataCollectAndWriteTest() throws IOException, InterruptedException {
-        when(coreCollector.collect(any())).thenReturn(metadata);
+        when(coreCollector.collect(any(), any())).thenReturn(metadata);
         createCoredump("core.dump");
         Path processingPath = coredumpHandler.processCoredumps();
 

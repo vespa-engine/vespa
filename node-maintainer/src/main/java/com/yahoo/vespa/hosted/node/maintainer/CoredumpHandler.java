@@ -40,14 +40,16 @@ public class CoredumpHandler {
     private final Path coredumpsPath;
     private final Path doneCoredumpsPath;
     private final Map<String, Object> nodeAttributes;
+    private final Optional<Path> yinstStatePath;
 
     public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path coredumpsPath, Path doneCoredumpsPath,
-                           Map<String, Object> nodeAttributes) {
+                           Map<String, Object> nodeAttributes, Optional<Path> yinstStatePath) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
         this.coredumpsPath = coredumpsPath;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.nodeAttributes = nodeAttributes;
+        this.yinstStatePath = yinstStatePath;
     }
 
     public void processAll() throws IOException {
@@ -116,7 +118,7 @@ public class CoredumpHandler {
     }
 
     private Map<String, Object> collectMetadata(Path coredumpPath, Map<String, Object> nodeAttributes) {
-        Map<String, Object> metadata = coreCollector.collect(coredumpPath);
+        Map<String, Object> metadata = coreCollector.collect(coredumpPath, yinstStatePath);
         metadata.putAll(nodeAttributes);
 
         Map<String, Object> fields = new HashMap<>();
