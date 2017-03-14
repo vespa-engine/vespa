@@ -1,0 +1,159 @@
+################### Filebeat Configuration Example #########################
+
+############################# Filebeat ######################################
+filebeat:
+  # List of prospectors to fetch data.
+  prospectors:
+
+    # vespa
+    - paths:
+        - /home/y/logs/vespa/vespa.log
+      exclude_files: [".gz$"]
+      document_type: vespa
+      fields:
+        HV-tenant: %%TENANT%%
+        HV-application: %%APPLICATION%%
+        HV-instance: %%INSTANCE%%
+        HV-region: %%REGION%%
+        HV-environment: %%ENVIRONMENT%%
+        index_source: "hosted-instance_%%TENANT%%_%%APPLICATION%%_%%REGION%%_%%ENVIRONMENT%%_%%INSTANCE%%"
+      fields_under_root: true
+      close_older: 20m
+      force_close_files: true
+
+    # vespa qrs
+    - paths:
+        - /home/y/logs/vespa/qrs/QueryAccessLog.*.*
+      exclude_files: [".gz$"]
+      exclude_lines: ["reserved-for-internal-use/feedapi"]
+      document_type: vespa-qrs
+      fields:
+        HV-tenant: %%TENANT%%
+        HV-application: %%APPLICATION%%
+        HV-instance: %%INSTANCE%%
+        HV-region: %%REGION%%
+        HV-environment: %%ENVIRONMENT%%
+        index_source: "hosted-instance_%%TENANT%%_%%APPLICATION%%_%%REGION%%_%%ENVIRONMENT%%_%%INSTANCE%%"
+      fields_under_root: true
+      close_older: 20m
+      force_close_files: true
+
+  # General filebeat configuration options
+  #
+  # Event count spool threshold - forces network flush if exceeded
+  spool_size: %%FILEBEAT_SPOOL_SIZE%%
+
+  # Defines how often the spooler is flushed. After idle_timeout the spooler is
+  # Flush even though spool_size is not reached.
+  #idle_timeout: 5s
+  publish_async: false
+
+  # Name of the registry file. Per default it is put in the current working
+  # directory. In case the working directory is changed after when running
+  # filebeat again, indexing starts from the beginning again.
+  registry_file: /var/lib/filebeat/registry
+
+  # Full Path to directory with additional prospector configuration files. Each file must end with .yml
+  # These config files must have the full filebeat config part inside, but only
+  # the prospector part is processed. All global options like spool_size are ignored.
+  # The config_dir MUST point to a different directory then where the main filebeat config file is in.
+  #config_dir:
+
+###############################################################################
+############################# Libbeat Config ##################################
+# Base config file used by all other beats for using libbeat features
+
+############################# Output ##########################################
+
+# Configure what outputs to use when sending the data collected by the beat.
+# Multiple outputs may be used.
+output:
+
+  ### Logstash as output
+  logstash:
+    # The Logstash hosts
+    hosts: [%%LOGSTASH_HOSTS%%]
+
+    timeout: 15
+
+    # Number of workers per Logstash host.
+    worker: %%LOGSTASH_WORKERS%%
+
+    # Set gzip compression level.
+    compression_level: 3
+
+    # Optional load balance the events between the Logstash hosts
+    loadbalance: true
+
+    # Optional index name. The default index name depends on the each beat.
+    # For Packetbeat, the default is set to packetbeat, for Topbeat
+    # top topbeat and for Filebeat to filebeat.
+    #index: filebeat
+
+    bulk_max_size: %%LOGSTASH_BULK_MAX_SIZE%%
+
+    # Optional TLS. By default is off.
+    #tls:
+      # List of root certificates for HTTPS server verifications
+      #certificate_authorities: ["/etc/pki/root/ca.pem"]
+
+      # Certificate for TLS client authentication
+      #certificate: "/etc/pki/client/cert.pem"
+
+      # Client Certificate Key
+      #certificate_key: "/etc/pki/client/cert.key"
+
+      # Controls whether the client verifies server certificates and host name.
+      # If insecure is set to true, all server host names and certificates will be
+      # accepted. In this mode TLS based connections are susceptible to
+      # man-in-the-middle attacks. Use only for testing.
+      #insecure: true
+
+      # Configure cipher suites to be used for TLS connections
+      #cipher_suites: []
+
+      # Configure curve types for ECDHE based cipher suites
+      #curve_types: []
+
+############################# Shipper #########################################
+
+shipper:
+
+############################# Logging #########################################
+
+# There are three options for the log ouput: syslog, file, stderr.
+# Under Windos systems, the log files are per default sent to the file output,
+# under all other system per default to syslog.
+logging:
+
+  # Send all logging output to syslog. On Windows default is false, otherwise
+  # default is true.
+  to_syslog: false
+
+  # Write all logging output to files. Beats automatically rotate files if rotateeverybytes
+  # limit is reached.
+  to_files: true
+
+  # To enable logging to files, to_files option has to be set to true
+  files:
+    # The directory where the log files will written to.
+    path: /home/y/logs/filebeat
+
+    # The name of the files where the logs are written to.
+    name: filebeat
+
+    # Configure log file size limit. If limit is reached, log file will be
+    # automatically rotated
+    rotateeverybytes: 10485760 # = 10MB
+
+    # Number of rotated log files to keep. Oldest files will be deleted first.
+    keepfiles: 7
+
+  # Enable debug output for selected components. To enable all selectors use ["*"]
+  # Other available selectors are beat, publish, service
+  # Multiple selectors can be chained.
+  #selectors: [ ]
+
+  # Sets log level. The default log level is error.
+  # Available log levels are: critical, error, warning, info, debug
+  level: warning
