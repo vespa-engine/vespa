@@ -9,6 +9,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.message.BasicStatusLine;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -61,17 +62,25 @@ public class CoredumpHandlerTest {
         metadata.put("backtrace", Arrays.asList("call 1", "function 2", "something something"));
     }
 
-    private final CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector);
-
-
     @Rule
-    public TemporaryFolder folder= new TemporaryFolder();
+    public TemporaryFolder folder = new TemporaryFolder();
+
+    private CoredumpHandler coredumpHandler;
+    private Path crashPath;
+    private Path donePath;
+
+    @Before
+    public void setup() throws IOException {
+        crashPath = folder.newFolder("crash").toPath();
+        donePath = folder.newFolder("done").toPath();
+
+        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, donePath, attributes);
+    }
 
     @Test
     public void ignoresIncompleteCoredumps() throws IOException {
         Path coredumpPath = createCoredump(".core.dump");
-        Path crashPath = coredumpPath.getParent();
-        Path processingPath = coredumpHandler.processCoredumps(crashPath, attributes);
+        Path processingPath = coredumpHandler.processCoredumps();
 
         // The 'processing' directory should be empty
         assertFolderContents(processingPath);
@@ -83,7 +92,6 @@ public class CoredumpHandlerTest {
     @Test
     public void startProcessingTest() throws IOException {
         Path coredumpPath = createCoredump("core.dump");
-        Path crashPath = coredumpPath.getParent();
         Path processingPath = crashPath.resolve("processing_dir");
         coredumpHandler.startProcessing(coredumpPath, crashPath.resolve("processing_dir"));
 
@@ -101,9 +109,8 @@ public class CoredumpHandlerTest {
     @Test
     public void coredumpMetadataCollectAndWriteTest() throws IOException, InterruptedException {
         when(coreCollector.collect(any())).thenReturn(metadata);
-        Path coredumpPath = createCoredump("core.dump");
-        Path crashPath = coredumpPath.getParent();
-        Path processingPath = coredumpHandler.processCoredumps(crashPath, attributes);
+        createCoredump("core.dump");
+        Path processingPath = coredumpHandler.processCoredumps();
 
         // Inside 'processing' directory, there should be a new directory containing 'metadata.json' file
         List<Path> processedCoredumps = Files.list(processingPath).collect(Collectors.toList());
@@ -125,13 +132,10 @@ public class CoredumpHandlerTest {
     @Test
     public void reportFailCoredumpTest() throws IOException, URISyntaxException {
         final String documentId = "UIDD-ABCD-EFGH";
-
         Path metadataPath = createProcessedCoredump(documentId);
-        Path crashPath = metadataPath.getParent().getParent().getParent();
-        Path donePath = folder.newFolder("done").toPath();
 
         setNextHttpResponse(500, Optional.of("Internal server error"));
-        coredumpHandler.reportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), donePath);
+        coredumpHandler.reportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
         validateNextHttpPost(documentId, expectedMetadataFileContents);
 
         // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
@@ -144,10 +148,7 @@ public class CoredumpHandlerTest {
         final String documentId = "UIDD-ABCD-EFGH";
 
         Path coredumpPath = createProcessedCoredump(documentId);
-        Path crashPath = coredumpPath.getParent().getParent().getParent();
-        Path donePath = folder.newFolder("done").toPath();
-
-        coredumpHandler.finishProcessing(coredumpPath.getParent(), donePath);
+        coredumpHandler.finishProcessing(coredumpPath.getParent());
 
         // The coredump should've been moved out of 'processing' and into 'done'
         assertFolderContents(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
@@ -164,14 +165,12 @@ public class CoredumpHandlerTest {
     }
 
     private Path createCoredump(String coredumpName) throws IOException {
-        Path crashPath = folder.newFolder("crash").toPath();
         Path coredumpPath = crashPath.resolve(coredumpName);
         coredumpPath.toFile().createNewFile();
         return coredumpPath;
     }
 
     private Path createProcessedCoredump(String documentId) throws IOException {
-        Path crashPath = folder.newFolder("crash").toPath();
         Path coredumpPath = crashPath
                 .resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)
                 .resolve(documentId)

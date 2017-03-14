@@ -37,23 +37,42 @@ public class CoredumpHandler {
 
     private final HttpClient httpClient;
     private final CoreCollector coreCollector;
+    private final Path coredumpsPath;
+    private final Path doneCoredumpsPath;
+    private final Map<String, Object> nodeAttributes;
 
-    public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector) {
+    public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path coredumpsPath, Path doneCoredumpsPath,
+                           Map<String, Object> nodeAttributes) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
+        this.coredumpsPath = coredumpsPath;
+        this.doneCoredumpsPath = doneCoredumpsPath;
+        this.nodeAttributes = nodeAttributes;
     }
 
-    public void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath, Map<String, Object> nodeAttributes) throws IOException {
-        Path processingCoredumps = processCoredumps(coredumpsPath, nodeAttributes);
-        reportCoredumps(processingCoredumps, doneCoredumpPath);
+    public void processAll() throws IOException {
+        removeJavaCoredumps();
+        processAndReportCoredumps();
+        removeOldCoredumps();
     }
 
-    public void removeJavaCoredumps(Path javaCoredumpsPath) throws IOException {
-        if (! javaCoredumpsPath.toFile().isDirectory()) return;
-        FileHelper.deleteFiles(javaCoredumpsPath, Duration.ZERO, Optional.of("^java_pid.*\\.hprof$"), false);
+    private void removeJavaCoredumps() throws IOException {
+        if (! coredumpsPath.toFile().isDirectory()) return;
+        FileHelper.deleteFiles(coredumpsPath, Duration.ZERO, Optional.of("^java_pid.*\\.hprof$"), false);
     }
 
-    Path processCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {
+    private void removeOldCoredumps() throws IOException {
+        if (! doneCoredumpsPath.toFile().isDirectory()) return;
+        FileHelper.deleteDirectories(doneCoredumpsPath, Duration.ofDays(10), Optional.empty());
+    }
+
+    private void processAndReportCoredumps() throws IOException {
+        Path processingCoredumps = processCoredumps();
+        reportCoredumps(processingCoredumps);
+    }
+
+
+    Path processCoredumps() throws IOException {
         Path processingCoredumpsPath = coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
         processingCoredumpsPath.toFile().mkdirs();
 
@@ -75,7 +94,7 @@ public class CoredumpHandler {
         return processingCoredumpsPath;
     }
 
-    void reportCoredumps(Path processingCoredumpsPath, Path doneCoredumpsPath) throws IOException {
+    void reportCoredumps(Path processingCoredumpsPath) throws IOException {
         doneCoredumpsPath.toFile().mkdirs();
 
         Files.list(processingCoredumpsPath)
@@ -83,7 +102,7 @@ public class CoredumpHandler {
                 .forEach(coredumpDirectory -> {
                     try {
                         report(coredumpDirectory);
-                        finishProcessing(coredumpDirectory, doneCoredumpsPath);
+                        finishProcessing(coredumpDirectory);
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Failed to report coredump " + coredumpDirectory, e);
                     }
@@ -128,7 +147,7 @@ public class CoredumpHandler {
         logger.info("Successfully reported coredump " + documentId);
     }
 
-    void finishProcessing(Path coredumpDirectory, Path doneCoredumpsPath) throws IOException {
+    void finishProcessing(Path coredumpDirectory) throws IOException {
         Files.move(coredumpDirectory, doneCoredumpsPath.resolve(coredumpDirectory.getFileName()));
     }
 }

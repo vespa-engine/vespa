@@ -190,7 +190,6 @@ public class StorageMaintainer {
     /**
      * Deletes old
      *  * archived app data
-     *  * archived and reported coredumps
      *  * JDisc logs
      */
     public void cleanNodeAdmin() {
@@ -199,10 +198,6 @@ public class StorageMaintainer {
                 .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin())
                 .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
                 .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
-
-        maintainerExecutor.addJob("delete-directories")
-                .withArgument("basePath", environment.pathInNodeAdminToDoneCoredumps())
-                .withArgument("maxAgeSeconds", Duration.ofDays(10).getSeconds());
 
         Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/logs/jdisc_core/");
         maintainerExecutor.addJob("delete-files")
