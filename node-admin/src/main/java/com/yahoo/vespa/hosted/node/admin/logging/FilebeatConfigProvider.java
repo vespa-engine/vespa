@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class FilebeatConfigProvider {
 
     private static final String TEMPLATE = "filebeat.yml.template";
+
     private static final String TENANT_FIELD = "%%TENANT%%";
     private static final String APPLICATION_FIELD = "%%APPLICATION%%";
     private static final String INSTANCE_FIELD = "%%INSTANCE%%";
@@ -25,6 +26,7 @@ public class FilebeatConfigProvider {
     private static final String LOGSTASH_HOSTS_FIELD = "%%LOGSTASH_HOSTS%%";
     private static final String LOGSTASH_WORKERS_FIELD = "%%LOGSTASH_WORKERS%%";
     private static final String LOGSTASH_BULK_MAX_SIZE_FIELD = "%%LOGSTASH_BULK_MAX_SIZE%%";
+
     private static final int logstashWorkers = 3;
     private static final int logstashBulkMaxSize = 2048;
     private final Environment environment;
