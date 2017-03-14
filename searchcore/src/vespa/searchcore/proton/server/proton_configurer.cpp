@@ -151,7 +151,7 @@ ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot)
     }
     auto dbitr = _documentDBs.begin();
     while (dbitr != _documentDBs.end()) {
-        DocTypeSet::const_iterator found(newDocTypes.find(dbitr->first));
+        auto found(newDocTypes.find(dbitr->first));
         if (found == newDocTypes.end()) {
             _owner.removeDocumentDB(dbitr->first);
             dbitr = _documentDBs.erase(dbitr);
