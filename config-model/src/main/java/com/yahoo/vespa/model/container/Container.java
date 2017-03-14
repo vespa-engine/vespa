@@ -150,9 +150,7 @@ public class Container extends AbstractService implements
     }
 
     public Http getHttp() {
-        return (parent instanceof ContainerCluster) ?
-                ((ContainerCluster) parent).getHttp():
-                null;
+        return (parent instanceof ContainerCluster) ? ((ContainerCluster) parent).getHttp() : null;
     }
 
     public JettyHttpServer getDefaultHttpServer() {
@@ -163,8 +161,7 @@ public class Container extends AbstractService implements
     public int index() { return index; }
 
     // We cannot set bindings yet, as baseport is not initialized
-    public void addBuiltinHandlers() {
-    }
+    public void addBuiltinHandlers() { }
 
     @Override
     public void initService() {
@@ -242,9 +239,7 @@ public class Container extends AbstractService implements
 
     @Override
     public int getWantedPort() {
-        return getHttp() == null ?
-                BASEPORT:
-                0;
+        return getHttp() == null ? BASEPORT: 0;
     }
 
     /**
@@ -253,7 +248,6 @@ public class Container extends AbstractService implements
     @Override
     public boolean requiresWantedPort() {
         return getHttp() == null;
-
     }
 
     public boolean requiresConsecutivePorts() {
@@ -281,9 +275,7 @@ public class Container extends AbstractService implements
     }
 
     private int getRpcPort() {
-        return isRpcServerEnabled() ?
-                getRelativePort(numHttpServerPorts + 1) :
-                0;
+        return isRpcServerEnabled() ? getRelativePort(numHttpServerPorts + 1) : 0;
     }
 
     private int getMessagingPort() {
@@ -356,8 +348,7 @@ public class Container extends AbstractService implements
 
     @Override
     public void getConfig(ComponentsConfig.Builder builder) {
-        builder.components.addAll(
-                ComponentsConfigGenerator.generate(allEnabledComponents()));
+        builder.components.addAll(ComponentsConfigGenerator.generate(allEnabledComponents()));
     }
 
     private Collection<Component<?, ?>> allEnabledComponents() {
@@ -368,12 +359,10 @@ public class Container extends AbstractService implements
 
     private void addAllEnabledComponents(Collection<Component<?, ?>> allComponents, AbstractConfigProducer<?> current) {
         for (AbstractConfigProducer<?> child: current.getChildren().values()) {
-            if (!httpServerEnabled && isHttpServer(child))
-                continue;
+            if ( ! httpServerEnabled && isHttpServer(child)) continue;
 
-            if (child instanceof Component) {
+            if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
-            }
 
             addAllEnabledComponents(allComponents, child);
         }
@@ -396,16 +385,14 @@ public class Container extends AbstractService implements
 
     @Override
     public void getConfig(ContainerMbusConfig.Builder builder) {
-        builder.enabled(messageBusEnabled).
-                port(getMessagingPort());
+        builder.enabled(messageBusEnabled).port(getMessagingPort());
     }
 
     @Override
     public HashMap<String,String> getDefaultMetricDimensions(){
         HashMap<String, String> dimensions = new HashMap<>();
-        if (clusterName != null) {
+        if (clusterName != null)
             dimensions.put("clustername", clusterName);
-        }
         return dimensions;
     }
 
