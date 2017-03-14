@@ -5,15 +5,16 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore.lid_allocator");
 
+using search::AttributeVector;
+using search::GrowStrategy;
+using search::QueryTermSimple;
+using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::Blueprint;
 using search::queryeval::FieldSpecBaseList;
-using search::queryeval::SimpleLeafBlueprint;
 using search::queryeval::SearchIterator;
-using search::AttributeVector;
+using search::queryeval::SimpleLeafBlueprint;
 using vespalib::GenerationHolder;
-using search::QueryTermSimple;
-using search::GrowStrategy;
 
 namespace proton {
 namespace documentmetastore {
@@ -268,8 +269,7 @@ LidAllocator::createBlackListBlueprint() const
 {
     QueryTermSimple::UP term(new QueryTermSimple("0", QueryTermSimple::WORD));
     return Blueprint::UP(
-            new BlackListBlueprint(_activeLids.getSearch(std::move(term),
-                                                         AttributeVector::SearchContext::Params())));
+            new BlackListBlueprint(_activeLids.getSearch(std::move(term), SearchContextParams())));
 }
 
 void

@@ -174,7 +174,7 @@ public:
     virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
-    getSearch(std::unique_ptr<QueryTermSimple> term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     virtual void clearOldValues(DocId doc);
     virtual void setNewValues(DocId doc, const std::vector<WType> & values);

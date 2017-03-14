@@ -40,7 +40,7 @@ class SingleExtAttribute
     using QueryTermSimpleUP = typename Super::QueryTermSimpleUP;
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;
@@ -112,7 +112,7 @@ protected:
     { }
 private:
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;
@@ -200,7 +200,7 @@ class WeightedSetIntegerExtAttribute
     : public WeightedSetExtAttributeBase<MultiIntegerExtAttribute>
 {
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;
@@ -216,7 +216,7 @@ class WeightedSetFloatExtAttribute
     : public WeightedSetExtAttributeBase<MultiFloatExtAttribute>
 {
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;

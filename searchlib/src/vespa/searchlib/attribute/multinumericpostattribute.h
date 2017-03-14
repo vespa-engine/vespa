@@ -88,7 +88,7 @@ public:
     virtual void onGenerationChange(generation_t generation);
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
     virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 

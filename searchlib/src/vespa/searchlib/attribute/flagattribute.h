@@ -32,7 +32,7 @@ private:
     bool onLoad() override;
     bool onLoadEnumerated(ReaderBase &attrReader) override;
     AttributeVector::SearchContext::UP
-    getSearch(std::unique_ptr<QueryTermSimple> term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
     void clearOldValues(DocId doc) override;
     void setNewValues(DocId doc, const std::vector<typename B::WType> & values) override;
 

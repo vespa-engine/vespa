@@ -39,7 +39,7 @@ MultiValueStringAttributeT<B, M>::freezeEnumDictionary(void)
 template <typename B, typename M>
 AttributeVector::SearchContext::UP
 MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP qTerm,
-                                            const AttributeVector::SearchContext::Params &) const
+                                            const attribute::SearchContextParams &) const
 {
     if (this->getCollectionType() == attribute::CollectionType::WSET) {
         return std::make_unique<StringTemplSearchContext<StringSetImplSearchContext>>(std::move(qTerm), *this);

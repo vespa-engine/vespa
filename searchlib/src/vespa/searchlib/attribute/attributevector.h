@@ -9,6 +9,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
@@ -520,37 +521,7 @@ public:
     public:
         SearchContext(const SearchContext &) = delete;
         SearchContext & operator = (const SearchContext &) = delete;
-        class Params {
-            using IAttributeVector = attribute::IAttributeVector;
-        public:
-            Params();
-            bool useBitVector() const { return _useBitVector; }
-            const IAttributeVector * diversityAttribute() const { return _diversityAttribute; }
-            size_t diversityCutoffGroups() const { return _diversityCutoffGroups; }
-            bool diversityCutoffStrict() const { return _diversityCutoffStrict; }
 
-            Params & useBitVector(bool value) {
-                _useBitVector = value;
-                return *this;
-            }
-            Params & diversityAttribute(const IAttributeVector * value) {
-                _diversityAttribute = value;
-                return *this;
-            }
-            Params & diversityCutoffGroups(size_t groups) {
-                _diversityCutoffGroups = groups;
-                return *this;
-            }
-            Params & diversityCutoffStrict(bool strict) {
-                _diversityCutoffStrict = strict;
-                return *this;
-            }
-        private:
-            const IAttributeVector * _diversityAttribute;
-            size_t                   _diversityCutoffGroups;
-            bool                     _useBitVector;
-            bool                     _diversityCutoffStrict;
-        };
         typedef std::unique_ptr<SearchContext> UP;
         ~SearchContext();
         unsigned int approximateHits() const override;
@@ -614,8 +585,8 @@ public:
         bool getIsFilter() const { return _attr.getConfig().getIsFilter(); }
     };
 
-    SearchContext::UP getSearch(QueryPacketT searchSpec, const SearchContext::Params & params) const;
-    virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const SearchContext::Params & params) const = 0;
+    SearchContext::UP getSearch(QueryPacketT searchSpec, const attribute::SearchContextParams &params) const;
+    virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const = 0;
     virtual const EnumStoreBase *getEnumStoreBase() const;
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
 private:

@@ -145,7 +145,7 @@ NotImplementedAttribute::addDoc(DocId &) {
 }
 
 SearchContext::UP
-NotImplementedAttribute::getSearch(QueryTermSimpleUP, const SearchContext::Params &) const {
+NotImplementedAttribute::getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const {
     notImplemented();
     return SearchContext::UP();
 }

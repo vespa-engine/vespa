@@ -152,7 +152,7 @@ SingleValueNumericEnumAttribute<B>::onLoad()
 template <typename B>
 AttributeVector::SearchContext::UP
 SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
-                                              const AttributeVector::SearchContext::Params & params) const
+                                              const attribute::SearchContextParams & params) const
 {
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();

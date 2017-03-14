@@ -176,7 +176,7 @@ private:
         mutable WeightedConstChar * _buffer;
         std::unique_ptr<vespalib::Regexp>   _regex;
     };
-    SearchContext::UP getSearch(QueryTermSimpleUP term, const SearchContext::Params & params) const override;
+    SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 };
 
 }
