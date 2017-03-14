@@ -82,7 +82,7 @@ private:
     AttributeFieldBlueprint(const FieldSpec &field,
                             const AttributeVector &attribute,
                             const string &query_stack,
-                            const AttributeVector::SearchContext::Params &params)
+                            const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
           _search_context(attribute.getSearch(query_stack, params).release())
     {
@@ -98,7 +98,7 @@ public:
         : AttributeFieldBlueprint(field,
                                   attribute,
                                   query_stack,
-                                  AttributeVector::SearchContext::Params()
+                                  attribute::SearchContextParams()
                                   .useBitVector(field.isFilter()))
     {
     }
@@ -112,7 +112,7 @@ public:
         : AttributeFieldBlueprint(field,
                                   attribute,
                                   query_stack,
-                                  AttributeVector::SearchContext::Params()
+                                  attribute::SearchContextParams()
                                       .diversityAttribute(&diversity)
                                       .useBitVector(field.isFilter())
                                       .diversityCutoffGroups(diversityCutoffGroups)
@@ -174,7 +174,7 @@ public:
             search::query::Range qr(r.min(), r.max());
             search::query::SimpleRangeTerm rt(qr, "", 0, search::query::Weight(0));
             string stack(StackDumpCreator::create(rt));
-            _rangeSearches.push_back(attr.getSearch(stack, AttributeVector::SearchContext::Params()));
+            _rangeSearches.push_back(attr.getSearch(stack, attribute::SearchContextParams()));
             estHits += _rangeSearches.back()->approximateHits();
             LOG(debug, "Range '%s' estHits %ld", qr.getRangeString().c_str(), estHits);
         }
@@ -570,7 +570,7 @@ public:
                 } else {
                     qt.reset(new search::QueryTermBase(term, search::QueryTermSimple::WORD));
                 }
-                ws->addToken(_attr.getSearch(std::move(qt), AttributeVector::SearchContext::Params()), weight);
+                ws->addToken(_attr.getSearch(std::move(qt), attribute::SearchContextParams()), weight);
             }
             setResult(std::move(result));
         } else {

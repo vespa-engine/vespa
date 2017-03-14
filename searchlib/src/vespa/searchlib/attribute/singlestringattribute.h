@@ -78,7 +78,7 @@ public:
     }
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
     class StringSingleImplSearchContext : public StringAttribute::StringSearchContext {
     public:

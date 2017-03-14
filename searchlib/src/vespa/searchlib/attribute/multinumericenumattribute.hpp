@@ -125,7 +125,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoad()
 template <typename B, typename M>
 AttributeVector::SearchContext::UP
 MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
-                                                const AttributeVector::SearchContext::Params & params) const
+                                                const attribute::SearchContextParams & params) const
 {
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();

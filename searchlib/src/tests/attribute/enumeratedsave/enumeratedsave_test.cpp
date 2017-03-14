@@ -28,20 +28,20 @@
 #include <iostream>
 #include <cmath>
 
-
+using search::AttributeFactory;
+using search::AttributeMemoryFileBufferWriter;
+using search::BufferWriter;
+using search::FloatingPointAttribute;
+using search::IAttributeFileWriter;
+using search::IntegerAttribute;
+using search::ParseItem;
+using search::RandomGenerator;
+using search::StringAttribute;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
-using search::AttributeFactory;
-using search::FloatingPointAttribute;
-using search::IntegerAttribute;
-using search::StringAttribute;
-using search::RandomGenerator;
-using search::ParseItem;
+using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
-using search::IAttributeFileWriter;
-using search::BufferWriter;
-using search::AttributeMemoryFileBufferWriter;
 
 typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
 typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
@@ -536,7 +536,7 @@ EnumeratedSaveTest::getSearch(const V &vec, const T &term, bool prefix)
 
     return (static_cast<const AttributeVector &>(vec)).
         getSearch(vespalib::stringref(&query[0], query.size()),
-                  AttributeVector::SearchContext::Params());
+                  SearchContextParams());
 }
 
 

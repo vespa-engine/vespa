@@ -104,7 +104,7 @@ public:
     bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
-    getSearch(std::unique_ptr<QueryTermSimple> term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     void set(DocId doc, T v) {
         _data[doc] = v;

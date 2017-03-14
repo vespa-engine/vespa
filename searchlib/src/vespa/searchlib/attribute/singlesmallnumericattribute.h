@@ -125,7 +125,7 @@ public:
     bool onLoad() override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
 
-    SearchContext::UP getSearch(std::unique_ptr<QueryTermSimple> term, const SearchContext::Params & params) const override;
+    SearchContext::UP getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     T getFast(DocId doc) const {
         const Word &word = _wordData[doc >> _wordShift];

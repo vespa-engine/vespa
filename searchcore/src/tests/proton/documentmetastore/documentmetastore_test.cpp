@@ -21,28 +21,29 @@
 LOG_SETUP("documentmetastore_test");
 
 using namespace document;
-using search::AttributeVector;
-using search::AttributeGuard;
+using proton::bucketdb::BucketState;
 using search::AttributeFileSaveTarget;
+using search::AttributeGuard;
+using search::AttributeVector;
 using search::DocumentMetaData;
-using vespalib::GenerationHandler;
-using vespalib::GenerationHolder;
 using search::GrowStrategy;
 using search::LidUsageStats;
 using search::QueryTermSimple;
 using search::SingleValueBitNumericAttribute;
+using search::TuneFileAttributes;
+using search::attribute::SearchContextParams;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldMatchData;
+using search::index::DummyFileHeaderContext;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleResult;
-using storage::spi::Timestamp;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
-using search::TuneFileAttributes;
-using search::index::DummyFileHeaderContext;
-using proton::bucketdb::BucketState;
+using storage::spi::Timestamp;
+using vespalib::GenerationHandler;
+using vespalib::GenerationHolder;
 
 namespace proton {
 
@@ -212,8 +213,7 @@ assertSearchResult(const SimpleResult &exp, const DocumentMetaStore &dms,
                    bool strict, uint32_t docIdLimit = 100)
 {
     AttributeVector::SearchContext::UP sc =
-            dms.getSearch(QueryTermSimple::UP(new QueryTermSimple(term, termType)),
-                          AttributeVector::SearchContext::Params());
+            dms.getSearch(QueryTermSimple::UP(new QueryTermSimple(term, termType)), SearchContextParams());
     TermFieldMatchData tfmd;
     SearchIterator::UP sb = sc->createIterator(&tfmd, strict);
     SimpleResult act;

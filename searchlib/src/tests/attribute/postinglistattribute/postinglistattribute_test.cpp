@@ -121,7 +121,7 @@ private:
     void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const vespalib::string & term, bool prefix);
 
     template <typename V, typename T>
-    SearchContextPtr getSearch(const V & vec, const T & term, bool prefix, const AttributeVector::SearchContext::Params & params=AttributeVector::SearchContext::Params());
+    SearchContextPtr getSearch(const V & vec, const T & term, bool prefix, const attribute::SearchContextParams & params=attribute::SearchContextParams());
 
     template <typename V>
     SearchContextPtr getSearch(const V & vec);
@@ -327,7 +327,7 @@ PostingListAttributeTest::buildTermQuery(std::vector<char> &buffer,
 
 template <typename V, typename T>
 SearchContextPtr
-PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix, const AttributeVector::SearchContext::Params & params)
+PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix, const attribute::SearchContextParams & params)
 {
     std::vector<char> query;
     vespalib::asciistream ss;
@@ -477,7 +477,7 @@ template <typename BufferType>
 void
 PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd)
 {
-    SearchContextPtr sc = getSearch(vec, term, false, AttributeVector::SearchContext::Params().useBitVector(useBitVector));
+    SearchContextPtr sc = getSearch(vec, term, false, attribute::SearchContextParams().useBitVector(useBitVector));
     EXPECT_FALSE( ! sc );
     sc->fetchPostings(true);
     size_t approx = sc->approximateHits();

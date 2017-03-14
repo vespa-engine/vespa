@@ -20,7 +20,7 @@ using attribute::LoadedEnumAttributeVector;
 using vespalib::Regexp;
 
 AttributeVector::SearchContext::UP
-StringAttribute::getSearch(QueryTermSimple::UP term, const SearchContext::Params & params) const
+StringAttribute::getSearch(QueryTermSimple::UP term, const attribute::SearchContextParams & params) const
 {
     (void) params;
     return SearchContext::UP(new StringSearchContext(std::move(term), *this));

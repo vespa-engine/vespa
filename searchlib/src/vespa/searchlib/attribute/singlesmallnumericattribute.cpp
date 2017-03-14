@@ -168,7 +168,7 @@ SingleValueSmallNumericAttribute::onSave(IAttributeSaveTarget &saveTarget)
 
 AttributeVector::SearchContext::UP
 SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTerm,
-                                            const SearchContext::Params & params) const
+                                            const attribute::SearchContextParams & params) const
 {
     (void) params;
     return SearchContext::UP(new SingleSearchContext(std::move(qTerm), *this));

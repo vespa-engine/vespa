@@ -74,7 +74,7 @@ MultiValueNumericPostingAttribute<B, M>::onGenerationChange(generation_t generat
 template <typename B, typename M>
 AttributeVector::SearchContext::UP
 MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
-                                                   const AttributeVector::SearchContext::Params & params) const
+                                                   const attribute::SearchContextParams & params) const
 {
     std::unique_ptr<search::AttributeVector::SearchContext> sc;
     sc.reset(new typename std::conditional<M::_hasWeight,

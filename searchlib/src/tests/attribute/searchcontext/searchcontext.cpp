@@ -424,7 +424,7 @@ SearchContextTest::getSearch(const V & vec, const T & term, QueryTermSimple::Sea
 
     return (dynamic_cast<const AttributeVector &>(vec)).
         getSearch(vespalib::stringref(&query[0], query.size()),
-                  AttributeVector::SearchContext::Params());
+                  attribute::SearchContextParams());
 }
 
 ResultSetPtr

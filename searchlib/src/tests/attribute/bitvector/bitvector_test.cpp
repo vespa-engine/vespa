@@ -19,18 +19,19 @@
 #include <vespa/log/log.h>
 LOG_SETUP("bitvector_test");
 
+using search::AttributeFactory;
+using search::AttributeVector;
+using search::BitVector;
+using search::BitVectorIterator;
+using search::FloatingPointAttribute;
+using search::IntegerAttribute;
+using search::ParseItem;
+using search::StringAttribute;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
-using search::AttributeFactory;
-using search::FloatingPointAttribute;
-using search::IntegerAttribute;
-using search::StringAttribute;
-using search::AttributeVector;
-using search::ParseItem;
+using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
-using search::BitVector;
-using search::BitVectorIterator;
 using search::queryeval::SearchIterator;
 
 typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
@@ -210,7 +211,7 @@ BitVectorTest::getSearch(const V &vec, const T &term, bool prefix,
 
     return (static_cast<const AttributeVector &>(vec)).
         getSearch(vespalib::stringref(&query[0], query.size()),
-                  AttributeVector::SearchContext::Params().useBitVector(useBitVector));
+                  SearchContextParams().useBitVector(useBitVector));
 }
 
 

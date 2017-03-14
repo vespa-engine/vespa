@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_weighted_set_blueprint.h"
-#include "isearchcontext.h"
+#include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>

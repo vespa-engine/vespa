@@ -28,6 +28,7 @@ using document::ValueUpdate;
 using vespalib::make_string;
 using vespalib::Array;
 using vespalib::IllegalStateException;
+using search::attribute::SearchContextParams;
 using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::queryeval::SearchIterator;
@@ -541,12 +542,7 @@ int32_t AttributeVector::getWeight(DocId, uint32_t) const { return 1; }
 
 bool AttributeVector::findEnum(const char *, EnumHandle &) const { return false; }
 
-AttributeVector::SearchContext::Params::Params() :
-    _diversityAttribute(nullptr),
-    _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
-    _useBitVector(false),
-    _diversityCutoffStrict(false)
-{ }
+
 
 AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :
     _attr(attr),
@@ -554,7 +550,7 @@ AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :
 { }
 
 AttributeVector::SearchContext::UP
-AttributeVector::getSearch(QueryPacketT searchSpec, const SearchContext::Params & params) const
+AttributeVector::getSearch(QueryPacketT searchSpec, const SearchContextParams &params) const
 {
     return getSearch(SearchContext::decodeQuery(searchSpec), params);
 }

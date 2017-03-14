@@ -228,7 +228,7 @@ private:
     typedef typename Parent::EnumStore EnumStore;
     typedef typename EnumStore::ComparatorType ComparatorType;
     typedef typename AttrT::T BaseType;
-    typedef typename Parent::Params Params;
+    using Params = attribute::SearchContextParams;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_low;
     using Parent::_high;

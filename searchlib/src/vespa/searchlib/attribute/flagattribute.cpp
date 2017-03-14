@@ -58,7 +58,7 @@ FlagAttributeT<B>::FlagAttributeT(const vespalib::string & baseFileName, const A
 template <typename B>
 AttributeVector::SearchContext::UP
 FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm,
-                             const AttributeVector::SearchContext::Params & params) const
+                             const attribute::SearchContextParams & params) const
 {
     (void) params;
     return AttributeVector::SearchContext::UP (new SearchContext(std::move(qTerm), *this));

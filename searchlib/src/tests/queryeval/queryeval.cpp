@@ -22,11 +22,12 @@
 #include <vespa/searchlib/fef/fef.h>
 
 using namespace search::queryeval;
+using search::BitVector;
+using search::BitVectorIterator;
+using search::attribute::SearchContextParams;
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
-using search::BitVector;
-using search::BitVectorIterator;
 using search::test::InitRangeVerifier;
 
 //-----------------------------------------------------------------------------
@@ -333,7 +334,7 @@ public:
         }
         _a.commit();
         _sc = _a.getSearch(search::QueryTermSimple::UP(new search::QueryTermSimple("1", search::QueryTermSimple::WORD)),
-                           search::AttributeVector::SearchContext::Params().useBitVector(true));
+                           SearchContextParams().useBitVector(true));
     }
     virtual SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const

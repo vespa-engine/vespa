@@ -21,24 +21,25 @@
 #include "document_meta_store_versions.h"
 
 
-using document::GlobalId;
 using document::BucketId;
+using document::GlobalId;
+using proton::bucketdb::BucketState;
 using search::AttributeVector;
 using search::FileReader;
-using vespalib::GenerationHandler;
 using search::GrowStrategy;
 using search::IAttributeSaveTarget;
 using search::LidUsageStats;
 using search::MemoryUsage;
-using search::fef::TermFieldMatchData;
+using search::attribute::SearchContextParams;
 using search::btree::BTreeNoLeafData;
+using search::fef::TermFieldMatchData;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using storage::spi::Timestamp;
-using proton::bucketdb::BucketState;
+using vespalib::GenerationHandler;
+using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
-using vespalib::GenerationHeldBase;
 
 namespace proton {
 
@@ -773,7 +774,7 @@ DocumentMetaStore::createBlackListBlueprint() const
 }
 
 AttributeVector::SearchContext::UP
-DocumentMetaStore::getSearch(std::unique_ptr<search::QueryTermSimple> qTerm, const AttributeVector::SearchContext::Params &) const
+DocumentMetaStore::getSearch(std::unique_ptr<search::QueryTermSimple> qTerm, const SearchContextParams &) const
 {
     return AttributeVector::SearchContext::UP
             (new documentmetastore::SearchContext(std::move(qTerm), *this));
