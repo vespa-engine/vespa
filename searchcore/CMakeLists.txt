@@ -74,7 +74,6 @@ vespa_define_module(
     src/tests/proton/common/document_type_inspector
     src/tests/proton/common/hw_info_sampler
     src/tests/proton/common/state_reporter_utils
-    src/tests/proton/config
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
     src/tests/proton/documentdb
@@ -120,6 +119,7 @@ vespa_define_module(
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
     src/tests/proton/proton
+    src/tests/proton/proton_config_fetcher
     src/tests/proton/proton_configurer
     src/tests/proton/reference/gid_to_lid_change_handler
     src/tests/proton/reference/gid_to_lid_change_listener
