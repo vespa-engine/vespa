@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/range.h>
+#include <vespa/searchcommon/common/range.h>
 
 namespace search {
 
@@ -34,8 +34,6 @@ namespace attribute {
          * unpacking data for a hit
          *
          * @param strict whether the iterator should be strict or not
-         *
-         * @param useBitVector whether bitvectors should be used when available
          **/
         virtual std::unique_ptr<queryeval::SearchIterator>
         createIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
