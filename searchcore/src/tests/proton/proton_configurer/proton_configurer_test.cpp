@@ -348,13 +348,6 @@ TEST_F("require that initial config is not reapplied due to config unblock", Fix
     TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
 }
 
-TEST_F("require that initial config is not reapplied due to unblock", Fixture())
-{
-    f.applyInitialConfig();
-    f.allowReconfig();
-    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
-}
-
 TEST_F("require that we can add document db", Fixture())
 {
     f.applyInitialConfig();
