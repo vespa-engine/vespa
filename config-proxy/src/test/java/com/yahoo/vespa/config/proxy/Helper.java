@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.*;
-import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.Payload;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
@@ -15,44 +14,40 @@ import java.util.Optional;
  * @author hmusum
  * @since 5.1.9
  */
+// TODO: Move into ConfigTester and delete this class
 public class Helper {
 
-    static final long serverTimeout = 100000;
     static RawConfig fooConfig;
-    static RawConfig fooConfigV2;
     static RawConfig barConfig;
-    static Payload fooConfigPayload;
-
-    static JRTServerConfigRequest fooConfigRequest;
-    static JRTServerConfigRequest barConfigRequest;
-
-    static ConfigCacheKey fooConfigConfigCacheKey;
-    static ConfigCacheKey barConfigConfigCacheKey;
+    static Payload fooPayload;
 
     static {
-        ConfigTester tester = new ConfigTester();
         String defName = "foo";
         String configId = "id";
         String namespace = "bar";
         ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
-        Payload payloadV1 = Payload.from("bar \"value\"");
-        Slime slime = new Slime();
-        slime.setString("bar \"value\"");
-        fooConfigPayload = Payload.from(new ConfigPayload(slime));
+
+        ConfigPayload fooConfigPayload = createConfigPayload("bar", "value");
+        fooPayload = Payload.from(fooConfigPayload);
 
         List<String> defContent = Collections.singletonList("bar string");
         long generation = 1;
         String defMd5 = ConfigUtils.getDefMd5(defContent);
-        String configMd5 = "5752ad0f757d7e711e32037f29940b73";
-        fooConfig = new RawConfig(configKey, defMd5, payloadV1, configMd5, generation, defContent, Optional.empty());
-        fooConfigV2 = new RawConfig(configKey, defMd5, fooConfigPayload, configMd5, generation, defContent, Optional.empty());
-        fooConfigRequest = tester.createRequest(defName, configId, namespace, serverTimeout);
-        fooConfigConfigCacheKey = new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5());
+        String configMd5 = ConfigUtils.getMd5(fooConfigPayload);
+        fooConfig = new RawConfig(configKey, defMd5, fooPayload, configMd5,
+                                  generation, defContent, Optional.empty());
 
         String defName2 = "bar";
-        barConfig = new RawConfig(new ConfigKey<>(defName2, configId, namespace), defMd5, payloadV1, configMd5, generation, defContent, Optional.empty());
-        barConfigRequest = tester.createRequest(defName2, configId, namespace, serverTimeout);
-        barConfigConfigCacheKey = new ConfigCacheKey(barConfig.getKey(), barConfig.getDefMd5());
+        barConfig = new RawConfig(new ConfigKey<>(defName2, configId, namespace), defMd5, fooPayload, configMd5,
+                                  generation, defContent, Optional.empty());
     }
+
+    static ConfigPayload createConfigPayload(String key, String value) {
+        Slime slime = new Slime();
+        slime.setObject().setString(key, value);
+        return new ConfigPayload(slime);
+    }
+
+
 
 }

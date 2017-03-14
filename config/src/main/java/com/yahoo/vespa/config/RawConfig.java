@@ -40,7 +40,8 @@ public class RawConfig {
         this(key, defMd5, null, "", 0L, 0, Collections.emptyList(), Optional.empty());
     }
 
-    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation, List<String> defContent, Optional<VespaVersion> vespaVersion) {
+    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
+                     List<String> defContent, Optional<VespaVersion> vespaVersion) {
         this(key, defMd5, payload, configMd5, generation, 0, defContent, vespaVersion);
     }
 
@@ -50,8 +51,8 @@ public class RawConfig {
                 rawConfig.generation, rawConfig.errorCode, rawConfig.defContent, rawConfig.getVespaVersion());
     }
 
-    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload,
-                   String configMd5, long generation, int errorCode, List<String> defContent, Optional<VespaVersion> vespaVersion) {
+    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
+                     int errorCode, List<String> defContent, Optional<VespaVersion> vespaVersion) {
         this.key = key;
         this.defMd5 = ConfigUtils.getDefMd5FromRequest(defMd5, defContent);
         this.payload = payload;

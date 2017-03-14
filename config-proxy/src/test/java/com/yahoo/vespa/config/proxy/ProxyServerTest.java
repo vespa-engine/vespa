@@ -25,7 +25,7 @@ public class ProxyServerTest {
     private final MapBackedConfigSource source = new MapBackedConfigSource(UpstreamConfigSubscriberTest.MockClientUpdater.create(memoryCache));
     private ProxyServer proxy = ProxyServer.createTestServer(source, source, memoryCache);
 
-    static final RawConfig fooConfig = Helper.fooConfigV2;
+    static final RawConfig fooConfig = Helper.fooConfig;
 
     // errorConfig based on fooConfig
     private static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
@@ -93,7 +93,7 @@ public class ProxyServerTest {
         assertEquals(0, memoryCache.size());
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
-        assertThat(res.getPayload().toString(), is(Helper.fooConfigPayload.toString()));
+        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
         assertEquals(1, memoryCache.size());
         assertThat(memoryCache.get(new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5())), is(res));
 
@@ -131,7 +131,7 @@ public class ProxyServerTest {
         res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
         assertNotNull(res.getPayload().getData());
-        assertThat(res.getPayload().toString(), is(Helper.fooConfigPayload.toString()));
+        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
         assertEquals(1, cacheManager.size());
 
         JRTServerConfigRequest newRequestBasedOnResponse = tester.createRequest(res);
