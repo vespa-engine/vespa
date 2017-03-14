@@ -41,22 +41,22 @@ using proton::matching::RankingConstants;
 
 struct DBConfigFixture {
     using UP = std::unique_ptr<DBConfigFixture>;
-    AttributesConfigBuilder attributesBuilder;
-    RankProfilesConfigBuilder rankProfilesBuilder;
-    RankingConstantsConfigBuilder rankingConstantsBuilder;
-    IndexschemaConfigBuilder indexschemaBuilder;
-    SummaryConfigBuilder summaryBuilder;
-    SummarymapConfigBuilder summarymapBuilder;
-    JuniperrcConfigBuilder juniperrcBuilder;
-    ImportedFieldsConfigBuilder importedFieldsBuilder;
+    AttributesConfigBuilder _attributesBuilder;
+    RankProfilesConfigBuilder _rankProfilesBuilder;
+    RankingConstantsConfigBuilder _rankingConstantsBuilder;
+    IndexschemaConfigBuilder _indexschemaBuilder;
+    SummaryConfigBuilder _summaryBuilder;
+    SummarymapConfigBuilder _summarymapBuilder;
+    JuniperrcConfigBuilder _juniperrcBuilder;
+    ImportedFieldsConfigBuilder _importedFieldsBuilder;
 
     Schema::SP buildSchema()
     {
         Schema::SP schema(std::make_shared<Schema>());
-        SchemaBuilder::build(attributesBuilder, *schema);
-        SchemaBuilder::build(summaryBuilder, *schema);
-        SchemaBuilder::build(indexschemaBuilder, *schema);
-        SchemaBuilder::build(importedFieldsBuilder, *schema);
+        SchemaBuilder::build(_attributesBuilder, *schema);
+        SchemaBuilder::build(_summaryBuilder, *schema);
+        SchemaBuilder::build(_indexschemaBuilder, *schema);
+        SchemaBuilder::build(_importedFieldsBuilder, *schema);
         return schema;
     }
 
@@ -73,16 +73,16 @@ struct DBConfigFixture {
     {
         return std::make_shared<DocumentDBConfig>
             (generation,
-             std::make_shared<RankProfilesConfig>(rankProfilesBuilder),
+             std::make_shared<RankProfilesConfig>(_rankProfilesBuilder),
              buildRankingConstants(),
-             std::make_shared<IndexschemaConfig>(indexschemaBuilder),
-             std::make_shared<AttributesConfig>(attributesBuilder),
-             std::make_shared<SummaryConfig>(summaryBuilder),
-             std::make_shared<SummarymapConfig>(summarymapBuilder),
-             std::make_shared<JuniperrcConfig>(juniperrcBuilder),
+             std::make_shared<IndexschemaConfig>(_indexschemaBuilder),
+             std::make_shared<AttributesConfig>(_attributesBuilder),
+             std::make_shared<SummaryConfig>(_summaryBuilder),
+             std::make_shared<SummarymapConfig>(_summarymapBuilder),
+             std::make_shared<JuniperrcConfig>(_juniperrcBuilder),
              documentTypes,
              repo,
-             std::make_shared<ImportedFieldsConfig>(importedFieldsBuilder),
+             std::make_shared<ImportedFieldsConfig>(_importedFieldsBuilder),
              std::make_shared<TuneFileDocumentDB>(),
              buildSchema(),
              std::make_shared<DocumentDBMaintenanceConfig>(),
@@ -93,22 +93,22 @@ struct DBConfigFixture {
 };
 
 struct ConfigFixture {
-    const std::string configId;
-    ProtonConfigBuilder protonBuilder;
-    DocumenttypesConfigBuilder documenttypesBuilder;
-    FiledistributorrpcConfigBuilder filedistBuilder;
-    map<std::string, DBConfigFixture::UP> dbConfig;
-    int idcounter;
+    const std::string _configId;
+    ProtonConfigBuilder _protonBuilder;
+    DocumenttypesConfigBuilder _documenttypesBuilder;
+    FiledistributorrpcConfigBuilder _filedistBuilder;
+    map<std::string, DBConfigFixture::UP> _dbConfig;
+    int _idcounter;
     int64_t _generation;
     std::shared_ptr<ProtonConfigSnapshot> _cachedConfigSnapshot;
 
     ConfigFixture(const std::string & id)
-        : configId(id),
-          protonBuilder(),
-          documenttypesBuilder(),
-          filedistBuilder(),
-          dbConfig(),
-          idcounter(-1),
+        : _configId(id),
+          _protonBuilder(),
+          _documenttypesBuilder(),
+          _filedistBuilder(),
+          _dbConfig(),
+          _idcounter(-1),
           _generation(1),
           _cachedConfigSnapshot()
     {
@@ -121,38 +121,38 @@ struct ConfigFixture {
         DocumenttypesConfigBuilder::Documenttype dt;
         dt.bodystruct = -1270491200;
         dt.headerstruct = 306916075;
-        dt.id = idcounter--;
+        dt.id = _idcounter--;
         dt.name = name;
         dt.version = 0;
-        documenttypesBuilder.documenttype.push_back(dt);
+        _documenttypesBuilder.documenttype.push_back(dt);
 
         ProtonConfigBuilder::Documentdb db;
         db.inputdoctypename = name;
-        db.configid = configId + "/" + name;
-        protonBuilder.documentdb.push_back(db);
+        db.configid = _configId + "/" + name;
+        _protonBuilder.documentdb.push_back(db);
 
         DBConfigFixture::UP fixture = std::make_unique<DBConfigFixture>();
-        return dbConfig.emplace(std::make_pair(name, std::move(fixture))).first->second.get();
+        return _dbConfig.emplace(std::make_pair(name, std::move(fixture))).first->second.get();
     }
 
     void removeDocType(const std::string & name)
     {
-        for (DocumenttypesConfigBuilder::DocumenttypeVector::iterator it(documenttypesBuilder.documenttype.begin()),
-                                                                      mt(documenttypesBuilder.documenttype.end());
+        for (auto it(_documenttypesBuilder.documenttype.begin()),
+                 mt(_documenttypesBuilder.documenttype.end());
              it != mt;
              it++) {
             if ((*it).name.compare(name) == 0) {
-                documenttypesBuilder.documenttype.erase(it);
+                _documenttypesBuilder.documenttype.erase(it);
                 break;
             }
         }
 
-        for (ProtonConfigBuilder::DocumentdbVector::iterator it(protonBuilder.documentdb.begin()),
-                                                             mt(protonBuilder.documentdb.end());
+        for (auto it(_protonBuilder.documentdb.begin()),
+                 mt(_protonBuilder.documentdb.end());
              it != mt;
              it++) {
             if ((*it).inputdoctypename.compare(name) == 0) {
-                protonBuilder.documentdb.erase(it);
+                _protonBuilder.documentdb.erase(it);
                 break;
             }
         }
@@ -160,9 +160,9 @@ struct ConfigFixture {
 
     BootstrapConfig::SP getBootstrapConfig(int64_t generation) const {
         return BootstrapConfig::SP(new BootstrapConfig(generation,
-                                                       BootstrapConfig::DocumenttypesConfigSP(new DocumenttypesConfig(documenttypesBuilder)),
-                                                       DocumentTypeRepo::SP(new DocumentTypeRepo(documenttypesBuilder)),
-                                                       BootstrapConfig::ProtonConfigSP(new ProtonConfig(protonBuilder)),
+                                                       BootstrapConfig::DocumenttypesConfigSP(new DocumenttypesConfig(_documenttypesBuilder)),
+                                                       DocumentTypeRepo::SP(new DocumentTypeRepo(_documenttypesBuilder)),
+                                                       BootstrapConfig::ProtonConfigSP(new ProtonConfig(_protonBuilder)),
                                                        std::make_shared<FiledistributorrpcConfig>(),
                                                        std::make_shared<TuneFileDocumentDB>()));
     }
@@ -177,13 +177,13 @@ struct ConfigFixture {
         std::map<DocTypeName, DocumentDBConfig::SP> dbconfigs;
         auto doctypes = bootstrap->getDocumenttypesConfigSP();
         auto repo = bootstrap->getDocumentTypeRepoSP();
-        for (auto &db : dbConfig) {
+        for (auto &db : _dbConfig) {
             DocTypeName name(db.first);
             dbconfigs.insert(std::make_pair(name,
                                             db.second->getConfig(generation,
                                                                  doctypes,
                                                                  repo,
-                                                                 configId + "/" + db.first,
+                                                                 _configId + "/" + db.first,
                                                                  db.first)));
         }
         _cachedConfigSnapshot = std::make_shared<ProtonConfigSnapshot>(bootstrap, dbconfigs);
