@@ -52,8 +52,7 @@ public:
 
     void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot);
 
-    void applyInitialConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapshot,
-                            InitializeThreads initializeThreads);
+    void applyInitialConfig(InitializeThreads initializeThreads);
 };
 
 } // namespace proton

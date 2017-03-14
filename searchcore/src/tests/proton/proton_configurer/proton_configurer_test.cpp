@@ -299,7 +299,7 @@ struct Fixture
 
     void applyInitialConfig() {
         applyConfig(); // sets initial pending config
-        _configurer.applyInitialConfig(_config.getConfigSnapshot(), InitializeThreads());
+        _configurer.applyInitialConfig(InitializeThreads());
     }
     void reconfigure() {
         _config.newConfig();

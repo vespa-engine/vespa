@@ -162,14 +162,13 @@ ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot)
 }
 
 void
-ProtonConfigurer::applyInitialConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapshot,
-                                     InitializeThreads initializeThreads)
+ProtonConfigurer::applyInitialConfig(InitializeThreads initializeThreads)
 {
     // called by proton app main thread
     assert(!_executor.isCurrentThread());
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();
-    _executor.execute(makeLambdaTask([this, configSnapshot, initializeThreads, &promise]() { applyConfig(configSnapshot, initializeThreads, true); promise.set_value(true); }));
+    _executor.execute(makeLambdaTask([this, initializeThreads, &promise]() { applyConfig(getPendingConfigSnapshot(), initializeThreads, true); promise.set_value(true); }));
     (void) future.get();
 }
 
