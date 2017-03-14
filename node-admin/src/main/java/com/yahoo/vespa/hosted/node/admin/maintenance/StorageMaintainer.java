@@ -179,7 +179,7 @@ public class StorageMaintainer {
             attributes.put("instance", owner.instance);
         });
 
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         maintainerExecutor.addJob("handle-core-dumps")
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
                 .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/crash"))
@@ -194,7 +194,7 @@ public class StorageMaintainer {
      *  * JDisc logs
      */
     public void cleanNodeAdmin() {
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         maintainerExecutor.addJob("delete-directories")
                 .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin())
                 .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
@@ -216,7 +216,7 @@ public class StorageMaintainer {
      * Archives container data, runs when container enters state "dirty"
      */
     public void archiveNodeData(ContainerName containerName) {
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor(true);
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         maintainerExecutor.addJob("recursive-delete")
                 .withArgument("path", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var"));
 
@@ -248,19 +248,13 @@ public class StorageMaintainer {
     private class MaintainerExecutor {
         private final List<MaintainerExecutorJob> jobs = new ArrayList<>();
         private final ContainerName executeIn;
-        private final boolean runAsRoot;
 
-        MaintainerExecutor(ContainerName executeIn, boolean runAsRoot) {
+        MaintainerExecutor(ContainerName executeIn) {
             this.executeIn = executeIn;
-            this.runAsRoot = runAsRoot;
-        }
-
-        MaintainerExecutor(boolean runAsRoot) {
-            this(NODE_ADMIN, runAsRoot);
         }
 
         MaintainerExecutor() {
-            this(false);
+            this(NODE_ADMIN);
         }
 
         MaintainerExecutorJob addJob(String jobName) {
@@ -282,8 +276,7 @@ public class StorageMaintainer {
             }
 
             String[] command = {"java", "-cp", classPath, "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
-            ProcessResult result = runAsRoot ?  docker.executeInContainerAsRoot(executeIn, command) :
-                                                docker.executeInContainer(executeIn, command);
+            ProcessResult result = docker.executeInContainerAsRoot(executeIn, command);
 
             if (! result.isSuccess()) {
                 numberOfNodeAdminMaintenanceFails.add();
