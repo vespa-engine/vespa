@@ -55,9 +55,7 @@ public class DeployProperties {
         return vespaVersion;
     }
 
-    public Zone zone() {
-        return zone;
-    }
+    public Zone zone() { return zone; }
 
     public static class Builder {
 

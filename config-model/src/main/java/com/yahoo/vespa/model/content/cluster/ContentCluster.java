@@ -6,6 +6,8 @@ import com.google.common.collect.Sets;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -59,7 +61,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     // TODO: Make private
     private String documentSelection;
     ContentSearchCluster search;
-    final Map<String, NewDocumentType> documentDefinitions;
+    private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
     com.yahoo.vespa.model.content.StorageGroup rootGroup;
     StorageCluster storageNodes;
@@ -69,6 +71,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     PersistenceEngine.PersistenceFactory persistenceFactory;
     String clusterName;
     Integer maxNodesPerMerge;
+    private Zone zone;
 
     /**
      * If multitenant or a cluster controller was explicitly configured in this cluster:
@@ -105,7 +108,9 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             Redundancy redundancy = new RedundancyBuilder().build(contentElement);
             Set<NewDocumentType> globallyDistributedDocuments = new GlobalDistributionBuilder(documentDefinitions).build(documentsElement);
 
-            ContentCluster c = new ContentCluster(ancestor, getClusterName(contentElement), documentDefinitions, globallyDistributedDocuments, routingSelection, redundancy);
+            ContentCluster c = new ContentCluster(ancestor, getClusterName(contentElement), documentDefinitions, 
+                                                  globallyDistributedDocuments, routingSelection, redundancy,
+                                                  ancestor.getRoot().getDeployState().getProperties().zone());
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
@@ -457,13 +462,15 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
                            String routingSelection,
-                           Redundancy redundancy) {
+                           Redundancy redundancy,
+                           Zone zone) {
         super(parent, clusterName);
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.documentSelection = routingSelection;
         this.redundancy = redundancy;
+        this.zone = zone;
     }
 
     public void prepare() {
@@ -586,7 +593,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
      * in config and not remove it again if they reduce the node count.
      */
     public int distributionBits() {
-        // if (hostedVespa) return 16; TODO: Re-enable this later (Nov 2015, ref VESPA-1702)
+        if (zone.region().equals(RegionName.from("us-west-1"))) return 16; // TODO: (March 2017): Enable for all hosted zones (i.e when zone isn't default)
         return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
     }
 
