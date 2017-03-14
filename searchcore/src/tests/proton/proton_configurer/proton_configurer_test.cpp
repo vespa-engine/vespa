@@ -236,7 +236,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
         (void) configId;
         (void) bootstrapConfig;
         (void) initializeThreads;
-        assert(_dbs.find(docTypeName) == _dbs.end());
+        ASSERT_TRUE(_dbs.find(docTypeName) == _dbs.end());
         auto db = std::make_shared<MyDocumentDBConfigOwner>(docTypeName.getName(), *this);
         _dbs.insert(std::make_pair(docTypeName, db));
         std::ostringstream os;
@@ -245,7 +245,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
         return db.get();
     }
     virtual void removeDocumentDB(const DocTypeName &docTypeName) override {
-        assert(_dbs.find(docTypeName) != _dbs.end());
+        ASSERT_FALSE(_dbs.find(docTypeName) == _dbs.end());
         _dbs.erase(docTypeName);
         std::ostringstream os;
         os << "remove db " << docTypeName.getName();
