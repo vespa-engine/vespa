@@ -6,6 +6,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Type;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.config.SlimeUtils;
+import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.Optional;
  */
 public class Maintainer {
     private static final CoreCollector coreCollector = new CoreCollector(new ProcessExecuter());
-    private static final CoredumpHandler coredumpHandler = new CoredumpHandler(HttpClientBuilder.create().build(), coreCollector);
+    private static final HttpClient httpClient = HttpClientBuilder.create().build();
 
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -123,10 +124,12 @@ public class Maintainer {
         Path coredumpsPath = Paths.get(getFieldOrFail(arguments, "coredumpsPath").asString());
         Path doneCoredumpsPath = Paths.get(getFieldOrFail(arguments, "doneCoredumpsPath").asString());
         Map<String, Object> attributesMap = parseMap(arguments);
+        Optional<Path> yinstStatePath = SlimeUtils.optionalString(arguments.field("yinstStatePath")).map(Paths::get);
 
         try {
-            coredumpHandler.removeJavaCoredumps(coredumpsPath);
-            coredumpHandler.processAndReportCoredumps(coredumpsPath, doneCoredumpsPath, attributesMap);
+            CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector,
+                    coredumpsPath, doneCoredumpsPath, attributesMap, yinstStatePath);
+            coredumpHandler.processAll();
         } catch (IOException e) {
             throw new RuntimeException("Failed processing coredumps at " + coredumpsPath.toAbsolutePath() +
                     ", moving fished dumps to " + doneCoredumpsPath.toAbsolutePath(), e);
