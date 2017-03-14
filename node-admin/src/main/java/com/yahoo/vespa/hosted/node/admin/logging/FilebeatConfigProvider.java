@@ -16,8 +16,6 @@ import java.util.stream.Collectors;
 public class FilebeatConfigProvider {
 
     private static final String TEMPLATE = "filebeat.yml.template";
-    private final Environment environment;
-
     private static final String TENANT_FIELD = "%%TENANT%%";
     private static final String APPLICATION_FIELD = "%%APPLICATION%%";
     private static final String INSTANCE_FIELD = "%%INSTANCE%%";
@@ -27,44 +25,31 @@ public class FilebeatConfigProvider {
     private static final String LOGSTASH_HOSTS_FIELD = "%%LOGSTASH_HOSTS%%";
     private static final String LOGSTASH_WORKERS_FIELD = "%%LOGSTASH_WORKERS%%";
     private static final String LOGSTASH_BULK_MAX_SIZE_FIELD = "%%LOGSTASH_BULK_MAX_SIZE%%";
-
     private static final int logstashWorkers = 3;
     private static final int logstashBulkMaxSize = 2048;
+    private final Environment environment;
 
     public FilebeatConfigProvider(Environment environment) {
         this.environment = environment;
     }
 
     public Optional<String> getConfig(ContainerNodeSpec containerNodeSpec) throws IOException {
-        if(environment.getLogstashNodes().size() == 0) {
+
+        if (environment.getLogstashNodes().size() == 0 || !containerNodeSpec.owner.isPresent()) {
             return Optional.empty();
         }
-
-        // Get a template with the environment stuff filled in
-        String template = replaceEnvironmentInfo(readTemplate());
-
-        // Replace application specific parts
-        Optional<ContainerNodeSpec.Owner> owner = containerNodeSpec.owner;
-        return owner.map(o -> replaceOwnerInfo(o, template));
-    }
-
-    private String replaceEnvironmentInfo(String template) {
-        template = template.replaceAll(ENVIRONMENT_FIELD, environment.getEnvironment());
-        template = template.replaceAll(REGION_FIELD, environment.getRegion());
-
+        ContainerNodeSpec.Owner owner = containerNodeSpec.owner.get();
         int spoolSize = environment.getLogstashNodes().size() * logstashWorkers * logstashBulkMaxSize;
-        template = template.replaceAll(FILEBEAT_SPOOL_SIZE_FIELD, Integer.toString(spoolSize));
-        template = template.replaceAll(LOGSTASH_HOSTS_FIELD, environment.getLogstashNodes().stream().collect(Collectors.joining(",")));
-        template = template.replaceAll(LOGSTASH_WORKERS_FIELD, Integer.toString(logstashWorkers));
-        template = template.replaceAll(LOGSTASH_BULK_MAX_SIZE_FIELD, Integer.toString(logstashBulkMaxSize));
-        return template;
-    }
-
-    private String replaceOwnerInfo(ContainerNodeSpec.Owner owner, String template) {
-        template = template.replaceAll(TENANT_FIELD, owner.tenant);
-        template = template.replaceAll(APPLICATION_FIELD, owner.application);
-        template = template.replaceAll(INSTANCE_FIELD, owner.instance);
-        return template;
+        return Optional.of(readTemplate()
+                .replaceAll(ENVIRONMENT_FIELD, environment.getEnvironment())
+                .replaceAll(REGION_FIELD, environment.getRegion())
+                .replaceAll(FILEBEAT_SPOOL_SIZE_FIELD, Integer.toString(spoolSize))
+                .replaceAll(LOGSTASH_HOSTS_FIELD, environment.getLogstashNodes().stream().collect(Collectors.joining(",")))
+                .replaceAll(LOGSTASH_WORKERS_FIELD, Integer.toString(logstashWorkers))
+                .replaceAll(LOGSTASH_BULK_MAX_SIZE_FIELD, Integer.toString(logstashBulkMaxSize))
+                .replaceAll(TENANT_FIELD, owner.tenant)
+                .replaceAll(APPLICATION_FIELD, owner.application)
+                .replaceAll(INSTANCE_FIELD, owner.instance));
     }
 
     private String readTemplate() throws IOException {
