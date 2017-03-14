@@ -156,6 +156,7 @@ struct ConfigFixture {
                 break;
             }
         }
+        _dbConfig.erase(name);
     }
 
     BootstrapConfig::SP getBootstrapConfig(int64_t generation) const {
