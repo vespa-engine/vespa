@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "slimefieldwriter.h"
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/slime/convenience.h>
-#include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -157,6 +154,8 @@ SlimeFieldWriter::SlimeFieldWriter() :
     _currPath()
 {
 }
+
+SlimeFieldWriter::~SlimeFieldWriter() {}
 
 void
 SlimeFieldWriter::convert(const document::FieldValue & fv)

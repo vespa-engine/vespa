@@ -231,10 +231,8 @@ std::string
 FieldValue::IteratorHandler::toString(const VariableMap& vars) {
     std::ostringstream out;
     out << "[ ";
-    for (FieldValue::IteratorHandler::VariableMap::const_iterator iter = vars.begin();
-         iter != vars.end();
-         iter++) {
-        out << iter->first << "=" << iter->second.toString() << " ";
+    for (const auto & entry : vars) {
+        out << entry.first << "=" << entry.second.toString() << " ";
     }
     out << "]";
     return out.str();

@@ -10,8 +10,8 @@
  */
 #pragma once
 
+#include "fieldvalue.h"
 #include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
 

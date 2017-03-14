@@ -2,10 +2,9 @@
 
 #include "docsumfilter.h"
 #include "slimefieldwriter.h"
-#include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
-#include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/document/base/exceptions.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.docsumfilter");
 

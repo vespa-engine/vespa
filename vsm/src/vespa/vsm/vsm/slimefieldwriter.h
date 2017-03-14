@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
+#include "docsumfieldspec.h"
 #include <vespa/vsm/common/storagedocument.h>
-#include <vespa/vsm/vsm/docsumfieldspec.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/util/rawbuf.h>
 
@@ -14,7 +14,7 @@ namespace vsm {
  * If only a subset of the field value should be written this subset
  * is specified using the setInputFields() function.
  **/
-class SlimeFieldWriter
+class SlimeFieldWriter : public document::FieldValue::IteratorHandler
 {
 private:
     search::RawBuf _rbuf;
@@ -27,6 +27,8 @@ private:
 
 public:
     SlimeFieldWriter();
+    ~SlimeFieldWriter();
+
 
     /**
      * Specifies the subset of the field value that should be written.
