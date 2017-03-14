@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import com.yahoo.vespa.hosted.provision.Node;
+import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -193,10 +194,21 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    private void experimentalWriteFile(final ContainerNodeSpec nodeSpec) {
+        try {
+            Path filebeatPath = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/filebeat/filebeat.yml");
+            FileUtils.writeStringToFile(filebeatPath.toFile(),  "Testing " + nodeSpec.owner.get().tenant);
+        } catch (Throwable t) {
+            logger.error("Experiment failed, ignoring " + t.getMessage());
+        }
+    }
+
     private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
             return;
         }
+        experimentalWriteFile(nodeSpec);
+
         addDebugMessage("Starting optional node program resume command");
         logger.info("Starting optional node program resume command");
         dockerOperations.resumeNode(containerName);
