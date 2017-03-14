@@ -253,7 +253,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner
     }
     virtual void applyConfig(const std::shared_ptr<BootstrapConfig> &bootstrapConfig) override {
         std::ostringstream os;
-        os << "reconf bootstrap " << bootstrapConfig->getGeneration();
+        os << "apply config " << bootstrapConfig->getGeneration();
         _log.push_back(os.str());
     }
     void reconfigureDocumentDB(const vespalib::string &name, const DocumentDBConfig::SP &config)
@@ -323,36 +323,36 @@ TEST_F("require that nothing is applied before initial config", Fixture())
 TEST_F("require that initial config is applied", Fixture())
 {
     f.applyInitialConfig();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
 }
 
 TEST_F("require that new config is blocked", Fixture())
 {
     f.applyInitialConfig();
     f.reconfigure();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
 }
 
-TEST_F("require that new config can ba unblocked", Fixture())
+TEST_F("require that new config can be unblocked", Fixture())
 {
     f.applyInitialConfig();
     f.reconfigure();
     f.allowReconfig();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2", "reconf bootstrap 3", "reconf db _alwaysthere_ 3"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
 }
 
 TEST_F("require that initial config is not reapplied due to config unblock", Fixture())
 {
     f.applyInitialConfig();
     f.allowReconfig();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
 }
 
 TEST_F("require that initial config is not reapplied due to unblock", Fixture())
 {
     f.applyInitialConfig();
     f.allowReconfig();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2"}));
 }
 
 TEST_F("require that we can add document db", Fixture())
@@ -361,7 +361,7 @@ TEST_F("require that we can add document db", Fixture())
     f.allowReconfig();
     f.addDocType("foobar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2", "reconf bootstrap 3","reconf db _alwaysthere_ 3", "add db foobar 3"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "apply config 3","reconf db _alwaysthere_ 3", "add db foobar 3"}));
 }
 
 TEST_F("require that we can remove document db", Fixture())
@@ -371,7 +371,7 @@ TEST_F("require that we can remove document db", Fixture())
     f.allowReconfig();
     f.removeDocType("foobar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2", "add db foobar 2", "reconf bootstrap 3","reconf db _alwaysthere_ 3", "remove db foobar"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "remove db foobar"}));
 }
 
 TEST_F("require that document db adds and reconfigs are intermingled", Fixture())
@@ -384,7 +384,7 @@ TEST_F("require that document db adds and reconfigs are intermingled", Fixture()
     f.addDocType("foobar");
     f.addDocType("zbar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2", "add db foobar 2", "reconf bootstrap 3","reconf db _alwaysthere_ 3", "add db abar 3", "reconf db foobar 3", "add db zbar 3"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "add db abar 3", "reconf db foobar 3", "add db zbar 3"}));
 }
 
 TEST_F("require that document db removes are applied at end", Fixture())
@@ -395,7 +395,7 @@ TEST_F("require that document db removes are applied at end", Fixture())
     f.allowReconfig();
     f.removeDocType("abar");
     f.reconfigure();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2", "add db abar 2", "add db foobar 2", "reconf bootstrap 3","reconf db _alwaysthere_ 3", "reconf db foobar 3", "remove db abar"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "add db abar 2", "add db foobar 2", "apply config 3","reconf db _alwaysthere_ 3", "reconf db foobar 3", "remove db abar"}));
 }
 
 TEST_F("require that new configs can be blocked again", Fixture())
@@ -405,7 +405,7 @@ TEST_F("require that new configs can be blocked again", Fixture())
     f.allowReconfig();
     f.disableReconfig();
     f.reconfigure();
-    TEST_DO(f1.assertLog({"reconf bootstrap 2", "add db _alwaysthere_ 2", "reconf bootstrap 3", "reconf db _alwaysthere_ 3"}));
+    TEST_DO(f1.assertLog({"apply config 2", "add db _alwaysthere_ 2", "apply config 3", "reconf db _alwaysthere_ 3"}));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
