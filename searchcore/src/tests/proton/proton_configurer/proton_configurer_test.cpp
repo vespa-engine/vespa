@@ -11,7 +11,7 @@
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
-#include <vespa/searchcore/proton/server/proton_config_fetcher.h>
+#include <vespa/searchcore/proton/server/i_document_db_config_owner.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/proton_configurer.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer_owner.h>

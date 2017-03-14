@@ -4,7 +4,7 @@
 #include "proton_config_snapshot.h"
 #include "bootstrapconfig.h"
 #include "i_proton_configurer_owner.h"
-#include "proton_config_fetcher.h"
+#include "i_document_db_config_owner.h"
 #include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include <future>

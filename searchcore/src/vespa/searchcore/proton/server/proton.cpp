@@ -8,7 +8,6 @@
 #include "persistencehandlerproxy.h"
 #include "persistenceproviderproxy.h"
 #include "proton.h"
-#include "proton_config_fetcher.h"
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
