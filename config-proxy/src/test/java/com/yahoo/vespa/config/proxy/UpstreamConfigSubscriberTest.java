@@ -17,7 +17,8 @@ import java.util.Optional;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -30,10 +31,6 @@ public class UpstreamConfigSubscriberTest {
     private MapBackedConfigSource sourceResponses;
     private MockClientUpdater clientUpdater;
     private MockConnection mockConnection;
-    private static RawConfig fooConfig;
-    private static RawConfig errorConfig;
-    private static ConfigKey<?> errorConfigKey;
-    private static Payload fooPayload;
     private long generation = 1;
 
 
@@ -44,61 +41,60 @@ public class UpstreamConfigSubscriberTest {
     public void setup() {
         clientUpdater = MockClientUpdater.create(new MemoryCache());
         sourceResponses = new MapBackedConfigSource(clientUpdater);
-
-        ConfigPayload payload = getConfigPayload("bar", "value");
-        fooPayload = Payload.from(payload);
-        fooConfig = new RawConfig(Helper.fooConfig.getKey(), Helper.fooConfig.getDefMd5(), fooPayload, ConfigUtils.getMd5(payload), generation, 0, Helper.fooConfig.getDefContent(), Optional.empty());
-
-        payload = new ConfigPayload(new Slime());
-        Payload errorPayload = Payload.from(payload);
-        errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
-        errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(), errorPayload, ConfigUtils.getMd5(payload), generation, ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
-
-        sourceResponses.clear();
-        sourceResponses.put(fooConfig.getKey(), fooConfig);
-
         mockConnection = new MockConnection(sourceResponses);
     }
 
     @Test
     public void basic() {
-        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber();
-        waitForConfigGeneration(clientUpdater, generation);
+        RawConfig fooConfig = Helper.fooConfig;
+        sourceResponses.put(fooConfig.getKey(), fooConfig);
+
+        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
+        waitForConfigGeneration(clientUpdater, fooConfig.getKey(), generation);
         assertThat(clientUpdater.getLastConfig(), is(fooConfig));
         subscriber.cancel();
     }
 
     @Test
     public void require_that_reconfiguration_works() {
-        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber();
-        waitForConfigGeneration(clientUpdater, generation);
+        RawConfig fooConfig = Helper.fooConfig;
+        sourceResponses.put(fooConfig.getKey(), fooConfig);
+
+        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
+        waitForConfigGeneration(clientUpdater, fooConfig.getKey(), generation);
         assertThat(clientUpdater.getLastConfig(), is(fooConfig));
 
-        // Add updated config
+        // Update payload in config
         generation++;
-        final ConfigPayload payload = getConfigPayload("bar", "value2");
-        fooPayload = Payload.from(payload);
-        RawConfig fooConfig2 = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(), fooPayload, ConfigUtils.getMd5(payload), generation, fooConfig.getDefContent(), Optional.empty());
+        final ConfigPayload payload = Helper.createConfigPayload("bar", "value2");
+        RawConfig fooConfig2 = createRawConfig(fooConfig, payload);
         sourceResponses.put(fooConfig2.getKey(), fooConfig2);
 
-        waitForConfigGeneration(clientUpdater, generation);
-        assertThat(clientUpdater.getLastConfig(), is(not(fooConfig)));
+        waitForConfigGeneration(clientUpdater, fooConfig2.getKey(), generation);
+        assertFalse(clientUpdater.getLastConfig().equals(fooConfig));
         subscriber.cancel();
     }
 
     @Test
     public void require_that_error_response_is_handled() {
+        RawConfig fooConfig = Helper.fooConfig;
+        sourceResponses.put(fooConfig.getKey(), fooConfig);
+
+        // Create config with error based on fooConfig
+        ConfigPayload errorConfigPayload = new ConfigPayload(new Slime());
+        Payload errorPayload = Payload.from(errorConfigPayload);
+        ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
+        RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(), errorPayload,
+                                              ConfigUtils.getMd5(errorConfigPayload), generation,
+                                              ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
+
         sourceResponses.put(errorConfigKey, errorConfig);
-        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber();
-        waitForConfigGeneration(clientUpdater, generation);
+        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(errorConfig);
+        waitForConfigGeneration(clientUpdater, errorConfigKey, generation);
         RawConfig lastConfig = clientUpdater.getLastConfig();
-        assertThat(lastConfig, is(errorConfig));
+        assertEquals(lastConfig, errorConfig);
         assertThat(lastConfig.errorCode(), is(ErrorCode.UNKNOWN_DEFINITION));
         subscriber.cancel();
-    }
-
-    private UpstreamConfigSubscriber createUpstreamConfigSubscriber(RawConfig config) {
-        return new UpstreamConfigSubscriber(config, clientUpdater, sourceSet, timingValues, createRequesterPool());
     }
 
     private Map<ConfigSourceSet, JRTConfigRequester> createRequesterPool() {
@@ -109,7 +105,7 @@ public class UpstreamConfigSubscriberTest {
         return requesterPool;
     }
 
-    private void waitForConfigGeneration(MockClientUpdater clientUpdater, long expectedGeneration) {
+    private void waitForConfigGeneration(MockClientUpdater clientUpdater, ConfigKey<?> configKey, long expectedGeneration) {
         int i = 0;
         RawConfig lastConfig;
         do {
@@ -117,7 +113,8 @@ public class UpstreamConfigSubscriberTest {
             if (lastConfig != null) {
                 System.out.println("i=" + i + ", config=" + lastConfig + ",generation=" + lastConfig.getGeneration());
             }
-            if (lastConfig != null && lastConfig.getGeneration() == expectedGeneration) {
+            if (lastConfig != null && lastConfig.getKey().equals(configKey) &&
+                    lastConfig.getGeneration() == expectedGeneration) {
                 break;
             } else {
                 try {
@@ -130,6 +127,7 @@ public class UpstreamConfigSubscriberTest {
         } while (i < 5000);
         assertNotNull(lastConfig);
         assertThat(lastConfig.getGeneration(), is(expectedGeneration));
+        assertThat(lastConfig.getKey(), is(configKey));
     }
 
     static class MockClientUpdater extends ClientUpdater {
@@ -155,17 +153,20 @@ public class UpstreamConfigSubscriberTest {
         }
     }
 
-    private UpstreamConfigSubscriber createUpstreamConfigSubscriber() {
-        UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
+    private UpstreamConfigSubscriber createUpstreamConfigSubscriber(RawConfig config) {
+        UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(config, clientUpdater, sourceSet, timingValues, createRequesterPool());
         subscriber.subscribe();
         new Thread(subscriber).start();
         return subscriber;
     }
 
-    private ConfigPayload getConfigPayload(String key, String value) {
-        Slime slime = new Slime();
-        slime.setObject().setString(key, value);
-        return new ConfigPayload(slime);
+    // Create new config based on another one
+    private RawConfig createRawConfig(RawConfig config, ConfigPayload configPayload) {
+        final int errorCode = 0;
+        Payload fooPayload = Payload.from(configPayload);
+        return new RawConfig(config.getKey(), config.getDefMd5(), fooPayload,
+                             ConfigUtils.getMd5(configPayload), generation, errorCode,
+                             config.getDefContent(), Optional.empty());
     }
 
 }
