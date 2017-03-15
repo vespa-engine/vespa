@@ -25,14 +25,6 @@ StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner,
 {
 }
 
-StructuredFieldValue::Iterator
-StructuredFieldValue::Iterator::operator++(int) // postfix
-{
-    StructuredFieldValue::Iterator it(*this);
-    operator++();
-    return it;
-}
-
 StructuredFieldValue::StructuredFieldValue(const StructuredFieldValue& other)
     : FieldValue(other),
       _type(other._type)
@@ -147,7 +139,7 @@ StructuredFieldValue::onIterateNested(
         if (handler.handleComplex(*this)) {
             LOG(spam, "handleComplex");
             std::vector<const Field*> fieldsToRemove;
-            for (const_iterator it(begin()), mt(end()); it != mt; it++) {
+            for (const_iterator it(begin()), mt(end()); it != mt; ++it) {
                 IteratorHandler::ModificationStatus
                     currStatus = getValue(it.field())->iterateNested(start, end_, handler);
                 if (currStatus == IteratorHandler::REMOVED) {
