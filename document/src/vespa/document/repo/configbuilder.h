@@ -7,6 +7,7 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <cassert>
 
 namespace document {
 namespace config_builder {
