@@ -115,6 +115,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _initConfigSerialNum(0u),
       _pendingConfigSnapshot(configSnapshot),
       _configMutex(),
+      _configCV(),
       _activeConfigSnapshot(),
       _activeConfigSnapshotGeneration(0),
       _activeConfigSnapshotSerialNum(0u),
@@ -234,6 +235,7 @@ void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
         _activeConfigSnapshotGeneration = generation;
     }
     _activeConfigSnapshotSerialNum = serialNum;
+    _configCV.notify_all();
 }
 
 DocumentDBConfig::SP DocumentDB::getActiveConfig() const {
@@ -621,6 +623,7 @@ DocumentDB::close()
     {
         lock_guard guard(_configMutex);
         _state.enterShutdownState();
+        _configCV.notify_all();
     }
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
     masterExecute([this]() { tearDownReferences(); });
@@ -884,9 +887,13 @@ DocumentDB::setIndexSchema(const DocumentDBConfig &configSnapshot)
 void
 DocumentDB::reconfigure(const DocumentDBConfig::SP & snapshot)
 {
-    _writeService.master().execute(makeTask(makeClosure(this,
-                                           &DocumentDB::newConfigSnapshot,
-                                           snapshot)));
+    masterExecute([this, snapshot]() { newConfigSnapshot(snapshot); });
+    // Wait for config to be applied or rejected, or for document db close
+    std::unique_lock<std::mutex> guard(_configMutex);
+    while ((_activeConfigSnapshotGeneration < snapshot->getGeneration()) &&
+           !_state.getClosed()) {
+        _configCV.wait(guard);
+    }
 }
 
 void

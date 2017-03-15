@@ -40,6 +40,7 @@
 #include "disk_mem_usage_forwarder.h"
 #include <vespa/metrics/updatehook.h>
 #include <mutex>
+#include <condition_variable>
 
 using vespa::config::search::core::ProtonConfig;
 
@@ -110,6 +111,7 @@ private:
     SerialNum                     _initConfigSerialNum;
     vespalib::VarHolder<DocumentDBConfig::SP> _pendingConfigSnapshot;
     mutable std::mutex            _configMutex;  // protects _active* below.
+    mutable std::condition_variable _configCV;
     DocumentDBConfig::SP          _activeConfigSnapshot;
     int64_t                       _activeConfigSnapshotGeneration;
     SerialNum                     _activeConfigSnapshotSerialNum;
