@@ -3,6 +3,7 @@
 
 #include "document.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/util/linkedptr.h>
 
 namespace vsm {
 
