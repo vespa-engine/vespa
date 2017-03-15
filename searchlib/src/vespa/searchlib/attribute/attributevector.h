@@ -503,7 +503,7 @@ public:
 ////// Search API
 
     // type-safe down-cast to attribute supporting direct document weight iterators
-    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const;
+    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 
     /**
        - Search for equality

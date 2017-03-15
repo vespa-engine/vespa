@@ -52,6 +52,7 @@ public:
     bool findEnum(const char * value, EnumHandle & e) const override;
     std::unique_ptr<ISearchContext> createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                         const SearchContextParams &params) const override;
+    const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
     BasicType::Type getBasicType() const override;
     size_t getFixedWidth() const override;
     CollectionType::Type getCollectionType() const override;

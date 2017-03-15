@@ -99,6 +99,10 @@ std::unique_ptr<ISearchContext> ImportedAttributeVector::createSearchContext(std
     return std::unique_ptr<ISearchContext>();
 }
 
+const IDocumentWeightAttribute *ImportedAttributeVector::asDocumentWeightAttribute() const {
+    return nullptr;
+}
+
 BasicType::Type ImportedAttributeVector::getBasicType() const {
     return _target_attribute->getBasicType();
 }

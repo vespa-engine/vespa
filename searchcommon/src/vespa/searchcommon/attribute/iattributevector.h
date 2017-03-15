@@ -11,6 +11,7 @@
 
 namespace search {
 
+class IDocumentWeightAttribute;
 class QueryTermSimple;
 
 namespace attribute {
@@ -253,6 +254,13 @@ public:
      **/
     virtual std::unique_ptr<ISearchContext> createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                                 const SearchContextParams &params) const = 0;
+
+    /**
+     * Type-safe down-cast to an attribute supporting direct document weight iterators.
+     *
+     * @return document weight attribute or nullptr if not supported.
+     */
+    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const = 0;
 
     /**
      * Returns the basic type of this attribute vector.
