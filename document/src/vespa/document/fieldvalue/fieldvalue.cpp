@@ -284,9 +284,6 @@ FieldValue::createArray(const DataType & baseType)
     }
 }
 
-bool operator != (const FieldValue::LP & a, const FieldValue::LP & b) { return *a != *b; }
-bool operator  < (const FieldValue::LP & a, const FieldValue::LP & b) { return *a < *b; }
-
 std::ostream& operator<<(std::ostream& out, const FieldValue & p) {
     p.print(out);
     return out;
