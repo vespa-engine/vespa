@@ -7,7 +7,9 @@
 
 namespace search {
 
-class AttributeVector;
+namespace attribute {
+class IAttributeVector;
+}
 
 namespace queryeval {
 
@@ -29,8 +31,8 @@ public:
      * Provide access to attributevectors
      * @return AttributeVector or nullptr if it does not exist.
      */
-    virtual const AttributeVector * getAttribute(const vespalib::string & name) const = 0;
-    virtual const AttributeVector * getAttributeStableEnum(const vespalib::string & name) const = 0;
+    virtual const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const = 0;
+    virtual const attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const = 0;
 };
 
 } // namespace queryeval

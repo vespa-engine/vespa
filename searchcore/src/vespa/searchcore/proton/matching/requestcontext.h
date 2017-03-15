@@ -14,8 +14,8 @@ public:
     using Doom = vespalib::Doom;
     RequestContext(const Doom & softDoom, IAttributeContext & attributeContext);
     const Doom & getSoftDoom() const override { return _softDoom; }
-    const search::AttributeVector * getAttribute(const vespalib::string & name) const override;
-    const search::AttributeVector * getAttributeStableEnum(const vespalib::string & name) const override;
+    const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;
+    const search::attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
 private:
     const Doom          _softDoom;
     IAttributeContext & _attributeContext;

@@ -30,7 +30,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 
-using search::AttributeVector;
+using search::attribute::IAttributeVector;
 using search::attribute::ISearchContext;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -82,7 +82,7 @@ private:
     ISearchContext::UP _search_context;
 
     AttributeFieldBlueprint(const FieldSpec &field,
-                            const AttributeVector &attribute,
+                            const IAttributeVector &attribute,
                             const string &query_stack,
                             const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
@@ -95,7 +95,7 @@ private:
 
 public:
     AttributeFieldBlueprint(const FieldSpec &field,
-                            const AttributeVector &attribute,
+                            const IAttributeVector &attribute,
                             const string &query_stack)
         : AttributeFieldBlueprint(field,
                                   attribute,
@@ -106,8 +106,8 @@ public:
     }
 
     AttributeFieldBlueprint(const FieldSpec &field,
-                            const AttributeVector &attribute,
-                            const AttributeVector &diversity,
+                            const IAttributeVector &attribute,
+                            const IAttributeVector &diversity,
                             const string &query_stack,
                             size_t diversityCutoffGroups,
                             bool diversityCutoffStrict)
@@ -158,19 +158,19 @@ class LocationPreFilterBlueprint :
         public search::queryeval::ComplexLeafBlueprint
 {
 private:
-    const AttributeVector & _attribute;
+    const IAttributeVector &_attribute;
     std::vector<ISearchContext::UP> _rangeSearches;
     bool _should_use;
 
 public:
-    LocationPreFilterBlueprint(const FieldSpec &field, const AttributeVector &attribute, const ZCurve::RangeVector &rangeVector)
+    LocationPreFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const ZCurve::RangeVector &rangeVector)
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
           _rangeSearches(),
           _should_use(false)
     {
         uint64_t estHits(0);
-        const AttributeVector & attr(_attribute);
+        const IAttributeVector &attr(_attribute);
         for (auto it(rangeVector.begin()), mt(rangeVector.end()); it != mt; it++) {
             const ZCurve::Range &r(*it);
             search::query::Range qr(r.min(), r.max());
@@ -221,11 +221,11 @@ class LocationPostFilterBlueprint :
         public search::queryeval::ComplexLeafBlueprint
 {
 private:
-    const AttributeVector & _attribute;
+    const IAttributeVector  &_attribute;
     search::common::Location _location;
 
 public:
-    LocationPostFilterBlueprint(const FieldSpec &field, const AttributeVector &attribute, const Location &loc)
+    LocationPostFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc)
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
           _location()
@@ -249,7 +249,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-Blueprint::UP make_location_blueprint(const FieldSpec &field, const AttributeVector &attribute, const Location &loc) {
+Blueprint::UP make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc) {
     LocationPostFilterBlueprint *post_filter = new LocationPostFilterBlueprint(field, attribute, loc);
     Blueprint::UP post_filter_bp(post_filter);
     const search::common::Location &location = post_filter->location();
@@ -433,7 +433,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-bool check_valid_diversity_attr(const AttributeVector *attr) {
+bool check_valid_diversity_attr(const IAttributeVector *attr) {
     if (attr == nullptr) {
         return false;
     }
@@ -453,14 +453,14 @@ class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper
 {
 private:
     const FieldSpec &_field;
-    const AttributeVector & _attr;
+    const IAttributeVector &_attr;
     const IDocumentWeightAttribute *_dwa;
 
 public:
     CreateBlueprintVisitor(Searchable &searchable,
                            const IRequestContext &requestContext,
                            const FieldSpec &field,
-                           const AttributeVector &attr)
+                           const IAttributeVector &attr)
         : CreateBlueprintVisitorHelper(searchable, field, requestContext),
           _field(field),
           _attr(attr),
@@ -503,7 +503,7 @@ public:
         const string term = search::queryeval::termAsString(n);
         search::QueryTermSimple parsed_term(term, search::QueryTermSimple::WORD);
         if (parsed_term.getMaxPerGroup() > 0) {
-            const AttributeVector * diversity(getRequestContext().getAttribute(parsed_term.getDiversityAttribute()));
+            const IAttributeVector *diversity(getRequestContext().getAttribute(parsed_term.getDiversityAttribute()));
             if (check_valid_diversity_attr(diversity)) {
                 setResult(make_UP(new AttributeFieldBlueprint(_field, _attr, *diversity, stack,
                                                               parsed_term.getDiversityCutoffGroups(),
@@ -622,7 +622,7 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
                                             const FieldSpec &field,
                                             const search::query::Node &term)
 {
-    const AttributeVector * attr(requestContext.getAttribute(field.getName()));
+    const IAttributeVector *attr(requestContext.getAttribute(field.getName()));
     CreateBlueprintVisitor visitor(*this, requestContext, field, *attr);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
