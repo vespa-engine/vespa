@@ -71,8 +71,8 @@ public class LocalZoneUtils {
                 .withEnvironment("HOSTED_VESPA_REGION", environment.getRegion())
                 .withEnvironment("CONFIG_SERVER_HOSTNAME", CONFIG_SERVER_HOSTNAME)
                 .withEntrypoint(Defaults.getDefaults().underVespaHome("bin/start-config-server.sh"))
-                .withUlimit("nofile", 16384, 16384)
-                .withUlimit("nproc", 409600, 409600)
+                .withUlimit("nofile", 262_144, 262_144)
+                .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
                 .create();
 

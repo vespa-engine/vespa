@@ -152,8 +152,8 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                     .withIpAddress(nodeInetAddress)
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers)
-                    .withUlimit("nofile", 16384, 16384)
-                    .withUlimit("nproc", 409600, 409600)
+                    .withUlimit("nofile", 262_144, 262_144)
+                    .withUlimit("nproc", 32_768, 409_600)
                     .withUlimit("core", -1, -1)
                     .withAddCapability("SYS_PTRACE"); // Needed for gcore, pstack etc.
 

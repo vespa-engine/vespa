@@ -211,8 +211,8 @@ public class RunSystemTests {
                 .withIpAddress(nodeInetAddress)
                 .withEnvironment("USER", "root")
                 .withEnvironment("VESPA_SYSTEM_TEST_USE_TLS", "false")
-                .withUlimit("nofile", 16384, 16384)
-                .withUlimit("nproc", 409600, 409600)
+                .withUlimit("nofile", 262_144, 262_144)
+                .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
                 .withVolume(Paths.get(System.getProperty("user.home")).resolve(".m2").toString(),
                         Paths.get("/home/").resolve(username).resolve(".m2").toString())
