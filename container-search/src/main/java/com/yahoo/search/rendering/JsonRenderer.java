@@ -1,29 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.function.LongSupplier;
-
-import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.tensor.Tensor;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -35,6 +12,7 @@ import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.processing.Response;
@@ -61,8 +39,29 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.function.LongSupplier;
 
 /**
  * JSON renderer for search results.
@@ -351,6 +350,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private void renderTrace(Trace trace) throws IOException {
         if (!trace.traceNode().children().iterator().hasNext()) return;
+        if (getResult().getQuery().getTraceLevel() == 0) return;
 
         try {
             long basetime = trace.traceNode().timestamp();

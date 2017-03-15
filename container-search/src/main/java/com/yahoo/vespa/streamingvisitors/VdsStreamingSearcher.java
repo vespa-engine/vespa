@@ -1,6 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.document.select.parser.ParseException;
@@ -17,21 +23,15 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * The searcher which forwards queries to storage nodes using visiting.
@@ -152,10 +152,8 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                 summaryMap.size());
 
         result.setTotalHitCount(visitor.getTotalHitCount());
-
-        Execution.Trace traceChild = query.getContext(true).getTrace().createChild();
-        traceChild.setTraceLevel(2);
-        traceChild.setProperty(STREAMING_STATISTICS, visitor.getStatistics());
+        query.trace(visitor.getStatistics().toString(), false, 2);
+        query.getContext(true).setProperty(STREAMING_STATISTICS, visitor.getStatistics());
 
         Packet[] summaryPackets = new Packet [hits.size()];
 
