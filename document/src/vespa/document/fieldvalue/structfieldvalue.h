@@ -65,7 +65,6 @@ private:
 
 public:
     typedef std::unique_ptr<StructFieldValue> UP;
-    typedef vespalib::LinkedPtr<StructFieldValue> LP;
     StructFieldValue(const DataType &type);
     ~StructFieldValue();
     void swap(StructFieldValue & rhs);
