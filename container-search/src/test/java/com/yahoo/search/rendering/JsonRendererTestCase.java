@@ -324,32 +324,10 @@ public class JsonRendererTestCase {
         assertEquals(exp, gen);
     }
 
-
     @Test
-    public final void testHalfEmptyTracing() throws IOException, InterruptedException, ExecutionException {
+    public void trace_is_not_included_if_tracelevel_0() throws IOException, ExecutionException, InterruptedException {
         String expected =
                 "{\n" +
-                "  \"trace\": {\n" +
-                "    \"children\": [\n" +
-                "      {\n" +
-                "        \"message\": \"No query profile is used\"\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"children\": [\n" +
-                "          {\n" +
-                "            \"children\": [\n" +
-                "              {\n" +
-                "                \"message\": \"green\"\n" +
-                "              }\n" +
-                "            ]\n" +
-                "          },\n" +
-                "          {\n" +
-                "            \"message\": \"marker\"\n" +
-                "          }\n" +
-                "        ]\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  },\n" +
                 "  \"root\": {\n" +
                 "    \"id\": \"toplevel\",\n" +
                 "    \"relevance\": 1.0,\n" +
@@ -358,19 +336,12 @@ public class JsonRendererTestCase {
                 "    }\n" +
                 "  }\n" +
                 "}";
-        Query q = new Query("/?query=a&tracelevel=1");
+        Query q = new Query("/?query=a&tracelevel=0");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
-
         execution.search(q);
-        subExecution(execution, "red", 0);
-        subExecution(execution, "green", 1);
-        subExecution(execution, "blue", 0);
-        q.trace("marker", 1);
-        ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
-        assertTrue(f.get());
-        String summary = Utf8.toString(bs.toByteArray());
+        q.getContext(true).setProperty("prop-key", "prop-value");
+        String summary = render(execution, r);
         assertEqualJson(expected, summary);
     }
 
