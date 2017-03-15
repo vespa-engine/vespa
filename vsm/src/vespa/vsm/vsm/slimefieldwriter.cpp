@@ -22,6 +22,19 @@ toString(const vsm::FieldPath & fp)
     return oss.str();
 }
 
+vespalib::string
+toString(const std::vector<vespalib::string> & fp)
+{
+    vespalib::asciistream oss;
+    for (size_t i = 0; i < fp.size(); ++i) {
+        if (i > 0) {
+            oss << ".";
+        }
+        oss << fp[i];
+    }
+    return oss.str();
+}
+
 } // namespace <unnamed>
 
 using namespace vespalib::slime::convenience;
@@ -66,7 +79,6 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
 
     } else if (fv.getClass().inherits(document::MapFieldValue::classId)) {
         const document::MapFieldValue & mfv = static_cast<const document::MapFieldValue &>(fv);
-        const document::MapDataType& mapType = static_cast<const document::MapDataType &>(*mfv.getDataType());
         Cursor &a = inserter.insertArray();
         Symbol keysym = a.resolve("key");
         Symbol valsym = a.resolve("value");
@@ -74,10 +86,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
             Cursor &o = a.addObject();
             ObjectSymbolInserter ki(o, keysym);
             traverseRecursive(*entry.first, ki);
-            document::FieldPathEntry valueEntry(
-                    mapType, mapType.getKeyType(), mapType.getValueType(),
-                    false, true);
-            _currPath.push_back(valueEntry);
+            _currPath.push_back("value");
             ObjectSymbolInserter vi(o, valsym);
             traverseRecursive(*entry.second, vi);
             _currPath.pop_back();
@@ -86,16 +95,14 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
         const document::StructuredFieldValue & sfv = static_cast<const document::StructuredFieldValue &>(fv);
         Cursor &o = inserter.insertObject();
         for (const document::Field & entry : sfv) {
-            // TODO: Why do we have to iterate like this?
-            document::FieldPathEntry fi(sfv.getField(entry.getName()));
-            _currPath.push_back(fi);
-            if (explorePath()) {
+            if (explorePath(entry.getName())) {
+                _currPath.push_back(entry.getName());
                 Memory keymem(entry.getName());
                 ObjectInserter oi(o, keymem);
                 document::FieldValue::UP fval(sfv.getValue(entry));
                 traverseRecursive(*fval, oi);
+                _currPath.pop_back();
             }
-            _currPath.pop_back();
         }
     } else {
         if (fv.getClass().inherits(document::LiteralFieldValueB::classId)) {
@@ -125,7 +132,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv,
 }
 
 bool
-SlimeFieldWriter::explorePath()
+SlimeFieldWriter::explorePath(vespalib::stringref candidate)
 {
     if (_inputFields == NULL) {
         return true;
@@ -136,11 +143,15 @@ SlimeFieldWriter::explorePath()
         if (_currPath.size() <= fp.size()) {
             bool equal = true;
             for (size_t j = 0; j < _currPath.size() && equal; ++j) {
-                equal = (fp[j].getName() == _currPath[j].getName());
+                equal = (fp[j].getName() == _currPath[j]);
             }
             if (equal) {
-                // the current path matches one of the input field paths
-                return true;
+                if (_currPath.size() == fp.size()) {
+                    return true;
+                } else if (fp[_currPath.size()].getName() == candidate) {
+                    // the current path matches one of the input field paths
+                    return true;
+                }
             }
         }
     }

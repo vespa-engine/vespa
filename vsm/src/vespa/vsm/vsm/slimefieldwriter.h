@@ -14,16 +14,16 @@ namespace vsm {
  * If only a subset of the field value should be written this subset
  * is specified using the setInputFields() function.
  **/
-class SlimeFieldWriter : public document::FieldValue::IteratorHandler
+class SlimeFieldWriter
 {
 private:
     search::RawBuf _rbuf;
     vespalib::Slime _slime;
     const DocsumFieldSpec::FieldIdentifierVector * _inputFields;
-    FieldPath _currPath;
+    std::vector<vespalib::string> _currPath;
 
     void traverseRecursive(const document::FieldValue & fv, vespalib::slime::Inserter & inserter);
-    bool explorePath();
+    bool explorePath(vespalib::stringref candidate);
 
 public:
     SlimeFieldWriter();
