@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author freva
@@ -34,11 +35,24 @@ public class Maintainer {
             throw new IllegalArgumentException("Expected a list maintainer jobs to execute");
         }
 
+        // Variable must be effectively final to be used in lambda expression
+        AtomicInteger numberOfJobsFailed = new AtomicInteger(0);
         object.traverse((ArrayTraverser) (int i, Inspector item) -> {
-            String type = getFieldOrFail(item, "type").asString();
-            Inspector arguments = getFieldOrFail(item, "arguments");
-            parseMaintenanceJob(type, arguments);
+            try {
+                String type = getFieldOrFail(item, "type").asString();
+                Inspector arguments = getFieldOrFail(item, "arguments");
+                parseMaintenanceJob(type, arguments);
+            } catch (Exception e) {
+                System.err.println("Failed executing job: " + item.toString());
+                e.printStackTrace();
+                numberOfJobsFailed.incrementAndGet();
+            }
         });
+
+        if (numberOfJobsFailed.get() > 0) {
+            System.err.println(numberOfJobsFailed.get() + " of jobs has failed");
+            System.exit(1);
+        }
     }
 
     private static void parseMaintenanceJob(String type, Inspector arguments) {
