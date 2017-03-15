@@ -39,7 +39,6 @@ public class Environment {
     private final String parentHostHostname;
     private final InetAddressResolver inetAddressResolver;
     private final PathResolver pathResolver;
-    private final List<String> logstashNodes;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -52,9 +51,7 @@ public class Environment {
                 getEnvironmentVariable(REGION),
                 HostName.getLocalhost(),
                 new InetAddressResolver(),
-                new PathResolver(),
-                Collections.emptyList()
-        );
+                new PathResolver());
     }
 
     public Environment(Set<String> configServerHosts,
@@ -62,14 +59,13 @@ public class Environment {
                        String region,
                        String parentHostHostname,
                        InetAddressResolver inetAddressResolver,
-                       PathResolver pathResolver, List<String> logstashNodes) {
+                       PathResolver pathResolver) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
         this.parentHostHostname = parentHostHostname;
         this.inetAddressResolver = inetAddressResolver;
         this.pathResolver = pathResolver;
-        this.logstashNodes = logstashNodes;
     }
 
     public Set<String> getConfigServerHosts() { return configServerHosts; }
@@ -164,10 +160,6 @@ public class Environment {
                 .resolve(PathResolver.ROOT.relativize(pathInNode));
     }
 
-    public List<String> getLogstashNodes() {
-        return logstashNodes;
-    }
-
 
     public static class Builder {
         private Set<String> configServerHosts = Collections.emptySet();
@@ -176,7 +168,6 @@ public class Environment {
         private String parentHostHostname;
         private InetAddressResolver inetAddressResolver;
         private PathResolver pathResolver;
-        private List<String> logstashNodes = Collections.emptyList();
 
         public Builder configServerHosts(String... hosts) {
             configServerHosts = Arrays.stream(hosts).collect(Collectors.toSet());
@@ -208,13 +199,8 @@ public class Environment {
             return this;
         }
 
-        public Builder logstashNodes(List<String> hosts) {
-            this.logstashNodes = hosts;
-            return this;
-        }
-
         public Environment build() {
-            return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver, pathResolver, logstashNodes);
+            return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver, pathResolver);
         }
     }
 }
