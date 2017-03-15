@@ -61,7 +61,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
         } else {
             for (document::Document::const_iterator docIter = doc->begin();
                  docIter != doc->end();
-                 docIter++) {
+                 ++docIter) {
                 if (_requestedFields.find(docIter.field().getName())
                     == _requestedFields.end())
                 {
