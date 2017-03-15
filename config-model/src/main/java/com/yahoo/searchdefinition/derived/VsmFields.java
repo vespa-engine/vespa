@@ -30,6 +30,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         derive(search);
     }
 
+    @Override
     protected void derive(SDDocumentType document,Search search) {
         super.derive(document, search);
         StreamingDocumentType docType=getDocumentType(document.getName());

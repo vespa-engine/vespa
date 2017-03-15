@@ -40,6 +40,7 @@ public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
     }
 
     // Inherit doc from Derived.
+    @Override
     protected String getDerivedName() {
         return "juniperrc";
     }

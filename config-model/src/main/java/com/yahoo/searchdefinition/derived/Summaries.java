@@ -25,6 +25,7 @@ public class Summaries extends Derived implements SummaryConfig.Producer {
         }
     }
 
+    @Override
     protected String getDerivedName() { return "summary"; }
 
     @Override

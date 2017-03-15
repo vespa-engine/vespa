@@ -88,6 +88,7 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
         return ret;
     }
 
+    @Override
     public String getDerivedName() {
         return "vsmsummary";
     }

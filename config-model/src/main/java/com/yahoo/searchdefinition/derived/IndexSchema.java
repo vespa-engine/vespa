@@ -1,14 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.document.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.FieldSet;
-import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Deriver of indexschema config containing information of all index fields with name and data type.
@@ -35,13 +44,13 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         super.derive(search);
     }
 
-    private void deriveIndexFields(SDField field, Search search) {
+    private void deriveIndexFields(ImmutableSDField field, Search search) {
         if (!field.doesIndexing() &&
             !field.isIndexStructureField())
         {
             return;
         }
-        List<Field> lst = flattenField(field);
+        List<Field> lst = flattenField(field.asField());
         if (lst.isEmpty()) {
             return;
         }
@@ -83,7 +92,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
     }
 
     @Override
-    protected void derive(SDField field, Search search) {
+    protected void derive(ImmutableSDField field, Search search) {
         if (field.usesStructOrMap()) {
             return; // unsupported
         }

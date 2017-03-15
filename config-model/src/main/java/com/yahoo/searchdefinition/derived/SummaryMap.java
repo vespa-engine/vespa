@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import com.yahoo.vespa.config.search.SummarymapConfig;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,7 +35,8 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
         super.derive(search);
     }
 
-    protected void derive(SDField field, Search search) {
+    @Override
+    protected void derive(ImmutableSDField field, Search search) {
     }
 
     private void derive(DocumentSummary documentSummary) {
