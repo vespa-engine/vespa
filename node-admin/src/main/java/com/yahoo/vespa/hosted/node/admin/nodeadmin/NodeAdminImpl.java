@@ -74,7 +74,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
         scheduler.scheduleWithFixedDelay(() -> {
             try {
-                nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics);
+                nodeAgents.values().forEach(nodeAgent -> nodeAgent.updateContainerNodeMetrics(nodeAgents.size()));
             } catch (Throwable e) {
                 logger.warning("Metric fetcher scheduler failed", e);
             }

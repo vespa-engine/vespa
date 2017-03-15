@@ -76,7 +76,7 @@
       "zone":"dev.us-east-1"
     },
     "metrics":{
-      "node.cpu.busy.pct": 45.6789123,
+      "node.cpu.busy.pct": 49.3827156,
       "node.cpu.throttled_time": 4523.0,
       "node.memory.usage":1.326026752E9,
       "node.memory.limit":4.294967296E9,

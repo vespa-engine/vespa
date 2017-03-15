@@ -497,10 +497,14 @@ public class NodeAgentImplTest {
 
         long totalContainerCpuTime = (long) ((Map) cpu_stats.get("cpu_usage")).get("total_usage");
         long totalSystemCpuTime = (long) cpu_stats.get("system_cpu_usage");
-        nodeAgent.lastCpuMetric.getCpuUsagePercentage(totalContainerCpuTime - 456_789_123, (long) (totalSystemCpuTime - 1e9));
-        // During the last 10^9 total cpu ns, 456,789,123ns were spent on running the container. That means the expected
-        // cpu usage percentage is 100 * (456,789,123 / 10^9) = 45.6789123%
-        nodeAgent.updateContainerNodeMetrics();
+        nodeAgent.lastCpuMetric.getCpuUsagePercentage(totalContainerCpuTime - 123_456_789, (long) (totalSystemCpuTime - 1e9));
+        int numAllocatedContainersOnHost = 4;
+        // During the last 10^9 total CPU ns, 123,456,789ns were spent on running the container. That means the container
+        // used 100 * (123,456,789 / 10^9) = 12.3456789% of total system CPU time.
+        // There are a total of 4 allocated nodes on this host, which means that the container only has 100 / 4 = 25%
+        // of total system CPU time at its disposal. Therefore, the expected CPU usage by this container is:
+        // 12.3456789% / 25% = 49.3827156%
+        nodeAgent.updateContainerNodeMetrics(4);
 
         Set<Map<String, Object>> actualMetrics = new HashSet<>();
         for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver.getMetrics(MetricReceiverWrapper.APPLICATION_DOCKER)) {
