@@ -10,12 +10,13 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -81,6 +82,7 @@ public class UpstreamConfigSubscriberTest {
         sourceResponses.put(fooConfig.getKey(), fooConfig);
 
         // Create config with error based on fooConfig
+        generation++;
         ConfigPayload errorConfigPayload = new ConfigPayload(new Slime());
         Payload errorPayload = Payload.from(errorConfigPayload);
         ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
@@ -92,7 +94,7 @@ public class UpstreamConfigSubscriberTest {
         UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(errorConfig);
         waitForConfigGeneration(clientUpdater, errorConfigKey, generation);
         RawConfig lastConfig = clientUpdater.getLastConfig();
-        assertEquals(lastConfig, errorConfig);
+        assertEquals(errorConfig, lastConfig);
         assertThat(lastConfig.errorCode(), is(ErrorCode.UNKNOWN_DEFINITION));
         subscriber.cancel();
     }
@@ -106,13 +108,11 @@ public class UpstreamConfigSubscriberTest {
     }
 
     private void waitForConfigGeneration(MockClientUpdater clientUpdater, ConfigKey<?> configKey, long expectedGeneration) {
-        int i = 0;
+        Instant end = Instant.now().plus(Duration.ofSeconds(60));
         RawConfig lastConfig;
         do {
             lastConfig = clientUpdater.getLastConfig();
-            if (lastConfig != null) {
-                System.out.println("i=" + i + ", config=" + lastConfig + ",generation=" + lastConfig.getGeneration());
-            }
+            System.out.println("config=" + lastConfig + (lastConfig == null ? "" : ",generation=" + lastConfig.getGeneration()));
             if (lastConfig != null && lastConfig.getKey().equals(configKey) &&
                     lastConfig.getGeneration() == expectedGeneration) {
                 break;
@@ -120,11 +120,11 @@ public class UpstreamConfigSubscriberTest {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    fail(e.getMessage());
+                    throw new RuntimeException(e);
                 }
             }
-            i++;
-        } while (i < 5000);
+        } while (Instant.now().isBefore(end));
+
         assertNotNull(lastConfig);
         assertThat(lastConfig.getGeneration(), is(expectedGeneration));
         assertThat(lastConfig.getKey(), is(configKey));
