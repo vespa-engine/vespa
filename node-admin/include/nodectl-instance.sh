@@ -100,6 +100,11 @@ container_drain() {
 Resume() {
     # Always start vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
+
+    # Start filebeat if configured
+    if [ -f /etc/filebeat/filebeat.yml ] ; then
+        $echo service filebeat start
+    fi
 }
 
 # Start all services, can be seen as a reboot of a non-Docker node
