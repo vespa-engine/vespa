@@ -19,9 +19,9 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import com.yahoo.vespa.hosted.provision.Node;
-import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -204,7 +204,7 @@ public class NodeAgentImpl implements NodeAgent {
                 return;
             }
             Path filebeatPath = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/filebeat/filebeat.yml");
-            FileUtils.writeStringToFile(filebeatPath.toFile(), config.get());
+            Files.write(filebeatPath, config.get().getBytes());
             logger.info("Wrote filebeat config.");
         } catch (Throwable t) {
             logger.error("Failed writing filebeat config; " + nodeSpec, t);

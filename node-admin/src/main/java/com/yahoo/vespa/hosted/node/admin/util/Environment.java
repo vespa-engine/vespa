@@ -62,7 +62,8 @@ public class Environment {
                        String region,
                        String parentHostHostname,
                        InetAddressResolver inetAddressResolver,
-                       PathResolver pathResolver, List<String> logstashNodes) {
+                       PathResolver pathResolver,
+                       List<String> logstashNodes) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
