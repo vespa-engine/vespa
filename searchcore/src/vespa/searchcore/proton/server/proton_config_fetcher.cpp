@@ -4,6 +4,8 @@
 #include "bootstrapconfig.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <thread>
+#include "proton_config_snapshot.h"
+#include "i_proton_configurer.h"
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.protonconfigurer");
 
@@ -14,13 +16,12 @@ using namespace std::chrono_literals;
 
 namespace proton {
 
-ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IBootstrapOwner * owner, uint64_t subscribeTimeout)
+ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, uint64_t subscribeTimeout)
     : _bootstrapConfigManager(configUri.getConfigId()),
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
-      _bootstrapOwner(owner),
+      _owner(owner),
       _mutex(),
       _dbManagerMap(),
-      _documentDBOwnerMap(),
       _threadPool(128 * 1024, 1)
 {
 }
@@ -72,14 +73,6 @@ ProtonConfigFetcher::pruneManagerMap(const BootstrapConfig::SP & config)
 }
 
 void
-ProtonConfigFetcher::reconfigureBootstrap(const ConfigSnapshot & snapshot)
-{
-    assert(_bootstrapOwner != NULL);
-    _bootstrapConfigManager.update(snapshot);
-    _bootstrapOwner->reconfigure(_bootstrapConfigManager.getConfig());
-}
-
-void
 ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstrapConfig, const ConfigSnapshot & snapshot)
 {
     lock_guard guard(_mutex);
@@ -92,21 +85,19 @@ ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstr
 }
 
 void
-ProtonConfigFetcher::reconfigureDocumentDBs()
+ProtonConfigFetcher::reconfigure()
 {
-    lock_guard guard(_mutex);
-    for (DocumentDBOwnerMap::iterator it(_documentDBOwnerMap.begin()), mt(_documentDBOwnerMap.end());
-         it != mt;
-         it++) {
-
-        if (_dbManagerMap.find(it->first) != _dbManagerMap.end()) {
-            DocumentDBConfig::SP dbConfig(_dbManagerMap[it->first]->getConfig());
-            IDocumentDBConfigOwner * owner = it->second;
-            // In case the new config does not contain this document type
-            LOG(debug, "Reconfiguring documentdb with config with generation %" PRId64, dbConfig->getGeneration());
-            owner->reconfigure(dbConfig);
+    std::map<DocTypeName, DocumentDBConfig::SP> dbConfigs;
+    {
+        lock_guard guard(_mutex);
+        for (auto &kv : _dbManagerMap) {
+            auto insres = dbConfigs.insert(std::make_pair(kv.first, kv.second->getConfig()));
+            assert(insres.second);
         }
     }
+    auto bootstrapConfig = _bootstrapConfigManager.getConfig();
+    auto configSnapshot = std::make_shared<ProtonConfigSnapshot>(std::move(bootstrapConfig), std::move(dbConfigs));
+    _owner.reconfigure(std::move(configSnapshot));
 }
 
 void
@@ -139,12 +130,12 @@ ProtonConfigFetcher::fetchConfigs()
                         LOG(debug, "Set is not empty, reconfiguring with generation %" PRId64, _retriever.getGeneration());
                         // Update document dbs first, so that we are prepared for
                         // getConfigs.
+                        _bootstrapConfigManager.update(bootstrapSnapshot);
                         updateDocumentDBConfigs(config, snapshot);
                         needsMoreConfig = false;
 
                         // Perform callbacks
-                        reconfigureBootstrap(bootstrapSnapshot);
-                        reconfigureDocumentDBs();
+                        reconfigure();
                         configured = true;
                     }
                 } else {
@@ -179,24 +170,6 @@ ProtonConfigFetcher::close()
         _retriever.close();
         _threadPool.Close();
     }
-}
-
-void
-ProtonConfigFetcher::registerDocumentDB(const DocTypeName & docTypeName, IDocumentDBConfigOwner * owner)
-{
-    lock_guard guard(_mutex);
-    assert(_documentDBOwnerMap.find(docTypeName) == _documentDBOwnerMap.end());
-    LOG(debug, "Registering new document db with checker");
-    _documentDBOwnerMap[docTypeName] = owner;
-}
-
-void
-ProtonConfigFetcher::unregisterDocumentDB(const DocTypeName & docTypeName)
-{
-    lock_guard guard(_mutex);
-    LOG(debug, "Removing document db from checker");
-    assert(_documentDBOwnerMap.find(docTypeName) != _documentDBOwnerMap.end());
-    _documentDBOwnerMap.erase(docTypeName);
 }
 
 DocumentDBConfig::SP

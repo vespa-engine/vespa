@@ -12,10 +12,13 @@
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/proton_config_fetcher.h>
+#include <vespa/searchcore/proton/server/proton_config_snapshot.h>
+#include <vespa/searchcore/proton/server/i_proton_configurer.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <mutex>
 
 using namespace config;
 using namespace proton;
@@ -149,32 +152,48 @@ struct ConfigTestFixture {
     void reload() { context->reload(); }
 };
 
-template <typename ConfigType, typename ConfigOwner>
-struct OwnerFixture : public ConfigOwner
+struct ProtonConfigOwner : public proton::IProtonConfigurer
 {
-    volatile bool configured;
-    VarHolder<ConfigType> config;
+    mutable std::mutex _mutex;
+    volatile bool _configured;
+    VarHolder<std::shared_ptr<ProtonConfigSnapshot>> _config;
 
-    OwnerFixture() : configured(false), config() { }
+    ProtonConfigOwner() : _configured(false), _config() { }
     bool waitUntilConfigured(int timeout) {
         FastOS_Time timer;
         timer.SetNow();
         while (timer.MilliSecsToNow() < timeout) {
-            if (configured)
-                break;
+            if (getConfigured())
+                return true;
             FastOS_Thread::Sleep(100);
         }
-        return configured;
+        return getConfigured();
     }
-    void reconfigure(const ConfigType & cfg) {
-        assert(cfg->valid());
-        config.set(cfg);
-        configured = true;
+    virtual void reconfigure(std::shared_ptr<ProtonConfigSnapshot> cfg) override {
+        std::unique_lock<std::mutex> guard(_mutex);
+        _config.set(cfg);
+        _configured = true;
+    }
+    bool getConfigured() const {
+        std::unique_lock<std::mutex> guard(_mutex);
+        return _configured;
+    }
+    BootstrapConfig::SP getBootstrapConfig() {
+        auto snapshot = _config.get();
+        return snapshot->getBootstrapConfig();
+    }
+    DocumentDBConfig::SP getDocumentDBConfig(const vespalib::string &name)
+    {
+        auto snapshot = _config.get();
+        auto &dbcs = snapshot->getDocumentDBConfigs();
+        auto dbitr = dbcs.find(DocTypeName(name));
+        if (dbitr != dbcs.end()) {
+            return dbitr->second;
+        } else {
+            return DocumentDBConfig::SP();
+        }
     }
 };
-
-typedef OwnerFixture<BootstrapConfig::SP, IBootstrapOwner> BootstrapOwner;
-typedef OwnerFixture<DocumentDBConfig::SP, IDocumentDBConfigOwner> DBOwner;
 
 TEST_F("require that bootstrap config manager creats correct key set", BootstrapConfigManager("foo")) {
     const ConfigKeySet set(f1.createConfigKeySet());
@@ -233,63 +252,61 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
-         BootstrapOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
+         ProtonConfigOwner(),
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
     f3.start();
-    ASSERT_TRUE(f2.configured);
-    ASSERT_TRUE(f1.configEqual(f2.config.get()));
-    f2.configured = false;
+    ASSERT_TRUE(f2._configured);
+    ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
+    f2._configured = false;
     f1.protonBuilder.rpcport = 9010;
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(120000));
-    ASSERT_TRUE(f1.configEqual(f2.config.get()));
+    ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f3.close();
 }
 
 TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
-         BootstrapOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
+         ProtonConfigOwner(),
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
     f3.start();
 
-    f2.configured = false;
+    f2._configured = false;
     f1.addDocType("typea");
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(60000));
-    ASSERT_TRUE(f1.configEqual(f2.config.get()));
+    ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
 
-    f2.configured = false;
+    f2._configured = false;
     f1.removeDocType("typea");
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(60000));
-    ASSERT_TRUE(f1.configEqual(f2.config.get()));
+    ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f3.close();
 }
 
 TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
-         BootstrapOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), &f2, 60000)) {
+         ProtonConfigOwner(),
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
     f3.start();
+    ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 
-    DBOwner dbA;
-    f3.registerDocumentDB(DocTypeName("typea"), &dbA);
-
-    // Add db and verify that we get an initial callback
-    f2.configured = false;
+    // Add db and verify that config for db is provided
+    f2._configured = false;
     f1.addDocType("typea");
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(60000));
-    ASSERT_TRUE(f1.configEqual(f2.config.get()));
-    ASSERT_TRUE(dbA.waitUntilConfigured(60000));
-    ASSERT_TRUE(f1.configEqual("typea", dbA.config.get()));
+    ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
+    ASSERT_TRUE(static_cast<bool>(f2.getDocumentDBConfig("typea")));
+    ASSERT_TRUE(f1.configEqual("typea", f2.getDocumentDBConfig("typea")));
 
-    // Remove and verify that we don't get any callback
-    dbA.configured = false;
+    // Remove and verify that config for db is no longer provided
+    f2._configured = false;
     f1.removeDocType("typea");
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(60000));
-    ASSERT_FALSE(dbA.waitUntilConfigured(1000));
+    ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
     f3.close();
 }
 

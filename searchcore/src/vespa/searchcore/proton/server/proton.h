@@ -8,6 +8,8 @@
 #include "documentdb.h"
 #include "memory_flush_config_updater.h"
 #include "proton_config_fetcher.h"
+#include "i_proton_configurer_owner.h"
+#include "proton_configurer.h"
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
 #include <vespa/persistence/proxy/providerstub.h>
@@ -41,7 +43,7 @@ class DiskMemUsageSampler;
 class HwInfoSampler;
 class IDocumentDBReferenceRegistry;
 
-class Proton : public IBootstrapOwner,
+class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
                public IDocumentDBOwner,
                public StatusProducer,
@@ -97,8 +99,6 @@ private:
                        const vespalib::string &baseDir);
     };
 
-    config::IConfigContext::SP      _configContext;
-    ProtonConfigFetcher             _protonConfigFetcher;
     const config::ConfigUri         _configUri;
     vespalib::string                _dbFile;
     mutable std::shared_timed_mutex _mutex;
@@ -124,14 +124,10 @@ private:
     vespalib::StateServer::UP       _stateServer;
     TransportServer::UP             _fs4Server;
     vespalib::ThreadStackExecutor   _executor;
+    ProtonConfigurer                _protonConfigurer;
+    ProtonConfigFetcher             _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _summaryExecutor;
-    bool                            _allowReconfig;
-    ProtonConfig::UP                _initialProtonConfig;
-    BootstrapConfig::SP             _activeConfigSnapshot;
-    int64_t                         _activeConfigSnapshotGeneration;
-    vespalib::VarHolder<BootstrapConfig::SP> _pendingConfigSnapshot;
-    mutable std::mutex              _configMutex;
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;
@@ -152,19 +148,16 @@ private:
 
     bool performDataDirectoryUpgrade(const vespalib::string &baseDir);
     void loadLibrary(const vespalib::string &libName);
-    // Override from ProtonConfigManager
-    virtual void reconfigure(const BootstrapConfig::SP & config);
 
-    // Called by executor task to handle serialized reconfig.
-    void performReconfig();
+    virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName & docTypeName,
+                                                  const vespalib::string & configid,
+                                                  const BootstrapConfig::SP & bootstrapConfig,
+                                                  const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
+                                                  InitializeThreads initializeThreads) override;
 
-    void applyConfig(const BootstrapConfig::SP & configSnapshot,
-                     InitializeThreads initializeThreads);
-    void addDocumentDB(const DocTypeName & docTypeName,
-                       const vespalib::string & configid, 
-                       const BootstrapConfig::SP & configSnapshot,
-                       InitializeThreads initializeThreads);
+    virtual void removeDocumentDB(const DocTypeName &docTypeName) override;
 
+    virtual void applyConfig(const BootstrapConfig::SP & configSnapshot) override;
     virtual MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client);
 
     /**
@@ -216,9 +209,8 @@ public:
     DocumentDB::SP
     addDocumentDB(const document::DocumentType &docType,
                   const BootstrapConfig::SP &configSnapshot,
+                  const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                   InitializeThreads initializeThreads);
-
-    void removeDocumentDB(const DocTypeName &docTypeName);
 
     metrics::MetricManager & getMetricManager() { return _metricsEngine->getManager(); }
     FastOS_ThreadPool & getThreadPool() { return _threadPool; }

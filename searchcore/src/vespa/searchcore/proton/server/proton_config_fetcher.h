@@ -13,13 +13,7 @@
 namespace proton {
 
 class BootstrapConfig;
-
-class IBootstrapOwner
-{
-public:
-    virtual ~IBootstrapOwner() { }
-    virtual void reconfigure(const std::shared_ptr<BootstrapConfig> & config) = 0;
-};
+class IProtonConfigurer;
 
 /**
  * A ProtonConfigFetcher monitors all config in proton and document dbs for change
@@ -30,19 +24,8 @@ class ProtonConfigFetcher : public FastOS_Runnable
 public:
     using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
-    ProtonConfigFetcher(const config::ConfigUri & configUri, IBootstrapOwner * owner, uint64_t subscribeTimeout);
+    ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, uint64_t subscribeTimeout);
     ~ProtonConfigFetcher();
-    /**
-     * Register a new document db that should receive config updates.
-     */
-    void registerDocumentDB(const DocTypeName & docTypeName, IDocumentDBConfigOwner * owner);
-
-    /**
-     * Remove document db from registry, ensuring that no callbacks will come
-     * after this method has returned.
-     */
-    void unregisterDocumentDB(const DocTypeName & docTypeName);
-
     /**
      * Get the current config generation.
      */
@@ -63,24 +46,21 @@ public:
     void Run(FastOS_ThreadInterface * thread, void *arg);
 
 private:
-    typedef std::map<DocTypeName, IDocumentDBConfigOwner * > DocumentDBOwnerMap;
     typedef std::map<DocTypeName, DocumentDBConfigManager::SP> DBManagerMap;
 
     BootstrapConfigManager _bootstrapConfigManager;
     config::ConfigRetriever _retriever;
-    IBootstrapOwner * _bootstrapOwner;
+    IProtonConfigurer & _owner;
 
     mutable std::mutex _mutex; // Protects maps
     using lock_guard = std::lock_guard<std::mutex>;
     DBManagerMap _dbManagerMap;
-    DocumentDBOwnerMap _documentDBOwnerMap;
 
     FastOS_ThreadPool _threadPool;
 
     void fetchConfigs();
-    void reconfigureBootstrap(const config::ConfigSnapshot & snapshot);
     void updateDocumentDBConfigs(const BootstrapConfigSP & config, const config::ConfigSnapshot & snapshot);
-    void reconfigureDocumentDBs();
+    void reconfigure();
     const config::ConfigKeySet pruneManagerMap(const BootstrapConfigSP & config);
 };
 

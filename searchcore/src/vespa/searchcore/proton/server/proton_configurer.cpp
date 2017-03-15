@@ -16,7 +16,8 @@ namespace proton {
 
 ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
                                    IProtonConfigurerOwner &owner)
-    : _executor(executor),
+    : IProtonConfigurer(),
+      _executor(executor),
       _owner(owner),
       _pendingConfigSnapshot(),
       _activeConfigSnapshot(),
@@ -130,8 +131,10 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
     auto dbitr(_documentDBs.find(docTypeName));
     if (dbitr == _documentDBs.end()) {
         auto *newdb = _owner.addDocumentDB(docTypeName, configId, bootstrapConfig, documentDBConfig, initializeThreads);
-        auto insres = _documentDBs.insert(std::make_pair(docTypeName, newdb));
-        assert(insres.second);
+        if (newdb != nullptr) {
+            auto insres = _documentDBs.insert(std::make_pair(docTypeName, newdb));
+            assert(insres.second);
+        }
     } else {
         dbitr->second->reconfigure(documentDBConfig);
     }
