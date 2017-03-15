@@ -5,6 +5,7 @@ vespa_add_library(searchlib_query OBJECT
     querynode.cpp
     base.cpp
     query.cpp
+    query_term_decoder.cpp
     querynoderesultbase.cpp
     DEPENDS
 )

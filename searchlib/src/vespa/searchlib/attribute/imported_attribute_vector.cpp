@@ -92,6 +92,13 @@ bool ImportedAttributeVector::findEnum(const char *value, EnumHandle &e) const {
     return _target_attribute->findEnum(value, e);
 }
 
+std::unique_ptr<ISearchContext> ImportedAttributeVector::createSearchContext(std::unique_ptr<QueryTermSimple> term,
+                                                                             const SearchContextParams &params) const {
+    (void) term;
+    (void) params;
+    return std::unique_ptr<ISearchContext>();
+}
+
 BasicType::Type ImportedAttributeVector::getBasicType() const {
     return _target_attribute->getBasicType();
 }

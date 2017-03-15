@@ -17,8 +17,11 @@ class QueryTermBase;
 
 namespace attribute {
 
+class IAttributeVector;
+
 class ISearchContext {
 public:
+    using UP = std::unique_ptr<ISearchContext>;
     virtual ~ISearchContext() {}
 
     virtual unsigned int approximateHits() const = 0;
@@ -59,7 +62,8 @@ public:
 
     virtual bool valid() const = 0;
     virtual Int64Range getAsIntegerTerm() const = 0;
-    virtual const QueryTermBase & queryTerm() const = 0;
+    virtual const QueryTermBase &queryTerm() const = 0;
+    virtual const IAttributeVector &attribute() const = 0;
 
 };
 

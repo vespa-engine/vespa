@@ -10,7 +10,13 @@
 #include <vespa/searchcommon/attribute/basictype.h>
 
 namespace search {
+
+class QueryTermSimple;
+
 namespace attribute {
+
+class ISearchContext;
+class SearchContextParams;
 
 /**
  * This class is used to store a value and a weight.
@@ -235,6 +241,18 @@ public:
      * @return true if found.
      **/
     virtual bool findEnum(const char * value, EnumHandle & e) const = 0;
+
+
+    /**
+     * Creates a context for searching this attribute with the given term.
+     * The search context is used to create the actual search iterator.
+     *
+     * @param term the term to search for.
+     * @param params optional bitvector and diversity settings for the search.
+     * @return the search context.
+     **/
+    virtual std::unique_ptr<ISearchContext> createSearchContext(std::unique_ptr<QueryTermSimple> term,
+                                                                const SearchContextParams &params) const = 0;
 
     /**
      * Returns the basic type of this attribute vector.

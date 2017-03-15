@@ -10,6 +10,8 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
+#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
@@ -22,14 +24,14 @@
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/searchlib/query/queryterm.h>
-#include <sstream>
 #include <vespa/vespalib/util/regexp.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 
 using search::AttributeVector;
+using search::attribute::ISearchContext;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPosition;
@@ -40,11 +42,11 @@ using search::query::NumberTerm;
 using search::query::PredicateQuery;
 using search::query::PrefixTerm;
 using search::query::RangeTerm;
+using search::query::RegExpTerm;
 using search::query::StackDumpCreator;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
-using search::query::RegExpTerm;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
@@ -52,15 +54,15 @@ using search::queryeval::CreateBlueprintVisitorHelper;
 using search::queryeval::DotProductBlueprint;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecBaseList;
+using search::queryeval::IRequestContext;
 using search::queryeval::MultiSearch;
+using search::queryeval::NoUnpack;
 using search::queryeval::OrLikeSearch;
 using search::queryeval::OrSearch;
 using search::queryeval::ParallelWeakAndBlueprint;
 using search::queryeval::PredicateBlueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
-using search::queryeval::NoUnpack;
-using search::queryeval::IRequestContext;
 using search::queryeval::WeightedSetTermBlueprint;
 using vespalib::geo::ZCurve;
 using vespalib::string;
@@ -77,14 +79,14 @@ class AttributeFieldBlueprint :
         public search::queryeval::SimpleLeafBlueprint
 {
 private:
-    AttributeVector::SearchContext::UP _search_context;
+    ISearchContext::UP _search_context;
 
     AttributeFieldBlueprint(const FieldSpec &field,
                             const AttributeVector &attribute,
                             const string &query_stack,
                             const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
-          _search_context(attribute.getSearch(query_stack, params).release())
+          _search_context(attribute.createSearchContext(QueryTermDecoder::decodeTerm(query_stack), params).release())
     {
         uint32_t estHits = _search_context->approximateHits();
         HitEstimate estimate(estHits, estHits == 0);
@@ -157,7 +159,7 @@ class LocationPreFilterBlueprint :
 {
 private:
     const AttributeVector & _attribute;
-    std::vector<AttributeVector::SearchContext::UP> _rangeSearches;
+    std::vector<ISearchContext::UP> _rangeSearches;
     bool _should_use;
 
 public:
@@ -174,7 +176,8 @@ public:
             search::query::Range qr(r.min(), r.max());
             search::query::SimpleRangeTerm rt(qr, "", 0, search::query::Weight(0));
             string stack(StackDumpCreator::create(rt));
-            _rangeSearches.push_back(attr.getSearch(stack, attribute::SearchContextParams()));
+            _rangeSearches.push_back(attr.createSearchContext(QueryTermDecoder::decodeTerm(stack),
+                                                              attribute::SearchContextParams()));
             estHits += _rangeSearches.back()->approximateHits();
             LOG(debug, "Range '%s' estHits %ld", qr.getRangeString().c_str(), estHits);
         }
@@ -570,7 +573,7 @@ public:
                 } else {
                     qt.reset(new search::QueryTermBase(term, search::QueryTermSimple::WORD));
                 }
-                ws->addToken(_attr.getSearch(std::move(qt), attribute::SearchContextParams()), weight);
+                ws->addToken(_attr.createSearchContext(std::move(qt), attribute::SearchContextParams()), weight);
             }
             setResult(std::move(result));
         } else {

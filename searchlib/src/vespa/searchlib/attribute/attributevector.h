@@ -525,7 +525,6 @@ public:
         typedef std::unique_ptr<SearchContext> UP;
         ~SearchContext();
         unsigned int approximateHits() const override;
-        static QueryTermSimpleUP decodeQuery(QueryPacketT searchSpec);
 
         /**
          * Creates an attribute search iterator associated with this
@@ -586,6 +585,8 @@ public:
     };
 
     SearchContext::UP getSearch(QueryPacketT searchSpec, const attribute::SearchContextParams &params) const;
+    virtual attribute::ISearchContext::UP createSearchContext(QueryTermSimpleUP term,
+                                                              const attribute::SearchContextParams &params) const override;
     virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const = 0;
     virtual const EnumStoreBase *getEnumStoreBase() const;
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
