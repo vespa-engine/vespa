@@ -58,7 +58,7 @@ private:
     void assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValue & fv, const std::string & exp);
     void assertSlimeFieldWriter(const FieldValue & fv, const std::string & exp) {
         SlimeFieldWriter sfw;
-        assertSlimeFieldWriter(sfw, fv, exp);
+        TEST_DO(assertSlimeFieldWriter(sfw, fv, exp));
     }
     void assertSlimeFieldWriter(SlimeFieldWriter & sfw, const FieldValue & fv, const std::string & exp);
 
@@ -123,30 +123,29 @@ void
 DocsumTest::testFlattenDocsumWriter()
 {
     { // basic tests
-        assertFlattenDocsumWriter(StringFieldValue("foo bar"), "foo bar");
-        assertFlattenDocsumWriter(RawFieldValue("foo bar"), "foo bar");
-        assertFlattenDocsumWriter(LongFieldValue(123456789), "123456789");
-        assertFlattenDocsumWriter(createFieldValue(StringList().add("foo bar").add("baz").add(" qux ")),
-                                  "foo bar baz  qux ");
+        TEST_DO(assertFlattenDocsumWriter(StringFieldValue("foo bar"), "foo bar"));
+        TEST_DO(assertFlattenDocsumWriter(RawFieldValue("foo bar"), "foo bar"));
+        TEST_DO(assertFlattenDocsumWriter(LongFieldValue(123456789), "123456789"));
+        TEST_DO(assertFlattenDocsumWriter(createFieldValue(StringList().add("foo bar").add("baz").add(" qux ")),
+                                  "foo bar baz  qux "));
     }
     { // test mulitple invokations
         FlattenDocsumWriter fdw("#");
-        assertFlattenDocsumWriter(fdw, StringFieldValue("foo"), "foo");
-        assertFlattenDocsumWriter(fdw, StringFieldValue("bar"), "foo#bar");
+        TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("foo"), "foo"));
+        TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("bar"), "foo#bar"));
         fdw.clear();
-        assertFlattenDocsumWriter(fdw, StringFieldValue("baz"), "baz");
-        assertFlattenDocsumWriter(fdw, StringFieldValue("qux"), "baz qux");
+        TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("baz"), "baz"));
+        TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("qux"), "baz qux"));
     }
     { // test resizing
         FlattenDocsumWriter fdw("#");
         EXPECT_EQUAL(fdw.getResult().getPos(), 0u);
         EXPECT_EQUAL(fdw.getResult().getLength(), 32u);
-        assertFlattenDocsumWriter(fdw, StringFieldValue("aaaabbbbccccddddeeeeffffgggghhhh"),
-                                                        "aaaabbbbccccddddeeeeffffgggghhhh");
+        TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("aaaabbbbccccddddeeeeffffgggghhhh"),
+                                          "aaaabbbbccccddddeeeeffffgggghhhh"));
         EXPECT_EQUAL(fdw.getResult().getPos(), 32u);
         EXPECT_EQUAL(fdw.getResult().getLength(), 32u);
-        assertFlattenDocsumWriter(fdw, StringFieldValue("aaaa"),
-                                                        "aaaabbbbccccddddeeeeffffgggghhhh#aaaa");
+        TEST_DO(assertFlattenDocsumWriter(fdw, StringFieldValue("aaaa"), "aaaabbbbccccddddeeeeffffgggghhhh#aaaa"));
         EXPECT_EQUAL(fdw.getResult().getPos(), 37u);
         EXPECT_TRUE(fdw.getResult().getLength() >= 37u);
         fdw.clear();
@@ -197,23 +196,21 @@ DocsumTest::testSlimeFieldWriter()
         { // select a subset and then all
             SlimeFieldWriter sfw;
             DocsumFieldSpec::FieldIdentifierVector fields;
-            fields.push_back(DocsumFieldSpec::FieldIdentifier(
-                            0, *type.buildFieldPath("a")));
-            fields.push_back(DocsumFieldSpec::FieldIdentifier(
-                            0, *type.buildFieldPath("c.e")));
+            fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *type.buildFieldPath("a")));
+            fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *type.buildFieldPath("c.e")));
             sfw.setInputFields(fields);
-            assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}");
+            TEST_DO(assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}"));
             sfw.clear();
-            assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"b\":\"bar\",\"c\":{\"d\":\"baz\",\"e\":\"qux\"}}");
+            TEST_DO(assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"b\":\"bar\",\"c\":{\"d\":\"baz\",\"e\":\"qux\"}}"));
         }
 
     { // multiple invocations
         SlimeFieldWriter sfw;
-        assertSlimeFieldWriter(sfw, StringFieldValue("foo"), "\"foo\"");
+        TEST_DO(assertSlimeFieldWriter(sfw, StringFieldValue("foo"), "\"foo\""));
         sfw.clear();
-        assertSlimeFieldWriter(sfw, StringFieldValue("bar"), "\"bar\"");
+        TEST_DO(assertSlimeFieldWriter(sfw, StringFieldValue("bar"), "\"bar\""));
         sfw.clear();
-        assertSlimeFieldWriter(sfw, StringFieldValue("baz"), "\"baz\"");
+        TEST_DO(assertSlimeFieldWriter(sfw, StringFieldValue("baz"), "\"baz\""));
     }
 
     }
@@ -246,13 +243,13 @@ DocsumTest::requireThatSlimeFieldWriterHandlesMap()
             DocsumFieldSpec::FieldIdentifierVector fields;
             fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("value.b")));
             sfw.setInputFields(fields);
-            assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]");
+            TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]"));
             fields[0] = DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("{k1}.a"));
             sfw.clear();
             sfw.setInputFields(fields);
-            assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]");
+            TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]"));
             sfw.clear(); // all fields implicit
-            assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\",\"b\":\"bar\"}}]");
+            TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\",\"b\":\"bar\"}}]"));
         }
     }
 }
@@ -262,9 +259,9 @@ DocsumTest::Main()
 {
     TEST_INIT("docsum_test");
 
-    testFlattenDocsumWriter();
-    testSlimeFieldWriter();
-    requireThatSlimeFieldWriterHandlesMap();
+    TEST_DO(testFlattenDocsumWriter());
+    TEST_DO(testSlimeFieldWriter());
+    TEST_DO(requireThatSlimeFieldWriterHandlesMap());
 
     TEST_DONE();
 }
