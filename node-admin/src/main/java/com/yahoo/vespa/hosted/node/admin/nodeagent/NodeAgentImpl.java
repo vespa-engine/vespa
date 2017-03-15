@@ -503,7 +503,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @SuppressWarnings("unchecked")
-    public void updateContainerNodeMetrics() {
+    public void updateContainerNodeMetrics(int numAllocatedContainersOnHost) {
         ContainerNodeSpec nodeSpec;
         synchronized (monitor) {
             nodeSpec = lastNodeSpec;
@@ -541,8 +541,12 @@ public class NodeAgentImpl implements NodeAgent {
         long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
         long currentCpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
 
-        double cpuPercentage = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.cpu.busy.pct").sample(cpuPercentage);
+        // CPU usage by a container is given by dividing used CPU time by the container with CPU time used by the entire
+        // system. Because each container is allocated same amount of CPU shares, no container should use more than 1/n
+        // of the total CPU time, where n is the number of running containers.
+        double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
+        double cpuPercentageOfAllocated = numAllocatedContainersOnHost * cpuPercentageOfHost;
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.cpu.busy.pct").sample(cpuPercentageOfAllocated);
 
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
         addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
