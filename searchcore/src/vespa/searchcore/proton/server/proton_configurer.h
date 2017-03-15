@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "i_proton_configurer.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <map>
-#include <memory>
 #include <mutex>
 #include "executor_thread_service.h"
 
@@ -13,13 +13,12 @@ namespace proton {
 class IDocumentDBConfigOwner;
 class IProtonConfigurerOwner;
 class BootstrapConfig;
-class ProtonConfigSnapshot;
 
 /*
  * Class to handle config changes to proton using config snapshots spanning
  * all document types.
  */
-class ProtonConfigurer
+class ProtonConfigurer : public IProtonConfigurer
 {
     using DocumentDBs = std::map<DocTypeName, IDocumentDBConfigOwner *>;
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
@@ -50,7 +49,7 @@ public:
 
     std::shared_ptr<ProtonConfigSnapshot> getActiveConfigSnapshot() const;
 
-    void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot);
+    virtual void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot) override;
 
     void applyInitialConfig(InitializeThreads initializeThreads);
 };

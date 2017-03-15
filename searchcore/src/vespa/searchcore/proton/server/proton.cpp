@@ -11,6 +11,7 @@
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
+#include "proton_config_snapshot.h"
 
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -152,14 +153,13 @@ Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string &
 Proton::Proton(const config::ConfigUri & configUri,
                const vespalib::string &progName,
                uint64_t subscribeTimeout)
-    : IBootstrapOwner(),
+    : IProtonConfigurerOwner(),
       search::engine::MonitorServer(),
       IDocumentDBOwner(),
       StatusProducer(),
       PersistenceProviderFactory(),
       IPersistenceEngineOwner(),
       ComponentConfigProducer(),
-      _protonConfigFetcher(configUri, this, subscribeTimeout),
       _configUri(configUri),
       _mutex(),
       _metricsHook(*this),
@@ -186,14 +186,10 @@ Proton::Proton(const config::ConfigUri & configUri,
       // This executor can only have 1 thread as it is used for
       // serializing startup.
       _executor(1, 128 * 1024),
+      _protonConfigurer(_executor, *this),
+      _protonConfigFetcher(configUri, _protonConfigurer, subscribeTimeout),
       _warmupExecutor(),
       _summaryExecutor(),
-      _allowReconfig(false),
-      _initialProtonConfig(),
-      _activeConfigSnapshot(),
-      _activeConfigSnapshotGeneration(0),
-      _pendingConfigSnapshot(),
-      _configMutex(),
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
@@ -224,15 +220,17 @@ Proton::init()
         throw IllegalStateException("Failed starting thread for the cheap clock");
     }
     _protonConfigFetcher.start();
-    BootstrapConfig::SP configSnapshot = _pendingConfigSnapshot.get();
-    assert(configSnapshot.get() != NULL);
+    auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
+    assert(configSnapshot);
+    auto bootstrapConfig = configSnapshot->getBootstrapConfig();
+    assert(bootstrapConfig);
 
-    const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
+    const ProtonConfig &protonConfig = bootstrapConfig->getProtonConfig();
 
     if (!performDataDirectoryUpgrade(protonConfig.basedir)) {
         _abortInit = true;
     }
-    return configSnapshot;
+    return bootstrapConfig;
 }
 
 void
@@ -252,7 +250,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                            (protonConfig.basedir,
                             diskMemUsageSamplerConfig(protonConfig));
 
-    _initialProtonConfig.reset(new ProtonConfig(protonConfig));
     _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("proton",
                                        configSnapshot->getGeneration(),
                                        "config obtained at startup"));
@@ -312,7 +309,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                             (protonConfig.initialize.threads, 128 * 1024);
         _initDocumentDbsInSequence = (protonConfig.initialize.threads == 1);
     }
-    applyConfig(configSnapshot, initializeThreads);
+    _protonConfigurer.applyInitialConfig(initializeThreads);
     initializeThreads.reset();
 
     if (_persistenceEngine.get() != NULL) {
@@ -348,13 +345,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         startOk ? "true" : "false",
         port);
     _flushEngine->start();
-    _allowReconfig = true;
     _isInitializing = false;
-    _executor.execute(
-            vespalib::makeTask(
-                    vespalib::makeClosure(
-                            this,
-                            &proton::Proton::performReconfig)));
+    _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
 }
 
@@ -401,12 +393,7 @@ Proton::getIndexManagerFactory(const vespalib::stringref & name) const
 BootstrapConfig::SP
 Proton::getActiveConfigSnapshot() const
 {
-    BootstrapConfig::SP result;
-    {
-        lock_guard guard(_configMutex);
-        result = _activeConfigSnapshot;
-    }
-    return result;
+    return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig();
 }
 
 storage::spi::PersistenceProvider::UP
@@ -422,60 +409,7 @@ Proton::create() const
 }
 
 void
-Proton::reconfigure(const BootstrapConfig::SP & config)
-{
-    _pendingConfigSnapshot.set(config);
-    {
-        lock_guard guard(_configMutex);
-        if (_activeConfigSnapshot.get() == NULL)
-            return;
-        if (!_allowReconfig)
-            return;
-        _executor.execute(
-                vespalib::makeTask(
-                        vespalib::makeClosure(
-                                this,
-                                &proton::Proton::performReconfig)));
-    }
-}
-
-void
-Proton::performReconfig()
-{
-    // Called by executor thread
-    BootstrapConfig::SP configSnapshot = _pendingConfigSnapshot.get();
-    bool generationChanged = false;
-    bool snapChanged = false;
-    {
-        lock_guard guard(_configMutex);
-        if (_activeConfigSnapshotGeneration != configSnapshot->getGeneration())
-            generationChanged = true;
-        if (_activeConfigSnapshot.get() != configSnapshot.get()) {
-            snapChanged = true;
-        } else if (generationChanged) {
-            _activeConfigSnapshotGeneration = configSnapshot->getGeneration();
-        }
-    }
-    if (snapChanged) {
-        applyConfig(configSnapshot, InitializeThreads());
-    }
-    _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("proton.documentdbs",
-                                       _activeConfigSnapshotGeneration));
-    if (_initialProtonConfig) {
-        if (configSnapshot->getProtonConfig() == *_initialProtonConfig) {
-            _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("proton",
-                                       configSnapshot->getGeneration(),
-                                       "config same as on startup"));
-        } else {
-            LOG(debug, "cannot apply proton.cfg generation %ld, differs from initial config",
-                configSnapshot->getGeneration());
-        }
-    }
-}
-
-void
-Proton::applyConfig(const BootstrapConfig::SP & configSnapshot,
-                    InitializeThreads initializeThreads)
+Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
 {
     // Called by executor thread during reconfig.
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
@@ -484,43 +418,11 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot,
     _queryLimiter.configure(protonConfig.search.memory.limiter.maxthreads,
                             protonConfig.search.memory.limiter.mincoverage,
                             protonConfig.search.memory.limiter.minhits);
-    typedef std::set<DocTypeName> DocTypeSet;
-    DocTypeSet oldDocTypes;
-    {
-        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
-        for (const auto &kv : _documentDBMap) {
-            const DocTypeName &docTypeName = kv.first;
-            oldDocTypes.insert(docTypeName);
-        }
-    }
-    DocTypeSet newDocTypes;
     const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
     // XXX: This assumes no feeding during reconfig.  Otherwise queued messages
     // might incorrectly use freed document type repo.
     if (_persistenceProxy.get() != NULL) {
         _persistenceProxy->setRepo(*repo);
-    }
-    for (const auto &ddbConfig : protonConfig.documentdb) {
-        DocTypeName docTypeName(ddbConfig.inputdoctypename);
-        newDocTypes.insert(docTypeName);
-        DocTypeSet::const_iterator found(oldDocTypes.find(docTypeName));
-        if (found == oldDocTypes.end()) {
-            addDocumentDB(docTypeName, ddbConfig.configid, configSnapshot,
-                          initializeThreads);
-        }
-    }
-    for (const auto &docType : oldDocTypes) {
-        DocTypeSet::const_iterator found(newDocTypes.find(docType));
-        if (found != newDocTypes.end())
-            continue;
-        // remove old document type
-        DocTypeName docTypeName(docType.getName());
-        removeDocumentDB(docTypeName);
-    }
-    {
-        lock_guard guard(_configMutex);
-        _activeConfigSnapshot = configSnapshot;
-        _activeConfigSnapshotGeneration = configSnapshot->getGeneration();
     }
     _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("proton.documentdbs",
                                        configSnapshot->getGeneration()));
@@ -532,14 +434,15 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot,
     }
 }
 
-void
+IDocumentDBConfigOwner *
 Proton::addDocumentDB(const DocTypeName & docTypeName,
                       const vespalib::string & configId,
-                      const BootstrapConfig::SP & configSnapshot,
+                      const BootstrapConfig::SP & bootstrapConfig,
+                      const DocumentDBConfig::SP &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
     try {
-        const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
+        const DocumentTypeRepo::SP repo = bootstrapConfig->getDocumentTypeRepoSP();
         const document::DocumentType *docType = repo->getDocumentType(docTypeName.getName());
         if (docType != NULL) {
             LOG(info,
@@ -547,19 +450,21 @@ Proton::addDocumentDB(const DocTypeName & docTypeName,
                 "doctypename(%s), configid(%s)",
                 docTypeName.toString().c_str(),
                 configId.c_str());
-            addDocumentDB(*docType, configSnapshot, initializeThreads);
+            return addDocumentDB(*docType, bootstrapConfig, documentDBConfig, initializeThreads).get();
         } else {
 
             LOG(warning,
                 "Did not find document type '%s' in the document manager. "
                 "Skipping creating document database for this type",
                 docTypeName.toString().c_str());
+            return nullptr;
         }
     } catch (const document::DocumentTypeNotFoundException & e) {
         LOG(warning,
             "Did not find document type '%s' in the document manager. "
             "Skipping creating document database for this type",
             docTypeName.toString().c_str());
+        return nullptr;
     }
 }
 
@@ -570,10 +475,7 @@ Proton::~Proton()
         LOG(warning, "Initialization of proton was halted. Shutdown sequence has been initiated.");
     }
     _protonConfigFetcher.close();
-    {
-        lock_guard guard(_configMutex);
-        _allowReconfig = false;
-    }
+    _protonConfigurer.setAllowReconfig(false);
     _executor.sync();
     _customComponentRootToken.reset();
     _customComponentBindToken.reset();
@@ -695,10 +597,11 @@ Proton::getDocumentDB(const document::DocumentType &docType)
 
 DocumentDB::SP
 Proton::addDocumentDB(const document::DocumentType &docType,
-                      const BootstrapConfig::SP &configSnapshot,
+                      const BootstrapConfig::SP &bootstrapConfig,
+                      const DocumentDBConfig::SP &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
-    const ProtonConfig &config(*configSnapshot->getProtonConfigSP());
+    const ProtonConfig &config(*bootstrapConfig->getProtonConfigSP());
 
     std::lock_guard<std::shared_timed_mutex> guard(_mutex);
     DocTypeName docTypeName(docType.getName());
@@ -707,15 +610,13 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         return it->second;
     }
 
-    DocumentDBConfig::SP dbConfig =
-        _protonConfigFetcher.getDocumentDBConfig(docTypeName);
     vespalib::string db_dir = config.basedir + "/documents/" + docTypeName.toString();
     vespalib::mkdir(db_dir, false); // Assume parent is created.
     ConfigStore::UP config_store(
             new FileConfigManager(db_dir + "/config",
-                                  dbConfig->getConfigId(),
+                                  documentDBConfig->getConfigId(),
                                   docTypeName.getName()));
-    config_store->setProtonConfig(configSnapshot->getProtonConfigSP());
+    config_store->setProtonConfig(bootstrapConfig->getProtonConfigSP());
     if (!initializeThreads) {
         // If configured value for initialize threads was 0, or we
         // are performing a reconfig after startup has completed, then use
@@ -724,7 +625,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                             (1, 128 * 1024);
     }
     DocumentDB::SP ret(new DocumentDB(config.basedir + "/documents",
-                                      dbConfig,
+                                      documentDBConfig,
                                       config.tlsspec,
                                       _queryLimiter,
                                       _clock,
@@ -739,7 +640,6 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                       std::move(config_store),
                                       initializeThreads,
                                       _hwInfo));
-    _protonConfigFetcher.registerDocumentDB(docTypeName, ret.get());
     try {
         ret->start();
     } catch (vespalib::Exception &e) {
@@ -784,7 +684,6 @@ void
 Proton::removeDocumentDB(const DocTypeName &docTypeName)
 {
     DocumentDB::SP old;
-    _protonConfigFetcher.unregisterDocumentDB(docTypeName);
     {
         std::lock_guard<std::shared_timed_mutex> guard(_mutex);
         DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
@@ -1020,12 +919,8 @@ Proton::getComponentConfig(Consumer &consumer)
 int64_t
 Proton::getConfigGeneration(void)
 {
-    int64_t g = 0;
+    int64_t g = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
     std::vector<DocumentDB::SP> dbs;
-    {
-        lock_guard guard(_configMutex);
-        g = _activeConfigSnapshot->getGeneration();
-    }
     {
         std::shared_lock<std::shared_timed_mutex> guard(_mutex);
         for (const auto &kv : _documentDBMap) {
