@@ -2,11 +2,14 @@
 package com.yahoo.vespa.http.client.core.communication;
 
 import com.yahoo.vespa.http.client.core.Document;
+import com.yahoo.vespa.http.client.core.EndpointResult;
+import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -104,9 +107,16 @@ class DocumentQueue {
         return previousState;
     }
 
-    Document peek() {
+    Optional<Document> pollDocumentIfTimedoutInQueue(long localQueueTimeOut) {
         synchronized (queue) {
-            return queue.peek();
+            if (queue.isEmpty()) {
+                return Optional.empty();
+            }
+            Document document = queue.peek();
+            if (document.timeInQueueMillis() > localQueueTimeOut) {
+                return Optional.of(queue.poll());
+            }
+            return Optional.empty();
         }
     }
 }

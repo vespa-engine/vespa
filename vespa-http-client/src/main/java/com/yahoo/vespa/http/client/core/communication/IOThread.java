@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -175,7 +176,7 @@ class IOThread implements Runnable, AutoCloseable {
         final List<Document> docsForSendChunk = new ArrayList<>();
         int chunkSizeBytes = 0;
         try {
-            drainFirstDocumentInQueueIfOld();
+            drainFirstDocumentsInQueueIfOld();
             Document doc = documentQueue.poll(maxWaitUnits, timeUnit);
             if (doc != null) {
                 docsForSendChunk.add(doc);
@@ -188,7 +189,7 @@ class IOThread implements Runnable, AutoCloseable {
         int pendingSize = 1 + resultQueue.getPendingSize();
         // see if we can get more documents without blocking
         while (chunkSizeBytes < maxChunkSizeBytes && pendingSize < maxInFlightRequests) {
-            drainFirstDocumentInQueueIfOld();
+            drainFirstDocumentsInQueueIfOld();
             Document d = documentQueue.poll();
             if (d == null) {
                 break;
@@ -300,12 +301,12 @@ class IOThread implements Runnable, AutoCloseable {
                 try {
                     if (! client.connect()) {
                         log.log(Level.WARNING, "Connect returned null " + endpoint);
-                        drainFirstDocumentInQueueIfOld();
+                        drainFirstDocumentsInQueueIfOld();
                         return ThreadState.DISCONNECTED;
                     }
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable1) {
-                    drainFirstDocumentInQueueIfOld();
+                    drainFirstDocumentsInQueueIfOld();
                     log.log(Level.INFO, "Connect did not work out " + endpoint, throwable1);
                     executeProblemsCounter.incrementAndGet();
                     return ThreadState.DISCONNECTED;
@@ -317,12 +318,12 @@ class IOThread implements Runnable, AutoCloseable {
                 } catch (ServerResponseException ser) {
                     executeProblemsCounter.incrementAndGet();
                     log.log(Level.INFO, "Handshake did not work out " + endpoint, ser.getMessage());
-                    drainFirstDocumentInQueueIfOld();
+                    drainFirstDocumentsInQueueIfOld();
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
                     log.log(Level.INFO, "Problem with Handshake " + endpoint, throwable.getMessage());
-                    drainFirstDocumentInQueueIfOld();
+                    drainFirstDocumentsInQueueIfOld();
                     client.close();
                     return ThreadState.DISCONNECTED;
                 }
@@ -378,23 +379,17 @@ class IOThread implements Runnable, AutoCloseable {
 
     }
 
-
-    private void drainFirstDocumentInQueueIfOld() {
+    private void drainFirstDocumentsInQueueIfOld() {
         while (true) {
-            Document document = documentQueue.peek();
-            if (document == null) {
+            Optional<Document> document = documentQueue.pollDocumentIfTimedoutInQueue(localQueueTimeOut);
+            if (! document.isPresent()) {
                 return;
             }
-            if (document.timeInQueueMillis() > localQueueTimeOut) {
-                documentQueue.poll();
-                EndpointResult endpointResult = EndPointResultFactory.createTransientError(
-                        endpoint, document.getOperationId(),
-                        new Exception("Not sending document operation, timed out in queue after "
-                                + document.timeInQueueMillis() + " ms."));
-                resultQueue.failOperation(endpointResult, clusterId);
-            } else {
-                return;
-            }
+            EndpointResult endpointResult = EndPointResultFactory.createTransientError(
+                    endpoint, document.get().getOperationId(),
+                    new Exception("Not sending document operation, timed out in queue after "
+                            + document.get().timeInQueueMillis() + " ms."));
+            resultQueue.failOperation(endpointResult, clusterId);
         }
     }
 
