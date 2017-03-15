@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -193,10 +195,28 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    private void experimentalWriteFile(final ContainerNodeSpec nodeSpec) {
+        try {
+            FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
+            Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
+            if (! config.isPresent()) {
+                logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + nodeSpec.toString());
+                return;
+            }
+            Path filebeatPath = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/filebeat/filebeat.yml");
+            Files.write(filebeatPath, config.get().getBytes());
+            logger.info("Wrote filebeat config.");
+        } catch (Throwable t) {
+            logger.error("Failed writing filebeat config; " + nodeSpec, t);
+        }
+    }
+
     private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
             return;
         }
+        experimentalWriteFile(nodeSpec);
+
         addDebugMessage("Starting optional node program resume command");
         logger.info("Starting optional node program resume command");
         dockerOperations.resumeNode(containerName);
