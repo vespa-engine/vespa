@@ -18,6 +18,9 @@ import org.apache.zookeeper.data.Stat;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,17 +49,19 @@ public class ZookeeperStatusService implements StatusService {
     final static String APPLICATION_STATUS_BASE_PATH = "/vespa/application-status-service";
 
     private final CuratorFramework curatorFramework;
+    private Clock clock;
 
     @Inject
-    public ZookeeperStatusService(@Component Curator curator) {
-        this(curator.framework());
+    public ZookeeperStatusService(@Component Curator curator, Clock clock) {
+        this(curator.framework(), clock);
     }
 
     /**
      * Called via public constructor on directly on testing.
      */
-    ZookeeperStatusService(CuratorFramework curatorFramework) {
+    ZookeeperStatusService(CuratorFramework curatorFramework, Clock clock) {
         this.curatorFramework = curatorFramework;
+        this.clock = clock;
     }
 
     @Override
@@ -227,7 +232,22 @@ public class ZookeeperStatusService implements StatusService {
             Stat statOrNull = curatorFramework.checkExists().forPath(
                     hostAllowedDownPath(applicationInstanceReference, hostName));
 
-            return (statOrNull == null) ? HostStatus.NO_REMARKS : HostStatus.ALLOWED_TO_BE_DOWN;
+            if (statOrNull == null) {
+                return HostStatus.NO_REMARKS;
+            }
+
+            Instant whenSuspended = Instant.ofEpochMilli(statOrNull.getCtime());
+            Instant deadline = whenSuspended.plus(6, ChronoUnit.HOURS);
+
+            if (clock.instant().isAfter(deadline)) {
+                try (MutableStatusRegistry mutableStatusRegistry = lockApplicationInstance_forCurrentThreadOnly(applicationInstanceReference)) {
+                    setHostStatus(applicationInstanceReference, hostName, HostStatus.NO_REMARKS);
+                    return HostStatus.NO_REMARKS;
+                }
+            }
+
+            return HostStatus.ALLOWED_TO_BE_DOWN;
+
         } catch (Exception e) {
             //TODO: IOException with explanation - Should we only catch IOExceptions or are they a special case?
             throw new RuntimeException(e);
