@@ -10,27 +10,27 @@ LOG_SETUP(".vsm.slimefieldwriter");
 namespace {
 
 vespalib::string
-toString(const vsm::FieldPath & fp)
+toString(const vsm::FieldPath & fieldPath)
 {
     vespalib::asciistream oss;
-    for (size_t i = 0; i < fp.size(); ++i) {
+    for (size_t i = 0; i < fieldPath.size(); ++i) {
         if (i > 0) {
             oss << ".";
         }
-        oss << fp[i].getName();
+        oss << fieldPath[i].getName();
     }
     return oss.str();
 }
 
 vespalib::string
-toString(const std::vector<vespalib::string> & fp)
+toString(const std::vector<vespalib::string> & fieldPath)
 {
     vespalib::asciistream oss;
-    for (size_t i = 0; i < fp.size(); ++i) {
+    for (size_t i = 0; i < fieldPath.size(); ++i) {
         if (i > 0) {
             oss << ".";
         }
-        oss << fp[i];
+        oss << fieldPath[i];
     }
     return oss.str();
 }
