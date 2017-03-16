@@ -208,7 +208,7 @@ FilterAttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) con
 
 template <typename SC>
 AttributeIteratorT<SC>::AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
-        : AttributeIterator(matchData, searchContext._attr.getCommittedDocIdLimit()),
+        : AttributeIterator(matchData, searchContext.attribute().getCommittedDocIdLimit()),
           _searchContext(searchContext)
 { }
 

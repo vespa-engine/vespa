@@ -45,6 +45,7 @@ vespa_add_library(searchlib_attribute OBJECT
     iattributemanager.cpp
     iattributesavetarget.cpp
     imported_attribute_vector.cpp
+    imported_search_context.cpp
     integerbase.cpp
     ipostinglistsearchcontext.cpp
     iterator_pack.cpp

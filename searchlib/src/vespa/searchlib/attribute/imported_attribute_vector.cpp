@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_attribute_vector.h"
+#include "imported_search_context.h"
 #include "attributeguard.h"
+#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace search {
@@ -94,9 +96,7 @@ bool ImportedAttributeVector::findEnum(const char *value, EnumHandle &e) const {
 
 std::unique_ptr<ISearchContext> ImportedAttributeVector::createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                                              const SearchContextParams &params) const {
-    (void) term;
-    (void) params;
-    return std::unique_ptr<ISearchContext>();
+    return std::make_unique<ImportedSearchContext>(std::move(term), params, *this);
 }
 
 const IDocumentWeightAttribute *ImportedAttributeVector::asDocumentWeightAttribute() const {

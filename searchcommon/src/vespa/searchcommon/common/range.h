@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <limits>
+#include <stdint.h>
+
 namespace search
 {
 
