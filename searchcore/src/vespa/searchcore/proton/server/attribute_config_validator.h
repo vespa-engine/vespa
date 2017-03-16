@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "configvalidator.h"
+#include "config_validator_result.h"
+#include <vespa/config-attributes.h>
 
 namespace proton {
 
@@ -11,7 +12,7 @@ namespace proton {
  **/
 struct AttributeConfigValidator
 {
-    static ConfigValidator::Result
+    static configvalidator::Result
     validate(const vespa::config::search::AttributesConfig &newCfg,
              const vespa::config::search::AttributesConfig &oldCfg);
 };

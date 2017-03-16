@@ -5,6 +5,7 @@
 LOG_SETUP(".proton.server.ddbstate");
 
 #include "ddbstate.h"
+using proton::configvalidator::ResultType;
 
 
 namespace proton {
@@ -164,7 +165,7 @@ DDBState::clearRejectedConfig()
 
 
 DDBState::ConfigState
-DDBState::calcConfigState(const ConfigValidator::ResultType &cvr)
+DDBState::calcConfigState(const ResultType &cvr)
 {
     if (_state < State::APPLY_LIVE_CONFIG) {
         // Config has been accepted, placed in transaction log and
@@ -173,12 +174,12 @@ DDBState::calcConfigState(const ConfigValidator::ResultType &cvr)
         return ConfigState::OK;
     }
     switch (cvr) {
-    case ConfigValidator::ResultType::OK:
+    case ResultType::OK:
         return ConfigState::OK;
-    case ConfigValidator::ResultType::ATTRIBUTE_ASPECT_ADDED:
-    case ConfigValidator::ResultType::ATTRIBUTE_FAST_ACCESS_ADDED:
-    case ConfigValidator::ResultType::ATTRIBUTE_ASPECT_REMOVED:
-    case ConfigValidator::ResultType::ATTRIBUTE_FAST_ACCESS_REMOVED:
+    case ResultType::ATTRIBUTE_ASPECT_ADDED:
+    case ResultType::ATTRIBUTE_FAST_ACCESS_ADDED:
+    case ResultType::ATTRIBUTE_ASPECT_REMOVED:
+    case ResultType::ATTRIBUTE_FAST_ACCESS_REMOVED:
         if (_state == State::APPLY_LIVE_CONFIG) {
             return ConfigState::OK;
         }

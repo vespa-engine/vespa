@@ -7,51 +7,52 @@ LOG_SETUP(".proton.server.attribute_config_validator");
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+
 using vespa::config::search::AttributesConfig;
 using vespalib::make_string;
 using vespalib::eval::ValueType;
+using proton::configvalidator::ResultType;
+using proton::configvalidator::Result;
 
 namespace proton {
 
-typedef ConfigValidator CV;
-
 namespace {
 
-CV::Result
+Result
 checkFastAccess(const AttributesConfig &cfg1,
                 const AttributesConfig &cfg2,
-                CV::ResultType type,
+                ResultType type,
                 const vespalib::string &typeStr)
 {
     for (const auto &attr1 : cfg1.attribute) {
         if (attr1.fastaccess) {
             for (const auto &attr2 : cfg2.attribute) {
                 if (attr1.name == attr2.name && !attr2.fastaccess) {
-                    return CV::Result(type,
+                    return Result(type,
                             make_string("Trying to %s 'fast-access' to attribute '%s'",
                                     typeStr.c_str(), attr1.name.c_str()));
                 }
             }
         }
     }
-    return CV::Result();
+    return Result();
 }
 
-CV::Result
+Result
 checkFastAccessAdded(const AttributesConfig &newCfg,
                      const AttributesConfig &oldCfg)
 {
-    return checkFastAccess(newCfg, oldCfg, CV::ATTRIBUTE_FAST_ACCESS_ADDED, "add");
+    return checkFastAccess(newCfg, oldCfg, ResultType::ATTRIBUTE_FAST_ACCESS_ADDED, "add");
 }
 
-CV::Result
+Result
 checkFastAccessRemoved(const AttributesConfig &newCfg,
                        const AttributesConfig &oldCfg)
 {
-    return checkFastAccess(oldCfg, newCfg, CV::ATTRIBUTE_FAST_ACCESS_REMOVED, "remove");
+    return checkFastAccess(oldCfg, newCfg, ResultType::ATTRIBUTE_FAST_ACCESS_REMOVED, "remove");
 }
 
-CV::Result
+Result
 checkTensorTypeChanged(const AttributesConfig &newCfg,
                        const AttributesConfig &oldCfg)
 {
@@ -60,26 +61,26 @@ checkTensorTypeChanged(const AttributesConfig &newCfg,
             if ((newAttr.name == oldAttr.name) &&
                 (ValueType::from_spec(newAttr.tensortype) != ValueType::from_spec(oldAttr.tensortype)))
             {
-                return CV::Result(CV::ATTRIBUTE_TENSOR_TYPE_CHANGED,
+                return Result(ResultType::ATTRIBUTE_TENSOR_TYPE_CHANGED,
                                   make_string("Tensor type has changed from '%s' -> '%s' for attribute '%s'",
                                               oldAttr.tensortype.c_str(), newAttr.tensortype.c_str(), newAttr.name.c_str()));
             }
         }
     }
-    return CV::Result();
+    return Result();
 }
 
 }
 
-CV::Result
+Result
 AttributeConfigValidator::validate(const AttributesConfig &newCfg,
                                    const AttributesConfig &oldCfg)
 {
-    CV::Result res;
+    Result res;
     if (!(res = checkFastAccessAdded(newCfg, oldCfg)).ok()) return res;
     if (!(res = checkFastAccessRemoved(newCfg, oldCfg)).ok()) return res;
     if (!(res = checkTensorTypeChanged(newCfg, oldCfg)).ok()) return res;
-    return CV::Result();
+    return Result();
 }
 
 } // namespace proton

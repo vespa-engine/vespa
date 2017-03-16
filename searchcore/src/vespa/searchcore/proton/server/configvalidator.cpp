@@ -8,9 +8,11 @@ LOG_SETUP(".proton.server.configvalidator");
 #include "schema_config_validator.h"
 #include "attribute_config_validator.h"
 
+using proton::configvalidator::Result;
+
 namespace proton {
 
-ConfigValidator::Result
+Result
 ConfigValidator::validate(const ConfigValidator::Config &newCfg,
                           const ConfigValidator::Config &oldCfg,
                           const search::index::Schema &oldHistory)
