@@ -2,16 +2,34 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.document.*;
-import com.yahoo.searchdefinition.document.*;
+import com.yahoo.document.Field;
+import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.ImportedFields;
+import com.yahoo.searchdefinition.document.SDDocumentType;
+import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.Stemming;
+import com.yahoo.searchdefinition.document.TemporaryImportedFields;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 import java.io.Reader;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * <p>A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
@@ -168,6 +186,13 @@ public class Search implements Serializable {
     public void setImportedFields(ImportedFields importedFields) {
         temporaryImportedFields = Optional.empty();
         this.importedFields = Optional.of(importedFields);
+    }
+
+    public Stream<ImmutableSDField> allImportedFields() {
+        return importedFields
+                .map(fields -> fields.fields().values().stream())
+                .orElse(Stream.empty())
+                .map(ImmutableImportedSDField::new);
     }
 
     /**

@@ -133,7 +133,8 @@ public class SummaryClass extends Derived {
         }
         return classBuilder;
     }
-    
+
+    @Override
     protected String getDerivedName() { return "summary"; }
 
     public String toString() {

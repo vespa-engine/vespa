@@ -28,7 +28,7 @@ import java.util.*;
  *
  * @author bratseth
  */
-public class SDField extends Field implements TypedKey, FieldOperationContainer, Serializable {
+public class SDField extends Field implements TypedKey, FieldOperationContainer, ImmutableSDField, Serializable {
 
     /** Use this field for modifying index-structure, even if it doesn't
         have any indexing code */
@@ -198,14 +198,22 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         isExtraField = isExtra;
     }
 
+    @Override
     public boolean isExtraField() {
         return isExtraField;
     }
 
+    @Override
+    public boolean isImportedField() {
+        return false;
+    }
+
+    @Override
     public boolean doesAttributing() {
         return containsExpression(AttributeExpression.class);
     }
 
+    @Override
     public boolean doesIndexing() {
         return containsExpression(IndexExpression.class);
     }
@@ -221,10 +229,12 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return containsExpression(SummaryExpression.class);
     }
 
+    @Override
     public boolean doesLowerCasing() {
         return containsExpression(LowerCaseExpression.class);
     }
 
+    @Override
     public <T extends Expression> boolean containsExpression(Class<T> searchFor) {
         return findExpression(searchFor) != null;
     }
@@ -404,6 +414,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return (dt != null);
     }
 
+    @Override
     public boolean usesStructOrMap() {
         DataType dt = getFirstStructOrMapRecursive();
         return (dt != null);
@@ -457,6 +468,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         }
     }
 
+    @Override
     public ScriptExpression getIndexingScript() {
         return indexingScript;
     }
@@ -474,6 +486,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         }
     }
 
+    @Override
     public boolean isIndexStructureField() {
         return indexStructureField;
     }
@@ -517,6 +530,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     /**
      * Returns what kind of matching type should be applied.
      */
+    @Override
     public Matching getMatching() { return matching; }
 
     /**
@@ -559,6 +573,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * some <b>explicit settings</b> applied in this field (even if this returns null,
      * the index may be implicitly defined by an indexing statement)
      */
+    @Override
     public Index getIndex(String name) {
         return indices.get(name);
     }
@@ -601,6 +616,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /** Returns the rank settings set in a "rank" block for this field. This is never null. */
+    @Override
     public Ranking getRanking() { return ranking; }
 
     /** Returns the default rank type of indices of this field, or null if nothing is set */
@@ -612,6 +628,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      *
      * <p>TODO: Make unmodifiable.</p>
      */
+    @Override
     public Map<String, Attribute> getAttributes() { return attributes; }
 
     public void addAttribute(Attribute attribute) {
@@ -629,16 +646,23 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      *
      * @return the stemming setting of this, or null, to use the default
      */
+    @Override
     public Stemming getStemming() { return stemming; }
 
     /**
      * Whether this field should be stemmed in this search definition
      */
+    @Override
     public Stemming getStemming(Search search) {
         if (stemming!=null)
             return stemming;
         else
             return search.getStemming();
+    }
+
+    @Override
+    public Field asField() {
+        return this;
     }
 
     /**
@@ -685,6 +709,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /** Returns list of static struct fields */
+    @Override
     public Collection<SDField> getStructFields() { return structFields.values(); }
 
     /**
@@ -692,6 +717,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * potentially traversing into nested structs.
      * Returns null if there is no such struct field defined.
      */
+    @Override
     public SDField getStructField(String name) {
         if (name.contains(".")) {
             String superFieldName = name.substring(0,name.indexOf("."));
@@ -708,6 +734,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     /**
      * Returns how the content of this field should be accent normalized etc
      */
+    @Override
     public NormalizeLevel getNormalizing() { return normalizing; }
 
     /**
@@ -727,6 +754,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * A list of query commands
      * @return a list of strings with query commands.
      */
+    @Override
     public List<String> getQueryCommands() {
         return queryCommands;
     }
@@ -766,6 +794,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /** The aliases declared for this field */
+    @Override
     public Map<String, String> getAliasToName() {
         return aliasToName;
     }

@@ -48,6 +48,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         derive(search);
     }
 
+    @Override
     protected void derive(Search search) {
         super.derive(search); // Derive per field
         this.search = search;
@@ -74,6 +75,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
     }
 
+    @Override
     protected void derive(Index index, Search search) {
         if (index.getMatchGroup().size() > 0) {
             addIndexCommand(index.getName(), CMD_MATCH_GROUP + toSpaceSeparated(index.getMatchGroup()));
@@ -91,7 +93,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         return b.toString();
     }
 
-    protected void derive(SDField field, Search search) {
+    @Override
+    protected void derive(ImmutableSDField field, Search search) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
             Index index = field.getIndex(field.getName());
             if (index != null) {
@@ -111,7 +114,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexAlias(alias, name);
         }
         if (field.usesStructOrMap()) {
-            for (SDField structField : field.getStructFields()) {
+            for (ImmutableSDField structField : field.getStructFields()) {
                 derive(structField, search); // Recursion
             }
         }
@@ -164,25 +167,25 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     }
 
-    static String stemCmd(SDField field, Search search) {
+    static String stemCmd(ImmutableSDField field, Search search) {
         return CMD_STEM + ":" + field.getStemming(search).toStemMode();
     }
 
-    private boolean stemSomehow(SDField field, Search search) {
+    private boolean stemSomehow(ImmutableSDField field, Search search) {
         if (field.getStemming(search).equals(Stemming.NONE)) return false;
         return isTypeOrNested(field, DataType.STRING);
     }
 
-    private boolean normalizeAccents(SDField field) {
+    private boolean normalizeAccents(ImmutableSDField field) {
         return field.getNormalizing().doRemoveAccents() && isTypeOrNested(field, DataType.STRING);
     }
 
-    private boolean isTypeOrNested(SDField field, DataType type) {
+    private boolean isTypeOrNested(ImmutableSDField field, DataType type) {
         return field.getDataType().equals(type) || field.getDataType().equals(DataType.getArray(type)) ||
                field.getDataType().equals(DataType.getWeightedSet(type));
     }
 
-    private boolean isUriField(Field field) {
+    private boolean isUriField(ImmutableSDField field) {
         DataType fieldType = field.getDataType();
         if (DataType.URI.equals(fieldType)) {
             return true;
@@ -195,7 +198,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         return false;
     }
 
-    private void addUriIndexCommands(SDField field) {
+    private void addUriIndexCommands(ImmutableSDField field) {
         String fieldName = field.getName();
         addIndexCommand(fieldName, CMD_FULLURL);
         addIndexCommand(fieldName, CMD_LOWERCASE);
@@ -225,14 +228,14 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     /**
      * Sets a command for all indices of a field
      */
-    private void addIndexCommand(SDField field, String command) {
+    private void addIndexCommand(ImmutableSDField field, String command) {
         addIndexCommand(field, command, null);
     }
 
     /**
      * Sets a command for all indices of a field
      */
-    private void addIndexCommand(SDField field, String command, IndexOverrider overrider) {
+    private void addIndexCommand(ImmutableSDField field, String command, IndexOverrider overrider) {
         if (overrider == null || !overrider.override(field.getName(), command, field)) {
             addIndexCommand(field.getName(), command);
         }
@@ -417,7 +420,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         return false;
     }
 
-    private Stemming getEffectiveStemming(SDField field) {
+    private Stemming getEffectiveStemming(ImmutableSDField field) {
         Stemming active = field.getStemming(search);
         if (field.getIndex(field.getName()) != null) {
             if (field.getIndex(field.getName()).getStemming()!=null) {
@@ -447,7 +450,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (m.getType().equals(Matching.Type.WORD)) return true;
         return false;
     }
-    
+
+    @Override
     protected String getDerivedName() {
         return "index-info";
     }
@@ -518,7 +522,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
          * Override the setting of this index for this field, returns true if overriden, false if this index should be
          * set according to the field
          */
-        public abstract boolean override(String indexName, String command, SDField field);
+        public abstract boolean override(String indexName, String command, ImmutableSDField field);
 
     }
 
@@ -531,7 +535,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             this.search = search;
         }
 
-        public boolean override(String indexName, String command, SDField field) {
+        public boolean override(String indexName, String command, ImmutableSDField field) {
             if (search == null) {
                 return false;
             }

@@ -1,17 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.document.*;
+import com.yahoo.config.subscription.ConfigInstanceUtil;
+import com.yahoo.document.DataType;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The set of all attribute fields defined by a search definition
@@ -34,12 +40,16 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     /**
      * Derives everything from a field
      */
-    protected void derive(SDField field, Search search) {
+    @Override
+    protected void derive(ImmutableSDField field, Search search) {
         if (field.usesStructOrMap() &&
             !field.getDataType().equals(PositionDataType.INSTANCE) &&
             !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)))
         {
             return; // Ignore struct fields for indexed search (only implemented for streaming search)
+        }
+        if (field.isImportedField()) {
+            return; // Ignore imported fields
         }
         deriveAttributes(field);
     }
@@ -57,8 +67,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     /**
      * Derives one attribute. TODO: Support non-default named attributes
+     * @param field
      */
-    private void deriveAttributes(SDField field) {
+    private void deriveAttributes(ImmutableSDField field) {
         for (Attribute fieldAttribute : field.getAttributes().values()) {
             Attribute attribute = getAttribute(fieldAttribute.getName());
             if (attribute == null) {
@@ -97,6 +108,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return "attributes " + getName();
     }
 
+    @Override
     protected String getDerivedName() {
         return "attributes";
     }

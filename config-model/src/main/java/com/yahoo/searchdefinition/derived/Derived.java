@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.Field;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.config.ConfigInstance;
@@ -44,6 +45,8 @@ public abstract class Derived implements Exportable {
         for (SDField field : search.allExtraFields() ) {
             derive(field,search);
         }
+        search.allImportedFields()
+                .forEach(importedField -> derive(importedField, search));
     }
 
 
@@ -64,7 +67,7 @@ public abstract class Derived implements Exportable {
      * Derives the content of this configuration. This
      * default does nothing.
      */
-    protected void derive(SDField field,Search search) {}
+    protected void derive(ImmutableSDField field, Search search) {}
 
     /**
      * Derives the content of this configuration. This

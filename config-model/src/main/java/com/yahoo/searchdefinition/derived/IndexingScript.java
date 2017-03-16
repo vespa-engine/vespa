@@ -1,15 +1,30 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.document.*;
-import com.yahoo.searchdefinition.*;
-import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.PositionDataType;
+import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
+import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
+import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.GuardExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.PassthroughExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ZCurveExpression;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * An indexing language script derived from a search definition. An indexing script contains a set of indexing
@@ -26,7 +41,11 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         derive(search);
     }
 
-    protected void derive(SDField field, Search search) {
+    @Override
+    protected void derive(ImmutableSDField field, Search search) {
+        if (field.isImportedField()) {
+            return;
+        }
         if (!field.isExtraField()) {
             docFields.add(field.getName());
         }
