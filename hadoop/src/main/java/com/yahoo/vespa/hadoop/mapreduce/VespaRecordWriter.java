@@ -54,14 +54,10 @@ public class VespaRecordWriter extends RecordWriter {
     private final VespaConfiguration configuration;
     private final int progressInterval;
 
-    private final TaskAttemptContext context;
-
-
-    VespaRecordWriter(VespaConfiguration configuration, VespaCounters counters, TaskAttemptContext context) {
+    VespaRecordWriter(VespaConfiguration configuration, VespaCounters counters) {
         this.counters = counters;
         this.configuration = configuration;
         this.progressInterval = configuration.progressInterval();
-        this.context = context;
     }
 
 

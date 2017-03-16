@@ -34,7 +34,7 @@ public class VespaOutputFormat extends OutputFormat {
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         VespaCounters counters = VespaCounters.get(context);
         VespaConfiguration configuration = VespaConfiguration.get(context.getConfiguration(), configOverride);
-        return new VespaRecordWriter(configuration, counters, context);
+        return new VespaRecordWriter(configuration, counters);
     }
 
 
@@ -46,7 +46,6 @@ public class VespaOutputFormat extends OutputFormat {
 
     @Override
     public void checkOutputSpecs(JobContext jobContext) throws IOException, InterruptedException {
-        System.out.println("Hei");
     }
 
 }
