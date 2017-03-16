@@ -23,7 +23,7 @@ public class VespaConfiguration {
     public static final String ROUTE = "vespa.feed.route";
     public static final String MAX_SLEEP_TIME_MS = "vespa.feed.max.sleep.time.ms";
     public static final String MAX_IN_FLIGHT_REQUESTS = "vespa.feed.max.in.flight.requests";
-    public static final String RANDOM_STARTUP_SLEEP = "vespa.feed.random.startup.sleep.seconds";
+    public static final String RANDOM_STARTUP_SLEEP = "vespa.feed.random.startup.sleep.ms";
     public static final String NUM_RETRIES = "vespa.feed.num.retries";
 
     private final Configuration conf;
