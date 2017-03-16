@@ -78,21 +78,17 @@ public class UpstreamConfigSubscriberTest {
 
     @Test
     public void require_that_error_response_is_handled() {
-        RawConfig fooConfig = Helper.fooConfig;
-        sourceResponses.put(fooConfig.getKey(), fooConfig);
-
         // Create config with error based on fooConfig
-        generation++;
+        RawConfig fooConfig = Helper.fooConfig;
         ConfigPayload errorConfigPayload = new ConfigPayload(new Slime());
         Payload errorPayload = Payload.from(errorConfigPayload);
-        ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
-        RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(), errorPayload,
+        RawConfig errorConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(), errorPayload,
                                               ConfigUtils.getMd5(errorConfigPayload), generation,
                                               ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
+        sourceResponses.put(fooConfig.getKey(), errorConfig);
 
-        sourceResponses.put(errorConfigKey, errorConfig);
         UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(errorConfig);
-        waitForConfigGeneration(clientUpdater, errorConfigKey, generation);
+        waitForConfigGeneration(clientUpdater, fooConfig.getKey(), generation);
         RawConfig lastConfig = clientUpdater.getLastConfig();
         assertEquals(errorConfig, lastConfig);
         assertThat(lastConfig.errorCode(), is(ErrorCode.UNKNOWN_DEFINITION));
@@ -126,8 +122,8 @@ public class UpstreamConfigSubscriberTest {
         } while (Instant.now().isBefore(end));
 
         assertNotNull(lastConfig);
-        assertThat(lastConfig.getGeneration(), is(expectedGeneration));
         assertThat(lastConfig.getKey(), is(configKey));
+        assertThat(lastConfig.getGeneration(), is(expectedGeneration));
     }
 
     static class MockClientUpdater extends ClientUpdater {
