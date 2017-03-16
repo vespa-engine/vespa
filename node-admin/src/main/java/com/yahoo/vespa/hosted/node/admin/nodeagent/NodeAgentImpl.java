@@ -417,6 +417,9 @@ public class NodeAgentImpl implements NodeAgent {
             } else {
                 try {
                     tick();
+                } catch (OrchestratorException e) {
+                    logger.info(e.getMessage());
+                    addDebugMessage(e.getMessage());
                 } catch (Exception e) {
                     numberOfUnhandledException++;
                     logger.error("Unhandled exception, ignoring.", e);
