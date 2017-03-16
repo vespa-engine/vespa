@@ -1,22 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attributefilesavetarget.h"
+#include "attributeiterators.hpp"
+#include "attributesaver.h"
 #include "attributevector.h"
 #include "attributevector.hpp"
-#include "attributeiterators.hpp"
-#include "attributefilesavetarget.h"
-#include "stringbase.h"
 #include "floatbase.h"
 #include "interlock.h"
-#include "attributesaver.h"
-#include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include "ipostinglistsearchcontext.h"
 #include "ipostinglistattributebase.h"
-#include <vespa/searchlib/queryeval/emptysearch.h>
+#include "ipostinglistsearchcontext.h"
+#include "stringbase.h"
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/query_term_decoder.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -552,7 +553,14 @@ AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :
 AttributeVector::SearchContext::UP
 AttributeVector::getSearch(QueryPacketT searchSpec, const SearchContextParams &params) const
 {
-    return getSearch(SearchContext::decodeQuery(searchSpec), params);
+    return getSearch(QueryTermDecoder::decodeTerm(searchSpec), params);
+}
+
+attribute::ISearchContext::UP
+AttributeVector::createSearchContext(QueryTermSimpleUP term,
+                                     const attribute::SearchContextParams &params) const
+{
+    return getSearch(std::move(term), params);
 }
 
 AttributeVector::SearchContext::~SearchContext() { }
@@ -566,21 +574,6 @@ AttributeVector::SearchContext::approximateHits() const
     return std::max(uint64_t(_attr.getNumDocs()),
                     _attr.getStatus().getNumValues());
 }
-
-QueryTermSimple::UP
-AttributeVector::SearchContext::decodeQuery(QueryPacketT searchSpec)
-{
-    QueryTermSimple::UP qt;
-    QueryNodeResultFactory factory;
-    Query q(factory, searchSpec);
-    if (q.valid() && (dynamic_cast<QueryTerm *>(q.getRoot().get()))) {
-        qt.reset(static_cast<QueryTerm *>(q.getRoot().release()));
-    } else {
-        throw IllegalStateException("Failed decoding query");
-    }
-    return qt;
-}
-
 
 SearchIterator::UP
 AttributeVector::SearchContext::

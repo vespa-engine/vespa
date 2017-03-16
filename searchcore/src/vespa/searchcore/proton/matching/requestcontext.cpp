@@ -11,18 +11,16 @@ RequestContext::RequestContext(const Doom & softDoom, IAttributeContext & attrib
     _attributeContext(attributeContext)
 { }
 
-const search::AttributeVector *
-RequestContext::getAttribute(const vespalib::string & name) const
+const search::attribute::IAttributeVector *
+RequestContext::getAttribute(const vespalib::string &name) const
 {
-    const IAttributeVector * iav = _attributeContext.getAttribute(name);
-    return dynamic_cast<const search::AttributeVector *>(iav);
+    return _attributeContext.getAttribute(name);
 }
 
-const search::AttributeVector *
-RequestContext::getAttributeStableEnum(const vespalib::string & name) const
+const search::attribute::IAttributeVector *
+RequestContext::getAttributeStableEnum(const vespalib::string &name) const
 {
-    const IAttributeVector * iav = _attributeContext.getAttributeStableEnum(name);
-    return dynamic_cast<const search::AttributeVector *>(iav);
+    return _attributeContext.getAttributeStableEnum(name);
 }
 
 }
