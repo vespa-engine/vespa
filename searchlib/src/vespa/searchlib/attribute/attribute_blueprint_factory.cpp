@@ -142,7 +142,7 @@ void
 AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     search::queryeval::LeafBlueprint::visitMembers(visitor);
-    visit(visitor, "attribute", _search_context->attribute().getName());
+    visit(visitor, "attribute", _search_context->attributeName());
 }
 
 //-----------------------------------------------------------------------------

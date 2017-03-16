@@ -524,52 +524,25 @@ public:
 
         typedef std::unique_ptr<SearchContext> UP;
         ~SearchContext();
-        unsigned int approximateHits() const override;
 
-        /**
-         * Creates an attribute search iterator associated with this
-         * search context.
-         *
-         * @return attribute search iterator
-         *
-         * @param matchData the attribute match data used when
-         * unpacking data for a hit
-         *
-         * @param strict whether the iterator should be strict or not
-         *
-         * @param useBitVector whether bitvectors should be used when available
-         **/
-        queryeval::SearchIterator::UP
-        createIterator(fef::TermFieldMatchData *matchData, bool strict) override;
+        // Implements attribute::ISearchContext
+        virtual unsigned int approximateHits() const override;
+        virtual queryeval::SearchIterator::UP createIterator(fef::TermFieldMatchData *matchData, bool strict) override;
+        virtual void fetchPostings(bool strict) override;
+        virtual bool valid() const override { return false; }
+        virtual Int64Range getAsIntegerTerm() const override { return Int64Range(); }
+        virtual const QueryTermBase &queryTerm() const override {
+            return *static_cast<const QueryTermBase *>(NULL);
+        }
+        virtual const vespalib::string &attributeName() const override {
+            return _attr.getName();
+        }
 
-        /**
-         * Creates an attribute search iterator associated with this
-         * search context.  Postings lists are not used.
-         *
-         * @return attribute search iterator
-         *
-         * @param matchData the attribute match data used when
-         * unpacking data for a hit
-         *
-         * @param strict whether the iterator should be strict or not
-         **/
-        queryeval::SearchIterator::UP
-        createFilterIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
-        /*
-         * Create temporary posting lists.  Should be called before
-         * createIterator is called.
-         */
-        virtual void fetchPostings(bool strict);
+
         bool cmp(DocId docId, int32_t &weight) const { return onCmp(docId, weight); }
         bool cmp(DocId docId) const { return onCmp(docId); }
         const AttributeVector & attribute() const { return _attr; }
-        virtual bool valid() const { return false; }
-        virtual Int64Range getAsIntegerTerm() const { return Int64Range(); }
-
-        virtual const QueryTermBase & queryTerm() const {
-            return *static_cast<const QueryTermBase *>(NULL);
-        }
 
     protected:
         SearchContext(const AttributeVector &attr);
@@ -580,6 +553,12 @@ public:
         const AttributeVector & _attr;
     protected:
         attribute::IPostingListSearchContext *_plsc;
+
+        /**
+         * Creates an attribute search iterator associated with this
+         * search context. Postings lists are not used.
+         **/
+        virtual queryeval::SearchIterator::UP createFilterIterator(fef::TermFieldMatchData *matchData, bool strict);
 
         bool getIsFilter() const { return _attr.getConfig().getIsFilter(); }
     };

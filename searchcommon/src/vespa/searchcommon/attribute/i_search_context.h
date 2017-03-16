@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/range.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search {
 
@@ -16,8 +17,6 @@ namespace queryeval {
 class QueryTermBase;
 
 namespace attribute {
-
-class IAttributeVector;
 
 class ISearchContext {
 public:
@@ -40,20 +39,6 @@ public:
     virtual std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
 
-    /**
-     * Creates an attribute search iterator associated with this
-     * search context.  Postings lists are not used.
-     *
-     * @return attribute search iterator
-     *
-     * @param matchData the attribute match data used when
-     * unpacking data for a hit
-     *
-     * @param strict whether the iterator should be strict or not
-     **/
-    virtual std::unique_ptr<queryeval::SearchIterator>
-    createFilterIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
-
     /*
      * Create temporary posting lists.
      * Should be called before createIterator() is called.
@@ -63,7 +48,7 @@ public:
     virtual bool valid() const = 0;
     virtual Int64Range getAsIntegerTerm() const = 0;
     virtual const QueryTermBase &queryTerm() const = 0;
-    virtual const IAttributeVector &attribute() const = 0;
+    virtual const vespalib::string &attributeName() const = 0;
 
 };
 
