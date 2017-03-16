@@ -17,18 +17,19 @@ set(RUN_BENCHMARKS FALSE CACHE BOOL "If TRUE, benchmarks are run together with t
 set(AUTORUN_UNIT_TESTS FALSE CACHE BOOL "If TRUE, tests will be run immediately after linking the test executable")
 
 # Warnings
-set(WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
+set(WARN_OPTS "-Winline -Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
 
 # C and C++ compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -Winline ${WARN_OPTS} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_DISABLE_ASSERTS -march=westmere -mtune=intel ${EXTRA_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -Wnon-virtual-dtor -fvisibility-inlines-hidden -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 ${WARN_OPTS} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_DISABLE_ASSERTS -march=westmere -mtune=intel ${EXTRA_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -std=c++1z -Wnon-virtual-dtor -fvisibility-inlines-hidden -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
 
 # Linker flags
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--build-id -latomic -ldl -Wl,-E")
 SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -rdynamic" )
 
-# Use C++ 14
-set(CMAKE_CXX_STANDARD 14)
+# Use C++ 17
+#TODO renable when cmake 3.8 is out.
+# set(CMAKE_CXX_STANDARD 17)
 
 # Always build shared libs if not explicitly specified
 set(BUILD_SHARED_LIBS ON)
