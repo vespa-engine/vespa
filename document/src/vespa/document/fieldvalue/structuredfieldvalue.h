@@ -10,8 +10,8 @@
  */
 #pragma once
 
+#include "fieldvalue.h"
 #include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
 
@@ -51,8 +51,8 @@ protected:
     };
     class Iterator {
         const StructuredFieldValue* _owner;
-        vespalib::LinkedPtr<StructuredIterator> _iterator;
-        const Field* _field;
+        StructuredIterator::UP      _iterator;
+        const Field *               _field;
 
     public:
         Iterator(); // Generate end iterator
@@ -66,7 +66,7 @@ protected:
             _field = _iterator->getNextField();
             return *this;
         }
-        Iterator operator++(int); // postfix
+
         bool operator==(const Iterator& other) const {
             if (_field == 0 && other._field == 0)
                // both at end()

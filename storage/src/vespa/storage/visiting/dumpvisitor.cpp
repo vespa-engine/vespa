@@ -90,7 +90,7 @@ void DumpVisitor::handleDocuments(const document::BucketId& bucketId,
             {
                 if (_requestedFields.get()) {
                     for (document::Document::const_iterator docIter
-                            = d->begin(); docIter != d->end(); docIter++)
+                            = d->begin(); docIter != d->end(); ++docIter)
                     {
                         if (_requestedFields->find(docIter.field().getName())
                                 == _requestedFields->end())

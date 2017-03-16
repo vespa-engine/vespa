@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
+#include "docsumfieldspec.h"
 #include <vespa/vsm/common/storagedocument.h>
-#include <vespa/vsm/vsm/docsumfieldspec.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/util/rawbuf.h>
 
@@ -20,13 +20,15 @@ private:
     search::RawBuf _rbuf;
     vespalib::Slime _slime;
     const DocsumFieldSpec::FieldIdentifierVector * _inputFields;
-    FieldPath _currPath;
+    std::vector<vespalib::string> _currPath;
 
     void traverseRecursive(const document::FieldValue & fv, vespalib::slime::Inserter & inserter);
-    bool explorePath();
+    bool explorePath(vespalib::stringref candidate);
 
 public:
     SlimeFieldWriter();
+    ~SlimeFieldWriter();
+
 
     /**
      * Specifies the subset of the field value that should be written.

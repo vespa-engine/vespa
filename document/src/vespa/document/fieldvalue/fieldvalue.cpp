@@ -231,10 +231,8 @@ std::string
 FieldValue::IteratorHandler::toString(const VariableMap& vars) {
     std::ostringstream out;
     out << "[ ";
-    for (FieldValue::IteratorHandler::VariableMap::const_iterator iter = vars.begin();
-         iter != vars.end();
-         iter++) {
-        out << iter->first << "=" << iter->second.toString() << " ";
+    for (const auto & entry : vars) {
+        out << entry.first << "=" << entry.second.toString() << " ";
     }
     out << "]";
     return out.str();
@@ -285,9 +283,6 @@ FieldValue::createArray(const DataType & baseType)
         return IArray::UP(new ComplexArrayT<FieldValue>(FieldValueFactory::UP(new FieldValueFactory(DataType::UP(baseType.clone())))));
     }
 }
-
-bool operator != (const FieldValue::LP & a, const FieldValue::LP & b) { return *a != *b; }
-bool operator  < (const FieldValue::LP & a, const FieldValue::LP & b) { return *a < *b; }
 
 std::ostream& operator<<(std::ostream& out, const FieldValue & p) {
     p.print(out);

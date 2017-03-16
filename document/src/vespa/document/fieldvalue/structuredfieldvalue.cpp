@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/structuredfieldvalue.hpp>
-#include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include "structuredfieldvalue.hpp"
+#include "fieldvalues.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.structured");
@@ -25,14 +23,6 @@ StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner,
       _iterator(owner.getIterator(first).release()),
       _field(_iterator->getNextField())
 {
-}
-
-StructuredFieldValue::Iterator
-StructuredFieldValue::Iterator::operator++(int) // postfix
-{
-    StructuredFieldValue::Iterator it(*this);
-    operator++();
-    return it;
 }
 
 StructuredFieldValue::StructuredFieldValue(const StructuredFieldValue& other)
@@ -149,7 +139,7 @@ StructuredFieldValue::onIterateNested(
         if (handler.handleComplex(*this)) {
             LOG(spam, "handleComplex");
             std::vector<const Field*> fieldsToRemove;
-            for (const_iterator it(begin()), mt(end()); it != mt; it++) {
+            for (const_iterator it(begin()), mt(end()); it != mt; ++it) {
                 IteratorHandler::ModificationStatus
                     currStatus = getValue(it.field())->iterateNested(start, end_, handler);
                 if (currStatus == IteratorHandler::REMOVED) {
@@ -160,11 +150,8 @@ StructuredFieldValue::onIterateNested(
                 }
             }
 
-            for (std::vector<const Field*>::iterator
-                     i = fieldsToRemove.begin(), last = fieldsToRemove.end();
-                 i != last; ++i)
-            {
-                const_cast<StructuredFieldValue&>(*this).remove(**i);
+            for (const Field * toRemove : fieldsToRemove){
+                const_cast<StructuredFieldValue&>(*this).remove(*toRemove);
             }
         }
 

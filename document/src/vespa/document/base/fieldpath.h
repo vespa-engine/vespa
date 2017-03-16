@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
 #include <vespa/vespalib/objects/cloneable.h>
-#include <vespa/vespalib/util/linkedptr.h>
-#include <memory>
 #include <vespa/document/util/identifiableid.h>
+#include <memory>
+#include <vector>
 
 namespace vespalib {
 class ObjectVisitor;

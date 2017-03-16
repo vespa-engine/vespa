@@ -11,13 +11,13 @@
  */
 #pragma once
 
-#include <vespa/vespalib/objects/cloneable.h>
 
 #include "fieldvaluevisitor.h"
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/util/xmlserializable.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/objects/cloneable.h>
 #include <map>
 
 namespace vespalib {
@@ -37,7 +37,6 @@ protected:
 public:
     typedef std::unique_ptr<FieldValue> UP;
     typedef std::shared_ptr<FieldValue> SP;
-    typedef vespalib::LinkedPtr<FieldValue> LP;
     typedef vespalib::CloneablePtr<FieldValue> CP;
 
     class IteratorHandler {
@@ -312,9 +311,6 @@ private:
             FieldPath::const_iterator end,
             IteratorHandler & handler) const;
 };
-
-bool operator != (const FieldValue::LP & a, const FieldValue::LP & b);
-bool operator  < (const FieldValue::LP & a, const FieldValue::LP & b);
 
 std::ostream& operator<<(std::ostream& out, const FieldValue & p);
 
