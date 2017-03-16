@@ -83,8 +83,6 @@ public class MapReduceTest {
         boolean success = job.waitForCompletion(true);
         assertTrue("Job Failed", success);
 
-        Counters c = job.getCounters();
-
         VespaCounters counters = VespaCounters.get(job);
         assertEquals(10, counters.getDocumentsSent());
         assertEquals(0, counters.getDocumentsFailed());
