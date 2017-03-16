@@ -116,7 +116,7 @@ public class AclMaintainerTest {
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-P", "INPUT", "DROP"})
+                aryEq(new String[]{"ip6tables", "-P", "INPUT", "REJECT"})
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
