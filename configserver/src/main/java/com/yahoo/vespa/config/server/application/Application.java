@@ -28,7 +28,7 @@ import java.util.Set;
 
 /**
  * A Vespa application for a specific version of Vespa. It holds data and metadata associated with
- * a Vespa application, i.e. generation, vespamodel instance and zookeeper data, as well as methods for resolving config
+ * a Vespa application, i.e. generation, model and zookeeper data, as well as methods for resolving config
  * and other queries against the model.
  *
  * @author Harald Musum
@@ -113,16 +113,13 @@ public class Application implements ModelResult {
             }
         }
 
-        // Try new ConfigInstance based API:
-        ConfigDefinitionWrapper configDefinitionWrapper = getTargetDef(req);
-        ConfigDefinition def = configDefinitionWrapper.getDef();
+        ConfigDefinition def = getTargetDef(req);
         if (def == null) {
             metricUpdater.incrementFailedRequests();
             throw new UnknownConfigDefinitionException("Unable to find config definition for '" + configKey.getNamespace() + "." + configKey.getName());
         }
-        configKey = new ConfigKey<>(configDefinitionWrapper.getDefKey().getName(), configKey.getConfigId(), configDefinitionWrapper.getDefKey().getNamespace());
         if (logDebug()) {
-            debug("Resolving " + configKey + " with targetDef=" + def);
+            debug("Resolving " + configKey + " with config definition " + def);
         }
         ConfigPayload payload = model.getConfig(configKey, def);
         if (payload == null) {
@@ -148,7 +145,7 @@ public class Application implements ModelResult {
         log.log(LogLevel.DEBUG, Tenants.logPre(getId())+message);
     }
 
-    private ConfigDefinitionWrapper getTargetDef(GetConfigRequest req) {
+    private ConfigDefinition getTargetDef(GetConfigRequest req) {
         ConfigKey<?> configKey = req.getConfigKey();
         DefContent def = req.getDefContent();
         ConfigDefinitionKey configDefinitionKey = new ConfigDefinitionKey(configKey.getName(), configKey.getNamespace());
@@ -156,48 +153,23 @@ public class Application implements ModelResult {
             if (logDebug()) {
                 debug("No config schema in request for " + configKey);
             }
-            ConfigDefinition ret = cache.getDef(configDefinitionKey);
-            return new ConfigDefinitionWrapper(configDefinitionKey, ret);
+            return cache.getDef(configDefinitionKey);
+
         } else {
             if (logDebug()) {
                 debug("Got config schema from request, length:" + def.asList().size() + " : " + configKey);
             }
-            return new ConfigDefinitionWrapper(configDefinitionKey, new ConfigDefinition(configKey.getName(), def.asStringArray()));
+            return new ConfigDefinition(configKey.getName(), def.asStringArray());
         }
     }
 
-    public void updateHostMetrics(int numHosts) {
+    void updateHostMetrics(int numHosts) {
         metricUpdater.setHosts(numHosts);
     }
 
     // For testing only
     ConfigResponse resolveConfig(GetConfigRequest req) {
         return resolveConfig(req, new UncompressedConfigResponseFactory());
-    }
-
-    /**
-     * Wrapper class for holding config definition key and def, since when looking up
-     * we may end up changing the config definition key (fallback mechanism when using
-     * legacy config namespace (or not using config namespace))
-     */
-    // TODO: Remove, no legacy config namespace anymore and namespace is required
-    private static class ConfigDefinitionWrapper {
-
-        private final ConfigDefinitionKey defKey;
-        private final ConfigDefinition def;
-
-        ConfigDefinitionWrapper(ConfigDefinitionKey defKey, ConfigDefinition def) {
-            this.defKey = defKey;
-            this.def = def;
-        }
-
-        public ConfigDefinitionKey getDefKey() {
-            return defKey;
-        }
-
-        public ConfigDefinition getDef() {
-            return def;
-        }
     }
 
     public Set<ConfigKey<?>> allConfigsProduced() {

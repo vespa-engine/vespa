@@ -19,6 +19,7 @@ public class ConfigDefinition {
     private final String[] defSchema;
     private final InnerCNode cnode;
 
+    // TODO: Should have namespace
     public ConfigDefinition(String name, String[] defSchema) {
         this.name = name;
         this.defSchema = defSchema;
