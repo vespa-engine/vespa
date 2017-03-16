@@ -32,7 +32,7 @@ public class Acl {
         final ImmutableList.Builder<Command> commands = ImmutableList.builder();
         commands.add(
                 // Default policies
-                new PolicyCommand(Chain.INPUT, Action.DROP),
+                new PolicyCommand(Chain.INPUT, Action.REJECT),
                 new PolicyCommand(Chain.FORWARD, Action.DROP),
                 new PolicyCommand(Chain.OUTPUT, Action.ACCEPT),
 
