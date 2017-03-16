@@ -60,7 +60,7 @@ public class TupleTools {
         while (m.find()) {
             Object value = fields.get(m.group(1));
             String replacement = value != null ? value.toString() : m.group(0);
-            m.appendReplacement(sb, replacement);
+            m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
         }
         m.appendTail(sb);
         return sb.toString();

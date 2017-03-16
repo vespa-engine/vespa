@@ -1,49 +1,39 @@
 package com.yahoo.vespa.hadoop.pig;
 
 import com.sun.net.httpserver.HttpServer;
-import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
-import com.yahoo.vespa.hadoop.mapreduce.util.VespaHttpClient;
 import com.yahoo.vespa.hadoop.util.MockQueryHandler;
-import junit.framework.Assert;
-import org.apache.avro.generic.GenericData;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
-import org.apache.pig.backend.executionengine.ExecJob;
 import org.apache.pig.data.Tuple;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class VespaQueryTest {
 
     @Test
     public void requireThatQueriesAreReturnedCorrectly() throws Exception {
-        MockQueryHandler queryHandler = createQueryHandler();
+        runQueryTest("src/test/pig/query.pig", createQueryHandler(""), 18901);
+    }
 
-        final int port = 18901;
+    @Test
+    public void requireThatQueriesAreReturnedCorrectlyWithAlternativeJsonRoot() throws Exception {
+        runQueryTest("src/test/pig/query_alt_root.pig", createQueryHandler("children"), 18902);
+    }
+
+    private void runQueryTest(String script, MockQueryHandler queryHandler, int port) throws Exception {
         final String endpoint = "http://localhost:" + port;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", queryHandler);
         server.start();
 
-        PigServer ps = setup("src/test/pig/query.pig", endpoint);
+        PigServer ps = setup(script, endpoint);
 
         Iterator<Tuple> recommendations = ps.openIterator("recommendations");
         while (recommendations.hasNext()) {
@@ -81,8 +71,8 @@ public class VespaQueryTest {
         return ps;
     }
 
-    private MockQueryHandler createQueryHandler() {
-        MockQueryHandler queryHandler = new MockQueryHandler();
+    private MockQueryHandler createQueryHandler(String childNode) {
+        MockQueryHandler queryHandler = new MockQueryHandler(childNode);
 
         List<String> userIds = Arrays.asList("5", "104", "313");
 

@@ -21,6 +21,10 @@ public class VespaConfiguration {
     public static final String THROTTLER_MIN_SIZE = "vespa.feed.throttler.min.size";
     public static final String QUERY_CONNECTION_TIMEOUT = "vespa.query.connection.timeout";
     public static final String ROUTE = "vespa.feed.route";
+    public static final String MAX_SLEEP_TIME_MS = "vespa.feed.max.sleep.time.ms";
+    public static final String MAX_IN_FLIGHT_REQUESTS = "vespa.feed.max.in.flight.requests";
+    public static final String RANDOM_STARTUP_SLEEP = "vespa.feed.random.startup.sleep.seconds";
+    public static final String NUM_RETRIES = "vespa.feed.num.retries";
 
     private final Configuration conf;
     private final Properties override;
@@ -62,12 +66,12 @@ public class VespaConfiguration {
 
 
     public boolean useV3Protocol() {
-        return getBoolean(V3_PROTOCOL, false);
+        return getBoolean(V3_PROTOCOL, true);
     }
 
 
     public int numConnections() {
-        return getInt(CONNECTIONS, 8);
+        return getInt(CONNECTIONS, 2);
     }
 
 
@@ -80,8 +84,29 @@ public class VespaConfiguration {
         return getInt(QUERY_CONNECTION_TIMEOUT, 10000);
     }
 
+
     public String route() {
         return getString(ROUTE);
+    }
+
+
+    public int maxSleepTimeMs() {
+        return getInt(MAX_SLEEP_TIME_MS, 10000);
+    }
+
+
+    public int maxInFlightRequests() {
+        return getInt(MAX_IN_FLIGHT_REQUESTS, 1000);
+    }
+
+
+    public int randomSartupSleepMs() {
+        return getInt(RANDOM_STARTUP_SLEEP, 30000);
+    }
+
+
+    public int numRetries() {
+        return getInt(NUM_RETRIES, 100);
     }
 
 
@@ -92,6 +117,7 @@ public class VespaConfiguration {
         }
         return FeedParams.DataFormat.JSON_UTF8;
     }
+
 
     public int progressInterval() {
         return getInt(PROGRESS_REPORT, 1000);
@@ -134,6 +160,28 @@ public class VespaConfiguration {
             }
         }
         return properties;
+    }
+
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ENDPOINT + ": " + endpoint() + "\n");
+        sb.append(PROXY_HOST + ": " + proxyHost() + "\n");
+        sb.append(PROXY_PORT + ": " + proxyPort() + "\n");
+        sb.append(DRYRUN + ": " +  dryrun() +"\n");
+        sb.append(USE_COMPRESSION + ": " +  useCompression() +"\n");
+        sb.append(DATA_FORMAT + ": " +  dataFormat() +"\n");
+        sb.append(PROGRESS_REPORT + ": " +  progressInterval() +"\n");
+        sb.append(V3_PROTOCOL + ": " +  useV3Protocol() +"\n");
+        sb.append(CONNECTIONS + ": " +  numConnections() +"\n");
+        sb.append(THROTTLER_MIN_SIZE + ": " +  throttlerMinSize() +"\n");
+        sb.append(QUERY_CONNECTION_TIMEOUT + ": " +  queryConnectionTimeout() +"\n");
+        sb.append(ROUTE + ": " +  route() +"\n");
+        sb.append(MAX_SLEEP_TIME_MS + ": " +  maxSleepTimeMs() +"\n");
+        sb.append(MAX_IN_FLIGHT_REQUESTS + ": " +  maxInFlightRequests() +"\n");
+        sb.append(RANDOM_STARTUP_SLEEP + ": " +  randomSartupSleepMs() +"\n");
+        sb.append(NUM_RETRIES + ": " +  numRetries() +"\n");
+        return sb.toString();
     }
 
 }

@@ -1,7 +1,13 @@
 package com.yahoo.vespa.hadoop.pig;
 
-import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
-import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.mapred.Counters;
@@ -11,22 +17,37 @@ import org.apache.pig.backend.executionengine.ExecJob;
 import org.apache.pig.tools.pigstats.JobStats;
 import org.apache.pig.tools.pigstats.PigStats;
 import org.apache.pig.tools.pigstats.mapreduce.MRJobStats;
-
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
+import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
 
 
 public class VespaStorageTest {
 
     @Test
+    public void requireThatPremadeXmlOperationsFeedSucceeds() throws Exception {
+        Configuration conf = new HdfsConfiguration();
+        conf.set(VespaConfiguration.DATA_FORMAT, "xml");
+        assertAllDocumentsOk("src/test/pig/feed_operations_xml.pig", conf);
+    }
+
+
+    @Test
     public void requireThatPremadeOperationsFeedSucceeds() throws Exception {
         assertAllDocumentsOk("src/test/pig/feed_operations.pig");
+    }
+
+
+    @Test
+    public void requireThatPremadeMultilineOperationsFeedSucceeds() throws Exception {
+        assertAllDocumentsOk("src/test/pig/feed_multiline_operations.pig");
+    }
+
+
+    @Test
+    public void requireThatPremadeOperationsWithJsonLoaderFeedSucceeds() throws Exception {
+        assertAllDocumentsOk("src/test/pig/feed_operations_with_json_loader.pig");
     }
 
 
@@ -47,10 +68,13 @@ public class VespaStorageTest {
         assertAllDocumentsOk("src/test/pig/feed_visit_data.pig");
     }
 
-    private PigServer setup(String script) throws Exception {
-        Configuration conf = new HdfsConfiguration();
-        conf.set(VespaConfiguration.DRYRUN, "true");
-        conf.set(VespaConfiguration.ENDPOINT, "dummy-endpoint");
+
+    private PigServer setup(String script, Configuration conf) throws Exception {
+        if (conf == null) {
+            conf = new HdfsConfiguration();
+        }
+        conf.setIfUnset(VespaConfiguration.DRYRUN, "true");
+        conf.setIfUnset(VespaConfiguration.ENDPOINT, "dummy-endpoint");
 
         // Parameter substitutions - can also be set by configuration
         Map<String, String> parameters = new HashMap<>();
@@ -63,8 +87,14 @@ public class VespaStorageTest {
         return ps;
     }
 
+
     private void assertAllDocumentsOk(String script) throws Exception {
-        PigServer ps = setup(script);
+        assertAllDocumentsOk(script, null);
+    }
+
+
+    private void assertAllDocumentsOk(String script, Configuration conf) throws Exception {
+        PigServer ps = setup(script, conf);
         List<ExecJob> jobs = ps.executeBatch();
         PigStats stats = jobs.get(0).getStatistics();
         for (JobStats js : stats.getJobGraph()) {

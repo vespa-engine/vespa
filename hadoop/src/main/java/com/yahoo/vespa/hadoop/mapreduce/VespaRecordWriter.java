@@ -1,5 +1,23 @@
 package com.yahoo.vespa.hadoop.mapreduce;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
+import java.util.Random;
+import java.util.StringTokenizer;
+import java.util.logging.Logger;
+
+import javax.xml.namespace.QName;
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -10,14 +28,13 @@ import com.yahoo.vespa.hadoop.pig.VespaDocumentOperation;
 import com.yahoo.vespa.http.client.FeedClient;
 import com.yahoo.vespa.http.client.FeedClientFactory;
 import com.yahoo.vespa.http.client.Result;
-import com.yahoo.vespa.http.client.config.*;
-import org.apache.hadoop.mapreduce.RecordWriter;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.logging.Logger;
+import com.yahoo.vespa.http.client.config.Cluster;
+import com.yahoo.vespa.http.client.config.ConnectionParams;
+import com.yahoo.vespa.http.client.config.Endpoint;
+import com.yahoo.vespa.http.client.config.FeedParams;
+import com.yahoo.vespa.http.client.config.FeedParams.DataFormat;
+import com.yahoo.vespa.http.client.config.SessionParams;
+import org.apache.hadoop.mapreduce.v2.app.job.Task;
 
 /**
  * VespaRecordWriter sends the output &lt;key, value&gt; to one or more Vespa
@@ -25,6 +42,7 @@ import java.util.logging.Logger;
  *
  * @author lesters
  */
+@SuppressWarnings("rawtypes")
 public class VespaRecordWriter extends RecordWriter {
 
     private final static Logger log = Logger.getLogger(VespaRecordWriter.class.getCanonicalName());
@@ -36,11 +54,14 @@ public class VespaRecordWriter extends RecordWriter {
     private final VespaConfiguration configuration;
     private final int progressInterval;
 
+    private final TaskAttemptContext context;
 
-    VespaRecordWriter(VespaConfiguration configuration, VespaCounters counters) {
+
+    VespaRecordWriter(VespaConfiguration configuration, VespaCounters counters, TaskAttemptContext context) {
         this.counters = counters;
         this.configuration = configuration;
         this.progressInterval = configuration.progressInterval();
+        this.context = context;
     }
 
 
@@ -50,13 +71,13 @@ public class VespaRecordWriter extends RecordWriter {
             initialize();
         }
 
-        // Assumption: json - xml not currently supported
-        String json = data.toString().trim();
+        String doc = data.toString().trim();
 
-        // Parse json to find document id - if none found, skip this write
-        String docId = findDocId(json);
+        // Parse data to find document id - if none found, skip this write
+        String docId = DataFormat.JSON_UTF8.equals(configuration.dataFormat()) ? findDocId(doc)
+                : findDocIdFromXml(doc);
         if (docId != null && docId.length() >= 0) {
-            feedClient.stream(docId, json);
+            feedClient.stream(docId, doc);
             counters.incrementDocumentsSent(1);
         } else {
             counters.incrementDocumentsSkipped(1);
@@ -83,11 +104,20 @@ public class VespaRecordWriter extends RecordWriter {
 
 
     private void initialize() {
+        if (!configuration.dryrun() && configuration.randomSartupSleepMs() > 0) {
+            int delay = new Random().nextInt(configuration.randomSartupSleepMs());
+            log.info("VespaStorage: Delaying startup by " + delay + " ms");
+            try {
+                Thread.sleep(delay);
+            } catch (Exception e) {}
+        }
+
         ConnectionParams.Builder connParamsBuilder = new ConnectionParams.Builder();
         connParamsBuilder.setDryRun(configuration.dryrun());
         connParamsBuilder.setUseCompression(configuration.useCompression());
         connParamsBuilder.setEnableV3Protocol(configuration.useV3Protocol());
         connParamsBuilder.setNumPersistentConnectionsPerEndpoint(configuration.numConnections());
+        connParamsBuilder.setMaxRetries(configuration.numRetries());
         if (configuration.proxyHost() != null) {
             connParamsBuilder.setProxyHost(configuration.proxyHost());
         }
@@ -98,6 +128,8 @@ public class VespaRecordWriter extends RecordWriter {
         FeedParams.Builder feedParamsBuilder = new FeedParams.Builder();
         feedParamsBuilder.setDataFormat(configuration.dataFormat());
         feedParamsBuilder.setRoute(configuration.route());
+        feedParamsBuilder.setMaxSleepTimeMs(configuration.maxSleepTimeMs());
+        feedParamsBuilder.setMaxInFlightRequests(configuration.maxInFlightRequests());
 
         SessionParams.Builder sessionParams = new SessionParams.Builder();
         sessionParams.setThrottlerMinSize(configuration.throttlerMinSize());
@@ -117,9 +149,29 @@ public class VespaRecordWriter extends RecordWriter {
         feedClient = FeedClientFactory.create(sessionParams.build(), resultCallback);
 
         initialized = true;
+        log.info("VespaStorage configuration:\n" + configuration.toString());
     }
 
-
+    private String findDocIdFromXml(String xml) {
+        try {
+            XMLEventReader eventReader = XMLInputFactory.newInstance().createXMLEventReader(new StringReader(xml));
+            while (eventReader.hasNext()) {
+                XMLEvent event = eventReader.nextEvent();
+                if (event.getEventType() == XMLEvent.START_ELEMENT) {
+                    StartElement element = event.asStartElement();
+                    String elementName = element.getName().getLocalPart();
+                    if (VespaDocumentOperation.Operation.valid(elementName)) {
+                        return element.getAttributeByName(QName.valueOf("documentid")).getValue();
+                    }
+                }
+            }
+        } catch (XMLStreamException | FactoryConfigurationError e) {
+            // as json dude does
+            return null;
+        }
+        return null;
+    }
+    
     private String findDocId(String json) throws IOException {
         JsonFactory factory = new JsonFactory();
         try(JsonParser parser = factory.createParser(json)) {

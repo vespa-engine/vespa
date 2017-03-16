@@ -16,6 +16,7 @@ import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -81,6 +82,8 @@ public class MapReduceTest {
 
         boolean success = job.waitForCompletion(true);
         assertTrue("Job Failed", success);
+
+        Counters c = job.getCounters();
 
         VespaCounters counters = VespaCounters.get(job);
         assertEquals(10, counters.getDocumentsSent());

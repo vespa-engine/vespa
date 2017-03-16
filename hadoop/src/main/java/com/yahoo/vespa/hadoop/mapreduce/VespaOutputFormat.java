@@ -14,6 +14,7 @@ import java.util.Properties;
  *
  * @author lesters
  */
+@SuppressWarnings("rawtypes")
 public class VespaOutputFormat extends OutputFormat {
 
     private final Properties configOverride;
@@ -33,7 +34,7 @@ public class VespaOutputFormat extends OutputFormat {
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         VespaCounters counters = VespaCounters.get(context);
         VespaConfiguration configuration = VespaConfiguration.get(context.getConfiguration(), configOverride);
-        return new VespaRecordWriter(configuration, counters);
+        return new VespaRecordWriter(configuration, counters, context);
     }
 
 
@@ -45,7 +46,7 @@ public class VespaOutputFormat extends OutputFormat {
 
     @Override
     public void checkOutputSpecs(JobContext jobContext) throws IOException, InterruptedException {
-
+        System.out.println("Hei");
     }
 
 }
