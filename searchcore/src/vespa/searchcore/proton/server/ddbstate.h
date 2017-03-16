@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "configvalidator.h"
+#include "config_validator_result_type.h"
+#include <vespa/vespalib/stllike/string.h>
 #include <mutex>
 #include <condition_variable>
 
@@ -159,7 +160,7 @@ public:
     setConfigState(ConfigState newConfigState);
 
     ConfigState
-    calcConfigState(const ConfigValidator::ResultType &cvr);
+    calcConfigState(const configvalidator::ResultType &cvr);
 
     void
     waitForOnlineState();

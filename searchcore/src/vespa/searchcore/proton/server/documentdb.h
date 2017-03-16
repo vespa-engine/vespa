@@ -61,6 +61,8 @@ namespace proton {
 class MetricsWireService;
 class IDocumentDBOwner;
 
+namespace configvalidator { class Result; }
+
 /**
  * The document database contains all the necessary structures required per
  * document type. It has an internal single-threaded Executor to process input
@@ -165,7 +167,7 @@ private:
 
     void
     handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
-                         const ConfigValidator::Result &cvr,
+                         const configvalidator::Result &cvr,
                          const DDBState::ConfigState &cs);
     void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot, SerialNum serialNum, const ReconfigParams &params);
     void applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum);

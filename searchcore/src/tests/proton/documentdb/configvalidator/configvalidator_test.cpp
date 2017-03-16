@@ -12,22 +12,35 @@ typedef Schema::AttributeField AField;
 typedef Schema::IndexField     IField;
 typedef Schema::SummaryField   SField;
 
-const ConfigValidator::ResultType OK  = ConfigValidator::OK;
-const ConfigValidator::ResultType DTC = ConfigValidator::DATA_TYPE_CHANGED;
-const ConfigValidator::ResultType CTC = ConfigValidator::COLLECTION_TYPE_CHANGED;
-const ConfigValidator::ResultType IAA = ConfigValidator::INDEX_ASPECT_ADDED;
-const ConfigValidator::ResultType IAR = ConfigValidator::INDEX_ASPECT_REMOVED;
-const ConfigValidator::ResultType AAA = ConfigValidator::ATTRIBUTE_ASPECT_ADDED;
-const ConfigValidator::ResultType AAR = ConfigValidator::ATTRIBUTE_ASPECT_REMOVED;
-const ConfigValidator::ResultType AFAA = ConfigValidator::ATTRIBUTE_FAST_ACCESS_ADDED;
-const ConfigValidator::ResultType AFAR = ConfigValidator::ATTRIBUTE_FAST_ACCESS_REMOVED;
-const ConfigValidator::ResultType ATTC = ConfigValidator::ATTRIBUTE_TENSOR_TYPE_CHANGED;
+using proton::configvalidator::ResultType;
+using proton::configvalidator::Result;
+
+const ResultType OK  = ResultType::OK;
+const ResultType DTC = ResultType::DATA_TYPE_CHANGED;
+const ResultType CTC = ResultType::COLLECTION_TYPE_CHANGED;
+const ResultType IAA = ResultType::INDEX_ASPECT_ADDED;
+const ResultType IAR = ResultType::INDEX_ASPECT_REMOVED;
+const ResultType AAA = ResultType::ATTRIBUTE_ASPECT_ADDED;
+const ResultType AAR = ResultType::ATTRIBUTE_ASPECT_REMOVED;
+const ResultType AFAA = ResultType::ATTRIBUTE_FAST_ACCESS_ADDED;
+const ResultType AFAR = ResultType::ATTRIBUTE_FAST_ACCESS_REMOVED;
+const ResultType ATTC = ResultType::ATTRIBUTE_TENSOR_TYPE_CHANGED;
 
 enum FType {
     INDEX,
     ATTRIBUTE,
     SUMMARY
 };
+
+namespace std {
+
+std::ostream &operator<<(std::ostream &os, const ResultType &value)
+{
+    os << static_cast<int>(value);
+    return os;
+}
+
+}
 
 struct SchemaBuilder
 {
@@ -70,7 +83,7 @@ createc(FType ftype, schema::CollectionType ctype)
     return create(ftype, schema::STRING, ctype);
 }
 
-ConfigValidator::ResultType
+ResultType
 checkSchema(const Schema &newSchema,
             const Schema &oldSchema,
             const Schema &oldHistory)
@@ -79,7 +92,7 @@ checkSchema(const Schema &newSchema,
             ConfigValidator::Config(oldSchema, AttributesConfig()), oldHistory).type();
 }
 
-ConfigValidator::ResultType
+ResultType
 checkAttribute(const AttributesConfig &newCfg,
                const AttributesConfig &oldCfg)
 {

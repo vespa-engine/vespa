@@ -10,6 +10,7 @@
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
+#include "configvalidator.h"
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -389,7 +390,7 @@ DocumentDB::performReconfig(DocumentDBConfig::SP configSnapshot)
 
 void
 DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
-                                 const ConfigValidator::Result &cvr,
+                                 const configvalidator::Result &cvr,
                                  const DDBState::ConfigState &cs)
 {
     _state.setConfigState(cs);
@@ -467,7 +468,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
             }
         } else {
             oldSchema = _activeConfigSnapshot->getSchemaSP();
-            ConfigValidator::Result cvr =
+            configvalidator::Result cvr =
                 ConfigValidator::validate(ConfigValidator::Config
                                           (*configSnapshot->getSchemaSP(),
                                            configSnapshot->getAttributesConfig()),

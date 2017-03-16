@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include "configvalidator.h"
+#include "config_validator_result.h"
+
+namespace search { namespace index { class Schema; } }
 
 namespace proton {
 
@@ -11,7 +13,7 @@ namespace proton {
  **/
 struct SchemaConfigValidator
 {
-    static ConfigValidator::Result
+    static configvalidator::Result
     validate(const search::index::Schema &newSchema,
              const search::index::Schema &oldSchema,
              const search::index::Schema &oldHistory);
