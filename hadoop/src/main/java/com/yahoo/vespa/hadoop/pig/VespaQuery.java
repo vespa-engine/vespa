@@ -33,9 +33,9 @@ public class VespaQuery extends EvalFunc<DataBag> {
 
     private VespaHttpClient httpClient;
 
-//    public VespaQuery() {
-//        this(new String[0]);
-//    }
+    public VespaQuery() {
+        this(new String[0]);
+    }
 
     public VespaQuery(String... params) {
         configuration = VespaConfiguration.get(UDFContext.getUDFContext().getJobConf(), null);
