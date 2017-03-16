@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
 public class ProxyServerTest {
 
     private final MemoryCache memoryCache = new MemoryCache();
-    private final MapBackedConfigSource source = new MapBackedConfigSource(UpstreamConfigSubscriberTest.MockClientUpdater.create(memoryCache));
+    private final MapBackedConfigSource source = new MapBackedConfigSource(new MockClientUpdater(memoryCache));
     private ProxyServer proxy = ProxyServer.createTestServer(source, source, memoryCache);
 
     static final RawConfig fooConfig = Helper.fooConfig;
@@ -138,6 +138,22 @@ public class ProxyServerTest {
         RawConfig res2 = proxy.resolveConfig(newRequestBasedOnResponse);
         assertFalse(ProxyServer.configOrGenerationHasChanged(res2, newRequestBasedOnResponse));
         assertEquals(1, cacheManager.size());
+    }
+
+    @Test
+    public void testReconfiguration() {
+        ConfigTester tester = new ConfigTester();
+        RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
+        assertNotNull(res);
+        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
+
+        // Simulate deployment, add config with new config generation
+        long previousGeneration = res.getGeneration();
+        source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(res, 0));
+        JRTServerConfigRequest newRequestBasedOnResponse = tester.createRequest(res);
+        RawConfig res2 = proxy.resolveConfig(newRequestBasedOnResponse);
+        assertEquals(previousGeneration + 1, res2.getGeneration());
+        assertTrue(ProxyServer.configOrGenerationHasChanged(res2, newRequestBasedOnResponse));
     }
 
     @Test
