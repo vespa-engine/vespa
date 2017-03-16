@@ -10,6 +10,7 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import com.yahoo.errorhandling.Results;
 import com.yahoo.errorhandling.Results.Builder;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.request.CompoundName;
@@ -37,20 +38,28 @@ import com.yahoo.search.searchchain.ForkingSearcher;
 import com.yahoo.search.searchchain.FutureResult;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import com.yahoo.errorhandling.Results;
-
 import org.apache.commons.lang.StringUtils;
+
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.yahoo.collections.CollectionUtil.first;
 import static com.yahoo.container.util.Util.quote;
 import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceProperties;
-
-import java.time.Clock;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * This searcher takes a set of sources, looks them up in config and fire off the correct searchchains.
@@ -194,8 +203,12 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private void search(Query query, Execution execution, Target target, Result mergedResults) {
-        Result result = search(query, execution, target);
-        mergeResult(query, target, mergedResults, result);
+        Optional<Result> result = search(query, execution, target);
+        if (result.isPresent()) {
+            mergeResult(query, target, mergedResults, result.get());
+        } else {
+            addSearchChainTimedOutError(query, target.getId());
+        }
     }
 
     private void search(Query query, Execution execution, Collection<Target> targets, Result mergedResults) {
@@ -215,14 +228,17 @@ public class FederationSearcher extends ForkingSearcher {
         }
     }
 
-    private Result search(Query query, Execution execution, Target target) {
+    private Optional<Result> search(Query query, Execution execution, Target target) {
         long timeout = target.federationOptions().getSearchChainExecutionTimeoutInMilliseconds(query.getTimeLeft());
+        if (timeout <= 0) {
+            return Optional.empty();
+        }
         Execution newExecution = new Execution(target.getChain(), execution.context());
         if (strictSearchchain) {
             query.resetTimeout();
-            return newExecution.search(createFederationQuery(query, query, Window.from(query), timeout, target));
+            return Optional.of(newExecution.search(createFederationQuery(query, query, Window.from(query), timeout, target)));
         } else {
-            return newExecution.search(cloneFederationQuery(query, Window.from(query), timeout, target));
+            return Optional.of(newExecution.search(cloneFederationQuery(query, Window.from(query), timeout, target)));
         }
     }
 
@@ -537,7 +553,7 @@ public class FederationSearcher extends ForkingSearcher {
         return target.federationOptions().getRequestTimeoutInMilliseconds() > query.getTimeout();
     }
 
-    private void addSearchChainTimedOutError(Query query, ComponentId searchChainId) {
+    private static void addSearchChainTimedOutError(Query query, ComponentId searchChainId) {
         ErrorMessage timeoutMessage = ErrorMessage.createTimeout("The search chain '" + searchChainId + "' timed out.");
         timeoutMessage.setSource(searchChainId.stringValue());
         query.errors().add(timeoutMessage);
