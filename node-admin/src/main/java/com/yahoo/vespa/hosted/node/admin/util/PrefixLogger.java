@@ -40,10 +40,6 @@ public class PrefixLogger {
         log(LogLevel.DEBUG, message);
     }
 
-    public void debug(String message, Throwable thrown) {
-        log(LogLevel.DEBUG, message, thrown);
-    }
-
     public void info(String message) {
         log(LogLevel.INFO, message);
     }
