@@ -18,12 +18,12 @@ public class VespaQueryTest {
 
     @Test
     public void requireThatQueriesAreReturnedCorrectly() throws Exception {
-        runQueryTest("src/test/pig/query.pig", createQueryHandler(""), 18901);
+        runQueryTest("src/test/pig/query.pig", createQueryHandler(""), 18911);
     }
 
     @Test
     public void requireThatQueriesAreReturnedCorrectlyWithAlternativeJsonRoot() throws Exception {
-        runQueryTest("src/test/pig/query_alt_root.pig", createQueryHandler("children"), 18902);
+        runQueryTest("src/test/pig/query_alt_root.pig", createQueryHandler("children"), 18912);
     }
 
     private void runQueryTest(String script, MockQueryHandler queryHandler, int port) throws Exception {
