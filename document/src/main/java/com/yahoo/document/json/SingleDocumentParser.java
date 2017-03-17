@@ -18,7 +18,7 @@ import java.io.InputStream;
  * @author dybis
  */
 public class SingleDocumentParser {
-    private static final JsonFactory jsonFactory = new JsonFactory();
+    private static final JsonFactory jsonFactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
     private DocumentTypeManager docMan;
 
     public SingleDocumentParser(DocumentTypeManager docMan) {
