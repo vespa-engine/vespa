@@ -173,11 +173,11 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
         }
         const string indexDir = d->getIndexDir();
         vespalib::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
-        Schema oldSchema;
-        if (!oldSchema.loadFromFile(schemaName)) {
+        Schema trimmedSchema;
+        if (!trimmedSchema.loadFromFile(schemaName)) {
             LOG(error, "Could not open schema '%s'", schemaName.c_str());
         }
-        if (oldSchema != d->getSchema()) {
+        if (trimmedSchema != d->getSchema()) {
             IDiskIndex::SP newIndex(reloadDiskIndex(*d));
             coll.replace(coll.getSourceId(i), newIndex);
             hasReopenedAnything = true;
