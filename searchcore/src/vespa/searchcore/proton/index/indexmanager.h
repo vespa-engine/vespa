@@ -118,8 +118,8 @@ public:
         _maintainer.setSchema(schema);
     }
 
-    virtual void wipeHistory(SerialNum wipeSerial, const Schema &historyFields) {
-        _maintainer.wipeHistory(wipeSerial, historyFields);
+    virtual void wipeHistory(SerialNum wipeSerial) {
+        _maintainer.wipeHistory(wipeSerial);
     }
 };
 

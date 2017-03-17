@@ -159,14 +159,11 @@ public:
     virtual void setSchema(const Schema &schema) = 0;
 
     /**
-     * Wipes remains of removed fields from this index manager as specified in the history schema.
-     * This can for instance be removing these fields from disk indexes.
-     * The default implementation does nothing.
+     * Wipes remains of removed fields from this index manager.
      *
      * @param wipeSerial The serial number of this wipe operation.
-     * @param historyFields The schema specifying which fields we should wipe away.
      **/
-    virtual void wipeHistory(SerialNum wipeSerial, const Schema &historyFields);
+    virtual void wipeHistory(SerialNum wipeSerial);
 };
 
 } // namespace searchcorespi

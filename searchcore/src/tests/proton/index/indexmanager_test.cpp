@@ -702,8 +702,7 @@ TEST_F("require that wipeHistory updates schema on disk", Fixture) {
     s.loadFromFile("test_data/index.flush.1/schema.txt");
     EXPECT_EQUAL(1u, s.getNumIndexFields());
 
-    f.runAsMaster([&]() { f._index_manager->wipeHistory(f._serial_num,
-                                                        empty_schema); });
+    f.runAsMaster([&]() { f._index_manager->wipeHistory(f._serial_num); });
 
     s.loadFromFile("test_data/index.flush.1/schema.txt");
     EXPECT_EQUAL(0u, s.getNumIndexFields());

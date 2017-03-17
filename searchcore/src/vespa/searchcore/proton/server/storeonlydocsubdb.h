@@ -249,7 +249,7 @@ public:
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
 
-    void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) override;
+    void wipeHistory(SerialNum wipeSerial, const Schema &wipeSchema) override;
     void setIndexSchema(const Schema::SP &schema) override;
     search::SearchableStats getSearchableStats() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;

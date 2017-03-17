@@ -1017,7 +1017,7 @@ DocumentDB::internalWipeHistory(SerialNum wipeSerial,
                                 const Schema &wipeSchema)
 {
     // Called by executor thread
-    _subDBs.wipeHistory(wipeSerial, *newHistorySchema, wipeSchema);
+    _subDBs.wipeHistory(wipeSerial, wipeSchema);
     _historySchema.reset(newHistorySchema.release());
 }
 

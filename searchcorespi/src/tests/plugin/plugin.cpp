@@ -34,8 +34,8 @@ public:
         searchcorespi::IFlushTarget::List l;
         return l;
     }
-    virtual void setSchema(const Schema &) { }
-    virtual void wipeHistory(SerialNum , const Schema &) { }
+    virtual void setSchema(const Schema &) override { }
+    virtual void wipeHistory(SerialNum) override { }
 };
 
 class IndexManagerFactory : public searchcorespi::IIndexManagerFactory

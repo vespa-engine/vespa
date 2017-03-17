@@ -435,16 +435,6 @@ IndexMaintainer::FlushArgs::~FlushArgs() { }
 IndexMaintainer::FlushArgs::FlushArgs(FlushArgs &&) = default;
 IndexMaintainer::FlushArgs & IndexMaintainer::FlushArgs::operator=(FlushArgs &&) = default;
 
-IndexMaintainer::WipeHistoryArgs::WipeHistoryArgs()
-        : _old_source_list(),
-          _new_source_list()
-{ }
-
-IndexMaintainer::WipeHistoryArgs::WipeHistoryArgs(WipeHistoryArgs &&) = default;
-IndexMaintainer::WipeHistoryArgs & IndexMaintainer::WipeHistoryArgs::operator=(WipeHistoryArgs &&) = default;
-
-IndexMaintainer::WipeHistoryArgs::~WipeHistoryArgs() { }
-
 bool
 IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)
 {
@@ -768,20 +758,6 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
 }
 
 
-bool
-IndexMaintainer::doneWipeHistory(WipeHistoryArgs &args)
-{
-    assert(_ctx.getThreadingService().master().isCurrentThread()); // with idle index executor
-    LockGuard state_lock(_state_lock);
-    LockGuard lock(_new_search_lock);
-    if (args._old_source_list.get() != _source_list.get()) {
-        return false;    // Flush or fusion had started/completed, must retry
-    }
-    _source_list = args._new_source_list;
-    return true;
-}
-
-
 Schema
 IndexMaintainer::getSchema(void) const
 {
@@ -891,7 +867,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     LOG(debug, "Index manager created with flushed serial num %" PRIu64, _flush_serial_num);
     sourceList->append(_current_index_id, _current_index);
     sourceList->setCurrentIndex(_current_index_id);
-    _source_list.reset(sourceList.release());
+    _source_list = std::move(sourceList);
     _fusion_spec = spec;
 }
 
@@ -1221,44 +1197,30 @@ IndexMaintainer::setSchema(const Schema & schema)
 }
 
 void
-IndexMaintainer::wipeHistory(SerialNum wipeSerial, const Schema &historyFields)
+IndexMaintainer::wipeHistory(SerialNum wipeSerial)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    for (;;) {
-        const Schema before_schema = getSchema();
-        IIndexCollection::SP before_coll = getSourceCollection();
-
-        Schema::UP schema = Schema::make_union(before_schema, historyFields);
-        updateIndexSchemas(*before_coll, *schema, wipeSerial);
-        updateActiveFusionWipeTimeSchema(*schema);
-
-        const Schema after_schema(getSchema());
-        IIndexCollection::SP after_coll = getSourceCollection();
-        if (before_schema == after_schema &&
-            before_coll.get() == after_coll.get())
-        {
-            break;
-        }
-    }
+    ISearchableIndexCollection::SP new_source_list;
+    const Schema schema = getSchema();
+    IIndexCollection::SP coll = getSourceCollection();
+    updateIndexSchemas(*coll, schema, wipeSerial);
+    updateActiveFusionWipeTimeSchema(schema);
     {
         LockGuard state_lock(_state_lock);
         LockGuard lock(_index_update_lock);
         _changeGens.bumpWipeGen();
     }
-    for (bool success(false); !success;) {
-        WipeHistoryArgs args;
-        {
-            LockGuard state_lock(_state_lock);
-            args._old_source_list = _source_list;
-            args._new_source_list.reset(new IndexCollection(_selector, *args._old_source_list));
-        }
-        if (reopenDiskIndexes(*args._new_source_list)) {
-            _ctx.getThreadingService().sync();
-            // Everything should be quiet now.
-            success = doneWipeHistory(args);
-        } else {
-            success = true;
-        }
+    {
+        LockGuard state_lock(_state_lock);
+        new_source_list = std::make_shared<IndexCollection>(_selector, *_source_list);
+    }
+    if (reopenDiskIndexes(*new_source_list)) {
+        scheduleCommit();
+        _ctx.getThreadingService().sync();
+        // Everything should be quiet now.
+        LockGuard state_lock(_state_lock);
+        LockGuard lock(_new_search_lock);
+        _source_list = new_source_list;
     }
 }
 
