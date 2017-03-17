@@ -732,7 +732,6 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
     LockGuard state_lock(_state_lock);
     typedef FixedSourceSelector::SaveInfo SaveInfo;
     args._oldSchema = _schema;		// Delay destruction
-    args._oldFusionSchema = _fusionSchema;
     args._oldIndex = _current_index;	// Delay destruction
     args._oldSourceList = _source_list; // Delay destruction
     uint32_t oldAbsoluteId = _current_index_id + _last_fusion_id;
@@ -745,7 +744,6 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
     {
         LockGuard lock(_index_update_lock);
         _schema = args._newSchema;
-        _fusionSchema = args._newFusionSchema;
         if (!_current_index->hasReceivedDocumentInsert()) {
             dropEmptyLast = true; // Skip flush of empty memory index
         }
@@ -829,7 +827,6 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _active_indexes(new ActiveDiskIndexes()),
       _layout(config.getBaseDir()),
       _schema(config.getSchema()),
-      _fusionSchema(config.getFusionSchema()),
       _activeFusionSchema(),
       _activeFusionWipeTimeSchema(),
       _source_selector_changes(0),
@@ -994,9 +991,9 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
     {
         LockGuard slock(_state_lock);
         LockGuard ilock(_index_update_lock);
-        _activeFusionSchema.reset(new Schema(_fusionSchema));
+        _activeFusionSchema.reset(new Schema(_schema));
         _activeFusionWipeTimeSchema.reset();
-        args._schema = _fusionSchema;
+        args._schema = _schema;
     }
     FastOS_StatInfo statInfo;
     string lastFlushDir(getFlushDir(fusion_spec.flush_ids.back()));
@@ -1207,14 +1204,13 @@ IndexMaintainer::getFlushTargets(void)
 }
 
 void
-IndexMaintainer::setSchema(const Schema & schema, const Schema & fusionSchema)
+IndexMaintainer::setSchema(const Schema & schema)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
     SetSchemaArgs args;
 
     args._newSchema = schema;
-    args._newFusionSchema = fusionSchema;
     scheduleCommit();
     // Ensure that all index thread tasks accessing memory index have completed.
     _ctx.getThreadingService().sync();
@@ -1228,11 +1224,6 @@ void
 IndexMaintainer::wipeHistory(SerialNum wipeSerial, const Schema &historyFields)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    {
-        LockGuard state_lock(_state_lock);
-        LockGuard lock(_index_update_lock);
-        _fusionSchema = _schema;
-    }
     for (;;) {
         const Schema before_schema = getSchema();
         IIndexCollection::SP before_coll = getSourceCollection();

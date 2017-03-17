@@ -104,7 +104,6 @@ public:
     virtual std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
-                      const Schema::SP &unionSchema,
                       const ProtonConfig::Summary &protonSummaryCfg,
                       const ProtonConfig::Index &indexCfg) const override;
 

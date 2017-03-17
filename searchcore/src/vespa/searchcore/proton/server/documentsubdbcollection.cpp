@@ -169,7 +169,6 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc,
 initializer::InitializerTask::SP
 DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapshot,
                                            SerialNum configSerialNum,
-                                           const Schema::SP &unionSchema,
                                            const ProtonConfig::Summary & protonSummaryCfg,
                                            const ProtonConfig::Index & indexCfg)
 {
@@ -179,7 +178,6 @@ DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapsho
         DocumentSubDbInitializer::SP
             subTask(subDb->createInitializer(configSnapshot,
                                              configSerialNum,
-                                             unionSchema,
                                              protonSummaryCfg,
                                              indexCfg));
         task->add(subTask);

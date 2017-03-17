@@ -323,11 +323,9 @@ struct FixtureBase
         test::runInMaster(_writeService, func);
     }
 	void init() {
-		Schema::SP unionSchema(new Schema());
                 DocumentSubDbInitializer::SP task =
                     _subDb.createInitializer(*_snapshot->_cfg,
                                              Traits::configSerial(),
-                                             unionSchema,
                                              ProtonConfig::Summary(),
                                              ProtonConfig::Index());
                 vespalib::ThreadStackExecutor executor(1, 1024 * 1024);

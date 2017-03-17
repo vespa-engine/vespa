@@ -78,7 +78,7 @@ public:
     virtual vespalib::string getName() const = 0;
 
     virtual std::unique_ptr<DocumentSubDbInitializer>
-    createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum, const SchemaSP &unionSchema,
+    createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                       const ProtonConfig::Summary &protonSummaryCfg, const ProtonConfig::Index &indexCfg) const = 0;
 
     // Called by master thread
@@ -123,7 +123,7 @@ public:
      */
     virtual SerialNum getNewestFlushedSerial()  = 0;
     virtual void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) = 0;
-    virtual void setIndexSchema(const SchemaSP &schema, const SchemaSP &fusionSchema) = 0;
+    virtual void setIndexSchema(const SchemaSP &schema) = 0;
     virtual search::SearchableStats getSearchableStats() const = 0;
     virtual std::unique_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
 

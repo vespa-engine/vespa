@@ -89,7 +89,6 @@ private:
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>
     createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
-                                  const search::index::Schema::SP &unionSchema,
                                   const vespa::config::search::core::ProtonConfig::Index &indexCfg,
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 
@@ -116,7 +115,6 @@ public:
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
-                      const Schema::SP &unionSchema,
                       const vespa::config::search::core::
                       ProtonConfig::Summary &protonSummaryCfg,
                       const vespa::config::search::core::
@@ -157,7 +155,7 @@ public:
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
     void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) override;
-    void setIndexSchema(const Schema::SP &schema, const Schema::SP &fusionSchema) override;
+    void setIndexSchema(const Schema::SP &schema) override;
     size_t getNumActiveDocs() const override;
     search::SearchableStats getSearchableStats() const override ;
     IDocumentRetriever::UP getDocumentRetriever() override;

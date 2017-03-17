@@ -89,7 +89,6 @@ class IndexMaintainer : public IIndexManager,
     ActiveDiskIndexes::SP  _active_indexes;
     IndexDiskLayout        _layout;
     Schema                 _schema;             // Protected by SL + IUL
-    Schema                 _fusionSchema;       // Protected by SL + IUL
     Schema::SP             _activeFusionSchema; // Protected by SL + IUL
     // Protected by SL + IUL
     Schema::SP             _activeFusionWipeTimeSchema;
@@ -258,17 +257,13 @@ class IndexMaintainer : public IIndexManager,
     {
     public:
         Schema           _newSchema;
-        Schema           _newFusionSchema;
         Schema           _oldSchema;
-        Schema           _oldFusionSchema;
         IMemoryIndex::SP _oldIndex;
         ISearchableIndexCollection::SP _oldSourceList; // Delays destruction
 
         SetSchemaArgs(void)
             : _newSchema(),
-              _newFusionSchema(),
               _oldSchema(),
-              _oldFusionSchema(),
               _oldIndex(),
               _oldSourceList()
         { }
@@ -400,7 +395,7 @@ public:
     }
 
     IFlushTarget::List getFlushTargets() override;
-    void setSchema(const Schema & schema, const Schema & fusionSchema) override ;
+    void setSchema(const Schema & schema) override ;
     void wipeHistory(SerialNum wipeSerial, const Schema &historyFields) override;
 };
 

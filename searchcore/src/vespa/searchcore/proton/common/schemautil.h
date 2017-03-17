@@ -26,13 +26,6 @@ public:
                       int64_t timestamp);
 
     /**
-     * Make union of schema and history, suitable for index fusion.
-     */
-    static search::index::Schema::SP
-    makeUnionSchema(const search::index::Schema &schema,
-                    const search::index::Schema &history);
-
-    /**
      * Iterate through the given schema and fill out the given string vectors.
      */
     static void

@@ -208,7 +208,6 @@ public:
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
-                      const Schema::SP &unionSchema,
                       const ProtonConfig::Summary &protonSummaryCfg,
                       const ProtonConfig::Index &indexCfg) const override;
 
@@ -251,7 +250,7 @@ public:
     SerialNum getNewestFlushedSerial() override;
 
     void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) override;
-    void setIndexSchema(const Schema::SP &schema, const Schema::SP &fusionSchema) override;
+    void setIndexSchema(const Schema::SP &schema) override;
     search::SearchableStats getSearchableStats() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;

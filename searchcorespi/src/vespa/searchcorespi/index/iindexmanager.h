@@ -152,16 +152,11 @@ public:
     virtual IFlushTarget::List getFlushTargets() = 0;
 
     /**
-     * Sets the new schema and new fusion schema to be used by this index manager.
-     * The fusion schema is the union of the new schema and the history schema.
-     * The history schema keeps track of removed fields that have not been completely wiped yet.
-     * By using the fusion schema during fusion we ensure that removed fields are taken into the
-     * fusioned disk index to support the case where they are later re-applied.
+     * Sets the new schema to be used by this index manager.
      *
      * @param schema The new schema to start using.
-     * @param fusionSchema The new fusion schema to start using.
      **/
-    virtual void setSchema(const Schema &schema, const Schema &fusionSchema) = 0;
+    virtual void setSchema(const Schema &schema) = 0;
 
     /**
      * Wipes remains of removed fields from this index manager as specified in the history schema.

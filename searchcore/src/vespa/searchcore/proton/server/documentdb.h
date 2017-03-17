@@ -142,8 +142,6 @@ private:
     // Members only accessed by executor thread
     // (+ ctor and after executor stops)
     Schema::SP                    _historySchema; // Removed fields
-    // current schema + _historySchema
-    Schema::SP                    _unionSchema;
     // End members only accessed by executor thread.
 
     DocumentSubDBCollection       _subDBs;

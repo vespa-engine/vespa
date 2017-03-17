@@ -61,7 +61,6 @@ public:
                  size_t maxFlushed,
                  size_t cacheSize,
                  const Schema &schema,
-                 const Schema &fusionSchema,
                  Reconfigurer &reconfigurer,
                  searchcorespi::index::IThreadingService &threadingService,
                  vespalib::ThreadExecutor & warmupExecutor,
@@ -115,8 +114,8 @@ public:
         return _maintainer.getFlushTargets();
     }
 
-    virtual void setSchema(const Schema &schema, const Schema &fusionSchema) {
-        _maintainer.setSchema(schema, fusionSchema);
+    virtual void setSchema(const Schema &schema) {
+        _maintainer.setSchema(schema);
     }
 
     virtual void wipeHistory(SerialNum wipeSerial, const Schema &historyFields) {

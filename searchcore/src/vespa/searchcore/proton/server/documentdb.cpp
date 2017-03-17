@@ -146,7 +146,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                    *this,
                    tlsDirectWriter),
       _historySchema(),
-      _unionSchema(),
       _subDBs(*this,
               *this,
               _feedHandler,
@@ -287,7 +286,7 @@ DocumentDB::initManagers()
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask =
         _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum,
-                                  _unionSchema, _protonSummaryCfg,
+                                  _protonSummaryCfg,
                                   _protonIndexCfg);
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
@@ -558,7 +557,6 @@ DocumentDB::reconfigureSchema(const DocumentDBConfig &configSnapshot,
     Schema::SP oldHistory = _historySchema;
     _historySchema =
         SchemaUtil::makeHistorySchema(newSchema, oldSchema, *oldHistory);
-    _unionSchema = SchemaUtil::makeUnionSchema(newSchema, *_historySchema);
 }
 
 
@@ -878,8 +876,7 @@ void
 DocumentDB::setIndexSchema(const DocumentDBConfig &configSnapshot)
 {
     // Called by executor thread
-    _subDBs.getReadySubDB()->setIndexSchema(configSnapshot.getSchemaSP(),
-                                            _unionSchema);
+    _subDBs.getReadySubDB()->setIndexSchema(configSnapshot.getSchemaSP());
 
     // TODO: Adjust tune.
 }
@@ -1022,7 +1019,6 @@ DocumentDB::internalWipeHistory(SerialNum wipeSerial,
     // Called by executor thread
     _subDBs.wipeHistory(wipeSerial, *newHistorySchema, wipeSchema);
     _historySchema.reset(newHistorySchema.release());
-    _unionSchema = getActiveConfig()->getSchemaSP();
 }
 
 

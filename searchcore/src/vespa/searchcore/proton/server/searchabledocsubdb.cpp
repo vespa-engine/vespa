@@ -28,9 +28,6 @@ using search::GrowStrategy;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;
-using searchcorespi::IndexManagerConfig;
-using searchcorespi::index::IndexMaintainerConfig;
-using searchcorespi::index::IndexMaintainerContext;
 using vespalib::IllegalStateException;
 using vespalib::ThreadStackExecutorBase;
 using namespace searchcorespi;
@@ -88,7 +85,6 @@ SearchableDocSubDB::getNewestFlushedSerial()
 initializer::InitializerTask::SP
 SearchableDocSubDB::
 createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
-                              const Schema::SP &unionSchema,
                               const ProtonConfig::Index &indexCfg,
                               std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const
 {
@@ -101,7 +97,6 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
          indexCfg.maxflushed,
          indexCfg.cache.size,
          *schema,
-         *unionSchema,
          const_cast<SearchableDocSubDB &>(*this),
          _writeService,
          _warmupExecutor,
@@ -123,17 +118,14 @@ DocumentSubDbInitializer::UP
 SearchableDocSubDB::
 createInitializer(const DocumentDBConfig &configSnapshot,
                   SerialNum configSerialNum,
-                  const Schema::SP &unionSchema,
                   const ProtonConfig::Summary &protonSummaryCfg,
                   const ProtonConfig::Index &indexCfg) const
 {
     auto result = Parent::createInitializer(configSnapshot,
                                             configSerialNum,
-                                            unionSchema,
                                             protonSummaryCfg,
                                             indexCfg);
     auto indexTask = createIndexManagerInitializer(configSnapshot,
-                                                   unionSchema,
                                                    indexCfg,
                                                    result->writableResult().
                                                    writableIndexManager());
@@ -318,15 +310,14 @@ SearchableDocSubDB::wipeHistory(SerialNum wipeSerial,
 }
 
 void
-SearchableDocSubDB::setIndexSchema(const Schema::SP &schema,
-                                   const Schema::SP &fusionSchema)
+SearchableDocSubDB::setIndexSchema(const Schema::SP &schema)
 {
     assert(_writeService.master().isCurrentThread());
 
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP oldFeedView = _iFeedView.get();
 
-    _indexMgr->setSchema(*schema, *fusionSchema);
+    _indexMgr->setSchema(*schema);
     reconfigureIndexSearchable();
 }
 
