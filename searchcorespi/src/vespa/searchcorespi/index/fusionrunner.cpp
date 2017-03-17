@@ -39,6 +39,9 @@ FusionRunner::FusionRunner(const string &base_dir,
       _fileHeaderContext(fileHeaderContext)
 { }
 
+FusionRunner::~FusionRunner() {
+}
+
 namespace {
 
 void readSelectorArray(const string &selector_name, SelectorArray &selector_array,
