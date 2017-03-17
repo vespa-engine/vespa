@@ -156,7 +156,7 @@ public:
      *
      * @param schema The new schema to start using.
      **/
-    virtual void setSchema(const Schema &schema) = 0;
+    virtual void setSchema(const Schema &schema, SerialNum serialNum) = 0;
 
     /**
      * Wipes remains of removed fields from this index manager.

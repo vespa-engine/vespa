@@ -309,14 +309,14 @@ SearchableDocSubDB::wipeHistory(SerialNum wipeSerial,
 }
 
 void
-SearchableDocSubDB::setIndexSchema(const Schema::SP &schema)
+SearchableDocSubDB::setIndexSchema(const Schema::SP &schema, SerialNum serialNum)
 {
     assert(_writeService.master().isCurrentThread());
 
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP oldFeedView = _iFeedView.get();
 
-    _indexMgr->setSchema(*schema);
+    _indexMgr->setSchema(*schema, serialNum);
     reconfigureIndexSearchable();
 }
 

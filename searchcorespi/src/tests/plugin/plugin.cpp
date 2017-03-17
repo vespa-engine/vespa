@@ -34,7 +34,7 @@ public:
         searchcorespi::IFlushTarget::List l;
         return l;
     }
-    virtual void setSchema(const Schema &) override { }
+    virtual void setSchema(const Schema &, SerialNum) override { }
     virtual void wipeHistory(SerialNum) override { }
 };
 

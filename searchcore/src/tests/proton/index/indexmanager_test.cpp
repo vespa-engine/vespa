@@ -694,7 +694,7 @@ TEST_F("require that wipeHistory updates schema on disk", Fixture) {
     Schema empty_schema;
     f.addDocument(docid);
     f.flushIndexManager();
-    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema); });
+    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema, 1000); });
     f.addDocument(docid);
     f.flushIndexManager();
 

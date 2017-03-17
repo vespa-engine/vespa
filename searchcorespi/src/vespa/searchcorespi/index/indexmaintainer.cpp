@@ -1180,8 +1180,9 @@ IndexMaintainer::getFlushTargets(void)
 }
 
 void
-IndexMaintainer::setSchema(const Schema & schema)
+IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
+    (void) serialNum;
     assert(_ctx.getThreadingService().master().isCurrentThread());
     IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
     SetSchemaArgs args;
