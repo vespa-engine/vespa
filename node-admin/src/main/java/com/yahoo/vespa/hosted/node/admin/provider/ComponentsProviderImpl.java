@@ -80,11 +80,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
     @Inject
     public ComponentsProviderImpl(final NodeAdminConfig config, final Docker docker, final MetricReceiverWrapper metricReceiver) {
-        this(
-                docker,
-                metricReceiver,
-                new Environment(),
-                config.isRunningLocally());
+        this(docker, metricReceiver, new Environment(), config.isRunningLocally());
 
         if (! config.isRunningLocally()) {
             setCorePattern(docker);
