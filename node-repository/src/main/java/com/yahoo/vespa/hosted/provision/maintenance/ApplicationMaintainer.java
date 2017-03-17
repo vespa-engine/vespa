@@ -11,6 +11,8 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -27,56 +29,63 @@ import java.util.stream.Collectors;
 public class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
-    private final Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter;
 
+    private final Executor deploymentExecutor = Executors.newCachedThreadPool();
+    
     public ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
-        this(deployer, nodeRepository, interval, ApplicationMaintainer::getActiveApplications);
-    }
-
-    ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
-                          Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
         super(nodeRepository, interval);
         this.deployer = deployer;
-        this.activeApplicationsGetter = activeApplicationsGetter;
     }
 
     @Override
     protected void maintain() {
-        Set<ApplicationId> applications = activeApplicationsGetter.apply(nodeRepository());
-
-        for (ApplicationId application : applications) {
+        for (ApplicationId application : activeApplications()) {
             try {
                 // An application might change it's state between the time the set of applications is retrieved and the
                 // time deployment happens. Lock on application and check if it's still active.
                 //
                 // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
                 try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
-                    if (isApplicationActive(application)) {
-                        Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
-                        if ( ! deployment.isPresent()) continue; // this will be done at another config server
+                    if ( ! isActive(application)) continue; // became inactive since we started the loop
+                    Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
+                    if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-                        deployment.get().prepare();
-                        deployment.get().activate();
-                    }
+                    // deploy asynchronously to make sure we do all applications even when deployments are slow
+                    deployAsynchronously(deployment.get()); 
                 }
+                
+                // Throttle deployments somewhat. 
+                // With a maintenance interval of 30 mins, 1 second is good until 1800 applications
+                try { Thread.sleep(1000); } catch (InterruptedException e) { return; }
             }
             catch (RuntimeException e) {
                 log.log(Level.WARNING, "Exception on maintenance redeploy of " + application, e);
             }
         }
     }
-
-    @Override
-    public String toString() { return "Periodic application redeployer"; }
-
-    private boolean isApplicationActive(ApplicationId application) {
-        return !nodeRepository().getNodes(application, Node.State.active).isEmpty();
+    
+    protected void deployAsynchronously(Deployment deployment) {
+        deploymentExecutor.execute(() -> {
+            try {
+                deployment.activate();
+            }
+            catch (RuntimeException e) {
+                log.log(Level.WARNING, "Exception on maintenance redeploy", e);
+            }
+        });
     }
 
-    static Set<ApplicationId> getActiveApplications(NodeRepository nodeRepository) {
-        return nodeRepository.getNodes(Node.State.active).stream()
+    protected Set<ApplicationId> activeApplications() {
+        return nodeRepository().getNodes(Node.State.active).stream()
                 .map(node -> node.allocation().get().owner())
                 .collect(Collectors.toSet());
     }
+
+    private boolean isActive(ApplicationId application) {
+        return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
+    }
+
+    @Override
+    public String toString() { return "Periodic application redeployer"; }
 
 }

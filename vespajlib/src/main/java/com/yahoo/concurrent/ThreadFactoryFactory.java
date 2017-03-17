@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author baldersheim
  */
 public class ThreadFactoryFactory {
+
     static public synchronized ThreadFactory getThreadFactory(String name) {
         PooledFactory p = factory.get(name);
         if (p == null) {
@@ -65,4 +66,5 @@ public class ThreadFactoryFactory {
         private final AtomicInteger poolId = new AtomicInteger(1);
     }
     static private Map<String, PooledFactory> factory = new HashMap<>();
+
 }
