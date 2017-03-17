@@ -35,7 +35,7 @@ public class JsonReader {
     public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
         try {
             final InputStreamJsonElementBuffer jsonElementBuffer = new InputStreamJsonElementBuffer(inputStream);
-            final JsonFactory jfactory = new JsonFactory();
+            final JsonFactory jfactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
             final JsonParser jParser = jfactory.createParser(jsonElementBuffer);
             while (true) {
                 String docId = parseOneDocument(jParser);
