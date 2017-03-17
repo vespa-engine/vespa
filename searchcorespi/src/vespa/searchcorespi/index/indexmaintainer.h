@@ -287,6 +287,7 @@ class IndexMaintainer : public IIndexManager,
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
     void scheduleCommit();
     void commit();
+    void internalWipeHistory(const Schema &schema, SerialNum wipeSerial);
 
 public:
     IndexMaintainer(const IndexMaintainer &) = delete;

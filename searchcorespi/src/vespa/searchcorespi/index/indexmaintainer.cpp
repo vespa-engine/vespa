@@ -1182,8 +1182,8 @@ IndexMaintainer::getFlushTargets(void)
 void
 IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
-    (void) serialNum;
     assert(_ctx.getThreadingService().master().isCurrentThread());
+    internalWipeHistory(schema, serialNum);
     IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
     SetSchemaArgs args;
 
@@ -1198,11 +1198,10 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 }
 
 void
-IndexMaintainer::wipeHistory(SerialNum wipeSerial)
+IndexMaintainer::internalWipeHistory(const Schema &schema, SerialNum wipeSerial)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     ISearchableIndexCollection::SP new_source_list;
-    const Schema schema = getSchema();
     IIndexCollection::SP coll = getSourceCollection();
     updateIndexSchemas(*coll, schema, wipeSerial);
     updateActiveFusionWipeTimeSchema(schema);
@@ -1223,6 +1222,12 @@ IndexMaintainer::wipeHistory(SerialNum wipeSerial)
         LockGuard lock(_new_search_lock);
         _source_list = new_source_list;
     }
+}
+
+void
+IndexMaintainer::wipeHistory(SerialNum wipeSerial)
+{
+    internalWipeHistory(getSchema(), wipeSerial);
 }
 
 }  // namespace index
