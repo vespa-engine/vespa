@@ -134,10 +134,11 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void addDebugMessage(String message) {
         synchronized (monitor) {
-            while (debugMessages.size() > 100) {
+            while (debugMessages.size() > 1000) {
                 debugMessages.pop();
             }
 
+            logger.debug(message);
             debugMessages.add("[" + sdf.format(new Date()) + "] " + message);
         }
     }

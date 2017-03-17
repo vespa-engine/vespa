@@ -36,6 +36,10 @@ public class PrefixLogger {
     }
 
 
+    public void debug(String message) {
+        log(LogLevel.DEBUG, message);
+    }
+
     public void info(String message) {
         log(LogLevel.INFO, message);
     }
