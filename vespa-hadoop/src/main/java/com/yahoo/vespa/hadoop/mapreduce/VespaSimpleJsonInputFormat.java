@@ -54,7 +54,7 @@ public class VespaSimpleJsonInputFormat extends FileInputFormat<Text, NullWritab
 
             remaining = fileSplit.getLength();
 
-            JsonFactory factory = new JsonFactory();
+            JsonFactory factory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
             parser = factory.createParser(new BufferedInputStream(stream));
             parser.setCodec(new ObjectMapper());
             parser.nextToken();
