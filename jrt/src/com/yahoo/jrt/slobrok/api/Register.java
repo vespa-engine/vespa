@@ -220,7 +220,7 @@ public class Register {
             return; // current request still in progress
         }
         if (target != null && ! slobroks.contains(currSlobrok)) {
-            log.log(Level.FINE, "RPC server " + mySpec + ": Slobrok server " + currSlobrok + " removed, will disconnect");
+            log.log(Level.INFO, "RPC server " + mySpec + ": Slobrok server " + currSlobrok + " removed, will disconnect");
             target.close();
             target = null;
         }
