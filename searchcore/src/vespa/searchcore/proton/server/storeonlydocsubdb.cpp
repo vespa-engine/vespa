@@ -285,12 +285,10 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
 DocumentSubDbInitializer::UP
 StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,
                                      SerialNum configSerialNum,
-                                     const Schema::SP &unionSchema,
                                      const ProtonConfig::Summary &
                                      protonSummaryCfg,
                                      const ProtonConfig::Index &indexCfg) const
 {
-    (void) unionSchema;
     (void) configSerialNum;
     (void) indexCfg;
     auto result = std::make_unique<DocumentSubDbInitializer>
@@ -465,12 +463,10 @@ StoreOnlyDocSubDB::wipeHistory(SerialNum, const Schema &, const Schema &)
 }
 
 void
-StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &schema,
-                                const Schema::SP &fusionSchema)
+StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &schema)
 {
     assert(_writeService.master().isCurrentThread());
     (void) schema;
-    (void) fusionSchema;
 }
 
 search::SearchableStats

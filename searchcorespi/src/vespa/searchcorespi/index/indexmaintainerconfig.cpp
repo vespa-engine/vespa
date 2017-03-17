@@ -15,13 +15,11 @@ IndexMaintainerConfig::IndexMaintainerConfig(const vespalib::string &baseDir,
                                              const WarmupConfig & warmup,
                                              size_t maxFlushed,
                                              const Schema &schema,
-                                             const Schema &fusionSchema,
                                              const TuneFileAttributes &tuneFileAttributes)
     : _baseDir(baseDir),
       _warmup(warmup),
       _maxFlushed(maxFlushed),
       _schema(schema),
-      _fusionSchema(fusionSchema),
       _tuneFileAttributes(tuneFileAttributes)
 {
 }

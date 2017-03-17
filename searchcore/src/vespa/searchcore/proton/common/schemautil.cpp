@@ -145,59 +145,6 @@ SchemaUtil::makeHistorySchema(const Schema &newSchema,
 }
 
 
-Schema::SP
-SchemaUtil::makeUnionSchema(const Schema &schema,
-                            const Schema &history)
-{
-    Schema::SP uSchema(new Schema);
-    *uSchema = schema;
-    uint32_t fields = history.getNumIndexFields();
-    for (uint32_t fieldId = 0; fieldId < fields; ++fieldId) {
-        const Schema::IndexField &field = history.getIndexField(fieldId);
-        uint32_t uFieldId = uSchema->getIndexFieldId(field.getName());
-        if (uFieldId == Schema::UNKNOWN_FIELD_ID) {
-            // Add back field known by history.
-            uSchema->addIndexField(field);
-        } else {
-            LOG(error,
-                "Index field '%s' is in both schema and history",
-                field.getName().c_str());
-        }
-    }
-    fields = history.getNumAttributeFields();
-    for (uint32_t fieldId = 0; fieldId < fields; ++fieldId) {
-        const Schema::AttributeField &field =
-            history.getAttributeField(fieldId);
-        uint32_t uFieldId =
-            uSchema->getAttributeFieldId(field.getName());
-        if (uFieldId == Schema::UNKNOWN_FIELD_ID) {
-            // Add back field known by history.
-            uSchema->addAttributeField(field);
-        } else {
-            LOG(error,
-                "Attribute field '%s' is in both schema and history",
-                field.getName().c_str());
-        }
-    }
-    fields = history.getNumSummaryFields();
-    for (uint32_t fieldId = 0; fieldId < fields; ++fieldId) {
-        const Schema::SummaryField &field =
-            history.getSummaryField(fieldId);
-        uint32_t uFieldId =
-            uSchema->getSummaryFieldId(field.getName());
-        if (uFieldId == Schema::UNKNOWN_FIELD_ID) {
-            // Add back field known by history.
-            uSchema->addSummaryField(field);
-        } else {
-            LOG(error,
-                "Summary field '%s' is in both schema and history",
-                field.getName().c_str());
-        }
-    }
-    return uSchema;
-}
-
-
 void
 SchemaUtil::listSchema(const Schema &schema,
                        std::vector<vespalib::string> &fieldNames,

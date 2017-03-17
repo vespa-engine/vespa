@@ -26,7 +26,7 @@ struct MockIndexManager : public IIndexManager
     virtual searchcorespi::IFlushTarget::List getFlushTargets() override {
         return searchcorespi::IFlushTarget::List();
     }
-    virtual void setSchema(const Schema &, const Schema &) override {}
+    virtual void setSchema(const Schema &) override {}
     virtual void wipeHistory(SerialNum, const Schema &) override {}
     virtual void heartBeat(SerialNum) override {}
 };

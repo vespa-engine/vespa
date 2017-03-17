@@ -96,7 +96,6 @@ public:
     initializer::InitializerTask::SP
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
-                      const search::index::Schema::SP &unionSchema,
                       const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
                       const vespa::config::search::core::ProtonConfig::Index & indexCfg);
 

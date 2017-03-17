@@ -208,11 +208,10 @@ FastAccessDocSubDB::~FastAccessDocSubDB() { }
 DocumentSubDbInitializer::UP
 FastAccessDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,
                                       SerialNum configSerialNum,
-                                      const search::index::Schema::SP &unionSchema,
                                       const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
                                       const vespa::config::search::core::ProtonConfig::Index &indexCfg) const
 {
-    auto result = Parent::createInitializer(configSnapshot, configSerialNum, unionSchema, protonSummaryCfg, indexCfg);
+    auto result = Parent::createInitializer(configSnapshot, configSerialNum, protonSummaryCfg, indexCfg);
     auto attrMgrInitTask = createAttributeManagerInitializer(configSnapshot,
                                                              configSerialNum,
                                                              result->getDocumentMetaStoreInitTask(),

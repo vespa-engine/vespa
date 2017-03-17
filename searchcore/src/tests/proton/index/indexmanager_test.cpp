@@ -174,7 +174,7 @@ Document::UP Fixture::addDocument(uint32_t id) {
 void Fixture::resetIndexManager() {
     _index_manager.reset(0);
     _index_manager.reset(
-            new IndexManager(index_dir, searchcorespi::index::WarmupConfig(), 2, 0, getSchema(), getSchema(),
+            new IndexManager(index_dir, searchcorespi::index::WarmupConfig(), 2, 0, getSchema(),
                              _reconfigurer, _writeService, _writeService.getMasterExecutor(),
                              TuneFileIndexManager(), TuneFileAttributes(),
                              _fileHeaderContext));
@@ -694,8 +694,7 @@ TEST_F("require that wipeHistory updates schema on disk", Fixture) {
     Schema empty_schema;
     f.addDocument(docid);
     f.flushIndexManager();
-    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema,
-                                                      empty_schema); });
+    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema); });
     f.addDocument(docid);
     f.flushIndexManager();
 

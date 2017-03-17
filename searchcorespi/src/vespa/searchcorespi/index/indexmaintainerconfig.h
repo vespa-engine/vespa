@@ -18,7 +18,6 @@ private:
     const WarmupConfig _warmup;
     const size_t _maxFlushed;
     const search::index::Schema _schema;
-    const search::index::Schema _fusionSchema;
     const search::TuneFileAttributes _tuneFileAttributes;
 
 public:
@@ -26,7 +25,6 @@ public:
                           const WarmupConfig & warmup,
                           size_t maxFlushed,
                           const search::index::Schema &schema,
-                          const search::index::Schema &fusionSchema,
                           const search::TuneFileAttributes &tuneFileAttributes);
 
     /**
@@ -43,16 +41,6 @@ public:
      */
     const search::index::Schema &getSchema() const {
         return _schema;
-    }
-
-    /**
-     * Returns the initial fusion schema containing all index fields that has been in the system.
-     * This includes all current fields and removed fields that has not been wiped yet.
-     * This schema is used during fusion to make sure that removed fields are transferred into the
-     * fusioned index in case they are re-introduced later on.
-     */
-    const search::index::Schema &getFusionSchema() const {
-        return _fusionSchema;
     }
 
     /**

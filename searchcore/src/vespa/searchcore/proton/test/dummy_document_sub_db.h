@@ -46,7 +46,6 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     DocumentSubDbInitializer::UP
     createInitializer(const DocumentDBConfig &,
                       SerialNum,
-                      const Schema::SP &,
                       const vespa::config::search::core::ProtonConfig::
                       Summary &,
                       const vespa::config::search::core::
@@ -83,7 +82,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     SerialNum getOldestFlushedSerial() override { return 0; }
     SerialNum getNewestFlushedSerial() override { return 0; }
     void wipeHistory(SerialNum, const Schema &, const Schema &) override { }
-    void setIndexSchema(const Schema::SP &, const Schema::SP &) override { }
+    void setIndexSchema(const Schema::SP &) override { }
     search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats();
     }
