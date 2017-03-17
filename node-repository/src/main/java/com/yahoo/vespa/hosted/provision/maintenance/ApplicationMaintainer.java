@@ -29,26 +29,17 @@ import java.util.stream.Collectors;
 public class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
-    private final Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter;
 
     private final Executor deploymentExecutor = Executors.newCachedThreadPool();
     
     public ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
-        this(deployer, nodeRepository, interval, ApplicationMaintainer::activeApplications);
-    }
-
-    ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
-                          Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
         super(nodeRepository, interval);
         this.deployer = deployer;
-        this.activeApplicationsGetter = activeApplicationsGetter;
     }
 
     @Override
     protected void maintain() {
-        Set<ApplicationId> applications = activeApplicationsGetter.apply(nodeRepository());
-
-        for (ApplicationId application : applications) {
+        for (ApplicationId application : activeApplications()) {
             try {
                 // An application might change it's state between the time the set of applications is retrieved and the
                 // time deployment happens. Lock on application and check if it's still active.
@@ -84,14 +75,14 @@ public class ApplicationMaintainer extends Maintainer {
         });
     }
 
-    private boolean isActive(ApplicationId application) {
-        return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
-    }
-
-    static Set<ApplicationId> activeApplications(NodeRepository nodeRepository) {
-        return nodeRepository.getNodes(Node.State.active).stream()
+    protected Set<ApplicationId> activeApplications() {
+        return nodeRepository().getNodes(Node.State.active).stream()
                 .map(node -> node.allocation().get().owner())
                 .collect(Collectors.toSet());
+    }
+
+    private boolean isActive(ApplicationId application) {
+        return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
     }
 
     @Override

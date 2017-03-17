@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -124,7 +123,7 @@ public class ApplicationMaintainerTest {
         assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
 
         // Nodes belonging to app2 are inactive after maintenance
-        fixture.runApplicationMaintainer((ignored) -> frozenActiveApplications);
+        fixture.runApplicationMaintainer(Optional.of(frozenActiveApplications));
         assertEquals("Inactive nodes were incorrectly activated after maintenance", fixture.wantedNodesApp2,
                      nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
     }
@@ -187,17 +186,17 @@ public class ApplicationMaintainerTest {
         }
 
         void runApplicationMaintainer() {
-            runApplicationMaintainer(ApplicationMaintainer::activeApplications);
+            runApplicationMaintainer(Optional.empty());
         }
 
-        void runApplicationMaintainer(Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
+        void runApplicationMaintainer(Optional<Set<ApplicationId>> overriddenActiveApplications) {
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
             apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
                                                                Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
                                                                Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
-            new SynchronousApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), activeApplicationsGetter).run();
+            new TestableApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenActiveApplications).run();
         }
 
         NodeList getNodes(Node.State ... states) {
@@ -206,16 +205,26 @@ public class ApplicationMaintainerTest {
 
     }
     
-    private static class SynchronousApplicationMaintainer extends ApplicationMaintainer {
+    private static class TestableApplicationMaintainer extends ApplicationMaintainer {
 
-        SynchronousApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
-                              Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
-            super(deployer, nodeRepository, interval, activeApplicationsGetter);
+        private Optional<Set<ApplicationId>> overriddenActiveApplications;
+        
+        TestableApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
+                                      Optional<Set<ApplicationId>> overriddenActiveApplications) {
+            super(deployer, nodeRepository, interval);
+            this.overriddenActiveApplications = overriddenActiveApplications;
         }
 
         @Override
         protected void deployAsynchronously(Deployment deployment) {
             deployment.activate();
+        }
+        
+        @Override
+        protected Set<ApplicationId> activeApplications() {
+            if (overriddenActiveApplications.isPresent())
+                return overriddenActiveApplications.get();
+            return super.activeApplications();
         }
 
     }
