@@ -24,12 +24,13 @@ public class VespaHttpClient {
     }
 
     public VespaHttpClient(VespaConfiguration configuration) {
-       httpClient = createClient(configuration);
+        httpClient = createClient(configuration);
     }
 
     public String get(String url) throws IOException {
         HttpGet httpGet = new HttpGet(url);
         HttpResponse httpResponse = httpClient.execute(httpGet);
+
         HttpEntity entity = httpResponse.getEntity();
         InputStream is = entity.getContent();
 
@@ -47,16 +48,36 @@ public class VespaHttpClient {
         return result;
     }
 
-    public JsonNode parseResultJson(String json) throws IOException {
+    public JsonNode parseResultJson(String json, String rootNode) throws IOException {
         if (json == null || json.isEmpty()) {
             return null;
         }
+        if (rootNode == null || rootNode.isEmpty()) {
+            return null;
+        }
+
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(json);
         if (node != null) {
-            node = node.get("root");
-            if (node != null) {
-                node = node.get("children");
+            String[] path = rootNode.split("/");
+            for (String p : path) {
+                node = node.get(p);
+
+                if (node == null) {
+                    return null;
+                }
+
+                // if node is an array, return the first node that has the correct path
+                if (node.isArray()) {
+                    for (int i = 0; i < node.size(); ++i) {
+                        JsonNode n = node.get(i);
+                        if (n.has(p)) {
+                            node = n;
+                            break;
+                        }
+                    }
+                }
+
             }
         }
         return node;

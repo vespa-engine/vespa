@@ -33,4 +33,18 @@ public class TupleToolsTest {
         tuple.append(value);
     }
 
+    @Test
+    public void requireThatTupleToStringHandlesStringCharacters() throws IOException {
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+
+        addToTuple("id", DataType.CHARARRAY, "_!@#$%^&*()", schema, tuple);
+        addToTuple("rank", DataType.INTEGER, 1, schema, tuple);
+
+        String template = "Id is <id> and rank is <rank>";
+        String result = TupleTools.toString(schema, tuple, template);
+
+        assertEquals("Id is _!@#$%^&*() and rank is 1", result);
+    }
+
 }

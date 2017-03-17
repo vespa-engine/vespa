@@ -19,9 +19,11 @@ import java.util.Map;
 public class MockQueryHandler implements HttpHandler {
 
     private final Map<String, List<MockQueryHit>> hitMap;
+    private final String childNode;
 
-    public MockQueryHandler() {
+    public MockQueryHandler(String childNode) {
         this.hitMap = new HashMap<>();
+        this.childNode = childNode;
     }
 
     public void handle(HttpExchange t) throws IOException {
@@ -145,9 +147,19 @@ public class MockQueryHandler implements HttpHandler {
 
         g.writeFieldName("children");
         g.writeStartArray();
+
+        if (!childNode.isEmpty()) {
+            g.writeStartObject();
+            g.writeFieldName(childNode);
+            g.writeStartArray();
+        }
     }
 
     private void writeResultsEnd(JsonGenerator g) throws IOException {
+        if (!childNode.isEmpty()) {
+            g.writeEndArray();
+            g.writeEndObject();
+        }
         g.writeEndArray();
         g.writeEndObject();
         g.writeEndObject();

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.vespa.hadoop.mapreduce.util.TupleTools;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.data.DataBag;
@@ -27,6 +28,7 @@ import java.util.*;
 public class VespaDocumentOperation extends EvalFunc<String> {
 
     public enum Operation {
+        DOCUMENT,
         PUT,
         ID,
         REMOVE,
@@ -108,7 +110,13 @@ public class VespaDocumentOperation extends EvalFunc<String> {
 
 
         } catch (Exception e) {
-            throw new IOException("Caught exception processing input row ", e);
+            StringBuilder sb = new StringBuilder();
+            sb.append("Caught exception processing input row: \n");
+            sb.append(tuple.toString());
+            sb.append("\nException: ");
+            sb.append(ExceptionUtils.getStackTrace(e));
+            warn(sb.toString(), PigWarning.UDF_WARNING_1);
+            return null;
         }
 
         return json;
@@ -123,7 +131,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
      * @param docId     Document id
      * @param fields    Fields to put in document operation
      * @return          A valid JSON Vespa document operation
-     * @throws IOException
+     * @throws IOException ...
      */
     public static String create(Operation op, String docId, Map<String, Object> fields, Properties properties) throws IOException {
         if (op == null) {

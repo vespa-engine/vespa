@@ -14,6 +14,7 @@ import java.util.Properties;
  *
  * @author lesters
  */
+@SuppressWarnings("rawtypes")
 public class VespaOutputFormat extends OutputFormat {
 
     private final Properties configOverride;
@@ -45,7 +46,6 @@ public class VespaOutputFormat extends OutputFormat {
 
     @Override
     public void checkOutputSpecs(JobContext jobContext) throws IOException, InterruptedException {
-
     }
 
 }

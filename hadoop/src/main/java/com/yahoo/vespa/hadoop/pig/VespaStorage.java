@@ -23,6 +23,7 @@ import java.util.Properties;
  *
  * @author lesters
  */
+@SuppressWarnings("rawtypes")
 public class VespaStorage extends StoreFunc {
 
     private final boolean createDocOp;

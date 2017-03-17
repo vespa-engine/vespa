@@ -1,7 +1,4 @@
-The grid feeding client.
+The Vespa Hadoop client.
 
-TODO: the code here is currently not the code that is built and distributed.
-That is in https://git.corp.yahoo.com/vespa/vespa-hadoop. Soon, that code will
-be moved here as it has a close relationship to the Java feed client. Also,
-system tests will be added.
+Contains APIs for feeding and querying Vespa from the grid.
 

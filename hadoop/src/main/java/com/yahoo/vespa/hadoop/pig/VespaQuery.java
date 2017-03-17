@@ -23,16 +23,18 @@ public class VespaQuery extends EvalFunc<DataBag> {
 
     private final String PROPERTY_QUERY_TEMPLATE = "query";
     private final String PROPERTY_QUERY_SCHEMA = "schema";
+    private final String PROPERTY_ROOT_NODE = "rootnode";
 
     private final VespaConfiguration configuration;
     private final Properties properties;
     private final String queryTemplate;
     private final String querySchema;
+    private final String queryRootNode;
 
     private VespaHttpClient httpClient;
 
     public VespaQuery() {
-        this(null);
+        this(new String[0]);
     }
 
     public VespaQuery(String... params) {
@@ -45,7 +47,7 @@ public class VespaQuery extends EvalFunc<DataBag> {
         }
 
         querySchema = properties.getProperty(PROPERTY_QUERY_SCHEMA, "rank:int,id:chararray");
-
+        queryRootNode = properties.getProperty(PROPERTY_ROOT_NODE, "root/children");
     }
 
     @Override
@@ -89,7 +91,7 @@ public class VespaQuery extends EvalFunc<DataBag> {
     }
 
     private JsonNode parseVespaResultJson(String result) throws IOException {
-        return httpClient == null ? null : httpClient.parseResultJson(result);
+        return httpClient == null ? null : httpClient.parseResultJson(result, queryRootNode);
     }
 
     private DataBag createPigRepresentation(JsonNode hits) {
