@@ -44,6 +44,7 @@ public:
                  const search::index::Schema &schema,
                  const search::TuneFileAttributes &tuneFileAttributes,
                  const search::common::FileHeaderContext &fileHeaderContext);
+    ~FusionRunner();
 
     /**
      * Combine the indexes specified by the ids by running fusion.

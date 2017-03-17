@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <stddef.h>
+
 namespace search {
 namespace attribute {
 

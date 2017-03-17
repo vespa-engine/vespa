@@ -1,237 +1,13 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/not_implemented_attribute.h>
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <algorithm>
-#include <future>
-#include <map>
-#include <memory>
-#include <vector>
+#include <vespa/searchlib/test/imported_attribute_fixture.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchcommon/attribute/search_context_params.h>
 
 namespace search {
 namespace attribute {
 
-using document::DocumentId;
-using document::GlobalId;
-using DocId             = IAttributeVector::DocId;
-using WeightedInt       = IAttributeVector::WeightedInt;
-using WeightedFloat     = IAttributeVector::WeightedFloat;
-using WeightedString    = IAttributeVector::WeightedString;
-using WeightedConstChar = IAttributeVector::WeightedConstChar;
-using WeightedEnum      = IAttributeVector::WeightedEnum;
-using test::MockGidToLidMapperFactory;
-
-std::shared_ptr<ReferenceAttribute> create_reference_attribute(vespalib::stringref name = "ref") {
-    return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
-}
-
-template <typename AttrVecType>
-std::shared_ptr<AttrVecType> create_typed_attribute(BasicType basic_type,
-                                                    CollectionType collection_type,
-                                                    vespalib::stringref name = "parent") {
-    return std::dynamic_pointer_cast<AttrVecType>(
-            AttributeFactory::createAttribute(name, Config(basic_type, collection_type)));
-}
-
-template <typename AttrVecType>
-std::shared_ptr<AttrVecType> create_single_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::SINGLE, name);
-}
-
-template <typename AttrVecType>
-std::shared_ptr<AttrVecType> create_array_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::ARRAY, name);
-}
-
-template <typename AttrVecType>
-std::shared_ptr<AttrVecType> create_wset_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, name);
-}
-
-template <typename VectorType>
-void add_n_docs_with_undefined_values(VectorType& vec, size_t n) {
-    vec.addDocs(n);
-    vec.commit();
-}
-
-GlobalId dummy_gid(uint32_t doc_index) {
-    return DocumentId(vespalib::make_string("id:foo:bar::%u", doc_index)).getGlobalId();
-}
-
-struct Fixture {
-    std::shared_ptr<AttributeVector>           target_attr;
-    std::shared_ptr<ReferenceAttribute>        reference_attr;
-    std::shared_ptr<ImportedAttributeVector>   imported_attr;
-    std::shared_ptr<MockGidToLidMapperFactory> mapper_factory;
-
-    Fixture();
-    ~Fixture();
-
-    void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
-        assert(from_lid < reference_attr->getNumDocs());
-        reference_attr->update(from_lid, via_gid);
-        reference_attr->commit();
-        mapper_factory->_map[via_gid] = to_lid;
-    }
-
-    std::shared_ptr<ImportedAttributeVector> create_attribute_vector_from_members(vespalib::stringref name = "imported") {
-        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr);
-    }
-
-    template <typename AttrVecType>
-    std::shared_ptr<AttrVecType> target_attr_as() {
-        auto ptr = std::dynamic_pointer_cast<AttrVecType>(target_attr);
-        assert(ptr.get() != nullptr);
-        return ptr;
-    }
-
-    void reset_with_new_target_attr(std::shared_ptr<AttributeVector> new_target) {
-        target_attr = std::move(new_target);
-        imported_attr = create_attribute_vector_from_members();
-    }
-
-    template <typename ValueType>
-    struct LidToLidMapping {
-        DocId     _from_lid;
-        GlobalId  _via_gid;
-        DocId     _to_lid;
-        ValueType _value_in_target_attr;
-
-        LidToLidMapping(DocId from_lid,
-                        GlobalId via_gid,
-                        DocId to_lid,
-                        ValueType value_in_target_attr)
-            : _from_lid(from_lid),
-              _via_gid(via_gid),
-              _to_lid(to_lid),
-              _value_in_target_attr(std::move(value_in_target_attr))
-        {}
-    };
-
-    void set_up_attribute_vectors_before_adding_mappings() {
-        // Make a sneaky assumption that no tests try to use a lid > 9
-        add_n_docs_with_undefined_values(*reference_attr, 10);
-        add_n_docs_with_undefined_values(*target_attr, 10);
-    }
-
-    template <typename AttrVecType, typename MappingsType, typename ValueAssigner>
-    void set_up_and_map(const MappingsType& mappings, ValueAssigner assigner) {
-        set_up_attribute_vectors_before_adding_mappings();
-        auto subtyped_target = target_attr_as<AttrVecType>();
-        for (auto& m : mappings) {
-            map_reference(m._from_lid, m._via_gid, m._to_lid);
-            assigner(*subtyped_target, m);
-        }
-        subtyped_target->commit();
-    }
-
-    template <typename AttrVecType, typename ValueType>
-    void reset_with_single_value_reference_mappings(
-            BasicType type,
-            const std::vector<LidToLidMapping<ValueType>>& mappings) {
-        reset_with_new_target_attr(create_single_attribute<AttrVecType>(type));
-        // Fun experiment: rename `auto& mapping` to `auto& m` and watch GCC howl about
-        // shadowing a variable... that exists in the set_up_and_map function!
-        set_up_and_map<AttrVecType>(mappings, [this](auto& target_vec, auto& mapping) {
-            ASSERT_TRUE(target_vec.update(mapping._to_lid, mapping._value_in_target_attr));
-        });
-    }
-
-    template <typename AttrVecType, typename ValueType>
-    void reset_with_array_value_reference_mappings(
-            BasicType type,
-            const std::vector<LidToLidMapping<std::vector<ValueType>>> &mappings) {
-        reset_with_new_target_attr(create_array_attribute<AttrVecType>(type));
-        set_up_and_map<AttrVecType>(mappings, [this](auto& target_vec, auto& mapping) {
-            constexpr uint32_t weight = 1;
-            for (const auto& v : mapping._value_in_target_attr) {
-                ASSERT_TRUE(target_vec.append(mapping._to_lid, v, weight));
-            }
-        });
-    }
-
-    template <typename AttrVecType, typename WeightedValueType>
-    void reset_with_wset_value_reference_mappings(
-            BasicType type,
-            const std::vector<LidToLidMapping<std::vector<WeightedValueType>>> &mappings) {
-        reset_with_new_target_attr(create_wset_attribute<AttrVecType>(type));
-        set_up_and_map<AttrVecType>(mappings, [this](auto& target_vec, auto& mapping) {
-            for (const auto& v : mapping._value_in_target_attr) {
-                ASSERT_TRUE(target_vec.append(mapping._to_lid, v.value(), v.weight()));
-            }
-        });
-    }
-};
-
-Fixture::Fixture()
-    : target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
-      reference_attr(create_reference_attribute()),
-      imported_attr(create_attribute_vector_from_members()),
-      mapper_factory(std::make_shared<MockGidToLidMapperFactory>())
-{
-    reference_attr->setGidToLidMapperFactory(mapper_factory);
-}
-
-Fixture::~Fixture() {}
-
-template <typename AttrValueType, typename PredicateType>
-void assert_multi_value_matches(const Fixture& f,
-                                DocId lid,
-                                const std::vector<AttrValueType>& expected,
-                                PredicateType predicate) {
-    AttributeContent<AttrValueType> content;
-    content.fill(*f.imported_attr, lid);
-    EXPECT_EQUAL(expected.size(), content.size());
-    std::vector<AttrValueType> actual(content.begin(), content.end());
-    EXPECT_TRUE(std::equal(expected.begin(), expected.end(),
-                           actual.begin(), actual.end(), predicate));
-}
-
-template <typename AttrValueType>
-void assert_multi_value_matches(const Fixture& f,
-                                DocId lid,
-                                const std::vector<AttrValueType>& expected) {
-    assert_multi_value_matches(f, lid, expected, std::equal_to<AttrValueType>());
-}
-
-// Simple wrappers to avoid ugly "f.template reset..." syntax.
-template <typename AttrVecType, typename ValueType>
-void reset_with_single_value_reference_mappings(
-        Fixture& f,
-        BasicType type,
-        const std::vector<Fixture::LidToLidMapping<ValueType>>& mappings) {
-    f.reset_with_single_value_reference_mappings<AttrVecType, ValueType>(type, mappings);
-}
-
-template <typename AttrVecType, typename ValueType>
-void reset_with_array_value_reference_mappings(
-        Fixture& f,
-        BasicType type,
-        const std::vector<Fixture::LidToLidMapping<std::vector<ValueType>>> &mappings) {
-    f.reset_with_array_value_reference_mappings<AttrVecType, ValueType>(type, mappings);
-}
-
-template <typename AttrVecType, typename WeightedValueType>
-void reset_with_wset_value_reference_mappings(
-        Fixture& f,
-        BasicType type,
-        const std::vector<Fixture::LidToLidMapping<std::vector<WeightedValueType>>> &mappings) {
-    f.reset_with_wset_value_reference_mappings<AttrVecType, WeightedValueType>(type, mappings);
-}
-
-bool has_active_enum_guards(AttributeVector &attr) {
-    return std::async(std::launch::async, [&attr] { return attr.hasActiveEnumGuards(); }).get();
-}
+using Fixture = ImportedAttributeFixture;
 
 TEST_F("Accessors return expected attributes", Fixture) {
     EXPECT_EQUAL(f.imported_attr->getReferenceAttribute().get(),
@@ -343,6 +119,10 @@ TEST_F("getFixedWidth() is inherited from target attribute vector", Fixture) {
                  f.imported_attr->getFixedWidth());
 }
 
+TEST_F("asDocumentWeightAttribute() returns nullptr", Fixture) {
+    EXPECT_TRUE(f.imported_attr->asDocumentWeightAttribute() == nullptr);
+}
+
 TEST_F("Multi-valued integer attribute values can be retrieved via reference", Fixture) {
     const std::vector<int64_t> doc3_values({1234});
     const std::vector<int64_t> doc7_values({5678, 9876, 555, 777});
@@ -443,6 +223,19 @@ TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFi
 
 TEST_F("hasEnum() is true for enum target attribute vector", SingleStringAttrFixture) {
     EXPECT_TRUE(f.imported_attr->hasEnum());
+}
+
+TEST_F("createSearchContext() returns an imported search context", SingleStringAttrFixture) {
+    auto ctx = f.imported_attr->createSearchContext(word_term("bar"), SearchContextParams());
+    ASSERT_TRUE(ctx.get() != nullptr);
+    fef::TermFieldMatchData match;
+    // Iterator specifics are tested in imported_search_context_test, so just make sure
+    // we get the expected iterator functionality. In this case, a non-strict iterator.
+    auto iter = ctx->createIterator(&match, false);
+    EXPECT_FALSE(iter->seek(DocId(1)));
+    EXPECT_FALSE(iter->seek(DocId(2)));
+    EXPECT_FALSE(iter->seek(DocId(3)));
+    EXPECT_TRUE(iter->seek(DocId(4)));
 }
 
 bool string_eq(const char* lhs, const char* rhs) noexcept {

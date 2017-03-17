@@ -89,7 +89,7 @@ private:
 
     vespalib::string                    _name;
     std::shared_ptr<ReferenceAttribute> _reference_attribute;
-    std::shared_ptr<AttributeVector>   _target_attribute;
+    std::shared_ptr<AttributeVector>    _target_attribute;
 };
 
 } // attribute

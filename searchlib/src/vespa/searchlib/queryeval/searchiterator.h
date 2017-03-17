@@ -271,7 +271,7 @@ public:
      *
      * @return global posting info or NULL if no info is available.
      **/
-    virtual const PostingInfo *getPostingInfo() const { return NULL; }
+    virtual const PostingInfo *getPostingInfo() const { return nullptr; }
 
     /**
      * Create a human-readable representation of this object. This
