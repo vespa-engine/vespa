@@ -234,6 +234,7 @@ public class Register {
                 updateTask.schedule(delay);
                 return;
             }
+            lastRegisterSucceeded.clear();
             target = orb.connect(new Spec(currSlobrok));
             String namesString = null;
             final boolean logFine = log.isLoggable(Level.FINE);
