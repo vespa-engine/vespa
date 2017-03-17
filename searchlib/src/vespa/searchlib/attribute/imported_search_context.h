@@ -18,6 +18,14 @@ class ReferenceAttribute;
 class ImportedAttributeVector;
 class SearchContextParams;
 
+/**
+ * Search context exposing iteraton over an imported attribute vector.
+ *
+ * Iterator doc id matching is performed via the GID->LID indirection of the
+ * associated reference attribute. This means that if the _referenced_ document
+ * matches the search term, the doc id of the _referring_ document will be
+ * considered a match.
+ */
 class ImportedSearchContext : public ISearchContext {
     const ImportedAttributeVector&                  _imported_attribute;
     const ReferenceAttribute&                       _reference_attribute;
