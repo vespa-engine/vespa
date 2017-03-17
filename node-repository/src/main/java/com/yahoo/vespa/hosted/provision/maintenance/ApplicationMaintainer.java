@@ -51,13 +51,12 @@ public class ApplicationMaintainer extends Maintainer {
                 //
                 // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
                 try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
-                    if (isApplicationActive(application)) {
-                        Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
-                        if ( ! deployment.isPresent()) continue; // this will be done at another config server
+                    if ( ! isActive(application)) continue;
+                    Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
+                    if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-                        deployment.get().prepare();
-                        deployment.get().activate();
-                    }
+                    deployment.get().prepare();
+                    deployment.get().activate();
                 }
             }
             catch (RuntimeException e) {
@@ -69,8 +68,8 @@ public class ApplicationMaintainer extends Maintainer {
     @Override
     public String toString() { return "Periodic application redeployer"; }
 
-    private boolean isApplicationActive(ApplicationId application) {
-        return !nodeRepository().getNodes(application, Node.State.active).isEmpty();
+    private boolean isActive(ApplicationId application) {
+        return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
     }
 
     static Set<ApplicationId> getActiveApplications(NodeRepository nodeRepository) {
