@@ -235,7 +235,6 @@ public class NodeFailer extends Maintainer {
             if (! allTenantNodesFailedOutSuccessfully) return false;
             node = nodeRepository().fail(node.hostname(), reason);
             try {
-                deployment.get().prepare();
                 deployment.get().activate();
                 return true;
             }

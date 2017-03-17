@@ -47,7 +47,7 @@ public class MockDeployer implements Deployer {
         private final ApplicationContext application;
 
         /** The list of hosts prepared in this. Only set after prepare is called (and a provisioner is assigned) */
-        private List<HostSpec> preparedHosts;
+        private List<HostSpec> preparedHosts = null;
 
         private MockDeployment(NodeRepositoryProvisioner provisioner, ApplicationContext application) {
             this.provisioner = provisioner;
@@ -61,6 +61,8 @@ public class MockDeployer implements Deployer {
 
         @Override
         public void activate() {
+            if (preparedHosts == null)
+                prepare();
             redeployments++;
             try (NestedTransaction t = new NestedTransaction()) {
                 provisioner.activate(t, application.id(), preparedHosts);

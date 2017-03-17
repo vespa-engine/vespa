@@ -11,6 +11,8 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -29,8 +31,10 @@ public class ApplicationMaintainer extends Maintainer {
     private final Deployer deployer;
     private final Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter;
 
+    private final Executor deploymentExecutor = Executors.newCachedThreadPool();
+    
     public ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
-        this(deployer, nodeRepository, interval, ApplicationMaintainer::getActiveApplications);
+        this(deployer, nodeRepository, interval, ApplicationMaintainer::activeApplications);
     }
 
     ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
@@ -51,31 +55,46 @@ public class ApplicationMaintainer extends Maintainer {
                 //
                 // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
                 try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
-                    if ( ! isActive(application)) continue;
+                    if ( ! isActive(application)) continue; // became inactive since we started the loop
                     Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
                     if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-                    deployment.get().prepare();
-                    deployment.get().activate();
+                    // deploy asynchronously to make sure we do all applications even when deployments are slow
+                    deployAsynchronously(deployment.get()); 
                 }
+                
+                // Throttle deployments somewhat. 
+                // With a maintenance interval of 30 mins, 1 second is good until 1800 applications
+                try { Thread.sleep(1000); } catch (InterruptedException e) { return; }
             }
             catch (RuntimeException e) {
                 log.log(Level.WARNING, "Exception on maintenance redeploy of " + application, e);
             }
         }
     }
-
-    @Override
-    public String toString() { return "Periodic application redeployer"; }
+    
+    protected void deployAsynchronously(Deployment deployment) {
+        deploymentExecutor.execute(() -> {
+            try {
+                deployment.activate();
+            }
+            catch (RuntimeException e) {
+                log.log(Level.WARNING, "Exception on maintenance redeploy", e);
+            }
+        });
+    }
 
     private boolean isActive(ApplicationId application) {
         return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
     }
 
-    static Set<ApplicationId> getActiveApplications(NodeRepository nodeRepository) {
+    static Set<ApplicationId> activeApplications(NodeRepository nodeRepository) {
         return nodeRepository.getNodes(Node.State.active).stream()
                 .map(node -> node.allocation().get().owner())
                 .collect(Collectors.toSet());
     }
+
+    @Override
+    public String toString() { return "Periodic application redeployer"; }
 
 }

@@ -5,6 +5,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -185,7 +187,7 @@ public class ApplicationMaintainerTest {
         }
 
         void runApplicationMaintainer() {
-            runApplicationMaintainer(ApplicationMaintainer::getActiveApplications);
+            runApplicationMaintainer(ApplicationMaintainer::activeApplications);
         }
 
         void runApplicationMaintainer(Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
@@ -195,11 +197,25 @@ public class ApplicationMaintainerTest {
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
                                                                Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
-            new ApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), activeApplicationsGetter).run();
+            new SynchronousApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), activeApplicationsGetter).run();
         }
 
         NodeList getNodes(Node.State ... states) {
             return new NodeList(nodeRepository.getNodes(NodeType.tenant, states));
+        }
+
+    }
+    
+    private static class SynchronousApplicationMaintainer extends ApplicationMaintainer {
+
+        SynchronousApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
+                              Function<NodeRepository, Set<ApplicationId>> activeApplicationsGetter) {
+            super(deployer, nodeRepository, interval, activeApplicationsGetter);
+        }
+
+        @Override
+        protected void deployAsynchronously(Deployment deployment) {
+            deployment.activate();
         }
 
     }
