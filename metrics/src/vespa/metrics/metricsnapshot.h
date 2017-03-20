@@ -28,7 +28,7 @@ class MetricSnapshot
         // Keeps the metrics set view of the snapshot
     std::unique_ptr<MetricSet> _snapshot;
         // Snapshots must own their own metrics
-    mutable std::vector<Metric::LP> _metrics;
+    mutable std::vector<Metric::UP> _metrics;
 
 public:
     typedef std::unique_ptr<MetricSnapshot> UP;

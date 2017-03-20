@@ -17,7 +17,6 @@ namespace storage {
 
 class MessageTracker : protected Types {
 public:
-    typedef vespalib::LinkedPtr<MessageTracker> LP;
     typedef std::unique_ptr<MessageTracker> UP;
 
     MessageTracker(FileStorThreadMetrics::Op& metric,

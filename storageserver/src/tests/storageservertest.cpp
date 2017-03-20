@@ -693,14 +693,14 @@ namespace {
                     }
                     CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
                     bucket = entries.begin()->first;
-                    StorBucketDatabase::WrappedEntry entry(
-                            entries.begin()->second);
+                    auto *entry = &(*(entries.begin()->second));
+                    auto *entry_wrapper = &(entries.begin()->second);
                     if (seed % 95 == 93) { // Delete bucket
                         if ((entry->getBucketInfo().getChecksum() & 2) == 0) {
                             cmd.reset(new api::DeleteBucketCommand(bucket));
                             entry->setChecksum(
                                     entry->getBucketInfo().getChecksum() | 2);
-                            entry.write();
+                            entry_wrapper->write();
                             sendList.push_back(
                                     new mbusprot::StorageCommand(cmd));
                         }
@@ -708,7 +708,8 @@ namespace {
                         if (entry->getBucketInfo().getChecksum() == 0 && bucket.getUsedBits() > 3) {
                                 // Remove existing locks we have to not cause
                                 // deadlock
-                            entry = StorBucketDatabase::WrappedEntry();
+                            entry = nullptr;
+                            entry_wrapper = nullptr;
                             entries.clear();
                                 // Then continue
                             document::BucketId super(bucket.getUsedBits() - 1,
@@ -750,7 +751,7 @@ namespace {
                         if (entry->getBucketInfo().getChecksum() == 0) {
                             cmd.reset(new api::SplitBucketCommand(bucket));
                             entry->setChecksum(1);
-                            entry.write();
+                            entry_wrapper->write();
                             sendList.push_back(
                                     new mbusprot::StorageCommand(cmd));
                         }

@@ -37,7 +37,7 @@ RemoveDocumentsOperation::deserializeLidsToRemove(vespalib::nbostream &is)
     for (i = 0; i < mapSize; ++i) {
         uint32_t subDbId;
         is >> subDbId;
-        LidVectorContext::LP lidsToRemove(new LidVectorContext());
+        LidVectorContext::SP lidsToRemove(new LidVectorContext());
         lidsToRemove->deserialize(is);
         setLidsToRemove(subDbId, lidsToRemove);
     }

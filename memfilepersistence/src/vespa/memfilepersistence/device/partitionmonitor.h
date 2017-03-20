@@ -14,7 +14,6 @@
 #include <vespa/vespalib/util/printable.h>
 #include <sys/statvfs.h>
 #include <vespa/config-stor-devices.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/xmlserializable.h>
 
@@ -28,7 +27,7 @@ class PartitionMonitor : public vespalib::Printable,
                          public vespalib::XmlSerializable
 {
 public:
-    typedef vespalib::LinkedPtr<PartitionMonitor> LP;
+    using UP = std::unique_ptr<PartitionMonitor>;
 
     /**
      * Use an object to stat through, such that unit tests can fake stat

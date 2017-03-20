@@ -28,7 +28,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
         Op(const std::string& id, const std::string name, MetricSet* owner = 0);
         ~Op();
 
-        MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                           MetricSet* owner, bool includeUnused) const override;
         Op* operator&() { return this; }
     };
@@ -37,7 +37,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
         OpWithNotFound(const std::string& id, const std::string name, metrics::MetricSet* owner = 0);
         ~OpWithNotFound();
-        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
         OpWithNotFound* operator&() { return this; }
     };
@@ -48,7 +48,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
         Update(MetricSet* owner = 0);
         ~Update();
 
-        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
         Update* operator&() { return this; }
     };
@@ -59,7 +59,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
         Visitor(MetricSet* owner = 0);
         ~Visitor();
 
-        MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
         Visitor* operator&() { return this; }
     };

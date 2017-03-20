@@ -31,11 +31,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION(DevicesTest);
 void DevicesTest::testDisk()
 {
     DeviceManager manager(DeviceMapper::UP(new SimpleDeviceMapper), _clock);
-    Disk::LP disk1(manager.getDisk("/something/on/disk"));
-    Disk::LP disk2(manager.getDisk("/something/on/disk"));
+    Disk::SP disk1(manager.getDisk("/something/on/disk"));
+    Disk::SP disk2(manager.getDisk("/something/on/disk"));
     CPPUNIT_ASSERT_EQUAL(disk1->getId(), disk2->getId());
     CPPUNIT_ASSERT_EQUAL(disk1.get(), disk2.get());
-    Disk::LP disk3(manager.getDisk("/something/on/disk2"));
+    Disk::SP disk3(manager.getDisk("/something/on/disk2"));
     CPPUNIT_ASSERT(disk2->getId() != disk3->getId());
     disk3->toString(); // Add code coverage
 }
@@ -43,7 +43,7 @@ void DevicesTest::testDisk()
 void DevicesTest::testPartition()
 {
     DeviceManager manager(DeviceMapper::UP(new SimpleDeviceMapper), _clock);
-    Partition::LP part(manager.getPartition("/etc"));
+    Partition::SP part(manager.getPartition("/etc"));
     CPPUNIT_ASSERT_EQUAL(std::string("/etc"), part->getMountPoint());
     part->toString(); // Add code coverage
 }
@@ -51,7 +51,7 @@ void DevicesTest::testPartition()
 void DevicesTest::testDirectory()
 {
     DeviceManager manager(DeviceMapper::UP(new SimpleDeviceMapper), _clock);
-    Directory::LP dir1(manager.getDirectory("/on/disk", 0));
+    Directory::SP dir1(manager.getDirectory("/on/disk", 0));
     CPPUNIT_ASSERT_EQUAL(std::string("/on/disk"), dir1->getPath());
     CPPUNIT_ASSERT(dir1->getLastEvent() == 0);
     CPPUNIT_ASSERT_EQUAL(Device::OK, dir1->getState());

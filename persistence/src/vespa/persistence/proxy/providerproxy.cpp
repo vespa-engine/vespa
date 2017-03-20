@@ -198,7 +198,7 @@ IterateResult ProviderProxy::readNoError(const FRT_Values &values) const {
         string doc_id(getString(values[4]._string_array._pt[i]));
         nbostream stream(values[5]._data_array._pt[i]._buf,
                          values[5]._data_array._pt[i]._len);
-        DocEntry::LP entry;
+        DocEntry::UP entry;
         if (!stream.empty()) {
             Document::UP doc = readDocument(stream, *_repo);
             entry.reset(new DocEntry(timestamp, meta_flags, std::move(doc)));
@@ -208,10 +208,10 @@ IterateResult ProviderProxy::readNoError(const FRT_Values &values) const {
         } else {
             entry.reset(new DocEntry(timestamp, meta_flags));
         }
-        result.push_back(entry);
+        result.push_back(std::move(entry));
     }
 
-    return IterateResult(result, values[6]._intval8);
+    return IterateResult(std::move(result), values[6]._intval8);
 }
 
 namespace {

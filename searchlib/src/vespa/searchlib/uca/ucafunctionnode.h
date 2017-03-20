@@ -51,7 +51,7 @@ private:
     };
     vespalib::string          _locale;
     vespalib::string          _strength;
-    common::BlobConverter::LP _collator;
+    common::BlobConverter::SP _collator;
     std::unique_ptr<Handler>    _handler;
 };
 

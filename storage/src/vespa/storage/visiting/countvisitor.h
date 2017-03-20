@@ -22,7 +22,7 @@ public:
 
 private:
     void handleDocuments(const document::BucketId& bucketId,
-                         std::vector<spi::DocEntry::LP>& entries,
+                         std::vector<spi::DocEntry::UP>& entries,
                          HitCounter& hitCounter);
 
     bool _doScheme;

@@ -12,6 +12,7 @@
 
 #include <map>
 #include <vespa/metrics/metric.h>
+#include <assert.h>
 
 namespace metrics {
 
@@ -33,7 +34,7 @@ public:
     MetricSet(const String& name, Tags dimensions,
               const String& description, MetricSet* owner = 0);
 
-    MetricSet(const MetricSet&, std::vector<Metric::LP>& ownerList,
+    MetricSet(const MetricSet&, std::vector<Metric::UP> &ownerList,
               CopyType, MetricSet* owner = 0, bool includeUnused = false);
     ~MetricSet();
 
@@ -52,7 +53,7 @@ public:
     void registerMetric(Metric& m);
     void unregisterMetric(Metric& m);
 
-    MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType type,
+    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType type,
                      MetricSet* owner, bool includeUnused = false) const override;
 
     void reset();
@@ -75,7 +76,7 @@ public:
                 const_cast<const MetricSet*>(this)->getMetric(name));
     }
 
-    virtual void addToSnapshot(Metric& m, std::vector<Metric::LP>& o) const
+    virtual void addToSnapshot(Metric& m, std::vector<Metric::UP> &o) const
         { addTo(m, &o); }
 
     const std::vector<Metric*>& getRegisteredMetrics() const
@@ -109,7 +110,7 @@ private:
     void tagRegistrationAltered();
     const Metric* getMetricInternal(const String& name) const;
 
-    virtual void addTo(Metric&, std::vector<Metric::LP>* ownerList) const;
+    virtual void addTo(Metric&, std::vector<Metric::UP> *ownerList) const;
 };
 
 } // metrics

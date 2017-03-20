@@ -111,8 +111,8 @@ struct MockProvider : PersistenceProvider {
     virtual IterateResult iterate(IteratorId, uint64_t, Context&) const {
         last_called = ITERATE;
         IterateResult::List result;
-        result.push_back(DocEntry::LP(new DocEntry(Timestamp(1), 0)));
-        return IterateResult(result, true);
+        result.push_back(DocEntry::UP(new DocEntry(Timestamp(1), 0)));
+        return IterateResult(std::move(result), true);
     }
 
     virtual Result destroyIterator(IteratorId, Context&) {

@@ -32,8 +32,8 @@ private:
         std::unique_ptr<RankManager>     _rankManager;
     };
     typedef vespalib::hash_map<vespalib::string, Env::SP> EnvMap;
-    typedef vespalib::LinkedPtr<EnvMap> EnvMapLP;
-    typedef std::vector< vespalib::LinkedPtr<EnvMap> > ThreadLocals;
+    typedef std::unique_ptr<EnvMap> EnvMapUP;
+    typedef std::vector<EnvMapUP> ThreadLocals;
 
     static __thread EnvMap * _localEnvMap;
     EnvMap                   _envMap;

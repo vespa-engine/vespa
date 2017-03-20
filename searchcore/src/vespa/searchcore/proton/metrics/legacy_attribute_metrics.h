@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/metrics/metrics.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace proton {
 
@@ -16,22 +15,22 @@ struct LegacyAttributeMetrics : metrics::MetricSet {
 
     struct List : metrics::MetricSet {
         struct Entry : metrics::MetricSet {
-            typedef vespalib::LinkedPtr<Entry> LP;
+            using UP = std::unique_ptr<Entry>;
             metrics::LongValueMetric memoryUsage;
             metrics::LongValueMetric bitVectors;
             Entry(const std::string &name);
         };
-        Entry::LP add(const std::string &name);
-        Entry::LP get(const std::string &name) const;
-        Entry::LP remove(const std::string &name);
-        std::vector<Entry::LP> release();
+        Entry *add(const std::string &name);
+        Entry *get(const std::string &name) const;
+        Entry::UP remove(const std::string &name);
+        std::vector<Entry::UP> release();
 
         // per attribute metrics will be wired in here (by the metrics engine)
         List(metrics::MetricSet *parent);
         ~List();
 
     private:
-        std::map<std::string, Entry::LP> metrics;
+        std::map<std::string, Entry::UP> metrics;
     };
 
     List                     list;

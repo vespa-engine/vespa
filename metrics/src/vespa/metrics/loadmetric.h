@@ -27,9 +27,9 @@ namespace metrics {
 
 template<typename MetricType>
 class LoadMetric : public MetricSet {
-    std::vector<Metric::LP> _ownerList;
-    typedef vespalib::LinkedPtr<MetricType> MetricTypeLP;
-    using MetricMap = vespalib::hash_map<uint32_t, MetricTypeLP>;
+    std::vector<Metric::UP> _ownerList;
+    using MetricTypeUP = std::unique_ptr<MetricType>;
+    using MetricMap = vespalib::hash_map<uint32_t, MetricTypeUP>;
     MetricMap _metrics;
     SumMetric<MetricType> _sum;
 
@@ -49,7 +49,7 @@ public:
      */
     LoadMetric(const LoadMetric<MetricType>& other, MetricSet* owner);
     ~LoadMetric();
-    MetricSet* clone(std::vector<Metric::LP>& ownerList,
+    MetricSet* clone(std::vector<Metric::UP> &ownerList,
                   CopyType copyType, MetricSet* owner,
                   bool includeUnused = false) const override;
 

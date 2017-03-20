@@ -1392,8 +1392,8 @@ updateLegacyAttributeMetrics(LegacyAttributeMetrics &metrics,
                              const TempAttributeMetrics &tmpMetrics)
 {
     for (const auto &attr : tmpMetrics._attrs) {
-        LegacyAttributeMetrics::List::Entry::LP entry = metrics.list.get(attr.first);
-        if (entry.get()) {
+        LegacyAttributeMetrics::List::Entry *entry = metrics.list.get(attr.first);
+        if (entry) {
             entry->memoryUsage.set(attr.second._memoryUsage.allocatedBytes());
             entry->bitVectors.set(attr.second._bitVectors);
         } else {

@@ -20,7 +20,7 @@ private:
     void startingVisitor(const std::vector<document::BucketId>& buckets);
 
     void handleDocuments(const document::BucketId& bucketId,
-                         std::vector<spi::DocEntry::LP>& entries,
+                         std::vector<spi::DocEntry::UP>& entries,
                          HitCounter& hitCounter);
 
     void completedBucket(const document::BucketId& bucket, HitCounter& hitCounter);

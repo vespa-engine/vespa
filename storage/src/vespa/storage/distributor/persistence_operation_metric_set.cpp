@@ -41,7 +41,7 @@ PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
 PersistenceFailuresMetricSet::~PersistenceFailuresMetricSet() { }
 
 MetricSet *
-PersistenceFailuresMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+PersistenceFailuresMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                                     MetricSet* owner, bool includeUnused) const
 {
     if (copyType == INACTIVE) {
@@ -61,7 +61,7 @@ PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& 
 PersistenceOperationMetricSet::~PersistenceOperationMetricSet() { }
 
 MetricSet *
-PersistenceOperationMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+PersistenceOperationMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                                      MetricSet* owner, bool includeUnused) const
 {   
     if (copyType == INACTIVE) {

@@ -53,7 +53,7 @@ public:
 private:
     class Entry {
     public:
-        typedef vespalib::LinkedPtr<Entry> LP;
+        using SP = std::shared_ptr<Entry>;
 
         MemFile _file;
         MemoryUsage _cacheSize;
@@ -78,10 +78,10 @@ private:
 
     struct EntryWrapper {
         EntryWrapper(
-                Entry::LP ptr,
+                Entry::SP ptr,
                 uint64_t lastUsed,
                 const document::BucketId& bid)
-            : _ptr(ptr), _lastUsed(lastUsed), _bid(bid) {}
+            : _ptr(std::move(ptr)), _lastUsed(lastUsed), _bid(bid) {}
 
         const Entry* operator->() const {
             return _ptr.get();
@@ -91,7 +91,7 @@ private:
             return _ptr.get();
         };
 
-        Entry::LP _ptr;
+        Entry::SP _ptr;
         uint64_t _lastUsed;
         document::BucketId _bid;
     };

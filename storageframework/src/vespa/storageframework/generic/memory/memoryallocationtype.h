@@ -18,13 +18,13 @@
 #pragma once
 
 #include <string>
-#include <vespa/vespalib/util/linkedptr.h>
+#include <memory>
 
 namespace storage {
 namespace framework {
 
 struct MemoryAllocationType {
-    typedef vespalib::LinkedPtr<MemoryAllocationType> LP;
+    using UP = std::unique_ptr<MemoryAllocationType>;
 
     enum Flags {
         NONE            = 0x00,

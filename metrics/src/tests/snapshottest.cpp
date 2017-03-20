@@ -40,7 +40,7 @@ struct SubSubMetricSet : public MetricSet {
 
     SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner = 0);
     ~SubSubMetricSet();
-    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+    virtual MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                              metrics::MetricSet* owner, bool includeUnused) const;
     void incValues();
 };
@@ -72,7 +72,7 @@ SubSubMetricSet::SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& lo
 SubSubMetricSet::~SubSubMetricSet() { }
 
 MetricSet*
-SubSubMetricSet::clone(std::vector<Metric::LP>& ownerList,
+SubSubMetricSet::clone(std::vector<Metric::UP> &ownerList,
                        CopyType copyType, metrics::MetricSet* owner,
                        bool includeUnused) const
 {
@@ -114,7 +114,7 @@ struct SubMetricSet : public MetricSet {
     SubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner = 0);
     ~SubMetricSet();
 
-    MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                      metrics::MetricSet* owner, bool includeUnused) const override;
 
     void incValues();
@@ -134,7 +134,7 @@ SubMetricSet::SubMetricSet(vespalib::stringref name, const LoadTypeSet& loadType
 SubMetricSet::~SubMetricSet() { }
 
 MetricSet*
-SubMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+SubMetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                     metrics::MetricSet* owner, bool includeUnused) const
 {
     if (copyType == INACTIVE) {

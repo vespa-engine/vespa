@@ -69,7 +69,7 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
 {
     for (size_t i=0; i < numDocIdPartitions; i++) {
         vespalib::string s(make_string("docid_part%02ld", i));
-        partitions.push_back(DocIdPartition::LP(new DocIdPartition(s, this)));
+        partitions.push_back(DocIdPartition::UP(new DocIdPartition(s, this)));
     }
 }
 

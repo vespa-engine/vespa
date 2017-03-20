@@ -81,7 +81,7 @@ public:
         std::string toString() const;
     };
 
-    typedef vespalib::LinkedPtr<MemSlot> LP;
+    using UP = std::unique_ptr<MemSlot>;
 
     MemSlot(const MemSlot&);
     /** Constructor used by mappers reading from file. */

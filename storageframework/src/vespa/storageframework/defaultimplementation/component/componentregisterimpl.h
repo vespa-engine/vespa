@@ -48,7 +48,7 @@ class ComponentRegisterImpl : public virtual ComponentRegister,
     std::vector<ManagedComponent*> _components;
 
     metrics::MetricSet _topMetricSet;
-    std::vector<vespalib::LinkedPtr<metrics::UpdateHook>> _hooks;
+    std::vector<std::unique_ptr<metrics::UpdateHook>> _hooks;
     metrics::MetricManager* _metricManager;
     MemoryManagerInterface* _memoryManager;
     Clock* _clock;

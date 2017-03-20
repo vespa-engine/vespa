@@ -375,7 +375,7 @@ FileScannerTest::runTest(const TestParameters& params)
 
     MountPointList mountPoints("./vdsroot",
                                std::vector<vespalib::string>(),
-                               vespalib::LinkedPtr<DeviceManager>(
+                               DeviceManager::UP(
                                        new DeviceManager(
                                                DeviceMapper::UP(new SimpleDeviceMapper),
                                                clock)));

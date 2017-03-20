@@ -97,7 +97,7 @@ public:
     void logOnlyIfSet() { _values.removeFlag(LOG_IF_UNSET); }
 
     virtual ValueMetric * clone(
-            std::vector<Metric::LP>&, CopyType type, MetricSet* owner,
+            std::vector<Metric::UP> &, CopyType type, MetricSet* owner,
             bool /*includeUnused*/) const
         { return new ValueMetric<AvgVal,TotVal,SumOnAdd>(*this, type, owner); }
 
@@ -150,7 +150,7 @@ public:
     virtual void printDebug(std::ostream&, const std::string& indent) const;
 
     virtual void addToPart(Metric&) const;
-    virtual void addToSnapshot(Metric&, std::vector<Metric::LP>&) const;
+    virtual void addToSnapshot(Metric&, std::vector<Metric::UP> &) const;
 };
 
 typedef ValueMetric<double, double, true> DoubleValueMetric;

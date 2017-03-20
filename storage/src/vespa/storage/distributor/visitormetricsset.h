@@ -15,7 +15,7 @@ struct VisitorMetricSet : public PersistenceOperationMetricSet {
     VisitorMetricSet(MetricSet* owner = nullptr);
     ~VisitorMetricSet();
 
-    MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+    MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       MetricSet* owner, bool includeUnused) const override;
 };
 

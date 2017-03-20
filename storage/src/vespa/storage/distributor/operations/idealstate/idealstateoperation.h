@@ -108,7 +108,6 @@ public:
     static const uint32_t MAINTENANCE_MESSAGE_TYPES[];
 
     typedef std::shared_ptr<IdealStateOperation> SP;
-    typedef vespalib::LinkedPtr<IdealStateOperation> LP;
     typedef std::unique_ptr<IdealStateOperation> UP;
     typedef std::vector<SP> Vector;
     typedef std::map<document::BucketId, SP> Map;

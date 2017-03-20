@@ -11,14 +11,12 @@
 #include <vespa/memfilepersistence/spi/operationhandler.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
+#include <vespa/document/select/node.h>
 
 namespace document {
 
 class FieldSet;
 
-namespace select {
-class Node;
-}
 }
 
 namespace storage {
@@ -75,8 +73,8 @@ class IteratorState
 {
     spi::Bucket _bucket;
     spi::Selection _selection;
-    vespalib::LinkedPtr<document::FieldSet> _fieldSet;
-    vespalib::LinkedPtr<document::select::Node> _documentSelection;
+    std::unique_ptr<document::FieldSet> _fieldSet;
+    std::unique_ptr<document::select::Node> _documentSelection;
     std::vector<Types::Timestamp> _remaining;
     spi::IncludedVersions _versions;
     CachePrefetchRequirements _prefetchRequirements;
@@ -89,12 +87,12 @@ public:
                   const spi::Selection& sel,
                   document::FieldSet::UP fieldSet,
                   spi::IncludedVersions versions,
-                  vespalib::LinkedPtr<document::select::Node> docSel,
+                  std::unique_ptr<document::select::Node> docSel,
                   const CachePrefetchRequirements& prefetchRequirements)
         : _bucket(bucket),
           _selection(sel),
-          _fieldSet(vespalib::LinkedPtr<document::FieldSet>(fieldSet.release())),
-          _documentSelection(docSel),
+          _fieldSet(std::move(fieldSet)),
+          _documentSelection(std::move(docSel)),
           _remaining(),
           _versions(versions),
           _prefetchRequirements(prefetchRequirements),

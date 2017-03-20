@@ -50,7 +50,7 @@ Environment::Environment(const config::ConfigUri & configUri,
       _devicesConfig(resolveConfig<DevicesConfig>(configUri)),
       _options(std::make_shared<Options>(*_config, *_persistenceConfig))
 {
-    DeviceManager::LP manager(
+    DeviceManager::UP manager(
             new DeviceManager(DeviceMapper::UP(new SimpleDeviceMapper()),
                               _clock));
 
@@ -58,7 +58,7 @@ Environment::Environment(const config::ConfigUri & configUri,
             _devicesConfig->statfsPolicy, _devicesConfig->statfsPeriod);
     _mountPoints.reset(new MountPointList(_devicesConfig->rootFolder,
                                           _devicesConfig->diskPath,
-                                          manager));
+                                          std::move(manager)));
 
     if (!ignoreDisks) {
         _mountPoints->init(0);

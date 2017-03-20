@@ -129,7 +129,7 @@ class StorageBucketDBInitializer : public StorageLink,
     System _system;
     Metrics _metrics;
     GlobalState _state;
-    std::vector<vespalib::LinkedPtr<BucketReadState>> _readState;
+    std::vector<std::unique_ptr<BucketReadState>> _readState;
 
 public:
     StorageBucketDBInitializer(const config::ConfigUri&,

@@ -228,7 +228,7 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd,
                     cmd.getBucketId().toString().c_str(),
                     results.begin()->first.toString().c_str());
                 cmd.remapBucketId(results.begin()->first);
-                return results.begin()->second;
+                return std::move(results.begin()->second);
             }
             std::ostringstream error;
             error << "Dropping " << cmd.getType() << " to bucket "

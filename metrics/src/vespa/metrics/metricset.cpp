@@ -32,7 +32,7 @@ MetricSet::MetricSet(const String& name, Tags dimensions,
 }
 
 MetricSet::MetricSet(const MetricSet& other,
-                     std::vector<Metric::LP>& ownerList,
+                     std::vector<Metric::UP> &ownerList,
                      CopyType copyType,
                      MetricSet* owner,
                      bool includeUnused)
@@ -48,7 +48,7 @@ MetricSet::MetricSet(const MetricSet& other,
     for (const Metric* metric : other._metricOrder) {
         if (copyType != INACTIVE || includeUnused || metric->used()) {
             Metric* m = metric->clone(ownerList, copyType, this, includeUnused);
-            ownerList.push_back(Metric::LP(m));
+            ownerList.push_back(Metric::UP(m));
         }
     }
 }
@@ -56,7 +56,7 @@ MetricSet::MetricSet(const MetricSet& other,
 MetricSet::~MetricSet() { }
 
 MetricSet*
-MetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType type,
+MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type,
                  MetricSet* owner, bool includeUnused) const
 {
     return new MetricSet(*this, ownerList, type, owner, includeUnused);
@@ -224,7 +224,7 @@ namespace {
 }
 
 void
-MetricSet::addTo(Metric& other, std::vector<Metric::LP>* ownerList) const
+MetricSet::addTo(Metric& other, std::vector<Metric::UP> *ownerList) const
 {
     bool mustAdd = (ownerList == 0);
     MetricSet& o(static_cast<MetricSet&>(other));
@@ -239,9 +239,9 @@ MetricSet::addTo(Metric& other, std::vector<Metric::LP>* ownerList) const
         if (target == map2.end() || source->first < target->first) {
                 // Source missing in snapshot to add to. Lets create and add.
             if (!mustAdd && source->second->used()) {
-                Metric::LP copy(source->second->clone(*ownerList, INACTIVE, &o));
-                ownerList->push_back(copy);
+                Metric::UP copy(source->second->clone(*ownerList, INACTIVE, &o));
                 newMetrics[source->first] = copy.get();
+                ownerList->push_back(std::move(copy));
             }
             ++source;
         } else if (source->first == target->first) {

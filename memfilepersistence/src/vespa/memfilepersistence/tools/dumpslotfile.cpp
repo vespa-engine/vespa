@@ -257,7 +257,7 @@ int SlotFileDumper::dump(int argc, const char * const * argv,
     EnvironmentImpl env(config, o.toXml ? o.documentManConfigId.c_str() : "");
 
     document::BucketId bucket(extractBucketId(o.filename));
-    Directory::LP dir(env._deviceManager.getDirectory(o.filename, 0));
+    Directory::SP dir(env._deviceManager.getDirectory(o.filename, 0));
     FileSpecification fileSpec(bucket, *dir, o.filename);
 
     MemFile::LoadOptions opts;

@@ -25,9 +25,9 @@ namespace memfile {
 
 class DeviceManager : public vespalib::XmlSerializable {
     DeviceMapper::UP _deviceMapper;
-    std::map<int, Disk::LP> _disks;
-    std::map<std::string, Partition::LP> _partitions;
-    std::map<std::string, Directory::LP> _directories;
+    std::map<int, Disk::SP> _disks;
+    std::map<std::string, Partition::SP> _partitions;
+    std::map<std::string, Directory::SP> _directories;
     std::set<IOEventListener*> _eventListeners;
     vespa::config::storage::StorDevicesConfig::StatfsPolicy _statPolicy;
     uint32_t _statPeriod;
@@ -39,7 +39,7 @@ class DeviceManager : public vespalib::XmlSerializable {
     void setFindDeviceFunction();
 
 public:
-    typedef vespalib::LinkedPtr<DeviceManager> LP;
+    using UP = std::unique_ptr<DeviceManager>;
 
     DeviceManager(DeviceMapper::UP mapper,
                   const framework::Clock& clock);
@@ -54,13 +54,13 @@ public:
     void addIOEventListener(IOEventListener& listener);
     void removeIOEventListener(IOEventListener& listener);
 
-    Directory::LP getDirectory(const std::string& dir, uint16_t index);
-    Directory::LP deserializeDirectory(const std::string& serialized);
-    Partition::LP getPartition(const std::string& path);
-    Disk::LP getDisk(const std::string& path);
+    Directory::SP getDirectory(const std::string& dir, uint16_t index);
+    Directory::SP deserializeDirectory(const std::string& serialized);
+    Partition::SP getPartition(const std::string& path);
+    Disk::SP getDisk(const std::string& path);
 
-    std::vector<Directory::LP> getDirectories(const Disk& disk) const;
-    std::vector<Directory::LP> getDirectories(const Partition& part) const;
+    std::vector<Directory::SP> getDirectories(const Disk& disk) const;
+    std::vector<Directory::SP> getDirectories(const Partition& part) const;
 
     vespa::config::storage::StorDevicesConfig::StatfsPolicy getStatPolicy() const
         { return _statPolicy; }

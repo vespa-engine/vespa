@@ -19,7 +19,7 @@ namespace memfile {
 class Directory : public Device {
     uint16_t _index;
     std::string _path;
-    Partition::LP _partition;
+    Partition::SP _partition;
 
     // Only DeviceManager can create these objects, so we only need
     // to cope with these constructors being so similar there.
@@ -31,7 +31,7 @@ class Directory : public Device {
     friend class DeviceManager;
 
 public:
-    typedef vespalib::LinkedPtr<Directory> LP;
+    using SP = std::shared_ptr<Directory>;
     void setIndex(uint16_t index) { _index = index; } // Used when deserializing
 
     uint16_t getIndex() const { return _index; }

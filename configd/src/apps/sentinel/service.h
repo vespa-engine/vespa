@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/config-sentinel.h>
 #include <list>
@@ -46,7 +45,7 @@ private:
     StartMetrics &_metrics;
 
 public:
-    typedef vespalib::LinkedPtr<Service> LP;
+    using UP = std::unique_ptr<Service>;
     ~Service();
     Service(const SentinelConfig::Service& config,
             const SentinelConfig::Application& application,

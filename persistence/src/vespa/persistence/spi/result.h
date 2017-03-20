@@ -248,7 +248,7 @@ private:
 
 class IterateResult : public Result {
 public:
-    typedef std::vector<DocEntry::LP> List;
+    typedef std::vector<DocEntry::UP> List;
 
     /**
      * Constructor used when there was an error creating the iterator.
@@ -270,15 +270,19 @@ public:
           _entries(std::move(entries))
     { }
 
+    IterateResult(const IterateResult &) = delete;
+    IterateResult(IterateResult &&rhs) = default;
+    IterateResult &operator=(IterateResult &&rhs) = default;
+
     ~IterateResult();
 
     const List& getEntries() const { return _entries; }
-
+    List steal_entries() { return std::move(_entries); }
     bool isCompleted() const { return _completed; }
 
 private:
     bool _completed;
-    std::vector<DocEntry::LP> _entries;
+    std::vector<DocEntry::UP> _entries;
 };
 
 class PartitionStateListResult : public Result

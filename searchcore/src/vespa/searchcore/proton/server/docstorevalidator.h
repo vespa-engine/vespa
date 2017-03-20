@@ -30,7 +30,7 @@ public:
     uint32_t getOrphanCount() const;
     uint32_t getVisitCount() const { return _visitCount; }
     uint32_t getVisitEmptyCount() const { return _visitEmptyCount; }
-    LidVectorContext::LP getInvalidLids() const;
+    LidVectorContext::SP getInvalidLids() const;
 };
 
 

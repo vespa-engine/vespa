@@ -404,7 +404,7 @@ public:
      * vector of documents arrive from the persistence layer.
      */
     virtual void handleDocuments(const document::BucketId&,
-                                 std::vector<spi::DocEntry::LP>& entries,
+                                 std::vector<spi::DocEntry::UP>& entries,
                                  HitCounter& hitCounter) = 0;
 
     /**

@@ -32,7 +32,7 @@ struct PersistenceTestEnvironment {
     StorageComponent _component;
     FileStorMetrics _metrics;
     std::unique_ptr<FileStorHandler> _handler;
-    std::vector<vespalib::LinkedPtr<PersistenceUtil> > _diskEnvs;
+    std::vector<std::unique_ptr<PersistenceUtil> > _diskEnvs;
 };
 
 class PersistenceTestUtils : public CppUnit::TestFixture {

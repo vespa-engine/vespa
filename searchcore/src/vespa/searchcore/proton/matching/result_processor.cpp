@@ -36,9 +36,9 @@ ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, I
     }
 }
 
-ResultProcessor::Context::Context(Sort::UP s, PartialResult::LP r, GroupingContext::UP g)
+ResultProcessor::Context::Context(Sort::UP s, PartialResult::UP r, GroupingContext::UP g)
     : sort(std::move(s)),
-      result(r),
+      result(std::move(r)),
       grouping(std::move(g)),
       groupingSource(grouping.get())
 { }
@@ -70,7 +70,6 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
       _sortSpec(sortSpec),
       _offset(offset),
       _hits(hits),
-      _result(),
       _wasMerged(false)
 {
     if (!_groupingContext.empty()) {
@@ -95,24 +94,21 @@ ResultProcessor::Context::UP
 ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey)
 {
     Sort::UP sort(new Sort(distributionKey, hardDoom, _attrContext, _sortSpec));
-    PartialResult::LP result(new PartialResult((_offset + _hits), sort->hasSortData()));
-    if (thread_id == 0) {
-        _result = result;
-    }
+    PartialResult::UP result(new PartialResult((_offset + _hits), sort->hasSortData()));
     search::grouping::GroupingContext::UP groupingContext;
     if (_groupingSession.get() != 0) {
         groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext);
     }
-    return Context::UP(new Context(std::move(sort), result, std::move(groupingContext)));
+    return Context::UP(new Context(std::move(sort), std::move(result), std::move(groupingContext)));
 }
 
 ResultProcessor::Result::UP
-ResultProcessor::makeReply()
+ResultProcessor::makeReply(PartialResultUP full_result)
 {
     search::engine::SearchReply::UP reply(new search::engine::SearchReply());
     const search::IDocumentMetaStore &metaStore = _metaStore;
     search::engine::SearchReply &r = *reply;
-    PartialResult &result = *_result;
+    PartialResult &result = *full_result;
     size_t numFs4Hits(0);
     if (_groupingSession) {
         if (_wasMerged) {

@@ -236,7 +236,7 @@ Metric::printDebug(std::ostream& out, const std::string& indent) const
 
 Metric*
 Metric::assignValues(const Metric& m) {
-    std::vector<Metric::LP> ownerList;
+    std::vector<Metric::UP> ownerList;
     const_cast<Metric&>(m).addToSnapshot(*this, ownerList);
     // As this should only be called among active metrics, all metrics
     // should exist and owner list should thus always end up empty.

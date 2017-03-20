@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/storage/distributor/operations/idealstate/mergelimiter.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
@@ -29,7 +28,7 @@ struct MergeLimiterTest : public CppUnit::TestFixture
 CPPUNIT_TEST_SUITE_REGISTRATION(MergeLimiterTest);
 
 namespace {
-    typedef vespalib::LinkedPtr<BucketCopy> BucketCopyPtr;
+    using BucketCopyPtr = std::unique_ptr<BucketCopy>;
     std::vector<BucketCopyPtr> _bucketDatabase;
 
     struct NodeFactory {

@@ -28,14 +28,14 @@ struct SplitBitDetectorTest : public CppUnit::TestFixture {
     void testZeroDocLimitFallbacksToOneBitIncreaseOnGidCollision();
     void findBucketCollisionIds();
 
-    spi::DocEntry::LP
+    spi::DocEntry::UP
     generateDocEntry(uint32_t userId,
                      uint32_t docNum,
                      spi::Timestamp timestamp)
     {
         std::ostringstream ost;
         ost << "id:storage_test:testdoctype1:n=" << userId << ":" << docNum;
-        return spi::DocEntry::LP(new spi::DocEntry(
+        return spi::DocEntry::UP(new spi::DocEntry(
                 timestamp, 0, document::DocumentId(ost.str())));
     };
 
@@ -68,7 +68,7 @@ SplitBitDetectorTest::testTwoUsers()
 
     provider.createBucket(bucket, context);
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
     for (uint32_t i = 0; i < 5; ++i) {
         document::Document::SP doc(
                 testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
@@ -102,7 +102,7 @@ SplitBitDetectorTest::testSingleUser()
 
     provider.createBucket(bucket, context);
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
     for (uint32_t i = 0; i < 10; ++i) {
         document::Document::SP doc(
                 testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
@@ -131,7 +131,7 @@ SplitBitDetectorTest::testMaxBits()
 
     provider.createBucket(bucket, context);
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
         int location = 1;
         document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
@@ -160,7 +160,7 @@ SplitBitDetectorTest::testMaxBitsOneBelowMax()
 
     provider.createBucket(bucket, context);
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
         int location = 1 | (seed % 2 == 0 ? 0x8000 : 0);
         document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
@@ -198,7 +198,7 @@ SplitBitDetectorTest::testUnsplittable()
 
     provider.createBucket(bucket, context);
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
 
     for (uint32_t i = 0; i < 10; ++i) {
         document::Document::SP doc(
@@ -227,7 +227,7 @@ SplitBitDetectorTest::testUnsplittableMinCount()
 
     provider.createBucket(bucket, context);
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
 
     for (uint32_t i = 0; i < 10; ++i) {
         document::Document::SP doc(

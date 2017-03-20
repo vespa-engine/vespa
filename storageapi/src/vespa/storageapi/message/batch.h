@@ -118,7 +118,7 @@ public:
     DECLARE_STORAGECOMMAND(BatchPutRemoveCommand, onBatchPutRemove)
 
 private:
-    std::vector<vespalib::LinkedPtr<Operation> > _operations;
+    std::vector<std::unique_ptr<Operation> > _operations;
     uint32_t _approxSize;
 };
 

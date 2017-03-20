@@ -111,8 +111,8 @@ namespace {
 struct HasDocId {
     const DocumentId &_did;
     HasDocId(const DocumentId &did) : _did(did) {}
-    bool operator()(const DocEntry::LP &entry)
-    { return *entry->getDocumentId() == _did; }
+    bool operator()(const DocEntry &entry)
+    { return *entry.getDocumentId() == _did; }
 };
 
 struct TimestampLess {
@@ -159,7 +159,7 @@ BucketContent::hasTimestamp(Timestamp t) const
  */
 
 void
-BucketContent::insert(DocEntry::LP e)
+BucketContent::insert(DocEntry::SP e)
 {
     LOG(spam, "insert(%s)", e->toString().c_str());
     const DocumentId* docId(e->getDocumentId());
@@ -247,24 +247,24 @@ BucketContent::insert(DocEntry::LP e)
     assert(_outdatedInfo || _info.getEntryCount() == _entries.size());
 }
 
-DocEntry::LP
+DocEntry::SP
 BucketContent::getEntry(const DocumentId& did) const
 {
     GidMapType::const_iterator it(_gidMap.find(did.getGlobalId()));
     if (it != _gidMap.end()) {
         return it->second;
     }
-    return DocEntry::LP();
+    return DocEntry::SP();
 }
 
-DocEntry::LP
+DocEntry::SP
 BucketContent::getEntry(Timestamp t) const
 {
     std::vector<BucketEntry>::const_iterator iter =
         lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
 
     if (iter == _entries.end() || iter->entry->getTimestamp() != t) {
-        return DocEntry::LP();
+        return DocEntry::SP();
     } else {
         return iter->entry;
     }
@@ -435,7 +435,7 @@ DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
         return BucketInfoResult(Result::TRANSIENT_ERROR, "Bucket not found");
     }
 
-    DocEntry::LP existing = (*bc)->getEntry(t);
+    DocEntry::SP existing = (*bc)->getEntry(t);
     if (existing.get()) {
         if (doc->getId() == *existing->getDocumentId()) {
             return Result();
@@ -447,8 +447,8 @@ DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
 
     LOG(spam, "Inserting document %s", doc->toString(true).c_str());
 
-    DocEntry::LP entry(new DocEntry(t, NONE, Document::UP(doc->clone())));
-    (*bc)->insert(entry);
+    DocEntry::UP entry(new DocEntry(t, NONE, Document::UP(doc->clone())));
+    (*bc)->insert(std::move(entry));
     return Result();
 }
 
@@ -490,14 +490,14 @@ DummyPersistence::remove(const Bucket& b,
         return RemoveResult(Result::TRANSIENT_ERROR, "Bucket not found");
     }
 
-    DocEntry::LP entry((*bc)->getEntry(did));
+    DocEntry::SP entry((*bc)->getEntry(did));
     bool foundPut(entry.get() && !entry->isRemove());
-    DocEntry::LP remEntry(new DocEntry(t, REMOVE_ENTRY, did));
+    DocEntry::UP remEntry(new DocEntry(t, REMOVE_ENTRY, did));
 
     if ((*bc)->hasTimestamp(t)) {
         (*bc)->eraseEntry(t);
     }
-    (*bc)->insert(remEntry);
+    (*bc)->insert(std::move(remEntry));
     return RemoveResult(foundPut);
 }
 
@@ -514,7 +514,7 @@ DummyPersistence::get(const Bucket& b,
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
     } else {
-        DocEntry::LP entry((*bc)->getEntry(did));
+        DocEntry::SP entry((*bc)->getEntry(did));
         if (entry.get() == 0 || entry->isRemove()) {
         } else {
             Document::UP doc(entry->getDocument()->clone());
@@ -538,7 +538,7 @@ DummyPersistence::createIterator(
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createIterator(%s)", b.toString().c_str());
-    vespalib::LinkedPtr<document::select::Node> docSelection;
+    std::unique_ptr<document::select::Node> docSelection;
     if (!s.getDocumentSelection().getDocumentSelection().empty()) {
         docSelection.reset(
                 parseDocumentSelection(
@@ -563,13 +563,13 @@ DummyPersistence::createIterator(
         ++_nextIterator;
         assert(_iterators.find(id) == _iterators.end());
         it = new Iterator;
-        _iterators[id] = Iterator::LP(it);
+        _iterators[id] = Iterator::UP(it);
         assert(it->_bucket.getBucketId().getRawId() == 0); // Wrap detection
         it->_bucket = b;
     }
     // Memory pointed to by 'it' should now be valid from here on out
 
-    it->_fieldSet = vespalib::LinkedPtr<document::FieldSet>(fs.clone());
+    it->_fieldSet = std::unique_ptr<document::FieldSet>(fs.clone());
     const BucketContent::GidMapType& gidMap((*bc)->_gidMap);
 
     if (s.getTimestampSubset().empty()) {
@@ -630,7 +630,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
     Iterator* it;
     {
         vespalib::MonitorGuard lock(_monitor);
-        std::map<IteratorId, Iterator::LP>::iterator iter(_iterators.find(id));
+        std::map<IteratorId, Iterator::UP>::iterator iter(_iterators.find(id));
         if (iter == _iterators.end()) {
             return IterateResult(Result::PERMANENT_ERROR,
                         "Bug! Used iterate without sending createIterator first");
@@ -645,12 +645,12 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
     }
     LOG(debug, "Iterator %zu acquired bucket lock", uint64_t(id));
 
-    std::vector<DocEntry::LP> entries;
+    std::vector<DocEntry::UP> entries;
     uint32_t currentSize = 0;
     uint32_t fastPath = 0;
     while (!it->_leftToIterate.empty()) {
         Timestamp next(it->_leftToIterate.back());
-        DocEntry::LP entry((*bc)->getEntry(next));
+        DocEntry::SP entry((*bc)->getEntry(next));
         if (entry.get() != 0) {
             uint32_t size = entry->getSize();
             if (currentSize != 0 && currentSize + size > maxByteSize) break;
@@ -664,14 +664,14 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
                         document::FieldSet::createDocumentSubsetCopy(
                                 *entry->getDocument(),
                                 *it->_fieldSet));
-                DocEntry::LP ret(new DocEntry(entry->getTimestamp(),
+                DocEntry::UP ret(new DocEntry(entry->getTimestamp(),
                                               entry->getFlags(),
                                               std::move(filtered),
                                               entry->getPersistedDocumentSize()));
-                entries.push_back(ret);
+                entries.push_back(std::move(ret));
             } else {
                 // Use entry as-is.
-                entries.push_back(DocEntry::LP(entry->clone()));
+                entries.push_back(DocEntry::UP(entry->clone()));
                 ++fastPath;
             }
         }
@@ -691,10 +691,10 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
         currentSize,
         fastPath);
     if (it->_leftToIterate.empty()) {
-        return IterateResult(entries, true);
+        return IterateResult(std::move(entries), true);
     }
 
-    return IterateResult(entries, false);
+    return IterateResult(std::move(entries), false);
 }
 
 Result
@@ -716,7 +716,7 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
     LOG(debug, "createBucket(%s)", b.toString().c_str());
     vespalib::MonitorGuard lock(_monitor);
     if (_content[b.getPartition()].find(b) == _content[b.getPartition()].end()) {
-        _content[b.getPartition()][b] = BucketContent::LP(new BucketContent);
+        _content[b.getPartition()][b] = BucketContent::SP(new BucketContent);
     } else {
         assert(!_content[b.getPartition()][b]->_inUse);
         LOG(debug, "%s already existed", b.toString().c_str());
@@ -770,16 +770,16 @@ DummyPersistence::split(const Bucket& source,
 
     // Add entries
     for (uint32_t i=0; i<sour._entries.size(); ++i) {
-        DocEntry::LP entry(sour._entries[i].entry);
+        DocEntry::SP entry(sour._entries[i].entry);
 
         document::BucketId bId(
                 target1.getBucketId().getUsedBits(),
                 idFactory.getBucketId(*entry->getDocumentId()).getRawId());
 
         if (bId == target1.getBucketId()) {
-            targ1.insert(entry);
+            targ1.insert(std::move(entry));
         } else {
-            targ2.insert(entry);
+            targ2.insert(std::move(entry));
         }
     }
     targ1.setActive(sour.isActive());
@@ -817,8 +817,8 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2,
         active |= sour.isActive();
 
         for (uint32_t i=0; i<sour._entries.size(); ++i) {
-            DocEntry::LP entry(sour._entries[i].entry);
-            (*targetGuard)->insert(entry);
+            DocEntry::SP entry(sour._entries[i].entry);
+            (*targetGuard)->insert(std::move(entry));
         }
         sourceGuard.reset(0);
         deleteBucket(source, context);
@@ -842,7 +842,7 @@ DummyPersistence::revert(const Bucket& b, Timestamp t, Context&)
     }
 
     BucketContent& content(**bc);
-    DocEntry::LP docEntry(content.getEntry(t));
+    DocEntry::SP docEntry(content.getEntry(t));
     if (!docEntry.get()) {
         return Result();
     }
@@ -953,4 +953,4 @@ DummyPersistence::releaseBucketNoLock(const BucketContent& bc) const
 } // spi
 } // storage
 
-VESPALIB_HASH_MAP_INSTANTIATE_H(storage::spi::Bucket, vespalib::LinkedPtr<storage::spi::dummy::BucketContent>, document::BucketId::hash)
+VESPALIB_HASH_MAP_INSTANTIATE_H(storage::spi::Bucket, std::shared_ptr<storage::spi::dummy::BucketContent>, document::BucketId::hash)

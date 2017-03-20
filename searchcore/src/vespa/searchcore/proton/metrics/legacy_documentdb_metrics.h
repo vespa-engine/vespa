@@ -59,14 +59,13 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
                 metrics::DoubleAverageMetric active_time;
                 metrics::DoubleAverageMetric wait_time;
 
-                typedef vespalib::LinkedPtr<DocIdPartition> LP;
+                using UP = std::unique_ptr<DocIdPartition>;
                 DocIdPartition(const std::string &name, metrics::MetricSet *parent);
                 ~DocIdPartition();
                 void update(const matching::MatchingStats::Partition &stats);
             };
-            typedef std::vector<DocIdPartition::LP> DocIdPartitions;
-
-            typedef vespalib::LinkedPtr<RankProfileMetrics> LP;
+            using DocIdPartitions = std::vector<DocIdPartition::UP>;
+            using UP = std::unique_ptr<RankProfileMetrics>;
 
             metrics::LongCountMetric     queries;
             metrics::LongCountMetric     limited_queries;        
@@ -82,7 +81,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
             void update(const matching::MatchingStats &stats);
 
         };
-        typedef std::map<std::string, RankProfileMetrics::LP> RankProfileMap;
+        using  RankProfileMap = std::map<std::string, RankProfileMetrics::UP>;
         RankProfileMap rank_profiles;
 
         void update(const matching::MatchingStats &stats);

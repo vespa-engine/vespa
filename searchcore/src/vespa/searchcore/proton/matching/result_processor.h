@@ -27,7 +27,7 @@ class ResultProcessor
     using GroupingContext = search::grouping::GroupingContext;
     using GroupingSession = search::grouping::GroupingSession;
     using IAttributeContext = search::attribute::IAttributeContext;
-    using PartialResultLP = vespalib::LinkedPtr<PartialResult>;
+    using PartialResultUP = std::unique_ptr<PartialResult>;
 public:
     /**
      * Sorter selection and owner of additional data needed for
@@ -63,11 +63,11 @@ public:
         using GroupingContextUP = std::unique_ptr<GroupingContext>;
 
         Sort::UP          sort;
-        PartialResultLP   result;
+        PartialResultUP   result;
         GroupingContextUP grouping;
         GroupingSource    groupingSource;
 
-        Context(Sort::UP s, PartialResultLP r, GroupingContextUP g);
+        Context(Sort::UP s, PartialResultUP r, GroupingContextUP g);
         ~Context();
     };
 
@@ -89,7 +89,6 @@ private:
     const vespalib::string                &_sortSpec;
     size_t                                 _offset;
     size_t                                 _hits;
-    PartialResultLP                        _result;
     bool                                   _wasMerged;
 
 public:
@@ -105,7 +104,7 @@ public:
     size_t countFS4Hits();
     void prepareThreadContextCreation(size_t num_threads);
     Context::UP createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey);
-    std::unique_ptr<Result> makeReply();
+    std::unique_ptr<Result> makeReply(PartialResultUP full_result);
 };
 
 } // namespace proton::matching

@@ -3,7 +3,6 @@
 
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vector>
 
 namespace proton {
@@ -17,7 +16,7 @@ private:
     size_t    _docIdLimit;
     enum { ARRAY = 0, BITVECTOR = 1 };
 public:
-    typedef vespalib::LinkedPtr<LidVectorContext> LP;
+    using SP = std::shared_ptr<LidVectorContext>;
     LidVectorContext();
     LidVectorContext(size_t docIdLimit);
     LidVectorContext(size_t docIdLimit, const LidVector &lids);

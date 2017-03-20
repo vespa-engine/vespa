@@ -249,7 +249,7 @@ TEST_F("require that prune removed documents removes documents",
 {
     f.addDocsToMetaStore(3);
 
-    LidVectorContext::LP lids(new LidVectorContext(4));
+    LidVectorContext::SP lids(new LidVectorContext(4));
     lids->addLid(1);
     lids->addLid(3);
     PruneRemovedDocumentsOperation op(lids->getDocIdLimit(), subdb_id);

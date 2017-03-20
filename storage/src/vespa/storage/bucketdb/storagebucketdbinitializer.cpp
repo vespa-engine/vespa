@@ -21,7 +21,7 @@ namespace storage {
 using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
 
 struct BucketReadState {
-    typedef vespalib::LinkedPtr<BucketReadState> LP;
+    using UP = std::unique_ptr<BucketReadState>;
 
     BucketSet _pending;
     document::BucketId _databaseIterator;
@@ -132,7 +132,7 @@ StorageBucketDBInitializer::StorageBucketDBInitializer(
         // Initialize read state for disks being available
     for (uint32_t i=0; i<_system._partitions.size(); ++i) {
         if (!_system._partitions[i].isUp()) continue;
-        _readState[i] = BucketReadState::LP(new BucketReadState);
+        _readState[i] = BucketReadState::UP(new BucketReadState);
         _state._dirsToList += 1;
     }
     _system._component.registerStatusPage(*this);

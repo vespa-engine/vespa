@@ -147,7 +147,7 @@ MetricSetTest::uniqueTargetMetricsAreAddedToMetricSet()
 
     // 'doge' metric in set2 must be preserved even though it does not exist
     // in set1.
-    std::vector<Metric::LP> ownerList;
+    std::vector<Metric::UP> ownerList;
     set1.addToSnapshot(set2, ownerList);
 
     CPPUNIT_ASSERT(set2.getMetric("wow") != nullptr);

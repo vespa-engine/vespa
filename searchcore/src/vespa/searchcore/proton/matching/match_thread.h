@@ -108,6 +108,7 @@ public:
     virtual void run();
     const MatchingStats::Partition &get_thread_stats() const { return thread_stats; }
     double get_match_time() const { return match_time_s; }
+    PartialResult::UP extract_result() { return std::move(resultContext->result); }
 };
 
 } // namespace proton::matching

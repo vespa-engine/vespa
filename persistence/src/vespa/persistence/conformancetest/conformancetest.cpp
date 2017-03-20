@@ -118,13 +118,13 @@ struct DocAndTimestamp
  */
 struct Chunk
 {
-    std::vector<DocEntry::LP> _entries;
+    std::vector<DocEntry::UP> _entries;
 };
 
 struct DocEntryIndirectTimestampComparator
 {
-    bool operator()(const DocEntry::LP& e1,
-                    const DocEntry::LP& e2) const
+    bool operator()(const DocEntry::UP& e1,
+                    const DocEntry::UP& e2) const
     {
         return e1->getTimestamp() < e2->getTimestamp();
     }
@@ -145,18 +145,12 @@ doIterate(PersistenceProvider& spi,
     std::vector<Chunk> chunks;
 
     while (true) {
-        std::vector<DocEntry::LP> entries;
-
         Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
         IterateResult result(spi.iterate(id, maxByteSize, context));
 
         CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
 
-        for (size_t i = 0; i < result.getEntries().size(); ++i) {
-            entries.push_back(result.getEntries()[i]);
-        }
-        chunks.push_back(Chunk());
-        chunks.back()._entries.swap(entries);
+        chunks.push_back(Chunk{std::move(result.steal_entries())});
         if (result.isCompleted()
             || (maxChunks != 0 && chunks.size() >= maxChunks))
         {
@@ -167,7 +161,7 @@ doIterate(PersistenceProvider& spi,
 }
 
 size_t
-getRemoveEntryCount(const std::vector<spi::DocEntry::LP>& entries)
+getRemoveEntryCount(const std::vector<spi::DocEntry::UP>& entries)
 {
     size_t ret = 0;
     for (size_t i = 0; i < entries.size(); ++i) {
@@ -178,13 +172,13 @@ getRemoveEntryCount(const std::vector<spi::DocEntry::LP>& entries)
     return ret;
 }
 
-std::vector<DocEntry::LP>
+std::vector<DocEntry::UP>
 getEntriesFromChunks(const std::vector<Chunk>& chunks)
 {
-    std::vector<spi::DocEntry::LP> ret;
+    std::vector<spi::DocEntry::UP> ret;
     for (size_t chunk = 0; chunk < chunks.size(); ++chunk) {
         for (size_t i = 0; i < chunks[chunk]._entries.size(); ++i) {
-            ret.push_back(chunks[chunk]._entries[i]);
+            ret.push_back(DocEntry::UP(chunks[chunk]._entries[i]->clone()));
         }
     }
     std::sort(ret.begin(),
@@ -194,12 +188,12 @@ getEntriesFromChunks(const std::vector<Chunk>& chunks)
 }
 
 
-std::vector<DocEntry::LP>
+std::vector<DocEntry::UP>
 iterateBucket(PersistenceProvider& spi,
               const Bucket& bucket,
               IncludedVersions versions)
 {
-    std::vector<DocEntry::LP> ret;
+    std::vector<DocEntry::UP> ret;
     DocumentSelection docSel("");
     Selection sel(docSel);
 
@@ -218,11 +212,10 @@ iterateBucket(PersistenceProvider& spi,
             spi.iterate(iter.getIteratorId(),
                          std::numeric_limits<int64_t>().max(), context);
         if (result.getErrorCode() != Result::NONE) {
-            return std::vector<DocEntry::LP>();
+            return std::vector<DocEntry::UP>();
         }
-        for (size_t i = 0; i < result.getEntries().size(); ++i) {
-            ret.push_back(result.getEntries()[i]);
-        }
+        auto list = result.steal_entries();
+        std::move(list.begin(), list.end(), std::back_inserter(ret));
         if (result.isCompleted()) {
             break;
         }
@@ -240,7 +233,7 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
            const std::vector<Chunk>& chunks,
            const std::set<string>& removes = std::set<string>())
 {
-    std::vector<DocEntry::LP> retrieved(
+    std::vector<DocEntry::UP> retrieved(
             getEntriesFromChunks(chunks));
     size_t removeCount = getRemoveEntryCount(retrieved);
     // Ensure that we've got the correct number of puts and removes
@@ -686,7 +679,7 @@ void ConformanceTest::testPutDuplicate() {
         CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
         CPPUNIT_ASSERT_EQUAL(checksum, info.getChecksum());
     }
-    std::vector<DocEntry::LP> entries(
+    std::vector<DocEntry::UP> entries(
             iterateBucket(*spi, bucket, ALL_VERSIONS));
     CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
 }
@@ -711,7 +704,7 @@ void ConformanceTest::testRemove() {
         CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
         CPPUNIT_ASSERT(info.getChecksum() != 0);
 
-        std::vector<DocEntry::LP> entries(
+        std::vector<DocEntry::UP> entries(
                 iterateBucket(*spi, bucket, NEWEST_DOCUMENT_ONLY));
         CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
     }
@@ -731,13 +724,13 @@ void ConformanceTest::testRemove() {
         CPPUNIT_ASSERT_EQUAL(true, result2.wasFound());
     }
     {
-        std::vector<DocEntry::LP> entries(iterateBucket(*spi,
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi,
                                                     bucket,
                                                     NEWEST_DOCUMENT_ONLY));
         CPPUNIT_ASSERT_EQUAL(size_t(0), entries.size());
     }
     {
-        std::vector<DocEntry::LP> entries(iterateBucket(*spi,
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi,
                                                     bucket,
                                                     NEWEST_DOCUMENT_OR_REMOVE));
 
@@ -820,7 +813,7 @@ void ConformanceTest::testRemoveMerge() {
 
     // Remove entry should exist afterwards
     {
-        std::vector<DocEntry::LP> entries(iterateBucket(
+        std::vector<DocEntry::UP> entries(iterateBucket(
                 *spi, bucket, ALL_VERSIONS));
         CPPUNIT_ASSERT_EQUAL(size_t(2), entries.size());
         // Timestamp-sorted by iterateBucket
@@ -848,7 +841,7 @@ void ConformanceTest::testRemoveMerge() {
     }
     // Must have new remove. We don't check for the presence of the old remove.
     {
-        std::vector<DocEntry::LP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
         CPPUNIT_ASSERT(entries.size() >= 2);
         CPPUNIT_ASSERT_EQUAL(removeId, *entries.back()->getDocumentId());
         CPPUNIT_ASSERT_EQUAL(Timestamp(11), entries.back()->getTimestamp());
@@ -875,7 +868,7 @@ void ConformanceTest::testRemoveMerge() {
     }
     // Must have newest remove. We don't check for the presence of the old remove.
     {
-        std::vector<DocEntry::LP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
         CPPUNIT_ASSERT(entries.size() >= 2);
         CPPUNIT_ASSERT_EQUAL(removeId, *entries.back()->getDocumentId());
         CPPUNIT_ASSERT_EQUAL(Timestamp(11), entries.back()->getTimestamp());
@@ -1302,7 +1295,7 @@ ConformanceTest::testIterateRemoves()
                 createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
 
         std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
-        std::vector<DocEntry::LP> entries = getEntriesFromChunks(chunks);
+        std::vector<DocEntry::UP> entries = getEntriesFromChunks(chunks);
         CPPUNIT_ASSERT_EQUAL(docs.size(), entries.size());
         verifyDocs(nonRemovedDocs, chunks, removedDocs);
 

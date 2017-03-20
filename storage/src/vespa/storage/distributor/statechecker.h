@@ -8,7 +8,6 @@
 #include <vespa/storage/distributor/bucketgctimecalculator.h>
 #include <vespa/storage/distributor/maintenancebucket.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 #include <unordered_set>
 #include <map>
@@ -97,7 +96,7 @@ public:
 
     class Result
     {
-        vespalib::LinkedPtr<ResultImpl> _impl;
+        std::unique_ptr<ResultImpl> _impl;
     public:
         IdealStateOperation::UP createOperation() {
             return (_impl.get() 
@@ -123,8 +122,8 @@ public:
                 IdealStateOperation::UP operation,
                 MaintenancePriority::Priority priority);
     private:
-        Result(const vespalib::LinkedPtr<ResultImpl> impl)
-            : _impl(impl)
+        Result(std::unique_ptr<ResultImpl> impl)
+            : _impl(std::move(impl))
         {}
     };
 

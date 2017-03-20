@@ -102,7 +102,7 @@ MetricSource::SourceMetricVisitor::visitMetric(const Metric& metric, bool) {
                 + metric.toString(),
                 VESPA_STRLOC);
     }
-    std::vector<Metric::LP> ownerList;
+    std::vector<Metric::UP> ownerList;
     _resultMetric.reset(metric.clone(ownerList, Metric::INACTIVE, 0));
     if (!ownerList.empty()) {
         throw vespalib::IllegalArgumentException(

@@ -53,7 +53,7 @@ class GetIterReply : public api::InternalReply {
 private:
     framework::MemoryToken::UP _token;
     document::BucketId _bucketId;
-    std::vector<spi::DocEntry::LP> _entries;
+    std::vector<spi::DocEntry::UP> _entries;
     bool _completed;
 
 public:
@@ -69,11 +69,11 @@ public:
         return _bucketId;
     }
 
-    const std::vector<spi::DocEntry::LP>& getEntries() const {
+    const std::vector<spi::DocEntry::UP>& getEntries() const {
         return _entries;
     }
 
-    std::vector<spi::DocEntry::LP>& getEntries() {
+    std::vector<spi::DocEntry::UP>& getEntries() {
         return _entries;
     }
 

@@ -28,10 +28,10 @@ namespace dummy {
 
 struct BucketEntry
 {
-    DocEntry::LP entry;
+    DocEntry::SP entry;
     GlobalId gid;
 
-    BucketEntry(const DocEntry::LP& e, const GlobalId& g)
+    BucketEntry(DocEntry::SP e, const GlobalId& g)
         : entry(e),
           gid(g)
     { }
@@ -40,11 +40,11 @@ struct BucketEntry
 struct BucketContent {
     typedef vespalib::hash_map<
         document::GlobalId,
-        DocEntry::LP,
+        DocEntry::SP,
         document::GlobalId::hash
     > GidMapType;
 
-    typedef vespalib::LinkedPtr<BucketContent> LP;
+    using SP = std::shared_ptr<BucketContent>;
 
     std::vector<BucketEntry> _entries;
     GidMapType _gidMap;
@@ -67,9 +67,9 @@ struct BucketContent {
     const BucketInfo& getBucketInfo() const;
     BucketInfo& getMutableBucketInfo() { return _info; }
     bool hasTimestamp(Timestamp) const;
-    void insert(DocEntry::LP);
-    DocEntry::LP getEntry(const DocumentId&) const;
-    DocEntry::LP getEntry(Timestamp) const;
+    void insert(DocEntry::SP);
+    DocEntry::SP getEntry(const DocumentId&) const;
+    DocEntry::SP getEntry(Timestamp) const;
     void eraseEntry(Timestamp t);
     void setActive(bool active = true) {
         _active = active;
@@ -87,10 +87,10 @@ struct BucketContent {
 };
 
 struct Iterator {
-    typedef vespalib::LinkedPtr<Iterator> LP;
+    using UP = std::unique_ptr<Iterator>;
     Bucket _bucket;
     std::vector<Timestamp> _leftToIterate;
-    vespalib::LinkedPtr<document::FieldSet> _fieldSet;
+    std::unique_ptr<document::FieldSet> _fieldSet;
 };
 
 class DummyPersistence;
@@ -220,12 +220,12 @@ private:
     mutable bool _initialized;
     document::DocumentTypeRepo::SP _repo;
     PartitionStateList _partitions;
-    typedef vespalib::hash_map<Bucket, BucketContent::LP, document::BucketId::hash>
+    typedef vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>
     PartitionContent;
 
     std::vector<PartitionContent> _content;
     IteratorId _nextIterator;
-    mutable std::map<IteratorId, Iterator::LP> _iterators;
+    mutable std::map<IteratorId, Iterator::UP> _iterators;
     vespalib::Monitor _monitor;
 
     std::unique_ptr<ClusterState> _clusterState;

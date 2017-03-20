@@ -7,7 +7,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 
-using vespalib::LinkedPtr;
 using vespalib::fileExists;
 using vespalib::isDirectory;
 using vespalib::isSymLink;
@@ -37,8 +36,8 @@ public:
     framework::defaultimplementation::FakeClock _clock;
 
 private:
-    LinkedPtr<DeviceManager> newDeviceManager() {
-        return LinkedPtr<DeviceManager>(
+    DeviceManager::UP newDeviceManager() {
+        return DeviceManager::UP(
                 new DeviceManager(
                         DeviceMapper::UP(new SimpleDeviceMapper),
                         _clock));
@@ -88,7 +87,7 @@ void MountPointList_Test::testScanning()
     init();
     MountPointList list(_prefix,
                         std::vector<vespalib::string>(),
-                        vespalib::LinkedPtr<DeviceManager>(
+                        DeviceManager::UP(
                                 new DeviceManager(
                                         DeviceMapper::UP(new SimpleDeviceMapper),
                                         _clock)));
@@ -133,7 +132,7 @@ void MountPointList_Test::testStatusFile()
     {
         MountPointList list(_prefix,
                             std::vector<vespalib::string>(),
-                            vespalib::LinkedPtr<DeviceManager>(
+                            DeviceManager::UP(
                                     new DeviceManager(
                                             DeviceMapper::UP(new SimpleDeviceMapper),
                                             _clock)));
@@ -195,7 +194,7 @@ void MountPointList_Test::testStatusFile()
     {
         MountPointList list(_prefix,
                             std::vector<vespalib::string>(),
-                            vespalib::LinkedPtr<DeviceManager>(
+                            DeviceManager::UP(
                                     new DeviceManager(
                                             DeviceMapper::UP(new SimpleDeviceMapper),
                                             _clock)));

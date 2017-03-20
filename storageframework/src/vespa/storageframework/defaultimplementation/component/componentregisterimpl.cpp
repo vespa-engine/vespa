@@ -161,9 +161,9 @@ ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
                                           SecondTime period)
 {
     vespalib::LockGuard lock(_componentLock);
-    metrics::UpdateHook::LP hookPtr(new MetricHookWrapper(name, hook));
-    _hooks.push_back(hookPtr);
+    metrics::UpdateHook::UP hookPtr(new MetricHookWrapper(name, hook));
     _metricManager->addMetricUpdateHook(*hookPtr, period.getTime());
+    _hooks.push_back(std::move(hookPtr));
 }
 
 metrics::MetricLockGuard

@@ -95,7 +95,7 @@ const MemoryAllocationType&
 MemoryManager::registerAllocationType(const MemoryAllocationType& type)
 {
     vespalib::LockGuard lock(_typeLock);
-    _types[type.getName()] = MemoryAllocationType::LP(
+    _types[type.getName()] = MemoryAllocationType::UP(
                                 new MemoryAllocationType(type));
     return *_types[type.getName()];
 }
@@ -104,7 +104,7 @@ const MemoryAllocationType&
 MemoryManager::getAllocationType(const std::string& name) const
 {
     vespalib::LockGuard lock(_typeLock);
-    std::map<std::string, MemoryAllocationType::LP>::const_iterator it(
+    std::map<std::string, MemoryAllocationType::UP>::const_iterator it(
             _types.find(name));
     if (it == _types.end()) {
         throw vespalib::IllegalArgumentException(
@@ -118,7 +118,7 @@ MemoryManager::getAllocationTypes() const
 {
     vespalib::LockGuard lock(_typeLock);
     std::vector<const MemoryAllocationType*> types;
-    for(std::map<std::string, MemoryAllocationType::LP>::const_iterator it
+    for(std::map<std::string, MemoryAllocationType::UP>::const_iterator it
             = _types.begin(); it != _types.end(); ++it)
     {
         types.push_back(it->second.get());

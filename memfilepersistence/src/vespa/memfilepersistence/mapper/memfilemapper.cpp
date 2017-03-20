@@ -69,7 +69,7 @@ MemFileMapper::sendNotifyBucketCommand(const MemFile&,
 }
 
 void
-MemFileMapper::addVersionSerializer(VersionSerializer::LP serializer)
+MemFileMapper::addVersionSerializer(VersionSerializer::UP serializer)
 {
     FileVersion version = serializer->getFileVersion();
     if (_serializers.find(version) != _serializers.end()) {
@@ -78,13 +78,13 @@ MemFileMapper::addVersionSerializer(VersionSerializer::LP serializer)
               << " is already registered.";
         throw vespalib::IllegalStateException(error.str(), VESPA_STRLOC);
     }
-    _serializers[version] = serializer;
+    _serializers[version] = std::move(serializer);
 }
 
 VersionSerializer&
 MemFileMapper::getVersionSerializer(const MemFile& file)
 {
-    std::map<FileVersion, VersionSerializer::LP>::iterator it(
+    std::map<FileVersion, VersionSerializer::UP>::iterator it(
             _serializers.find(file.getCurrentVersion()));
     if (it == _serializers.end()) {
         std::ostringstream ost;
@@ -99,7 +99,7 @@ MemFileMapper::getVersionSerializer(const MemFile& file)
 MemFileMapper::MemFileMapper(ThreadMetricProvider& metricProvider)
     : _metricProvider(metricProvider)
 {
-    addVersionSerializer(VersionSerializer::LP(new MemFileV1Serializer(metricProvider)));
+    addVersionSerializer(VersionSerializer::UP(new MemFileV1Serializer(metricProvider)));
 }
 
 void
@@ -107,7 +107,7 @@ MemFileMapper::setDefaultMemFileIO(MemFile& file,
                                    vespalib::LazyFile::UP lf,
                                    const Environment& env)
 {
-    std::map<FileVersion, VersionSerializer::LP>::iterator serializer(
+    std::map<FileVersion, VersionSerializer::UP>::iterator serializer(
             _serializers.find(file.getFile().getWantedFileVersion()));
     assert(serializer != _serializers.end());
 
@@ -162,7 +162,7 @@ MemFileMapper::loadFileImpl(MemFile& file, Environment& env)
 
     FileVersion version = static_cast<FileVersion>(
             *reinterpret_cast<uint32_t*>(buffer.getBuffer()));
-    std::map<FileVersion, VersionSerializer::LP>::iterator serializer(
+    std::map<FileVersion, VersionSerializer::UP>::iterator serializer(
             _serializers.find(version));
     file.setCurrentVersion(version);
     if (serializer == _serializers.end()) {
@@ -237,7 +237,7 @@ MemFileMapper::flush(MemFile& f, Environment& env, bool autoRepair)
     }
 
     // If we get here we failed to write updates only and will rewrite
-    std::map<FileVersion, VersionSerializer::LP>::iterator serializer(
+    std::map<FileVersion, VersionSerializer::UP>::iterator serializer(
             _serializers.find(f.getFile().getWantedFileVersion()));
     assert(serializer != _serializers.end());
 
@@ -250,7 +250,7 @@ MemFileMapper::verify(MemFile& file, Environment& env,
                       uint16_t fileVerifyFlags)
 {
     if (file.fileExists()) {
-        std::map<FileVersion, VersionSerializer::LP>::iterator serializer(
+        std::map<FileVersion, VersionSerializer::UP>::iterator serializer(
                 _serializers.find(file.getCurrentVersion()));
         if (serializer != _serializers.end()) {
             bool wasOk = serializer->second->verify(

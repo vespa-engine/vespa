@@ -15,7 +15,6 @@
 #pragma once
 
 #include <vespa/memfilepersistence/device/device.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace storage {
 
@@ -29,7 +28,7 @@ class Disk : public Device {
     friend class DeviceManager;
 
 public:
-    typedef vespalib::LinkedPtr<Disk> LP;
+    using SP = std::shared_ptr<Disk>;
 
     uint64_t getId() const { return _id; }
 

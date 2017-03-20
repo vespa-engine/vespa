@@ -20,6 +20,7 @@ struct LinkedValue : public LinkedValueBase
 {
     LinkedValue() {}
     LinkedValue(const V & v) : LinkedValueBase(), _value(v) { }
+    LinkedValue(V && v) : LinkedValueBase(), _value(std::move(v)) { }
     V _value;
 };
 
@@ -123,6 +124,12 @@ public:
      * Object is then put at head of LRU list.
      */
     insert_result insert(const K & key, const V & value);
+
+    /**
+     * Object is inserted in cache with given key.
+     * Object is then put at head of LRU list.
+     */
+    insert_result insert(const K & key, V && value);
 
     /**
      * Return the object with the given key. If it does not exist an empty one will be created.

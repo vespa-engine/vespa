@@ -28,7 +28,7 @@ DeviceManager::setPartitionMonitorPolicy(
 {
     _statPolicy = policy;
     _statPeriod = period;
-    for (std::map<std::string, Partition::LP>::iterator it
+    for (std::map<std::string, Partition::SP>::iterator it
             = _partitions.begin(); it != _partitions.end(); ++it)
     {
         Partition& p(*it->second);
@@ -80,26 +80,26 @@ DeviceManager::removeIOEventListener(IOEventListener& listener)
     _eventListeners.erase(&listener);
 }
 
-Directory::LP
+Directory::SP
 DeviceManager::getDirectory(const std::string& dir, uint16_t index)
 {
-    std::map<std::string, Directory::LP>::iterator it =
+    std::map<std::string, Directory::SP>::iterator it =
         _directories.find(dir);
     if (it != _directories.end()) {
         return it->second;
     }
-    Directory::LP d(new Directory(*this, index, dir));
+    Directory::SP d(new Directory(*this, index, dir));
     _directories[dir] = d;
     return d;
 }
 
-Directory::LP
+Directory::SP
 DeviceManager::deserializeDirectory(const std::string& serialized)
 {
         // Deserialize object
-    Directory::LP d(new Directory(serialized, *this));
+    Directory::SP d(new Directory(serialized, *this));
         // If not existing, just add it.
-    std::map<std::string, Directory::LP>::iterator it =
+    std::map<std::string, Directory::SP>::iterator it =
         _directories.find(d->getPath());
     if (it == _directories.end()) {
         _directories[d->getPath()] = d;
@@ -110,18 +110,18 @@ DeviceManager::deserializeDirectory(const std::string& serialized)
     return it->second;
 }
 
-Partition::LP
+Partition::SP
 DeviceManager::getPartition(const std::string& path)
 {
     try{
         std::string mountPoint(_deviceMapper->getMountPoint(path));
         uint64_t id = _deviceMapper->getPartitionId(mountPoint);
-        std::map<std::string, Partition::LP>::iterator it(
+        std::map<std::string, Partition::SP>::iterator it(
             _partitions.find(mountPoint));
         if (it != _partitions.end()) {
             return it->second;
         }
-        Partition::LP part(new Partition(*this, id, mountPoint));
+        Partition::SP part(new Partition(*this, id, mountPoint));
         if (part->getMonitor() != 0) {
             part->getMonitor()->setPolicy(_statPolicy, _statPeriod);
         }
@@ -131,7 +131,7 @@ DeviceManager::getPartition(const std::string& path)
         // If we fail to create partition, due to having IO troubles getting
         // partition id or mount point, create a partition that doesn't
         // correspond to a physical device containing the error found.
-        Partition::LP part(new Partition(*this, -1, path));
+        Partition::SP part(new Partition(*this, -1, path));
         part->addEvent(IOEvent::createEventFromIoException(
                                e,
                                _clock.getTimeInSeconds().getTime()));
@@ -140,16 +140,16 @@ DeviceManager::getPartition(const std::string& path)
     }
 }
 
-Disk::LP
+Disk::SP
 DeviceManager::getDisk(const std::string& path)
 {
     try{
         int devnr = _deviceMapper->getDeviceId(path);
-        std::map<int, Disk::LP>::iterator it = _disks.find(devnr);
+        std::map<int, Disk::SP>::iterator it = _disks.find(devnr);
         if (it != _disks.end()) {
             return it->second;
         }
-        Disk::LP disk(new Disk(*this, devnr));
+        Disk::SP disk(new Disk(*this, devnr));
         _disks[devnr] = disk;
         return disk;
     } catch (vespalib::IoException& e) {
@@ -160,7 +160,7 @@ DeviceManager::getDisk(const std::string& path)
         // If we fail to create partition, due to having IO troubles getting
         // partition id or mount point, create a partition that doesn't
         // correspond to a physical device containing the error found.
-        Disk::LP disk(new Disk(*this, devnr));
+        Disk::SP disk(new Disk(*this, devnr));
         disk->addEvent(IOEvent::createEventFromIoException(
                                e,
                                _clock.getTimeInSeconds().getTime()));
@@ -177,11 +177,11 @@ DeviceManager::printXml(vespalib::XmlOutputStream& xos) const
     xos << XmlTag("mapper") << XmlAttribute("type", _deviceMapper->getName())
         << XmlEndTag();
     xos << XmlTag("devices");
-    for (std::map<int, Disk::LP>::const_iterator diskIt = _disks.begin();
+    for (std::map<int, Disk::SP>::const_iterator diskIt = _disks.begin();
          diskIt != _disks.end(); ++diskIt)
     {
         xos << XmlTag("disk") << XmlAttribute("deviceId", diskIt->first);
-        for (std::map<std::string, Partition::LP>::const_iterator partIt
+        for (std::map<std::string, Partition::SP>::const_iterator partIt
                 = _partitions.begin(); partIt != _partitions.end(); ++partIt)
         {
             if (partIt->second->getDisk() != *diskIt->second) continue;
@@ -191,7 +191,7 @@ DeviceManager::printXml(vespalib::XmlOutputStream& xos) const
             if (partIt->second->getMonitor() != 0) {
                 xos << *partIt->second->getMonitor();
             }
-            for (std::map<std::string, Directory::LP>::const_iterator dirIt
+            for (std::map<std::string, Directory::SP>::const_iterator dirIt
                     = _directories.begin(); dirIt != _directories.end();
                  ++dirIt)
             {

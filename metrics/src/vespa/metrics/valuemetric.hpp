@@ -79,7 +79,7 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::dec(AvgVal decVal)
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 void
 ValueMetric<AvgVal, TotVal, SumOnAdd>::addToSnapshot(
-        Metric& other, std::vector<Metric::LP>&) const
+        Metric& other, std::vector<Metric::UP> &) const
 {
     ValueMetric<AvgVal, TotVal, SumOnAdd>& o(
             reinterpret_cast<ValueMetric<AvgVal, TotVal, SumOnAdd>&>(other));

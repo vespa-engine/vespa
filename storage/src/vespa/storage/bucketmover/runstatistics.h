@@ -19,8 +19,8 @@
     if (anyset) { \
         out << "<h4>" << desc << "</h4>\n"; \
         HtmlTable matrixTable("Source \\ Target"); \
-        typedef vespalib::LinkedPtr<LongColumn> LCLP; \
-        std::vector<LCLP> matrixData((rs)._diskData.size()); \
+        using LCUP = std::unique_ptr<LongColumn>; \
+        std::vector<LCUP> matrixData((rs)._diskData.size()); \
         for (uint32_t i=0; i<(rs)._diskData.size(); ++i)  { \
             std::ostringstream index; \
             index << "Disk " << i; \

@@ -18,7 +18,7 @@ class MemFileV1Serializer : public VersionSerializer
         return _metricProvider.getMetrics();
     }
 public:
-    typedef vespalib::LinkedPtr<MemFileV1Serializer> LP;
+    using UP = std::unique_ptr<MemFileV1Serializer>;
 
     MemFileV1Serializer(ThreadMetricProvider&);
 

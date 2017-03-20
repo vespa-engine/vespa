@@ -2,7 +2,6 @@
 #ifndef STORAGE_SRC_CPP_STORAGE_COMMON_HOSTREPORTER_HOSTINFO_H_
 #define STORAGE_SRC_CPP_STORAGE_COMMON_HOSTREPORTER_HOSTINFO_H_
 
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/jsonstream.h>
 
 #include "cpureporter.h"

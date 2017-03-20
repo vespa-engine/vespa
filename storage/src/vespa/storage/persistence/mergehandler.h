@@ -91,7 +91,7 @@ private:
      */
     void populateMetaData(const spi::Bucket&,
                           Timestamp maxTimestamp,
-                          std::vector<spi::DocEntry::LP>& entries,
+                          std::vector<spi::DocEntry::UP>& entries,
                           spi::Context& context);
 
     Document::UP deserializeDiffDocument(

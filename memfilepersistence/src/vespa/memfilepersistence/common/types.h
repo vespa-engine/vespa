@@ -76,7 +76,6 @@ std::ostream& operator<<(std::ostream&, const DataLocation&);
 struct Types {
     typedef document::BucketId BucketId;
     typedef document::Document Document;
-    typedef vespalib::LinkedPtr<Document> DocLP;
     typedef document::DocumentId DocumentId;
     typedef document::GlobalId GlobalId;
     typedef framework::MicroSecTime Timestamp;
