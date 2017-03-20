@@ -17,10 +17,17 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -40,8 +47,8 @@ public class ConfigServerHttpRequestExecutorTest {
         public String foo;
     }
 
-    final StringBuilder mockLog = new StringBuilder();
-    int mockReturnCode = 200;
+    private final StringBuilder mockLog = new StringBuilder();
+    private int mockReturnCode = 200;
 
     private CloseableHttpClient createClientMock() throws IOException {
         CloseableHttpClient httpMock = mock(CloseableHttpClient.class);
@@ -71,7 +78,7 @@ public class ConfigServerHttpRequestExecutorTest {
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
         TestPojo answer = executor.get("/path", 666, TestPojo.class);
         assertThat(answer.foo, is("bar"));
-        assertThat(mockLog.toString(), is("GET http://host1:666/path  "));
+        assertLogStringContainsGETForAHost();
     }
 
     @Test
@@ -88,7 +95,7 @@ public class ConfigServerHttpRequestExecutorTest {
         } catch (Exception e) {
             // ignore
         }
-        assertThat(mockLog.toString(), is("GET http://host1:666/path  "));
+        assertLogStringContainsGETForAHost();
     }
 
     @Test
@@ -105,8 +112,10 @@ public class ConfigServerHttpRequestExecutorTest {
         } catch (Exception e) {
             // ignore
         }
-        assertThat(mockLog.toString(), is("GET http://host1:666/path  GET http://host2:666/path  " +
-                "GET http://host1:666/path  GET http://host2:666/path  "));
+
+        String[] log = mockLog.toString().split("  ");
+        assertThat(log, arrayContainingInAnyOrder("GET http://host1:666/path", "GET http://host2:666/path",
+                                         "GET http://host1:666/path", "GET http://host2:666/path"));
     }
 
     @Test
@@ -123,6 +132,14 @@ public class ConfigServerHttpRequestExecutorTest {
         } catch (ConfigServerHttpRequestExecutor.NotFoundException e) {
             // ignore
         }
-        assertThat(mockLog.toString(), is("GET http://host1:666/path  "));
+        assertLogStringContainsGETForAHost();
+    }
+
+    private void assertLogStringContainsGETForAHost() {
+        String logString = mockLog.toString();
+        //assertThat(logString, startsWith("GET http://host"));
+        //assertThat(logString, endsWith(":666/path  "));
+        assertTrue("log does not contain expected entries:" + logString,
+                   (logString.equals("GET http://host1:666/path  ") || logString.equals("GET http://host2:666/path  ")));
     }
 }
