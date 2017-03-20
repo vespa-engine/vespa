@@ -81,20 +81,11 @@ TEST_F("valid() forwards to target search context", Fixture) {
 TEST_F("getAsIntegerTerm() forwards to target search context", Fixture) {
     auto ctx = f.create_context(word_term("foo"));
     // No operator== or printing for Range, so doing this the hard way
-    // TODO could add the darn things
     auto expected_range = ctx->target_search_context().getAsIntegerTerm();
     auto actual_range = ctx->getAsIntegerTerm();
     EXPECT_EQUAL(expected_range.lower(), actual_range.lower());
     EXPECT_EQUAL(expected_range.upper(), actual_range.upper());
 }
-
-/*
- FIXME this seems to not actually be implemented as expected by the target search context...! SIGSEGVs.
-TEST_F("queryTerm() returns term context was created with", Fixture) {
-    auto ctx = f.create_context(word_term("helloworld"));
-    EXPECT_EQUAL(std::string("helloworld"), std::string(ctx->queryTerm().getTerm()));
-}
-*/
 
 TEST_F("Non-strict iterator not marked as strict", Fixture) {
     auto ctx = f.create_context(word_term("5678"));
@@ -155,14 +146,31 @@ struct ArrayValueFixture : Fixture {
     }
 };
 
+TEST_F("Non-strict iterator handles unmapped LIDs", ArrayValueFixture) {
+    auto ctx = f.create_context(word_term("1234"));
+    TermFieldMatchData match;
+    auto iter = f.create_non_strict_iterator(*ctx, match);
+
+    EXPECT_FALSE(iter->seek(DocId(2)));
+    EXPECT_EQUAL(iter->beginId(), iter->getDocId());
+}
+
+TEST_F("Non-strict iterator handles seek outside of LID space", ArrayValueFixture) {
+    auto ctx = f.create_context(word_term("1234"));
+    TermFieldMatchData match;
+    auto iter = f.create_non_strict_iterator(*ctx, match);
+
+    const auto n_docs = f.reference_attr->getNumDocs();
+    EXPECT_FALSE(iter->seek(DocId(n_docs + 1)));
+    EXPECT_TRUE(iter->isAtEnd());
+}
+
 TEST_F("Non-strict iterator unpacks target match data for array hit", ArrayValueFixture) {
     auto ctx = f.create_context(word_term("1234"));
     TermFieldMatchData match;
     auto iter = f.create_non_strict_iterator(*ctx, match);
 
     EXPECT_TRUE(is_hit_with_weight(*iter, match, DocId(1), 1));
-    EXPECT_FALSE(iter->seek(DocId(2)));
-    EXPECT_FALSE(iter->seek(DocId(3)));
     EXPECT_TRUE(is_hit_with_weight(*iter, match, DocId(4), 3));
 }
 
@@ -206,6 +214,8 @@ struct SingleValueFixture : Fixture {
                  {DocId(7), dummy_gid(9), DocId(9), 4321}});
     }
 };
+
+// Strict iteration implicitly tests unmapped LIDs by its nature, so we don't have a separate test for that.
 
 TEST_F("Strict iterator seeks to first available hit LID", SingleValueFixture) {
     auto ctx = f.create_context(word_term("5678"));
@@ -264,6 +274,16 @@ TEST_F("Strict iterator unpacks target match data for weighted set hit", WsetVal
     EXPECT_TRUE(is_strict_hit_with_weight(*iter, match, DocId(3), DocId(6), 42));
 }
 
+TEST_F("Strict iterator handles seek outside of LID space", ArrayValueFixture) {
+    auto ctx = f.create_context(word_term("1234"));
+    TermFieldMatchData match;
+    auto iter = f.create_strict_iterator(*ctx, match);
+
+    const auto n_docs = f.reference_attr->getNumDocs();
+    EXPECT_FALSE(iter->seek(DocId(n_docs + 1)));
+    EXPECT_TRUE(iter->isAtEnd());
+}
+
 TEST_F("cmp() performs GID mapping and forwards to target attribute", SingleValueFixture) {
     auto ctx = f.create_context(word_term("5678"));
     EXPECT_FALSE(ctx->cmp(DocId(2)));
@@ -285,9 +305,33 @@ TEST_F("cmp(weight) performs GID mapping and forwards to target attribute", Wset
     EXPECT_EQUAL(42, weight);
 }
 
-// TODO test multiple iterators created from same context
-// TODO test non-mapped lid
-// TODO test seek outside lid limit
+TEST_F("Multiple iterators can be created from the same context", SingleValueFixture) {
+    auto ctx = f.create_context(word_term("5678"));
+
+    TermFieldMatchData match1;
+    auto iter1 = f.create_strict_iterator(*ctx, match1);
+
+    TermFieldMatchData match2;
+    auto iter2 = f.create_non_strict_iterator(*ctx, match2);
+
+    TermFieldMatchData match3;
+    auto iter3 = f.create_strict_iterator(*ctx, match3);
+
+    TermFieldMatchData match4;
+    auto iter4 = f.create_non_strict_iterator(*ctx, match4);
+
+    EXPECT_TRUE(is_strict_hit_with_weight(*iter3, match3, DocId(4), DocId(5), 1));
+    EXPECT_TRUE(is_strict_hit_with_weight(*iter1, match1, DocId(1), DocId(3), 1));
+    EXPECT_TRUE(is_hit_with_weight(*iter4, match4, DocId(5), 1));
+    EXPECT_TRUE(is_hit_with_weight(*iter2, match2, DocId(3), 1));
+}
+
+// Note: this uses an underlying string attribute, as queryTerm() does not seem to
+// implemented at all for (single) numeric attributes. Intentional?
+TEST_F("queryTerm() returns term context was created with", WsetValueFixture) {
+    auto ctx = f.create_context(word_term("helloworld"));
+    EXPECT_EQUAL(std::string("helloworld"), std::string(ctx->queryTerm().getTerm()));
+}
 
 } // attribute
 } // search
