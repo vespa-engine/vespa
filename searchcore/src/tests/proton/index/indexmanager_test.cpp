@@ -690,36 +690,23 @@ TEST_F("requireThatFailedFusionIsRetried", Fixture) {
     EXPECT_EQUAL(2u, spec.flush_ids[1]);
 }
 
-namespace {
+TEST_F("require that wipeHistory updates schema on disk", Fixture) {
+    Schema empty_schema;
+    f.addDocument(docid);
+    f.flushIndexManager();
+    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema); });
+    f.addDocument(docid);
+    f.flushIndexManager();
 
-void expectSchemaIndexFields(uint32_t expIndexFields) {
     Schema s;
     s.loadFromFile("test_data/index.flush.1/schema.txt");
-    EXPECT_EQUAL(expIndexFields, s.getNumIndexFields());
-}
+    EXPECT_EQUAL(1u, s.getNumIndexFields());
 
-}
+    f.runAsMaster([&]() { f._index_manager->wipeHistory(f._serial_num,
+                                                        empty_schema); });
 
-TEST_F("require that setSchema updates schema on disk, wiping removed fields", Fixture)
-{
-    Schema empty_schema;
-    f.addDocument(docid);
-    f.flushIndexManager();
-    TEST_DO(expectSchemaIndexFields(1));
-    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema, ++f._serial_num); });
-    TEST_DO(expectSchemaIndexFields(0));
-}
-
-TEST_F("require that wipeHistory updates schema on disk", Fixture)
-{
-    Schema empty_schema;
-    f.addDocument(docid);
-    f.flushIndexManager();
-    TEST_DO(expectSchemaIndexFields(1));
-    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema, f._serial_num); });
-    TEST_DO(expectSchemaIndexFields(1));
-    f.runAsMaster([&]() { f._index_manager->wipeHistory(++f._serial_num); });
-    TEST_DO(expectSchemaIndexFields(0));
+    s.loadFromFile("test_data/index.flush.1/schema.txt");
+    EXPECT_EQUAL(0u, s.getNumIndexFields());
 }
 
 TEST_F("require that indexes manager stats can be generated", Fixture)

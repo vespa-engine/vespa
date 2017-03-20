@@ -156,14 +156,17 @@ public:
      *
      * @param schema The new schema to start using.
      **/
-    virtual void setSchema(const Schema &schema, SerialNum serialNum) = 0;
+    virtual void setSchema(const Schema &schema) = 0;
 
     /**
-     * Wipes remains of removed fields from this index manager.
+     * Wipes remains of removed fields from this index manager as specified in the history schema.
+     * This can for instance be removing these fields from disk indexes.
+     * The default implementation does nothing.
      *
      * @param wipeSerial The serial number of this wipe operation.
+     * @param historyFields The schema specifying which fields we should wipe away.
      **/
-    virtual void wipeHistory(SerialNum wipeSerial);
+    virtual void wipeHistory(SerialNum wipeSerial, const Schema &historyFields);
 };
 
 } // namespace searchcorespi

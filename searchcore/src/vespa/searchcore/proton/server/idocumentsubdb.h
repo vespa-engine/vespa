@@ -122,8 +122,8 @@ public:
      * last part of transaction log.
      */
     virtual SerialNum getNewestFlushedSerial()  = 0;
-    virtual void wipeHistory(SerialNum wipeSerial, const Schema &wipeSchema) = 0;
-    virtual void setIndexSchema(const SchemaSP &schema, SerialNum serialNum) = 0;
+    virtual void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) = 0;
+    virtual void setIndexSchema(const SchemaSP &schema) = 0;
     virtual search::SearchableStats getSearchableStats() const = 0;
     virtual std::unique_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
 
