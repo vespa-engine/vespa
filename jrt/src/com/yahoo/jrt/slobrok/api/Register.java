@@ -1,12 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt.slobrok.api;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Method;
+import com.yahoo.jrt.MethodHandler;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringArray;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Task;
+import com.yahoo.jrt.Values;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
-import java.util.logging.Logger;
+import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A Register object is used to register and unregister services with
@@ -20,21 +33,28 @@ public class Register {
 
     private static Logger log = Logger.getLogger(Register.class.getName());
 
+    private static final String REGISTER_METHOD_NAME = "slobrok.registerRpcServer";
+    private static final String UNREGISTER_METHOD_NAME = "slobrok.unregisterRpcServer";
+
     private Supervisor    orb;
     private SlobrokList   slobroks;
     private String        currSlobrok;
-    private String        mySpec;
+    private final String  mySpec;
     private BackOffPolicy backOff;
     private boolean       reqDone    = false;
-    private List<String>     names      = new ArrayList<>();
-    private List<String> pending    = new ArrayList<>();
-    private List<String>     unreg      = new ArrayList<>();
+    private List<String>  names      = new ArrayList<>();
+    private List<String>  pending    = new ArrayList<>();
+    private List<String>  unreg      = new ArrayList<>();
     private Task          updateTask = null;
     private RequestWaiter reqWait    = null;
     private Target        target     = null;
     private Request       req        = null;
+    private String        name       = null;
     private Method        m_list     = null;
     private Method        m_unreg    = null;
+
+    /** Whether the last registerRpcServer for the name was a success, or null for the first. */
+    private final Map<String, Boolean> lastRegisterSucceeded = new HashMap<>();
 
     /**
      * Remove all instances of name from list.
@@ -160,24 +180,47 @@ public class Register {
     private void handleUpdate() {
         if (reqDone) {
             reqDone = false;
+
+            boolean logOnSuccess = false;
+            synchronized (this) {
+                if (req.methodName().equals(UNREGISTER_METHOD_NAME)) {
+                    logOnSuccess = true;
+                    // Why is this remove() here and not in unregisterName? Because at that time there may be
+                    // an in-flight request for the registration of name, and in case handleUpdate() would
+                    // anyway have to have special code for handling a removed name, e.g. testing for name
+                    // being in names which is O(N).
+                    lastRegisterSucceeded.remove(name);
+                } else {
+                    final Boolean lastSucceeded = lastRegisterSucceeded.get(name);
+                    if (lastSucceeded == null || lastSucceeded != !req.isError()) {
+                        logOnSuccess = true;
+                        lastRegisterSucceeded.put(name, !req.isError());
+                    }
+                }
+            }
+
             if (req.isError()) {
-                if (req.errorCode() != ErrorCode.METHOD_FAILED) {
-                    log.log(Level.FINE, "register failed: " + req.errorMessage() + " (code " + req.errorCode() + ")");
+                 if (req.errorCode() != ErrorCode.METHOD_FAILED) {
+                    log.log(Level.INFO, logMessagePrefix() + " failed, will disconnect: " + req.errorMessage() + " (code " + req.errorCode() + ")");
                     target.close();
                     target = null;
                 } else {
-                    log.log(Level.WARNING, "register failed: " + req.errorMessage() + " (code " + req.errorCode() + ")");
+                    log.log(Level.WARNING, logMessagePrefix() + " failed: " + req.errorMessage());
                 }
             } else {
+                log.log(logOnSuccess ? Level.INFO : Level.FINE, logMessagePrefix() + " completed successfully");
                 backOff.reset();
             }
+
             req = null;
+            name = null;
         }
         if (req != null) {
             log.log(Level.FINEST, "req in progress");
             return; // current request still in progress
         }
         if (target != null && ! slobroks.contains(currSlobrok)) {
+            log.log(Level.INFO, "RPC server " + mySpec + ": Slobrok server " + currSlobrok + " removed, will disconnect");
             target.close();
             target = null;
         }
@@ -185,48 +228,56 @@ public class Register {
             currSlobrok = slobroks.nextSlobrokSpec();
             if (currSlobrok == null) {
                 double delay = backOff.get();
+                Level level = backOff.shouldWarn(delay) ? Level.WARNING : Level.FINE;
+                log.log(level, "RPC server " + mySpec + ": All Slobrok servers tried, will retry in " + delay
+                            + " seconds: " + slobroks);
                 updateTask.schedule(delay);
-                if (backOff.shouldWarn(delay))
-                    log.log(Level.WARNING, "slobrok connection problems (retry in " + delay + " seconds) to: " + slobroks);
-                else
-                    log.log(Level.FINE, "slobrok retry in " + delay + " seconds");
                 return;
             }
+            lastRegisterSucceeded.clear();
             target = orb.connect(new Spec(currSlobrok));
+            String namesString = null;
+            final boolean logFine = log.isLoggable(Level.FINE);
             synchronized (this) {
+                if (logFine) {
+                    // 'names' must only be accessed in a synchronized(this) block
+                    namesString = names.toString();
+                }
                 pending.clear();
                 pending.addAll(names);
             }
+
+            if (logFine) {
+                log.log(Level.FINE, "RPC server " + mySpec + ": Connect to Slobrok server " + currSlobrok +
+                        " and reregister all Slobrok names: " + namesString);
+            }
         }
-        boolean unregister = false;
-        String  name;
+
         synchronized (this) {
             if (unreg.size() > 0) {
                 name = unreg.remove(unreg.size() - 1);
-                unregister = true;
+                req = new Request(UNREGISTER_METHOD_NAME);
             } else if (pending.size() > 0) {
                 name = pending.remove(pending.size() - 1);
+                req = new Request(REGISTER_METHOD_NAME);
             } else {
                 pending.addAll(names);
-                log.log(Level.FINE, "done, reschedule in 30s");
+                log.log(Level.FINE, "RPC server " + mySpec + ": Reregister all Slobrok names in 30 seconds: " + names);
                 updateTask.schedule(30.0);
                 return;
             }
         }
 
-        if (unregister) {
-            req = new Request("slobrok.unregisterRpcServer");
-            req.parameters().add(new StringValue(name));
-            log.log(Level.FINE, "unregister [" + name + "]");
-            req.parameters().add(new StringValue(mySpec));
-            target.invokeAsync(req, 35.0, reqWait);
-        } else { // register
-            req = new Request("slobrok.registerRpcServer");
-            req.parameters().add(new StringValue(name));
-            log.log(Level.FINE, "register [" + name + "]");
-            req.parameters().add(new StringValue(mySpec));
-            target.invokeAsync(req, 35.0, reqWait);
-        }
+        req.parameters().add(new StringValue(name));
+        req.parameters().add(new StringValue(mySpec));
+        log.log(Level.FINE, logMessagePrefix() + " now");
+        target.invokeAsync(req, 35.0, reqWait);
+    }
+
+    private String logMessagePrefix() {
+        return "RPC server " + mySpec
+                + (req.methodName().equals(UNREGISTER_METHOD_NAME) ? " unregistering " : " registering ")
+                + name + " with Slobrok server " + currSlobrok;
     }
 
     private synchronized void handleRpcList(Request req) {
