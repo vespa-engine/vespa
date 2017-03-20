@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.util;
 
+import com.google.common.base.Strings;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 
@@ -32,6 +33,7 @@ public class Environment {
     private static final String ENV_CONFIGSERVERS = "services__addr_configserver";
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
+    private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
 
     private final Set<String> configServerHosts;
     private final String environment;
@@ -53,7 +55,7 @@ public class Environment {
                 HostName.getLocalhost(),
                 new InetAddressResolver(),
                 new PathResolver(),
-                Collections.emptyList()
+                getLogstashNodesFromEnvironment()
         );
     }
 
@@ -105,6 +107,14 @@ public class Environment {
 
         final List<String> hostNameStrings = Arrays.asList(configServerHosts.split("[,\\s]+"));
         return hostNameStrings.stream().collect(Collectors.toSet());
+    }
+
+    private static List<String> getLogstashNodesFromEnvironment() {
+        String logstashNodes = System.getenv(LOGSTASH_NODES);
+        if(Strings.isNullOrEmpty(logstashNodes)) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(logstashNodes.split("[,\\s]+"));
     }
 
     public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
