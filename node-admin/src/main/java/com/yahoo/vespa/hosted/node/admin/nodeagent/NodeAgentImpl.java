@@ -508,14 +508,21 @@ public class NodeAgentImpl implements NodeAgent {
 
     @SuppressWarnings("unchecked")
     public void updateContainerNodeMetrics(int numAllocatedContainersOnHost) {
+        logger.debug("Gathering metrics");
         ContainerNodeSpec nodeSpec;
         synchronized (monitor) {
             nodeSpec = lastNodeSpec;
         }
 
-        if (nodeSpec == null || !vespaVersion.isPresent()) return;
+        if (nodeSpec == null || !vespaVersion.isPresent()) {
+            logger.debug("Not updating container metrics, nodeSpec=" + nodeSpec + ", vespaVersion=" + vespaVersion);
+            return;
+        }
         Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
-        if ( ! containerStats.isPresent()) return;
+        if ( ! containerStats.isPresent()) {
+            logger.debug("Failed to get docker stats from daemon");
+            return;
+        }
 
         Docker.ContainerStats stats = containerStats.get();
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
@@ -551,6 +558,7 @@ public class NodeAgentImpl implements NodeAgent {
         double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
         double cpuPercentageOfAllocated = numAllocatedContainersOnHost * cpuPercentageOfHost;
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.cpu.busy.pct").sample(cpuPercentageOfAllocated);
+        logger.debug("Updated CPU busy metric with: " + cpuPercentageOfAllocated);
 
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
         addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
