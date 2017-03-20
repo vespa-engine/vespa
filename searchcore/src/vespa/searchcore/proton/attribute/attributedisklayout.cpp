@@ -14,6 +14,45 @@ using search::AttributeVector;
 namespace proton
 {
 
+vespalib::string
+AttributeDiskLayout::getSnapshotDir(uint64_t syncToken)
+{
+    return vespalib::make_string("snapshot-%" PRIu64, syncToken);
+}
+
+vespalib::string
+AttributeDiskLayout::getSnapshotRemoveDir(const vespalib::string &baseDir,
+                                          const vespalib::string &snapDir)
+{
+    if (baseDir.empty()) {
+        return snapDir;
+    }
+    return vespalib::make_string("%s/%s",
+                                 baseDir.c_str(),
+                                 snapDir.c_str());
+}
+
+vespalib::string
+AttributeDiskLayout::getAttributeBaseDir(const vespalib::string &baseDir,
+                                         const vespalib::string &attrName)
+{
+    if (baseDir.empty()) {
+        return attrName;
+    }
+    return vespalib::make_string("%s/%s",
+                                 baseDir.c_str(),
+                                 attrName.c_str());
+}
+
+AttributeVector::BaseName
+AttributeDiskLayout::getAttributeFileName(const vespalib::string &baseDir,
+                                          const vespalib::string &attrName,
+                                          uint64_t syncToken)
+{
+    return AttributeVector::BaseName(getAttributeBaseDir(baseDir, attrName),
+                                     getSnapshotDir(syncToken),
+                                     attrName);
+}
 
 bool
 AttributeDiskLayout::removeOldSnapshots(IndexMetaInfo &snapInfo,

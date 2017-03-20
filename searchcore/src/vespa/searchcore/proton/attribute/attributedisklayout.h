@@ -15,54 +15,14 @@ namespace proton {
 class AttributeDiskLayout
 {
 private:
-    static vespalib::string
-    getSnapshotDir(uint64_t syncToken)
-    {
-        return vespalib::make_string("snapshot-%" PRIu64, syncToken);
-    }
+    static vespalib::string getSnapshotDir(uint64_t syncToken);
+    static vespalib::string getSnapshotRemoveDir(const vespalib::string &baseDir, const vespalib::string &snapDir);
 
-    static vespalib::string
-    getSnapshotRemoveDir(const vespalib::string &baseDir,
-                         const vespalib::string &snapDir)
-    {
-        if (baseDir.empty()) {
-            return snapDir;
-        }
-        return vespalib::make_string("%s/%s",
-                                     baseDir.c_str(),
-                                     snapDir.c_str());
-    }
 public:
-    static vespalib::string
-    getAttributeBaseDir(const vespalib::string &baseDir,
-                        const vespalib::string &attrName)
-    {
-        if (baseDir.empty()) {
-            return attrName;
-        }
-        return vespalib::make_string("%s/%s",
-                                     baseDir.c_str(),
-                                     attrName.c_str());
-    }
-
-    static search::AttributeVector::BaseName
-    getAttributeFileName(const vespalib::string &baseDir,
-                         const vespalib::string &attrName,
-                         uint64_t syncToken)
-    {
-        return search::AttributeVector::BaseName(getAttributeBaseDir(baseDir,
-                                                         attrName),
-                getSnapshotDir(syncToken),
-                attrName);
-    }
-
-    static bool
-    removeOldSnapshots(search::IndexMetaInfo &snapInfo,
-                       vespalib::Lock &snapInfoLock);
-
-    static bool
-    removeAttribute(const vespalib::string &baseDir,
-                    const vespalib::string &attrName);
+    static vespalib::string  getAttributeBaseDir(const vespalib::string &baseDir, const vespalib::string &attrName);
+    static search::AttributeVector::BaseName getAttributeFileName(const vespalib::string &baseDir, const vespalib::string &attrName, uint64_t syncToken);
+    static bool removeOldSnapshots(search::IndexMetaInfo &snapInfo, vespalib::Lock &snapInfoLock);
+    static bool removeAttribute(const vespalib::string &baseDir, const vespalib::string &attrName);
 
 };
 

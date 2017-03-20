@@ -111,7 +111,6 @@ public:
 
     void
     wipeHistory(SerialNum wipeSerial,
-                const search::index::Schema &newHistorySchema,
                 const search::index::Schema &wipeSchema);
 
     void
