@@ -81,8 +81,8 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     void onReprocessDone(SerialNum) override { }
     SerialNum getOldestFlushedSerial() override { return 0; }
     SerialNum getNewestFlushedSerial() override { return 0; }
-    void wipeHistory(SerialNum, const Schema &) override { }
-    void setIndexSchema(const Schema::SP &, SerialNum) override { }
+    void wipeHistory(SerialNum, const Schema &, const Schema &) override { }
+    void setIndexSchema(const Schema::SP &) override { }
     search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats();
     }

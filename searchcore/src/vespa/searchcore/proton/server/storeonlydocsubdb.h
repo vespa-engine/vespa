@@ -249,8 +249,8 @@ public:
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
 
-    void wipeHistory(SerialNum wipeSerial, const Schema &wipeSchema) override;
-    void setIndexSchema(const Schema::SP &schema, SerialNum serialNum) override;
+    void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) override;
+    void setIndexSchema(const Schema::SP &schema) override;
     search::SearchableStats getSearchableStats() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;

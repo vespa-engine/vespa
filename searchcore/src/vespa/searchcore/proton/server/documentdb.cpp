@@ -531,7 +531,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         }
     }
     if (params.shouldIndexManagerChange()) {
-        setIndexSchema(*configSnapshot, serialNum);
+        setIndexSchema(*configSnapshot);
     }
     if (!fallbackConfig) { 
         if (_state.getRejectedConfig()) {
@@ -873,10 +873,10 @@ DocumentDB::flushDone(SerialNum flushedSerial)
 }
 
 void
-DocumentDB::setIndexSchema(const DocumentDBConfig &configSnapshot, SerialNum serialNum)
+DocumentDB::setIndexSchema(const DocumentDBConfig &configSnapshot)
 {
     // Called by executor thread
-    _subDBs.getReadySubDB()->setIndexSchema(configSnapshot.getSchemaSP(), serialNum);
+    _subDBs.getReadySubDB()->setIndexSchema(configSnapshot.getSchemaSP());
 
     // TODO: Adjust tune.
 }
@@ -1017,7 +1017,7 @@ DocumentDB::internalWipeHistory(SerialNum wipeSerial,
                                 const Schema &wipeSchema)
 {
     // Called by executor thread
-    _subDBs.wipeHistory(wipeSerial, wipeSchema);
+    _subDBs.wipeHistory(wipeSerial, *newHistorySchema, wipeSchema);
     _historySchema.reset(newHistorySchema.release());
 }
 

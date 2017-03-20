@@ -114,12 +114,12 @@ public:
         return _maintainer.getFlushTargets();
     }
 
-    virtual void setSchema(const Schema &schema, SerialNum serialNum) {
-        _maintainer.setSchema(schema, serialNum);
+    virtual void setSchema(const Schema &schema) {
+        _maintainer.setSchema(schema);
     }
 
-    virtual void wipeHistory(SerialNum wipeSerial) {
-        _maintainer.wipeHistory(wipeSerial);
+    virtual void wipeHistory(SerialNum wipeSerial, const Schema &historyFields) {
+        _maintainer.wipeHistory(wipeSerial, historyFields);
     }
 };
 

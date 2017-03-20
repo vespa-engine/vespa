@@ -298,25 +298,26 @@ SearchableDocSubDB::getFlushTargetsInternal()
 
 void
 SearchableDocSubDB::wipeHistory(SerialNum wipeSerial,
+                                const Schema &newHistorySchema,
                                 const Schema &wipeSchema)
 {
     assert(_writeService.master().isCurrentThread());
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP oldFeedView = _iFeedView.get();
-    _indexMgr->wipeHistory(wipeSerial);
+    _indexMgr->wipeHistory(wipeSerial, newHistorySchema);
     reconfigureIndexSearchable();
     getAttributeManager()->wipeHistory(wipeSchema);
 }
 
 void
-SearchableDocSubDB::setIndexSchema(const Schema::SP &schema, SerialNum serialNum)
+SearchableDocSubDB::setIndexSchema(const Schema::SP &schema)
 {
     assert(_writeService.master().isCurrentThread());
 
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP oldFeedView = _iFeedView.get();
 
-    _indexMgr->setSchema(*schema, serialNum);
+    _indexMgr->setSchema(*schema);
     reconfigureIndexSearchable();
 }
 
