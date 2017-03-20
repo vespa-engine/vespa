@@ -31,8 +31,8 @@ public class Acl {
     public List<Command> toCommands() {
         final ImmutableList.Builder<Command> commands = ImmutableList.builder();
         commands.add(
-                // Default policies
-                new PolicyCommand(Chain.INPUT, Action.REJECT),
+                // Default policies. Packets that do not match any rules will be processed according to policy.
+                new PolicyCommand(Chain.INPUT, Action.DROP),
                 new PolicyCommand(Chain.FORWARD, Action.DROP),
                 new PolicyCommand(Chain.OUTPUT, Action.ACCEPT),
 
@@ -56,6 +56,13 @@ public class Acl {
                 .map(ipAddress -> new FilterCommand(Chain.INPUT, Action.ACCEPT)
                         .withOption("-s", String.format("%s/128", ipAddress)))
                 .forEach(commands::add);
+
+        // Reject all other packets. This means that packets that would otherwise be processed according to policy, are
+        // matched by the following rule.
+        //
+        // Ideally, we want to set the INPUT policy to REJECT and get rid of this rule, but unfortunately REJECT is not
+        // a valid policy action.
+        commands.add(new FilterCommand(Chain.INPUT, Action.REJECT));
 
         return commands.build();
     }
