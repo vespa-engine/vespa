@@ -227,7 +227,7 @@ private:
             const DocumentDBConfig &configSnapshot,
             const Schema &newHistorySchema);
 
-    void internalWipeHistory(SerialNum wipeSerial, Schema::UP newHistorySchema, const Schema &wipeSchema);
+    void internalWipeHistory(SerialNum wipeSerial, Schema::UP newHistorySchema);
 
     void startTransactionLogReplay();
 

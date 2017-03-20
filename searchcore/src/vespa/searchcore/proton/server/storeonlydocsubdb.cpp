@@ -458,7 +458,7 @@ StoreOnlyDocSubDB::getIndexWriter() const
 }
 
 void
-StoreOnlyDocSubDB::wipeHistory(SerialNum, const Schema &)
+StoreOnlyDocSubDB::wipeHistory(SerialNum)
 {
 }
 

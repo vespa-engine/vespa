@@ -22,7 +22,8 @@ public:
     static vespalib::string  getAttributeBaseDir(const vespalib::string &baseDir, const vespalib::string &attrName);
     static search::AttributeVector::BaseName getAttributeFileName(const vespalib::string &baseDir, const vespalib::string &attrName, uint64_t syncToken);
     static bool removeOldSnapshots(search::IndexMetaInfo &snapInfo, vespalib::Lock &snapInfoLock);
-    static bool removeAttribute(const vespalib::string &baseDir, const vespalib::string &attrName);
+    static bool removeAttribute(const vespalib::string &baseDir, const vespalib::string &attrName, uint64_t wipeSerial);
+    static std::vector<vespalib::string> listAttributes(const vespalib::string &baseDir);
 
 };
 

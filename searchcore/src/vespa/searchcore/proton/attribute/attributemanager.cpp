@@ -445,12 +445,14 @@ AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
 }
 
 void
-AttributeManager::wipeHistory(const Schema &historySchema)
+AttributeManager::wipeHistory(search::SerialNum wipeSerial)
 {
-    for (uint32_t i = 0; i < historySchema.getNumAttributeFields(); ++i) {
-        const Schema::AttributeField & field =
-            historySchema.getAttributeField(i);
-        AttributeDiskLayout::removeAttribute(_baseDir, field.getName());
+    std::vector<vespalib::string> attributes = AttributeDiskLayout::listAttributes(_baseDir);
+    for (const auto &attribute : attributes) {
+        auto itr = _attributes.find(attribute);
+        if (itr == _attributes.end()) {
+            AttributeDiskLayout::removeAttribute(_baseDir, attribute, wipeSerial);
+        }
     }
 }
 

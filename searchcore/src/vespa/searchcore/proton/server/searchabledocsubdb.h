@@ -154,7 +154,7 @@ public:
 
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
-    void wipeHistory(SerialNum wipeSerial, const Schema &wipeSchema) override;
+    void wipeHistory(SerialNum wipeSerial) override;
     void setIndexSchema(const Schema::SP &schema, SerialNum serialNum) override;
     size_t getNumActiveDocs() const override;
     search::SearchableStats getSearchableStats() const override ;

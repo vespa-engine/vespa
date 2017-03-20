@@ -44,7 +44,7 @@ public:
     virtual search::SerialNum getOldestFlushedSerialNumber() const;
     virtual search::SerialNum getNewestFlushedSerialNumber() const;
     virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const;
-    virtual void wipeHistory(const search::index::Schema &);
+    virtual void wipeHistory(search::SerialNum wipeSerial) override;
     virtual const IAttributeFactory::SP &getFactory() const;
     virtual search::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
 

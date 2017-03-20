@@ -67,9 +67,9 @@ struct IAttributeManager : public search::IAttributeManager
     virtual void getAttributeListAll(std::vector<search::AttributeGuard> &list) const = 0;
 
     /**
-     * Wipe history using the given schema.
+     * Wipe unknown attributes from file system.
      */
-    virtual void wipeHistory(const search::index::Schema &historySchema) = 0;
+    virtual void wipeHistory(search::SerialNum wipeSerial) = 0;
 
     /**
      * Returns the attribute factory used by this manager.
