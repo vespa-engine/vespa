@@ -23,6 +23,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -76,10 +79,14 @@ public class ConfigServerHttpRequestExecutor {
         }
     }
 
-    public <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
+    private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
+        // Shuffle config server hosts to balance load
+        List<String> shuffledConfigServerHosts = new ArrayList<>(configServerHosts);
+        Collections.shuffle(shuffledConfigServerHosts);
+
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
-            for (String configServer : configServerHosts) {
+            for (String configServer : shuffledConfigServerHosts) {
                 final CloseableHttpResponse response;
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));
