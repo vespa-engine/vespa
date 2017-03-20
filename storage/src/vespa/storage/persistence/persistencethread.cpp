@@ -343,6 +343,21 @@ PersistenceThread::handleCreateBucket(api::CreateBucketCommand& cmd)
     return tracker;
 }
 
+namespace {
+
+bool bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo& b) {
+    // Don't check document sizes, as background moving of documents in Proton
+    // may trigger a change in size without any mutations taking place. This will
+    // only take place when a document being moved was fed _prior_ to the change
+    // where Proton starts reporting actual document sizes, and will eventually
+    // converge to a stable value. But for now, ignore it to prevent false positive
+    // error logs and non-deleted buckets.
+    return ((a.getChecksum() == b.getChecksum())
+            && (a.getDocumentCount() == b.getDocumentCount()));
+}
+
+}
+
 bool
 PersistenceThread::checkProviderBucketInfoMatches(const spi::Bucket& bucket,
                                                   const api::BucketInfo& info) const
@@ -361,7 +376,7 @@ PersistenceThread::checkProviderBucketInfoMatches(const spi::Bucket& bucket,
     // that important and ready may change under the hood in a race with
     // getModifiedBuckets(). If bucket is empty it means it has already
     // been deleted by a racing split/join.
-    if (!info.equalDocumentInfo(providerInfo) && !providerInfo.empty()) {
+    if (!bucketStatesAreSemanticallyEqual(info, providerInfo) && !providerInfo.empty()) {
         LOG(error,
             "Service layer bucket database and provider out of sync before "
             "deleting bucket %s! Service layer db had %s while provider says "

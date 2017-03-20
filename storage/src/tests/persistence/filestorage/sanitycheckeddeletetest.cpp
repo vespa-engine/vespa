@@ -9,34 +9,29 @@
 
 namespace storage {
 
-class SanityCheckedDeleteTest : public FileStorTestFixture
-{
+class SanityCheckedDeleteTest : public FileStorTestFixture {
 public:
-    void testDeleteBucketFailsWhenProviderOutOfSync();
+    void delete_bucket_fails_when_provider_out_of_sync();
+    void differing_document_sizes_not_considered_out_of_sync();
 
     CPPUNIT_TEST_SUITE(SanityCheckedDeleteTest);
-    CPPUNIT_TEST(testDeleteBucketFailsWhenProviderOutOfSync);
+    CPPUNIT_TEST(delete_bucket_fails_when_provider_out_of_sync);
+    CPPUNIT_TEST(differing_document_sizes_not_considered_out_of_sync);
     CPPUNIT_TEST_SUITE_END();
+
+    spi::BucketInfo send_put_and_get_bucket_info(TestFileStorComponents &c, const spi::Bucket &spiBucket);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SanityCheckedDeleteTest);
 
-void
-SanityCheckedDeleteTest::testDeleteBucketFailsWhenProviderOutOfSync()
-{
-    TestFileStorComponents c(*this, "testDeleteBucketFailsWhenProviderOutOfSync");
+void SanityCheckedDeleteTest::delete_bucket_fails_when_provider_out_of_sync() {
+    TestFileStorComponents c(*this, "delete_bucket_fails_when_provider_out_of_sync");
     document::BucketId bucket(8, 123);
     document::BucketId syncBucket(8, 234);
     spi::Bucket spiBucket(bucket, spi::PartitionId(0));
 
-    createBucket(bucket);
     // Send a put to ensure bucket isn't empty.
-    c.sendPut(bucket, DocumentIndex(0), PutTimestamp(1000));
-    c.top.waitForMessages(1, MSG_WAIT_TIME);
-    c.top.getRepliesOnce();
-    spi::BucketInfo infoBefore(
-            _node->getPersistenceProvider()
-            .getBucketInfo(spiBucket).getBucketInfo());
+    spi::BucketInfo infoBefore(send_put_and_get_bucket_info(c, spiBucket));
 
     createBucket(syncBucket);
 
@@ -50,8 +45,7 @@ SanityCheckedDeleteTest::testDeleteBucketFailsWhenProviderOutOfSync()
         entry.write();
     }
 
-    std::shared_ptr<api::DeleteBucketCommand> cmd(
-            new api::DeleteBucketCommand(bucket));
+    auto cmd = std::make_shared<api::DeleteBucketCommand>(bucket);
     cmd->setBucketInfo(serviceLayerInfo);
 
     c.top.sendDown(cmd);
@@ -73,6 +67,36 @@ SanityCheckedDeleteTest::testDeleteBucketFailsWhenProviderOutOfSync()
             _node->getPersistenceProvider().getBucketInfo(spiBucket));
     CPPUNIT_ASSERT_MSG(infoResult.getErrorMessage(), !infoResult.hasError());
     CPPUNIT_ASSERT(infoBefore == infoResult.getBucketInfo());
+}
+
+spi::BucketInfo SanityCheckedDeleteTest::send_put_and_get_bucket_info(
+        FileStorTestFixture::TestFileStorComponents& c,
+        const spi::Bucket& spiBucket) {
+    createBucket(spiBucket.getBucketId());
+    c.sendPut(spiBucket.getBucketId(), DocumentIndex(0), PutTimestamp(1000));
+    c.top.waitForMessages(1, MSG_WAIT_TIME);
+    c.top.getRepliesOnce();
+    return _node->getPersistenceProvider().getBucketInfo(spiBucket).getBucketInfo();
+}
+
+void SanityCheckedDeleteTest::differing_document_sizes_not_considered_out_of_sync() {
+    TestFileStorComponents c(*this, "differing_document_sizes_not_considered_out_of_sync");
+    document::BucketId bucket(8, 123);
+    spi::Bucket spiBucket(bucket, spi::PartitionId(0));
+
+    spi::BucketInfo info_before(send_put_and_get_bucket_info(c, spiBucket));
+    // Expect 1 byte of reported size, which will mismatch with the actually put document.
+    api::BucketInfo info_with_size_diff(info_before.getChecksum(), info_before.getDocumentCount(), 1u);
+
+    auto delete_cmd = std::make_shared<api::DeleteBucketCommand>(bucket);
+    delete_cmd->setBucketInfo(info_with_size_diff);
+
+    c.top.sendDown(delete_cmd);
+    c.top.waitForMessages(1, MSG_WAIT_TIME);
+    // Bucket should now well and truly be gone. Will trigger a getBucketInfo error response.
+    spi::BucketInfoResult info_post_delete(
+            _node->getPersistenceProvider().getBucketInfo(spiBucket));
+    CPPUNIT_ASSERT_MSG(info_post_delete.getErrorMessage(), info_post_delete.hasError());
 }
 
 } // namespace storage
