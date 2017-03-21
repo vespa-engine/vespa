@@ -37,7 +37,7 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
 
     @Override
     public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceByHost(HostName hostName) {
-        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap
+        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap 
                 = slobrokAndConfigIntersector.queryStatusOfAllApplicationInstances();
         List<ApplicationInstance<ServiceMonitorStatus>> applicationInstancesUsingHost = instanceMap.entrySet().stream()
                 .filter(entry -> applicationInstanceUsesHost(entry.getValue(), hostName))
