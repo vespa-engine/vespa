@@ -375,7 +375,7 @@ struct MyAttributeManager : public proton::IAttributeManager
     virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const override {
         abort();
     }
-    virtual void wipeHistory(const search::index::Schema &) override {
+    virtual void wipeHistory(search::SerialNum) override {
         abort();
     }
     virtual const IAttributeFactory::SP &getFactory() const override {

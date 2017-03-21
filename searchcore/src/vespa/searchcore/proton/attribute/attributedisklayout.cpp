@@ -5,6 +5,7 @@
 LOG_SETUP(".proton.attribute.attributedisklayout");
 #include "attributedisklayout.h"
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/vespalib/io/fileutil.h>
 
 using search::IndexMetaInfo;
 using search::index::SchemaBuilder;
@@ -13,6 +14,21 @@ using search::AttributeVector;
 
 namespace proton
 {
+
+AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir)
+    : _baseDir(baseDir)
+{
+}
+
+AttributeDiskLayout::~AttributeDiskLayout()
+{
+}
+
+void
+AttributeDiskLayout::createBaseDir()
+{
+    vespalib::mkdir(_baseDir, false);
+}
 
 vespalib::string
 AttributeDiskLayout::getSnapshotDir(uint64_t syncToken)
@@ -123,9 +139,15 @@ AttributeDiskLayout::removeOldSnapshots(IndexMetaInfo &snapInfo,
 
 bool
 AttributeDiskLayout::removeAttribute(const vespalib::string &baseDir,
-                                     const vespalib::string &attrName)
+                                     const vespalib::string &attrName,
+                                     uint64_t wipeSerial)
 {
     const vespalib::string currDir = getAttributeBaseDir(baseDir, attrName);
+    search::IndexMetaInfo snapInfo(currDir);
+    IndexMetaInfo::Snapshot best = snapInfo.getBestSnapshot();
+    if (best.valid && best.syncToken >= wipeSerial) {
+        return true; // Attribute has been resurrected and flushed later on
+    }
     const vespalib::string rmDir =
         getAttributeBaseDir(baseDir,
                             vespalib::make_string("remove.%s",
@@ -168,6 +190,22 @@ AttributeDiskLayout::removeAttribute(const vespalib::string &baseDir,
     return true;
 }
 
+std::vector<vespalib::string>
+AttributeDiskLayout::listAttributes(const vespalib::string &baseDir)
+{
+    std::vector<vespalib::string> attributes;
+    FastOS_DirectoryScan dir(baseDir.c_str());
+    while (dir.ReadNext()) {
+        if (strcmp(dir.GetName(), "..") != 0 &&
+            strcmp(dir.GetName(), ".") != 0)
+        {
+            if (dir.IsDirectory()) {
+                attributes.emplace_back(dir.GetName());
+            }
+        }
+    }
+    return attributes;
+}
 
 } // namespace proton
 

@@ -993,7 +993,7 @@ DocumentDB::performWipeHistory()
         Schema::UP newHistory(new Schema);
         writeWipeHistoryTransactionLogEntry(wipeSerial, 0,
                                             *configSnapshot, *newHistory);
-        internalWipeHistory(wipeSerial, std::move(newHistory), *_historySchema);
+        internalWipeHistory(wipeSerial, std::move(newHistory));
     }
 }
 
@@ -1013,11 +1013,10 @@ void DocumentDB::writeWipeHistoryTransactionLogEntry(
 
 void
 DocumentDB::internalWipeHistory(SerialNum wipeSerial,
-                                Schema::UP newHistorySchema,
-                                const Schema &wipeSchema)
+                                Schema::UP newHistorySchema)
 {
     // Called by executor thread
-    _subDBs.wipeHistory(wipeSerial, wipeSchema);
+    _subDBs.wipeHistory(wipeSerial);
     _historySchema.reset(newHistorySchema.release());
 }
 
@@ -1074,7 +1073,7 @@ DocumentDB::replayWipeHistory(search::SerialNum serialNum,
     }
     LOG(info, "DocumentDB(%s): Replayed history wipe with serialNum=%" PRIu64,
         _docTypeName.toString().c_str(), serialNum);
-    internalWipeHistory(serialNum, std::move(newHistory), *wipeSchema);
+    internalWipeHistory(serialNum, std::move(newHistory));
 }
 
 
@@ -1287,7 +1286,7 @@ DocumentDB::wipeOldRemovedFields(fastos::TimeStamp wipeTimeLimit)
     SerialNum wipeSerial = _feedHandler.incSerialNum();
     writeWipeHistoryTransactionLogEntry(wipeSerial, wipeTimeLimit,
                                         *configSnapshot, *newHistorySchema);
-    internalWipeHistory(wipeSerial, std::move(newHistorySchema), *wipeSchema);
+    internalWipeHistory(wipeSerial, std::move(newHistorySchema));
 
     LOG(debug, "DocumentDB(%s): Done wipeOldRemovedFields: wipe(%s), history(%s) timeLimit(%" PRIu64 ")",
         _docTypeName.toString().c_str(),

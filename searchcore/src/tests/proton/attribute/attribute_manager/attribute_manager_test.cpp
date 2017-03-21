@@ -523,10 +523,12 @@ TEST_F("require that history can be wiped", Fixture)
     f.addAttribute("a2");
     f.addAttribute("a3");
     f._m.flushAll(10);
-    Schema hs;
-    hs.addAttributeField(Schema::AttributeField("a1", schema::INT32));
-    hs.addAttributeField(Schema::AttributeField("a3", schema::INT32));
-    f._m.wipeHistory(hs);
+
+    AttrSpecList newSpec;
+    newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
+    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 11));
+    sam.mgr.wipeHistory(11);
+
     FastOS_StatInfo si;
     EXPECT_TRUE(!FastOS_File::Stat(vespalib::string(test_dir + "/a1").c_str(), &si));
     EXPECT_TRUE(FastOS_File::Stat(vespalib::string(test_dir + "/a2").c_str(), &si));

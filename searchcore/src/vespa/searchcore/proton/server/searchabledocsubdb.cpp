@@ -297,15 +297,14 @@ SearchableDocSubDB::getFlushTargetsInternal()
 }
 
 void
-SearchableDocSubDB::wipeHistory(SerialNum wipeSerial,
-                                const Schema &wipeSchema)
+SearchableDocSubDB::wipeHistory(SerialNum wipeSerial)
 {
     assert(_writeService.master().isCurrentThread());
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP oldFeedView = _iFeedView.get();
     _indexMgr->wipeHistory(wipeSerial);
     reconfigureIndexSearchable();
-    getAttributeManager()->wipeHistory(wipeSchema);
+    getAttributeManager()->wipeHistory(wipeSerial);
 }
 
 void
