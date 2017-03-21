@@ -78,8 +78,8 @@ public class AclProvisioningTest {
         // Allocate 2 nodes to an application
         allocateNodes(2);
 
-        // Get trusted nodes for a ready node
-        Node node = tester.nodeRepository().getNodes(Node.State.ready).get(0);
+        // Get trusted nodes for a ready tenant node
+        Node node = tester.nodeRepository().getNodes(NodeType.tenant, Node.State.ready).get(0);
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
         List<Node> tenantNodes = tester.nodeRepository().getNodes(NodeType.tenant);
 
