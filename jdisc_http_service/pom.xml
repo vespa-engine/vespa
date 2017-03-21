@@ -172,6 +172,7 @@
             jetty-continuation-${jetty.version}.jar,
             jetty-http-${jetty.version}.jar,
             jetty-io-${jetty.version}.jar,
+            jetty-jmx-${jetty.version}.jar,
             jetty-security-${jetty.version}.jar,
             jetty-server-${jetty.version}.jar,
             jetty-servlet-${jetty.version}.jar,
