@@ -16,7 +16,7 @@ HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const 
                        double score, const void * sortData, size_t sortDataLen) :
     _docid(docId),
     _score(score),
-    _document(std::move(doc)),
+    _document(doc),
     _matchData(),
     _sortBlob(sortData, sortDataLen)
 {
