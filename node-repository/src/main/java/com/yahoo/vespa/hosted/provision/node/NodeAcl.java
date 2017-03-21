@@ -1,31 +1,31 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.Set;
+import java.util.List;
 
 /**
- * A node ACL. The ACL contains the node which the ACL is valid for, and a set of nodes that the node should trust.
+ * A node ACL. The ACL contains the node which the ACL is valid for, and a list of nodes that the node should trust.
  *
  * @author mpolden
  */
 public class NodeAcl {
 
     private final Node node;
-    private final Set<Node> trustedNodes;
+    private final List<Node> trustedNodes;
 
-    public NodeAcl(Node node, Set<Node> trustedNodes) {
+    public NodeAcl(Node node, List<Node> trustedNodes) {
         this.node = node;
-        this.trustedNodes = ImmutableSet.copyOf(trustedNodes);
+        this.trustedNodes = ImmutableList.copyOf(trustedNodes);
     }
 
     public Node node() {
         return node;
     }
 
-    public Set<Node> trustedNodes() {
+    public List<Node> trustedNodes() {
         return trustedNodes;
     }
 }
