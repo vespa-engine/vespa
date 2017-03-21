@@ -73,8 +73,6 @@ public:
         is.get(Identifiable::hasObjectField, hasObject);
         if (hasObject) {
             this->reset(static_cast<T *>(Identifiable::create(is).release()));
-        } else {
-            this->reset();
         }
         return is;
     }
@@ -112,8 +110,6 @@ public:
         is.get(Identifiable::hasObjectField, hasObject);
         if (hasObject) {
             reset(static_cast<T *>(Identifiable::create(is).release()));
-        } else {
-            this->reset();
         }
         return is;
     }
@@ -151,8 +147,6 @@ public:
         is.get(Identifiable::hasObjectField, hasObject);
         if (hasObject) {
             this->reset(static_cast<T *>(Identifiable::create(is).release()));
-        } else {
-            this->reset();
         }
         return is;
     }

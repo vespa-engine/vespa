@@ -59,8 +59,8 @@ public:
     const ResultNode & getResult() const { return onGetRank(); }
     virtual ResultNode & getResult() { return const_cast<ResultNode &>(onGetRank()); }
     virtual AggregationResult * clone() const = 0;
-    const ExpressionNode * getExpression() const { return _expressionTree->getRoot(); }
-    ExpressionNode * getExpression() { return _expressionTree->getRoot(); }
+    const ExpressionNode * getExpression() const { return _expressionTree->getRoot().get(); }
+    ExpressionNode * getExpression() { return _expressionTree->getRoot().get(); }
 protected:
     AggregationResult();
 private:

@@ -68,7 +68,7 @@ public:
                 const EnumResultNode & er = static_cast<const EnumResultNode &>(group.getId());
                 const Grouping::GroupingLevelList &gll = _grouping.getLevels();
                 const GroupingLevel & gl = gll[_level];
-                const ExpressionNode * en = gl.getExpression().getRoot();
+                const ExpressionNode::LP & en = gl.getExpression().getRoot();
                 const AttributeNode & an = static_cast<const AttributeNode &>(*en);
                 StringResultNode srn((static_cast<const StringAttribute *>(an.getAttribute()))->getFromEnum(er.getEnum()));
                 group.setId(srn);
