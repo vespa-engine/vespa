@@ -18,7 +18,7 @@ IMPLEMENT_EXPRESSIONNODE(ExpressionTree, ExpressionNode);
 void ExpressionTree::Configure::execute(vespalib::Identifiable &obj)
 {
     ExpressionTree & e(static_cast<ExpressionTree &>(obj));
-    if (e.getRoot().get()) {
+    if (e.getRoot()) {
         e.getRoot()->prepare(false);
     }
     e.prepare(false);
@@ -53,8 +53,8 @@ class Gather : public vespalib::ObjectOperation, public vespalib::ObjectPredicat
 public:
     Gather(std::vector<NODE *> &list) : _list(list) { _list.clear(); }
 
-    void from(ExpressionNode::LP &root) {
-        root->select(*this, *this);
+    void from(ExpressionNode & root) {
+        root.select(*this, *this);
     }
 private:
     virtual void execute(vespalib::Identifiable &obj) {
@@ -76,11 +76,11 @@ void ExpressionTree::onPrepare(bool preserveAccurateTypes)
 {
     (void) preserveAccurateTypes;
     if (_root.get() != NULL) {
-        gather(_attributeNodes).from(_root);
-        gather(_documentAccessorNodes).from(_root);
-        gather(_relevanceNodes).from(_root);
-        gather(_interpolatedLookupNodes).from(_root);
-        gather(_arrayAtLookupNodes).from(_root);
+        gather(_attributeNodes).from(*_root);
+        gather(_documentAccessorNodes).from(*_root);
+        gather(_relevanceNodes).from(*_root);
+        gather(_interpolatedLookupNodes).from(*_root);
+        gather(_arrayAtLookupNodes).from(*_root);
     }
 }
 
