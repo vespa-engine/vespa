@@ -23,14 +23,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -125,7 +118,14 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
-        return zkClient.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
+        return zkClient.getNodes(inState).stream()
+                .filter(node -> node.type().equals(type)).collect(Collectors.toList());
+    }
+
+    private List<Node> getNodes(NodeType type, List<Node> candidateNodes, Node.State ... inState) {
+        HashSet<Node.State> states = new HashSet<>(Arrays.asList(inState));
+        return candidateNodes.stream().filter(node -> states.contains(node.state()))
+                .filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
     /**
@@ -135,7 +135,11 @@ public class NodeRepository extends AbstractComponent {
      * @return List of child nodes
      */
     public List<Node> getChildNodes(String hostname) {
-        return zkClient.getNodes().stream()
+        return getChildNodes(hostname, zkClient.getNodes());
+    }
+
+    private List<Node> getChildNodes(String hostname, List<Node> candidateNodes) {
+        return candidateNodes.stream()
                 .filter(node -> node.parentHostname()
                         .map(parentHostname -> parentHostname.equals(hostname))
                         .orElse(false))
@@ -143,17 +147,27 @@ public class NodeRepository extends AbstractComponent {
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return zkClient.getNodes(id, inState); }
+    public List<Node> getNodes(ApplicationId id, List<Node> candidateNodes, Node.State ... inState) {
+        List<Node> nodes = new ArrayList<>(candidateNodes);
+        nodes.removeIf(node -> ! node.allocation().isPresent() || ! node.allocation().get().owner().equals(id));
+        return nodes;
+    }
+
     public List<Node> getInactive() { return zkClient.getNodes(Node.State.inactive); }
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
+
+    private List<Node> getTrustedNodes(Node node) {
+        return getTrustedNodes(node, getNodes());
+    }
 
     /**
      * Returns a list of nodes that should be trusted by the given node.
      */
-    private List<Node> getTrustedNodes(Node node) {
+    private List<Node> getTrustedNodes(Node node, List<Node> candidateNodes) {
         final List<Node> trustedNodes = new ArrayList<>();
 
         // For all cases below: Trust nodes in same application (if node is part of an application)
-        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner(), candidateNodes)));
 
         switch (node.type()) {
             case tenant:
@@ -161,14 +175,14 @@ public class NodeRepository extends AbstractComponent {
                 // They also trust all traffic from Docker hosts of trusted nodes,
                 // as it may be NATed traffic from trusted Docker containers
                 trustedNodes.addAll(getDockerHosts(trustedNodes)); // TODO: Remove when we no longer have IPv4-only nodes
-                trustedNodes.addAll(getNodes(NodeType.proxy));
+                trustedNodes.addAll(getNodes(NodeType.proxy, candidateNodes));
                 trustedNodes.addAll(getConfigNodes());
                 break;
 
             case config:
                 // Config servers trust each other and all nodes in the zone
                 trustedNodes.addAll(getConfigNodes());
-                trustedNodes.addAll(getNodes());
+                trustedNodes.addAll(candidateNodes);
                 break;
 
             case proxy:
@@ -176,14 +190,14 @@ public class NodeRepository extends AbstractComponent {
                 // 4080/4443, but these static rules are configured by the node itself
                 trustedNodes.addAll(getConfigNodes());
                 if ( ! node.allocation().isPresent()) // TODO: Remove when proxy nodes are in zone app everywhere
-                    trustedNodes.addAll(getNodes(NodeType.proxy));
+                    trustedNodes.addAll(getNodes(NodeType.proxy, candidateNodes));
                 break;
 
             case host:
                 // Docker hosts trust nodes in same application and config servers
                 trustedNodes.addAll(getConfigNodes());
                 if ( ! node.allocation().isPresent()) // TODO: Remove when Docker hosts are in zone app everywhere
-                    trustedNodes.addAll(getNodes(NodeType.host));
+                    trustedNodes.addAll(getNodes(NodeType.host, candidateNodes));
                 break;
 
             default:
@@ -208,11 +222,13 @@ public class NodeRepository extends AbstractComponent {
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         final List<NodeAcl> nodeAcls = new ArrayList<>();
 
+        List<Node> allNodes = getNodes();
+
         if (children) {
-            final List<Node> childNodes = getChildNodes(node.hostname());
-            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode))));
+            final List<Node> childNodes = getChildNodes(node.hostname(), allNodes);
+            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode, allNodes))));
         } else {
-            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
+            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node, allNodes)));
         }
 
         return Collections.unmodifiableList(nodeAcls);
