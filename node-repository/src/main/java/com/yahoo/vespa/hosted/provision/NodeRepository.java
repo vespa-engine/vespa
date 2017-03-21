@@ -6,13 +6,13 @@ import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -147,13 +148,16 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
 
     /**
-     * Returns a list of nodes that should be trusted by the given node.
+     * Returns a set of nodes that should be trusted by the given node.
      */
-    private List<Node> getTrustedNodes(Node node) {
-        final List<Node> trustedNodes = new ArrayList<>();
+    private Set<Node> getTrustedNodes(Node node) {
+        final Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
 
-        // For all cases below: Trust nodes in same application (if node is part of an application)
+        // For all cases below:
+        // - Trust nodes in same application
+        // - All config servers
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+        trustedNodes.addAll(getConfigNodes());
 
         switch (node.type()) {
             case tenant:
@@ -162,28 +166,16 @@ public class NodeRepository extends AbstractComponent {
                 // as it may be NATed traffic from trusted Docker containers
                 trustedNodes.addAll(getDockerHosts(trustedNodes)); // TODO: Remove when we no longer have IPv4-only nodes
                 trustedNodes.addAll(getNodes(NodeType.proxy));
-                trustedNodes.addAll(getConfigNodes());
                 break;
 
             case config:
-                // Config servers trust each other and all nodes in the zone
-                trustedNodes.addAll(getConfigNodes());
+                // Config servers trust all nodes in the zone
                 trustedNodes.addAll(getNodes());
                 break;
 
             case proxy:
-                // Proxy nodes trust nodes in same application and config servers. They also trust any traffic to ports
-                // 4080/4443, but these static rules are configured by the node itself
-                trustedNodes.addAll(getConfigNodes());
-                if ( ! node.allocation().isPresent()) // TODO: Remove when proxy nodes are in zone app everywhere
-                    trustedNodes.addAll(getNodes(NodeType.proxy));
-                break;
-
             case host:
-                // Docker hosts trust nodes in same application and config servers
-                trustedNodes.addAll(getConfigNodes());
-                if ( ! node.allocation().isPresent()) // TODO: Remove when Docker hosts are in zone app everywhere
-                    trustedNodes.addAll(getNodes(NodeType.host));
+                // No special rules for proxies and Docker hosts
                 break;
 
             default:
@@ -192,10 +184,7 @@ public class NodeRepository extends AbstractComponent {
                                 node.hostname(), node.type()));
         }
 
-        // Sort by hostname so that the resulting list is always the same if trusted nodes don't change
-        trustedNodes.sort(Comparator.comparing(Node::hostname));
-
-        return Collections.unmodifiableList(trustedNodes);
+        return Collections.unmodifiableSet(trustedNodes);
     }
 
     /**
@@ -516,7 +505,7 @@ public class NodeRepository extends AbstractComponent {
                 .collect(Collectors.toList());
     }
 
-    private List<Node> getDockerHosts(List<Node> nodes) {
+    private List<Node> getDockerHosts(Set<Node> nodes) {
         return nodes.stream()
                 .map(Node::parentHostname)
                 .filter(Optional::isPresent)

@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -109,9 +110,14 @@ public class AclProvisioningTest {
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
-        List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
+        tester.makeReadyNodes(3, "default", NodeType.proxy);
+
+        // Deploy zone application
+        ApplicationId zoneApplication = tester.makeApplicationId();
+        allocateNodes(Capacity.fromRequiredNodeType(NodeType.proxy), zoneApplication);
 
         // Get trusted nodes for first proxy node
+        List<Node> proxyNodes = tester.nodeRepository().getNodes(zoneApplication);
         Node node = proxyNodes.get(0);
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
@@ -124,8 +130,13 @@ public class AclProvisioningTest {
         List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
 
         // Populate repo
-        List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
+        tester.makeReadyNodes(2, "default", NodeType.host);
 
+        // Deploy zone application
+        ApplicationId zoneApplication = tester.makeApplicationId();
+        allocateNodes(Capacity.fromRequiredNodeType(NodeType.host), zoneApplication);
+
+        List<Node> dockerHostNodes = tester.nodeRepository().getNodes(zoneApplication);
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodes.get(0), false);
 
         // Trusted nodes is all Docker hosts and all config servers
@@ -178,7 +189,7 @@ public class AclProvisioningTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + dockerNode.hostname()));
             assertEquals(dockerHostNodeUnderTest.hostname(), dockerNode.parentHostname().get());
-            // Since the containers are unallocated, they only trust config servers
+            // Since the containers are unallocated, they only trust Docker hosts config servers
             assertAcls(Collections.singletonList(configServers), nodeAcl);
         }
     }
@@ -194,9 +205,10 @@ public class AclProvisioningTest {
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(readyNodes.get(0), false);
 
         assertEquals(3, nodeAcls.get(0).trustedNodes().size());
-        assertEquals(singleton("127.0.0.1"), nodeAcls.get(0).trustedNodes().get(0).ipAddresses());
-        assertEquals(singleton("127.0.0.2"), nodeAcls.get(0).trustedNodes().get(1).ipAddresses());
-        assertEquals(singleton("127.0.0.3"), nodeAcls.get(0).trustedNodes().get(2).ipAddresses());
+        Iterator<Node> trustedNodes = nodeAcls.get(0).trustedNodes().iterator();
+        assertEquals(singleton("127.0.0.1"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.0.2"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.0.3"), trustedNodes.next().ipAddresses());
     }
 
     private List<Node> allocateNodes(int nodeCount) {
