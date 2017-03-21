@@ -153,23 +153,31 @@ public class NodeRepository extends AbstractComponent {
     private Set<Node> getTrustedNodes(Node node) {
         final Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
 
-        // For all cases below:
-        // - Trust nodes in same application
-        // - All config servers
+        // For all cases below, trust:
+        // - nodes in same application
+        // - config servers
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
         trustedNodes.addAll(getConfigNodes());
 
         switch (node.type()) {
             case tenant:
-                // Tenant nodes trust nodes in same application and all infrastructure nodes
-                // They also trust all traffic from Docker hosts of trusted nodes,
-                // as it may be NATed traffic from trusted Docker containers
+                // Tenant nodes in other states than ready, trust:
+                // - proxy nodes
+                // - parent (Docker) hosts of already trusted nodes. This is needed in a transition period, while
+                //   we migrate away from IPv4-only nodes
                 trustedNodes.addAll(getDockerHosts(trustedNodes)); // TODO: Remove when we no longer have IPv4-only nodes
                 trustedNodes.addAll(getNodes(NodeType.proxy));
+                if (node.state() == Node.State.ready) {
+                    // Tenant nodes in state ready, trust:
+                    // - All tenant nodes in zone. When a ready node is allocated to a an application there's a brief
+                    //   window where current ACLs have not yet been applied on the node. To avoid service disruption
+                    //   during this window, ready tenant nodes trust all other tenant nodes.
+                    trustedNodes.addAll(getNodes(NodeType.tenant));
+                }
                 break;
 
             case config:
-                // Config servers trust all nodes in the zone
+                // Config servers trust all nodes
                 trustedNodes.addAll(getNodes());
                 break;
 
