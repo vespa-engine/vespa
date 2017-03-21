@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vsm/common/document.h>
 
 namespace vsm {
@@ -13,7 +12,7 @@ namespace vsm {
 class FieldModifier
 {
 public:
-    typedef vespalib::LinkedPtr<FieldModifier> LP;
+    typedef std::unique_ptr<FieldModifier> UP;
 
     /**
      * Modifies the given field value and returns a new one.
@@ -30,7 +29,7 @@ public:
     virtual ~FieldModifier() { }
 };
 
-typedef vespalib::hash_map<FieldIdT, FieldModifier::LP> FieldModifierMapT;
+typedef vespalib::hash_map<FieldIdT, FieldModifier::UP> FieldModifierMapT;
 
 /**
  * This class wraps a map from field id to field modifier.
