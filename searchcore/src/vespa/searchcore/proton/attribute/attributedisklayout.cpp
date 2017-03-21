@@ -5,6 +5,7 @@
 LOG_SETUP(".proton.attribute.attributedisklayout");
 #include "attributedisklayout.h"
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/vespalib/io/fileutil.h>
 
 using search::IndexMetaInfo;
 using search::index::SchemaBuilder;
@@ -13,6 +14,21 @@ using search::AttributeVector;
 
 namespace proton
 {
+
+AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir)
+    : _baseDir(baseDir)
+{
+}
+
+AttributeDiskLayout::~AttributeDiskLayout()
+{
+}
+
+void
+AttributeDiskLayout::createBaseDir()
+{
+    vespalib::mkdir(_baseDir, false);
+}
 
 vespalib::string
 AttributeDiskLayout::getSnapshotDir(uint64_t syncToken)
