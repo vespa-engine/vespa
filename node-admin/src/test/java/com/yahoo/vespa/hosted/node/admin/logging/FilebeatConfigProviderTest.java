@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,7 +27,7 @@ public class FilebeatConfigProviderTest {
     private static final List<String> logstashNodes = ImmutableList.of("logstash1", "logstash2");
 
     @Test
-    public void it_replaces_all_fields_correctly() throws IOException {
+    public void it_replaces_all_fields_correctly() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment());
 
         Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
@@ -39,7 +38,7 @@ public class FilebeatConfigProviderTest {
     }
 
     @Test
-    public void it_does_not_generate_config_when_no_logstash_nodes() throws IOException {
+    public void it_does_not_generate_config_when_no_logstash_nodes() {
         Environment env = new Environment.Builder()
                 .environment(environment)
                 .region(region)
@@ -51,7 +50,7 @@ public class FilebeatConfigProviderTest {
     }
 
     @Test
-    public void it_does_not_generate_config_for_nodes_wihout_owner() throws IOException {
+    public void it_does_not_generate_config_for_nodes_wihout_owner() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment());
         ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .nodeFlavor("flavor")
@@ -64,22 +63,22 @@ public class FilebeatConfigProviderTest {
     }
 
     @Test
-    public void it_generates_correct_index_source() throws IOException {
+    public void it_generates_correct_index_source() {
         assertThat(getConfigString(), containsString("index_source: \"hosted-instance_vespa_music_us-north-1_prod_default\""));
     }
 
     @Test
-    public void it_sets_logstash_nodes_properly() throws IOException {
+    public void it_sets_logstash_nodes_properly() {
         assertThat(getConfigString(), containsString("hosts: [logstash1,logstash2]"));
     }
 
     @Test
-    public void it_generates_correct_spool_size() throws IOException {
+    public void it_generates_correct_spool_size() {
         // 2 nodes, 3 workers, 2048 buffer size -> 12288
         assertThat(getConfigString(), containsString("spool_size: 12288"));
     }
 
-    private String getConfigString() throws IOException {
+    private String getConfigString() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment());
         ContainerNodeSpec nodeSpec = getNodeSpec(tenant, application, instance);
         return filebeatConfigProvider.getConfig(nodeSpec).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
