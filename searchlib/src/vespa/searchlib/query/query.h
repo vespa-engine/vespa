@@ -15,7 +15,6 @@ namespace search
 class QueryConnector : public QueryNode, public QueryNodeList
 {
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT_NS(search, QueryConnector);
     QueryConnector(const char * opName);
     ~QueryConnector();
     virtual const HitList & evaluateHits(HitList & hl) const;
@@ -45,7 +44,6 @@ private:
 class TrueNode : public QueryConnector
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, TrueNode);
     TrueNode() : QueryConnector("AND") { }
     virtual bool evaluate() const;
 };
@@ -56,7 +54,6 @@ public:
 class AndQueryNode : public QueryConnector
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, AndQueryNode);
     AndQueryNode() : QueryConnector("AND") { }
     AndQueryNode(const char * opName) : QueryConnector(opName) { }
     virtual bool evaluate() const;
@@ -69,7 +66,6 @@ public:
 class AndNotQueryNode : public QueryConnector
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, AndNotQueryNode);
     AndNotQueryNode() : QueryConnector("ANDNOT") { }
     virtual bool evaluate() const;
     virtual bool isFlattenable(ParseItem::ItemType type) const { return type == ParseItem::ITEM_NOT; }
@@ -81,7 +77,6 @@ public:
 class OrQueryNode : public QueryConnector
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, OrQueryNode);
     OrQueryNode() : QueryConnector("OR") { }
     OrQueryNode(const char * opName) : QueryConnector(opName) { }
     virtual bool evaluate() const;
@@ -99,7 +94,6 @@ public:
 class EquivQueryNode : public OrQueryNode
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, EquivQueryNode);
     EquivQueryNode() : OrQueryNode("EQUIV") { }
     virtual bool evaluate() const;
     virtual bool isFlattenable(ParseItem::ItemType type) const {
@@ -115,7 +109,6 @@ public:
 class PhraseQueryNode : public AndQueryNode
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, PhraseQueryNode);
     PhraseQueryNode() : AndQueryNode("PHRASE"), _fieldInfo(32) { }
     virtual bool evaluate() const;
     virtual const HitList & evaluateHits(HitList & hl) const;
@@ -139,7 +132,6 @@ private:
 class NotQueryNode : public QueryConnector
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, NotQueryNode);
     NotQueryNode() : QueryConnector("NOT") { }
     virtual bool evaluate() const;
 };
@@ -150,7 +142,6 @@ public:
 class NearQueryNode : public AndQueryNode
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, NearQueryNode);
     NearQueryNode() : AndQueryNode("NEAR"), _distance(0) { }
     NearQueryNode(const char * opName) : AndQueryNode(opName), _distance(0) { }
     virtual bool evaluate() const;
@@ -169,7 +160,6 @@ private:
 class ONearQueryNode : public NearQueryNode
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, ONearQueryNode);
     ONearQueryNode() : NearQueryNode("ONEAR") { }
     virtual ~ONearQueryNode() { }
     virtual bool evaluate() const;
@@ -183,13 +173,11 @@ public:
    you want to process. The tree can also be printed. And you can read the
    width and depth properties.
 */
-class Query : public vespalib::Identifiable
+class Query
 {
 public:
-    DECLARE_IDENTIFIABLE_NS(search, Query);
     Query();
     Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep);
-    virtual ~Query() { }
     /// Will build the query tree
     bool build(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep);
     /// Will clear the results from the querytree.
@@ -204,11 +192,10 @@ public:
     size_t depth() const;
     size_t width() const;
     bool valid() const { return _root.get() != NULL; }
-    const QueryNode::LP & getRoot() const { return _root; }
-    QueryNode::LP & getRoot() { return _root; }
+    const QueryNode & getRoot() const { return *_root; }
+    static QueryNode::UP steal(Query && query) { return std::move(query._root); }
 private:
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    QueryNode::LP _root;
+    QueryNode::UP _root;
 };
 
 }

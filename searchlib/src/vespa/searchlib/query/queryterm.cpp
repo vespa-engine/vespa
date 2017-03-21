@@ -48,8 +48,6 @@ bool isValidInteger(int64_t value)
 
 namespace search {
 
-IMPLEMENT_IDENTIFIABLE_NS(search, QueryTerm, QueryNode);
-
 QueryTermBase::UCS4StringT
 QueryTermBase::getUCS4Term() const {
     UCS4StringT ucs4;

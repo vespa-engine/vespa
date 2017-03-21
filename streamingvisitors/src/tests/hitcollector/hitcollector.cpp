@@ -29,6 +29,7 @@ private:
     void testFeatureSet();
 
     DocumentType _docType;
+    std::vector<vsm::StorageDocument::UP> _backedHits;
 
 public:
     HitCollectorTest();
@@ -62,10 +63,11 @@ void
 HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const char *sortData, size_t sortDataSize)
 {
     document::Document::UP doc(new document::Document(_docType, DocumentId("doc::")));
-    StorageDocument::LP sdoc(new StorageDocument(std::move(doc), SharedFieldPathMap(), 0));
+    StorageDocument::UP sdoc(new StorageDocument(std::move(doc), SharedFieldPathMap(), 0));
     ASSERT_TRUE(sdoc->valid());
     MatchData md(MatchData::params());
-    hc.addHit(sdoc, docId, md, score, sortData, sortDataSize);
+    hc.addHit(sdoc.get(), docId, md, score, sortData, sortDataSize);
+    _backedHits.push_back(std::move(sdoc));
 }
 
 void

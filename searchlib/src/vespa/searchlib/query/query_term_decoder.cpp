@@ -12,8 +12,8 @@ QueryTermDecoder::decodeTerm(QueryPacketT term)
     QueryTermSimple::UP result;
     QueryNodeResultFactory factory;
     Query query(factory, term);
-    if (query.valid() && (dynamic_cast<QueryTerm *>(query.getRoot().get()))) {
-        result.reset(static_cast<QueryTerm *>(query.getRoot().release()));
+    if (query.valid() && (dynamic_cast<const QueryTerm *>(&query.getRoot()))) {
+        result.reset(static_cast<QueryTerm *>(Query::steal(std::move(query)).release()));
     } else {
         throw vespalib::IllegalStateException("Failed decoding query term");
     }

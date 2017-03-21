@@ -6,6 +6,8 @@
 #include "querynoderesultbase.h"
 #include "weight.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/memory.h>
+#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 
 namespace search {
@@ -154,7 +156,6 @@ public:
         uint32_t _hitCount;
         uint32_t _fieldLength;
     };
-    DECLARE_IDENTIFIABLE_NS(search, QueryTerm);
     QueryTerm();
     QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, SearchTerm type);
     QueryTerm(const QueryTerm &) = default;

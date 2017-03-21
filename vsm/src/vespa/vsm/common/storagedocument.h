@@ -3,7 +3,6 @@
 
 #include "document.h"
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace vsm {
 
@@ -14,7 +13,7 @@ typedef std::shared_ptr<FieldPathMapT> SharedFieldPathMap;
 
 class StorageDocument : public Document {
 public:
-    typedef vespalib::LinkedPtr<StorageDocument> LP;
+    typedef std::unique_ptr<StorageDocument> UP;
 
     class SubDocument {
     public:
