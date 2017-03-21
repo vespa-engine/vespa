@@ -247,11 +247,10 @@ DocumentSubDBCollection::getNewestFlushedSerial()
 
 void
 DocumentSubDBCollection::wipeHistory(SerialNum wipeSerial,
-                                     const Schema &newHistorySchema,
                                      const Schema &wipeSchema)
 {
     for (auto subDb : _subDBs) {
-        subDb->wipeHistory(wipeSerial, newHistorySchema, wipeSchema);
+        subDb->wipeHistory(wipeSerial, wipeSchema);
     }
 }
 
