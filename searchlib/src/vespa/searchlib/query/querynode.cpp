@@ -7,30 +7,10 @@ LOG_SETUP(".vsm.querynode");
 
 namespace search {
 
-#if 0
-void NewNode(QueryNode::UP qn, QueryNodeList & currentNodeList, size_t count=0)
-{
-    if ( ! currentNodeList.empty() ) {
-        QueryConnector *qc = dynamic_cast<QueryConnector *> (&*currentNodeList.back());
-        if (qc != 0 &&
-            ((dynamic_cast<NotQueryNode *>(qc) != NULL) ||
-             (dynamic_cast<PhraseQueryNode *>(qc) != NULL && (count == qc->size()))))
-        {
-            qc->push_back(qn);
-        } else {
-            currentNodeList.push_back(qn);
-        }
-    } else {
-        currentNodeList.push_back(qn);
-    }
-}
-#endif
-
 namespace {
     vespalib::stringref DEFAULT("default");
 }
 
-#define CASE(c, q) case c: { qn.reset(new q()); } break;
 QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factory, search::SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
 {
     unsigned int arity = queryRep.getArity();
@@ -162,7 +142,6 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFa
     }
     return qn;
 }
-#undef CASE
 
 const HitList & QueryNode::evaluateHits(HitList & hl) const
 {
