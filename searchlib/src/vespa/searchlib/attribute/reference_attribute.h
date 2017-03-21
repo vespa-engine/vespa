@@ -14,8 +14,13 @@ class IGidToLidMapperFactory;
 namespace attribute {
 
 /*
- * Attribute vector mapping from local document ids to global ids
- * referencing external documents.
+ * Attribute vector which maintains a lid-2-lid mapping from local document ids to global ids (referencing external documents)
+ * and their local document ids counterpart.
+ *
+ * The lid-2-lid mapping is updated as follows:
+ * 1) In populateReferencedLids() all referenced lids are set by using the gid-2-lid mapper.
+ * 1) In update() a new lid-gid pair is set and the referenced lid is set by using gid-2-lid mapper.
+ * 2) In notifyGidToLidChange() a gid-reference-lid pair is set explicitly.
  */
 class ReferenceAttribute : public NotImplementedAttribute
 {

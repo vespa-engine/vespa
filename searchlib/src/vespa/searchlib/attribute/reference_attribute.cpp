@@ -175,7 +175,11 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
     updateUncommittedDocIdLimit(doc);
     assert(doc < _indices.size());
     EntryRef oldRef = _indices[doc];
-    EntryRef newRef = _store.add(gid).ref();
+    Reference refToAdd(gid);
+    if (_gidToLidMapperFactory) {
+        refToAdd.setLid(_gidToLidMapperFactory->getMapper()->mapGidToLid(gid));
+    }
+    EntryRef newRef = _store.add(refToAdd).ref();
     std::atomic_thread_fence(std::memory_order_release);
     _indices[doc] = newRef;
     if (oldRef.valid()) {
@@ -187,11 +191,11 @@ const ReferenceAttribute::Reference *
 ReferenceAttribute::getReference(DocId doc)
 {
     assert(doc < _indices.size());
-    EntryRef oldRef = _indices[doc];
-    if (!oldRef.valid()) {
+    EntryRef ref = _indices[doc];
+    if (!ref.valid()) {
         return nullptr;
     } else {
-        return &_store.get(oldRef);
+        return &_store.get(ref);
     }
 }
 
@@ -242,12 +246,12 @@ ReferenceAttribute::DocId
 ReferenceAttribute::getReferencedLid(DocId doc) const
 {
     assert(doc < _indices.size());
-    EntryRef oldRef = _indices[doc];
-    if (!oldRef.valid() || !_gidToLidMapperFactory) {
+    EntryRef ref = _indices[doc];
+    if (!ref.valid()) {
         return 0;
+    } else {
+        return _store.get(ref).lid();
     }
-    std::unique_ptr<IGidToLidMapper> mapper = _gidToLidMapperFactory->getMapper();
-    return mapper->mapGidToLid(_store.get(oldRef).gid());
 }
 
 void
