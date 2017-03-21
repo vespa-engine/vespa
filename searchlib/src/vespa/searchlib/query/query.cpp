@@ -2,26 +2,11 @@
 #include "query.h"
 #include <vespa/vespalib/objects/visit.hpp>
 
-using vespalib::Identifiable;
-
 namespace search {
-
-IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS(search, QueryConnector, QueryNode);
-IMPLEMENT_IDENTIFIABLE_NS(search, Query, Identifiable);
-IMPLEMENT_IDENTIFIABLE_NS(search, TrueNode, QueryNode);
-IMPLEMENT_IDENTIFIABLE_NS(search, AndQueryNode, QueryConnector);
-IMPLEMENT_IDENTIFIABLE_NS(search, AndNotQueryNode, QueryConnector);
-IMPLEMENT_IDENTIFIABLE_NS(search, OrQueryNode, QueryConnector);
-IMPLEMENT_IDENTIFIABLE_NS(search, EquivQueryNode, OrQueryNode);
-IMPLEMENT_IDENTIFIABLE_NS(search, PhraseQueryNode, AndQueryNode);
-IMPLEMENT_IDENTIFIABLE_NS(search, NotQueryNode, QueryConnector);
-IMPLEMENT_IDENTIFIABLE_NS(search, NearQueryNode, AndQueryNode);
-IMPLEMENT_IDENTIFIABLE_NS(search, ONearQueryNode, NearQueryNode);
 
 void QueryConnector::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "Operator", _opName);
-    visit(visitor, "Children", (const QueryNodeList &)*this);
 }
 
 QueryConnector::QueryConnector(const char * opName) :
@@ -268,20 +253,13 @@ bool ONearQueryNode::evaluate() const
 }
 
 Query::Query() :
-  Identifiable(),
   _root()
 { }
 
 Query::Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep) :
-  Identifiable(),
   _root()
 {
   build(factory, queryRep);
-}
-
-void Query::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
-    visit(visitor, "root", _root);
 }
 
 bool Query::evaluate() const

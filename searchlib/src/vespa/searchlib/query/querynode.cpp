@@ -5,12 +5,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.querynode");
 
-namespace search
-{
+namespace search {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS(search, QueryNode, vespalib::Identifiable);
-
-void NewNode(QueryNode::LP & qn, QueryNodeList & currentNodeList, size_t count=0)
+#if 0
+void NewNode(QueryNode::UP qn, QueryNodeList & currentNodeList, size_t count=0)
 {
     if ( ! currentNodeList.empty() ) {
         QueryConnector *qc = dynamic_cast<QueryConnector *> (&*currentNodeList.back());
@@ -26,6 +24,7 @@ void NewNode(QueryNode::LP & qn, QueryNodeList & currentNodeList, size_t count=0
         currentNodeList.push_back(qn);
     }
 }
+#endif
 
 namespace {
     vespalib::stringref DEFAULT("default");
@@ -69,9 +68,9 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFa
                 if (qc->isFlattenable(queryRep.getType())) {
                     arity += queryRep.getArity();
                 } else {
-                    LP child(Build(qc, factory, queryRep,
-                                   allowRewrite && ((dynamic_cast<NearQueryNode *> (qn.get()) == NULL) && (dynamic_cast<PhraseQueryNode *> (qn.get()) == NULL))).release());
-                    qc->push_back(child);
+                    UP child(Build(qc, factory, queryRep,
+                                   allowRewrite && ((dynamic_cast<NearQueryNode *> (qn.get()) == NULL) && (dynamic_cast<PhraseQueryNode *> (qn.get()) == NULL))));
+                    qc->push_back(std::move(child));
                 }
             }
         }
@@ -131,11 +130,11 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFa
             } else {
                 std::unique_ptr<PhraseQueryNode> phrase(new PhraseQueryNode());
 
-                phrase->push_back(LP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
-                phrase->push_back(LP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
+                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
+                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
                 std::unique_ptr<EquivQueryNode> orqn(new EquivQueryNode());
-                orqn->push_back(LP(qt.release()));
-                orqn->push_back(LP(phrase.release()));
+                orqn->push_back(std::move(qt));
+                orqn->push_back(std::move(phrase));
                 qn.reset(orqn.release());
             }
         }

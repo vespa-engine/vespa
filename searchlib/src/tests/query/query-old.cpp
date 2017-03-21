@@ -232,11 +232,11 @@ TEST("e is not rewritten even if allowed") {
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQUAL(6u, stackDump.size());
     AllowRewrite allowRewrite;
-    Query q(allowRewrite, stackDump);
+    const Query q(allowRewrite, stackDump);
     EXPECT_TRUE(q.valid());
-    const QueryNode::LP & root = q.getRoot();
-    EXPECT_EQUAL(QueryTerm::classId, root->getClass().id());
-    const QueryTerm & qt = static_cast<const QueryTerm &>(*root);
+    const QueryNode & root = q.getRoot();
+    EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
+    const QueryTerm & qt = static_cast<const QueryTerm &>(root);
     EXPECT_EQUAL("c", qt.index());
     EXPECT_EQUAL(vespalib::stringref("e"), qt.getTerm());
     EXPECT_EQUAL(3u, qt.uniqueId());
@@ -247,11 +247,11 @@ TEST("1.0e is not rewritten by default") {
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQUAL(9u, stackDump.size());
     QueryNodeResultFactory empty;
-    Query q(empty, stackDump);
+    const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
-    const QueryNode::LP & root = q.getRoot();
-    EXPECT_EQUAL(QueryTerm::classId, root->getClass().id());
-    const QueryTerm & qt = static_cast<const QueryTerm &>(*root);
+    const QueryNode & root = q.getRoot();
+    EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
+    const QueryTerm & qt = static_cast<const QueryTerm &>(root);
     EXPECT_EQUAL("c", qt.index());
     EXPECT_EQUAL(vespalib::stringref("1.0e"), qt.getTerm());
     EXPECT_EQUAL(3u, qt.uniqueId());
@@ -262,31 +262,31 @@ TEST("1.0e is rewritten if allowed too.") {
     vespalib::stringref stackDump(term, sizeof(term));
     EXPECT_EQUAL(9u, stackDump.size());
     AllowRewrite empty;
-    Query q(empty, stackDump);
+    const Query q(empty, stackDump);
     EXPECT_TRUE(q.valid());
-    const QueryNode::LP & root = q.getRoot();
-    EXPECT_EQUAL(EquivQueryNode::classId, root->getClass().id());
-    const EquivQueryNode & equiv = static_cast<const EquivQueryNode &>(*root);
+    const QueryNode & root = q.getRoot();
+    EXPECT_TRUE(dynamic_cast<const EquivQueryNode *>(&root) != nullptr);
+    const EquivQueryNode & equiv = static_cast<const EquivQueryNode &>(root);
     EXPECT_EQUAL(2u, equiv.size());
-    EXPECT_EQUAL(QueryTerm::classId, equiv[0]->getClass().id());
+    EXPECT_TRUE(dynamic_cast<const QueryTerm *>(equiv[0].get()) != nullptr);
     {
         const QueryTerm & qt = static_cast<const QueryTerm &>(*equiv[0]);
         EXPECT_EQUAL("c", qt.index());
         EXPECT_EQUAL(vespalib::stringref("1.0e"), qt.getTerm());
         EXPECT_EQUAL(3u, qt.uniqueId());
     }
-    EXPECT_EQUAL(PhraseQueryNode::classId, equiv[1]->getClass().id());
+    EXPECT_TRUE(dynamic_cast<const PhraseQueryNode *>(equiv[1].get()) != nullptr);
     {
         const PhraseQueryNode & phrase = static_cast<const PhraseQueryNode &>(*equiv[1]);
         EXPECT_EQUAL(2u, phrase.size());
-        EXPECT_EQUAL(QueryTerm::classId, phrase[0]->getClass().id());
+        EXPECT_TRUE(dynamic_cast<const QueryTerm *>(phrase[0].get()) != nullptr);
         {
             const QueryTerm & qt = static_cast<const QueryTerm &>(*phrase[0]);
             EXPECT_EQUAL("c", qt.index());
             EXPECT_EQUAL(vespalib::stringref("1"), qt.getTerm());
             EXPECT_EQUAL(0u, qt.uniqueId());
         }
-        EXPECT_EQUAL(QueryTerm::classId, phrase[1]->getClass().id());
+        EXPECT_TRUE(dynamic_cast<const QueryTerm *>(phrase[1].get()) != nullptr);
         {
             const QueryTerm & qt = static_cast<const QueryTerm &>(*phrase[1]);
             EXPECT_EQUAL("c", qt.index());
