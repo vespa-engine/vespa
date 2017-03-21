@@ -95,7 +95,7 @@ public:
      * If you add a NULL document you should not use getDocSum() or fillSearchResult(),
      * as these functions expect valid documents.
      *
-     * @param doc   The document that is a hit.
+     * @param doc   The document that is a hit. Must be kept alive on the outside.
      * @param data  The match data for the hit.
      * @return true if the document was added to the heap
      **/
@@ -107,7 +107,7 @@ public:
      * If you add a NULL document you should not use getDocSum() or fillSearchResult(),
      * as these functions expect valid documents.
      *
-     * @param doc   The document that is a hit.
+     * @param doc   The document that is a hit. Must be kept alive on the outside.
      * @param data  The match data for the hit.
      * @param sortData The buffer of the sortdata.
      * @param sortDataLen The length of the sortdata.

@@ -184,13 +184,13 @@ private:
          * @param hasSorting whether the search result should be sorted.
          * @param visitor the search visitor.
          * @param tmpSortBuffer the sort buffer containing the sort data.
-         * @param documentId the document id of the document to collect.
+         * @param document the document to collect. Must be kept alive on the outside.
          * @return true if the document was added to the heap
          **/
         bool collectMatchedDocument(bool hasSorting,
                                     SearchVisitor & visitor,
                                     const std::vector<char> & tmpSortBuffer,
-                                    const vsm::StorageDocument * documentId);
+                                    const vsm::StorageDocument * document);
         /**
          * Callback function that is called when visiting is completed.
          * Perform second phase ranking and calculate summary features / rank features if asked for.
