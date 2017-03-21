@@ -292,7 +292,6 @@ void SearchVisitor::init(const Parameters & params)
             VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
             QueryTermDataFactory addOnFactory;
             _query = search::Query(addOnFactory, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
-            LOG(debug, "Query tree: '%s'", _query.asString().c_str());
             _searchBuffer->reserve(0x10000);
 
             int stackCount = 0;
@@ -534,7 +533,7 @@ bool
 SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
                                                       SearchVisitor & visitor,
                                                       const std::vector<char> & tmpSortBuffer,
-                                                      const StorageDocument::LP & document)
+                                                      const StorageDocument * document)
 {
     bool amongTheBest(false);
     uint32_t docId = _rankProcessor->getDocId();
@@ -542,7 +541,7 @@ SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
         amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(),
                                                                 _rankProcessor->getRankScore());
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(StorageDocument::LP(NULL), docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
+            _dumpProcessor->getHitCollector().addHit(nullptr, docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
         }
     } else {
         size_t pos = visitor.fillSortBuffer();
@@ -550,7 +549,7 @@ SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
         amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(),
                                                                 _rankProcessor->getRankScore(), &tmpSortBuffer[0], pos);
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(StorageDocument::LP(NULL), docId, _dumpProcessor->getMatchData(),
+            _dumpProcessor->getHitCollector().addHit(nullptr, docId, _dumpProcessor->getMatchData(),
                                                      _dumpProcessor->getRankScore(), &tmpSortBuffer[0], pos);
         }
     }
@@ -885,7 +884,7 @@ SearchVisitor::handleDocuments(const document::BucketId&,
     const document::DocumentType* defaultDocType = _docTypeMapping.getDefaultDocumentType();
     assert(defaultDocType);
     for (const auto & entry : entries) {
-        StorageDocument::LP document(new StorageDocument(entry->releaseDocument(), _fieldPathMap, highestFieldNo));
+        StorageDocument::UP document(new StorageDocument(entry->releaseDocument(), _fieldPathMap, highestFieldNo));
 
         try {
             if (defaultDocType != NULL
@@ -894,8 +893,8 @@ SearchVisitor::handleDocuments(const document::BucketId&,
                 LOG(debug, "Skipping document of type '%s' when handling only documents of type '%s'",
                     document->docDoc().getType().getName().c_str(), defaultDocType->getName().c_str());
             } else {
-                if (handleDocument(document)) {
-                    _backingDocuments.push_back(document);
+                if (handleDocument(*document)) {
+                    _backingDocuments.push_back(std::move(document));
                 }
             }
         } catch (const std::exception & e) {
@@ -906,19 +905,19 @@ SearchVisitor::handleDocuments(const document::BucketId&,
 }
 
 bool
-SearchVisitor::handleDocument(const StorageDocument::LP & document)
+SearchVisitor::handleDocument(StorageDocument & document)
 {
     bool needToKeepDocument(false);
-    _syntheticFieldsController.onDocument(*document);
-    group(document->docDoc(), 0, true);
-    if (match(*document)) {
+    _syntheticFieldsController.onDocument(document);
+    group(document.docDoc(), 0, true);
+    if (match(document)) {
         RankProcessor & rp = *_rankController.getRankProcessor();
-        vespalib::string documentId(document->docDoc().getId().getScheme().toString());
+        vespalib::string documentId(document.docDoc().getId().getScheme().toString());
         LOG(debug, "Matched document with id '%s'", documentId.c_str());
 
-        document->setDocId(rp.getDocId());
+        document.setDocId(rp.getDocId());
 
-        fillAttributeVectors(documentId, *document);
+        fillAttributeVectors(documentId, document);
 
         _rankController.rankMatchedDocument(rp.getDocId());
 
@@ -928,16 +927,16 @@ SearchVisitor::handleDocument(const StorageDocument::LP & document)
 
         if (_rankController.keepMatchedDocument()) {
 
-            bool amongTheBest = _rankController.collectMatchedDocument(!_sortList.empty(), *this, _tmpSortBuffer, document);
+            bool amongTheBest = _rankController.collectMatchedDocument(!_sortList.empty(), *this, _tmpSortBuffer, &document);
 
-            _syntheticFieldsController.onDocumentMatch(*document, documentId);
+            _syntheticFieldsController.onDocumentMatch(document, documentId);
 
-            SingleDocumentStore single(*document);
+            SingleDocumentStore single(document);
             _summaryGenerator.setDocsumCache(single);
-            group(document->docDoc(), rp.getRankScore(), false);
+            group(document.docDoc(), rp.getRankScore(), false);
 
             if (amongTheBest) {
-                document->saveCachedFields();
+                document.saveCachedFields();
                 needToKeepDocument = true;
             }
 
@@ -949,7 +948,7 @@ SearchVisitor::handleDocument(const StorageDocument::LP & document)
                 _rankController.getRankSetup()->getRankScoreDropLimit());
         }
     } else {
-        LOG(debug, "Did not match document with id '%s'", document->docDoc().getId().getScheme().toString().c_str());
+        LOG(debug, "Did not match document with id '%s'", document.docDoc().getId().getScheme().toString().c_str());
     }
     return needToKeepDocument;
 }

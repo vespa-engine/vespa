@@ -22,9 +22,9 @@ private:
     class Hit
     {
     public:
-        Hit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & matchData,
+        Hit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & matchData,
             double score, const void * sortData, size_t sortDataLen);
-        Hit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & matchData, double score)
+        Hit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & matchData, double score)
             : Hit(doc, docId, matchData, score, nullptr, 0)
         { }
         ~Hit();
@@ -33,7 +33,7 @@ private:
         Hit(Hit && rhs) = default;
         Hit & operator = (Hit && rhs) = default;
         search::DocumentIdT getDocId() const { return _docid; }
-        const vsm::StorageDocument::LP & getDocument() const { return _document; }
+        const vsm::StorageDocument & getDocument() const { return *_document; }
         const std::vector<search::fef::TermFieldMatchData> &getMatchData() const { return _matchData; }
         search::feature_t getRankScore() const { return _score; }
         const vespalib::string & getSortBlob() const { return _sortBlob; }
@@ -65,7 +65,7 @@ private:
     private:
         uint32_t _docid;
         double _score;
-        vsm::StorageDocument::LP _document;
+        const vsm::StorageDocument * _document;
         std::vector<search::fef::TermFieldMatchData> _matchData;
         vespalib::string _sortBlob;
     };
@@ -99,7 +99,7 @@ public:
      * @param data  The match data for the hit.
      * @return true if the document was added to the heap
      **/
-    bool addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data, double score);
+    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data, double score);
 
     /**
      * Adds a hit to this hit collector.
@@ -113,7 +113,7 @@ public:
      * @param sortDataLen The length of the sortdata.
      * @return true if the document was added to the heap
      **/
-    bool addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data,
+    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data,
                 double score, const void * sortData, size_t sortDataLen);
 
     /**
