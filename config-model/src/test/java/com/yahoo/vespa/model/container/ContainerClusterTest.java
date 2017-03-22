@@ -71,7 +71,7 @@ public class ContainerClusterTest {
     @Test
     public void requreThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(true).build())
-                                                     .zone(new Zone(SystemName.ci, Environment.test, RegionName.from("some-region"))).build();
+                                                     .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region"))).build();
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
@@ -79,7 +79,7 @@ public class ContainerClusterTest {
         ConfigserverConfig config = new ConfigserverConfig(builder);
         assertEquals(Environment.test.value(), config.environment());
         assertEquals("some-region", config.region());
-        assertEquals("ci", config.system());
+        assertEquals("cd", config.system());
     }
 
     private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster) {

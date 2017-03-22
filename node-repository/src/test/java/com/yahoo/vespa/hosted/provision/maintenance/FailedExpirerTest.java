@@ -60,15 +60,6 @@ public class FailedExpirerTest {
     }
 
     @Test
-    public void ensure_failed_nodes_are_deallocated_in_ci() throws InterruptedException {
-        NodeRepository nodeRepository = failureScenarioIn(SystemName.ci, Environment.prod);
-
-        assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
-        assertEquals("node2", nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
-    }
-
-    @Test
     public void ensure_failed_nodes_are_deallocated_in_cd() throws InterruptedException {
         NodeRepository nodeRepository = failureScenarioIn(SystemName.cd, Environment.prod);
 
