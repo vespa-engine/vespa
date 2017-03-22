@@ -36,7 +36,7 @@ AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout
       _cv(),
       _snapInfo(getDirName())
 {
-    (void) _snapInfo.load();
+    _snapInfo.load();
     SerialNum flushedSerialNum = getFlushedSerialNum();
     if (flushedSerialNum != 0) {
         vespalib::string dirName = getSnapshotDir(flushedSerialNum);
