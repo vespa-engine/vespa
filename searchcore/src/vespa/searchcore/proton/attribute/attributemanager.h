@@ -59,7 +59,7 @@ private:
     AttributeMap _attributes;
     FlushableMap _flushables;
     std::vector<search::AttributeVector *> _writableAttributes;
-    std::shared_ptr<AttributeDiskLayout> _attributeDiskLayout;
+    std::shared_ptr<AttributeDiskLayout> _diskLayout;
     vespalib::string _documentSubDbName;
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;

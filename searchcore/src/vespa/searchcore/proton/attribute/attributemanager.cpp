@@ -36,7 +36,7 @@ AttributeManager::internalAddAttribute(const vespalib::string &name,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_attributeDiskLayout->getBaseDir(), _documentSubDbName, name, cfg, serialNum, factory);
+    AttributeInitializer initializer(_diskLayout->getBaseDir(), _documentSubDbName, name, cfg, serialNum, factory);
     AttributeVector::SP attr = initializer.init();
     if (attr.get() != NULL) {
         attr->setInterlock(_interlock);
@@ -54,7 +54,7 @@ AttributeManager::addAttribute(const AttributeWrap &attribute)
     if ( ! attribute.isExtra() ) {
         // Flushing of extra attributes is handled elsewhere
         _flushables[attribute->getName()] = FlushableAttribute::SP
-                (new FlushableAttribute(attribute, _attributeDiskLayout->getBaseDir(),
+                (new FlushableAttribute(attribute, _diskLayout->getBaseDir(),
                                         _tuneFileAttributes,
                                         _fileHeaderContext,
                                         _attributeFieldWriter,
@@ -128,7 +128,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
                    aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
         AttributeInitializer::UP initializer =
-                std::make_unique<AttributeInitializer>(_attributeDiskLayout->getBaseDir(), _documentSubDbName, aspec.getName(),
+                std::make_unique<AttributeInitializer>(_diskLayout->getBaseDir(), _documentSubDbName, aspec.getName(),
                         aspec.getConfig(), newSpec.getCurrentSerialNum(), *_factory);
         initializerRegistry.add(std::move(initializer));
 
@@ -167,7 +167,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _attributes(),
       _flushables(),
       _writableAttributes(),
-      _attributeDiskLayout(std::make_shared<AttributeDiskLayout>(baseDir)),
+      _diskLayout(AttributeDiskLayout::create(baseDir)),
       _documentSubDbName(documentSubDbName),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
@@ -177,7 +177,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _hwInfo(hwInfo),
       _importedAttributes()
 {
-    _attributeDiskLayout->createBaseDir();
+    _diskLayout->createBaseDir();
 }
 
 
@@ -193,7 +193,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _attributes(),
       _flushables(),
       _writableAttributes(),
-      _attributeDiskLayout(std::make_shared<AttributeDiskLayout>(baseDir)),
+      _diskLayout(AttributeDiskLayout::create(baseDir)),
       _documentSubDbName(documentSubDbName),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
@@ -203,7 +203,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _hwInfo(hwInfo),
       _importedAttributes()
 {
-    _attributeDiskLayout->createBaseDir();
+    _diskLayout->createBaseDir();
 }
 
 AttributeManager::AttributeManager(const AttributeManager &currMgr,
@@ -213,7 +213,7 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _attributes(),
       _flushables(),
       _writableAttributes(),
-      _attributeDiskLayout(currMgr._attributeDiskLayout),
+      _diskLayout(currMgr._diskLayout),
       _documentSubDbName(currMgr._documentSubDbName),
       _tuneFileAttributes(currMgr._tuneFileAttributes),
       _fileHeaderContext(currMgr._fileHeaderContext),
@@ -441,7 +441,7 @@ AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
 void
 AttributeManager::wipeHistory(search::SerialNum wipeSerial)
 {
-    const vespalib::string &baseDir = _attributeDiskLayout->getBaseDir();
+    const vespalib::string &baseDir = _diskLayout->getBaseDir();
     std::vector<vespalib::string> attributes = AttributeDiskLayout::listAttributes(baseDir);
     for (const auto &attribute : attributes) {
         auto itr = _attributes.find(attribute);
