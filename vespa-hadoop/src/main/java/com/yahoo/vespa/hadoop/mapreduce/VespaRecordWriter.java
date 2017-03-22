@@ -126,11 +126,14 @@ public class VespaRecordWriter extends RecordWriter {
         feedParamsBuilder.setRoute(configuration.route());
         feedParamsBuilder.setMaxSleepTimeMs(configuration.maxSleepTimeMs());
         feedParamsBuilder.setMaxInFlightRequests(configuration.maxInFlightRequests());
+        feedParamsBuilder.setLocalQueueTimeOut(3600*1000); //1 hour queue timeout
 
         SessionParams.Builder sessionParams = new SessionParams.Builder();
         sessionParams.setThrottlerMinSize(configuration.throttlerMinSize());
         sessionParams.setConnectionParams(connParamsBuilder.build());
         sessionParams.setFeedParams(feedParamsBuilder.build());
+        sessionParams.setClientQueueSize(configuration.maxInFlightRequests()*2);
+
 
         String endpoints = configuration.endpoint();
         StringTokenizer tokenizer = new StringTokenizer(endpoints, ",");
