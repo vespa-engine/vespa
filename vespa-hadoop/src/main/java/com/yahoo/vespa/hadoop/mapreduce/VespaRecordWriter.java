@@ -149,6 +149,7 @@ public class VespaRecordWriter extends RecordWriter {
 
         initialized = true;
         log.info("VespaStorage configuration:\n" + configuration.toString());
+        log.info(feedClient.getStatsAsJson());
     }
 
     private String findDocIdFromXml(String xml) {
