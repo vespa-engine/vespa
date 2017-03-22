@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -59,7 +60,8 @@ public class CuratorDatabaseClient {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
         jsonMapper.registerModule(new JodaModule());
-        this.curatorDatabase = new CuratorDatabase(curator, root, /* useCache: */ false);
+        boolean useCache = zone.system().equals(SystemName.cd);
+        this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         initZK();
     }
