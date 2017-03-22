@@ -28,7 +28,6 @@ private:
     const vespalib::string _name;
     fastos::TimeStamp      _lastFlushTime;
     Writer                *_writer; // current writer
-    std::mutex             _flusherMutex;
     mutable std::mutex     _mutex;
     std::condition_variable _cv;
     search::IndexMetaInfo  _snapInfo;
