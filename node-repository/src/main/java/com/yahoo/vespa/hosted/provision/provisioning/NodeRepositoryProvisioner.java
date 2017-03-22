@@ -82,6 +82,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
             Optional<String> defaultFlavorOverride = nodeRepository.getDefaultFlavorOverride(application);
             Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster, defaultFlavorOverride);
+            log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
             requestedNodes = NodeSpec.from(nodeCount, flavor);
         }
@@ -109,9 +110,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes) {
-        nodes.sort(Comparator.comparingInt((Node node) -> node.allocation().get().membership().index()));
+        nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
+            log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             hosts.add(new HostSpec(node.hostname(),
                                    node.allocation().orElseThrow(IllegalStateException::new).membership(),
                                    node.flavor()));
