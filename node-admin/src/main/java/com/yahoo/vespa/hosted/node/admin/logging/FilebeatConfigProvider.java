@@ -38,16 +38,25 @@ public class FilebeatConfigProvider {
         }
         ContainerNodeSpec.Owner owner = containerNodeSpec.owner.get();
         int spoolSize = environment.getLogstashNodes().size() * logstashWorkers * logstashBulkMaxSize;
+        String logstashNodeString = environment.getLogstashNodes().stream()
+                .map(this::addQuotes)
+                .collect(Collectors.joining(","));
         return Optional.of(getTemplate()
                 .replaceAll(ENVIRONMENT_FIELD, environment.getEnvironment())
                 .replaceAll(REGION_FIELD, environment.getRegion())
                 .replaceAll(FILEBEAT_SPOOL_SIZE_FIELD, Integer.toString(spoolSize))
-                .replaceAll(LOGSTASH_HOSTS_FIELD, environment.getLogstashNodes().stream().collect(Collectors.joining(",")))
+                .replaceAll(LOGSTASH_HOSTS_FIELD, logstashNodeString)
                 .replaceAll(LOGSTASH_WORKERS_FIELD, Integer.toString(logstashWorkers))
                 .replaceAll(LOGSTASH_BULK_MAX_SIZE_FIELD, Integer.toString(logstashBulkMaxSize))
                 .replaceAll(TENANT_FIELD, owner.tenant)
                 .replaceAll(APPLICATION_FIELD, owner.application)
                 .replaceAll(INSTANCE_FIELD, owner.instance));
+    }
+
+    private String addQuotes(String logstashNode) {
+        return logstashNode.startsWith("\"")
+                ? logstashNode
+                : String.format("\"%s\"", logstashNode);
     }
 
     private static String getTemplate() {

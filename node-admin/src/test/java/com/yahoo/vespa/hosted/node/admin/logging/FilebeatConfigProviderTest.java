@@ -69,7 +69,19 @@ public class FilebeatConfigProviderTest {
 
     @Test
     public void it_sets_logstash_nodes_properly() {
-        assertThat(getConfigString(), containsString("hosts: [logstash1,logstash2]"));
+        assertThat(getConfigString(), containsString("hosts: [\"logstash1\",\"logstash2\"]"));
+    }
+
+    @Test
+    public void it_does_not_add_double_quotes() {
+        Environment environment = new Environment.Builder()
+                .environment(FilebeatConfigProviderTest.environment)
+                .region(region)
+                .logstashNodes(ImmutableList.of("unquoted", "\"quoted\""))
+                .build();
+        FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
+        Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
+        assertThat(config.get(), containsString("hosts: [\"unquoted\",\"quoted\"]"));
     }
 
     @Test
