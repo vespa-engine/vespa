@@ -243,13 +243,23 @@ parseVectors(const Property & prop, std::vector<T> & values, std::vector<uint32_
     }
 }
 
+template <typename T>
+struct ArrayParam : public fef::Anything
+{
+    ArrayParam(const Property & prop) {
+        parseVectors(prop, values, indexes);
+    }
+    std::vector<T>        values;
+    std::vector<uint32_t> indexes;
+};
+
 template <typename A>
 FeatureExecutor &
-create(const IAttributeVector * attribute, const Property & prop, vespalib::Stash &stash)
+createForArrayImpl(const IAttributeVector * attribute,
+                   const std::vector<typename A::BaseType> & values,
+                   const std::vector<uint32_t> & indexes,
+                   vespalib::Stash & stash)
 {
-    std::vector<typename A::BaseType> values;
-    std::vector<uint32_t> indexes;
-    parseVectors(prop, values, indexes);
     if (values.empty()) {
         return stash.create<SingleZeroValueExecutor>();
     }
@@ -283,44 +293,23 @@ create(const IAttributeVector * attribute, const Property & prop, vespalib::Stas
     return stash.create<SingleZeroValueExecutor>();
 }
 
-template <typename T>
-struct ArrayParam : public fef::Anything
-{
-    ArrayParam(const Property & prop) {
-        parseVectors(prop, values, indexes);
-    }
-    std::vector<T>        values;
+template <typename A>
+FeatureExecutor &
+createForArray(const IAttributeVector * attribute,
+               const Property & prop,
+               vespalib::Stash & stash) {
+    std::vector<typename A::BaseType> values;
     std::vector<uint32_t> indexes;
-};
+    parseVectors(prop, values, indexes);
+    return createForArrayImpl<A>(attribute, values, indexes, stash);
+}
 
 template <typename A>
 FeatureExecutor &
-create(const IAttributeVector * attribute, const ArrayParam<typename A::BaseType> & arguments, vespalib::Stash &stash)
-{
-    if (arguments.values.empty()) {
-        return stash.create<SingleZeroValueExecutor>();
-    }
-    const A & iattr = dynamic_cast<const A &>(*attribute);
-    if (arguments.indexes.empty()) {
-        try {
-            const multivalue::Value<typename A::BaseType> * tmp;
-            iattr.getRawValues(0, tmp);
-            return stash.create<dotproduct::array::DotProductExecutor<A>>(&iattr, arguments.values);
-        } catch (const std::runtime_error & e) {
-            (void) e;
-            return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(&iattr, arguments.values);
-        }
-    } else {
-        try {
-            const multivalue::Value<typename A::BaseType> * tmp;
-            iattr.getRawValues(0, tmp);
-            return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(&iattr, arguments.values, arguments.indexes);
-        } catch (const std::runtime_error & e) {
-            (void) e;
-            return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(&iattr, arguments.values, arguments.indexes);
-        }
-    }
-    return stash.create<SingleZeroValueExecutor>();
+createForArray(const IAttributeVector * attribute,
+               const ArrayParam<typename A::BaseType> & arguments,
+               vespalib::Stash & stash) {
+    return createForArrayImpl<A>(attribute, arguments.values, arguments.indexes, stash);
 }
 
 //const char * BINARY = "binary";
@@ -333,13 +322,13 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
         switch (attribute->getBasicType()) {
             case BasicType::INT32:
-                return create<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
+                return createForArray<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
             case BasicType::INT64:
-                return create<IntegerAttributeTemplate<int64_t>>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
+                return createForArray<IntegerAttributeTemplate<int64_t>>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
             case BasicType::FLOAT:
-                return create<FloatingPointAttributeTemplate<float>>(attribute, dynamic_cast<const ArrayParam<float> &>(object), stash);
+                return createForArray<FloatingPointAttributeTemplate<float>>(attribute, dynamic_cast<const ArrayParam<float> &>(object), stash);
             case BasicType::DOUBLE:
-                return create<FloatingPointAttributeTemplate<double>>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
+                return createForArray<FloatingPointAttributeTemplate<double>>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
             default:
                 break;
         }
@@ -380,13 +369,13 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
     } else if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
         switch (attribute->getBasicType()) {
             case BasicType::INT32:
-                return create<IntegerAttributeTemplate<int32_t>>(attribute, prop, stash);
+                return createForArray<IntegerAttributeTemplate<int32_t>>(attribute, prop, stash);
             case BasicType::INT64:
-                return create<IntegerAttributeTemplate<int64_t>>(attribute, prop, stash);
+                return createForArray<IntegerAttributeTemplate<int64_t>>(attribute, prop, stash);
             case BasicType::FLOAT:
-                return create<FloatingPointAttributeTemplate<float>>(attribute, prop, stash);
+                return createForArray<FloatingPointAttributeTemplate<float>>(attribute, prop, stash);
             case BasicType::DOUBLE:
-                return create<FloatingPointAttributeTemplate<double>>(attribute, prop, stash);
+                return createForArray<FloatingPointAttributeTemplate<double>>(attribute, prop, stash);
             default:
                 break;
         }
