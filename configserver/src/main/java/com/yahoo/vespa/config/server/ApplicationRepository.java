@@ -111,20 +111,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                    localSessionRepo,
                                    hostProvisioner,
                                    lock,
-                                   timeout,
-                                   clock);
-    }
-
-    public Deployment deployFromUnpreparedSession(LocalSession session, ActivateLock lock, LocalSessionRepo localSessionRepo, Duration timeout) {
-        Tenant tenant = tenants.getTenant(application.tenant());
-        return Deployment.unprepared(session,
-                                     localSessionRepo,
-                                     tenant.getPath(),
-                                     hostProvisioner,
-                                     lock,
-                                     timeout,
-                                     clock,
-                                     true); // validate
+                                   timeout, clock);
     }
 
     /**
@@ -302,15 +289,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                        DeployLogger logger,
                                        PrepareParams params) {
         LocalSession session = getLocalSession(tenant, sessionId);
-        Duration timeout = params.getTimeoutBudget().timeLeft(); // TODO: Verify that this is right
-        Deployment deployment = deployFromUnpreparedSession(session, activateLock, localSessionRepo, timeout);
-        return deployment.prepare();
-        //ApplicationId appId = params.getApplicationId();
-        //Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, appId);
-        //return session.prepare(logger,
-         //                      params,
-          //                     currentActiveApplicationSet,
-           //                    tenant.getPath());
+        ApplicationId appId = params.getApplicationId();
+        Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, appId);
+        return session.prepare(logger,
+                               params,
+                               currentActiveApplicationSet,
+                               tenant.getPath());
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
