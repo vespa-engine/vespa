@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * Various utilities for getting values from node-admin's environment. Immutable.
  *
  * @author bakksjo
- * @author musum
+ * @author hmusum
  */
 public class Environment {
     private static final DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
@@ -34,6 +34,7 @@ public class Environment {
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
+    private static final String ATHENS_DOMAIN = "ATHENS_DOMAIN";
 
     private final Set<String> configServerHosts;
     private final String environment;
@@ -42,21 +43,21 @@ public class Environment {
     private final InetAddressResolver inetAddressResolver;
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
+    private final String athensDomain;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     public Environment() {
-        this(
-                getConfigServerHostsFromEnvironment(),
-                getEnvironmentVariable(ENVIRONMENT),
-                getEnvironmentVariable(REGION),
-                HostName.getLocalhost(),
-                new InetAddressResolver(),
-                new PathResolver(),
-                getLogstashNodesFromEnvironment()
-        );
+        this(getConfigServerHostsFromEnvironment(),
+             getEnvironmentVariable(ENVIRONMENT),
+             getEnvironmentVariable(REGION),
+             HostName.getLocalhost(),
+             new InetAddressResolver(),
+             new PathResolver(),
+             getLogstashNodesFromEnvironment(),
+             getEnvironmentVariable(ATHENS_DOMAIN));
     }
 
     public Environment(Set<String> configServerHosts,
@@ -65,7 +66,8 @@ public class Environment {
                        String parentHostHostname,
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
-                       List<String> logstashNodes) {
+                       List<String> logstashNodes,
+                       String athensDomain) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
@@ -73,6 +75,7 @@ public class Environment {
         this.inetAddressResolver = inetAddressResolver;
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
+        this.athensDomain = athensDomain;
     }
 
     public Set<String> getConfigServerHosts() { return configServerHosts; }
@@ -179,6 +182,9 @@ public class Environment {
         return logstashNodes;
     }
 
+    public String getAthensDomain() {
+        return athensDomain;
+    }
 
     public static class Builder {
         private Set<String> configServerHosts = Collections.emptySet();
@@ -188,6 +194,7 @@ public class Environment {
         private InetAddressResolver inetAddressResolver;
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
+        private String athensDomain;
 
         public Builder configServerHosts(String... hosts) {
             configServerHosts = Arrays.stream(hosts).collect(Collectors.toSet());
@@ -224,8 +231,14 @@ public class Environment {
             return this;
         }
 
+        public Builder athensDomain(String region) {
+            this.athensDomain = athensDomain;
+            return this;
+        }
+
         public Environment build() {
-            return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver, pathResolver, logstashNodes);
+            return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
+                                   pathResolver, logstashNodes, athensDomain);
         }
     }
 }
