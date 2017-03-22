@@ -41,7 +41,7 @@ public class ConfigServerHttpRequestExecutor {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final CloseableHttpClient client;
-    private final Set<String> configServerHosts;
+    private final List<String> configServerHosts;
     private final static int MAX_LOOPS = 2;
 
     @Override
@@ -63,8 +63,8 @@ public class ConfigServerHttpRequestExecutor {
                 .setConnectionManager(cm).build());
     }
 
-    public ConfigServerHttpRequestExecutor(Set<String> configServerHosts, CloseableHttpClient client) {
-        this.configServerHosts = configServerHosts;
+    ConfigServerHttpRequestExecutor(Set<String> configServerHosts, CloseableHttpClient client) {
+        this.configServerHosts = randomizeConfigServerHosts(configServerHosts);
         this.client = client;
     }
 
@@ -81,12 +81,8 @@ public class ConfigServerHttpRequestExecutor {
 
     private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
-        // Shuffle config server hosts to balance load
-        List<String> shuffledConfigServerHosts = new ArrayList<>(configServerHosts);
-        Collections.shuffle(shuffledConfigServerHosts);
-
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
-            for (String configServer : shuffledConfigServerHosts) {
+            for (String configServer : configServerHosts) {
                 final CloseableHttpResponse response;
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));
@@ -175,4 +171,12 @@ public class ConfigServerHttpRequestExecutor {
     private void setContentTypeToApplicationJson(HttpRequestBase request) {
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     }
+
+    // Shuffle config server hosts to balance load
+    private List<String> randomizeConfigServerHosts(Set<String> configServerHosts) {
+        List<String> shuffledConfigServerHosts = new ArrayList<>(configServerHosts);
+        Collections.shuffle(shuffledConfigServerHosts);
+        return shuffledConfigServerHosts;
+    }
+
 }
