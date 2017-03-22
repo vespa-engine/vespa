@@ -150,13 +150,13 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Returns a set of nodes that should be trusted by the given node.
      */
-    private Set<Node> getTrustedNodes(Node node) {
-        final Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
+    private Set<Node> getTrustedNodes(Node node, NodeList candidates) {
+        Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
 
         // For all cases below, trust:
         // - nodes in same application
         // - config servers
-        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+        node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
         trustedNodes.addAll(getConfigNodes());
 
         switch (node.type()) {
@@ -165,20 +165,20 @@ public class NodeRepository extends AbstractComponent {
                 // - proxy nodes
                 // - parent (Docker) hosts of already trusted nodes. This is needed in a transition period, while
                 //   we migrate away from IPv4-only nodes
-                trustedNodes.addAll(getDockerHosts(trustedNodes)); // TODO: Remove when we no longer have IPv4-only nodes
-                trustedNodes.addAll(getNodes(NodeType.proxy));
+                trustedNodes.addAll(candidates.parentNodes(trustedNodes).asList()); // TODO: Remove when we no longer have IPv4-only nodes
+                trustedNodes.addAll(candidates.nodeType(NodeType.proxy).asList());
                 if (node.state() == Node.State.ready) {
                     // Tenant nodes in state ready, trust:
                     // - All tenant nodes in zone. When a ready node is allocated to a an application there's a brief
                     //   window where current ACLs have not yet been applied on the node. To avoid service disruption
                     //   during this window, ready tenant nodes trust all other tenant nodes.
-                    trustedNodes.addAll(getNodes(NodeType.tenant));
+                    trustedNodes.addAll(candidates.nodeType(NodeType.tenant).asList());
                 }
                 break;
 
             case config:
                 // Config servers trust all nodes
-                trustedNodes.addAll(getNodes());
+                trustedNodes.addAll(candidates.asList());
                 break;
 
             case proxy:
@@ -203,13 +203,14 @@ public class NodeRepository extends AbstractComponent {
      * @return List of node ACLs
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
-        final List<NodeAcl> nodeAcls = new ArrayList<>();
+        List<NodeAcl> nodeAcls = new ArrayList<>();
 
+        NodeList candidates = new NodeList(getNodes());
         if (children) {
-            final List<Node> childNodes = getChildNodes(node.hostname());
-            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode))));
+            List<Node> childNodes = candidates.childNodes(node).asList();
+            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode, candidates))));
         } else {
-            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
+            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node, candidates)));
         }
 
         return Collections.unmodifiableList(nodeAcls);
@@ -510,17 +511,6 @@ public class NodeRepository extends AbstractComponent {
                 .map(host -> createNode(host, host, Optional.empty(),
                         flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
                         NodeType.config))
-                .collect(Collectors.toList());
-    }
-
-    private List<Node> getDockerHosts(Set<Node> nodes) {
-        return nodes.stream()
-                .map(Node::parentHostname)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(hostName -> getNode(hostName))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
