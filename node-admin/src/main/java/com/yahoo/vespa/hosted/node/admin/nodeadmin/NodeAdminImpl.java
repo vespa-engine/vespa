@@ -17,13 +17,13 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,15 +39,15 @@ import java.util.stream.Stream;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService aclScheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService metricsScheduler = Executors.newScheduledThreadPool(1);
 
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final Optional<StorageMaintainer> storageMaintainer;
-    private final Optional<AclMaintainer> aclMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
-    private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
+    private final Map<String, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 
     private final int nodeAgentScanIntervalMillis;
 
@@ -61,7 +61,6 @@ public class NodeAdminImpl implements NodeAdmin {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
-        this.aclMaintainer = aclMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
         Dimensions dimensions = new Dimensions.Builder()
@@ -72,15 +71,15 @@ public class NodeAdminImpl implements NodeAdmin {
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
 
-        scheduler.scheduleWithFixedDelay(() -> {
+        metricsScheduler.scheduleAtFixedRate(() -> {
             try {
                 nodeAgents.values().forEach(nodeAgent -> nodeAgent.updateContainerNodeMetrics(nodeAgents.size()));
             } catch (Throwable e) {
                 logger.warning("Metric fetcher scheduler failed", e);
             }
-        }, 0, 30000, TimeUnit.MILLISECONDS);
+        }, 0, 30, TimeUnit.SECONDS);
 
-        this.aclMaintainer.ifPresent(maintainer -> scheduler.scheduleAtFixedRate(maintainer, 30, 60, TimeUnit.SECONDS));
+        aclMaintainer.ifPresent(maintainer -> aclScheduler.scheduleAtFixedRate(maintainer, 30, 60, TimeUnit.SECONDS));
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
@@ -176,10 +175,15 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void shutdown() {
-        scheduler.shutdown();
+        metricsScheduler.shutdown();
+        aclScheduler.shutdown();
         try {
-            if (! scheduler.awaitTermination(30, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Did not manage to shutdown node-agent metrics update metricsFetcherScheduler.");
+            boolean metricsSchedulerShutdown = metricsScheduler.awaitTermination(30, TimeUnit.SECONDS);
+            boolean aclSchedulerShutdown = aclScheduler.awaitTermination(30, TimeUnit.SECONDS);
+            if (! (metricsSchedulerShutdown && aclSchedulerShutdown)) {
+                throw new RuntimeException("Failed shuttingdown all scheduler(s), shutdown status:\n" +
+                        "\tMetrics Scheduler: " + metricsSchedulerShutdown + "\n" +
+                        "\tACL Scheduler: " + aclSchedulerShutdown);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

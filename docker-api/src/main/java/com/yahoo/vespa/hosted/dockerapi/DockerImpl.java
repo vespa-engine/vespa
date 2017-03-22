@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -278,7 +279,7 @@ public class DockerImpl implements Docker {
     public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         try {
             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
-            statsCallback.awaitCompletion(10, TimeUnit.SECONDS);
+            statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
 
             return statsCallback.stats.map(stats -> new ContainerStatsImpl(
                     stats.getNetworks(), stats.getCpuStats(), stats.getMemoryStats(), stats.getBlkioStats()));
@@ -446,15 +447,26 @@ public class DockerImpl implements Docker {
         }
     }
 
+    // docker-java currently (3.0.8) does not support getting docker stats with stream=false, therefore we need
+    // to subscribe to the stream and complete as soon we get the first result.
     private class DockerStatsCallback extends ResultCallbackTemplate<DockerStatsCallback, Statistics> {
         private Optional<Statistics> stats = Optional.empty();
+        private final CountDownLatch completed = new CountDownLatch(1);
 
         @Override
         public void onNext(Statistics stats) {
             if (stats != null) {
                 this.stats = Optional.of(stats);
+                completed.countDown();
                 onComplete();
             }
+        }
+
+        @Override
+        public boolean awaitCompletion(long timeout, TimeUnit timeUnit) throws InterruptedException {
+            // For some reason it takes as long to execute onComplete as the awaitCompletion timeout is, therefore
+            // we have own awaitCompletion that completes as soon as we get the first result.
+            return completed.await(timeout, timeUnit);
         }
     }
 
