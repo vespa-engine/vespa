@@ -84,9 +84,6 @@ private:
                                     const Spec &newSpec,
                                     Spec::AttributeList &toBeAdded);
 
-    void flushRemovedAttributes(const AttributeManager &currMgr,
-                                const Spec &newSpec);
-
     void addNewAttributes(const Spec &newSpec,
                           const Spec::AttributeList &toBeAdded,
                           IAttributeInitializerRegistry &initializerRegistry);

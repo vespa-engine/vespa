@@ -97,28 +97,6 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
 }
 
 void
-AttributeManager::flushRemovedAttributes(const AttributeManager &currMgr,
-                                         const Spec &newSpec)
-{
-    for (const auto &kv : currMgr._attributes) {
-        if (!newSpec.hasAttribute(kv.first) &&
-            !kv.second.isExtra() &&
-            kv.second->getStatus().getLastSyncToken() <
-            newSpec.getCurrentSerialNum() - 1) {
-            FlushableAttribute::SP flushable =
-                currMgr.findFlushable(kv.first);
-            vespalib::Executor::Task::UP flushTask =
-                flushable->initFlush(newSpec.getCurrentSerialNum() - 1);
-            if (flushTask.get() != NULL) {
-                LOG(debug, "Flushing removed attribute vector '%s' with %u docs and serial number %lu",
-                           kv.first.c_str(), kv.second->getNumDocs(), kv.second->getStatus().getLastSyncToken());
-                flushTask->run();
-            }
-        }
-    }
-}
-
-void
 AttributeManager::addNewAttributes(const Spec &newSpec,
                                    const Spec::AttributeList &toBeAdded,
                                    IAttributeInitializerRegistry &initializerRegistry)
@@ -223,7 +201,6 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
 {
     Spec::AttributeList toBeAdded;
     transferExistingAttributes(currMgr, newSpec, toBeAdded);
-    flushRemovedAttributes(currMgr, newSpec);
     addNewAttributes(newSpec, toBeAdded, initializerRegistry);
     transferExtraAttributes(currMgr);
 }
