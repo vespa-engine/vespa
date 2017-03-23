@@ -142,7 +142,10 @@ struct Fixture : public test::DirectoryHandler
         auto dir = createFooAttrDir();
         auto writer = dir->getWriter();
         writer->invalidateOldSnapshots(10);
-        writer->removeInvalidSnapshots(removeDir);
+        writer->removeInvalidSnapshots();
+        if (removeDir) {
+            writer->removeDiskDir();
+        }
         TEST_DO(assertGetAttributeDir("foo", dir));
     }
 
@@ -210,7 +213,7 @@ TEST_F("Test that we can prune attribute snapshots", Fixture)
     TEST_DO(f.assertSnapshots("foo", "v2,v4"));
     dir->getWriter()->invalidateOldSnapshots();
     TEST_DO(f.assertSnapshots("foo", "i2,v4"));
-    dir->getWriter()->removeInvalidSnapshots(false);
+    dir->getWriter()->removeInvalidSnapshots();
     TEST_DO(f.assertSnapshots("foo", "v4"));
 }
 

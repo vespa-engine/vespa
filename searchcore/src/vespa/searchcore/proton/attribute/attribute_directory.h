@@ -39,10 +39,10 @@ private:
     void markValidSnapshot(SerialNum serialNum);
     void invalidateOldSnapshots(SerialNum serialNum);
     void invalidateOldSnapshots();
-    bool removeInvalidSnapshots(bool removeDir);
+    void removeInvalidSnapshots();
+    bool removeDiskDir();
     void detach();
     vespalib::string getDirName() const;
-    bool empty() const;
 
 public:
     AttributeDirectory(const std::shared_ptr<AttributeDiskLayout> &diskLayout,
@@ -70,7 +70,8 @@ public:
         // methods called while pruning old snapshots or removing attribute
         void invalidateOldSnapshots(SerialNum serialNum) { _dir.invalidateOldSnapshots(serialNum); }
         void invalidateOldSnapshots() { _dir.invalidateOldSnapshots(); }
-        bool removeInvalidSnapshots(bool removeDir) { return _dir.removeInvalidSnapshots(removeDir); }
+        void removeInvalidSnapshots() { _dir.removeInvalidSnapshots(); }
+        bool removeDiskDir() { return _dir.removeDiskDir(); }
         void detach() { _dir.detach(); }
     };
 
@@ -78,6 +79,8 @@ public:
     std::unique_ptr<Writer> tryGetWriter();
     SerialNum getFlushedSerialNum() const;
     fastos::TimeStamp getLastFlushTime() const;
+    bool empty() const;
+    vespalib::string getAttributeFileName(SerialNum serialNum);
 };
 
 } // namespace proton

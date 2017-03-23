@@ -36,7 +36,7 @@ AttributeManager::internalAddAttribute(const vespalib::string &name,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_diskLayout->getBaseDir(), _documentSubDbName, name, cfg, serialNum, factory);
+    AttributeInitializer initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, cfg, serialNum, factory);
     AttributeVector::SP attr = initializer.init();
     if (attr.get() != NULL) {
         attr->setInterlock(_interlock);
@@ -54,7 +54,7 @@ AttributeManager::addAttribute(const AttributeWrap &attribute)
     if ( ! attribute.isExtra() ) {
         // Flushing of extra attributes is handled elsewhere
         _flushables[attribute->getName()] = FlushableAttribute::SP
-                (new FlushableAttribute(attribute, _diskLayout->getBaseDir(),
+                                            (new FlushableAttribute(attribute, _diskLayout->createAttributeDir(attribute->getName()),
                                         _tuneFileAttributes,
                                         _fileHeaderContext,
                                         _attributeFieldWriter,
@@ -97,28 +97,6 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
 }
 
 void
-AttributeManager::flushRemovedAttributes(const AttributeManager &currMgr,
-                                         const Spec &newSpec)
-{
-    for (const auto &kv : currMgr._attributes) {
-        if (!newSpec.hasAttribute(kv.first) &&
-            !kv.second.isExtra() &&
-            kv.second->getStatus().getLastSyncToken() <
-            newSpec.getCurrentSerialNum()) {
-            FlushableAttribute::SP flushable =
-                currMgr.findFlushable(kv.first);
-            vespalib::Executor::Task::UP flushTask =
-                flushable->initFlush(newSpec.getCurrentSerialNum());
-            if (flushTask.get() != NULL) {
-                LOG(debug, "Flushing removed attribute vector '%s' with %u docs and serial number %lu",
-                           kv.first.c_str(), kv.second->getNumDocs(), kv.second->getStatus().getLastSyncToken());
-                flushTask->run();
-            }
-        }
-    }
-}
-
-void
 AttributeManager::addNewAttributes(const Spec &newSpec,
                                    const Spec::AttributeList &toBeAdded,
                                    IAttributeInitializerRegistry &initializerRegistry)
@@ -128,7 +106,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
                    aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
         AttributeInitializer::UP initializer =
-                std::make_unique<AttributeInitializer>(_diskLayout->getBaseDir(), _documentSubDbName, aspec.getName(),
+            std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName,
                         aspec.getConfig(), newSpec.getCurrentSerialNum(), *_factory);
         initializerRegistry.add(std::move(initializer));
 
@@ -177,7 +155,6 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _hwInfo(hwInfo),
       _importedAttributes()
 {
-    _diskLayout->createBaseDir();
 }
 
 
@@ -203,7 +180,6 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _hwInfo(hwInfo),
       _importedAttributes()
 {
-    _diskLayout->createBaseDir();
 }
 
 AttributeManager::AttributeManager(const AttributeManager &currMgr,
@@ -225,7 +201,6 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
 {
     Spec::AttributeList toBeAdded;
     transferExistingAttributes(currMgr, newSpec, toBeAdded);
-    flushRemovedAttributes(currMgr, newSpec);
     addNewAttributes(newSpec, toBeAdded, initializerRegistry);
     transferExtraAttributes(currMgr);
 }
@@ -441,12 +416,11 @@ AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
 void
 AttributeManager::wipeHistory(search::SerialNum wipeSerial)
 {
-    const vespalib::string &baseDir = _diskLayout->getBaseDir();
-    std::vector<vespalib::string> attributes = AttributeDiskLayout::listAttributes(baseDir);
+    std::vector<vespalib::string> attributes = _diskLayout->listAttributes();
     for (const auto &attribute : attributes) {
         auto itr = _attributes.find(attribute);
         if (itr == _attributes.end()) {
-            AttributeDiskLayout::removeAttribute(baseDir, attribute, wipeSerial);
+            _diskLayout->removeAttributeDir(attribute, wipeSerial);
         }
     }
 }

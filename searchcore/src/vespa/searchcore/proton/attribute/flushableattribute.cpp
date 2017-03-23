@@ -12,6 +12,8 @@
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <future>
+#include "attribute_directory.h"
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.flushableattribute");
@@ -25,7 +27,37 @@ using vespalib::makeClosure;
 
 namespace proton {
 
-FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncToken)
+/**
+ * Task performing the actual flushing to disk.
+ **/
+class FlushableAttribute::Flusher : public Task {
+private:
+    FlushableAttribute              & _fattr;
+    search::AttributeMemorySaveTarget      _saveTarget;
+    std::unique_ptr<search::AttributeSaver> _saver;
+    uint64_t                          _syncToken;
+    search::AttributeVector::BaseName _flushFile;
+
+    bool saveAttribute(); // not updating snap info.
+public:
+    Flusher(FlushableAttribute & fattr, uint64_t syncToken, AttributeDirectory::Writer &writer);
+    ~Flusher();
+    uint64_t getSyncToken() const { return _syncToken; }
+    bool flush(AttributeDirectory::Writer &writer);
+    void updateStats();
+    bool cleanUp(AttributeDirectory::Writer &writer);
+    // Implements vespalib::Executor::Task
+    virtual void run();
+
+    virtual SerialNum
+    getFlushSerial(void) const
+    {
+        return _syncToken;
+    }
+};
+
+
+FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncToken, AttributeDirectory::Writer &writer)
     : _fattr(fattr),
       _saveTarget(),
       _saver(),
@@ -38,9 +70,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     if (attr.canShrinkLidSpace()) {
         attr.shrinkLidSpace();
     }
-    _flushFile = AttributeDiskLayout::getAttributeFileName(_fattr._baseDir,
-                                                           attr.getName(),
-                                                           _syncToken);
+    _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
     attr.setBaseFileName(_flushFile);
     _saver = attr.initSave();
     if (!_saver) {
@@ -52,18 +82,6 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
 FlushableAttribute::Flusher::~Flusher()
 {
     // empty
-}
-
-bool
-FlushableAttribute::Flusher::saveSnapInfo()
-{
-    if (!_fattr._snapInfo.save()) {
-        LOG(warning,
-            "Could not save meta-info file for attribute vector '%s' to disk",
-            _fattr._attr->getBaseFileName().c_str());
-        return false;
-    }
-    return true;
 }
 
 bool
@@ -93,31 +111,16 @@ FlushableAttribute::Flusher::saveAttribute()
 }
 
 bool
-FlushableAttribute::Flusher::flush()
+FlushableAttribute::Flusher::flush(AttributeDirectory::Writer &writer)
 {
-    IndexMetaInfo::Snapshot newSnap(false, _syncToken,
-                                    _flushFile.getSnapshotName());
-    {
-        vespalib::LockGuard guard(_fattr._snapInfoLock);
-        _fattr._snapInfo.addSnapshot(newSnap);
-    }
-    if (!saveSnapInfo()) {
-        return false;
-    }
+    writer.createInvalidSnapshot(_syncToken);
     if (!saveAttribute()) {
         LOG(warning, "Could not write attribute vector '%s' to disk",
             _flushFile.c_str());
         return false;
     }
-    {
-        vespalib::LockGuard guard(_fattr._snapInfoLock);
-        _fattr._snapInfo.validateSnapshot(_syncToken);
-    }
-    if (!saveSnapInfo()) {
-        return false;
-    }
-    _fattr._lastFlushTime =
-        search::FileKit::getModificationTime(_flushFile.getDirName());
+    writer.markValidSnapshot(_syncToken);
+    writer.setLastFlushTime(search::FileKit::getModificationTime(_flushFile.getDirName()));
     return true;
 }
 
@@ -128,17 +131,11 @@ FlushableAttribute::Flusher::updateStats()
 }
 
 bool
-FlushableAttribute::Flusher::cleanUp()
+FlushableAttribute::Flusher::cleanUp(AttributeDirectory::Writer &writer)
 {
     if (_fattr._cleanUpAfterFlush) {
-        if (!AttributeDiskLayout::removeOldSnapshots(_fattr._snapInfo,
-                    _fattr._snapInfoLock)) {
-            LOG(warning,
-                "Encountered problems when removing old snapshot directories"
-                "after flushing attribute vector '%s' to disk",
-                _fattr._attr->getBaseFileName().c_str());
-            return false;
-        }
+        writer.invalidateOldSnapshots();
+        writer.removeInvalidSnapshots();
     }
     return true;
 }
@@ -146,23 +143,23 @@ FlushableAttribute::Flusher::cleanUp()
 void
 FlushableAttribute::Flusher::run()
 {
-    vespalib::LockGuard guard(_fattr._flusherLock);
-    if (_syncToken <= _fattr.getFlushedSerialNum()) {
+    auto writer = _fattr._attrDir->tryGetWriter();
+    if (!writer || _syncToken <= _fattr.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created
         return;
     }
-    if (!flush()) {
+    if (!flush(*writer)) {
         // TODO (geirst): throw exception ?
     }
     updateStats();
-    if (!cleanUp()) {
+    if (!cleanUp(*writer)) {
         // TODO (geirst): throw exception ?
     }
 }
 
 FlushableAttribute::FlushableAttribute(const AttributeVector::SP attr,
-                                       const vespalib::string & baseDir,
+                                       const std::shared_ptr<AttributeDirectory> &attrDir,
                                        const TuneFileAttributes &
                                        tuneFileAttributes,
                                        const FileHeaderContext &
@@ -175,28 +172,14 @@ FlushableAttribute::FlushableAttribute(const AttributeVector::SP attr,
                            attr->getName().c_str()),
             Type::SYNC, Component::ATTRIBUTE),
       _attr(attr),
-      _baseDir(baseDir),
-      _snapInfo(AttributeDiskLayout::getAttributeBaseDir(baseDir,
-                        attr->getName())),
-      _snapInfoLock(),
-      _flusherLock(),
       _cleanUpAfterFlush(true),
       _lastStats(),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
-      _lastFlushTime(),
       _attributeFieldWriter(attributeFieldWriter),
-      _hwInfo(hwInfo)
+      _hwInfo(hwInfo),
+      _attrDir(attrDir)
 {
-    if (!_snapInfo.load()) {
-        _snapInfo.save();
-    } else {
-        vespalib::string dirName =
-            AttributeDiskLayout::getAttributeFileName(_baseDir,
-                    _attr->getName(),
-                    getFlushedSerialNum()).getDirName();
-        _lastFlushTime = search::FileKit::getModificationTime(dirName);
-    }
     _lastStats.setPathElementsToLog(8);
 }
 
@@ -209,9 +192,7 @@ FlushableAttribute::~FlushableAttribute()
 IFlushTarget::SerialNum
 FlushableAttribute::getFlushedSerialNum() const
 {
-    vespalib::LockGuard guard(_snapInfoLock);
-    IndexMetaInfo::Snapshot bestSnap = _snapInfo.getBestSnapshot();
-    return bestSnap.valid ? bestSnap.syncToken : 0;
+    return _attrDir->getFlushedSerialNum();
 }
 
 IFlushTarget::MemoryGain
@@ -253,34 +234,36 @@ FlushableAttribute::getApproxDiskGain() const
 IFlushTarget::Time
 FlushableAttribute::getLastFlushTime() const
 {
-    return _lastFlushTime;
+    return _attrDir->getLastFlushTime();
 }
 
 IFlushTarget::Task::UP
 FlushableAttribute::internalInitFlush(SerialNum currentSerial)
 {
-    // Called by document db executor
-    (void)currentSerial;
+    // Called by attribute field writer thread while document db executor waits
     _attr->removeAllOldGenerations();
-    SerialNum syncToken = currentSerial;
-    syncToken = std::max(currentSerial,
-                         _attr->getStatus().getLastSyncToken());
+    SerialNum syncToken = std::max(currentSerial,
+                                   _attr->getStatus().getLastSyncToken());
+    auto writer = _attrDir->tryGetWriter();
+    if (!writer) {
+        return Task::UP();
+    }
     if (syncToken <= getFlushedSerialNum()) {
-        vespalib::LockGuard guard(_flusherLock);
-        _lastFlushTime = fastos::ClockSystem::now();
+        writer->setLastFlushTime(fastos::ClockSystem::now());
         LOG(debug,
             "No attribute vector to flush."
             " Update flush time to current: lastFlushTime(%f)",
-            _lastFlushTime.sec());
+            getLastFlushTime().sec());
         return Task::UP();
     }
-    return Task::UP(new Flusher(*this, syncToken));
+    return Task::UP(new Flusher(*this, syncToken, *writer));
 }
 
 
 IFlushTarget::Task::UP
 FlushableAttribute::initFlush(SerialNum currentSerial)
 {
+    // Called by document db executor
     std::promise<IFlushTarget::Task::UP> promise;
     std::future<IFlushTarget::Task::UP> future = promise.get_future();
     _attributeFieldWriter.execute(_attr->getName(),

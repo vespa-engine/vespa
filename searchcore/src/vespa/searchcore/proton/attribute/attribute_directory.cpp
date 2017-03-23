@@ -60,7 +60,10 @@ AttributeDirectory::getDirName() const
         diskLayout = _diskLayout.lock();
     }
     assert(diskLayout);
-    return AttributeDiskLayout::getAttributeBaseDir(diskLayout->getBaseDir(), _name);
+    if (_name.empty()) {
+        return diskLayout->getBaseDir();
+    }
+    return diskLayout->getBaseDir() + "/" + _name;
 }
 
 SerialNum
@@ -98,10 +101,8 @@ AttributeDirectory::saveSnapInfo()
 vespalib::string
 AttributeDirectory::getSnapshotDir(search::SerialNum serialNum)
 {
-    auto snap = _snapInfo.getSnapshot(serialNum);
-    assert(snap.syncToken == serialNum);
     vespalib::string dirName(getDirName());
-    return dirName + "/" + snap.dirName;
+    return dirName + "/" + getSnapshotDirComponent(serialNum);
 }
 
 void
@@ -162,8 +163,8 @@ AttributeDirectory::invalidateOldSnapshots()
     }
 }
 
-bool
-AttributeDirectory::removeInvalidSnapshots(bool removeDir)
+void
+AttributeDirectory::removeInvalidSnapshots()
 {
     std::vector<SerialNum> toRemove;
     auto &list = _snapInfo.snapshots();
@@ -185,7 +186,12 @@ AttributeDirectory::removeInvalidSnapshots(bool removeDir)
         }
         saveSnapInfo();
     }
-    if (empty() && removeDir) {
+}
+
+bool
+AttributeDirectory::removeDiskDir()
+{
+    if (empty()) {
         vespalib::string dirName(getDirName());
         vespalib::rmdir(dirName, true);
         return true;
@@ -233,6 +239,12 @@ AttributeDirectory::empty() const
 {
     std::unique_lock<std::mutex> guard(_mutex);
     return _snapInfo.snapshots().empty();
+}
+
+vespalib::string
+AttributeDirectory::getAttributeFileName(SerialNum serialNum)
+{
+    return getSnapshotDir(serialNum) + "/" + _name;
 }
 
 AttributeDirectory::Writer::Writer(AttributeDirectory &dir)
