@@ -4,14 +4,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributedisklayout");
 #include "attributedisklayout.h"
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include "attribute_directory.h"
-
-using search::IndexMetaInfo;
-using search::index::SchemaBuilder;
-using search::index::Schema;
-using search::AttributeVector;
 
 namespace proton
 {

@@ -13,6 +13,7 @@
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <future>
 #include "attribute_directory.h"
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.flushableattribute");

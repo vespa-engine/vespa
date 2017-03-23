@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/common/indexmetainfo.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <mutex>
 #include <shared_mutex>
 #include <map>
+#include <vector>
 
 namespace proton {
 
