@@ -59,9 +59,9 @@ public class ImportedFieldsResolver extends Processor {
         if (targetField == null) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
         } else if (!targetField.doesAttributing()) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute field");
         } else if (targetField.doesIndexing()) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Index not allowed");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Index field not supported");
         } else if (targetField.getDataType() instanceof TensorDataType) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Type 'tensor' not supported");
         }
