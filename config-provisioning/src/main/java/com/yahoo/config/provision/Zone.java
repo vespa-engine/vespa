@@ -70,6 +70,20 @@ public class Zone {
     public String toString() {
         return "zone " + environment + "." + region;
     }
+    
+    @Override
+    public int hashCode() { return environment().hashCode() + 7 * region.hashCode();}
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if ( ! (o instanceof Zone)) return false;
+        
+        Zone other = (Zone)o;
+        if ( this.environment() != other.environment()) return false;
+        if ( ! this.region.equals(other.region)) return false;
+        return true;
+    }
 
     private static class FlavorDefaults {
 
