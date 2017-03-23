@@ -18,7 +18,8 @@
       "parentHostname": "parent.host.name.yahoo.com"
     },
     "metrics": {
-      "alive": 1.0
+      "alive": 1.0,
+      "uptime": 1234.0
     },
     "routing": {
       "yamas": {
@@ -76,7 +77,7 @@
       "zone":"dev.us-east-1"
     },
     "metrics":{
-      "node.cpu.busy.pct": 49.3827156,
+      "node.cpu.busy.pct": 6.75,
       "node.cpu.throttled_time": 4523.0,
       "node.memory.usage":1.326026752E9,
       "node.memory.limit":4.294967296E9,

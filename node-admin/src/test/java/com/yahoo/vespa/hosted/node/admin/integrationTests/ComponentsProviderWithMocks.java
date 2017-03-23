@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
+import java.time.Clock;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -33,7 +34,7 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
-                    dockerOperations, Optional.empty(), mr, environment, Optional.empty());
+                    dockerOperations, Optional.empty(), mr, environment, Clock.systemUTC(), Optional.empty());
     private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100, mr, Optional.empty());
 
 

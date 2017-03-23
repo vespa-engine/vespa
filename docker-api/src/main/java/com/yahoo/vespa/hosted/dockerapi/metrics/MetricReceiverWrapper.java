@@ -8,17 +8,20 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * Export metrics to both /state/v1/metrics and makes them available programmatically.
  * Each metric belongs to a yamas application
  *
- * @author valerijf
+ * @author freva
  */
 public class MetricReceiverWrapper {
     // Application names used
@@ -98,6 +101,19 @@ public class MetricReceiverWrapper {
         }
     }
 
+    // For testing, returns same as getAllMetrics(), but without "timestamp"
+    public Set<Map<String, Object>> getAllMetricsRaw() {
+        synchronized (monitor) {
+            Set<Map<String, Object>> dimensionMetrics = new HashSet<>();
+            applicationMetrics.entrySet()
+                    .forEach(e -> e.getValue().metricsByDimensions().entrySet().stream()
+                            .map(entry -> new DimensionMetrics(e.getKey(), entry.getKey(), entry.getValue()))
+                            .map(DimensionMetrics::getMetrics)
+                            .forEach(dimensionMetrics::add));
+            return dimensionMetrics;
+        }
+    }
+
     // For testing
     Map<String, Number> getMetricsForDimension(String application, Dimensions dimensions) {
         synchronized (monitor) {
@@ -119,18 +135,23 @@ public class MetricReceiverWrapper {
                     Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
         }
 
-        public String toSecretAgentReport() throws JsonProcessingException {
+        private Map<String, Object> getMetrics() {
             final Map<String, Object> routing = new HashMap<>();
             final Map<String, Object> routingYamas = new HashMap<>();
             routing.put("yamas", routingYamas);
-            routingYamas.put("namespaces", new String[]{"Vespa"});
+            routingYamas.put("namespaces", Arrays.asList("Vespa"));
 
-            Map<String, Object> report = new LinkedHashMap<>();
+            Map<String, Object> report = new HashMap<>();
             report.put("application", application);
-            report.put("timestamp", System.currentTimeMillis() / 1000);
             report.put("dimensions", dimensions.dimensionsMap);
             report.put("metrics", metrics);
             report.put("routing", routing);
+            return report;
+        }
+
+        public String toSecretAgentReport() throws JsonProcessingException {
+            Map<String, Object> report = getMetrics();
+            report.put("timestamp", System.currentTimeMillis() / 1000);
 
             return objectMapper.writeValueAsString(report);
         }
