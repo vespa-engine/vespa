@@ -111,6 +111,19 @@ fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64
     test::AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
 }
 
+search::SerialNum getCreateSerialNum(const AttributeGuard::UP &guard)
+{
+    if (!guard || !guard->valid()) {
+        return 0;
+    } else {
+        return (*guard)->getCreateSerialNum();
+    }
+}
+
+void assertCreateSerialNum(const AttributeManager &am, const vespalib::string &name, search::SerialNum expCreateSerialNum) {
+    EXPECT_EQUAL(expCreateSerialNum, getCreateSerialNum(am.getAttribute(name)));
+}
+
 struct ImportedAttributesRepoBuilder {
     ImportedAttributesRepo::UP _repo;
     ImportedAttributesRepoBuilder() : _repo(std::make_unique<ImportedAttributesRepo>()) {}
@@ -738,6 +751,23 @@ TEST_F("require that imported attributes are exposed via attribute context toget
     EXPECT_EQUAL(2u, all.size());
     EXPECT_EQUAL("attr", all[0]->getName());
     EXPECT_EQUAL("imported", all[1]->getName());
+}
+
+TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
+{
+    auto am1(std::make_shared<proton::AttributeManager>
+             (test_dir, "test.subdb", TuneFileAttributes(),
+              f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
+    am1->addAttribute("a1", INT32_SINGLE, 1);
+    am1->addAttribute("a2", INT32_SINGLE, 2);
+    AttrSpecList newSpec;
+    newSpec.push_back(AttrSpec("a1", INT32_SINGLE));
+    newSpec.push_back(AttrSpec("a2", INT32_ARRAY));
+    SequentialAttributeManager am2(*am1, AttrMgrSpec(newSpec, 5, 20));
+    TEST_DO(assertCreateSerialNum(*am1, "a1", 1));
+    TEST_DO(assertCreateSerialNum(*am1, "a2", 2));
+    TEST_DO(assertCreateSerialNum(am2.mgr, "a1", 1));
+    TEST_DO(assertCreateSerialNum(am2.mgr, "a2", 20));
 }
 
 TEST_MAIN()

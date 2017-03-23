@@ -30,6 +30,20 @@ using search::index::Schema;
 
 namespace proton {
 
+namespace {
+
+bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Config &newConfig) {
+    if (av) {
+        const auto &oldConfig = av->getConfig();
+        return ((oldConfig.basicType() == newConfig.basicType()) &&
+                (oldConfig.collectionType() == newConfig.collectionType()));
+    } else {
+        return false;
+    }
+}
+
+}
+
 AttributeVector::SP
 AttributeManager::internalAddAttribute(const vespalib::string &name,
                                        const Config &cfg,
@@ -86,7 +100,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
 {
     for (const auto &aspec : newSpec.getAttributes()) {
         AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
-        if (av.get() != NULL) { // transfer attribute
+        if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
             LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
                        av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
             addAttribute(av);
