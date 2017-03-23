@@ -63,7 +63,7 @@ AttributeDirectory::getDirName() const
     if (_name.empty()) {
         return diskLayout->getBaseDir();
     }
-    return AttributeDiskLayout::getAttributeBaseDir(diskLayout->getBaseDir(), _name);
+    return diskLayout->getBaseDir() + "/" + _name;
 }
 
 SerialNum
@@ -234,6 +234,12 @@ AttributeDirectory::empty() const
 {
     std::unique_lock<std::mutex> guard(_mutex);
     return _snapInfo.snapshots().empty();
+}
+
+vespalib::string
+AttributeDirectory::getAttributeFileName(SerialNum serialNum)
+{
+    return getSnapshotDir(serialNum) + "/" + _name;
 }
 
 AttributeDirectory::Writer::Writer(AttributeDirectory &dir)

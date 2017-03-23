@@ -271,10 +271,8 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         EXPECT_EQUAL(1u, a2->getNumDocs());	// Not resized to size of attributemanager
         fillAttribute(a2, 1, 5, 4, 10);
         EXPECT_EQUAL(5u, a2->getNumDocs());	// Increased
-        EXPECT_TRUE(ia1.load());
-        EXPECT_TRUE(!ia1.getBestSnapshot().valid);
-        EXPECT_TRUE(ia2.load());
-        EXPECT_TRUE(!ia2.getBestSnapshot().valid);
+        EXPECT_TRUE(!ia1.load());
+        EXPECT_TRUE(!ia2.load());
         EXPECT_TRUE(!ia3.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
@@ -308,8 +306,7 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         EXPECT_EQUAL(10u, ia1.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia2.load());
         EXPECT_EQUAL(10u, ia2.getBestSnapshot().syncToken);
-        EXPECT_TRUE(ia3.load());
-        EXPECT_TRUE(!ia3.getBestSnapshot().valid);
+        EXPECT_TRUE(!ia3.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
         EXPECT_EQUAL(20u, ia1.getBestSnapshot().syncToken);
@@ -357,8 +354,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
 
         EXPECT_EQUAL(2u, a1->getNumDocs());
 
-        EXPECT_TRUE(ia1.load());
-        EXPECT_TRUE(!ia1.getBestSnapshot().valid);
+        EXPECT_TRUE(!ia1.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
         EXPECT_EQUAL(10u, ia1.getBestSnapshot().syncToken);

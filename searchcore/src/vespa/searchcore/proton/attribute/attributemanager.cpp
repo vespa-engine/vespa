@@ -36,7 +36,7 @@ AttributeManager::internalAddAttribute(const vespalib::string &name,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_diskLayout->getBaseDir(), _documentSubDbName, name, cfg, serialNum, factory);
+    AttributeInitializer initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, cfg, serialNum, factory);
     AttributeVector::SP attr = initializer.init();
     if (attr.get() != NULL) {
         attr->setInterlock(_interlock);
@@ -128,7 +128,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
                    aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
         AttributeInitializer::UP initializer =
-                std::make_unique<AttributeInitializer>(_diskLayout->getBaseDir(), _documentSubDbName, aspec.getName(),
+            std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName,
                         aspec.getConfig(), newSpec.getCurrentSerialNum(), *_factory);
         initializerRegistry.add(std::move(initializer));
 

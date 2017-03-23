@@ -4,10 +4,12 @@
 
 #include "i_attribute_factory.h"
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchlib/common/serialnum.h>
 
 namespace proton {
+
+class AttributeDirectory;
 
 /**
  * Class used by an attribute manager to initialize and load attribute vectors from disk.
@@ -28,28 +30,26 @@ public:
     };
 
 private:
-    const vespalib::string          _baseDir;
+    std::shared_ptr<AttributeDirectory> _attrDir;
     const vespalib::string          _documentSubDbName;
-    const vespalib::string          _attrName;
     const search::attribute::Config _cfg;
     const uint64_t                  _currentSerialNum;
     const IAttributeFactory        &_factory;
 
-    search::AttributeVector::SP tryLoadAttribute(const search::IndexMetaInfo &info) const;
+    search::AttributeVector::SP tryLoadAttribute() const;
 
     bool loadAttribute(const search::AttributeVector::SP &attr,
-                       const search::IndexMetaInfo::Snapshot &snap) const;
+                       search::SerialNum serialNum) const;
 
     void setupEmptyAttribute(search::AttributeVector::SP &attr,
-                             const search::IndexMetaInfo::Snapshot &snap,
+                             search::SerialNum serialNum,
                              const AttributeHeader &header) const;
 
-    search::AttributeVector::SP createAndSetupEmptyAttribute(search::IndexMetaInfo &info) const;
+    search::AttributeVector::SP createAndSetupEmptyAttribute() const;
 
 public:
-    AttributeInitializer(const vespalib::string &baseDir,
+    AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                          const vespalib::string &documentSubDbName,
-                         const vespalib::string &attrName,
                          const search::attribute::Config &cfg,
                          uint64_t currentSerialNum,
                          const IAttributeFactory &factory);

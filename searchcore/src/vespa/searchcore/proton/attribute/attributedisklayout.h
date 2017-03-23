@@ -29,8 +29,6 @@ private:
 public:
     explicit AttributeDiskLayout(const vespalib::string &baseDir, PrivateConstructorTag tag);
     ~AttributeDiskLayout();
-    static vespalib::string  getAttributeBaseDir(const vespalib::string &baseDir, const vespalib::string &attrName);
-    static search::AttributeVector::BaseName getAttributeFileName(const vespalib::string &baseDir, const vespalib::string &attrName, uint64_t syncToken);
     std::vector<vespalib::string> listAttributes();
     const vespalib::string &getBaseDir() const { return _baseDir; }
     void createBaseDir();

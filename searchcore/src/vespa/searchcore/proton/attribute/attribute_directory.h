@@ -42,7 +42,6 @@ private:
     bool removeInvalidSnapshots(bool removeDir);
     void detach();
     vespalib::string getDirName() const;
-    bool empty() const;
 
 public:
     AttributeDirectory(const std::shared_ptr<AttributeDiskLayout> &diskLayout,
@@ -78,6 +77,8 @@ public:
     std::unique_ptr<Writer> tryGetWriter();
     SerialNum getFlushedSerialNum() const;
     fastos::TimeStamp getLastFlushTime() const;
+    bool empty() const;
+    vespalib::string getAttributeFileName(SerialNum serialNum);
 };
 
 } // namespace proton

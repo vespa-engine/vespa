@@ -16,16 +16,6 @@ using search::AttributeVector;
 namespace proton
 {
 
-namespace {
-
-vespalib::string
-getSnapshotDir(uint64_t syncToken)
-{
-    return vespalib::make_string("snapshot-%" PRIu64, syncToken);
-}
-
-}
-
 AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, PrivateConstructorTag)
     : _baseDir(baseDir),
       _mutex(),
@@ -41,28 +31,6 @@ void
 AttributeDiskLayout::createBaseDir()
 {
     vespalib::mkdir(_baseDir, false);
-}
-
-vespalib::string
-AttributeDiskLayout::getAttributeBaseDir(const vespalib::string &baseDir,
-                                         const vespalib::string &attrName)
-{
-    if (baseDir.empty()) {
-        return attrName;
-    }
-    return vespalib::make_string("%s/%s",
-                                 baseDir.c_str(),
-                                 attrName.c_str());
-}
-
-AttributeVector::BaseName
-AttributeDiskLayout::getAttributeFileName(const vespalib::string &baseDir,
-                                          const vespalib::string &attrName,
-                                          uint64_t syncToken)
-{
-    return AttributeVector::BaseName(getAttributeBaseDir(baseDir, attrName),
-                                     getSnapshotDir(syncToken),
-                                     attrName);
 }
 
 std::vector<vespalib::string>

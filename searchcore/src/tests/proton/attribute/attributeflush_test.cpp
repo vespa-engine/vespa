@@ -359,8 +359,7 @@ Test::requireThatFlushableAttributeManagesSyncTokenInfo()
     IndexMetaInfo info("flush/a3");
     EXPECT_EQUAL(0u, fa->getFlushedSerialNum());
     EXPECT_TRUE(fa->initFlush(0).get() == NULL);
-    EXPECT_TRUE(info.load());
-    EXPECT_EQUAL(0u, info.snapshots().size());
+    EXPECT_TRUE(!info.load());
 
     av->commit(10, 10); // last sync token = 10
     EXPECT_EQUAL(0u, fa->getFlushedSerialNum());
@@ -406,8 +405,10 @@ Test::requireThatCleanUpIsPerformedAfterFlush(void)
     av->commit(30, 30);
 
     // fake up some snapshots
+    std::string base = "flush/a6";
     std::string snap10 = "flush/a6/snapshot-10";
     std::string snap20 = "flush/a6/snapshot-20";
+    vespalib::mkdir(base, false);
     vespalib::mkdir(snap10, false);
     vespalib::mkdir(snap20, false);
     IndexMetaInfo info("flush/a6");
