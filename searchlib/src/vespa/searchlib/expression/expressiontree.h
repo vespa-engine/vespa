@@ -34,7 +34,6 @@ class ExpressionTree : public ExpressionNode
 {
 public:
     DECLARE_EXPRESSIONNODE(ExpressionTree);
-    typedef vespalib::LinkedPtr<ExpressionTree> LP;
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
@@ -46,8 +45,11 @@ public:
     ExpressionTree(const ExpressionNode & root);
     ExpressionTree(ExpressionNode::UP root);
     ExpressionTree(const ExpressionTree & rhs);
+    ExpressionTree(ExpressionTree &&) = default;
     ~ExpressionTree();
     ExpressionTree & operator = (const ExpressionTree & rhs);
+    ExpressionTree & operator = (ExpressionTree &&) = default;
+
     bool execute(DocId docId, HitRank rank) const;
     bool execute(const document::Document & doc, HitRank rank) const;
     const ExpressionNode * getRoot() const { return _root.get(); }
