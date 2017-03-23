@@ -5,4 +5,8 @@ search ad {
   }
   import field campaign_ref.budget as my_budget {}
   import field person_ref.name as my_person_name {}
+
+  fieldset myfieldset {
+    fields: my_budget, my_person_name
+  }
 }

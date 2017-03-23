@@ -104,12 +104,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Matching getMatching() {
-        throw createUnsupportedException();
+        return importedField.targetField().getMatching();
     }
 
     @Override
     public NormalizeLevel getNormalizing() {
-        throw createUnsupportedException();
+        return importedField.targetField().getNormalizing();
     }
 
     @Override
@@ -124,7 +124,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Stemming getStemming() {
-        throw createUnsupportedException();
+        return importedField.targetField().getStemming();
     }
 
     @Override

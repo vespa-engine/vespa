@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 // TODO: Make a class owned by this, for each of these responsibilities:
 // Managing indexes, managing attributes, managing summary classes.
 // Ensure that after the processing step, all implicit instances of the above types are explicitly represented
-public class Search implements Serializable {
+public class Search implements Serializable, ImmutableSearch {
 
     private static final Logger log = Logger.getLogger(Search.class.getName());
     private static final String SD_DOC_FIELD_NAME = "sddocname";
@@ -188,11 +188,29 @@ public class Search implements Serializable {
         this.importedFields = Optional.of(importedFields);
     }
 
+    @Override
     public Stream<ImmutableSDField> allImportedFields() {
         return importedFields
                 .map(fields -> fields.fields().values().stream())
                 .orElse(Stream.empty())
                 .map(ImmutableImportedSDField::new);
+    }
+
+    @Override
+    // TODO Rename field concepts to make a distinction between concrete fields and imported fields
+    public ImmutableSDField getImmutableField(String name) {
+        ImmutableSDField field = getExtraField(name);
+        if (field != null) {
+            return field;
+        }
+        field = (ImmutableSDField)docType.getField(name);
+        if (field != null) {
+            return field;
+        }
+        return importedFields
+                .map(imf -> imf.fields().get(name))
+                .map(ImmutableImportedSDField::new)
+                .orElse(null);
     }
 
     /**
