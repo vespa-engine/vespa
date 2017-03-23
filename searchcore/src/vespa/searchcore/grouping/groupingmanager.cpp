@@ -49,10 +49,10 @@ GroupingManager::init(const IAttributeContext &attrCtx)
             for (size_t k = grouping.getFirstLevel(); k <= grouping.getLastLevel() &&
                             k < levels.size(); k++) {
                 GroupingLevel & level(levels[k]);
-                ExpressionNode::LP en = level.getExpression().getRoot();
+                ExpressionNode & en = *level.getExpression().getRoot();
 
-                if (en->inherits(AttributeNode::classId)) {
-                    AttributeNode & an = static_cast<AttributeNode &>(*en);
+                if (en.inherits(AttributeNode::classId)) {
+                    AttributeNode & an = static_cast<AttributeNode &>(en);
                     an.useEnumOptimization();
                 }
             }
