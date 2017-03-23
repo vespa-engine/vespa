@@ -39,7 +39,6 @@ public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(ExpressionNode);
     typedef std::unique_ptr<ExpressionNode> UP;
     typedef vespalib::IdentifiablePtr<ExpressionNode> CP;
-    typedef vespalib::IdentifiableLinkedPtr<ExpressionNode> LP;
     virtual const ResultNode & getResult() const = 0;
     bool execute() const { return onExecute(); }
     ExpressionNode & prepare(bool preserveAccurateTypes) { onPrepare(preserveAccurateTypes); return *this; }

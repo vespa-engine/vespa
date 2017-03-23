@@ -50,7 +50,8 @@ public:
     ExpressionTree & operator = (const ExpressionTree & rhs);
     bool execute(DocId docId, HitRank rank) const;
     bool execute(const document::Document & doc, HitRank rank) const;
-    const ExpressionNode::LP & getRoot() const { return _root; }
+    const ExpressionNode * getRoot() const { return _root.get(); }
+    ExpressionNode * getRoot() { return _root.get(); }
     virtual const ResultNode & getResult() const { return _root->getResult(); }
     friend vespalib::Serializer & operator << (vespalib::Serializer & os, const ExpressionTree & et);
     friend vespalib::Deserializer & operator >> (vespalib::Deserializer & is, ExpressionTree & et);
@@ -67,7 +68,7 @@ private:
     typedef std::vector<InterpolatedLookup *> InterpolatedLookupList;
     typedef std::vector<ArrayAtLookup *> ArrayAtLookupList;
 
-    ExpressionNode::LP       _root;
+    vespalib::IdentifiableLinkedPtr<ExpressionNode>  _root;
     AttributeNodeList        _attributeNodes;
     DocumentAccessorNodeList _documentAccessorNodes;
     RelevanceNodeList        _relevanceNodes;
