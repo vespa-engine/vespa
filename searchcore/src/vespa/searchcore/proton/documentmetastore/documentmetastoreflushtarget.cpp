@@ -151,7 +151,7 @@ DocumentMetaStoreFlushTarget::Flusher::cleanUp(AttributeDirectory::Writer &write
 void
 DocumentMetaStoreFlushTarget::Flusher::run()
 {
-    auto writer = _dmsft._dmsDir->getWriter();
+    auto writer = _dmsft._dmsDir->tryGetWriter();
     if (!writer || _syncToken <= _dmsft.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created

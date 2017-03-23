@@ -143,7 +143,7 @@ FlushableAttribute::Flusher::cleanUp(AttributeDirectory::Writer &writer)
 void
 FlushableAttribute::Flusher::run()
 {
-    auto writer = _fattr._attrDir->getWriter();
+    auto writer = _fattr._attrDir->tryGetWriter();
     if (!writer || _syncToken <= _fattr.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created
