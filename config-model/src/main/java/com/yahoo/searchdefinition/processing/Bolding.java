@@ -23,7 +23,7 @@ public class Bolding extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             for (SummaryField summary : field.getSummaryFields()) {
                 if (summary.getTransform().isBolded() &&
                     !((summary.getDataType() == DataType.STRING) || (summary.getDataType() == DataType.URI)))

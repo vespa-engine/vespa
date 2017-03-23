@@ -35,7 +35,7 @@ public class FieldSetValidity extends Processor {
 
     private static void checkFieldNames(Search search, FieldSet fieldSet) {
         for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getImmutableField(fld);
+            ImmutableSDField field = search.getField(fld);
             if (field == null) {
                 throw new IllegalArgumentException(
                         "For search '" + search.getName() + "': Field '"+ fld + "' in " + fieldSet + " does not exist.");
@@ -46,7 +46,7 @@ public class FieldSetValidity extends Processor {
     private void checkMatching(Search search, FieldSet fieldSet) {
         Matching fsMatching = null;
         for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getImmutableField(fld);
+            ImmutableSDField field = search.getField(fld);
             Matching fieldMatching = field.getMatching();
             if (fsMatching==null) {
                 fsMatching = fieldMatching;
@@ -64,7 +64,7 @@ public class FieldSetValidity extends Processor {
     private void checkNormalization(Search search, FieldSet fieldSet) {
         NormalizeLevel.Level fsNorm = null;
         for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getImmutableField(fld);
+            ImmutableSDField field = search.getField(fld);
             NormalizeLevel.Level fieldNorm = field.getNormalizing().getLevel();
             if (fsNorm==null) {
                 fsNorm = fieldNorm;
@@ -82,7 +82,7 @@ public class FieldSetValidity extends Processor {
     private void checkStemming(Search search, FieldSet fieldSet) {
         Stemming fsStemming = null;
         for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getImmutableField(fld);
+            ImmutableSDField field = search.getField(fld);
             Stemming fieldStemming = field.getStemming();
             if (fsStemming==null) {
                 fsStemming = fieldStemming;

@@ -33,6 +33,10 @@ public interface ImmutableSDField {
 
     boolean isImportedField();
 
+    default boolean isConcreteField() {
+        return !isImportedField();
+    }
+
     boolean isIndexStructureField();
 
     boolean usesStructOrMap();

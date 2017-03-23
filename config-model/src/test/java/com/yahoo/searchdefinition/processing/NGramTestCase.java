@@ -24,15 +24,15 @@ public class NGramTestCase extends SearchDefinitionTestCase {
         Search search = SearchBuilder.buildFromFile("src/test/examples/ngram.sd");
         assertNotNull(search);
 
-        SDField gram1=search.getField("gram_1");
+        SDField gram1=search.getConcreteField("gram_1");
         assertEquals(Matching.Type.GRAM,gram1.getMatching().getType());
         assertEquals(1,gram1.getMatching().getGramSize());
 
-        SDField gram2=search.getField("gram_2");
+        SDField gram2=search.getConcreteField("gram_2");
         assertEquals(Matching.Type.GRAM,gram2.getMatching().getType());
         assertEquals(-1,gram2.getMatching().getGramSize()); // Not set explicitly
 
-        SDField gram3=search.getField("gram_3");
+        SDField gram3=search.getConcreteField("gram_3");
         assertEquals(Matching.Type.GRAM,gram3.getMatching().getType());
         assertEquals(3,gram3.getMatching().getGramSize());
 

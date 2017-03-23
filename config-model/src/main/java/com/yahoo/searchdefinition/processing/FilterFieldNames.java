@@ -27,7 +27,7 @@ public class FilterFieldNames extends Processor {
 
     @Override
     public void process() {
-        for (SDField f : search.allFieldsList()) {
+        for (SDField f : search.allConcreteFields()) {
             if (f.getRanking().isFilter()) {
                 filterField(f.getName());
             }
@@ -56,7 +56,7 @@ public class FilterFieldNames extends Processor {
                     ((Boolean)setting.getValue()).booleanValue())
             {
                 String fieldName = setting.getFieldName();
-                if (search.getField(fieldName) != null) {
+                if (search.getConcreteField(fieldName) != null) {
                     if (!profile.filterFields().contains(fieldName)) {
                         filterFields.add(fieldName);
                     }

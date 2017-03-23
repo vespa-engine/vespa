@@ -26,7 +26,7 @@ public class DisallowComplexMapAndWsetKeyTypes extends Processor {
     public void process() {
     	// TODO also traverse struct types to search for bad map or wset types there. Do this after document manager is fixed, do
     	// not start using the static stuff on SDDocumentTypes any more.
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getDataType() instanceof WeightedSetDataType) {
                 DataType nestedType = ((WeightedSetDataType)field.getDataType()).getNestedType();
                 if (!(nestedType instanceof PrimitiveDataType)) {

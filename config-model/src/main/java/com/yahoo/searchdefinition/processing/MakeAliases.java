@@ -27,7 +27,7 @@ public class MakeAliases extends Processor {
     @Override
     public void process() {
         List<String> usedAliases = new ArrayList<>();
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             for (Map.Entry<String, String> e : field.getAliasToName().entrySet()) {
                 String alias = e.getKey();
                 String name = e.getValue();

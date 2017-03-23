@@ -27,7 +27,7 @@ public class SummaryDynamicStructsArrays extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             DataType type = field.getDataType();
             if (type instanceof ArrayDataType || type instanceof WeightedSetDataType
                     || type instanceof StructDataType) {

@@ -22,7 +22,7 @@ public class SortingSettings extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             for (Attribute attribute : field.getAttributes().values()) {
                 Sorting sorting = attribute.getSorting();
                 if (sorting.getFunction()!=Sorting.Function.UCA) {

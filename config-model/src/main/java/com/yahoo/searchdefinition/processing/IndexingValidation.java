@@ -27,7 +27,7 @@ public class IndexingValidation extends Processor {
     @Override
     public void process() {
         VerificationContext context = new VerificationContext(new MyAdapter(search));
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             try {
                 script.verify(context);
@@ -106,7 +106,7 @@ public class IndexingValidation extends Processor {
                 fieldDesc = "attribute";
                 fieldType = attribute.getDataType();
             } else if (exp instanceof IndexExpression) {
-                SDField field = search.getField(fieldName);
+                SDField field = search.getConcreteField(fieldName);
                 if (field == null) {
                     throw new VerificationException(exp, "Index field '" + fieldName + "' not found.");
                 }

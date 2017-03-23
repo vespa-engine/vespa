@@ -35,7 +35,7 @@ public class TextMatch extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getMatching().getType() != Matching.Type.TEXT) {
                 continue;
             }

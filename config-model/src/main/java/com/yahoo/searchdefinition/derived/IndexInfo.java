@@ -55,7 +55,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         // Populate fieldsets with actual field objects, bit late to do that here but
         for (FieldSet fs : fieldSets.values()) {
             for (String fieldName : fs.getFieldNames()) {
-                fs.fields().add(search.getImmutableField(fieldName));
+                fs.fields().add(search.getField(fieldName));
             }
         }
         // Must follow, because index settings overrides field settings

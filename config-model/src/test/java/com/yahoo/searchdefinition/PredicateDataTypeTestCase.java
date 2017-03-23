@@ -66,7 +66,7 @@ public class PredicateDataTypeTestCase {
                                             upperBoundParameter(upperBound))));
 
         SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (SDField field : sb.getSearch().allFieldsList()) {
+        for (SDField field : sb.getSearch().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertEquals(true, index.getBooleanIndexDefiniton().hasArity());
@@ -93,7 +93,7 @@ public class PredicateDataTypeTestCase {
                                             upperBoundParameter(upperBound))));
 
         SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (SDField field : sb.getSearch().allFieldsList()) {
+        for (SDField field : sb.getSearch().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertEquals(arity, index.getBooleanIndexDefiniton().getArity());
@@ -111,7 +111,7 @@ public class PredicateDataTypeTestCase {
                             attributeFieldSd(
                                     arityParameter(2))));
         SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (SDField field : sb.getSearch().allFieldsList()) {
+        for (SDField field : sb.getSearch().allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertEquals(true, index.getBooleanIndexDefiniton().hasArity());

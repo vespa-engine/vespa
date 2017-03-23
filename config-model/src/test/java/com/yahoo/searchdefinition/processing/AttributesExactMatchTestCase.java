@@ -21,19 +21,19 @@ public class AttributesExactMatchTestCase extends SearchDefinitionTestCase {
     @Test
     public void testAttributesExactMatch() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/attributesexactmatch.sd");
-        assertEquals(search.getField("color").getMatching().getType(), Matching.Type.EXACT);
-        assertEquals(search.getField("artist").getMatching().getType(), Matching.Type.WORD);
-        assertEquals(search.getField("drummer").getMatching().getType(), Matching.Type.WORD);
-        assertEquals(search.getField("guitarist").getMatching().getType(), Matching.Type.TEXT);
-        assertEquals(search.getField("saxophonist_arr").getMatching().getType(), Matching.Type.WORD);
-        assertEquals(search.getField("flutist").getMatching().getType(), Matching.Type.TEXT);
+        assertEquals(search.getConcreteField("color").getMatching().getType(), Matching.Type.EXACT);
+        assertEquals(search.getConcreteField("artist").getMatching().getType(), Matching.Type.WORD);
+        assertEquals(search.getConcreteField("drummer").getMatching().getType(), Matching.Type.WORD);
+        assertEquals(search.getConcreteField("guitarist").getMatching().getType(), Matching.Type.TEXT);
+        assertEquals(search.getConcreteField("saxophonist_arr").getMatching().getType(), Matching.Type.WORD);
+        assertEquals(search.getConcreteField("flutist").getMatching().getType(), Matching.Type.TEXT);
 
-        assertFalse(search.getField("genre").getMatching().getType().equals(Matching.Type.EXACT));
-        assertFalse(search.getField("title").getMatching().getType().equals(Matching.Type.EXACT));
-        assertFalse(search.getField("trumpetist").getMatching().getType().equals(Matching.Type.EXACT));
-        assertFalse(search.getField("genre").getMatching().getType().equals(Matching.Type.WORD));
-        assertFalse(search.getField("title").getMatching().getType().equals(Matching.Type.WORD));
-        assertFalse(search.getField("trumpetist").getMatching().getType().equals(Matching.Type.WORD));
+        assertFalse(search.getConcreteField("genre").getMatching().getType().equals(Matching.Type.EXACT));
+        assertFalse(search.getConcreteField("title").getMatching().getType().equals(Matching.Type.EXACT));
+        assertFalse(search.getConcreteField("trumpetist").getMatching().getType().equals(Matching.Type.EXACT));
+        assertFalse(search.getConcreteField("genre").getMatching().getType().equals(Matching.Type.WORD));
+        assertFalse(search.getConcreteField("title").getMatching().getType().equals(Matching.Type.WORD));
+        assertFalse(search.getConcreteField("trumpetist").getMatching().getType().equals(Matching.Type.WORD));
 
     }
 

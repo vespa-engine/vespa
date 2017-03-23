@@ -23,7 +23,7 @@ public class TagType extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getDataType() instanceof WeightedSetDataType && ((WeightedSetDataType)field.getDataType()).isTag()) {
                 implementTagType(field);
             }

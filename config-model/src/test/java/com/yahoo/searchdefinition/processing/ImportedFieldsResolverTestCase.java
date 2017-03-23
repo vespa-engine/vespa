@@ -45,9 +45,9 @@ public class ImportedFieldsResolverTestCase {
         ImportedField myField = model.importedFields.fields().get("my_attribute_field");
         assertNotNull(myField);
         assertEquals("my_attribute_field", myField.fieldName());
-        assertSame(model.childSearch.getField("ref"), myField.reference().referenceField());
+        assertSame(model.childSearch.getConcreteField("ref"), myField.reference().referenceField());
         assertSame(model.parentSearch, myField.reference().targetSearch());
-        assertSame(model.parentSearch.getField("attribute_field"), myField.targetField());
+        assertSame(model.parentSearch.getConcreteField("attribute_field"), myField.targetField());
     }
 
     @Test

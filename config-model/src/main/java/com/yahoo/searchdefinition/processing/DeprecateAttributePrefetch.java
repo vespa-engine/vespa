@@ -16,7 +16,7 @@ public class DeprecateAttributePrefetch extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             for (Attribute a : field.getAttributes().values()) {
                 if (Boolean.TRUE.equals(a.getPrefetchValue())) {
                     warn(search, field, "Attribute prefetch is deprecated. Use an explicitly defined document summary with all desired fields defined as attribute.");

@@ -24,7 +24,7 @@ public class ValidateFieldWithIndexSettingsCreatesIndex extends Processor {
     public void process() {
         Matching defaultMatching = new Matching();
         Ranking defaultRanking = new Ranking();
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.doesIndexing()) {
                 continue;
             }

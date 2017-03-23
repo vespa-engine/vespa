@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.CollectionDataType;
-import com.yahoo.document.DataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -24,7 +23,7 @@ public class TensorFieldProcessor extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if ( field.getDataType() instanceof TensorDataType ) {
                 warnUseOfTensorFieldAsAttribute(field);
                 validateIndexingScripsForTensorField(field);

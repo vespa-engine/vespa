@@ -32,7 +32,7 @@ public class ValidateFieldTypes extends Processor {
     public void process() {
         String searchName = search.getName();
         Map<String, DataType> seenFields = new HashMap<>();
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             checkFieldType(searchName, "index field", field.getName(), field.getDataType(), seenFields);
             for (Map.Entry<String, Attribute> entry : field.getAttributes().entrySet()) {
                 checkFieldType(searchName, "attribute", entry.getKey(), entry.getValue().getDataType(), seenFields);

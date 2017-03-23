@@ -41,7 +41,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processAttributeFields() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.tensorType().isPresent()) {
                 addAttributeTypeToRankProfiles(attribute.getName(), attribute.tensorType().get().toString());

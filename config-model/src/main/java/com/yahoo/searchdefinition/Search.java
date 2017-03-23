@@ -197,8 +197,7 @@ public class Search implements Serializable, ImmutableSearch {
     }
 
     @Override
-    // TODO Rename field concepts to make a distinction between concrete fields and imported fields
-    public ImmutableSDField getImmutableField(String name) {
+    public ImmutableSDField getField(String name) {
         ImmutableSDField field = getExtraField(name);
         if (field != null) {
             return field;
@@ -207,10 +206,19 @@ public class Search implements Serializable, ImmutableSearch {
         if (field != null) {
             return field;
         }
-        return importedFields
-                .map(imf -> imf.fields().get(name))
-                .map(ImmutableImportedSDField::new)
+        return allImportedFields()
+                .filter(f -> f.getName().equals(name))
+                .findFirst()
                 .orElse(null);
+    }
+
+    @Override
+    public Stream<ImmutableSDField> allFields() {
+        Stream<ImmutableSDField> extraFields = extraFieldList().stream().map(ImmutableSDField.class::cast);
+        Stream<ImmutableSDField> documentFields = docType.fieldSet().stream().map(ImmutableSDField.class::cast);
+        return Stream.concat(
+                extraFields,
+                Stream.concat(documentFields, allImportedFields()));
     }
 
     /**
@@ -247,7 +255,7 @@ public class Search implements Serializable, ImmutableSearch {
      *
      * @return the list of fields in this searchdefinition
      */
-    public List<SDField> allFieldsList() {
+    public List<SDField> allConcreteFields() {
         List<SDField> allFields = new ArrayList<>();
         allFields.addAll(extraFieldList());
         for (Field field : docType.fieldSet()) {
@@ -270,7 +278,7 @@ public class Search implements Serializable, ImmutableSearch {
      * @param name of the field
      * @return the SDField representing the field
      */
-    public SDField getField(String name) {
+    public SDField getConcreteField(String name) {
         SDField field = getExtraField(name);
         if (field != null) {
             return field;
@@ -355,7 +363,7 @@ public class Search implements Serializable, ImmutableSearch {
             sameIndices.add(searchIndex);
         }
 
-        for (SDField field : allFieldsList()) {
+        for (SDField field : allConcreteFields()) {
             Index index = field.getIndex(name);
             if (index != null) {
                 sameIndices.add(index);
@@ -374,7 +382,7 @@ public class Search implements Serializable, ImmutableSearch {
         if (indices.get(name) != null) {
             return true;
         }
-        for (SDField field : allFieldsList()) {
+        for (SDField field : allConcreteFields()) {
             if (field.existsIndex(name)) {
                 return true;
             }
@@ -424,7 +432,7 @@ public class Search implements Serializable, ImmutableSearch {
      */
     public List<Index> getExplicitIndices() {
         List<Index> allIndices = new ArrayList<>(indices.values());
-        for (SDField field : allFieldsList()) {
+        for (SDField field : allConcreteFields()) {
             for (Index index : field.getIndices().values()) {
                 allIndices.add(index);
             }
@@ -545,7 +553,7 @@ public class Search implements Serializable, ImmutableSearch {
      * @return The Attribute with given name.
      */
     public Attribute getAttribute(String name) {
-        for (SDField field : allFieldsList()) {
+        for (SDField field : allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(name);
             if (attribute != null) {
                 return attribute;
@@ -583,7 +591,7 @@ public class Search implements Serializable, ImmutableSearch {
     }
 
     private boolean isAccessingDiskSummary(String source) {
-        SDField field = getField(source);
+        SDField field = getConcreteField(source);
         if (field == null) {
             return false;
         }

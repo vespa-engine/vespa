@@ -133,7 +133,7 @@ public class DocumentModelBuilder {
         for (Field f : search.getDocument().fieldSet()) {
             addSearchField((SDField) f, searchDef);
         }
-        for(SDField field : search.allFieldsList()) {
+        for(SDField field : search.allConcreteFields()) {
             for(Attribute attribute : field.getAttributes().values()) {
                 if (!searchDef.getFields().containsKey(attribute.getName())) {
                     searchDef.add(new SearchField(new Field(attribute.getName(), field), !field.getIndices().isEmpty(), true));

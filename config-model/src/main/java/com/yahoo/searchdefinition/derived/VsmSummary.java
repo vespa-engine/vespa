@@ -35,7 +35,7 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
             List<String> from = toStringList(summaryField.sourceIterator());
 
             if (doMapField(search, summaryField)) {
-                SDField sdField = search.getField(summaryField.getName());
+                SDField sdField = search.getConcreteField(summaryField.getName());
                 if (sdField != null && PositionDataType.INSTANCE.equals(sdField.getDataType())) {
                     summaryMap.put(summaryField, Collections.singletonList(summaryField.getName()));
                 } else {
@@ -52,7 +52,7 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
      * @param summaryField a {@link SummaryField}
      */
     private boolean doMapField(Search search, SummaryField summaryField) {
-        SDField sdField = search.getField(summaryField.getName());
+        SDField sdField = search.getConcreteField(summaryField.getName());
         SDDocumentType document = search.getDocument();
         if (sdField==null || ((document != null) && (document.getField(summaryField.getName()) == sdField))) {
             return true;

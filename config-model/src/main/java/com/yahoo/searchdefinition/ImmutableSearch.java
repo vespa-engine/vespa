@@ -15,5 +15,7 @@ public interface ImmutableSearch {
 
     Stream<ImmutableSDField> allImportedFields();
 
-    ImmutableSDField getImmutableField(String name);
+    ImmutableSDField getField(String name);
+
+    Stream<ImmutableSDField> allFields();
 }

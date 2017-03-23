@@ -24,7 +24,7 @@ public class IndexFieldNames extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (!field.getName().matches(FIELD_NAME_REGEXP) && !legalDottedPositionField(field)) {
                 fail(search, field, " Not a legal field name. Legal expression: " + FIELD_NAME_REGEXP);
             }
