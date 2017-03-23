@@ -293,8 +293,7 @@ public:
      * @param operation component performing some operation
      *                  on the selected (sub-)objects
      **/
-    void select(const ObjectPredicate &predicate,
-                ObjectOperation &operation);
+    void select(const ObjectPredicate &predicate, ObjectOperation &operation);
 
     /**
      * Invoke @ref select on any member objects this object wants to

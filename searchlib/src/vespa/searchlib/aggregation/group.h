@@ -122,7 +122,9 @@ public:
     Group();
     Group(const Group & rhs);
     Group & operator =(const Group & rhs);
-    virtual ~Group();
+    Group(Group &&) noexcept;
+    Group & operator = (Group &&) noexcept;
+    ~Group();
     void swap(Group & rhs);
 
     int cmpId(const Group &rhs) const { return _id->cmpFast(*rhs._id); }
@@ -139,10 +141,14 @@ public:
     Group unchain() const { return *this; }
 
     Group &setId(const ResultNode &id)  { _id.reset(static_cast<ResultNode *>(id.clone())); return *this; }
-    Group &addAggregationResult(const ExpressionNode::CP &result);
-    Group &addResult(const ExpressionNode::CP &aggr);
-    Group &addExpressionResult(const ExpressionNode::CP &expressionNode);
-    Group &addOrderBy(const ExpressionNode::CP & orderBy, bool ascending);
+    Group &addAggregationResult(ExpressionNode::UP result);
+    Group &addResult(ExpressionNode::UP aggr);
+    Group &addResult(const ExpressionNode & aggr) { return addResult(ExpressionNode::UP(aggr.clone())); }
+    Group &addExpressionResult(ExpressionNode::UP expressionNode);
+    Group &addOrderBy(ExpressionNode::UP orderBy, bool ascending);
+    Group &addOrderBy(const ExpressionNode & orderBy, bool ascending) {
+        return addOrderBy(ExpressionNode::UP(orderBy.clone()), ascending);
+    }
     Group &addChild(const Group &child) { addChild(new Group(child)); return *this; }
     Group &addChild(Group::UP child) { addChild(child.release()); return *this; }
 
@@ -162,8 +168,7 @@ public:
      */
     bool needResort() const;
 
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate,
-                               vespalib::ObjectOperation &operation);
+    void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
 
     void preAggregate();
     template <typename Doc>

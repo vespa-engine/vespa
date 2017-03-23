@@ -20,8 +20,8 @@ UcaFunctionNode::~UcaFunctionNode()
 {
 }
 
-UcaFunctionNode::UcaFunctionNode(const ExpressionNode::CP & arg, const vespalib::string & locale, const vespalib::string & strength) :
-    UnaryFunctionNode(arg),
+UcaFunctionNode::UcaFunctionNode(ExpressionNode::UP arg, const vespalib::string & locale, const vespalib::string & strength) :
+    UnaryFunctionNode(std::move(arg)),
     _locale(locale),
     _strength(strength),
     _collator(new uca::UcaConverter(locale, strength))

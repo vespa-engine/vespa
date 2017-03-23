@@ -21,7 +21,7 @@ void Attribute2DocumentAccessor::execute(vespalib::Identifiable &obj)
     if (obj.getClass().inherits(GroupingLevel::classId)) {
         GroupingLevel & g(static_cast<GroupingLevel &>(obj));
         if (g.getExpression().getRoot()->inherits(AttributeNode::classId)) {
-            g.setExpression(new DocumentFieldNode(static_cast<const AttributeNode &>(*g.getExpression().getRoot()).getAttributeName()));
+            g.setExpression(std::make_unique<DocumentFieldNode>(static_cast<const AttributeNode &>(*g.getExpression().getRoot()).getAttributeName()));
         } else {
             g.getExpression().getRoot()->select(*this, *this);
         }
@@ -31,7 +31,7 @@ void Attribute2DocumentAccessor::execute(vespalib::Identifiable &obj)
         ExpressionNode * e(a.getExpression());
         if (e) {
             if (e->inherits(AttributeNode::classId)) {
-                a.setExpression(new DocumentFieldNode(static_cast<const AttributeNode &>(*e).getAttributeName()));
+                a.setExpression(std::make_unique<DocumentFieldNode>(static_cast<const AttributeNode &>(*e).getAttributeName()));
             } else {
                 e->select(*this, *this);
             }

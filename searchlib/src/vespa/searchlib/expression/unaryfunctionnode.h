@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/multiargfunctionnode.h>
+#include "multiargfunctionnode.h"
 
 namespace search {
 namespace expression {
@@ -11,10 +11,10 @@ class UnaryFunctionNode : public MultiArgFunctionNode
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(UnaryFunctionNode);
     UnaryFunctionNode() { }
-    UnaryFunctionNode(const ExpressionNode::CP & arg) :
+    UnaryFunctionNode(ExpressionNode::UP arg) :
         MultiArgFunctionNode()
     {
-        appendArg(arg);
+        appendArg(std::move(arg));
     }
 protected:
     const ExpressionNode & getArg() const { return MultiArgFunctionNode::getArg(0); }

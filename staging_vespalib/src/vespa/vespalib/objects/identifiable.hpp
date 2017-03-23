@@ -47,6 +47,10 @@ class IdentifiablePtr : public CloneablePtr<T>
 {
 public:
     IdentifiablePtr(const T &t) : CloneablePtr<T>(t.clone()) {}
+    IdentifiablePtr(IdentifiablePtr &&) = default;
+    IdentifiablePtr & operator = (IdentifiablePtr &&) = default;
+    IdentifiablePtr(const IdentifiablePtr &) = default;
+    IdentifiablePtr & operator = (const IdentifiablePtr &) = default;
     IdentifiablePtr(T * p=NULL) : CloneablePtr<T>(p) { }
     int cmp(const IdentifiablePtr<T> &rhs) const {
         const T *a = this->get();

@@ -22,8 +22,14 @@ GroupingLevel::GroupingLevel() :
     _classify(),
     _collect(),
     _grouper(NULL)
-{
-}
+{ }
+
+GroupingLevel::~GroupingLevel() { }
+
+GroupingLevel::GroupingLevel(const GroupingLevel &) = default;
+GroupingLevel & GroupingLevel::operator =(const GroupingLevel &) = default;
+GroupingLevel::GroupingLevel(GroupingLevel &&) = default;
+GroupingLevel & GroupingLevel::operator =(GroupingLevel &&) = default;
 
 Serializer & GroupingLevel::onSerialize(Serializer & os) const
 {

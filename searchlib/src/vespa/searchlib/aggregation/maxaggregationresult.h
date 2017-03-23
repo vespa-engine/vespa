@@ -12,13 +12,14 @@ class MaxAggregationResult : public AggregationResult
 public:
     using SingleResultNode = expression::SingleResultNode;
     DECLARE_AGGREGATIONRESULT(MaxAggregationResult);
-    MaxAggregationResult() : AggregationResult(), _max() { }
-    MaxAggregationResult(const SingleResultNode & max) : AggregationResult(), _max(max) { }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    MaxAggregationResult();
+    MaxAggregationResult(const SingleResultNode & max);
+    ~MaxAggregationResult();
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const SingleResultNode & getMax() const { return *_max; }
 private:
-    virtual const ResultNode & onGetRank() const { return getMax(); }
-    virtual void onPrepare(const ResultNode & result, bool useForInit);
+    const ResultNode & onGetRank() const override { return getMax(); }
+    void onPrepare(const ResultNode & result, bool useForInit) override;
     SingleResultNode::CP _max;
 };
 

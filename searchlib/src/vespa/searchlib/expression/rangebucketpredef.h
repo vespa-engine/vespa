@@ -58,7 +58,7 @@ public:
     DECLARE_EXPRESSIONNODE(RangeBucketPreDefFunctionNode);
     DECLARE_NBO_SERIALIZE;
     RangeBucketPreDefFunctionNode() : UnaryFunctionNode(), _predef(), _result(NULL), _nullResult(NULL) {}
-    RangeBucketPreDefFunctionNode(const ExpressionNode::CP &arg) : UnaryFunctionNode(arg), _predef(), _result(NULL), _nullResult(NULL) {}
+    RangeBucketPreDefFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _predef(), _result(NULL), _nullResult(NULL) {}
     RangeBucketPreDefFunctionNode(const RangeBucketPreDefFunctionNode & rhs);
     RangeBucketPreDefFunctionNode & operator = (const RangeBucketPreDefFunctionNode & rhs);
     virtual const ResultNode & getResult()   const { return *_result; }

@@ -84,8 +84,8 @@ void ExpressionTree::onPrepare(bool preserveAccurateTypes)
     }
 }
 
-ExpressionTree::ExpressionTree(const ExpressionNode::CP & root) :
-    _root(root->clone()),
+ExpressionTree::ExpressionTree(ExpressionNode::UP root) :
+    _root(root.release()),
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),

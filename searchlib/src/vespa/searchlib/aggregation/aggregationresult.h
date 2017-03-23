@@ -33,6 +33,10 @@ public:
     using ResultNode = expression::ResultNode;
     DECLARE_NBO_SERIALIZE;
     DECLARE_ABSTRACT_AGGREGATIONRESULT(AggregationResult);
+    AggregationResult(const AggregationResult &);
+    AggregationResult & operator = (const AggregationResult &);
+    AggregationResult(AggregationResult &&) = default;
+    AggregationResult & operator = (AggregationResult &&) = default;
     ~AggregationResult();
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
@@ -49,7 +53,7 @@ public:
     virtual void postMerge() {}
     void aggregate(const document::Document & doc, HitRank rank);
     void aggregate(DocId docId, HitRank rank);
-    AggregationResult &setExpression(const ExpressionNode::CP &expr);
+    AggregationResult &setExpression(ExpressionNode::UP expr);
     AggregationResult &setResult(const ResultNode::CP &result) {
         prepare(result.get(), true);
         return *this;

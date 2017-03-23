@@ -78,7 +78,8 @@ class ResultNodeVectorT : public ResultNodeVector
 {
 public:
     DECLARE_NBO_SERIALIZE;
-    typedef std::vector<B> Vector;
+    using Vector = std::vector<B>;
+    using BaseType = B;
     const Vector & getVector() const { return _result; }
     Vector & getVector() { return _result; }
     virtual const ResultNode * find(const ResultNode & key) const;

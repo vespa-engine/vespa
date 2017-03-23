@@ -500,6 +500,7 @@ TEST("require that sortspec can be used (multi-threaded)") {
     }
 }
 
+ExpressionNode::UP createAttr() { return std::make_unique<AttributeNode>("a1"); }
 TEST("require that grouping is performed (multi-threaded)") {
     for (size_t threads = 1; threads <= 16; ++threads) {
         MyWorld world;
@@ -511,29 +512,24 @@ TEST("require that grouping is performed (multi-threaded)") {
             vespalib::NBOSerializer os(buf);
             uint32_t n = 1;
             os << n;
-            Grouping grequest =
-                Grouping()
-                .setRoot(Group()
-                         .addResult(SumAggregationResult()
-                                    .setExpression(AttributeNode("a1"))));
+            Grouping grequest;
+            grequest.setRoot(Group().addResult(SumAggregationResult().setExpression(createAttr())));
             grequest.serialize(os);
             request->groupSpec.assign(buf.c_str(), buf.c_str() + buf.size());
         }
         SearchReply::UP reply = world.performSearch(request, threads);
         {
-            vespalib::nbostream buf(&reply->groupResult[0],
-                                    reply->groupResult.size());
+            vespalib::nbostream buf(&reply->groupResult[0], reply->groupResult.size());
             vespalib::NBOSerializer is(buf);
             uint32_t n;
             is >> n;
             EXPECT_EQUAL(1u, n);
             Grouping gresult;
             gresult.deserialize(is);
-            Grouping gexpect = Grouping()
-                               .setRoot(Group()
-                                        .addResult(SumAggregationResult()
-                                                   .setExpression(AttributeNode("a1"))
-                                                   .setResult(Int64ResultNode(4500))));
+            Grouping gexpect;
+            gexpect.setRoot(Group().addResult(SumAggregationResult()
+                                                      .setExpression(createAttr())
+                                                      .setResult(Int64ResultNode(4500))));
             EXPECT_EQUAL(gexpect.root().asString(), gresult.root().asString());
         }
         EXPECT_GREATER(world.matchingStats.groupingTimeAvg(), 0.0000001);

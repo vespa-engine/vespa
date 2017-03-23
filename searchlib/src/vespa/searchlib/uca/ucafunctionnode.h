@@ -17,7 +17,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     UcaFunctionNode();
     ~UcaFunctionNode();
-    UcaFunctionNode(const ExpressionNode::CP & arg, const vespalib::string & locale, const vespalib::string & strength);
+    UcaFunctionNode(ExpressionNode::UP arg, const vespalib::string & locale, const vespalib::string & strength);
     UcaFunctionNode(const UcaFunctionNode & rhs);
     UcaFunctionNode & operator = (const UcaFunctionNode & rhs);
 private:

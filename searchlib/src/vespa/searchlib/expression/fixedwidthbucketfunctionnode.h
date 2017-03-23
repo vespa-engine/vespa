@@ -59,7 +59,7 @@ public:
     DECLARE_EXPRESSIONNODE(FixedWidthBucketFunctionNode);
     DECLARE_NBO_SERIALIZE;
     FixedWidthBucketFunctionNode() : UnaryFunctionNode(), _width(), _bucketHandler() {}
-    FixedWidthBucketFunctionNode(const ExpressionNode::CP &arg) : UnaryFunctionNode(arg), _width(), _bucketHandler() {}
+    FixedWidthBucketFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _width(), _bucketHandler() {}
     FixedWidthBucketFunctionNode &setWidth(const NumericResultNode::CP &width) {
         _width = width;
         return *this;

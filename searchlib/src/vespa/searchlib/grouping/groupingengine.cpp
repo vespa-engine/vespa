@@ -65,7 +65,7 @@ GroupingEngine::fillRootRequest(const Group & r)
 {
     _rootRequestLevel.setMaxGroups(1).setPresicion(1).freeze();
     for (size_t i(0), m(r.getAggrSize()); i < m; i++) {
-        _rootRequestLevel.addResult(r.getAggregationResult(i));
+        _rootRequestLevel.addResult(ExpressionNode::UP(r.getAggregationResult(i).clone()));
     }
 }
 

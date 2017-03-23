@@ -77,8 +77,12 @@ private:
 
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:
-
     GroupingLevel();
+    GroupingLevel(GroupingLevel &&);
+    GroupingLevel & operator =(GroupingLevel &&);
+    GroupingLevel(const GroupingLevel &);
+    GroupingLevel & operator =(const GroupingLevel &);
+    ~GroupingLevel();
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, GroupingLevel);
     DECLARE_NBO_SERIALIZE;
 
@@ -93,10 +97,11 @@ public:
     }
     GroupingLevel & freeze() { _frozen = true; return *this; }
     GroupingLevel &setPresicion(int64_t precision) { _precision = precision; return *this; }
-    GroupingLevel &setExpression(const ExpressionNode::CP &root) { _classify = root; return *this; }
-    GroupingLevel &addResult(const ExpressionNode::CP &result) { _collect.addResult(result); return *this; }
-    GroupingLevel &addAggregationResult(const ExpressionNode::CP &aggr) { _collect.addAggregationResult(aggr); return *this; }
-    GroupingLevel &addOrderBy(const ExpressionNode::CP & orderBy, bool ascending) { _collect.addOrderBy(orderBy, ascending); return *this; }
+    GroupingLevel &setExpression(ExpressionNode::UP root) { _classify = std::move(root); return *this; }
+    GroupingLevel &addResult(ExpressionNode::UP result) { _collect.addResult(std::move(result)); return *this; }
+    GroupingLevel &addResult(const ExpressionNode & result) { return addResult(ExpressionNode::UP(result.clone())); }
+    GroupingLevel &addAggregationResult(ExpressionNode::UP aggr) { _collect.addAggregationResult(std::move(aggr)); return *this; }
+    GroupingLevel &addOrderBy(ExpressionNode::UP orderBy, bool ascending) { _collect.addOrderBy(std::move(orderBy), ascending); return *this; }
     bool needResort() const { return _collect.needResort(); }
 
     int64_t getMaxGroups() const { return _maxGroups; }

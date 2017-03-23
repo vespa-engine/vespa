@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "expressionnode.h"
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/searchlib/common/hitrank.h>
-#include <vespa/searchlib/expression/expressionnode.h>
 
 namespace document {
     class DocumentType;
@@ -44,7 +44,7 @@ public:
 
     ExpressionTree();
     ExpressionTree(const ExpressionNode & root);
-    ExpressionTree(const ExpressionNode::CP & root);
+    ExpressionTree(ExpressionNode::UP root);
     ExpressionTree(const ExpressionTree & rhs);
     ~ExpressionTree();
     ExpressionTree & operator = (const ExpressionTree & rhs);

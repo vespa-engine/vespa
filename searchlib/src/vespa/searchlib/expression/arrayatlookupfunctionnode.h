@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/unaryfunctionnode.h>
+#include "unaryfunctionnode.h"
 
 namespace search {
     namespace attribute {
@@ -20,10 +20,10 @@ public:
     ~ArrayAtLookup();
 
     ArrayAtLookup(const vespalib::string &attribute,
-                  const ExpressionNode::CP & arg);
+                  ExpressionNode::UP arg);
 
     ArrayAtLookup(const search::attribute::IAttributeVector &attr,
-                  const ExpressionNode::CP &indexArg);
+                  ExpressionNode::UP indexArg);
 
     ArrayAtLookup(const ArrayAtLookup &rhs);
 

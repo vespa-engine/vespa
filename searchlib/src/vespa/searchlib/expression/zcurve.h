@@ -15,7 +15,7 @@ public:
     DECLARE_EXPRESSIONNODE(ZCurveFunctionNode);
     DECLARE_NBO_SERIALIZE;
     ZCurveFunctionNode() : _dim(X) { }
-    ZCurveFunctionNode(const ExpressionNode::CP & arg, Dimension dim) : UnaryFunctionNode(arg), _dim(dim) { }
+    ZCurveFunctionNode(ExpressionNode::UP arg, Dimension dim) : UnaryFunctionNode(std::move(arg)), _dim(dim) { }
     ZCurveFunctionNode(const ZCurveFunctionNode & rhs);
     ZCurveFunctionNode & operator = (const ZCurveFunctionNode & rhs);
     Dimension getDim() const { return _dim; }

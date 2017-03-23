@@ -27,6 +27,8 @@ document::GlobalId getGlobalId(uint32_t docId) {
         .getGlobalId();
 }
 
+#define MU std::make_unique
+
 struct Fixture {
     // Set WRITE_FILES to true to generate new expected serialization files.
     const bool WRITE_FILES = false;
@@ -69,28 +71,27 @@ struct Fixture {
         Identifiable::UP newObj = Identifiable::create(stream);
 
         if (!EXPECT_TRUE(newObj.get() != 0)) {
-            LOG(error, "object of class '%s' resulted in empty echo",
-                obj.getClass().name());
+            LOG(error, "object of class '%s' resulted in empty echo", obj.getClass().name());
             return;
         }
         if (EXPECT_EQUAL(obj.asString(), newObj->asString())
             && EXPECT_TRUE(newObj->cmp(obj) == 0)
             && EXPECT_TRUE(obj.cmp(*newObj) == 0))
         {
-            LOG(info, "object of class '%s' passed echo test : %s",
-                obj.getClass().name(), newObj->asString().c_str());
+            LOG(info, "object of class '%s' passed echo test : %s", obj.getClass().name(), newObj->asString().c_str());
         } else {
-            LOG(error, "object of class '%s' FAILED echo test",
-                obj.getClass().name());
+            LOG(error, "object of class '%s' FAILED echo test", obj.getClass().name());
         }
     }
 };
 
 //-----------------------------------------------------------------------------
 
-ExpressionNode::CP createDummyExpression() {
-    return AddFunctionNode().addArg(ConstantNode(Int64ResultNode(2)))
-        .addArg(ConstantNode(Int64ResultNode(2)));
+ExpressionNode::UP
+createDummyExpression() {
+    std::unique_ptr<AddFunctionNode> f = MU<AddFunctionNode>();
+    f->addArg(MU<ConstantNode>(MU<Int64ResultNode>(2))).addArg(MU<ConstantNode>(MU<Int64ResultNode>(2)));
+    return f;
 }
 
 //-----------------------------------------------------------------------------
@@ -150,83 +151,82 @@ TEST_F("testSpecialNodes", Fixture("testSpecialNodes")) {
 
 TEST_F("testFunctionNodes", Fixture("testFunctionNodes")) {
     f.checkObject(AddFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
     f.checkObject(XorFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
     f.checkObject(MultiplyFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
     f.checkObject(DivideFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
     f.checkObject(ModuloFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
     f.checkObject(MinFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
     f.checkObject(MaxFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
-    f.checkObject(TimeStampFunctionNode(ConstantNode(Int64ResultNode(7)),
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
+    f.checkObject(TimeStampFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7)),
                                       TimeStampFunctionNode::Hour, true));
-    f.checkObject(ZCurveFunctionNode(ConstantNode(Int64ResultNode(7)),
+    f.checkObject(ZCurveFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7)),
                                    ZCurveFunctionNode::X));
-    f.checkObject(ZCurveFunctionNode(ConstantNode(Int64ResultNode(7)),
+    f.checkObject(ZCurveFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7)),
                                    ZCurveFunctionNode::Y));
-    f.checkObject(NegateFunctionNode(ConstantNode(Int64ResultNode(7))));
-    f.checkObject(SortFunctionNode(ConstantNode(Int64ResultNode(7))));
-    f.checkObject(NormalizeSubjectFunctionNode(ConstantNode(
-                            StringResultNode("foo"))));
-    f.checkObject(ReverseFunctionNode(ConstantNode(Int64ResultNode(7))));
-    f.checkObject(MD5BitFunctionNode(ConstantNode(Int64ResultNode(7)), 64));
-    f.checkObject(XorBitFunctionNode(ConstantNode(Int64ResultNode(7)), 64));
+    f.checkObject(NegateFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7))));
+    f.checkObject(SortFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7))));
+    f.checkObject(NormalizeSubjectFunctionNode(MU<ConstantNode>(MU<StringResultNode>("foo"))));
+    f.checkObject(ReverseFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7))));
+    f.checkObject(MD5BitFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7)), 64));
+    f.checkObject(XorBitFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(7)), 64));
     f.checkObject(CatFunctionNode()
-                .addArg(ConstantNode(Int64ResultNode(7)))
-                .addArg(ConstantNode(Int64ResultNode(8)))
-                .addArg(ConstantNode(Int64ResultNode(9))));
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
+                .addArg(MU<ConstantNode>(MU<Int64ResultNode>(9))));
     f.checkObject(FixedWidthBucketFunctionNode());
-    f.checkObject(FixedWidthBucketFunctionNode(AttributeNode("foo")));
-    f.checkObject(FixedWidthBucketFunctionNode(AttributeNode("foo"))
+    f.checkObject(FixedWidthBucketFunctionNode(MU<AttributeNode>("foo")));
+    f.checkObject(FixedWidthBucketFunctionNode(MU<AttributeNode>("foo"))
                 .setWidth(Int64ResultNode(10)));
-    f.checkObject(FixedWidthBucketFunctionNode(AttributeNode("foo"))
+    f.checkObject(FixedWidthBucketFunctionNode(MU<AttributeNode>("foo"))
                 .setWidth(FloatResultNode(10.0)));
     f.checkObject(RangeBucketPreDefFunctionNode());
-    f.checkObject(RangeBucketPreDefFunctionNode(AttributeNode("foo")));
-    f.checkObject(DebugWaitFunctionNode(ConstantNode(Int64ResultNode(5)),
+    f.checkObject(RangeBucketPreDefFunctionNode(MU<AttributeNode>("foo")));
+    f.checkObject(DebugWaitFunctionNode(MU<ConstantNode>(MU<Int64ResultNode>(5)),
                                       3.3, false));
 }
 
 TEST_F("testAggregatorResults", Fixture("testAggregatorResults")) {
     f.checkObject(SumAggregationResult()
-                .setExpression(AttributeNode("attributeA"))
+                .setExpression(MU<AttributeNode>("attributeA"))
                 .setResult(Int64ResultNode(7)));
     f.checkObject(XorAggregationResult()
                 .setXor(Int64ResultNode(7))
-                .setExpression(AttributeNode("attributeA")));
+                .setExpression(MU<AttributeNode>("attributeA")));
     f.checkObject(CountAggregationResult()
                 .setCount(7)
-                .setExpression(AttributeNode("attributeA")));
+                .setExpression(MU<AttributeNode>("attributeA")));
     f.checkObject(MinAggregationResult()
-                .setExpression(AttributeNode("attributeA"))
+                .setExpression(MU<AttributeNode>("attributeA"))
                 .setResult(Int64ResultNode(7)));
     f.checkObject(MaxAggregationResult()
-                .setExpression(AttributeNode("attributeA"))
+                .setExpression(MU<AttributeNode>("attributeA"))
                 .setResult(Int64ResultNode(7)));
     f.checkObject(AverageAggregationResult()
-                .setExpression(AttributeNode("attributeA"))
+                .setExpression(MU<AttributeNode>("attributeA"))
                 .setResult(Int64ResultNode(7)));
     ExpressionCountAggregationResult expression_count;
-    expression_count.setExpression(ConstantNode(Int64ResultNode(67)))
+    expression_count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67)))
         .aggregate(DocId(42), HitRank(21));
     f.checkObject(expression_count);
 }
@@ -245,7 +245,7 @@ TEST_F("testHitCollection", Fixture("testHitCollection")) {
                 .addHit(FS4Hit(0, 3.0).setGlobalId(getGlobalId(30)))
                 .addHit(FS4Hit(0, 4.0).setGlobalId(getGlobalId(40)))
                 .addHit(FS4Hit(0, 5.0).setGlobalId(getGlobalId(50)))
-                .setExpression(ConstantNode(Int64ResultNode(5))));
+                .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(5))));
     f.checkObject(HitsAggregationResult()
                 .setMaxHits(3)
                 .addHit(FS4Hit(0, 1.0).setGlobalId(getGlobalId(10))
@@ -254,20 +254,20 @@ TEST_F("testHitCollection", Fixture("testHitCollection")) {
                         .setDistributionKey(200))
                 .addHit(FS4Hit(0, 3.0).setGlobalId(getGlobalId(30))
                         .setDistributionKey(300))
-                .setExpression(ConstantNode(Int64ResultNode(5))));
+                .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(5))));
     f.checkObject(HitsAggregationResult()
                 .setMaxHits(3)
                 .addHit(VdsHit("10", 1.0).setSummary("100", 3))
                 .addHit(VdsHit("20", 2.0).setSummary("200", 3))
                 .addHit(VdsHit("30", 3.0).setSummary("300", 3))
-                .setExpression(ConstantNode(Int64ResultNode(5))));
+                .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(5))));
 }
 
 TEST_F("testGroupingLevel", Fixture("testGroupingLevel")) {
     f.checkObject(GroupingLevel()
                 .setMaxGroups(100)
                 .setExpression(createDummyExpression())
-                .addAggregationResult(SumAggregationResult()
+                .addResult(SumAggregationResult()
                            .setExpression(createDummyExpression())));
 }
 
@@ -279,9 +279,9 @@ TEST_F("testGroup", Fixture("testGroup")) {
                 .addChild(Group().setId(Int64ResultNode(110)))
                 .addChild(Group().setId(Int64ResultNode(120))
                           .setRank(20.5)
-                          .addAggregationResult(SumAggregationResult()
+                          .addResult(SumAggregationResult()
                                   .setExpression(createDummyExpression()))
-                          .addAggregationResult(SumAggregationResult()
+                          .addResult(SumAggregationResult()
                                   .setExpression(createDummyExpression())))
                 .addChild(Group().setId(Int64ResultNode(130))
                           .addChild(Group().setId(Int64ResultNode(131)))));
@@ -293,32 +293,31 @@ TEST_F("testGrouping", Fixture("testGrouping")) {
                 .addLevel(GroupingLevel()
                           .setMaxGroups(100)
                           .setExpression(createDummyExpression())
-                          .addAggregationResult(SumAggregationResult()
+                          .addResult(SumAggregationResult()
                                   .setExpression(createDummyExpression())))
                 .addLevel(GroupingLevel()
                           .setMaxGroups(10)
                           .setExpression(createDummyExpression())
-                          .addAggregationResult(SumAggregationResult()
+                          .addResult(SumAggregationResult()
                                   .setExpression(createDummyExpression()))
-                          .addAggregationResult(SumAggregationResult()
+                          .addResult(SumAggregationResult()
                                   .setExpression(createDummyExpression()))));
     f.checkObject(Grouping()
                 .addLevel(GroupingLevel()
-                          .setExpression(AttributeNode("folder"))
-                          .addAggregationResult(XorAggregationResult()
-                                  .setExpression(MD5BitFunctionNode(
-                                                  AttributeNode("docid"), 64)))
-                          .addAggregationResult(SumAggregationResult()
-                                  .setExpression(MinFunctionNode()
-                                          .addArg(AttributeNode("attribute1"))
-                                          .addArg(AttributeNode("attribute2")))
+                          .setExpression(MU<AttributeNode>("folder"))
+                          .addResult(XorAggregationResult()
+                                  .setExpression(MU<MD5BitFunctionNode>(MU<AttributeNode>("docid"), 64)))
+                          .addResult(SumAggregationResult()
+                                  .setExpression(ExpressionNode::UP(MinFunctionNode()
+                                          .addArg(MU<AttributeNode>("attribute1"))
+                                          .addArg(MU<AttributeNode>("attribute2")).clone()))
                                      )
-                          .addAggregationResult(XorAggregationResult()
+                          .addResult(XorAggregationResult()
                                   .setExpression(
-                                          XorBitFunctionNode(CatFunctionNode()
-                                                  .addArg(GetDocIdNamespaceSpecificFunctionNode())
-                                                  .addArg(DocumentFieldNode("folder"))
-                                                  .addArg(DocumentFieldNode("flags")), 64)))));
+                                          ExpressionNode::UP(XorBitFunctionNode(ExpressionNode::UP(CatFunctionNode()
+                                                  .addArg(MU<GetDocIdNamespaceSpecificFunctionNode>())
+                                                  .addArg(MU<DocumentFieldNode>("folder"))
+                                                  .addArg(MU<DocumentFieldNode>("flags")).clone()), 64).clone())))));
 }
 
 }  // namespace

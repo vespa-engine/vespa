@@ -42,6 +42,20 @@ AggregationResult::AggregationResult() :
     _tag(-1)
 { }
 
+AggregationResult::AggregationResult(const AggregationResult & rhs) :
+    _expressionTree(rhs._expressionTree),
+    _tag(-1)
+{
+}
+
+AggregationResult &
+AggregationResult::operator=(const AggregationResult & rhs) {
+    _expressionTree = rhs._expressionTree;
+    _tag = rhs._tag;
+    return *this;
+}
+
+
 AggregationResult::~AggregationResult() { }
 
 void
@@ -75,9 +89,9 @@ void AggregationResult::Configure::execute(vespalib::Identifiable &obj)
 }
 
 AggregationResult &
-AggregationResult::setExpression(const ExpressionNode::CP &expr)
+AggregationResult::setExpression(ExpressionNode::UP expr)
 {
-    _expressionTree.reset(new ExpressionTree(expr));
+    _expressionTree.reset(new ExpressionTree(std::move(expr)));
     prepare(&_expressionTree->getResult(), false);
     return *this;
 }
@@ -99,6 +113,14 @@ void SumAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     }
 }
 
+MinAggregationResult::MinAggregationResult() : AggregationResult() { }
+MinAggregationResult::MinAggregationResult(const ResultNode::CP &result)
+    : AggregationResult()
+{
+    setResult(result);
+}
+MinAggregationResult::~MinAggregationResult() { }
+
 void MinAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
     if (isReady(_min.get(), result)) {
@@ -111,6 +133,13 @@ void MinAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
         _min->set(result);
     }
 }
+
+MaxAggregationResult::MaxAggregationResult() : AggregationResult(), _max() { }
+MaxAggregationResult::MaxAggregationResult(const SingleResultNode & max)
+    : AggregationResult(),
+      _max(max)
+{ }
+MaxAggregationResult::~MaxAggregationResult() { }
 
 void MaxAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {

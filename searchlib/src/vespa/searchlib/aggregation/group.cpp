@@ -60,29 +60,29 @@ int Group::cmpRank(const Group &rhs) const
                    : ((_rank < rhs._rank) ? 1 : 0));
 }
 
-Group & Group::addOrderBy(const ExpressionNode::CP & orderBy, bool ascending)
+Group & Group::addOrderBy(ExpressionNode::UP orderBy, bool ascending)
 {
     assert(getOrderBySize() < sizeof(_orderBy)*2-1);
     assert(getExprSize() < 15);
-    addExpressionResult(orderBy);
+    addExpressionResult(std::move(orderBy));
     setOrderBy(getOrderBySize(), (ascending ? getExprSize() : -getExprSize()));
     setOrderBySize(getOrderBySize() + 1);
     setupAggregationReferences();
     return *this;
 }
 
-Group & Group::addAggregationResult(const ExpressionNode::CP & aggr)
+Group & Group::addAggregationResult(ExpressionNode::UP aggr)
 {
     assert(getAggrSize() < 15);
     size_t newSize = getAggrSize() + 1 + getExprSize();
     ExpressionVector n = new ExpressionNode::CP[newSize];
     for (size_t i(0), m(getAggrSize()); i < m; i++) {
-        n[i] = _aggregationResults[i];
+        n[i] = std::move(_aggregationResults[i]);
     }
-    n[getAggrSize()] = aggr;
+    n[getAggrSize()].reset(aggr.release());
     // Copy expressions after aggregationresults
     for (size_t i(getAggrSize()); i < newSize - 1; i++) {
-        n[i + 1] = _aggregationResults[i];
+        n[i + 1] = std::move(_aggregationResults[i]);
     }
     delete [] _aggregationResults;
     _aggregationResults = n;
@@ -90,14 +90,14 @@ Group & Group::addAggregationResult(const ExpressionNode::CP & aggr)
     return *this;
 }
 
-Group & Group::addExpressionResult(const ExpressionNode::CP & expressionNode)
+Group & Group::addExpressionResult(ExpressionNode::UP expressionNode)
 {
     uint32_t newSize = getAggrSize() + getExprSize() + 1;
     ExpressionVector n = new ExpressionNode::CP[newSize];
     for (uint32_t i(0); i < (newSize - 1); i++) {
-        n[i] = _aggregationResults[i];
+        n[i] = std::move(_aggregationResults[i]);
     }
-    n[newSize - 1] = expressionNode;
+    n[newSize - 1].reset(expressionNode.release());
     delete [] _aggregationResults;
     _aggregationResults = n;
     setExprSize(getExprSize()+1);
@@ -110,11 +110,12 @@ void Group::setupAggregationReferences()
     select(exprRefSetup, exprRefSetup);
 }
 
-Group & Group::addResult(const ExpressionNode::CP & aggr)
+Group &
+Group::addResult(ExpressionNode::UP aggr)
 {
     assert(getExprSize() < 15);
-    addAggregationResult(aggr);
-    addExpressionResult(ExpressionNode::CP(new AggregationRefNode(getAggrSize() - 1)));
+    addAggregationResult(std::move(aggr));
+    addExpressionResult(ExpressionNode::UP(new AggregationRefNode(getAggrSize() - 1)));
     setupAggregationReferences();
     return *this;
 }
@@ -599,6 +600,24 @@ Group::Group(const Group & rhs) :
     }
 }
 
+Group::Group(Group && rhs) noexcept :
+    Identifiable(rhs),
+    _id(std::move(rhs._id)),
+    _rank(std::move(rhs._rank)),
+    _packedLength(std::move(rhs._packedLength)),
+    _tag(std::move(rhs._tag)),
+    _aggregationResults(std::move(rhs._aggregationResults)),
+    _orderBy(),
+    _children(std::move(rhs._children)),
+    _childInfo(std::move(rhs._childInfo))
+{
+    memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
+    rhs.setChildrenSize(0);
+    rhs._aggregationResults = nullptr;
+    rhs._childInfo._allChildren = 0;
+    rhs._children = nullptr;
+}
+
 Group::~Group()
 {
     destruct(_children, getAllChildrenSize());
@@ -607,8 +626,17 @@ Group::~Group()
     delete [] _aggregationResults;
 }
 
-Group & Group::operator =(const Group & rhs)
-{
+Group &
+Group::operator = (const Group & rhs) {
+    if (&rhs != this) {
+        Group g(rhs);
+        swap(g);
+    }
+    return *this;
+}
+
+Group &
+Group::operator = (Group && rhs) noexcept {
     if (&rhs != this) {
         Group g(rhs);
         swap(g);

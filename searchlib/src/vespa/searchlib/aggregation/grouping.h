@@ -45,14 +45,14 @@ public:
 
     Grouping unchain() const { return *this; }
 
-    Grouping &setId(unsigned int i)                { _id = i;                  return *this; }
-    Grouping &invalidate()                         { _valid = false;           return *this; }
-    Grouping &setAll(bool v)                       { _all = v;                 return *this; }
-    Grouping &setTopN(int64_t v)                   { _topN = v;                return *this; }
-    Grouping &setFirstLevel(unsigned int level)    { _firstLevel = level;      return *this; }
-    Grouping &setLastLevel(unsigned int level)     { _lastLevel = level;       return *this; }
-    Grouping &addLevel(const GroupingLevel &level) { _levels.push_back(level); return *this; }
-    Grouping &setRoot(const Group &root_)          { _root = root_;            return *this; }
+    Grouping &setId(unsigned int i)             { _id = i;                  return *this; }
+    Grouping &invalidate()                      { _valid = false;           return *this; }
+    Grouping &setAll(bool v)                    { _all = v;                 return *this; }
+    Grouping &setTopN(int64_t v)                { _topN = v;                return *this; }
+    Grouping &setFirstLevel(unsigned int level) { _firstLevel = level;      return *this; }
+    Grouping &setLastLevel(unsigned int level)  { _lastLevel = level;       return *this; }
+    Grouping &addLevel(GroupingLevel level)     { _levels.emplace_back(std::move(level)); return *this; }
+    Grouping &setRoot(const Group &root_)       { _root = root_;            return *this; }
     Grouping &setClock(const vespalib::Clock * clock) { _clock = clock; return *this; }
     Grouping &setTimeOfDoom(fastos::TimeStamp timeOfDoom) { _timeOfDoom = timeOfDoom; return *this; }
 

@@ -172,24 +172,22 @@ TEST("testSessionId") {
     EXPECT_EQUAL(id2, id2);
 }
 
+#define MU std::make_unique
+
 TEST_F("testGroupingContextInitialization", DoomFixture()) {
     vespalib::nbostream os;
     Grouping baseRequest = Grouping()
                            .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                            .setExpression(AttributeNode("attr0"))))
+                                    .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr2"))))
+                                     .setExpression(MU<AttributeNode>("attr1"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr3"))))
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr3"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr1"))));
+                                     .setExpression(MU<AttributeNode>("attr3"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
 
     vespalib::NBOSerializer nos(os);
     nos << (uint32_t)1;
@@ -209,40 +207,31 @@ TEST_F("testGroupingContextUsage", DoomFixture()) {
     Grouping request1 = Grouping()
                            .setFirstLevel(0)
                            .setLastLevel(0)
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                            .setExpression(AttributeNode("attr0"))))
+                           .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr2"))))
+                                     .setExpression(MU<AttributeNode>("attr1"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr3"))))
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr3"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr1"))));
+                                     .setExpression(MU<AttributeNode>("attr3"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
 
     Grouping request2 = Grouping()
                            .setFirstLevel(0)
                            .setLastLevel(3)
                            .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                            .setExpression(AttributeNode("attr0"))))
+                                    .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr2"))))
+                                     .setExpression(MU<AttributeNode>("attr1"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr3"))))
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr3"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr1"))));
+                                     .setExpression(MU<AttributeNode>("attr3"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
 
 
     GroupingContext::GroupingPtr r1(new Grouping(request1));
@@ -260,20 +249,16 @@ TEST_F("testGroupingContextUsage", DoomFixture()) {
 TEST_F("testGroupingContextSerializing", DoomFixture()) {
     Grouping baseRequest = Grouping()
                            .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                            .setExpression(AttributeNode("attr0"))))
+                                    .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr2"))))
+                                     .setExpression(MU<AttributeNode>("attr1"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr3"))))
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr3"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr1"))));
+                                     .setExpression(MU<AttributeNode>("attr3"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
 
     vespalib::nbostream os;
     vespalib::NBOSerializer nos(os);
@@ -294,17 +279,13 @@ TEST_F("testGroupingManager", DoomFixture()) {
     Grouping request1 = Grouping()
                            .setFirstLevel(0)
                            .setLastLevel(0)
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                            .setExpression(AttributeNode("attr0"))))
+                           .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr2"))))
+                                     .setExpression(MU<AttributeNode>("attr1"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(AttributeNode("attr3"))));
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))));
 
     GroupingContext context(f1.clock, f1.timeOfDoom);
     GroupingContext::GroupingPtr bp(new Grouping(request1));
@@ -322,30 +303,25 @@ TEST_F("testGroupingSession", DoomFixture()) {
                            .setFirstLevel(0)
                            .setLastLevel(0)
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr2"))))
+                                     .setExpression(MU<AttributeNode>("attr1"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr3"))));
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))));
 
     Grouping request2 = Grouping()
                            .setId(1)
                            .setFirstLevel(0)
                            .setLastLevel(3)
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr2"))))
+                                     .setExpression(MU<AttributeNode>("attr1"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr3"))))
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr3"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr1"))));
+                                     .setExpression(MU<AttributeNode>("attr3"))
+                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
 
 
     CheckAttributeReferences attrCheck;
@@ -420,13 +396,13 @@ TEST_F("testEmptySessionId", DoomFixture()) {
                            .setFirstLevel(0)
                            .setLastLevel(0)
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
+                                     .setExpression(MU<AttributeNode>("attr1"))
                                      .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr2"))))
+                                                .setExpression(MU<AttributeNode>("attr2"))))
                            .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
+                                     .setExpression(MU<AttributeNode>("attr2"))
                                      .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr3"))));
+                                                .setExpression(MU<AttributeNode>("attr3"))));
 
     GroupingContext::GroupingPtr r1(new Grouping(request1));
     GroupingContext initContext(f1.clock, f1.timeOfDoom);
@@ -451,23 +427,22 @@ TEST_F("testSessionManager", DoomFixture()) {
     MyWorld world;
     world.basicSetup();
     vespalib::nbostream os;
-    Grouping request1 = Grouping()
-                           .setId(0)
-                           .setFirstLevel(0)
-                           .setLastLevel(0)
-                           .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr1"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr2"))
-                                                .setResult(Int64ResultNode(0))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(AttributeNode("attr2"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(AttributeNode("attr3"))
-                                                .setResult(Int64ResultNode(0))))
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                               .setExpression(AttributeNode("attr0"))
+    Grouping request1;
+    request1.setId(0)
+            .setFirstLevel(0)
+            .setLastLevel(0)
+            .addLevel(GroupingLevel()
+                              .setExpression(MU<AttributeNode>("attr1"))
+                              .addResult(SumAggregationResult()
+                                                 .setExpression(MU<AttributeNode>("attr2"))
+                                                 .setResult(Int64ResultNode(0))))
+            .addLevel(GroupingLevel()
+                              .setExpression(MU<AttributeNode>("attr2"))
+                              .addResult(SumAggregationResult()
+                                                 .setExpression(MU<AttributeNode>("attr3"))
+                                                 .setResult(Int64ResultNode(0))))
+            .setRoot(Group().addResult(SumAggregationResult()
+                                               .setExpression(MU<AttributeNode>("attr0"))
                                                .setResult(Int64ResultNode(0))));
 
     GroupingContext::GroupingPtr r1(new Grouping(request1));
@@ -522,12 +497,8 @@ TEST_F("test grouping fork/join", DoomFixture()) {
     world.basicSetup();
 
     Grouping request = Grouping()
-                       .setRoot(Group()
-                                .addResult(SumAggregationResult()
-                                           .setExpression(AttributeNode("attr0"))))
-                       .addLevel(GroupingLevel()
-                                 .setMaxGroups(3)
-                                 .setExpression(AttributeNode("attr0")))
+                       .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+                       .addLevel(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr0")))
                        .setFirstLevel(0)
                        .setLastLevel(1);
 
@@ -554,15 +525,11 @@ TEST_F("test grouping fork/join", DoomFixture()) {
 
     Grouping expect = Grouping()
                       .setRoot(Group()
-                               .addResult(SumAggregationResult()
-                                          .setExpression(AttributeNode("attr0"))
-                                          .setResult(Int64ResultNode(189)))
+                               .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(189)))
                                .addChild(Group().setId(Int64ResultNode(21)).setRank(40.0))
                                .addChild(Group().setId(Int64ResultNode(22)).setRank(150.0))
                                .addChild(Group().setId(Int64ResultNode(32)).setRank(100.0)))
-                      .addLevel(GroupingLevel()
-                                .setMaxGroups(3)
-                                .setExpression(AttributeNode("attr0")))
+                      .addLevel(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr0")))
                       .setFirstLevel(0)
                       .setLastLevel(1);
 
