@@ -14,7 +14,7 @@ public:
     using SingleResultNode = expression::SingleResultNode;
     DECLARE_AGGREGATIONRESULT(SumAggregationResult);
     SumAggregationResult() : AggregationResult(), _sum() { }
-    SumAggregationResult(const SingleResultNode & sum) : AggregationResult(), _sum(sum) { }
+    SumAggregationResult(SingleResultNode::UP sum) : AggregationResult(), _sum(sum.release()) { }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     const SingleResultNode & getSum() const { return *_sum; }
 private:
