@@ -71,7 +71,7 @@ public class VespaConfiguration {
 
 
     public int numConnections() {
-        return getInt(CONNECTIONS, 2);
+        return getInt(CONNECTIONS, 1);
     }
 
 
@@ -96,7 +96,7 @@ public class VespaConfiguration {
 
 
     public int maxInFlightRequests() {
-        return getInt(MAX_IN_FLIGHT_REQUESTS, 1000);
+        return getInt(MAX_IN_FLIGHT_REQUESTS, 500);
     }
 
 
