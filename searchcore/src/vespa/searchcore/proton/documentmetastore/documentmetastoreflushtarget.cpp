@@ -17,6 +17,8 @@ LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 #include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
+#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
+#include <vespa/searchcore/proton/attribute/attribute_directory.h>
 
 using namespace search;
 using namespace vespalib;
@@ -27,9 +29,38 @@ using vespalib::makeClosure;
 
 namespace proton {
 
+/**
+ * Task performing the actual flushing to disk.
+ **/
+class DocumentMetaStoreFlushTarget::Flusher : public Task {
+private:
+    DocumentMetaStoreFlushTarget     &_dmsft;
+    std::unique_ptr<search::AttributeSaver> _saver;
+    uint64_t                          _syncToken;
+    vespalib::string                  _flushDir;
+
+    bool saveDocumentMetaStore(); // not updating snap info.
+public:
+    Flusher(DocumentMetaStoreFlushTarget &dmsft, uint64_t syncToken, AttributeDirectory::Writer &writer);
+    ~Flusher();
+    uint64_t getSyncToken() const { return _syncToken; }
+    bool saveSnapInfo();
+    bool flush(AttributeDirectory::Writer &writer);
+    void updateStats();
+    bool cleanUp(AttributeDirectory::Writer &writer);
+    // Implements vespalib::Executor::Task
+    virtual void run();
+
+    virtual SerialNum
+    getFlushSerial(void) const
+    {
+        return _syncToken;
+    }
+};
+
 DocumentMetaStoreFlushTarget::Flusher::
 Flusher(DocumentMetaStoreFlushTarget &dmsft,
-        SerialNum syncToken)
+        SerialNum syncToken, AttributeDirectory::Writer &writer)
     : _dmsft(dmsft),
       _saver(),
       _syncToken(syncToken),
@@ -40,7 +71,7 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
     if (dms.canShrinkLidSpace()) {
         dms.shrinkLidSpace();
     }
-    _flushDir = _dmsft.getSnapshotDir(syncToken);
+    _flushDir = writer.getSnapshotDir(syncToken);
     vespalib::string newBaseFileName(_flushDir + "/" + dms.getName());
     dms.setBaseFileName(newBaseFileName);
     _saver = dms.initSave();
@@ -50,19 +81,6 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
 DocumentMetaStoreFlushTarget::Flusher::~Flusher()
 {
     // empty
-}
-
-bool
-DocumentMetaStoreFlushTarget::Flusher::saveSnapInfo()
-{
-    if (!_dmsft._snapInfo.save()) {
-        LOG(warning,
-            "Could not save meta-info file for document meta store"
-            " '%s' to disk",
-            _dmsft._dms->getBaseFileName().c_str());
-        return false;
-    }
-    return true;
 }
 
 bool
@@ -90,17 +108,9 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
 }
 
 bool
-DocumentMetaStoreFlushTarget::Flusher::flush()
+DocumentMetaStoreFlushTarget::Flusher::flush(AttributeDirectory::Writer &writer)
 {
-    IndexMetaInfo::Snapshot newSnap(false, _syncToken,
-                                    getSnapshotName(_syncToken));
-    {
-        vespalib::LockGuard guard(_dmsft._snapInfoLock);
-        _dmsft._snapInfo.addSnapshot(newSnap);
-    }
-    if (!saveSnapInfo()) {
-        return false;
-    }
+    writer.createInvalidSnapshot(_syncToken);
     if (!saveDocumentMetaStore()) {
         LOG(warning, "Could not write document meta store '%s' to disk",
             _dmsft._dms->getBaseFileName().c_str());
@@ -111,16 +121,14 @@ DocumentMetaStoreFlushTarget::Flusher::flush()
      * flush is activated to ensure that same future will occur that has
      * already been observable in the saved document meta store (future
      * timestamp or bucket id).
+     *
+     * Assume only flush engine tries to flush document meta store, i.e.
+     * noone else tries to get writer while flush task is flushing
+     * document meta store to disk.
      */
     _dmsft._tlsSyncer.sync();
-    {
-        vespalib::LockGuard guard(_dmsft._snapInfoLock);
-        _dmsft._snapInfo.validateSnapshot(_syncToken);
-    }
-    if (!saveSnapInfo()) {
-        return false;
-    }
-    _dmsft._lastFlushTime = search::FileKit::getModificationTime(_flushDir);
+    writer.markValidSnapshot(_syncToken);
+    writer.setLastFlushTime(search::FileKit::getModificationTime(_flushDir));
     return true;
 }
 
@@ -131,17 +139,11 @@ DocumentMetaStoreFlushTarget::Flusher::updateStats()
 }
 
 bool
-DocumentMetaStoreFlushTarget::Flusher::cleanUp()
+DocumentMetaStoreFlushTarget::Flusher::cleanUp(AttributeDirectory::Writer &writer)
 {
     if (_dmsft._cleanUpAfterFlush) {
-        if (!AttributeDiskLayout::removeOldSnapshots(_dmsft._snapInfo,
-                    _dmsft._snapInfoLock)) {
-            LOG(warning,
-                "Encountered problems when removing old snapshot directories"
-                "after flushing document meta store '%s' to disk",
-                _dmsft._dms->getBaseFileName().c_str());
-            return false;
-        }
+        writer.invalidateOldSnapshots();
+        writer.removeInvalidSnapshots(false);
     }
     return true;
 }
@@ -149,17 +151,17 @@ DocumentMetaStoreFlushTarget::Flusher::cleanUp()
 void
 DocumentMetaStoreFlushTarget::Flusher::run()
 {
-    vespalib::LockGuard guard(_dmsft._flusherLock);
-    if (_syncToken <= _dmsft.getFlushedSerialNum()) {
+    auto writer = _dmsft._dmsDir->getWriter();
+    if (!writer || _syncToken <= _dmsft.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created
         return;
     }
-    if (!flush()) {
+    if (!flush(*writer)) {
         // TODO (geirst): throw exception ?
     }
     updateStats();
-    if (!cleanUp()) {
+    if (!cleanUp(*writer)) {
         // TODO (geirst): throw exception ?
     }
 }
@@ -175,23 +177,15 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
       _dms(dms),
       _tlsSyncer(tlsSyncer),
       _baseDir(baseDir),
-      _snapInfo(_baseDir),
-      _snapInfoLock(),
-      _flusherLock(),
       _cleanUpAfterFlush(true),
       _lastStats(),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
-      _lastFlushTime(),
-      _hwInfo(hwInfo)
+      _hwInfo(hwInfo),
+      _diskLayout(AttributeDiskLayout::createSimple(baseDir)),
+      _dmsDir(_diskLayout->createAttributeDir(""))
 
 {
-    if (!_snapInfo.load()) {
-        _snapInfo.save();
-    } else {
-        vespalib::string dirName(getSnapshotDir(getFlushedSerialNum()));
-        _lastFlushTime = search::FileKit::getModificationTime(dirName);
-    }
     _lastStats.setPathElementsToLog(8);
 }
 
@@ -201,28 +195,10 @@ DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget()
 }
 
 
-vespalib::string
-DocumentMetaStoreFlushTarget::getSnapshotName(uint64_t syncToken)
-{
-    return vespalib::make_string("snapshot-%" PRIu64, syncToken);
-}
-
-
-vespalib::string
-DocumentMetaStoreFlushTarget::getSnapshotDir(uint64_t syncToken)
-{
-    return vespalib::make_string("%s/%s",
-                                 _baseDir.c_str(),
-                                 getSnapshotName(syncToken).c_str());
-}
-
-
 IFlushTarget::SerialNum
 DocumentMetaStoreFlushTarget::getFlushedSerialNum() const
 {
-    vespalib::LockGuard guard(_snapInfoLock);
-    IndexMetaInfo::Snapshot bestSnap = _snapInfo.getBestSnapshot();
-    return bestSnap.valid ? bestSnap.syncToken : 0;
+    return _dmsDir->getFlushedSerialNum();
 }
 
 
@@ -255,7 +231,7 @@ DocumentMetaStoreFlushTarget::getApproxDiskGain() const
 IFlushTarget::Time
 DocumentMetaStoreFlushTarget::getLastFlushTime() const
 {
-    return _lastFlushTime;
+    return _dmsDir->getLastFlushTime();
 }
 
 
@@ -263,21 +239,22 @@ IFlushTarget::Task::UP
 DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial)
 {
     // Called by document db executor
-    (void)currentSerial;
     _dms->removeAllOldGenerations();
-    SerialNum syncToken = currentSerial;
-    syncToken = std::max(currentSerial,
-                         _dms->getStatus().getLastSyncToken());
+    SerialNum syncToken = std::max(currentSerial,
+                                   _dms->getStatus().getLastSyncToken());
+    auto writer = _dmsDir->tryGetWriter();
+    if (!writer) {
+        return Task::UP();
+    }
     if (syncToken <= getFlushedSerialNum()) {
-        vespalib::LockGuard guard(_flusherLock);
-        _lastFlushTime = fastos::ClockSystem::now();
+        writer->setLastFlushTime(fastos::ClockSystem::now());
         LOG(debug,
             "No document meta store to flush."
             " Update flush time to current: lastFlushTime(%f)",
-            _lastFlushTime.sec());
+            getLastFlushTime().sec());
         return Task::UP();
     }
-    return Task::UP(new Flusher(*this, syncToken));
+    return Task::UP(new Flusher(*this, syncToken, *writer));
 }
 
 

@@ -24,9 +24,6 @@ private:
     mutable std::shared_timed_mutex _mutex;
     std::map<vespalib::string, std::shared_ptr<AttributeDirectory>> _dirs;
 
-    static vespalib::string getSnapshotDir(uint64_t syncToken);
-    static vespalib::string getSnapshotRemoveDir(const vespalib::string &baseDir, const vespalib::string &snapDir);
-
     void scanDir();
     struct PrivateConstructorTag { };
 public:
@@ -34,15 +31,14 @@ public:
     ~AttributeDiskLayout();
     static vespalib::string  getAttributeBaseDir(const vespalib::string &baseDir, const vespalib::string &attrName);
     static search::AttributeVector::BaseName getAttributeFileName(const vespalib::string &baseDir, const vespalib::string &attrName, uint64_t syncToken);
-    static bool removeOldSnapshots(search::IndexMetaInfo &snapInfo, vespalib::Lock &snapInfoLock);
-    static bool removeAttribute(const vespalib::string &baseDir, const vespalib::string &attrName, uint64_t wipeSerial);
-    static std::vector<vespalib::string> listAttributes(const vespalib::string &baseDir);
+    std::vector<vespalib::string> listAttributes();
     const vespalib::string &getBaseDir() const { return _baseDir; }
     void createBaseDir();
     std::shared_ptr<AttributeDirectory> getAttributeDir(const vespalib::string &name);
     std::shared_ptr<AttributeDirectory> createAttributeDir(const vespalib::string &name);
     void removeAttributeDir(const vespalib::string &name, search::SerialNum serialNum);
     static std::shared_ptr<AttributeDiskLayout> create(const vespalib::string &baseDir);
+    static std::shared_ptr<AttributeDiskLayout> createSimple(const vespalib::string &baseDir);
 };
 
 } // namespace proton

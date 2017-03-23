@@ -60,6 +60,9 @@ AttributeDirectory::getDirName() const
         diskLayout = _diskLayout.lock();
     }
     assert(diskLayout);
+    if (_name.empty()) {
+        return diskLayout->getBaseDir();
+    }
     return AttributeDiskLayout::getAttributeBaseDir(diskLayout->getBaseDir(), _name);
 }
 
@@ -98,10 +101,8 @@ AttributeDirectory::saveSnapInfo()
 vespalib::string
 AttributeDirectory::getSnapshotDir(search::SerialNum serialNum)
 {
-    auto snap = _snapInfo.getSnapshot(serialNum);
-    assert(snap.syncToken == serialNum);
     vespalib::string dirName(getDirName());
-    return dirName + "/" + snap.dirName;
+    return dirName + "/" + getSnapshotDirComponent(serialNum);
 }
 
 void

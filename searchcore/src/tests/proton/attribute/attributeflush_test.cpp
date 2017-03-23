@@ -6,6 +6,7 @@ LOG_SETUP("attributeflush_test");
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -78,6 +79,9 @@ public:
     void
     doFlushing(Executor::Task::UP task)
     {
+        if (!task) {
+            return;
+        }
         Executor::Task::UP wrapper(new TaskWrapper(std::move(task), gate));
         Executor::Task::UP ok = _executor.execute(std::move(wrapper));
         assert(ok.get() == NULL);
@@ -410,8 +414,9 @@ Test::requireThatCleanUpIsPerformedAfterFlush(void)
     info.addSnapshot(IndexMetaInfo::Snapshot(true, 10, "snapshot-10"));
     info.addSnapshot(IndexMetaInfo::Snapshot(false, 20, "snapshot-20"));
     EXPECT_TRUE(info.save());
+    auto diskLayout = AttributeDiskLayout::create("flush");
 
-    FlushableAttribute fa(av, "flush", TuneFileAttributes(),
+    FlushableAttribute fa(av, diskLayout->getAttributeDir("a6"), TuneFileAttributes(),
                           f._fileHeaderContext, f._attributeFieldWriter,
                           f._hwInfo);
     fa.initFlush(30)->run();
@@ -457,7 +462,9 @@ Test::requireThatOnlyOneFlusherCanRunAtTheSameTime(void)
     for (size_t i = 10; i < 100; ++i) {
         av->commit(i, i);
         vespalib::Executor::Task::UP task = ft->initFlush(i);
-        exec.execute(std::move(task));
+        if (task) {
+            exec.execute(std::move(task));
+        }
     }
     exec.sync();
     exec.shutdown();
@@ -470,9 +477,6 @@ Test::requireThatOnlyOneFlusherCanRunAtTheSameTime(void)
     }
     IndexMetaInfo::Snapshot best = info.getBestSnapshot();
     EXPECT_EQUAL(true, best.valid);
-    EXPECT_EQUAL(99u, best.syncToken);
-    FlushStats stats = ft->getLastFlushStats();
-    EXPECT_EQUAL("flush/a8/snapshot-99", stats.getPath());
 }
 
 

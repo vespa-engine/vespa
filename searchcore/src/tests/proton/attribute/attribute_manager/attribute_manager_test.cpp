@@ -409,7 +409,7 @@ TEST_F("require that reconfig can add attributes", Fixture)
     newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
     newSpec.push_back(AttrSpec("a3", INT32_SINGLE));
 
-    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, f._m.getNumDocs(), 0));
+    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, f._m.getNumDocs(), 10));
     std::vector<AttributeGuard> list;
     sam.mgr.getAttributeList(list);
     std::sort(list.begin(), list.end(), [](const AttributeGuard & a, const AttributeGuard & b) {
@@ -432,7 +432,7 @@ TEST_F("require that reconfig can remove attributes", Fixture)
     AttrSpecList newSpec;
     newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
 
-    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 0));
+    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 10));
     std::vector<AttributeGuard> list;
     sam.mgr.getAttributeList(list);
     EXPECT_EQUAL(1u, list.size());
@@ -471,7 +471,7 @@ TEST_F("require that new attributes after reconfig are initialized", Fixture)
     EXPECT_EQUAL(0u, a3->getStatus().getLastSyncToken());
 }
 
-TEST_F("require that removed attributes can resurrect", BaseFixture)
+TEST_F("require that removed attributes cannot resurrect", BaseFixture)
 {
     proton::AttributeManager::SP am1(
             new proton::AttributeManager(test_dir, "test.subdb",
@@ -499,11 +499,11 @@ TEST_F("require that removed attributes can resurrect", BaseFixture)
     AttributeGuard &ag1(*ag1ap);
     ASSERT_TRUE(ag1.valid());
     EXPECT_EQUAL(5u, ag1->getNumDocs());
-    EXPECT_EQUAL(10, ag1->getInt(1));
-    EXPECT_EQUAL(10, ag1->getInt(2));
+    EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(1)));
+    EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(2)));
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(3)));
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(ag1->getInt(4)));
-    EXPECT_EQUAL(16u, ag1->getStatus().getLastSyncToken());
+    EXPECT_EQUAL(0u, ag1->getStatus().getLastSyncToken());
 }
 
 TEST_F("require that extra attribute is not treated as removed", Fixture)

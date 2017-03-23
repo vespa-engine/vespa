@@ -54,7 +54,7 @@ AttributeManager::addAttribute(const AttributeWrap &attribute)
     if ( ! attribute.isExtra() ) {
         // Flushing of extra attributes is handled elsewhere
         _flushables[attribute->getName()] = FlushableAttribute::SP
-                (new FlushableAttribute(attribute, _diskLayout->getBaseDir(),
+                                            (new FlushableAttribute(attribute, _diskLayout->createAttributeDir(attribute->getName()),
                                         _tuneFileAttributes,
                                         _fileHeaderContext,
                                         _attributeFieldWriter,
@@ -104,11 +104,11 @@ AttributeManager::flushRemovedAttributes(const AttributeManager &currMgr,
         if (!newSpec.hasAttribute(kv.first) &&
             !kv.second.isExtra() &&
             kv.second->getStatus().getLastSyncToken() <
-            newSpec.getCurrentSerialNum()) {
+            newSpec.getCurrentSerialNum() - 1) {
             FlushableAttribute::SP flushable =
                 currMgr.findFlushable(kv.first);
             vespalib::Executor::Task::UP flushTask =
-                flushable->initFlush(newSpec.getCurrentSerialNum());
+                flushable->initFlush(newSpec.getCurrentSerialNum() - 1);
             if (flushTask.get() != NULL) {
                 LOG(debug, "Flushing removed attribute vector '%s' with %u docs and serial number %lu",
                            kv.first.c_str(), kv.second->getNumDocs(), kv.second->getStatus().getLastSyncToken());
@@ -441,12 +441,11 @@ AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
 void
 AttributeManager::wipeHistory(search::SerialNum wipeSerial)
 {
-    const vespalib::string &baseDir = _diskLayout->getBaseDir();
-    std::vector<vespalib::string> attributes = AttributeDiskLayout::listAttributes(baseDir);
+    std::vector<vespalib::string> attributes = _diskLayout->listAttributes();
     for (const auto &attribute : attributes) {
         auto itr = _attributes.find(attribute);
         if (itr == _attributes.end()) {
-            AttributeDiskLayout::removeAttribute(baseDir, attribute, wipeSerial);
+            _diskLayout->removeAttributeDir(attribute, wipeSerial);
         }
     }
 }

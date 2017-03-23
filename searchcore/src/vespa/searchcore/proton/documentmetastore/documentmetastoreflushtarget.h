@@ -25,6 +25,8 @@ namespace proton
 {
 
 class ITlsSyncer;
+class AttributeDiskLayout;
+class AttributeDirectory;
 
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
@@ -38,50 +40,18 @@ private:
     /**
      * Task performing the actual flushing to disk.
      **/
-    class Flusher : public Task {
-    private:
-        DocumentMetaStoreFlushTarget     &_dmsft;
-        std::unique_ptr<search::AttributeSaver> _saver;
-        uint64_t                          _syncToken;
-        vespalib::string                  _flushDir;
-
-        bool saveDocumentMetaStore(); // not updating snap info.
-    public:
-        Flusher(DocumentMetaStoreFlushTarget &dmsft, uint64_t syncToken);
-        ~Flusher();
-        uint64_t getSyncToken() const { return _syncToken; }
-        bool saveSnapInfo();
-        bool flush();
-        void updateStats();
-        bool cleanUp();
-        // Implements vespalib::Executor::Task
-        virtual void run();
-
-        virtual SerialNum
-        getFlushSerial(void) const
-        {
-            return _syncToken;
-        }
-    };
+    class Flusher;
 
     DocumentMetaStore::SP       _dms;
     ITlsSyncer                 &_tlsSyncer;
     vespalib::string            _baseDir;
-    search::IndexMetaInfo       _snapInfo;
-    vespalib::Lock		_snapInfoLock;
-    vespalib::Lock              _flusherLock;
     bool                        _cleanUpAfterFlush;
     FlushStats                  _lastStats;
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    fastos::TimeStamp           _lastFlushTime;
     HwInfo                      _hwInfo;
-    
-    static vespalib::string
-    getSnapshotName(uint64_t syncToken);
-
-    vespalib::string
-    getSnapshotDir(uint64_t syncToken);
+    std::shared_ptr<AttributeDiskLayout> _diskLayout;
+    std::shared_ptr<AttributeDirectory> _dmsDir;
 
 public:
     typedef std::shared_ptr<DocumentMetaStoreFlushTarget> SP;
