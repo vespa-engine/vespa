@@ -1,10 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol.test;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class TestFileUtil {
     protected static final String DATA_PATH = "./test/crosslanguagefiles";
@@ -33,14 +34,6 @@ public class TestFileUtil {
     }
 
     public static byte[] readFile(String path) throws IOException {
-        try (FileInputStream stream = new FileInputStream(path)) {
-            byte[] data = new byte[stream.available()];
-            int read = stream.read(data);
-            if (read != data.length) {
-                throw new IOException(String.format("Truncated read (expected %d bytes, read %d)", data.length, read));
-            }
-            return data;
-        }
+        return Files.readAllBytes(Paths.get(path));
     }
-
 }
