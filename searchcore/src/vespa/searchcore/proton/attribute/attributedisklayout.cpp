@@ -4,131 +4,116 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributedisklayout");
 #include "attributedisklayout.h"
-#include <vespa/searchcommon/common/schemaconfigurer.h>
-
-using search::IndexMetaInfo;
-using search::index::SchemaBuilder;
-using search::index::Schema;
-using search::AttributeVector;
+#include <vespa/vespalib/io/fileutil.h>
+#include "attribute_directory.h"
 
 namespace proton
 {
 
-
-bool
-AttributeDiskLayout::removeOldSnapshots(IndexMetaInfo &snapInfo,
-                                        vespalib::Lock &snapInfoLock)
+AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, PrivateConstructorTag)
+    : _baseDir(baseDir),
+      _mutex(),
+      _dirs()
 {
-    IndexMetaInfo::Snapshot best = snapInfo.getBestSnapshot();
-    if (!best.valid) {
-        return true;
+    vespalib::mkdir(_baseDir, false);
+}
+
+AttributeDiskLayout::~AttributeDiskLayout()
+{
+}
+
+std::vector<vespalib::string>
+AttributeDiskLayout::listAttributes()
+{
+    std::vector<vespalib::string> attributes;
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
+    for (const auto &dir : _dirs)  {
+        attributes.emplace_back(dir.first);
     }
-    std::vector<IndexMetaInfo::Snapshot> toRemove;
-    const IndexMetaInfo::SnapshotList & list = snapInfo.snapshots();
-    for (const auto &snap : list) {
-        if (!(snap == best)) {
-            toRemove.push_back(snap);
-        }
-    }
-    LOG(debug,
-        "About to remove %zu old snapshots. "
-        "Will keep best snapshot with sync token %" PRIu64,
-        toRemove.size(),
-        best.syncToken);
-    for (const auto &snap : toRemove) {
-        if (snap.valid) {
-            {
-                vespalib::LockGuard guard(snapInfoLock);
-                snapInfo.invalidateSnapshot(snap.syncToken);
-            }
-            if (!snapInfo.save()) {
-                LOG(warning,
-                    "Could not save meta info file in directory '%s' after "
-                    "invalidating snapshot with sync token %" PRIu64,
-                    snapInfo.getPath().c_str(),
-                    snap.syncToken);
-                return false;
+    return attributes;
+}
+
+void
+AttributeDiskLayout::scanDir()
+{
+    FastOS_DirectoryScan dir(_baseDir.c_str());
+    while (dir.ReadNext()) {
+        if (strcmp(dir.GetName(), "..") != 0 && strcmp(dir.GetName(), ".") != 0) {
+            if (dir.IsDirectory()) {
+                createAttributeDir(dir.GetName());
             }
         }
-        vespalib::string rmDir =
-            getSnapshotRemoveDir(snapInfo.getPath(), snap.dirName);
-        FastOS_StatInfo statInfo;
-        if (!FastOS_File::Stat(rmDir.c_str(), &statInfo) &&
-            statInfo._error == FastOS_StatInfo::FileNotFound)
-        {
-            // Directory already removed
+    }
+}
+
+std::shared_ptr<AttributeDirectory>
+AttributeDiskLayout::getAttributeDir(const vespalib::string &name)
+{
+    std::shared_lock<std::shared_timed_mutex> guard(_mutex);
+    auto itr = _dirs.find(name);
+    if (itr == _dirs.end()) {
+        return std::shared_ptr<AttributeDirectory>();
+    } else {
+        return itr->second;
+    }
+}
+
+std::shared_ptr<AttributeDirectory>
+AttributeDiskLayout::createAttributeDir(const vespalib::string &name)
+{
+    std::unique_lock<std::shared_timed_mutex> guard(_mutex);
+    auto itr = _dirs.find(name);
+    if (itr == _dirs.end()) {
+        auto dir = std::make_shared<AttributeDirectory>(shared_from_this(), name);
+        auto insres = _dirs.insert(std::make_pair(name, dir));
+        assert(insres.second);
+        return dir;
+    } else {
+        return itr->second;
+    }
+}
+
+void
+AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::SerialNum serialNum)
+{
+    auto dir = getAttributeDir(name);
+    if (dir) {
+        auto writer = dir->getWriter();
+        if (writer) {
+            writer->invalidateOldSnapshots(serialNum);
+            writer->removeInvalidSnapshots();
+            if (writer->removeDiskDir()) {
+                std::unique_lock<std::shared_timed_mutex> guard(_mutex);
+                auto itr = _dirs.find(name);
+                assert(itr != _dirs.end());
+                assert(dir.get() == itr->second.get());
+                _dirs.erase(itr);
+                writer->detach();
+            }
         } else {
-            FastOS_FileInterface:: EmptyAndRemoveDirectory(rmDir.c_str());
-#if 0
-            LOG(warning,
-                "Could not remove snapshot directory '%s'",
-                rmDir.c_str());
-            return false;
-#endif
+            std::unique_lock<std::shared_timed_mutex> guard(_mutex);
+            auto itr = _dirs.find(name);
+            if (itr != _dirs.end()) {
+                assert(dir.get() != itr->second.get());
+            }
         }
-        {
-            vespalib::LockGuard guard(snapInfoLock);
-            snapInfo.removeSnapshot(snap.syncToken);
-        }
-        if (!snapInfo.save()) {
-            LOG(warning,
-                "Could not save meta info file in directory '%s' after "
-                "removing snapshot with sync token %" PRIu64,
-                snapInfo.getPath().c_str(), snap.syncToken);
-            return false;
-        }
-        LOG(debug, "Removed snapshot directory '%s'", rmDir.c_str());
     }
-    return true;
 }
 
-bool
-AttributeDiskLayout::removeAttribute(const vespalib::string &baseDir,
-                                     const vespalib::string &attrName)
+std::shared_ptr<AttributeDiskLayout>
+AttributeDiskLayout::create(const vespalib::string &baseDir)
 {
-    const vespalib::string currDir = getAttributeBaseDir(baseDir, attrName);
-    const vespalib::string rmDir =
-        getAttributeBaseDir(baseDir,
-                            vespalib::make_string("remove.%s",
-                                    attrName.c_str()));
-
-    FastOS_StatInfo statInfo;
-    if (FastOS_File::Stat(rmDir.c_str(), &statInfo) && statInfo._isDirectory) {
-        FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str());
-#if 0
-        if (!FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str())) {
-            LOG(warning,
-                "Could not remove attribute directory '%s'",
-                rmDir.c_str());
-            return false;
-        }
-#endif
-    }
-    if (!FastOS_File::Stat(currDir.c_str(), &statInfo) &&
-        statInfo._error == FastOS_StatInfo::FileNotFound)
-    {
-        // Directory already removed
-        return true;
-    }
-    if (!FastOS_FileInterface::MoveFile(currDir.c_str(), rmDir.c_str())) {
-        LOG(warning,
-            "Could not move attribute directory '%s' to '%s'",
-            currDir.c_str(),
-            rmDir.c_str());
-        return false;
-    }
-    FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str());
-#if 0
-    if (!FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str())) {
-        LOG(warning,
-            "Could not remove attribute directory '%s'",
-            rmDir.c_str());
-        return false;
-    }
-#endif
-    return true;
+    auto diskLayout = std::make_shared<AttributeDiskLayout>(baseDir, PrivateConstructorTag());
+    diskLayout->scanDir();
+    return diskLayout;
 }
 
+std::shared_ptr<AttributeDiskLayout>
+AttributeDiskLayout::createSimple(const vespalib::string &baseDir)
+{
+    auto diskLayout = std::make_shared<AttributeDiskLayout>(baseDir, PrivateConstructorTag());
+    return diskLayout;
+}
 
 } // namespace proton
 

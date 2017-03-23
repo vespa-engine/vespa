@@ -5,33 +5,12 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.querynode");
 
-namespace search
-{
-
-IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS(search, QueryNode, vespalib::Identifiable);
-
-void NewNode(QueryNode::LP & qn, QueryNodeList & currentNodeList, size_t count=0)
-{
-    if ( ! currentNodeList.empty() ) {
-        QueryConnector *qc = dynamic_cast<QueryConnector *> (&*currentNodeList.back());
-        if (qc != 0 &&
-            ((dynamic_cast<NotQueryNode *>(qc) != NULL) ||
-             (dynamic_cast<PhraseQueryNode *>(qc) != NULL && (count == qc->size()))))
-        {
-            qc->push_back(qn);
-        } else {
-            currentNodeList.push_back(qn);
-        }
-    } else {
-        currentNodeList.push_back(qn);
-    }
-}
+namespace search {
 
 namespace {
     vespalib::stringref DEFAULT("default");
 }
 
-#define CASE(c, q) case c: { qn.reset(new q()); } break;
 QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factory, search::SimpleQueryStackDumpIterator & queryRep, bool allowRewrite)
 {
     unsigned int arity = queryRep.getArity();
@@ -69,9 +48,9 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFa
                 if (qc->isFlattenable(queryRep.getType())) {
                     arity += queryRep.getArity();
                 } else {
-                    LP child(Build(qc, factory, queryRep,
-                                   allowRewrite && ((dynamic_cast<NearQueryNode *> (qn.get()) == NULL) && (dynamic_cast<PhraseQueryNode *> (qn.get()) == NULL))).release());
-                    qc->push_back(child);
+                    UP child(Build(qc, factory, queryRep,
+                                   allowRewrite && ((dynamic_cast<NearQueryNode *> (qn.get()) == NULL) && (dynamic_cast<PhraseQueryNode *> (qn.get()) == NULL))));
+                    qc->push_back(std::move(child));
                 }
             }
         }
@@ -131,11 +110,11 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFa
             } else {
                 std::unique_ptr<PhraseQueryNode> phrase(new PhraseQueryNode());
 
-                phrase->push_back(LP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
-                phrase->push_back(LP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
+                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
+                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
                 std::unique_ptr<EquivQueryNode> orqn(new EquivQueryNode());
-                orqn->push_back(LP(qt.release()));
-                orqn->push_back(LP(phrase.release()));
+                orqn->push_back(std::move(qt));
+                orqn->push_back(std::move(phrase));
                 qn.reset(orqn.release());
             }
         }
@@ -163,7 +142,6 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultFa
     }
     return qn;
 }
-#undef CASE
 
 const HitList & QueryNode::evaluateHits(HitList & hl) const
 {

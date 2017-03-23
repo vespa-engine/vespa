@@ -2,8 +2,7 @@
 #pragma once
 
 #include "posocc.h"
-#include <vespa/vespalib/util/linkedptr.h>
-#include <vespa/searchlib/common/identifiable.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search {
 
@@ -25,11 +24,9 @@ typedef std::vector<const QueryTerm *> ConstQueryTermList;
   This is the base of any node in the query tree. Both leaf nodes (terms)
   and operator nodes (AND, NOT, OR, PHRASE, NEAR, ONEAR, etc).
 */
-class QueryNode : public vespalib::Identifiable
+class QueryNode
 {
  public:
-  DECLARE_IDENTIFIABLE_ABSTRACT_NS(search, QueryNode);
-  typedef vespalib::LinkedPtr<QueryNode> LP;
   typedef std::unique_ptr<QueryNode> UP;
 
   virtual ~QueryNode() { }
@@ -59,7 +56,7 @@ class QueryNode : public vespalib::Identifiable
 };
 
 /// A list conating the QuerNode objects. With copy/assignment.
-typedef std::vector<QueryNode::LP> QueryNodeList;
+typedef std::vector<QueryNode::UP> QueryNodeList;
 
 }
 

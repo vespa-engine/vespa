@@ -95,7 +95,7 @@ class IndexMaintainer : public IIndexManager,
     uint32_t               _source_selector_changes; // Protected by IUL
     // _selector is protected by SL + IUL
     ISourceSelector::SP             _selector;
-    ISearchableIndexCollection::SP  _source_list; // Protected by SL + NSL
+    ISearchableIndexCollection::SP  _source_list; // Protected by SL + NSL, only set by master thread
     uint32_t          _last_fusion_id;   // Protected by SL + IUL
     uint32_t          _next_id;          // Protected by SL + IUL
     uint32_t          _current_index_id; // Protected by SL + IUL
@@ -272,20 +272,6 @@ class IndexMaintainer : public IIndexManager,
 
     void doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex);
 
-    class WipeHistoryArgs
-    {
-    public:
-        ISearchableIndexCollection::SP _old_source_list;
-        ISearchableIndexCollection::SP _new_source_list;
-
-        WipeHistoryArgs();
-        WipeHistoryArgs(WipeHistoryArgs &&);
-        WipeHistoryArgs & operator=(WipeHistoryArgs &&);
-
-        ~WipeHistoryArgs();
-    };
-
-    bool doneWipeHistory(WipeHistoryArgs &args);
     Schema getSchema(void) const;
     Schema::SP getActiveFusionWipeTimeSchema() const;
     search::TuneFileAttributes getAttrTune();
@@ -301,6 +287,7 @@ class IndexMaintainer : public IIndexManager,
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
     void scheduleCommit();
     void commit();
+    void internalWipeHistory(const Schema &schema, SerialNum wipeSerial);
 
 public:
     IndexMaintainer(const IndexMaintainer &) = delete;
@@ -395,8 +382,8 @@ public:
     }
 
     IFlushTarget::List getFlushTargets() override;
-    void setSchema(const Schema & schema) override ;
-    void wipeHistory(SerialNum wipeSerial, const Schema &historyFields) override;
+    void setSchema(const Schema & schema, SerialNum serialNum) override ;
+    void wipeHistory(SerialNum wipeSerial) override;
 };
 
 } // namespace index

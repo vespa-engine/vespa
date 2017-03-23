@@ -114,8 +114,7 @@ SnippetModifierManager::setup(const QueryTermList & queryTerms,
                         LOG(debug, "Create snippet modifier for field id '%u'", fId);
                         UTF8SubstringSnippetModifier::SP searcher
                             (new UTF8SubstringSnippetModifier(fId, _searchModifyBuf, _searchOffsetBuf));
-                        FieldModifier::LP modifier(new SnippetModifier(searcher, _modifierBuf));
-                        _modifiers.map()[fId] = modifier;
+                        _modifiers.map()[fId] = std::make_unique<SnippetModifier>(searcher, _modifierBuf);
                     }
                 }
             }
@@ -123,11 +122,10 @@ SnippetModifierManager::setup(const QueryTermList & queryTerms,
     }
 
     // prepare modifiers
-    for (FieldModifierMapT::iterator itr = _modifiers.map().begin(); itr != _modifiers.map().end(); ++itr) {
-        FieldIdT fId = itr->first;
-        const FieldModifier::LP & fmod = itr->second;
-        SnippetModifier * smod = static_cast<SnippetModifier *>(fmod.get());
-        smod->getSearcher()->prepare(fqtm[fId], _searchBuf);
+    for (auto & entry : _modifiers.map()) {
+        FieldIdT fId = entry.first;
+        SnippetModifier & smod = static_cast<SnippetModifier &>(*entry.second);
+        smod.getSearcher()->prepare(fqtm[fId], _searchBuf);
     }
 }
 

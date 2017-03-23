@@ -28,6 +28,8 @@ class FileHeaderContext;
 namespace proton
 {
 
+class AttributeDiskLayout;
+
 /**
  * Specialized attribute manager for proton.
  */
@@ -57,7 +59,7 @@ private:
     AttributeMap _attributes;
     FlushableMap _flushables;
     std::vector<search::AttributeVector *> _writableAttributes;
-    vespalib::string _baseDir;
+    std::shared_ptr<AttributeDiskLayout> _diskLayout;
     vespalib::string _documentSubDbName;
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
@@ -78,15 +80,9 @@ private:
 
     FlushableAttribute::SP findFlushable(const vespalib::string &name) const;
 
-    void createBaseDir();
-
-
     void transferExistingAttributes(const AttributeManager &currMgr,
                                     const Spec &newSpec,
                                     Spec::AttributeList &toBeAdded);
-
-    void flushRemovedAttributes(const AttributeManager &currMgr,
-                                const Spec &newSpec);
 
     void addNewAttributes(const Spec &newSpec,
                           const Spec::AttributeList &toBeAdded,
@@ -165,7 +161,7 @@ public:
 
     virtual void getAttributeListAll(std::vector<search::AttributeGuard> &list) const override;
 
-    virtual void wipeHistory(const search::index::Schema &historySchema) override;
+    virtual void wipeHistory(search::SerialNum wipeSerial) override;
 
     virtual const IAttributeFactory::SP &getFactory() const override { return _factory; }
 

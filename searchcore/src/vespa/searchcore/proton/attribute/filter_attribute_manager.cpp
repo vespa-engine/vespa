@@ -60,7 +60,7 @@ FilterAttributeManager::getAttributeListAll(std::vector<search::AttributeGuard> 
     throw vespalib::IllegalArgumentException("Not implemented");
 }
 void
-FilterAttributeManager::wipeHistory(const search::index::Schema &) {
+FilterAttributeManager::wipeHistory(search::SerialNum) {
     throw vespalib::IllegalArgumentException("Not implemented");
 }
 const IAttributeFactory::SP &

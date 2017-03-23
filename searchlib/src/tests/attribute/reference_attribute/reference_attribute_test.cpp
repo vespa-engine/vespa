@@ -111,15 +111,17 @@ struct Fixture
         EXPECT_EQUAL(toGid(str), *gid);
     }
 
-    void assertRefLid(uint32_t expLid, uint32_t doc) {
+    void assertRefLid(uint32_t doc, uint32_t expReferencedLid) {
         auto ref = getRef(doc);
         EXPECT_TRUE(ref != nullptr);
-        EXPECT_EQUAL(expLid, ref->lid());
+        EXPECT_EQUAL(expReferencedLid, ref->lid());
+        EXPECT_EQUAL(expReferencedLid, _attr->getReferencedLid(doc));
     }
 
     void assertNoRefLid(uint32_t doc) {
         auto ref = getRef(doc);
         EXPECT_TRUE(ref == nullptr);
+        EXPECT_EQUAL(0u, _attr->getReferencedLid(doc));
     }
 
     void save() {
@@ -148,11 +150,6 @@ struct Fixture
         LOG(info,
             "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
             iter, oldStatus.getUsed(), newStatus.getUsed());
-    }
-
-    void assertReferencedLid(uint32_t doc, uint32_t expReferencedDoc) {
-        uint32_t referencedDoc = _attr->getReferencedLid(doc);
-        EXPECT_EQUAL(expReferencedDoc, referencedDoc);
     }
 
     void notifyGidToLidChange(const GlobalId &gid, uint32_t referencedDoc) {
@@ -255,43 +252,42 @@ TEST_F("require that we can save and load attribute", Fixture)
     EXPECT_TRUE(vespalib::unlink("test.udat"));
 }
 
-TEST_F("require that we can use gid mapper", Fixture)
+TEST_F("require that update() uses gid-mapper to set referenced lid", Fixture)
 {
     f.ensureDocIdLimit(6);
+    std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
+    f._attr->setGidToLidMapperFactory(factory);
     f.set(1, toGid(doc1));
     f.set(2, toGid(doc2));
     f.set(4, toGid(doc1));
     f.set(5, toGid(doc3));
     f.commit();
-    std::shared_ptr<search::IGidToLidMapperFactory> factory =
-        std::make_shared<MyGidToLidMapperFactory>();
-    f._attr->setGidToLidMapperFactory(factory);
-    TEST_DO(f.assertReferencedLid(1, 10));
-    TEST_DO(f.assertReferencedLid(2, 17));
-    TEST_DO(f.assertReferencedLid(3, 0));
-    TEST_DO(f.assertReferencedLid(4, 10));
-    TEST_DO(f.assertReferencedLid(5, 0));
+    TEST_DO(f.assertRefLid(1, 10));
+    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertNoRefLid(3));
+    TEST_DO(f.assertRefLid(4, 10));
+    TEST_DO(f.assertRefLid(5, 0));
 }
 
-TEST_F("require that notifyGidToLidChange works", Fixture)
+TEST_F("require that notifyGidToLidChange() updates lid-2-lid mapping", Fixture)
 {
     f.ensureDocIdLimit(4);
     f.set(1, toGid(doc1));
     f.set(2, toGid(doc2));
     f.set(3, toGid(doc1));
     f.commit();
-    TEST_DO(f.assertRefLid(0, 1));
-    TEST_DO(f.assertRefLid(0, 2));
-    TEST_DO(f.assertRefLid(0, 3));
+    TEST_DO(f.assertRefLid(1, 0));
+    TEST_DO(f.assertRefLid(2, 0));
+    TEST_DO(f.assertRefLid(3, 0));
     f.notifyGidToLidChange(toGid(doc1), 10);
     f.notifyGidToLidChange(toGid(doc2), 20);
     f.notifyGidToLidChange(toGid(doc3), 30);
-    TEST_DO(f.assertRefLid(10, 1));
-    TEST_DO(f.assertRefLid(20, 2));
-    TEST_DO(f.assertRefLid(10, 3));
+    TEST_DO(f.assertRefLid(1, 10));
+    TEST_DO(f.assertRefLid(2, 20));
+    TEST_DO(f.assertRefLid(3, 10));
 }
 
-TEST_F("require that populateReferencedLids works", Fixture)
+TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
@@ -299,19 +295,18 @@ TEST_F("require that populateReferencedLids works", Fixture)
     f.set(3, toGid(doc1));
     f.set(4, toGid(doc3));
     f.commit();
-    TEST_DO(f.assertRefLid(0, 1));
-    TEST_DO(f.assertRefLid(0, 2));
-    TEST_DO(f.assertRefLid(0, 3));
-    TEST_DO(f.assertRefLid(0, 4));
+    TEST_DO(f.assertRefLid(1, 0));
+    TEST_DO(f.assertRefLid(2, 0));
+    TEST_DO(f.assertRefLid(3, 0));
+    TEST_DO(f.assertRefLid(4, 0));
     TEST_DO(f.assertNoRefLid(5));
-    std::shared_ptr<search::IGidToLidMapperFactory> factory =
-        std::make_shared<MyGidToLidMapperFactory>();
+    std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
     f._attr->setGidToLidMapperFactory(factory);
     f.populateReferencedLids();
-    TEST_DO(f.assertRefLid(10, 1));
-    TEST_DO(f.assertRefLid(17, 2));
-    TEST_DO(f.assertRefLid(10, 3));
-    TEST_DO(f.assertRefLid(0, 4));
+    TEST_DO(f.assertRefLid(1, 10));
+    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertRefLid(3, 10));
+    TEST_DO(f.assertRefLid(4, 0));
     TEST_DO(f.assertNoRefLid(5));
 }
 

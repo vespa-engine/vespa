@@ -186,7 +186,7 @@ private:
     reconfigureSchema(const DocumentDBConfig &configSnapshot,
                       const DocumentDBConfig &oldConfigSnapshot);
 
-    void setIndexSchema(const DocumentDBConfig &configSnapshot);
+    void setIndexSchema(const DocumentDBConfig &configSnapshot, SerialNum serialNum);
 
     /**
      * Redo interrupted reprocessing if last entry in transaction log
@@ -227,7 +227,7 @@ private:
             const DocumentDBConfig &configSnapshot,
             const Schema &newHistorySchema);
 
-    void internalWipeHistory(SerialNum wipeSerial, Schema::UP newHistorySchema, const Schema &wipeSchema);
+    void internalWipeHistory(SerialNum wipeSerial, Schema::UP newHistorySchema);
 
     void startTransactionLogReplay();
 

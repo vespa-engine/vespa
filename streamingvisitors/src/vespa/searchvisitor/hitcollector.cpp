@@ -12,7 +12,7 @@ using vdslib::SearchResult;
 
 namespace storage {
 
-HitCollector::Hit::Hit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & matchData,
+HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const search::fef::MatchData & matchData,
                        double score, const void * sortData, size_t sortDataLen) :
     _docid(docId),
     _score(score),
@@ -38,22 +38,22 @@ HitCollector::HitCollector(size_t wantedHits) :
 const vsm::Document &
 HitCollector::getDocSum(const search::DocumentIdT & docId) const
 {
-    for (HitVector::const_iterator it(_hits.begin()), mt(_hits.end()); it < mt; it++) {
-        if (docId == it->getDocId()) {
-            return *it->getDocument();
+    for (const Hit & hit : _hits) {
+        if (docId == hit.getDocId()) {
+            return hit.getDocument();
         }
     }
     throw std::runtime_error(vespalib::make_string("Could not look up document id %d", docId));
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data, double score)
+HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data, double score)
 {
     return addHit(Hit(doc, docId, data, score));
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument::LP & doc, uint32_t docId, const search::fef::MatchData & data,
+HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data,
                      double score, const void * sortData, size_t sortDataLen)
 {
     return addHit(Hit(doc, docId, data, score, sortData, sortDataLen));
@@ -123,7 +123,7 @@ HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
 {
     sortByDocId();
     for (const Hit & hit : _hits) {
-        vespalib::string documentId(hit.getDocument()->docDoc().getId().toString());
+        vespalib::string documentId(hit.getDocument().docDoc().getId().toString());
         search::DocumentIdT docId = hit.getDocId();
         SearchResult::RankType rank = hit.getRankScore();
 

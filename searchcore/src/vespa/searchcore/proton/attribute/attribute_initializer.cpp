@@ -2,6 +2,7 @@
 
 #include "attribute_initializer.h"
 #include "attributedisklayout.h"
+#include "attribute_directory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -103,19 +104,18 @@ AttributeInitializer::AttributeHeader::AttributeHeader()
 AttributeInitializer::AttributeHeader::~AttributeHeader() {}
 
 AttributeVector::SP
-AttributeInitializer::tryLoadAttribute(const IndexMetaInfo &info) const
+AttributeInitializer::tryLoadAttribute() const
 {
-    IndexMetaInfo::Snapshot snap = info.getBestSnapshot();
-    vespalib::string attrFileName =
-            AttributeDiskLayout::getAttributeFileName(_baseDir, _attrName, snap.syncToken);
+    search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
+    vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
-    if (snap.valid) {
+    if (serialNum != 0) {
         AttributeHeader header = extractHeader(attr, attrFileName);
         if (header._createSerialNum > _currentSerialNum || !header._headerTypeOK) {
-            setupEmptyAttribute(attr, snap, header);
+            setupEmptyAttribute(attr, serialNum, header);
             return attr;
         }
-        if (!loadAttribute(attr, snap)) {
+        if (!loadAttribute(attr, serialNum)) {
             return AttributeVector::SP();
         }
     } else {
@@ -126,7 +126,7 @@ AttributeInitializer::tryLoadAttribute(const IndexMetaInfo &info) const
 
 bool
 AttributeInitializer::loadAttribute(const AttributeVector::SP &attr,
-                                    const IndexMetaInfo::Snapshot &snap) const
+                                    search::SerialNum serialNum) const
 {
     assert(attr->hasLoadData());
     fastos::TimeStamp startTime = fastos::ClockSystem::now();
@@ -137,7 +137,7 @@ AttributeInitializer::loadAttribute(const AttributeVector::SP &attr,
                 attr->getBaseFileName().c_str());
         return false;
     } else {
-        attr->commit(snap.syncToken, snap.syncToken);
+        attr->commit(serialNum, serialNum);
         fastos::TimeStamp endTime = fastos::ClockSystem::now();
         int64_t elapsedTimeMs = (endTime - startTime).ms();
         EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), elapsedTimeMs);
@@ -147,7 +147,7 @@ AttributeInitializer::loadAttribute(const AttributeVector::SP &attr,
 
 void
 AttributeInitializer::setupEmptyAttribute(AttributeVector::SP &attr,
-                                          const IndexMetaInfo::Snapshot &snap,
+                                          search::SerialNum serialNum,
                                           const AttributeHeader &header) const
 {
     if (header._createSerialNum > _currentSerialNum) {
@@ -159,30 +159,25 @@ AttributeInitializer::setupEmptyAttribute(AttributeVector::SP &attr,
     LOG(info, "Returning empty attribute vector for '%s'",
             attr->getBaseFileName().c_str());
     _factory.setupEmpty(attr, _currentSerialNum);
-    attr->commit(snap.syncToken, snap.syncToken);
+    attr->commit(serialNum, serialNum);
 }
 
 AttributeVector::SP
-AttributeInitializer::createAndSetupEmptyAttribute(IndexMetaInfo &info) const
+AttributeInitializer::createAndSetupEmptyAttribute() const
 {
-    vespalib::mkdir(info.getPath(), false);
-    vespalib::string attrFileName =
-            AttributeDiskLayout::getAttributeFileName(_baseDir, _attrName, 0);
+    vespalib::string attrFileName = _attrDir->getAttributeFileName(0);
     AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
     _factory.setupEmpty(attr, _currentSerialNum);
-    info.save();
     return attr;
 }
 
-AttributeInitializer::AttributeInitializer(const vespalib::string &baseDir,
+AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                                            const vespalib::string &documentSubDbName,
-                                           const vespalib::string &attrName,
                                            const search::attribute::Config &cfg,
                                            uint64_t currentSerialNum,
                                            const IAttributeFactory &factory)
-    : _baseDir(baseDir),
+    : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
-      _attrName(attrName),
       _cfg(cfg),
       _currentSerialNum(currentSerialNum),
       _factory(factory)
@@ -194,11 +189,10 @@ AttributeInitializer::~AttributeInitializer() {}
 search::AttributeVector::SP
 AttributeInitializer::init() const
 {
-    IndexMetaInfo info(AttributeDiskLayout::getAttributeBaseDir(_baseDir, _attrName));
-    if (info.load()) {
-        return tryLoadAttribute(info);
+    if (!_attrDir->empty()) {
+        return tryLoadAttribute();
     } else {
-        return createAndSetupEmptyAttribute(info);
+        return createAndSetupEmptyAttribute();
     }
 }
 

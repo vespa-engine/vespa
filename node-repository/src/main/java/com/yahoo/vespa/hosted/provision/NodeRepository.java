@@ -6,13 +6,13 @@ import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -147,43 +148,42 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
 
     /**
-     * Returns a list of nodes that should be trusted by the given node.
+     * Returns a set of nodes that should be trusted by the given node.
      */
-    private List<Node> getTrustedNodes(Node node) {
-        final List<Node> trustedNodes = new ArrayList<>();
+    private Set<Node> getTrustedNodes(Node node, NodeList candidates) {
+        Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
 
-        // For all cases below: Trust nodes in same application (if node is part of an application)
-        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+        // For all cases below, trust:
+        // - nodes in same application
+        // - config servers
+        node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
+        trustedNodes.addAll(getConfigNodes());
 
         switch (node.type()) {
             case tenant:
-                // Tenant nodes trust nodes in same application and all infrastructure nodes
-                // They also trust all traffic from Docker hosts of trusted nodes,
-                // as it may be NATed traffic from trusted Docker containers
-                trustedNodes.addAll(getDockerHosts(trustedNodes)); // TODO: Remove when we no longer have IPv4-only nodes
-                trustedNodes.addAll(getNodes(NodeType.proxy));
-                trustedNodes.addAll(getConfigNodes());
+                // Tenant nodes in other states than ready, trust:
+                // - proxy nodes
+                // - parent (Docker) hosts of already trusted nodes. This is needed in a transition period, while
+                //   we migrate away from IPv4-only nodes
+                trustedNodes.addAll(candidates.parentNodes(trustedNodes).asList()); // TODO: Remove when we no longer have IPv4-only nodes
+                trustedNodes.addAll(candidates.nodeType(NodeType.proxy).asList());
+                if (node.state() == Node.State.ready) {
+                    // Tenant nodes in state ready, trust:
+                    // - All tenant nodes in zone. When a ready node is allocated to a an application there's a brief
+                    //   window where current ACLs have not yet been applied on the node. To avoid service disruption
+                    //   during this window, ready tenant nodes trust all other tenant nodes.
+                    trustedNodes.addAll(candidates.nodeType(NodeType.tenant).asList());
+                }
                 break;
 
             case config:
-                // Config servers trust each other and all nodes in the zone
-                trustedNodes.addAll(getConfigNodes());
-                trustedNodes.addAll(getNodes());
+                // Config servers trust all nodes
+                trustedNodes.addAll(candidates.asList());
                 break;
 
             case proxy:
-                // Proxy nodes trust nodes in same application and config servers. They also trust any traffic to ports
-                // 4080/4443, but these static rules are configured by the node itself
-                trustedNodes.addAll(getConfigNodes());
-                if ( ! node.allocation().isPresent()) // TODO: Remove when proxy nodes are in zone app everywhere
-                    trustedNodes.addAll(getNodes(NodeType.proxy));
-                break;
-
             case host:
-                // Docker hosts trust nodes in same application and config servers
-                trustedNodes.addAll(getConfigNodes());
-                if ( ! node.allocation().isPresent()) // TODO: Remove when Docker hosts are in zone app everywhere
-                    trustedNodes.addAll(getNodes(NodeType.host));
+                // No special rules for proxies and Docker hosts
                 break;
 
             default:
@@ -192,10 +192,7 @@ public class NodeRepository extends AbstractComponent {
                                 node.hostname(), node.type()));
         }
 
-        // Sort by hostname so that the resulting list is always the same if trusted nodes don't change
-        trustedNodes.sort(Comparator.comparing(Node::hostname));
-
-        return Collections.unmodifiableList(trustedNodes);
+        return Collections.unmodifiableSet(trustedNodes);
     }
 
     /**
@@ -206,13 +203,14 @@ public class NodeRepository extends AbstractComponent {
      * @return List of node ACLs
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
-        final List<NodeAcl> nodeAcls = new ArrayList<>();
+        List<NodeAcl> nodeAcls = new ArrayList<>();
 
+        NodeList candidates = new NodeList(getNodes());
         if (children) {
-            final List<Node> childNodes = getChildNodes(node.hostname());
-            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode))));
+            List<Node> childNodes = candidates.childNodes(node).asList();
+            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode, candidates))));
         } else {
-            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node)));
+            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node, candidates)));
         }
 
         return Collections.unmodifiableList(nodeAcls);
@@ -513,17 +511,6 @@ public class NodeRepository extends AbstractComponent {
                 .map(host -> createNode(host, host, Optional.empty(),
                         flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
                         NodeType.config))
-                .collect(Collectors.toList());
-    }
-
-    private List<Node> getDockerHosts(List<Node> nodes) {
-        return nodes.stream()
-                .map(Node::parentHostname)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(hostName -> getNode(hostName))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 

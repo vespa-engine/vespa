@@ -4,10 +4,9 @@
 namespace searchcorespi {
 
 void
-IIndexManager::wipeHistory(SerialNum wipeSerial, const Schema &historyFields)
+IIndexManager::wipeHistory(SerialNum wipeSerial)
 {
     (void) wipeSerial;
-    (void) historyFields;
 }
 
 IIndexManager::Reconfigurer::~Reconfigurer()

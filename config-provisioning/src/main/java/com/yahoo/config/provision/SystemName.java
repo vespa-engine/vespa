@@ -7,9 +7,6 @@ package com.yahoo.config.provision;
  */
 public enum SystemName {
 
-    /** System for continuous integration of latest Vespa and hosted Vespa code */
-    ci,
-
     /** System for continuous deployment where a pre-test of hosted Vespa combined with a verified Vespa version */
     cd,
 
@@ -22,7 +19,6 @@ public enum SystemName {
 
     public static SystemName from(String value) {
         switch (value) {
-            case "ci": return ci;
             case "cd": return cd;
             case "main": return main;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));

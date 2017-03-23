@@ -110,9 +110,7 @@ public:
     SerialNum getNewestFlushedSerial(void);
 
     void
-    wipeHistory(SerialNum wipeSerial,
-                const search::index::Schema &newHistorySchema,
-                const search::index::Schema &wipeSchema);
+    wipeHistory(SerialNum wipeSerial);
 
     void
     applyConfig(const DocumentDBConfig &newConfigSnapshot,

@@ -458,15 +458,16 @@ StoreOnlyDocSubDB::getIndexWriter() const
 }
 
 void
-StoreOnlyDocSubDB::wipeHistory(SerialNum, const Schema &, const Schema &)
+StoreOnlyDocSubDB::wipeHistory(SerialNum)
 {
 }
 
 void
-StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &schema)
+StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &schema, SerialNum serialNum)
 {
     assert(_writeService.master().isCurrentThread());
     (void) schema;
+    (void) serialNum;
 }
 
 search::SearchableStats

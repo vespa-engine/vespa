@@ -104,6 +104,7 @@ public:
     bool        isFrozen() const { return _frozen; }
     bool    allowMoreGroups(size_t sz) const { return (!_frozen && (!_isOrdered || (sz < (uint64_t)_precision))); }
     const ExpressionTree & getExpression() const { return _classify; }
+    ExpressionTree & getExpression() { return _classify; }
     const       Group &getGroupPrototype() const { return _collect; }
     void prepare(const Grouping * grouping, uint32_t level, bool isOrdered_);
 

@@ -22,6 +22,8 @@ namespace proton {
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
 
+class AttributeDirectory;
+
 /**
  * Implementation of IFlushTarget interface for attribute vectors.
  */
@@ -31,45 +33,16 @@ private:
     /**
      * Task performing the actual flushing to disk.
      **/
-    class Flusher : public Task {
-    private:
-        FlushableAttribute              & _fattr;
-        search::AttributeMemorySaveTarget      _saveTarget;
-        std::unique_ptr<search::AttributeSaver> _saver;
-        uint64_t                          _syncToken;
-        search::AttributeVector::BaseName _flushFile;
-
-        bool saveAttribute(); // not updating snap info.
-    public:
-        Flusher(FlushableAttribute & fattr, uint64_t syncToken);
-        ~Flusher();
-        uint64_t getSyncToken() const { return _syncToken; }
-        bool saveSnapInfo();
-        bool flush();
-        void updateStats();
-        bool cleanUp();
-        // Implements vespalib::Executor::Task
-        virtual void run();
-
-        virtual SerialNum
-        getFlushSerial(void) const
-        {
-            return _syncToken;
-        } 
-    };
+    class Flusher;
 
     search::AttributeVector::SP _attr;
-    vespalib::string            _baseDir;
-    search::IndexMetaInfo       _snapInfo;
-    vespalib::Lock		_snapInfoLock;
-    vespalib::Lock              _flusherLock;
     bool                        _cleanUpAfterFlush;
     FlushStats                  _lastStats;
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    fastos::TimeStamp           _lastFlushTime;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
     HwInfo                       _hwInfo;
+    std::shared_ptr<AttributeDirectory> _attrDir;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 
@@ -83,7 +56,7 @@ public:
      * fileHeaderContext must be kept alive by caller.
      **/
     FlushableAttribute(const search::AttributeVector::SP attr,
-                       const vespalib::string & baseDir,
+                       const std::shared_ptr<AttributeDirectory> &attrDir,
                        const search::TuneFileAttributes &tuneFileAttributes,
                        const search::common::FileHeaderContext &
                        fileHeaderContext,

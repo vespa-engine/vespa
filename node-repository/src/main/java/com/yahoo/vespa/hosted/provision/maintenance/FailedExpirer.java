@@ -56,7 +56,7 @@ public class FailedExpirer extends Expirer {
     }
 
     private boolean failCountIndicatesHwFail(Zone zone) {
-        if (zone.system() == SystemName.cd || zone.system() == SystemName.ci) {
+        if (zone.system() == SystemName.cd) {
             return false;
         }
         return zone.environment() == Environment.prod || zone.environment() == Environment.staging;

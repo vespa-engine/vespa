@@ -221,24 +221,6 @@ public class ApplicationTest {
     }
 
     @Test
-    public void builder_with_networking() throws Exception {
-        try (
-                Application app = Application.fromBuilder(new Application.Builder().networking(Networking.enable).container("default", new Application.Builder.Container().handler("http://*/*", MockHttpHandler.class)))
-        ) {
-            DefaultHttpClient client = new DefaultHttpClient();
-            HttpResponse response = client.execute(new HttpGet("http://localhost:" + getListenPort() + "/query=foo"));
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            BufferedReader r = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-            String line;
-            StringBuilder sb = new StringBuilder();
-            while ((line = r.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-            assertEquals("OK\n", sb.toString());
-        }
-    }
-
-    @Test
     public void document_type() throws Exception {
         try (
                 Application app = Application.fromBuilder(new Application.Builder()
@@ -360,11 +342,18 @@ public class ApplicationTest {
         int httpPort = getFreePort();
         try (Application application = Application.fromServicesXml(servicesXmlWithServer(httpPort), Networking.enable)) {
             HttpClient client = new DefaultHttpClient();
-            int statusCode = client.execute(new HttpGet("http://localhost:" + httpPort)).getStatusLine().getStatusCode();
-            assertEquals(200, statusCode);
+            HttpResponse response = client.execute(new HttpGet("http://localhost:" + httpPort));
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            BufferedReader r = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+            String line;
+            StringBuilder sb = new StringBuilder();
+            while ((line = r.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            assertTrue(sb.toString().contains("Handler"));
         }
     }
-    
+
     private static int getFreePort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             socket.setReuseAddress(true);
