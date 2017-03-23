@@ -36,7 +36,8 @@ bool fastPartialUpdateAttribute(const schema::DataType &attrType) {
 
 FilterAttributeManager::AttributeSet
 getAttributeSetToPopulate(const ARIConfig &newCfg,
-                          const ARIConfig &oldCfg)
+                          const ARIConfig &oldCfg,
+                          search::SerialNum serialNum)
 {
     FilterAttributeManager::AttributeSet attrsToPopulate;
     std::vector<AttributeGuard> attrList;
@@ -45,7 +46,8 @@ getAttributeSetToPopulate(const ARIConfig &newCfg,
         const vespalib::string &name = guard->getName();
         bool inOldAttrMgr = oldCfg.getAttrMgr()->getAttribute(name)->valid();
         bool inOldSchema = oldCfg.getInspector()->hasField(name);
-        bool populateAttribute = !inOldAttrMgr && inOldSchema;
+        search::SerialNum flushedSerialNum = newCfg.getAttrMgr()->getFlushedSerialNum(name);
+        bool populateAttribute = !inOldAttrMgr && inOldSchema && (flushedSerialNum < serialNum);
         LOG(debug, "getAttributeSetToPopulate(): name='%s', inOldAttrMgr=%s, inOldSchema=%s, populate=%s",
                 name.c_str(), toStr(inOldAttrMgr), toStr(inOldSchema), toStr(populateAttribute));
         if (populateAttribute) {
@@ -58,15 +60,16 @@ getAttributeSetToPopulate(const ARIConfig &newCfg,
 IReprocessingReader::SP
 getAttributesToPopulate(const ARIConfig &newCfg,
                         const ARIConfig &oldCfg,
-                        const vespalib::string &subDbName)
+                        const vespalib::string &subDbName,
+                        search::SerialNum serialNum)
 {
     FilterAttributeManager::AttributeSet attrsToPopulate =
-            getAttributeSetToPopulate(newCfg, oldCfg);
+        getAttributeSetToPopulate(newCfg, oldCfg, serialNum);
     if (!attrsToPopulate.empty()) {
         return IReprocessingReader::SP(new AttributePopulator
                 (IAttributeManager::SP(new FilterAttributeManager
                         (attrsToPopulate, newCfg.getAttrMgr())),
-                        ATTRIBUTE_INIT_SERIAL, subDbName));
+                        ATTRIBUTE_INIT_SERIAL, subDbName, serialNum));
     }
     return IReprocessingReader::SP();
 }
@@ -119,8 +122,9 @@ getFieldsToPopulate(const ARIConfig &newCfg,
 AttributeReprocessingInitializer::
 AttributeReprocessingInitializer(const Config &newCfg,
                                  const Config &oldCfg,
-                                 const vespalib::string &subDbName)
-    : _attrsToPopulate(getAttributesToPopulate(newCfg, oldCfg, subDbName)),
+                                 const vespalib::string &subDbName,
+                                 search::SerialNum serialNum)
+    : _attrsToPopulate(getAttributesToPopulate(newCfg, oldCfg, subDbName, serialNum)),
       _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, subDbName))
 {
 }

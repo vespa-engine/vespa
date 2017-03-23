@@ -68,7 +68,7 @@ struct Fixture
           _mgr(new AttributeManager(TEST_DIR, "test.subdb",
                   TuneFileAttributes(),
                                     _fileHeader, _attributeFieldWriter, _hwInfo)),
-          _pop(_mgr, 1, "test"),
+          _pop(_mgr, 1, "test", CREATE_SERIAL_NUM),
           _ctx()
     {
         _mgr->addAttribute("a1", AVConfig(AVBasicType::INT32),
@@ -93,6 +93,8 @@ TEST_F("require that reprocess with document populates attribute", Fixture)
     EXPECT_EQUAL(7u, attr->get()->getNumDocs());
     EXPECT_EQUAL(44, attr->get()->getInt(6));
     EXPECT_EQUAL(2u, attr->get()->getStatus().getLastSyncToken());
+    f._pop.done();
+    EXPECT_EQUAL(CREATE_SERIAL_NUM, attr->get()->getStatus().getLastSyncToken());
 }
 
 TEST_MAIN()

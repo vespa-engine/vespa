@@ -121,7 +121,7 @@ struct Fixture
     void init() {
         _initializer.reset(new AttributeReprocessingInitializer
                 (ARIConfig(_newCfg._mgr, _newCfg._schema, _newCfg._inspector),
-                        ARIConfig(_oldCfg._mgr, _oldCfg._schema, _oldCfg._inspector), "test"));
+                 ARIConfig(_oldCfg._mgr, _oldCfg._schema, _oldCfg._inspector), "test", INIT_SERIAL_NUM));
         _initializer->initialize(_handler);
     }
     Fixture &addOldConfig(const StringVector &fields,

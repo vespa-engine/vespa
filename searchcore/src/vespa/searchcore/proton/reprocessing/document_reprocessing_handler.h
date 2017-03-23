@@ -70,6 +70,7 @@ public:
 
     virtual void visit(uint32_t lid);
 
+    void done();
 };
 
 } // namespace proton

@@ -46,7 +46,8 @@ private:
 public:
     AttributeReprocessingInitializer(const Config &newCfg,
                                      const Config &oldCfg,
-                                     const vespalib::string &subDbName);
+                                     const vespalib::string &subDbName,
+                                     search::SerialNum serialNum);
 
     // Implements IReprocessingInitializer
     virtual bool hasReprocessors() const;

@@ -20,6 +20,7 @@ struct IReprocessingReader
      * Handle the given existing document.
      */
     virtual void handleExisting(uint32_t lid, const document::Document &doc) = 0;
+    virtual void done() = 0;
 };
 
 } // namespace proton

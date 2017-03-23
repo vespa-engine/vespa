@@ -9,6 +9,12 @@ using search::AttributeGuard;
 
 namespace proton {
 
+namespace {
+
+const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.");
+
+}
+
 bool
 FilterAttributeManager::acceptAttribute(const vespalib::string &name) const
 {
@@ -43,10 +49,24 @@ IAttributeManager::SP
 FilterAttributeManager::create(const AttributeCollectionSpec &) const {
     throw vespalib::IllegalArgumentException("Not implemented");
 }
+
 std::vector<searchcorespi::IFlushTarget::SP>
 FilterAttributeManager::getFlushTargets() const {
-    throw vespalib::IllegalArgumentException("Not implemented");
+    std::vector<searchcorespi::IFlushTarget::SP> completeList = _mgr->getFlushTargets();
+    std::vector<searchcorespi::IFlushTarget::SP> list;
+    list.reserve(completeList.size());
+    for (const auto &flushTarget : completeList) {
+        const vespalib::string &targetName = flushTarget->getName();
+        if (targetName.substr(0, FLUSH_TARGET_NAME_PREFIX.size()) == FLUSH_TARGET_NAME_PREFIX) {
+            vespalib::string name = targetName.substr(FLUSH_TARGET_NAME_PREFIX.size());
+            if (acceptAttribute(name)) {
+                list.push_back(flushTarget);
+            }
+        }
+    }
+    return list;
 }
+
 search::SerialNum
 FilterAttributeManager::getOldestFlushedSerialNumber() const {
     throw vespalib::IllegalArgumentException("Not implemented");

@@ -53,6 +53,7 @@ ReprocessDocumentsTask::run()
                     *this,
                     *_docTypeRepo);
         }
+        _handler.done();
         ts = fastos::ClockSystem::now();
         int64_t elapsedTime = ts.ms() - _startTime;
         EventLogger::reprocessDocumentsComplete(_subDbName,
