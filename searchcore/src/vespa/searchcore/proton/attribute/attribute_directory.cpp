@@ -163,8 +163,8 @@ AttributeDirectory::invalidateOldSnapshots()
     }
 }
 
-bool
-AttributeDirectory::removeInvalidSnapshots(bool removeDir)
+void
+AttributeDirectory::removeInvalidSnapshots()
 {
     std::vector<SerialNum> toRemove;
     auto &list = _snapInfo.snapshots();
@@ -186,7 +186,12 @@ AttributeDirectory::removeInvalidSnapshots(bool removeDir)
         }
         saveSnapInfo();
     }
-    if (empty() && removeDir) {
+}
+
+bool
+AttributeDirectory::removeDiskDir()
+{
+    if (empty()) {
         vespalib::string dirName(getDirName());
         vespalib::rmdir(dirName, true);
         return true;

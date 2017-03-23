@@ -135,7 +135,7 @@ FlushableAttribute::Flusher::cleanUp(AttributeDirectory::Writer &writer)
 {
     if (_fattr._cleanUpAfterFlush) {
         writer.invalidateOldSnapshots();
-        writer.removeInvalidSnapshots(false);
+        writer.removeInvalidSnapshots();
     }
     return true;
 }

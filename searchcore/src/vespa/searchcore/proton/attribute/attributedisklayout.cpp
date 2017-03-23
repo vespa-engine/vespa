@@ -81,7 +81,8 @@ AttributeDiskLayout::removeAttributeDir(const vespalib::string &name, search::Se
         auto writer = dir->getWriter();
         if (writer) {
             writer->invalidateOldSnapshots(serialNum);
-            if (writer->removeInvalidSnapshots(true)) {
+            writer->removeInvalidSnapshots();
+            if (writer->removeDiskDir()) {
                 std::unique_lock<std::shared_timed_mutex> guard(_mutex);
                 auto itr = _dirs.find(name);
                 assert(itr != _dirs.end());

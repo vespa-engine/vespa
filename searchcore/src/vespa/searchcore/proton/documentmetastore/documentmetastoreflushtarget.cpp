@@ -143,7 +143,7 @@ DocumentMetaStoreFlushTarget::Flusher::cleanUp(AttributeDirectory::Writer &write
 {
     if (_dmsft._cleanUpAfterFlush) {
         writer.invalidateOldSnapshots();
-        writer.removeInvalidSnapshots(false);
+        writer.removeInvalidSnapshots();
     }
     return true;
 }
