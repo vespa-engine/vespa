@@ -78,7 +78,7 @@ struct Fixture {
             && EXPECT_TRUE(newObj->cmp(obj) == 0)
             && EXPECT_TRUE(obj.cmp(*newObj) == 0))
         {
-            LOG(info, "object of class '%s' passed echo test : %s", obj.getClass().name(), newObj->asString().c_str());
+            LOG(debug, "object of class '%s' passed echo test : %s", obj.getClass().name(), newObj->asString().c_str());
         } else {
             LOG(error, "object of class '%s' FAILED echo test", obj.getClass().name());
         }
@@ -263,12 +263,19 @@ TEST_F("testHitCollection", Fixture("testHitCollection")) {
                 .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(5))));
 }
 
+template<typename T>
+ExpressionNode::UP
+createAggr(ExpressionNode::UP e) {
+    std::unique_ptr<T> aggr = MU<T>();
+    aggr->setExpression(std::move(e));
+    return aggr;
+}
+
 TEST_F("testGroupingLevel", Fixture("testGroupingLevel")) {
     f.checkObject(GroupingLevel()
                 .setMaxGroups(100)
                 .setExpression(createDummyExpression())
-                .addResult(SumAggregationResult()
-                           .setExpression(createDummyExpression())));
+                .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())));
 }
 
 TEST_F("testGroup", Fixture("testGroup")) {
@@ -279,10 +286,8 @@ TEST_F("testGroup", Fixture("testGroup")) {
                 .addChild(Group().setId(Int64ResultNode(110)))
                 .addChild(Group().setId(Int64ResultNode(120))
                           .setRank(20.5)
-                          .addResult(SumAggregationResult()
-                                  .setExpression(createDummyExpression()))
-                          .addResult(SumAggregationResult()
-                                  .setExpression(createDummyExpression())))
+                          .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression()))
+                          .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())))
                 .addChild(Group().setId(Int64ResultNode(130))
                           .addChild(Group().setId(Int64ResultNode(131)))));
 }
@@ -293,31 +298,27 @@ TEST_F("testGrouping", Fixture("testGrouping")) {
                 .addLevel(GroupingLevel()
                           .setMaxGroups(100)
                           .setExpression(createDummyExpression())
-                          .addResult(SumAggregationResult()
-                                  .setExpression(createDummyExpression())))
+                          .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())))
                 .addLevel(GroupingLevel()
                           .setMaxGroups(10)
                           .setExpression(createDummyExpression())
-                          .addResult(SumAggregationResult()
-                                  .setExpression(createDummyExpression()))
-                          .addResult(SumAggregationResult()
-                                  .setExpression(createDummyExpression()))));
+                          .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression()))
+                                  .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression()))));
     f.checkObject(Grouping()
                 .addLevel(GroupingLevel()
                           .setExpression(MU<AttributeNode>("folder"))
-                          .addResult(XorAggregationResult()
-                                  .setExpression(MU<MD5BitFunctionNode>(MU<AttributeNode>("docid"), 64)))
-                          .addResult(SumAggregationResult()
-                                  .setExpression(ExpressionNode::UP(MinFunctionNode()
-                                          .addArg(MU<AttributeNode>("attribute1"))
-                                          .addArg(MU<AttributeNode>("attribute2")).clone()))
-                                     )
-                          .addResult(XorAggregationResult()
-                                  .setExpression(
-                                          ExpressionNode::UP(XorBitFunctionNode(ExpressionNode::UP(CatFunctionNode()
-                                                  .addArg(MU<GetDocIdNamespaceSpecificFunctionNode>())
-                                                  .addArg(MU<DocumentFieldNode>("folder"))
-                                                  .addArg(MU<DocumentFieldNode>("flags")).clone()), 64).clone())))));
+                          .addAggregationResult(createAggr<XorAggregationResult>(MU<MD5BitFunctionNode>(MU<AttributeNode>("docid"), 64)))
+                          .addAggregationResult(createAggr<SumAggregationResult>(
+                                  ExpressionNode::UP(MinFunctionNode()
+                                                             .addArg(MU<AttributeNode>("attribute1"))
+                                                             .addArg(MU<AttributeNode>("attribute2")).clone())))
+                          .addAggregationResult(createAggr<XorAggregationResult>(
+                                  ExpressionNode::UP(XorBitFunctionNode(
+                                          ExpressionNode::UP(CatFunctionNode()
+                                                                     .addArg(MU<GetDocIdNamespaceSpecificFunctionNode>())
+                                                                     .addArg(MU<DocumentFieldNode>("folder"))
+                                                                     .addArg(MU<DocumentFieldNode>("flags")).clone())
+                                          , 64).clone())))));
 }
 
 }  // namespace
