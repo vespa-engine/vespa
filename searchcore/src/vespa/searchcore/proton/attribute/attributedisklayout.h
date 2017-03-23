@@ -29,7 +29,6 @@ public:
     ~AttributeDiskLayout();
     std::vector<vespalib::string> listAttributes();
     const vespalib::string &getBaseDir() const { return _baseDir; }
-    void createBaseDir();
     std::shared_ptr<AttributeDirectory> getAttributeDir(const vespalib::string &name);
     std::shared_ptr<AttributeDirectory> createAttributeDir(const vespalib::string &name);
     void removeAttributeDir(const vespalib::string &name, search::SerialNum serialNum);

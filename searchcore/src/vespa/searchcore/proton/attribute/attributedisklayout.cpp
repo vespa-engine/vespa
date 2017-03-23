@@ -15,16 +15,11 @@ AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, Privat
       _mutex(),
       _dirs()
 {
+    vespalib::mkdir(_baseDir, false);
 }
 
 AttributeDiskLayout::~AttributeDiskLayout()
 {
-}
-
-void
-AttributeDiskLayout::createBaseDir()
-{
-    vespalib::mkdir(_baseDir, false);
 }
 
 std::vector<vespalib::string>

@@ -177,7 +177,6 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _hwInfo(hwInfo),
       _importedAttributes()
 {
-    _diskLayout->createBaseDir();
 }
 
 
@@ -203,7 +202,6 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _hwInfo(hwInfo),
       _importedAttributes()
 {
-    _diskLayout->createBaseDir();
 }
 
 AttributeManager::AttributeManager(const AttributeManager &currMgr,
