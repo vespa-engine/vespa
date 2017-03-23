@@ -107,11 +107,13 @@ public class DocumentGraphValidatorTest {
     }
 
     @Test
-    public void self_reference_is_allowed() {
+    public void self_reference_is_forbidden() {
         Search adSearch = createSearchWithName("ad");
         createDocumentReference(adSearch, adSearch, "ad_ref");
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
+        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
+        exceptionRule.expectMessage("Document dependency cycle detected: ad->ad.");
         validator.validateDocumentGraph(documentListOf(adSearch));
     }
 
