@@ -55,7 +55,11 @@ public class ImportedFieldsResolver extends Processor {
 
     private SDField validateTargetField(TemporaryImportedField importedField, DocumentReference reference) {
         String targetFieldName = importedField.targetFieldName();
-        SDField targetField = reference.targetSearch().getField(targetFieldName);
+        Search targetSearch = reference.targetSearch();
+        if (isImportedField(targetSearch, targetFieldName)) {
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an imported field. Importing such field not supported");
+        }
+        SDField targetField = targetSearch.getField(targetFieldName);
         if (targetField == null) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
         } else if (!targetField.doesAttributing()) {
@@ -66,6 +70,10 @@ public class ImportedFieldsResolver extends Processor {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Type 'tensor' not supported");
         }
         return targetField;
+    }
+
+    private static boolean isImportedField(Search targetSearch, String targetFieldName) {
+        return targetSearch.importedFields().isPresent() && targetSearch.importedFields().get().fields().containsKey(targetFieldName);
     }
 
     private static String targetFieldAsString(String targetFieldName, DocumentReference reference) {
