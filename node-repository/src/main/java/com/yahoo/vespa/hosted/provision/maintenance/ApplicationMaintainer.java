@@ -9,6 +9,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -39,7 +41,8 @@ public class ApplicationMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (ApplicationId application : activeApplications()) {
+        Set<ApplicationId> applications = activeApplications();
+        for (ApplicationId application : applications) {
             try {
                 // An application might change it's state between the time the set of applications is retrieved and the
                 // time deployment happens. Lock on application and check if it's still active.
@@ -53,10 +56,7 @@ public class ApplicationMaintainer extends Maintainer {
                     // deploy asynchronously to make sure we do all applications even when deployments are slow
                     deployAsynchronously(deployment.get()); 
                 }
-                
-                // Throttle deployments somewhat. 
-                // With a maintenance interval of 30 mins, 1 second is good until 1800 applications
-                try { Thread.sleep(1000); } catch (InterruptedException e) { return; }
+                throttle(applications.size());
             }
             catch (RuntimeException e) {
                 log.log(Level.WARNING, "Exception on maintenance redeploy of " + application, e);
@@ -74,11 +74,16 @@ public class ApplicationMaintainer extends Maintainer {
             }
         });
     }
+    
+    protected void throttle(int applicationCount) {
+        // Sleep for a length of time that will spread deployment evenly over the maintenance period
+        try { Thread.sleep(interval().toMillis() / applicationCount); } catch (InterruptedException e) { return; }
+    }
 
     protected Set<ApplicationId> activeApplications() {
         return nodeRepository().getNodes(Node.State.active).stream()
                 .map(node -> node.allocation().get().owner())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private boolean isActive(ApplicationId application) {

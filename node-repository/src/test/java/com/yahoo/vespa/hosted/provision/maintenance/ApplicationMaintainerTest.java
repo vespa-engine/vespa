@@ -219,7 +219,9 @@ public class ApplicationMaintainerTest {
         protected void deployAsynchronously(Deployment deployment) {
             deployment.activate();
         }
-        
+
+        protected void throttle(int applicationCount) { }
+
         @Override
         protected Set<ApplicationId> activeApplications() {
             if (overriddenActiveApplications.isPresent())
