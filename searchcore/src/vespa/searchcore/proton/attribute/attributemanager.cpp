@@ -27,6 +27,7 @@ using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
 using search::index::Schema;
+using search::attribute::BasicType;
 
 namespace proton {
 
@@ -35,8 +36,25 @@ namespace {
 bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Config &newConfig) {
     if (av) {
         const auto &oldConfig = av->getConfig();
-        return ((oldConfig.basicType() == newConfig.basicType()) &&
-                (oldConfig.collectionType() == newConfig.collectionType()));
+        if ((oldConfig.basicType() != newConfig.basicType()) ||
+            (oldConfig.collectionType() != newConfig.collectionType())) {
+            return false;
+        }
+        if (newConfig.basicType().type() == BasicType::TENSOR) {
+            if (oldConfig.tensorType() != newConfig.tensorType()) {
+                return false;
+            }
+        }
+        if (newConfig.basicType().type() == BasicType::PREDICATE) {
+            if ((oldConfig.getMaxInternalBlobSize() != newConfig.getMaxInternalBlobSize()) ||
+                (oldConfig.arity() != newConfig.arity()) ||
+                (oldConfig.lower_bound() != newConfig.lower_bound()) ||
+                (oldConfig.upper_bound() != newConfig.upper_bound()) ||
+                (oldConfig.dense_posting_list_threshold() != newConfig.dense_posting_list_threshold())) {
+                return false;
+            }
+        }
+        return true;
     } else {
         return false;
     }

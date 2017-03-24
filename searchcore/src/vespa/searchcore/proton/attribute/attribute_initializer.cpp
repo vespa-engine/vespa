@@ -12,6 +12,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_initializer");
 
+using search::attribute::BasicType;
 using search::attribute::Config;
 using search::AttributeVector;
 using search::IndexMetaInfo;
@@ -25,6 +26,31 @@ namespace {
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string createSerialNumTag = "createSerialNum";
+const vespalib::string tensorTypeTag = "tensortype";
+
+vespalib::string
+extraType(const Config &cfg)
+{
+    if (cfg.basicType().type() == BasicType::TENSOR) {
+        return cfg.tensorType().to_spec();
+    }
+    if (cfg.basicType().type() == BasicType::PREDICATE) {
+        // TODO: Check for predicate params
+    }
+    return "";
+}
+
+vespalib::string
+extraType(const AttributeHeader &header)
+{
+    if (header._btString == "tensor") {
+        return header._ttString;
+    }
+    if (header._btString == "predicate") {
+        // TODO: Check for predicate params
+    }
+    return "";
+}
 
 uint64_t
 extractCreateSerialNum(const vespalib::GenericHeader &header)
@@ -39,12 +65,25 @@ extractCreateSerialNum(const vespalib::GenericHeader &header)
 bool
 extractHeaderTypeOK(const vespalib::GenericHeader &header, const Config &cfg)
 {
-    return header.hasTag(dataTypeTag) &&
-        header.hasTag(collectionTypeTag) &&
-        header.getTag(dataTypeTag).asString() ==
-        cfg.basicType().asString() &&
-        header.getTag(collectionTypeTag).asString() ==
-        cfg.collectionType().asString();
+    if (!header.hasTag(dataTypeTag) || !header.hasTag(collectionTypeTag)) {
+        return false;
+    }
+    if ((header.getTag(dataTypeTag).asString() != cfg.basicType().asString()) ||
+        (header.getTag(collectionTypeTag).asString() != cfg.collectionType().asString())) {
+        return false;
+    }
+    if (cfg.basicType().type() == BasicType::TENSOR) {
+        if (!header.hasTag(tensorTypeTag)) {
+            return false;
+        }
+        if (header.getTag(tensorTypeTag).asString() != cfg.tensorType().to_spec()) {
+            return false;
+        }
+    }
+    if (cfg.basicType().type() == BasicType::PREDICATE) {
+        // TODO: Check parameters if available.
+    }
+    return true;
 }
 
 AttributeHeader
@@ -63,6 +102,9 @@ extractHeader(const AttributeVector::SP &attr,
     }
     if (datHeader.hasTag(collectionTypeTag)) {
         retval._ctString = datHeader.getTag(collectionTypeTag).asString();
+    }
+    if (datHeader.hasTag(tensorTypeTag)) {
+        retval._ttString = datHeader.getTag(tensorTypeTag).asString();
     }
     return retval;
 }
@@ -83,12 +125,16 @@ logAttributeWrongType(const AttributeVector::SP &attr,
                       const AttributeHeader &header)
 {
     const Config &cfg(attr->getConfig());
-    LOG(info, "Attribute vector '%s' is of wrong type (expected %s/%s, got %s/%s)",
+    vespalib::string extraCfgType = extraType(cfg);
+    vespalib::string extraHeaderType = extraType(header);
+    LOG(info, "Attribute vector '%s' is of wrong type (expected %s/%s/%s, got %s/%s/%s)",
             attr->getBaseFileName().c_str(),
             cfg.basicType().asString(),
             cfg.collectionType().asString(),
+            extraCfgType.c_str(),
             header._btString.c_str(),
-            header._ctString.c_str());
+            header._ctString.c_str(),
+            extraHeaderType.c_str());
 }
 
 }
@@ -97,7 +143,8 @@ AttributeInitializer::AttributeHeader::AttributeHeader()
     : _createSerialNum(0),
       _headerTypeOK(false),
       _btString("unknown"),
-      _ctString("unknown")
+      _ctString("unknown"),
+      _ttString("unknown")
 {
 }
 

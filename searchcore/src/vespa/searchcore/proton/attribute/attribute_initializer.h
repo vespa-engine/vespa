@@ -25,6 +25,7 @@ public:
         bool _headerTypeOK;
         vespalib::string _btString;
         vespalib::string _ctString;
+        vespalib::string _ttString;
         AttributeHeader();
         ~AttributeHeader();
     };

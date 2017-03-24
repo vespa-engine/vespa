@@ -61,6 +61,7 @@ using search::predicate::PredicateIndex;
 using search::predicate::PredicateTreeAnnotations;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
+using vespalib::eval::ValueType;
 
 typedef search::attribute::Config AVConfig;
 typedef proton::AttributeCollectionSpec::Attribute AttrSpec;
@@ -755,19 +756,44 @@ TEST_F("require that imported attributes are exposed via attribute context toget
 
 TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
 {
+    AVConfig generic_tensor(BasicType::TENSOR);
+    generic_tensor.setTensorType(ValueType::tensor_type({}));
+    AVConfig dense_tensor(BasicType::TENSOR);
+    dense_tensor.setTensorType(ValueType::from_spec("tensor(x[10])"));
+    AVConfig predicate(BasicType::PREDICATE);
+    predicate.setArity(2);
+    AVConfig predicate2(BasicType::PREDICATE);
+    predicate2.setArity(4);
+
     auto am1(std::make_shared<proton::AttributeManager>
              (test_dir, "test.subdb", TuneFileAttributes(),
               f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
     am1->addAttribute("a1", INT32_SINGLE, 1);
     am1->addAttribute("a2", INT32_SINGLE, 2);
+    am1->addAttribute("a3", generic_tensor, 3);
+    am1->addAttribute("a4", generic_tensor, 4);
+    am1->addAttribute("a5", predicate, 5);
+    am1->addAttribute("a6", predicate, 6);
     AttrSpecList newSpec;
     newSpec.push_back(AttrSpec("a1", INT32_SINGLE));
     newSpec.push_back(AttrSpec("a2", INT32_ARRAY));
+    newSpec.push_back(AttrSpec("a3", generic_tensor));
+    newSpec.push_back(AttrSpec("a4", dense_tensor));
+    newSpec.push_back(AttrSpec("a5", predicate));
+    newSpec.push_back(AttrSpec("a6", predicate2));
     SequentialAttributeManager am2(*am1, AttrMgrSpec(newSpec, 5, 20));
     TEST_DO(assertCreateSerialNum(*am1, "a1", 1));
     TEST_DO(assertCreateSerialNum(*am1, "a2", 2));
+    TEST_DO(assertCreateSerialNum(*am1, "a3", 3));
+    TEST_DO(assertCreateSerialNum(*am1, "a4", 4));
+    TEST_DO(assertCreateSerialNum(*am1, "a5", 5));
+    TEST_DO(assertCreateSerialNum(*am1, "a6", 6));
     TEST_DO(assertCreateSerialNum(am2.mgr, "a1", 1));
     TEST_DO(assertCreateSerialNum(am2.mgr, "a2", 20));
+    TEST_DO(assertCreateSerialNum(am2.mgr, "a3", 3));
+    TEST_DO(assertCreateSerialNum(am2.mgr, "a4", 20));
+    TEST_DO(assertCreateSerialNum(am2.mgr, "a5", 5));
+    TEST_DO(assertCreateSerialNum(am2.mgr, "a6", 20));
 }
 
 TEST_MAIN()
