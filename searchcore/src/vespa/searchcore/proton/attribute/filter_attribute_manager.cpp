@@ -6,12 +6,27 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 using search::AttributeGuard;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 
 namespace {
 
 const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.");
+
+bool isAttributeFlushTarget(const IFlushTarget::SP &flushTarget) {
+    const vespalib::string &targetName = flushTarget->getName();
+    if ((flushTarget->getType() != IFlushTarget::Type::SYNC) ||
+        (flushTarget->getComponent() != IFlushTarget::Component::ATTRIBUTE)) {
+        return false;
+    }
+    return (targetName.substr(0, FLUSH_TARGET_NAME_PREFIX.size()) == FLUSH_TARGET_NAME_PREFIX);
+}
+
+vespalib::string attributeFlushTargetAttributeName(const IFlushTarget::SP &flushTarget) {
+    const vespalib::string &targetName = flushTarget->getName();
+    return targetName.substr(FLUSH_TARGET_NAME_PREFIX.size());
+}
 
 }
 
@@ -56,10 +71,8 @@ FilterAttributeManager::getFlushTargets() const {
     std::vector<searchcorespi::IFlushTarget::SP> list;
     list.reserve(completeList.size());
     for (const auto &flushTarget : completeList) {
-        const vespalib::string &targetName = flushTarget->getName();
-        if (targetName.substr(0, FLUSH_TARGET_NAME_PREFIX.size()) == FLUSH_TARGET_NAME_PREFIX) {
-            vespalib::string name = targetName.substr(FLUSH_TARGET_NAME_PREFIX.size());
-            if (acceptAttribute(name)) {
+        if (isAttributeFlushTarget(flushTarget)) {
+            if (acceptAttribute(attributeFlushTargetAttributeName(flushTarget))) {
                 list.push_back(flushTarget);
             }
         }
