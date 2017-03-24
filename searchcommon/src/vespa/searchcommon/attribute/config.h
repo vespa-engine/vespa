@@ -11,8 +11,6 @@
 namespace search {
 namespace attribute {
 
-const size_t defaultMaxInternalBlobSize = 0x400000000ul;
-
 class Config
 {
 public:
@@ -27,7 +25,6 @@ public:
     CollectionType collectionType()       const { return _type; }
     bool fastSearch()                     const { return _fastSearch; }
     bool huge()                           const { return _huge; }
-    size_t getMaxInternalBlobSize()       const { return _maxInternalBlobSize; }
     uint32_t arity()                      const { return _arity; }
     int64_t lower_bound()                 const { return _lower_bound; }
     int64_t upper_bound()                 const { return _upper_bound; }
@@ -70,7 +67,6 @@ public:
     const CompactionStrategy &getCompactionStrategy() const { return _compactionStrategy; }
     void setHuge(bool v)                         { _huge = v; }
     void setFastSearch(bool v)                   { _fastSearch = v; }
-    void setMaxInternalBlobSize(size_t v)        { _maxInternalBlobSize = v; }
     void setArity(uint32_t v)                    { _arity = v; }
     void setBounds(int64_t lower, int64_t upper) { _lower_bound = lower;
                                                    _upper_bound = upper; }
@@ -126,7 +122,6 @@ public:
                _enableOnlyBitVector == b._enableOnlyBitVector &&
                _isFilter == b._isFilter &&
                _fastAccess == b._fastAccess &&
-               _maxInternalBlobSize == b._maxInternalBlobSize &&
                _growStrategy == b._growStrategy &&
                _compactionStrategy == b._compactionStrategy &&
                _arity == b._arity &&
@@ -146,7 +141,6 @@ private:
     bool           _enableOnlyBitVector;
     bool           _isFilter;
     bool           _fastAccess;
-    size_t         _maxInternalBlobSize;
     GrowStrategy   _growStrategy;
     CompactionStrategy _compactionStrategy;
     uint32_t       _arity;
