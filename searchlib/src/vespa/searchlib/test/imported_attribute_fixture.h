@@ -38,27 +38,39 @@ std::shared_ptr<ReferenceAttribute> create_reference_attribute(vespalib::stringr
     return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
 }
 
+enum class FastSearchConfig {
+    ExplicitlyEnabled,
+    Default
+};
+
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_typed_attribute(BasicType basic_type,
                                                     CollectionType collection_type,
+                                                    FastSearchConfig fast_search = FastSearchConfig::Default,
                                                     vespalib::stringref name = "parent") {
+    Config cfg(basic_type, collection_type);
+    if (fast_search == FastSearchConfig::ExplicitlyEnabled) {
+        cfg.setFastSearch(true);
+    }
     return std::dynamic_pointer_cast<AttrVecType>(
-            AttributeFactory::createAttribute(name, Config(basic_type, collection_type)));
+            AttributeFactory::createAttribute(name, std::move(cfg)));
 }
 
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_single_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::SINGLE, name);
+    return create_typed_attribute<AttrVecType>(type, CollectionType::SINGLE, FastSearchConfig::Default, name);
 }
 
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_array_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::ARRAY, name);
+    return create_typed_attribute<AttrVecType>(type, CollectionType::ARRAY, FastSearchConfig::Default, name);
 }
 
 template<typename AttrVecType>
-std::shared_ptr<AttrVecType> create_wset_attribute(BasicType type, vespalib::stringref name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, name);
+std::shared_ptr<AttrVecType> create_wset_attribute(BasicType type,
+                                                   FastSearchConfig fast_search = FastSearchConfig::Default,
+                                                   vespalib::stringref name = "parent") {
+    return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, fast_search, name);
 }
 
 template<typename VectorType>
@@ -83,7 +95,7 @@ struct ImportedAttributeFixture {
 
     ImportedAttributeFixture();
 
-    ~ImportedAttributeFixture();
+    virtual ~ImportedAttributeFixture();
 
     void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
         assert(from_lid < reference_attr->getNumDocs());
@@ -176,8 +188,9 @@ struct ImportedAttributeFixture {
     template<typename AttrVecType, typename WeightedValueType>
     void reset_with_wset_value_reference_mappings(
             BasicType type,
-            const std::vector<LidToLidMapping<std::vector<WeightedValueType>>> &mappings) {
-        reset_with_new_target_attr(create_wset_attribute<AttrVecType>(type));
+            const std::vector<LidToLidMapping<std::vector<WeightedValueType>>> &mappings,
+            FastSearchConfig fast_search = FastSearchConfig::Default) {
+        reset_with_new_target_attr(create_wset_attribute<AttrVecType>(type, fast_search));
         set_up_and_map<AttrVecType>(mappings, [this](auto &target_vec, auto &mapping) {
             for (const auto &v : mapping._value_in_target_attr) {
                 ASSERT_TRUE(target_vec.append(mapping._to_lid, v.value(), v.weight()));
@@ -237,8 +250,9 @@ template<typename AttrVecType, typename WeightedValueType>
 void reset_with_wset_value_reference_mappings(
         ImportedAttributeFixture &f,
         BasicType type,
-        const std::vector<ImportedAttributeFixture::LidToLidMapping<std::vector<WeightedValueType>>> &mappings) {
-    f.reset_with_wset_value_reference_mappings<AttrVecType, WeightedValueType>(type, mappings);
+        const std::vector<ImportedAttributeFixture::LidToLidMapping<std::vector<WeightedValueType>>> &mappings,
+        FastSearchConfig fast_search = FastSearchConfig::Default) {
+    f.reset_with_wset_value_reference_mappings<AttrVecType, WeightedValueType>(type, mappings, fast_search);
 }
 
 bool has_active_enum_guards(AttributeVector &attr) {

@@ -99,7 +99,7 @@ struct ExecFixture
         for (const auto &attr : attrs) {
             attr->addReservedDoc();
             attr->addDocs(1);
-            test.getIndexEnv().getAttributeManager().add(attr);
+            test.getIndexEnv().getAttributeMap().add(attr);
         }
 
         StringAttribute *astr = static_cast<StringAttribute *>(attrs[0].get());

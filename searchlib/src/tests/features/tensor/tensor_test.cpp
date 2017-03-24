@@ -111,7 +111,7 @@ struct ExecFixture
             attr->clearDoc(1);
             attr->clearDoc(2);
             attr->commit();
-            test.getIndexEnv().getAttributeManager().add(attr);
+            test.getIndexEnv().getAttributeMap().add(attr);
         }
 
         TensorAttribute *tensorAttr =
