@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -63,6 +64,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final Optional<StorageMaintainer> storageMaintainer;
     private final MetricReceiverWrapper metricReceiver;
     private final Environment environment;
+    private final Clock clock;
     private final Optional<AclMaintainer> aclMaintainer;
 
     private final Object monitor = new Object();
@@ -84,9 +86,9 @@ public class NodeAgentImpl implements NodeAgent {
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
-    ContainerNodeSpec lastNodeSpec = null;
-    CpuUsageReporter lastCpuMetric = new CpuUsageReporter(Instant.now());
-    Optional<String> vespaVersion = Optional.empty();
+    private ContainerNodeSpec lastNodeSpec = null;
+    private CpuUsageReporter lastCpuMetric;
+    private Optional<String> vespaVersion = Optional.empty();
 
     public NodeAgentImpl(
             final String hostName,
@@ -96,6 +98,7 @@ public class NodeAgentImpl implements NodeAgent {
             final Optional<StorageMaintainer> storageMaintainer,
             final MetricReceiverWrapper metricReceiver,
             final Environment environment,
+            final Clock clock,
             final Optional<AclMaintainer> aclMaintainer) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -106,7 +109,18 @@ public class NodeAgentImpl implements NodeAgent {
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
         this.metricReceiver = metricReceiver;
         this.environment = environment;
+        this.clock = clock;
         this.aclMaintainer = aclMaintainer;
+
+        // If the container is already running, initialize vespaVersion and lastCpuMetric
+        lastCpuMetric = new CpuUsageReporter(clock.instant());
+        dockerOperations.getContainer(containerName)
+                .filter(container -> container.state.isRunning())
+                .ifPresent(container -> {
+                    vespaVersion = dockerOperations.getVespaVersion(container.name);
+                    lastCpuMetric = new CpuUsageReporter(container.created);
+                    containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+                });
     }
 
     @Override
@@ -165,14 +179,6 @@ public class NodeAgentImpl implements NodeAgent {
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
         }
-
-        // If the container is already running, initialize vespaVersion and lastCpuMetric
-        dockerOperations.getContainer(containerName)
-                .filter(container -> container.state.isRunning())
-                .ifPresent(container -> {
-                    vespaVersion = dockerOperations.getVespaVersion(container.name);
-                    lastCpuMetric = new CpuUsageReporter(container.created);
-                });
 
         loopThread = new Thread(this::loop);
         loopThread.setName("loop-" + hostname);
@@ -261,8 +267,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        Optional<Container> existingContainer = dockerOperations.getContainer(containerName);
-        if (!existingContainer.isPresent()) {
+        if (containerState == ABSENT || !dockerOperations.getContainer(containerName).isPresent()) {
             aclMaintainer.ifPresent(AclMaintainer::run);
             dockerOperations.startContainer(containerName, nodeSpec);
             metricReceiver.unsetMetricsForContainer(hostname);
@@ -273,21 +278,12 @@ public class NodeAgentImpl implements NodeAgent {
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
                             RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
-        } else {
-            // In case container was already running on startup, we found the container, but should call
-            if (containerState == ABSENT) {
-                addDebugMessage("startContainerIfNeeded: was already running, containerState set to " +
-                        RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
-                containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
-            }
         }
     }
 
     private void removeContainerIfNeededUpdateContainerState(ContainerNodeSpec nodeSpec) throws Exception {
-        if (removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) {
-            addDebugMessage("removeContainerIfNeededUpdateContainerState: containerState " + containerState + " -> ABSENT");
-            containerState = ABSENT;
-        }
+        if (containerState == ABSENT || removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) return;
+
         Optional<String> restartReason = shouldRestartServices(nodeSpec);
         if (restartReason.isPresent()) {
             Optional<Container> existingContainer = dockerOperations.getContainer(containerName);
@@ -361,6 +357,7 @@ public class NodeAgentImpl implements NodeAgent {
                 dockerOperations.trySuspendNode(containerName);
                 stopServices(containerName);
             }
+            containerState = ABSENT;
             vespaVersion = Optional.empty();
             dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
@@ -671,8 +668,8 @@ public class NodeAgentImpl implements NodeAgent {
             return cpuUsagePct;
         }
 
-        double getUptime() {
-            return Duration.between(created, Instant.now()).toMillis() / 1000;
+        long getUptime() {
+            return Duration.between(created, clock.instant()).getSeconds();
         }
     }
 

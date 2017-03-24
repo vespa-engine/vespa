@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -62,7 +63,7 @@ public class DockerTester implements AutoCloseable {
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
-                orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment, Optional.empty());
+                orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment, Clock.systemUTC(), Optional.empty());
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.of(storageMaintainer), 100, mr, Optional.empty());
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }

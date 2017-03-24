@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -69,7 +70,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                        storageMaintainer, metricReceiver, environment, aclMaintainer);
+                        storageMaintainer, metricReceiver, environment, Clock.systemUTC(), aclMaintainer);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS,
