@@ -5,12 +5,15 @@ LOG_SETUP("attribute_reprocessing_initializer_test");
 
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
+#include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_handler.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
@@ -19,6 +22,8 @@ LOG_SETUP("attribute_reprocessing_initializer_test");
 using namespace proton;
 using namespace search;
 using namespace search::index;
+using search::attribute::Config;
+using search::attribute::BasicType;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
@@ -118,6 +123,7 @@ struct Fixture
           _handler()
     {
     }
+    ~Fixture() { }
     void init() {
         _initializer.reset(new AttributeReprocessingInitializer
                 (ARIConfig(_newCfg._mgr, _newCfg._schema, _newCfg._inspector),
@@ -247,6 +253,25 @@ TEST_F("require that predicate fields are not populated from attribute", Fixture
                    {"a", "b", "c", "d", "predicate"}).
         addNewConfig({"a", "b", "c", "d", "predicate"}, {"a", "b"}).init();
     EXPECT_TRUE(f.assertFields({"c", "d"}));
+}
+
+TEST("require that added attribute aspect with flushed attribute after interruptted reprocessing does not require attribute populate")
+{
+    {
+        auto diskLayout = AttributeDiskLayout::create(TEST_DIR);
+        auto dir = diskLayout->createAttributeDir("a");
+        auto writer = dir->getWriter();
+        writer->createInvalidSnapshot(INIT_SERIAL_NUM);
+        writer->markValidSnapshot(INIT_SERIAL_NUM);
+        auto snapshotdir = writer->getSnapshotDir(INIT_SERIAL_NUM);
+        vespalib::mkdir(snapshotdir);
+        auto av = AttributeFactory::createAttribute(snapshotdir + "/a",
+                                                    Config(BasicType::STRING));
+        av->save();
+    }
+    Fixture f;
+    f.addOldConfig({"a"}, {}).addNewConfig({"a"}, {"a"}).init();
+    EXPECT_TRUE(f.assertAttributes({}));
 }
 
 TEST_MAIN()
