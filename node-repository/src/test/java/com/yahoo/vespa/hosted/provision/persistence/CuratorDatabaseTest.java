@@ -9,6 +9,8 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -40,12 +42,14 @@ public class CuratorDatabaseTest {
         List<String> children1Call1 = database.getChildren(Path.fromString("/1"));
         List<String> children1Call2 = database.getChildren(Path.fromString("/1"));
         assertTrue("We reuse cached data when there are no commits", children1Call1 == children1Call2);
+
         assertEquals(1, database.getChildren(Path.fromString("/2")).size());
         commitCreate("/2/2", database);
         List<String> children1Call3 = database.getChildren(Path.fromString("/1"));
         assertEquals(2, database.getChildren(Path.fromString("/2")).size());
         assertFalse("We do not reuse cached data in different parts of the tree when there are commits",
                     children1Call3 == children1Call2);
+        
     }
 
     @Test
