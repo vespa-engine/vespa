@@ -57,17 +57,17 @@ public class ImportedFieldsResolver extends Processor {
         String targetFieldName = importedField.targetFieldName();
         Search targetSearch = reference.targetSearch();
         if (isImportedField(targetSearch, targetFieldName)) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an imported field. Importing such field not supported");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an imported field. Not supported");
         }
         SDField targetField = targetSearch.getField(targetFieldName);
         if (targetField == null) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
         } else if (!targetField.doesAttributing()) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute field");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute field. Only attribute fields supported");
         } else if (targetField.doesIndexing()) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Index field not supported");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an index field. Not supported");
         } else if (targetField.getDataType() instanceof TensorDataType) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Type 'tensor' not supported");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is of type 'tensor'. Not supported");
         }
         return targetField;
     }

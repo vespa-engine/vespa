@@ -70,7 +70,7 @@ public class ImportedFieldsResolverTestCase {
     public void resolver_fails_if_imported_field_is_not_an_attribute() {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("For search 'child', import field 'my_not_attribute': "
-                + "Field 'not_attribute' via reference field 'ref': Is not an attribute");
+                + "Field 'not_attribute' via reference field 'ref': Is not an attribute field. Only attribute fields supported");
         new SearchModel().addImportedField("my_not_attribute", "ref", "not_attribute").resolve();
     }
 
@@ -79,7 +79,7 @@ public class ImportedFieldsResolverTestCase {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "For search 'child', import field 'my_attribute_and_index': " +
-                        "Field 'attribute_and_index' via reference field 'ref': Index field not supported");
+                        "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported");
         new SearchModel()
                 .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
                 .resolve();
@@ -90,7 +90,7 @@ public class ImportedFieldsResolverTestCase {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "For search 'child', import field 'my_tensor_field': " +
-                        "Field 'tensor_field' via reference field 'ref': Type 'tensor' not supported");
+                        "Field 'tensor_field' via reference field 'ref': Is of type 'tensor'. Not supported");
         new SearchModel()
                 .addImportedField("my_tensor_field", "ref", "tensor_field")
                 .resolve();
@@ -101,7 +101,7 @@ public class ImportedFieldsResolverTestCase {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "For search 'child', import field 'my_ancient_field': " +
-                        "Field 'ancient_field' via reference field 'ref': Is an imported field. Importing such field not supported");
+                        "Field 'ancient_field' via reference field 'ref': Is an imported field. Not supported");
         new SearchModel()
                 .addImportedField("my_ancient_field", "ref", "ancient_field")
                 .resolve();
