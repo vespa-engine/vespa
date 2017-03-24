@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
@@ -49,9 +47,6 @@ public class CuratorDatabaseClient {
 
     private final CuratorDatabase curatorDatabase;
 
-    /** Used to serialize and de-serialize JSON data stored in ZK */
-    private final ObjectMapper jsonMapper = new ObjectMapper();
-
     private final Clock clock;
     
     private final Zone zone;
@@ -59,7 +54,6 @@ public class CuratorDatabaseClient {
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
-        jsonMapper.registerModule(new JodaModule());
         boolean useCache = zone.system().equals(SystemName.cd);
         this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
