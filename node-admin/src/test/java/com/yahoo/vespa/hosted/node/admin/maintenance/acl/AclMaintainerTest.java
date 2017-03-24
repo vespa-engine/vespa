@@ -11,8 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.verification.VerificationMode;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -27,18 +27,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AclMaintainerTest {
-
-    private static final String NODE_ADMIN_HOSTNAME = "node-admin";
+    private static final String NODE_ADMIN_HOSTNAME = "node-admin.region-1.yahoo.com";
 
     private AclMaintainer aclMaintainer;
     private DockerOperations dockerOperations;
     private NodeRepoMock nodeRepository;
+    private List<Container> containers;
 
     @Before
     public void before() {
         this.dockerOperations = mock(DockerOperations.class);
         this.nodeRepository = new NodeRepoMock(new CallOrderVerifier());
-        this.aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, () -> NODE_ADMIN_HOSTNAME);
+        this.aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME);
+        this.containers = new ArrayList<>();
+        when(dockerOperations.getAllManagedContainers()).thenReturn(containers);
     }
 
     @Test
@@ -157,15 +159,13 @@ public class AclMaintainerTest {
         final ContainerName containerName = new ContainerName(hostname);
         final Container container = new Container(hostname, new DockerImage("mock"),
                 containerName, state, pid);
-        when(dockerOperations.getContainer(eq(containerName))).thenReturn(Optional.of(container));
+        containers.add(container);
         return container;
     }
 
     private static List<ContainerAclSpec> makeAclSpecs(int count, ContainerName containerName) {
         return IntStream.rangeClosed(1, count)
-                .mapToObj(i -> new ContainerAclSpec("node-" + i, "::" + i,
-                        containerName))
+                .mapToObj(i -> new ContainerAclSpec("node-" + i, "::" + i, containerName))
                 .collect(Collectors.toList());
     }
-
 }

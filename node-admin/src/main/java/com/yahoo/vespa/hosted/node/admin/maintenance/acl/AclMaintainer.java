@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
-import com.yahoo.net.HostName;
-import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.collections.Pair;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -17,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -35,25 +33,20 @@ import java.util.stream.Collectors;
  * @author mpolden
  */
 public class AclMaintainer implements Runnable {
-
     private static final PrefixLogger log = PrefixLogger.getNodeAdminLogger(AclMaintainer.class);
 
     private static final String IPTABLES_COMMAND = "ip6tables";
 
     private final DockerOperations dockerOperations;
     private final NodeRepository nodeRepository;
-    private final Supplier<String> nodeAdminHostnameSupplier;
+    private final String nodeAdminHostname;
     private final Map<ContainerName, Acl> containerAcls;
 
-    public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository) {
-        this(dockerOperations, nodeRepository, HostName::getLocalhost);
-    }
-
-    AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository,
-                  Supplier<String> nodeAdminHostnameSupplier) {
+    public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository,
+                  String nodeAdminHostname) {
         this.dockerOperations = dockerOperations;
         this.nodeRepository = nodeRepository;
-        this.nodeAdminHostnameSupplier = nodeAdminHostnameSupplier;
+        this.nodeAdminHostname = nodeAdminHostname;
         this.containerAcls = new HashMap<>();
     }
 
@@ -85,23 +78,17 @@ public class AclMaintainer implements Runnable {
     }
 
     private void configureAcls() {
-        final List<ContainerAclSpec> aclSpecs = nodeRepository.getContainerAclSpecs(nodeAdminHostnameSupplier.get());
-        final Map<ContainerName, List<ContainerAclSpec>> aclSpecsGroupedByHostname = aclSpecs.stream()
+        final Map<ContainerName, List<ContainerAclSpec>> aclSpecsGroupedByHostname = nodeRepository
+                .getContainerAclSpecs(nodeAdminHostname).stream()
                 .collect(Collectors.groupingBy(ContainerAclSpec::trustedBy));
 
-        for (Map.Entry<ContainerName, List<ContainerAclSpec>> entry : aclSpecsGroupedByHostname.entrySet()) {
-            final ContainerName containerName = entry.getKey();
-            final Optional<Container> container = dockerOperations.getContainer(containerName);
-            if (!container.isPresent()) {
-                // Container belongs to this Docker host, but is currently unallocated
-                continue;
-            }
-            if (!container.get().state.isRunning()) {
-                log.info(String.format("Container with name %s is not running, skipping", container.get().name.asString()));
-                continue;
-            }
-            applyAcl(container.get().name, new Acl(container.get().pid, entry.getValue()));
-        }
+        dockerOperations
+                .getAllManagedContainers().stream()
+                .filter(container -> container.state.isRunning())
+                .map(container -> new Pair<>(container, aclSpecsGroupedByHostname.get(container.name)))
+                .filter(pair -> pair.getSecond() != null)
+                .forEach(pair ->
+                        applyAcl(pair.getFirst().name, new Acl(pair.getFirst().pid, pair.getSecond())));
     }
 
     @Override
