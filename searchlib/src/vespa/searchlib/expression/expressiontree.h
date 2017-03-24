@@ -47,6 +47,7 @@ public:
     ExpressionTree(const ExpressionTree & rhs);
     ExpressionTree(ExpressionTree &&) = default;
     ~ExpressionTree();
+    ExpressionTree & operator = (ExpressionNode::UP rhs);
     ExpressionTree & operator = (const ExpressionTree & rhs);
     ExpressionTree & operator = (ExpressionTree &&) = default;
 
@@ -70,12 +71,12 @@ private:
     typedef std::vector<InterpolatedLookup *> InterpolatedLookupList;
     typedef std::vector<ArrayAtLookup *> ArrayAtLookupList;
 
-    vespalib::IdentifiableLinkedPtr<ExpressionNode>  _root;
-    AttributeNodeList        _attributeNodes;
-    DocumentAccessorNodeList _documentAccessorNodes;
-    RelevanceNodeList        _relevanceNodes;
-    InterpolatedLookupList   _interpolatedLookupNodes;
-    ArrayAtLookupList        _arrayAtLookupNodes;
+    ExpressionNode::CP        _root;
+    AttributeNodeList         _attributeNodes;
+    DocumentAccessorNodeList  _documentAccessorNodes;
+    RelevanceNodeList         _relevanceNodes;
+    InterpolatedLookupList    _interpolatedLookupNodes;
+    ArrayAtLookupList         _arrayAtLookupNodes;
 };
 
 

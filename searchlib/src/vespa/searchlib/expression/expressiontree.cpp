@@ -106,12 +106,21 @@ ExpressionTree::ExpressionTree(const ExpressionTree & rhs) :
     prepare(false);
 }
 
-ExpressionTree & ExpressionTree::operator = (const ExpressionTree & rhs)
+ExpressionTree &
+ExpressionTree::operator = (const ExpressionTree & rhs)
 {
     if (this != & rhs) {
         ExpressionTree eTree(rhs);
         swap(eTree);
     }
+    return *this;
+}
+
+ExpressionTree &
+ExpressionTree::operator = (ExpressionNode::UP rhs)
+{
+    ExpressionTree eTree(std::move(rhs));
+    swap(eTree);
     return *this;
 }
 

@@ -292,33 +292,41 @@ TEST_F("testGroup", Fixture("testGroup")) {
                           .addChild(Group().setId(Int64ResultNode(131)))));
 }
 
+GroupingLevel
+createDummyLevel(size_t maxGroups, size_t numAggr) {
+    GroupingLevel l;
+    l.setMaxGroups(maxGroups);
+    l.setExpression(createDummyExpression());
+    for (size_t i(0); i < numAggr; i++) {
+        l.addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression()));
+    }
+    return l;
+}
+
+GroupingLevel
+createLargeLevel() {
+    GroupingLevel l;
+    l.setExpression(MU<AttributeNode>("folder"));
+    l.addAggregationResult(createAggr<XorAggregationResult>(MU<MD5BitFunctionNode>(MU<AttributeNode>("docid"), 64)));
+    l.addAggregationResult(createAggr<SumAggregationResult>(
+            ExpressionNode::UP(MinFunctionNode()
+                                       .addArg(MU<AttributeNode>("attribute1"))
+                                       .addArg(MU<AttributeNode>("attribute2")).clone())));
+    l.addAggregationResult(createAggr<XorAggregationResult>(
+            ExpressionNode::UP(XorBitFunctionNode(
+                    ExpressionNode::UP(CatFunctionNode()
+                                               .addArg(MU<GetDocIdNamespaceSpecificFunctionNode>())
+                                               .addArg(MU<DocumentFieldNode>("folder"))
+                                               .addArg(MU<DocumentFieldNode>("flags")).clone())
+                    , 64).clone())));
+    return l;
+}
 TEST_F("testGrouping", Fixture("testGrouping")) {
+
     f.checkObject(Grouping());
-    f.checkObject(Grouping()
-                .addLevel(GroupingLevel()
-                          .setMaxGroups(100)
-                          .setExpression(createDummyExpression())
-                          .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())))
-                .addLevel(GroupingLevel()
-                          .setMaxGroups(10)
-                          .setExpression(createDummyExpression())
-                          .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression()))
-                                  .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression()))));
-    f.checkObject(Grouping()
-                .addLevel(GroupingLevel()
-                          .setExpression(MU<AttributeNode>("folder"))
-                          .addAggregationResult(createAggr<XorAggregationResult>(MU<MD5BitFunctionNode>(MU<AttributeNode>("docid"), 64)))
-                          .addAggregationResult(createAggr<SumAggregationResult>(
-                                  ExpressionNode::UP(MinFunctionNode()
-                                                             .addArg(MU<AttributeNode>("attribute1"))
-                                                             .addArg(MU<AttributeNode>("attribute2")).clone())))
-                          .addAggregationResult(createAggr<XorAggregationResult>(
-                                  ExpressionNode::UP(XorBitFunctionNode(
-                                          ExpressionNode::UP(CatFunctionNode()
-                                                                     .addArg(MU<GetDocIdNamespaceSpecificFunctionNode>())
-                                                                     .addArg(MU<DocumentFieldNode>("folder"))
-                                                                     .addArg(MU<DocumentFieldNode>("flags")).clone())
-                                          , 64).clone())))));
+    f.checkObject(Grouping().addLevel(createDummyLevel(100, 1))
+                            .addLevel(createDummyLevel(10, 2)));
+    f.checkObject(Grouping().addLevel(createLargeLevel()));
 }
 
 }  // namespace

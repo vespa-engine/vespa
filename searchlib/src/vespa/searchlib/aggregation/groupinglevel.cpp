@@ -28,15 +28,15 @@ GroupingLevel::~GroupingLevel() { }
 
 GroupingLevel::GroupingLevel(const GroupingLevel &) = default;
 GroupingLevel & GroupingLevel::operator =(const GroupingLevel &) = default;
-GroupingLevel::GroupingLevel(GroupingLevel &&) = default;
-GroupingLevel & GroupingLevel::operator =(GroupingLevel &&) = default;
 
-Serializer & GroupingLevel::onSerialize(Serializer & os) const
+Serializer &
+GroupingLevel::onSerialize(Serializer & os) const
 {
     return os << _maxGroups << _precision << _classify << _collect;
 }
 
-Deserializer & GroupingLevel::onDeserialize(Deserializer & is)
+Deserializer &
+GroupingLevel::onDeserialize(Deserializer & is)
 {
     return is >> _maxGroups >> _precision >> _classify >> _collect;
 }

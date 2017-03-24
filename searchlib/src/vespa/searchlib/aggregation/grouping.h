@@ -42,6 +42,11 @@ public:
     DECLARE_NBO_SERIALIZE;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     Grouping();
+    Grouping(const Grouping &);
+    Grouping & operator = (const Grouping &);
+    Grouping(Grouping &&) noexcept;
+    Grouping & operator = (Grouping &&) noexcept;
+    ~Grouping();
 
     Grouping unchain() const { return *this; }
 
@@ -51,7 +56,7 @@ public:
     Grouping &setTopN(int64_t v)                { _topN = v;                return *this; }
     Grouping &setFirstLevel(unsigned int level) { _firstLevel = level;      return *this; }
     Grouping &setLastLevel(unsigned int level)  { _lastLevel = level;       return *this; }
-    Grouping &addLevel(GroupingLevel level)     { _levels.emplace_back(std::move(level)); return *this; }
+    Grouping &addLevel(GroupingLevel && level)  { _levels.emplace_back(std::move(level)); return *this; }
     Grouping &setRoot(const Group &root_)       { _root = root_;            return *this; }
     Grouping &setClock(const vespalib::Clock * clock) { _clock = clock; return *this; }
     Grouping &setTimeOfDoom(fastos::TimeStamp timeOfDoom) { _timeOfDoom = timeOfDoom; return *this; }

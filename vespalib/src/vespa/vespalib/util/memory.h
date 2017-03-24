@@ -341,7 +341,7 @@ public:
     }
 
     /** @brief destructor doing delete on owned pointer */
-    ~CloneablePtr() { cleanup(); }
+    ~CloneablePtr() noexcept { cleanup(); }
 
     /** @brief copy constructor, does deep copy using clone() */
     CloneablePtr(const CloneablePtr & rhs) : _p(nullptr) {
@@ -387,7 +387,7 @@ public:
     /** @brief release owned pointer */
     T * release()                   { T * p(_p); _p = nullptr; return p; }
 private:
-    void cleanup() {
+    void cleanup() noexcept {
         if (_p) {
             delete _p;
             _p = nullptr;

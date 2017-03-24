@@ -124,7 +124,7 @@ public:
     Group & operator =(const Group & rhs);
     Group(Group &&) noexcept;
     Group & operator = (Group &&) noexcept;
-    ~Group();
+    ~Group() noexcept;
     void swap(Group & rhs);
 
     int cmpId(const Group &rhs) const { return _id->cmpFast(*rhs._id); }

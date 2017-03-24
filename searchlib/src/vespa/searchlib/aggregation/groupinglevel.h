@@ -78,8 +78,8 @@ private:
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:
     GroupingLevel();
-    GroupingLevel(GroupingLevel &&);
-    GroupingLevel & operator =(GroupingLevel &&);
+    GroupingLevel(GroupingLevel &&) = default;
+    GroupingLevel & operator =(GroupingLevel &&) = default;
     GroupingLevel(const GroupingLevel &);
     GroupingLevel & operator =(const GroupingLevel &);
     ~GroupingLevel();

@@ -29,7 +29,7 @@ namespace document {
 class FieldValue : public vespalib::Identifiable
 {
 protected:
-    FieldValue(const FieldValue&) { }
+    FieldValue(const FieldValue&) : Identifiable() { }
     FieldValue& operator=(const FieldValue&) { return *this; }
     typedef vespalib::IArrayT<FieldValue> IArray;
     static IArray::UP createArray(const DataType & baseType);

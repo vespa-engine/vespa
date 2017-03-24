@@ -172,6 +172,11 @@ public:
         RuntimeInfo * _rt;
     };
     DECLARE_IDENTIFIABLE(Identifiable);
+    Identifiable() { }
+    Identifiable(Identifiable &&) = default;
+    Identifiable & operator = (Identifiable &&) = default;
+    Identifiable(const Identifiable &) = default;
+    Identifiable & operator = (const Identifiable &) = default;
     virtual ~Identifiable() { }
 
     /**
