@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Responsible for management of a single node over its lifecycle.
@@ -55,11 +53,6 @@ public interface NodeAgent {
      * method returns, no more actions will be taken by the agent.
      */
     void stop();
-
-    /**
-     * Returns the {@link ContainerNodeSpec} for this node agent.
-     */
-    Optional<ContainerNodeSpec> getContainerNodeSpec();
 
     /**
      * Updates metric receiver with the latest node-agent stats

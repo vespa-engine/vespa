@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -51,9 +50,8 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final int nodeAgentScanIntervalMillis;
 
-    private GaugeWrapper numberOfContainersInActiveState;
-    private GaugeWrapper numberOfContainersInLoadImageState;
-    private CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
+    private final GaugeWrapper numberOfContainersInLoadImageState;
+    private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
     public NodeAdminImpl(final DockerOperations dockerOperations, final Function<String, NodeAgent> nodeAgentFactory,
                          final Optional<StorageMaintainer> storageMaintainer, final int nodeAgentScanIntervalMillis,
@@ -67,7 +65,6 @@ public class NodeAdminImpl implements NodeAdmin {
                 .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
-        this.numberOfContainersInActiveState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.state.active");
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
 
@@ -93,18 +90,14 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     private void updateNodeAgentMetrics() {
-        int numberContainersInActive = 0;
         int numberContainersWaitingImage = 0;
         int numberOfNewUnhandledExceptions = 0;
 
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            Optional<ContainerNodeSpec> nodeSpec = nodeAgent.getContainerNodeSpec();
-            if (nodeSpec.isPresent() && nodeSpec.get().nodeState == Node.State.active) numberContainersInActive++;
             if (nodeAgent.isDownloadingImage()) numberContainersWaitingImage++;
             numberOfNewUnhandledExceptions += nodeAgent.getAndResetNumberOfUnhandledExceptions();
         }
 
-        numberOfContainersInActiveState.sample(numberContainersInActive);
         numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
         numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
     }

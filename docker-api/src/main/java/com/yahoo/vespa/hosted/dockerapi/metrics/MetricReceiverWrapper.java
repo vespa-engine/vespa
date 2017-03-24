@@ -80,16 +80,6 @@ public class MetricReceiverWrapper {
         }
     }
 
-    public List<DimensionMetrics> getMetrics(String application) {
-        synchronized (monitor) {
-            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
-            return metricsByDimensions.entrySet()
-                                     .stream()
-                                     .map(entry -> new DimensionMetrics(application, entry.getKey(), entry.getValue()))
-                                     .collect(Collectors.toList());
-        }
-    }
-
     public List<DimensionMetrics> getAllMetrics() {
         synchronized (monitor) {
             List<DimensionMetrics> dimensionMetrics = new ArrayList<>();

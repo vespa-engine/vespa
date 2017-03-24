@@ -355,12 +355,12 @@
     "eth0":{
       "rx_bytes":19499270,
       "rx_packets":58913,
-      "rx_errors":0,
-      "rx_dropped":0,
+      "rx_errors":55,
+      "rx_dropped":4,
       "tx_bytes":20303455,
       "tx_packets":62319,
-      "tx_errors":0,
-      "tx_dropped":0
+      "tx_errors":3,
+      "tx_dropped":13
     },
     "eth1":{
       "rx_bytes":3245766,
