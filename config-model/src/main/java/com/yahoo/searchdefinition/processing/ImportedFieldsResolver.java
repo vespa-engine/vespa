@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -54,15 +55,25 @@ public class ImportedFieldsResolver extends Processor {
 
     private SDField validateTargetField(TemporaryImportedField importedField, DocumentReference reference) {
         String targetFieldName = importedField.targetFieldName();
-        SDField targetField = reference.targetSearch().getField(targetFieldName);
+        Search targetSearch = reference.targetSearch();
+        if (isImportedField(targetSearch, targetFieldName)) {
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an imported field. Not supported");
+        }
+        SDField targetField = targetSearch.getField(targetFieldName);
         if (targetField == null) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
         } else if (!targetField.doesAttributing()) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute field. Only attribute fields supported");
         } else if (targetField.doesIndexing()) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Index not allowed");
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an index field. Not supported");
+        } else if (targetField.getDataType() instanceof TensorDataType) {
+            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is of type 'tensor'. Not supported");
         }
         return targetField;
+    }
+
+    private static boolean isImportedField(Search targetSearch, String targetFieldName) {
+        return targetSearch.importedFields().isPresent() && targetSearch.importedFields().get().fields().containsKey(targetFieldName);
     }
 
     private static String targetFieldAsString(String targetFieldName, DocumentReference reference) {
