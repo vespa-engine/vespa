@@ -509,12 +509,8 @@ public class NodeAgentImpl implements NodeAgent {
         synchronized (monitor) {
             nodeSpec = lastNodeSpec;
         }
+        if (nodeSpec == null) return;
 
-        if (nodeSpec == null || !vespaVersion.isPresent()) return;
-        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
-        if ( ! containerStats.isPresent()) return;
-
-        Docker.ContainerStats stats = containerStats.get();
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
                 .add("role", "tenants")
@@ -522,6 +518,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("state", nodeSpec.nodeState.toString())
                 .add("zone", environment.getZone())
                 .add("parentHostname", environment.getParentHostHostname());
+        vespaVersion.ifPresent(version -> dimensionsBuilder.add("vespaVersion", version));
 
         nodeSpec.owner.ifPresent(owner ->
                 dimensionsBuilder
@@ -535,10 +532,17 @@ public class NodeAgentImpl implements NodeAgent {
                 dimensionsBuilder
                         .add("clustertype", membership.clusterType)
                         .add("clusterid", membership.clusterId));
-
-        vespaVersion.ifPresent(version -> dimensionsBuilder.add("vespaVersion", version));
-
         Dimensions dimensions = dimensionsBuilder.build();
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.alive").sample(1);
+
+
+        // The remaining metrics require container to exists and be running
+        if (containerState == ABSENT) return;
+        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
+        if ( ! containerStats.isPresent()) return;
+
+        Docker.ContainerStats stats = containerStats.get();
+
         long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
         long currentCpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
 
@@ -560,8 +564,12 @@ public class NodeAgentImpl implements NodeAgent {
         stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
             Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
 
-            addIfNotNull(netDims, "node.network.bytes_rcvd", interfaceStats, "rx_bytes");
-            addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
+            addIfNotNull(netDims, "node.net.in.bytes", interfaceStats, "rx_bytes");
+            addIfNotNull(netDims, "node.net.in.errors", interfaceStats, "rx_errors");
+            addIfNotNull(netDims, "node.net.in.dropped", interfaceStats, "rx_dropped");
+            addIfNotNull(netDims, "node.net.out.bytes", interfaceStats, "tx_bytes");
+            addIfNotNull(netDims, "node.net.out.errors", interfaceStats, "tx_errors");
+            addIfNotNull(netDims, "node.net.out.dropped", interfaceStats, "tx_dropped");
         });
 
         long bytesInGB = 1 << 30;
@@ -586,12 +594,6 @@ public class NodeAgentImpl implements NodeAgent {
                           .sample(((Number) metricsMap.get(metricName)).doubleValue());
         } catch (Throwable e) {
             logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
-        }
-    }
-
-    public Optional<ContainerNodeSpec> getContainerNodeSpec() {
-        synchronized (monitor) {
-            return Optional.ofNullable(lastNodeSpec);
         }
     }
 

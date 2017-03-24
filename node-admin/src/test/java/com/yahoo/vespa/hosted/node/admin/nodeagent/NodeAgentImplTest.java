@@ -438,7 +438,34 @@ public class NodeAgentImplTest {
         nodeAgent.updateContainerNodeMetrics(5);
 
 
-        File expectedMetricsFile = new File(classLoader.getResource("docker.stats.metrics.expected.json").getFile());
+        File expectedMetricsFile = new File(classLoader.getResource("docker.stats.metrics.active.expected.json").getFile());
+        Set<Map<String, Object>> expectedMetrics = objectMapper.readValue(expectedMetricsFile, Set.class);
+        Set<Map<String, Object>> actualMetrics = metricReceiver.getAllMetricsRaw();
+
+        assertEquals(expectedMetrics, actualMetrics);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGetRelevantMetricsForReadyNode() throws Exception {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        ClassLoader classLoader = getClass().getClassLoader();
+
+        final ContainerNodeSpec nodeSpec = nodeSpecBuilder
+                .nodeState(Node.State.ready)
+                .build();
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
+
+        when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
+        when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
+        when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(Optional.empty());
+
+        nodeAgent.tick(); // Run the tick loop once to initialize lastNodeSpec
+
+        nodeAgent.updateContainerNodeMetrics(5);
+
+        File expectedMetricsFile = new File(classLoader.getResource("docker.stats.metrics.ready.expected.json").getFile());
         Set<Map<String, Object>> expectedMetrics = objectMapper.readValue(expectedMetricsFile, Set.class);
         Set<Map<String, Object>> actualMetrics = metricReceiver.getAllMetricsRaw();
 
