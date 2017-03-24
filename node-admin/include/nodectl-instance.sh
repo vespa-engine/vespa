@@ -120,6 +120,7 @@ Start() {
 
     echo "Yinst settings"
     yinst set zpe_policy_updater.domains=$ATHENS_DOMAIN
+    yinst set zpe_policy_updater.autostart=on
     echo "Starting all yinst packages"
     # Start yinst the way it is done when a non-Docker node is booted.
     # As this is implemented in yinst now (2017-02-08), this will take care of
