@@ -89,25 +89,9 @@ public class CuratorDatabase {
     // These can read from the memory file system, which accurately mirrors the ZooKeeper content IF
 
     /** Returns the immediate, local names of the children under this node in any order */
-    public List<String> getChildren(Path path) {
-        CuratorDatabaseCache cache = getCache();
-        List<String> children = cache.children(path);
-        if (children == null) { // children are not in this cache - get and add
-            children = curator.getChildren(path);
-            cache.addChildren(path, children);
-        }
-        return children;
-    }
+    public List<String> getChildren(Path path) { return getCache().getChildren(path); }
 
-    public Optional<byte[]> getData(Path path) {
-        CuratorDatabaseCache cache = getCache();
-        Optional<byte[]> data = cache.data(path);
-        if (data == null) { // data is not in this cache - get and add
-            data = curator.getData(path);
-            cache.addData(path, data);
-        }
-        return data;
-    }
+    public Optional<byte[]> getData(Path path) { return getCache().getData(path); }
 
     private CuratorDatabaseCache getCache() {
         CuratorDatabaseCache cache = this.cache.get();
@@ -121,18 +105,20 @@ public class CuratorDatabase {
 
     /** Caches must only be instantiated using this method */
     private CuratorDatabaseCache newCache(long generation) {
-        return useCache ? new CuratorDatabaseCache(generation) : new DeactivatedCache(generation);
+        return useCache ? new CuratorDatabaseCache(generation, curator) : new DeactivatedCache(generation, curator);
     }
 
     /**
      * A thread safe partial snapshot of the curator database content with a given generation.
-     * Note that a snapshot is not necessarily consistent - consistency is handled by pessimistic and optimistic locking
-     * in other layers.
-     * This is merely what Curator returned at various points in time it had the counter at this generation.
+     * This is merely a recording of what Curator returned at various points in time when 
+     * it had the counter at this generation.
      */
     private static class CuratorDatabaseCache {
 
         private final long generation;
+        
+        /** The curator instance used to fetch missing data */
+        protected final Curator curator;
 
         // The data of this partial state mirror. The amount of curator state mirrored in this may grow
         // over time by multiple threads. Growing is the only operation permitted by this.
@@ -140,9 +126,10 @@ public class CuratorDatabase {
         private final Map<Path, List<String>> children = new ConcurrentHashMap<>();
         private final Map<Path, Optional<byte[]>> data = new ConcurrentHashMap<>();
 
-        /** Create an empty snapshot at a given generation (as empty snapshot is a valid "partial snapshot" */
-        public CuratorDatabaseCache(long generation) {
+        /** Create an empty snapshot at a given generation (as an empty snapshot is a valid partial snapshot) */
+        public CuratorDatabaseCache(long generation, Curator curator) {
             this.generation = generation;
+            this.curator = curator;
         }
 
         public long generation() { return generation; }
@@ -151,46 +138,30 @@ public class CuratorDatabase {
          * Returns the children of this path, which may be empty.
          * Returns null only if it is not present in this state mirror
          */
-        public List<String> children(Path path) { return children.get(path); }
-
-        public void addChildren(Path path, List<String> childrenAtPath) {
-            if (children.containsKey(path)) throw new RuntimeException("Programming error");
-            children.put(path, ImmutableList.copyOf(childrenAtPath));
+        public List<String> getChildren(Path path) { 
+            return children.computeIfAbsent(path, key -> ImmutableList.copyOf(curator.getChildren(path)));
         }
 
         /**
          * Returns the content of this child - which may be empty.
          * Returns null only if it is not present in this state mirror
          */
-        public Optional<byte[]> data(Path path) {
-            Optional<byte[]> dataAtPath = data.get(path);
-            if (dataAtPath == null) return null;
-            return dataAtPath.map(d -> Arrays.copyOf(d, d.length));
-        }
-
-        public void addData(Path path, Optional<byte[]> dataAtPath) {
-            if (data.containsKey(path)) throw new RuntimeException("Programming error");
-            data.put(path, dataAtPath);
+        public Optional<byte[]> getData(Path path) {
+            return data.computeIfAbsent(path, key -> curator.getData(path).map(data -> Arrays.copyOf(data, data.length)));
         }
 
     }
 
     /** An implementation of the curator database cache which does no caching */
     private static class DeactivatedCache extends CuratorDatabaseCache {
-
-        public DeactivatedCache(long generation) { super(generation); }
-
-        @Override
-        public List<String> children(Path path) { return null; }
+        
+        public DeactivatedCache(long generation, Curator curator) { super(generation, curator); }
 
         @Override
-        public void addChildren(Path path, List<String> childrenAtPath) {}
+        public List<String> getChildren(Path path) { return curator.getChildren(path); }
 
         @Override
-        public Optional<byte[]> data(Path path) { return null; }
-
-        @Override
-        public void addData(Path path, Optional<byte[]> dataAtPath) {}
+        public Optional<byte[]> getData(Path path) { return curator.getData(path); }
 
     }
 
