@@ -21,14 +21,14 @@ public class AttributeIndexTestCase extends SearchDefinitionTestCase {
     public void testAttributeIndex() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/attributeindex.sd");
 
-        assertTrue(search.getField("nosettings").getAttributes().get("nosettings") != null);
+        assertTrue(search.getConcreteField("nosettings").getAttributes().get("nosettings") != null);
 
-        assertTrue(search.getField("specifyname").getAttributes().get("newname") != null);
+        assertTrue(search.getConcreteField("specifyname").getAttributes().get("newname") != null);
 
-        assertTrue(search.getField("specifyname2").getAttributes().get("newname2") != null);
+        assertTrue(search.getConcreteField("specifyname2").getAttributes().get("newname2") != null);
 
-        assertTrue(search.getField("withstaticrankname").getAttributes().get("withstaticrankname") != null);
+        assertTrue(search.getConcreteField("withstaticrankname").getAttributes().get("withstaticrankname") != null);
 
-        assertTrue(search.getField("withstaticrankname").getAttributes().get("someothername") != null);
+        assertTrue(search.getConcreteField("withstaticrankname").getAttributes().get("someothername") != null);
     }
 }

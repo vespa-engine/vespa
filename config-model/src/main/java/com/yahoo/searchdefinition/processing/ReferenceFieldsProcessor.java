@@ -28,7 +28,7 @@ public class ReferenceFieldsProcessor extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getDataType() instanceof ReferenceDataType) {
                 removeFromAttributePrefetchSummaryClass(field);
                 clearSummaryTransformOnSummaryFields(field);

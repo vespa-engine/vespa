@@ -60,7 +60,7 @@ public abstract class Processor {
      * @return the implementation field which is added to the search
      */
     protected SDField addField(Search search, SDField field, String suffix, String indexing, String queryCommand) {
-        SDField implementationField = search.getField(field.getName() + "_" + suffix);
+        SDField implementationField = search.getConcreteField(field.getName() + "_" + suffix);
         if (implementationField != null) {
             deployLogger.log(Level.WARNING, "Implementation field " + implementationField + " added twice");
         } else {

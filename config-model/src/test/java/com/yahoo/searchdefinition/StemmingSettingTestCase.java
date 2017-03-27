@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -48,8 +44,8 @@ public class StemmingSettingTestCase extends SearchDefinitionTestCase {
     @Test
     public void requireThatStemmingIsDefaultShortest() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/stemmingdefault.sd");
-        assertNull(search.getField("my_str").getStemming());
-        assertEquals(Stemming.SHORTEST, search.getField("my_str").getStemming(search));
+        assertNull(search.getConcreteField("my_str").getStemming());
+        assertEquals(Stemming.SHORTEST, search.getConcreteField("my_str").getStemming(search));
     }
 
 }

@@ -29,7 +29,7 @@ public class NoPrefixForIndexes extends Validator {
                 for (DocumentDatabase docDb : sc.getDocumentDbs()) {
                     DerivedConfiguration sdConfig = docDb.getDerivedConfiguration();
                     Search search = sdConfig.getSearch();
-                    for (SDField field : search.allFieldsList()) {
+                    for (SDField field : search.allConcreteFields()) {
                         if (field.doesIndexing()) {
                             //if (!field.getIndexTo().isEmpty() && !field.getIndexTo().contains(field.getName())) continue;
                             if (field.getMatching().getAlgorithm().equals(Matching.Algorithm.PREFIX)) {

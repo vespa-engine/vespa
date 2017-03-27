@@ -33,9 +33,9 @@ public class IndexingScriptChangeValidator {
 
     public List<VespaConfigChangeAction> validate(ValidationOverrides overrides) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
-        for (SDField nextField : nextSearch.allFieldsList()) {
+        for (SDField nextField : nextSearch.allConcreteFields()) {
             String fieldName = nextField.getName();
-            SDField currentField = currentSearch.getField(fieldName);
+            SDField currentField = currentSearch.getConcreteField(fieldName);
             if (currentField != null) {
                 validateScripts(currentField, nextField, overrides).ifPresent(r -> result.add(r));
             }

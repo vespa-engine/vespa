@@ -95,24 +95,24 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertEquals(1, field.getAttributes().size());
 
         // Seventh field
-        field= search.getField("categories");
+        field= search.getConcreteField("categories");
         assertEquals("{ input categories_src | lowercase | normalize | index; }",
                      field.getIndexingScript().toString());
         assertTrue(!field.isHeader());
 
         // Eight field
-        field= search.getField("categoriesagain");
+        field= search.getConcreteField("categoriesagain");
         assertEquals("{ input categoriesagain_src | lowercase | normalize | index; }",
                      field.getIndexingScript().toString());
         assertTrue(field.isHeader());
 
         // Ninth field
-        field= search.getField("exactemento");
+        field= search.getConcreteField("exactemento");
         assertEquals("{ input exactemento_src | lowercase | index | summary; }",
                      field.getIndexingScript().toString());
 
         // Tenth field
-        field = search.getField("category_arr");
+        field = search.getConcreteField("category_arr");
         assertEquals(1, field.getAttributes().size());
         attribute = field.getAttributes().get("category_arr");
         assertNotNull(attribute);
@@ -122,7 +122,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertTrue(field.isHeader());
 
         // Eleventh field
-        field = search.getField("measurement_arr");
+        field = search.getConcreteField("measurement_arr");
         assertEquals(1, field.getAttributes().size());
         attribute = field.getAttributes().get("measurement_arr");
         assertEquals("measurement_arr", attribute.getName());
@@ -148,7 +148,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertEquals("experimental",profile.getInheritedName());
 
         // The extra-document field
-        SDField exact=search.getField("exact");
+        SDField exact=search.getConcreteField("exact");
         assertNotNull("Extra field was parsed",exact);
         assertEquals("exact",exact.getName());
         assertEquals(Stemming.NONE,exact.getStemming());

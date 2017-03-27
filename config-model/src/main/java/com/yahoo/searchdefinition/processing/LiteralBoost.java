@@ -39,7 +39,7 @@ public class LiteralBoost extends Processor {
 
     /** Checks if literal boost is given using rank: , and set the actual literal boost accordingly. */
     private void checkRankModifierRankType(Search search) {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getLiteralBoost() > -1) continue; // Let explicit value take precedence
             if (field.getRanking().isLiteral())
                 field.setLiteralBoost(100);
@@ -55,7 +55,7 @@ public class LiteralBoost extends Processor {
         Iterator i = matchingRankSettingsIterator(search, RankProfile.RankSetting.Type.LITERALBOOST);
         while (i.hasNext()) {
             RankProfile.RankSetting setting = (RankProfile.RankSetting)i.next();
-            SDField field = search.getField(setting.getFieldName());
+            SDField field = search.getConcreteField(setting.getFieldName());
             if (field == null) continue;
             if (field.getLiteralBoost() < 0)
                 field.setLiteralBoost(0);
@@ -63,7 +63,7 @@ public class LiteralBoost extends Processor {
     }
 
     private void reduceFieldLiteralBoosts(Search search) {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getLiteralBoost()<0) continue;
             reduceFieldLiteralBoost(field,search);
         }

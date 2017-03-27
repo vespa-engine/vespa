@@ -12,7 +12,7 @@ import java.io.IOException;
 public class ImportedFieldsTestCase extends AbstractExportingTestCase {
 
     @Test
-    public void imported_fields_config_is_derived() throws IOException, ParseException {
+    public void configs_for_imported_fields_are_derived() throws IOException, ParseException {
         assertCorrectDeriving("importedfields", "ad");
     }
 }

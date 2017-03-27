@@ -34,7 +34,7 @@ public class PredicateProcessor extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 if (field.doesIndexing()) {
                     fail(search, field, "Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");

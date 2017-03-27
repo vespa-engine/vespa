@@ -21,7 +21,7 @@ public class SetRankTypeEmptyOnFilters extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.getRanking().isFilter()) {
                 field.setRankType(RankType.EMPTY);
             }

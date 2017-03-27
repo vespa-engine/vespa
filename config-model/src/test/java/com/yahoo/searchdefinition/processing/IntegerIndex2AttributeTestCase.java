@@ -26,32 +26,32 @@ public class IntegerIndex2AttributeTestCase extends SearchDefinitionTestCase {
         new IntegerIndex2Attribute(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process();
 
         SDField f;
-        f = search.getField("s1");
+        f = search.getConcreteField("s1");
         assertTrue(f.getAttributes().isEmpty());
         assertTrue(f.existsIndex("s1"));
-        f = search.getField("s2");
+        f = search.getConcreteField("s2");
         assertEquals(f.getAttributes().size(), 1);
         assertTrue(f.existsIndex("s2"));
 
-        f = search.getField("as1");
+        f = search.getConcreteField("as1");
         assertTrue(f.getAttributes().isEmpty());
         assertTrue(f.existsIndex("as1"));
-        f = search.getField("as2");
+        f = search.getConcreteField("as2");
         assertEquals(f.getAttributes().size(), 1);
         assertTrue(f.existsIndex("as2"));
 
-        f = search.getField("i1");
+        f = search.getConcreteField("i1");
         assertEquals(f.getAttributes().size(), 1);
         assertTrue( ! f.existsIndex("i1"));
 
-        f = search.getField("i2");
+        f = search.getConcreteField("i2");
         assertEquals(f.getAttributes().size(), 1);
         assertTrue( ! f.existsIndex("i2"));
 
-        f = search.getField("ai1");
-        assertEquals(search.getField("ai1").getAttributes().size(), 1);
-        assertTrue( ! search.getField("ai1").existsIndex("ai1"));
-        f = search.getField("ai2");
+        f = search.getConcreteField("ai1");
+        assertEquals(search.getConcreteField("ai1").getAttributes().size(), 1);
+        assertTrue( ! search.getConcreteField("ai1").existsIndex("ai1"));
+        f = search.getConcreteField("ai2");
         assertEquals(f.getAttributes().size(), 1);
         assertTrue( ! f.existsIndex("ai2"));
     }

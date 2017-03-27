@@ -37,7 +37,7 @@ public class MultifieldIndexHarmonizer extends Processor {
     }
 
     private void populateIndexToFields(Search search) {
-        for (SDField field : search.allFieldsList() ) {
+        for (SDField field : search.allConcreteFields() ) {
             if (!field.doesIndexing()) {
                 continue;
             }

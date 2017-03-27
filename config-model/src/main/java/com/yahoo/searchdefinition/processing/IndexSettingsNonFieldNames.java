@@ -25,7 +25,7 @@ public class IndexSettingsNonFieldNames extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             boolean fieldNameUsed = false;
             for (Iterator i = field.getFieldNameAsIterator(); i.hasNext();) {
                 String iName = (String)(i.next());

@@ -31,7 +31,7 @@ public class IntegerIndex2Attribute extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.doesIndexing() && field.getDataType().getPrimitiveType() instanceof NumericDataType) {
                 // Avoid changing for example RISE fields
                 if (field.getIndex(field.getName()) != null && !(field.getIndex(field.getName()).getType().equals(Index.Type.VESPA))) continue;

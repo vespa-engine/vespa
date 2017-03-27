@@ -39,7 +39,7 @@ public class CreatePositionZCurve extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             DataType fieldType = field.getDataType();
             if ( ! isSupportedPositionType(fieldType)) continue;
 
@@ -88,7 +88,7 @@ public class CreatePositionZCurve extends Processor {
     }
 
     private SDField createZCurveField(SDField inputField, String fieldName) {
-        if (search.getField(fieldName) != null || search.getAttribute(fieldName) != null) {
+        if (search.getConcreteField(fieldName) != null || search.getAttribute(fieldName) != null) {
             throw newProcessException(search, null, "Incompatible position attribute '" + fieldName +
                                                     "' already created.");
         }

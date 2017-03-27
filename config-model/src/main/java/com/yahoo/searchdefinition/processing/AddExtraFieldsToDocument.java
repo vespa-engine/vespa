@@ -58,7 +58,7 @@ public class AddExtraFieldsToDocument extends Processor {
     private void addSummaryField(Search search, SDDocumentType document, SummaryField field) {
         Field docField = document.getField(field.getName());
         if (docField == null) {
-            SDField newField = search.getField(field.getName());
+            SDField newField = search.getConcreteField(field.getName());
             if (newField == null) {
                 newField = new SDField(document, field.getName(), field.getDataType(), field.isHeader(), true);
                 newField.setIsExtraField(true);

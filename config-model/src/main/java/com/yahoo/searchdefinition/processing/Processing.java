@@ -63,6 +63,7 @@ public class Processing {
                 ValidateFieldTypes::new,
                 DisallowComplexMapAndWsetKeyTypes::new,
                 SortingSettings::new,
+                ImportedFieldsResolver::new,
                 FieldSetValidity::new,
                 AddExtraFieldsToDocument::new,
                 PredicateProcessor::new,
@@ -71,7 +72,6 @@ public class Processing {
                 TensorFieldProcessor::new,
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
-                ImportedFieldsResolver::new,
 
                 // These two should be last.
                 IndexingValidation::new,

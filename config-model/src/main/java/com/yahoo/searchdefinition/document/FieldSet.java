@@ -5,6 +5,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static java.util.Comparator.comparing;
+
 /**
  * Searchable collection of fields.
  * 
@@ -15,14 +17,14 @@ public class FieldSet {
     private final String name;
     private final Set<String> queryCommands = new LinkedHashSet<>();
     private final Set<String> fieldNames = new TreeSet<>();
-    private final Set<SDField> fields = new TreeSet<>();
+    private final Set<ImmutableSDField> fields = new TreeSet<>(comparing(ImmutableSDField::asField));
     private Matching matching = null;
 
     public FieldSet(String name) { this.name = name; }
     public String getName() { return name; }
     public FieldSet addFieldName(String field) { fieldNames.add(field); return this; }
     public Set<String> getFieldNames() { return fieldNames; }
-    public Set<SDField> fields() { return fields; }
+    public Set<ImmutableSDField> fields() { return fields; }
 
     public Set<String> queryCommands() {
         return queryCommands;

@@ -26,7 +26,7 @@ public class WordMatch extends Processor {
     }
 
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (!field.getMatching().getType().equals(Matching.Type.WORD)) {
                 continue;
             }

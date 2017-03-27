@@ -27,7 +27,7 @@ public class SetLanguage extends Processor {
     public void process() {
         List<String> textFieldsWithoutLanguage = new ArrayList<>();
 
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (fieldMustComeAfterLanguageSettingField(field)) {
                 textFieldsWithoutLanguage.add(field.getName());
             }

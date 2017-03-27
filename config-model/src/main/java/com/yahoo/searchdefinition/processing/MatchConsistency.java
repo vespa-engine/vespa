@@ -29,7 +29,7 @@ public class MatchConsistency extends Processor {
     @Override
     public void process() {
         Map<String, Matching.Type> types = new HashMap<>();
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             new MyVisitor(search, field, types).visit(field.getIndexingScript());
         }
     }

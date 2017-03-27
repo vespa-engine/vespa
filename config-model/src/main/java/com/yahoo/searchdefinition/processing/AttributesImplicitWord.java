@@ -25,7 +25,7 @@ public class AttributesImplicitWord extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (fieldImplicitlyWordMatch(field)) {
                 field.getMatching().setType(Matching.Type.WORD);
             }

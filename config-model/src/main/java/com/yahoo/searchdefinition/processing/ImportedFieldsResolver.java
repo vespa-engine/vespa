@@ -59,7 +59,7 @@ public class ImportedFieldsResolver extends Processor {
         if (isImportedField(targetSearch, targetFieldName)) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an imported field. Not supported");
         }
-        SDField targetField = targetSearch.getField(targetFieldName);
+        SDField targetField = targetSearch.getConcreteField(targetFieldName);
         if (targetField == null) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
         } else if (!targetField.doesAttributing()) {

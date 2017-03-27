@@ -45,7 +45,7 @@ public class DefaultRankProfile extends RankProfile {
         RankSetting setting=super.getRankSetting(fieldOrIndex,type);
         if (setting!=null) return setting;
 
-        SDField field=getSearch().getField(fieldOrIndex);
+        SDField field=getSearch().getConcreteField(fieldOrIndex);
         if (field!=null) {
             setting=toRankSetting(field,type);
             if (setting!=null)
@@ -94,7 +94,7 @@ public class DefaultRankProfile extends RankProfile {
     public Set<RankSetting> rankSettings() {
         Set<RankSetting> settings=new LinkedHashSet<>(20);
         settings.addAll(this.rankSettings);
-        for (SDField field : getSearch().allFieldsList() ) {
+        for (SDField field : getSearch().allConcreteFields() ) {
             addSetting(field,RankSetting.Type.WEIGHT,settings);
             addSetting(field,RankSetting.Type.RANKTYPE,settings);
             addSetting(field,RankSetting.Type.LITERALBOOST,settings);

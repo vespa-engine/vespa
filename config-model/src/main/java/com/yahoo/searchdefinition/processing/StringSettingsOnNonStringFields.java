@@ -17,7 +17,7 @@ public class StringSettingsOnNonStringFields extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (!doCheck(field)) continue;
             if (field.getMatching().isTypeUserSet()) {
                 warn(search, field, "Matching type "+field.getMatching().getType()+" is only allowed for string fields.");

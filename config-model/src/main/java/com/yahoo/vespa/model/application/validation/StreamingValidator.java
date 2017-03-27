@@ -34,7 +34,7 @@ public class StreamingValidator extends Validator {
 
     private void warnStreamingGramMatching(SearchCluster sc, DeployLogger logger) {
         if (sc.getSdConfig() != null) {
-            for (SDField sd : sc.getSdConfig().getSearch().allFieldsList()) {
+            for (SDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
                 if (sd.getMatching().getType().equals(Matching.Type.GRAM)) {
                     logger.log(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
                             "', SD field '" + sd.getName() + "': n-gram matching is not supported for streaming search.");
@@ -51,7 +51,7 @@ public class StreamingValidator extends Validator {
      */
     private void warnStreamingAttributes(SearchCluster sc, DeployLogger logger) {
         if (sc.getSdConfig() != null) {
-            for (SDField sd : sc.getSdConfig().getSearch().allFieldsList()) {
+            for (SDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
                 if (sd.doesAttributing()) {
                     warnStreamingAttribute(sc, sd, logger);
                 }

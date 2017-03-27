@@ -311,7 +311,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         String stemmingCommand = null;
         Matching fieldSetMatching = fieldSet.getMatching(); // null if no explicit matching
         // First a pass over the fields to read some params to decide field settings implicitly:
-        for (SDField field : fieldSet.fields()) {
+        for (ImmutableSDField field : fieldSet.fields()) {
             if (field.doesIndexing()) {
                 anyIndexing = true;
             }
@@ -413,7 +413,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     private boolean hasMultiValueField(FieldSet fieldSet) {
-        for (SDField field : fieldSet.fields()) {
+        for (ImmutableSDField field : fieldSet.fields()) {
             if (field.getDataType().isMultivalue())
                 return true;
         }
@@ -434,11 +434,12 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         return Stemming.SHORTEST;
     }
 
-    private boolean stemming(SDField field) {
+    private boolean stemming(ImmutableSDField field) {
         if (field.getStemming() != null) {
             return !field.getStemming().equals(Stemming.NONE);
         }
         if (search.getStemming()==Stemming.NONE) return false;
+        if (field.isImportedField()) return false;
         if (field.getIndex(field.getName())==null) return true;
         if (field.getIndex(field.getName()).getStemming()==null) return true;
         return !(field.getIndex(field.getName()).getStemming().equals(Stemming.NONE));

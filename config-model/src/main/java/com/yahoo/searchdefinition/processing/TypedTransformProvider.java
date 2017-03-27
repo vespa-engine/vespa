@@ -32,7 +32,7 @@ public abstract class TypedTransformProvider extends ValueTransformProvider {
                 }
                 fieldType = attribute.getDataType();
             } else if (exp instanceof IndexExpression) {
-                Field field = search.getField(fieldName);
+                Field field = search.getConcreteField(fieldName);
                 if (field == null) {
                     throw new IllegalArgumentException("Index field '" + fieldName + "' not found.");
                 }

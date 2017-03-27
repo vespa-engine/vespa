@@ -33,7 +33,7 @@ public class ImplicitSummaries extends Processor {
             search.addSummary(defaultSummary);
         }
 
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             collectSummaries(field,search);
         }
 
@@ -156,7 +156,7 @@ public class ImplicitSummaries extends Processor {
         }
 
         String fieldName = summaryField.getSourceField();
-        SDField sourceField = search.getField(fieldName);
+        SDField sourceField = search.getConcreteField(fieldName);
         if (sourceField == null) {
             throw newProcessException(search, summaryField, "Source field '" + fieldName + "' does not exist.");
         }

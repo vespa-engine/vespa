@@ -24,7 +24,7 @@ public class UriHack extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             if (field.doesIndexing()) {
                 DataType fieldType = field.getDataType();
                 if (fieldType instanceof CollectionDataType) {

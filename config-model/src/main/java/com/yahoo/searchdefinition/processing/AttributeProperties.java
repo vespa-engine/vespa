@@ -21,7 +21,7 @@ public class AttributeProperties extends Processor {
 
     @Override
     public void process() {
-        for (SDField field : search.allFieldsList()) {
+        for (SDField field : search.allConcreteFields()) {
             String fieldName = field.getName();
 
             // For each attribute, check if the attribute has been created
@@ -32,7 +32,7 @@ public class AttributeProperties extends Processor {
                 }
                 // Check other fields or statements that may have created this attribute.
                 boolean created = false;
-                for (SDField f : search.allFieldsList()) {
+                for (SDField f : search.allConcreteFields()) {
                     // Checking against the field we are looking at
                     if (!f.getName().equals(fieldName)) {
                         if (attributeCreated(f, attribute.getName())) {
