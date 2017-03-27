@@ -48,8 +48,7 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
         if (newConfig.basicType().type() == BasicType::PREDICATE) {
             if ((oldConfig.arity() != newConfig.arity()) ||
                 (oldConfig.lower_bound() != newConfig.lower_bound()) ||
-                (oldConfig.upper_bound() != newConfig.upper_bound()) ||
-                (oldConfig.dense_posting_list_threshold() != newConfig.dense_posting_list_threshold())) {
+                (oldConfig.upper_bound() != newConfig.upper_bound())) {
                 return false;
             }
         }
