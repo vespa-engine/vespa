@@ -328,7 +328,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     for (const auto & g : initContext.getGroupingList()) {
         g->select(attrCheck2, attrCheck2);
     }
-    EXPECT_EQUAL(10u, attrCheck2._numrefs);
+    EXPECT_EQUAL(8u, attrCheck2._numrefs);
     RankedHit hit;
     hit._docId = 0;
     GroupingManager &manager(session.getGroupingManager());

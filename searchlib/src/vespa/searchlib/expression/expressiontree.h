@@ -71,7 +71,7 @@ private:
     typedef std::vector<InterpolatedLookup *> InterpolatedLookupList;
     typedef std::vector<ArrayAtLookup *> ArrayAtLookupList;
 
-    vespalib::IdentifiableLinkedPtr<ExpressionNode>        _root;
+    ExpressionNode::CP        _root;
     AttributeNodeList         _attributeNodes;
     DocumentAccessorNodeList  _documentAccessorNodes;
     RelevanceNodeList         _relevanceNodes;
