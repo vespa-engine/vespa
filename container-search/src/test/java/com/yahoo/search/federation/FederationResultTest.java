@@ -24,22 +24,22 @@ import static org.junit.Assert.assertEquals;
  */
 public class FederationResultTest {
     
-    private static final FederationSearcher.Target organic = new MockTarget("organic", 250);
-    private static final FederationSearcher.Target dsp1 = new MockTarget("dsp1", 120);
-    private static final FederationSearcher.Target dsp2 = new MockTarget("dsp2", 100);
+    private static final FederationSearcher.Target organic = new MockTarget("organic", 500);
+    private static final FederationSearcher.Target dsp1 = new MockTarget("dsp1", 240);
+    private static final FederationSearcher.Target dsp2 = new MockTarget("dsp2", 200);
 
     private final Clock clock = Clock.systemUTC();
 
     @Test
     public void testFederationResult() {
-        assertTimeout(ImmutableSet.of(),                50, 100,  90);
-        assertTimeout(ImmutableSet.of(),               240, 200, 200);
-        assertTimeout(ImmutableSet.of("dsp1"),         130, 140, 110);
-        assertTimeout(ImmutableSet.of("organic"),      260,  80,  80);
-        assertTimeout(ImmutableSet.of("dsp2"),         100, 110, 115);
-        assertTimeout(ImmutableSet.of(),               100, 110, 105);
-        assertTimeout(ImmutableSet.of("dsp1", "dsp2"), 100, 130, 130);
-        assertTimeout(ImmutableSet.of("organic"),      260, 130, 130);
+        assertTimeout(ImmutableSet.of(),               100, 200, 180);
+        assertTimeout(ImmutableSet.of(),               480, 400, 400);
+        assertTimeout(ImmutableSet.of("dsp1"),         260, 280, 220);
+        assertTimeout(ImmutableSet.of("organic"),      520, 160, 160);
+        assertTimeout(ImmutableSet.of("dsp2"),         200, 220, 230);
+        assertTimeout(ImmutableSet.of(),               200, 220, 210);
+        assertTimeout(ImmutableSet.of("dsp1", "dsp2"), 200, 260, 260);
+        assertTimeout(ImmutableSet.of("organic"),      520, 260, 260);
     }
     
     private void assertTimeout(Set<String> expectedTimeoutNames, int ... responseTimes) {
