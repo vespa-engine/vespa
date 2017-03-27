@@ -6,6 +6,7 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <stdint.h>
 #include "iattributefilewriter.h"
+#include <vespa/searchcommon/attribute/predicate_params.h>
 
 namespace search {
 
@@ -26,6 +27,7 @@ public:
         bool        _hasMultiValue;
         bool        _hasWeightedSetType;
         bool        _enumerated;
+        attribute::PersistentPredicateParams _predicateParams;
         uint32_t    _numDocs;
         uint32_t    _fixedWidth;
         uint64_t    _uniqueValueCount;
@@ -40,6 +42,7 @@ public:
               _hasMultiValue(false),
               _hasWeightedSetType(false),
               _enumerated(false),
+              _predicateParams(),
               _numDocs(0),
               _fixedWidth(0),
               _uniqueValueCount(0),
@@ -55,6 +58,7 @@ public:
                const vespalib::string &tensorType,
                bool multiValue, bool weightedSetType,
                bool enumerated,
+               const attribute::PersistentPredicateParams &predicateParams,
                uint32_t numDocs,
                uint32_t fixedWidth,
                uint64_t uniqueValueCount,
@@ -69,6 +73,7 @@ public:
               _hasMultiValue(multiValue),
               _hasWeightedSetType(weightedSetType),
               _enumerated(enumerated),
+              _predicateParams(predicateParams),
               _numDocs(numDocs),
               _fixedWidth(fixedWidth),
               _uniqueValueCount(uniqueValueCount),
@@ -127,6 +132,7 @@ public:
         }
 
         uint32_t getVersion() const  { return _version; }
+        const attribute::PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
     };
     using Buffer = IAttributeFileWriter::Buffer;
 protected:

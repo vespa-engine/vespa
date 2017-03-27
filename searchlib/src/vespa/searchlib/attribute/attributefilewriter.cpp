@@ -165,6 +165,12 @@ AttributeFileWriter::addTags(vespalib::GenericHeader &header)
     if (!tensorType.empty()) {
         header.putTag(Tag("tensortype", tensorType));;
     }
+    if (_cfg.getBasicType() == "predicate") {
+        const auto & params = _cfg.getPredicateParams();
+        header.putTag(Tag("predicate.arity", params.arity()));
+        header.putTag(Tag("predicate.lower_bound", params.lower_bound()));
+        header.putTag(Tag("predicate.upper_bound", params.upper_bound()));
+    }
     header.putTag(Tag("desc", _desc));
 }
 

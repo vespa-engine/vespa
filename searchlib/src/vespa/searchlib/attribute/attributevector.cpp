@@ -476,6 +476,7 @@ AttributeVector::createSaveTargetConfig() const {
                                    hasMultiValue(),
                                    hasWeightedSetType(),
                                    getEnumeratedSave(),
+                                   getConfig().predicateParams(),
                                    getCommittedDocIdLimit(),
                                    getFixedWidth(),
                                    getUniqueValueCount(),
