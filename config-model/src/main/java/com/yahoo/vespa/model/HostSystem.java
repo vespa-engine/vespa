@@ -22,6 +22,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import static com.yahoo.log.LogLevel.DEBUG;
+
 /**
  * The parent node for all Host instances, and thus accessible
  * to enable services to get their Host.
@@ -137,7 +139,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
         hostname2host.put(host.getHostName(), hostResource);
-       return hostResource;
+        log.log(DEBUG, () -> "Added new host resource for " + host.getHostName() + " with flavor " + hostResource.getFlavor());
+        return hostResource;
     }
 
     /** Returns the hosts owned by the application having this system - i.e all hosts except shared ones */
@@ -155,9 +158,12 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
             HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
-            if (! host.getFlavor().isPresent())
+            if (! host.getFlavor().isPresent()) {
                 host.setFlavor(spec.flavor());
+                log.log(DEBUG, () -> "Host resource " + host.getHostName() + " had no flavor, setting to " + spec.flavor());
+            }
         }
+        retAllocatedHosts.keySet().forEach(host -> log.log(DEBUG, () -> "Allocated host " + host.getHostName() + " with flavor " + host.getFlavor()));
         return retAllocatedHosts;
     }
 
@@ -168,6 +174,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         if (hosts.isEmpty()) {
             return Optional.empty();
         } else {
+            log.log(DEBUG, () -> "Found existing host resource for " + key.hostname() + " with flavor " + hosts.get(0).getFlavor());
             return Optional.of(hosts.get(0));
         }
     }
