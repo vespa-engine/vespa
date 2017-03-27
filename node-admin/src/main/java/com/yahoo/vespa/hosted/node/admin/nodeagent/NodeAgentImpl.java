@@ -267,7 +267,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (containerState == ABSENT || !dockerOperations.getContainer(containerName).isPresent()) {
+        if (! getContainer().isPresent()) {
             aclMaintainer.ifPresent(AclMaintainer::run);
             dockerOperations.startContainer(containerName, nodeSpec);
             metricReceiver.unsetMetricsForContainer(hostname);
@@ -281,17 +281,12 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void removeContainerIfNeededUpdateContainerState(ContainerNodeSpec nodeSpec) throws Exception {
-        if (containerState == ABSENT || removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) return;
-
-        Optional<String> restartReason = shouldRestartServices(nodeSpec);
-        if (restartReason.isPresent()) {
-            Optional<Container> existingContainer = dockerOperations.getContainer(containerName);
-            if (existingContainer.isPresent()) {
-                logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
-                restartServices(nodeSpec, existingContainer.get(), orchestrator);
-            }
-        }
+    private void removeContainerIfNeededUpdateContainerState(ContainerNodeSpec nodeSpec) {
+        removeContainerIfNeeded(nodeSpec).ifPresent(existingContainer ->
+                shouldRestartServices(nodeSpec).ifPresent(restartReason -> {
+                    logger.info("Will restart services for container " + existingContainer + ": " + restartReason);
+                    restartServices(nodeSpec, existingContainer);
+        }));
     }
 
     private Optional<String> shouldRestartServices(ContainerNodeSpec nodeSpec) {
@@ -305,16 +300,13 @@ public class NodeAgentImpl implements NodeAgent {
         return Optional.empty();
     }
 
-    private void restartServices(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
-            throws Exception {
-        if (existingContainer.state.isRunning()) {
+    private void restartServices(ContainerNodeSpec nodeSpec, Container existingContainer) {
+        if (existingContainer.state.isRunning() && nodeSpec.nodeState == Node.State.active) {
             ContainerName containerName = existingContainer.name;
-            if (nodeSpec.nodeState == Node.State.active) {
-                logger.info("Restarting services for " + containerName);
-                // Since we are restarting the services we need to suspend the node.
-                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
-                dockerOperations.restartVespaOnNode(containerName);
-            }
+            logger.info("Restarting services for " + containerName);
+            // Since we are restarting the services we need to suspend the node.
+            orchestratorSuspendNode(nodeSpec);
+            dockerOperations.restartVespaOnNode(containerName);
         }
     }
 
@@ -340,12 +332,9 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     // Returns true if container is absent on return
-    private boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
-            throws Exception {
-        Optional<Container> existingContainer = dockerOperations.getContainer(containerName);
-        if (!existingContainer.isPresent()) {
-            return true;
-        }
+    private Optional<Container> removeContainerIfNeeded(ContainerNodeSpec nodeSpec) {
+        Optional<Container> existingContainer = getContainer();
+        if (!existingContainer.isPresent()) return Optional.empty();
 
         Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer.get());
         if (removeReason.isPresent()) {
@@ -353,7 +342,7 @@ public class NodeAgentImpl implements NodeAgent {
 
             if (existingContainer.get().state.isRunning()) {
                 final ContainerName containerName = existingContainer.get().name;
-                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
+                orchestratorSuspendNode(nodeSpec);
                 dockerOperations.trySuspendNode(containerName);
                 stopServices(containerName);
             }
@@ -361,9 +350,9 @@ public class NodeAgentImpl implements NodeAgent {
             vespaVersion = Optional.empty();
             dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
-            return true;
+            return Optional.empty();
         }
-        return false;
+        return existingContainer;
     }
 
 
@@ -431,7 +420,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     // Public for testing
-    void tick() throws Exception {
+    void tick() {
         final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                 .orElseThrow(() ->
                         new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
@@ -597,10 +586,17 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    private Optional<Container> getContainer() {
+        if (containerState == ABSENT) return Optional.empty();
+        return dockerOperations.getContainer(containerName);
+    }
+
+    @Override
     public String getHostname() {
         return hostname;
     }
 
+    @Override
     public ContainerName getContainerName() {
         return containerName;
     }
@@ -687,7 +683,7 @@ public class NodeAgentImpl implements NodeAgent {
     // More generally, the node repo response should contain sufficient info on what the docker image is,
     // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
-    private void orchestratorSuspendNode(Orchestrator orchestrator, ContainerNodeSpec nodeSpec, PrefixLogger logger) throws OrchestratorException {
+    private void orchestratorSuspendNode(ContainerNodeSpec nodeSpec) {
         final String hostname = nodeSpec.hostname;
         logger.info("Ask Orchestrator for permission to suspend node " + hostname);
         if ( ! orchestrator.suspend(hostname)) {

@@ -231,7 +231,7 @@ public class Environment {
             return this;
         }
 
-        public Builder athensDomain(String region) {
+        public Builder athensDomain(String athensDomain) {
             this.athensDomain = athensDomain;
             return this;
         }
