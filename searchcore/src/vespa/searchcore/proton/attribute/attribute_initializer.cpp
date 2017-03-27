@@ -27,6 +27,19 @@ const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string createSerialNumTag = "createSerialNum";
 const vespalib::string tensorTypeTag = "tensortype";
+const vespalib::string predicateArityTag = "predicate.arity";
+const vespalib::string predicateLowerBoundTag = "predicate.lower_bound";
+const vespalib::string predicateUpperBoundTag = "predicate.upper_bound";
+
+vespalib::string
+extraPredicateType(const search::attribute::PersistentPredicateParams &params)
+{
+    vespalib::asciistream os;
+    os << "arity=" << params.arity();
+    os << ",lower_bound=" << params.lower_bound();
+    os << ",upper_bound=" << params.upper_bound();
+    return os.str();
+}
 
 vespalib::string
 extraType(const Config &cfg)
@@ -35,7 +48,7 @@ extraType(const Config &cfg)
         return cfg.tensorType().to_spec();
     }
     if (cfg.basicType().type() == BasicType::PREDICATE) {
-        // TODO: Check for predicate params
+        return extraPredicateType(cfg.predicateParams());
     }
     return "";
 }
@@ -47,7 +60,9 @@ extraType(const AttributeHeader &header)
         return header._ttString;
     }
     if (header._btString == "predicate") {
-        // TODO: Check for predicate params
+        if (header._predicateParamsSet) {
+            return extraPredicateType(header._predicateParams);
+        }
     }
     return "";
 }
@@ -81,7 +96,14 @@ extractHeaderTypeOK(const vespalib::GenericHeader &header, const Config &cfg)
         }
     }
     if (cfg.basicType().type() == BasicType::PREDICATE) {
-        // TODO: Check parameters if available.
+        if (header.hasTag(predicateArityTag) && header.hasTag(predicateLowerBoundTag) && header.hasTag(predicateUpperBoundTag)) {
+            const auto &params = cfg.predicateParams();
+            if ((header.getTag(predicateArityTag).asInteger() != params.arity()) ||
+                (header.getTag(predicateLowerBoundTag).asInteger() != params.lower_bound()) ||
+                (header.getTag(predicateUpperBoundTag).asInteger() != params.upper_bound())) {
+                return false;
+            }
+        }
     }
     return true;
 }
@@ -105,6 +127,18 @@ extractHeader(const AttributeVector::SP &attr,
     }
     if (datHeader.hasTag(tensorTypeTag)) {
         retval._ttString = datHeader.getTag(tensorTypeTag).asString();
+    }
+    if (datHeader.hasTag(predicateArityTag)) {
+        retval._predicateParamsSet = true;
+        retval._predicateParams.setArity(datHeader.getTag(predicateArityTag).asInteger());
+    }
+    if (datHeader.hasTag(predicateLowerBoundTag)) {
+        retval._predicateParamsSet = true;
+        retval._predicateParams.setBounds(datHeader.getTag(predicateLowerBoundTag).asInteger(), retval._predicateParams.upper_bound());
+    }
+    if (datHeader.hasTag(predicateUpperBoundTag)) {
+        retval._predicateParamsSet = true;
+        retval._predicateParams.setBounds(retval._predicateParams.lower_bound(), datHeader.getTag(predicateUpperBoundTag).asInteger());
     }
     return retval;
 }
@@ -142,9 +176,11 @@ logAttributeWrongType(const AttributeVector::SP &attr,
 AttributeInitializer::AttributeHeader::AttributeHeader()
     : _createSerialNum(0),
       _headerTypeOK(false),
+      _predicateParamsSet(false),
       _btString("unknown"),
       _ctString("unknown"),
-      _ttString("unknown")
+      _ttString("unknown"),
+      _predicateParams()
 {
 }
 

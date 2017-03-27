@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 
 namespace proton {
 
@@ -23,9 +24,11 @@ public:
     {
         uint64_t _createSerialNum;
         bool _headerTypeOK;
+        bool _predicateParamsSet;
         vespalib::string _btString;
         vespalib::string _ctString;
         vespalib::string _ttString;
+        search::attribute::PersistentPredicateParams _predicateParams;
         AttributeHeader();
         ~AttributeHeader();
     };
