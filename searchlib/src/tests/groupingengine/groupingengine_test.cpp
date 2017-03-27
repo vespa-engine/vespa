@@ -334,6 +334,37 @@ void Test::testAggregationSimpleSum(AggregationContext & ctx, const AggregationR
     EXPECT_TRUE(testAggregation(ctx, request, expect));
 }
 
+GroupingLevel
+createGL(ExpressionNode::UP expr, ExpressionNode::UP result) {
+    GroupingLevel l;
+    l.setExpression(std::move(expr));
+    l.addResult(SumAggregationResult().setExpression(std::move(result)));
+    return l;
+}
+
+GroupingLevel
+createGL(ExpressionNode::UP expr) {
+    GroupingLevel l;
+    l.setExpression(std::move(expr));
+    return l;
+}
+
+GroupingLevel
+createGL(size_t maxGroups, ExpressionNode::UP expr) {
+    GroupingLevel l;
+    l.setMaxGroups(maxGroups);
+    l.setExpression(std::move(expr));
+    return l;
+}
+
+GroupingLevel
+createGL(size_t maxGroups, ExpressionNode::UP expr, ExpressionNode::UP result) {
+    GroupingLevel l;
+    l.setMaxGroups(maxGroups);
+    l.setExpression(std::move(expr));
+    l.addResult(SumAggregationResult().setExpression(std::move(result)));
+    return l;
+}
 /**
  * Verify that the backend aggregation will classify and collect on
  * the appropriate levels, as indicated by the firstLevel and
@@ -352,15 +383,9 @@ Test::testAggregationLevels()
     Grouping baseRequest;
     baseRequest.setRoot(Group().setId(NullResultNode())
                                .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-               .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("attr1"))
-                                 .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-               .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("attr2"))
-                                 .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
-               .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("attr3"))
-                                 .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
+               .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+               .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")))
+               .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
 
     Group notDone;
     notDone.addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")));
@@ -476,8 +501,7 @@ Test::testAggregationMaxGroups()
 
     Grouping baseRequest = Grouping()
                            .setRoot(Group().setId(NullResultNode()))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr")));
+                           .addLevel(createGL(MU<AttributeNode>("attr")));
 
     Group empty = Group().setId(NullResultNode());
     Group grp1 = empty.unchain().addChild(Group().setId(Int64ResultNode(5)));
@@ -528,8 +552,7 @@ Test::testAggregationGroupOrder()
 
     Grouping request = Grouping()
                        .setRoot(Group().setId(NullResultNode()))
-                       .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("attr")));
+                       .addLevel(createGL(MU<AttributeNode>("attr")));
 
     Group expect;
     expect.setId(NullResultNode())
@@ -562,7 +585,7 @@ Test::testAggregationGroupRank()
 
     Grouping request = Grouping()
                            .setRoot(Group().setId(NullResultNode()))
-                           .addLevel(GroupingLevel().setExpression(MU<AttributeNode>("attr")));
+                           .addLevel(createGL(MU<AttributeNode>("attr")));
 
     Group expect = Group()
                    .setId(NullResultNode())
@@ -603,8 +626,8 @@ Test::testAggregationGroupCapping()
         .add(6, 7).add(7, 8).add(8, 9);
 
     {
-        Grouping request = Grouping().setRoot(Group().setId(NullResultNode())).addLevel(
-                               GroupingLevel().setExpression(MU<AttributeNode>("attr")));
+        Grouping request;
+        request.setRoot(Group().setId(NullResultNode())).addLevel(createGL(MU<AttributeNode>("attr")));
 
         Group expect = Group().setId(NullResultNode())
                        .addChild(Group().setId(Int64ResultNode(1)).setRank(RawRank(1)))
@@ -622,7 +645,7 @@ Test::testAggregationGroupCapping()
     {
         Grouping request;
         request.setRoot(Group().setId(NullResultNode())).addLevel(
-                               GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr")));
+                               createGL(3, MU<AttributeNode>("attr")));
 
         Group expect;
         expect.setId(NullResultNode())
@@ -637,9 +660,9 @@ Test::testAggregationGroupCapping()
         request.setRoot(Group().setId(NullResultNode()))
                 .setFirstLevel(0)
                 .setLastLevel(1)
-                .addLevel(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr"))
+                .addLevel(std::move(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr"))
                                   .addAggregationResult(createAggr<SumAggregationResult>(MU<AttributeNode>("attr")))
-                                  .addOrderBy(MU<AggregationRefNode>(0), false));
+                                  .addOrderBy(MU<AggregationRefNode>(0), false)));
 
         Group expect;
         expect.setId(NullResultNode())
@@ -660,11 +683,9 @@ Test::testAggregationGroupCapping()
         request.setRoot(Group().setId(NullResultNode()))
                .setFirstLevel(0)
                 .setLastLevel(1)
-                .addLevel(GroupingLevel()
-                                  .setMaxGroups(3)
-                                  .setExpression(MU<AttributeNode>("attr"))
+                .addLevel(std::move(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr"))
                                   .addAggregationResult(createAggr<SumAggregationResult>(MU<AttributeNode>("attr")))
-                                  .addOrderBy(MU<AggregationRefNode>(0), true));
+                                  .addOrderBy(MU<AggregationRefNode>(0), true)));
 
         Group expect;
         expect.setId(NullResultNode())
@@ -688,9 +709,9 @@ Test::testAggregationGroupCapping()
         Grouping request;
         request.setFirstLevel(0)
                 .setLastLevel(1)
-                .addLevel(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr")).
+                .addLevel(std::move(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr")).
                         addResult(createAggr<SumAggregationResult>(MU<AttributeNode>("attr"))).
-                        addOrderBy(std::move(i1), false));
+                        addOrderBy(std::move(i1), false)));
 
         Group expect = Group()
                        .addChild(Group().setId(Int64ResultNode(7)).setRank(RawRank(7))
@@ -748,18 +769,9 @@ void
 Test::testMergeLevels()
 {
     Grouping request = Grouping()
-                       .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("c1"))
-                                 .addResult(SumAggregationResult()
-                                         .setExpression(MU<AttributeNode>("s1"))))
-                       .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("c2"))
-                                 .addResult(SumAggregationResult()
-                                         .setExpression(MU<AttributeNode>("s2"))))
-                       .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("c3"))
-                                 .addResult(SumAggregationResult()
-                                         .setExpression(MU<AttributeNode>("s3"))));
+                       .addLevel(createGL(MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
+                       .addLevel(createGL(MU<AttributeNode>("c2"), MU<AttributeNode>("s2")))
+                       .addLevel(createGL(MU<AttributeNode>("c3"), MU<AttributeNode>("s3")));
 
     Group a = Group()
               .setId(NullResultNode())
@@ -936,9 +948,7 @@ Test::testMergeLevels()
 void
 Test::testMergeGroups()
 {
-    Grouping request = Grouping()
-                       .addLevel(GroupingLevel()
-                                 .setExpression(MU<AttributeNode>("attr")));
+    Grouping request = Grouping().addLevel(createGL(MU<AttributeNode>("attr")));
 
     Group a = Group()
               .setId(NullResultNode())
@@ -999,22 +1009,10 @@ Test::testMergeGroups()
 void
 Test::testMergeTrees()
 {
-    Grouping request = Grouping()
-                       .addLevel(GroupingLevel()
-                                 .setMaxGroups(3)
-                                 .setExpression(MU<AttributeNode>("c1"))
-                                 .addResult(SumAggregationResult()
-                                         .setExpression(MU<AttributeNode>("s1"))))
-                       .addLevel(GroupingLevel()
-                                 .setMaxGroups(2)
-                                 .setExpression(MU<AttributeNode>("c2"))
-                                 .addResult(SumAggregationResult()
-                                         .setExpression(MU<AttributeNode>("s2"))))
-                       .addLevel(GroupingLevel()
-                                 .setMaxGroups(1)
-                                 .setExpression(MU<AttributeNode>("c3"))
-                                 .addResult(SumAggregationResult()
-                                         .setExpression(MU<AttributeNode>("s3"))));
+    Grouping request;
+    request.addLevel(createGL(3, MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
+           .addLevel(createGL(2, MU<AttributeNode>("c2"), MU<AttributeNode>("s2")))
+           .addLevel(createGL(1, MU<AttributeNode>("c3"), MU<AttributeNode>("s3")));
 
     Group a = Group()
               .setId(NullResultNode())
@@ -1416,19 +1414,10 @@ Test::testPruneComplex()
 void
 Test::testPartialMerging()
 {
-    Grouping baseRequest = Grouping()
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("c1"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(MU<AttributeNode>("s1"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("c2"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(MU<AttributeNode>("s2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("c3"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(MU<AttributeNode>("s3"))));
+    Grouping baseRequest;
+    baseRequest.addLevel(createGL(MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
+               .addLevel(createGL(MU<AttributeNode>("c2"), MU<AttributeNode>("s2")))
+               .addLevel(createGL(MU<AttributeNode>("c3"), MU<AttributeNode>("s3")));
 
     // Cached result
     Group cached = Group()
@@ -1591,11 +1580,8 @@ void
 Test::testPruneSimple()
 {
     {
-        Grouping request = Grouping()
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr")))
-                           .setFirstLevel(1)
-                           .setLastLevel(1);
+        Grouping request;
+        request.addLevel(createGL(MU<AttributeNode>("attr"))).setFirstLevel(1).setLastLevel(1);
 
         Group a = Group()
                   .addChild(Group().setId(StringResultNode("foo")))
@@ -1640,9 +1626,9 @@ Test::testTopN()
     {
         Grouping request2 = Grouping()
                             .setRoot(Group().setId(NullResultNode()))
-                            .addLevel(GroupingLevel()
+                            .addLevel(std::move(GroupingLevel()
                                       .addAggregationResult(MU<SumAggregationResult>())
-                                      .addOrderBy(MU<AggregationRefNode>(0), false));
+                                      .addOrderBy(MU<AggregationRefNode>(0), false)));
         EXPECT_TRUE(request2.needResort());
         request2.setTopN(0);
         EXPECT_TRUE(request2.needResort());
@@ -1818,8 +1804,7 @@ Test::checkBucket(const NumericResultNode &width, const NumericResultNode &value
     std::unique_ptr<FixedWidthBucketFunctionNode> fixed = MU<FixedWidthBucketFunctionNode>(MU<AttributeNode>("attr"));
     fixed->setWidth(width);
     Grouping request = Grouping().setRoot(Group().setId(NullResultNode()))
-                       .addLevel(GroupingLevel()
-                                 .setExpression(std::move(fixed)));
+                       .addLevel(createGL(std::move(fixed)));
     Group expect = Group().setId(NullResultNode()).addChild(Group().setId(bucket));
     return testAggregation(ctx, request, expect);
 }
@@ -1936,22 +1921,11 @@ Test::testGroupingEngineFromRequest()
     ctx.add(IntAttrBuilder("attr2").add(12).add(12).sp());
     ctx.add(IntAttrBuilder("attr3").add(13).add(13).sp());
     ctx.result().add(0).add(1);
-    Grouping baseRequest = Grouping()
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                            .setExpression(MU<AttributeNode>("attr0"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("attr3"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr3"))
-                                     .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("attr1"))));
+    Grouping baseRequest;
+    baseRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")))
+            .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
     ctx.setup(baseRequest);
     GroupingEngine engine(baseRequest.setFirstLevel(0).setLastLevel(2));
     EXPECT_EQUAL(4u, engine.getEngines().size());

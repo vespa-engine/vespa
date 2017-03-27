@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("grouping_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
@@ -11,7 +9,6 @@ LOG_SETUP("grouping_test");
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingsession.h>
-#include <vespa/searchcore/grouping/sessionid.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 
 using namespace search::attribute;
@@ -174,20 +171,36 @@ TEST("testSessionId") {
 
 #define MU std::make_unique
 
+GroupingLevel
+createGL(ExpressionNode::UP expr, ExpressionNode::UP result) {
+    GroupingLevel l;
+    l.setExpression(std::move(expr));
+    l.addResult(SumAggregationResult().setExpression(std::move(result)));
+    return l;
+}
+
+GroupingLevel
+createGL(ExpressionNode::UP expr, ExpressionNode::UP resultExpr, ResultNode::UP result) {
+    GroupingLevel l;
+    l.setExpression(std::move(expr));
+    l.addResult(SumAggregationResult().setExpression(std::move(resultExpr)).setResult(result.release()));
+    return l;
+}
+GroupingLevel
+createGL(size_t maxGroups, ExpressionNode::UP expr) {
+    GroupingLevel l;
+    l.setMaxGroups(maxGroups);
+    l.setExpression(std::move(expr));
+    return l;
+}
+
 TEST_F("testGroupingContextInitialization", DoomFixture()) {
     vespalib::nbostream os;
-    Grouping baseRequest = Grouping()
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr3"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
+    Grouping baseRequest;
+    baseRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")))
+            .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
 
     vespalib::NBOSerializer nos(os);
     nos << (uint32_t)1;
@@ -204,34 +217,21 @@ TEST_F("testGroupingContextInitialization", DoomFixture()) {
 
 TEST_F("testGroupingContextUsage", DoomFixture()) {
     vespalib::nbostream os;
-    Grouping request1 = Grouping()
-                           .setFirstLevel(0)
-                           .setLastLevel(0)
-                           .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr3"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
+    Grouping request1;
+    request1.setFirstLevel(0)
+            .setLastLevel(0)
+            .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")))
+            .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
 
-    Grouping request2 = Grouping()
-                           .setFirstLevel(0)
-                           .setLastLevel(3)
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr3"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
+    Grouping request2;
+    request2.setFirstLevel(0)
+            .setLastLevel(3)
+            .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")))
+            .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
 
 
     GroupingContext::GroupingPtr r1(new Grouping(request1));
@@ -247,18 +247,11 @@ TEST_F("testGroupingContextUsage", DoomFixture()) {
 }
 
 TEST_F("testGroupingContextSerializing", DoomFixture()) {
-    Grouping baseRequest = Grouping()
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr3"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
+    Grouping baseRequest;
+    baseRequest.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")))
+            .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
 
     vespalib::nbostream os;
     vespalib::NBOSerializer nos(os);
@@ -276,16 +269,12 @@ TEST_F("testGroupingContextSerializing", DoomFixture()) {
 
 TEST_F("testGroupingManager", DoomFixture()) {
     vespalib::nbostream os;
-    Grouping request1 = Grouping()
-                           .setFirstLevel(0)
-                           .setLastLevel(0)
-                           .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))));
+    Grouping request1;
+    request1.setFirstLevel(0)
+            .setLastLevel(0)
+            .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
 
     GroupingContext context(f1.clock, f1.timeOfDoom);
     GroupingContext::GroupingPtr bp(new Grouping(request1));
@@ -298,30 +287,20 @@ TEST_F("testGroupingSession", DoomFixture()) {
     MyWorld world;
     world.basicSetup();
     vespalib::nbostream os;
-    Grouping request1 = Grouping()
-                           .setId(0)
-                           .setFirstLevel(0)
-                           .setLastLevel(0)
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))));
+    Grouping request1;
+    request1.setId(0)
+            .setFirstLevel(0)
+            .setLastLevel(0)
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
 
-    Grouping request2 = Grouping()
-                           .setId(1)
-                           .setFirstLevel(0)
-                           .setLastLevel(3)
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr3"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr3"))
-                                     .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr1"))));
+    Grouping request2;
+    request2.setId(1)
+            .setFirstLevel(0)
+            .setLastLevel(3)
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")))
+            .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
 
 
     CheckAttributeReferences attrCheck;
@@ -391,18 +370,12 @@ TEST_F("testEmptySessionId", DoomFixture()) {
     MyWorld world;
     world.basicSetup();
     vespalib::nbostream os;
-    Grouping request1 = Grouping()
-                           .setId(0)
-                           .setFirstLevel(0)
-                           .setLastLevel(0)
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr1"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(MU<AttributeNode>("attr2"))))
-                           .addLevel(GroupingLevel()
-                                     .setExpression(MU<AttributeNode>("attr2"))
-                                     .addResult(SumAggregationResult()
-                                                .setExpression(MU<AttributeNode>("attr3"))));
+    Grouping request1;
+    request1.setId(0)
+            .setFirstLevel(0)
+            .setLastLevel(0)
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
 
     GroupingContext::GroupingPtr r1(new Grouping(request1));
     GroupingContext initContext(f1.clock, f1.timeOfDoom);
@@ -431,16 +404,8 @@ TEST_F("testSessionManager", DoomFixture()) {
     request1.setId(0)
             .setFirstLevel(0)
             .setLastLevel(0)
-            .addLevel(GroupingLevel()
-                              .setExpression(MU<AttributeNode>("attr1"))
-                              .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("attr2"))
-                                                 .setResult(Int64ResultNode(0))))
-            .addLevel(GroupingLevel()
-                              .setExpression(MU<AttributeNode>("attr2"))
-                              .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("attr3"))
-                                                 .setResult(Int64ResultNode(0))))
+            .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2"), MU<Int64ResultNode>(0)))
+            .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3"), MU<Int64ResultNode>(0)))
             .setRoot(Group().addResult(SumAggregationResult()
                                                .setExpression(MU<AttributeNode>("attr0"))
                                                .setResult(Int64ResultNode(0))));
@@ -496,11 +461,11 @@ TEST_F("test grouping fork/join", DoomFixture()) {
     MyWorld world;
     world.basicSetup();
 
-    Grouping request = Grouping()
-                       .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-                       .addLevel(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr0")))
-                       .setFirstLevel(0)
-                       .setLastLevel(1);
+    Grouping request;
+    request.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+           .addLevel(createGL(3, MU<AttributeNode>("attr0")))
+           .setFirstLevel(0)
+           .setLastLevel(1);
 
     GroupingContext::GroupingPtr g1(new Grouping(request));
     GroupingContext context(f1.clock, f1.timeOfDoom);
@@ -523,15 +488,14 @@ TEST_F("test grouping fork/join", DoomFixture()) {
         man.prune();
     }
 
-    Grouping expect = Grouping()
-                      .setRoot(Group()
-                               .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(189)))
-                               .addChild(Group().setId(Int64ResultNode(21)).setRank(40.0))
-                               .addChild(Group().setId(Int64ResultNode(22)).setRank(150.0))
-                               .addChild(Group().setId(Int64ResultNode(32)).setRank(100.0)))
-                      .addLevel(GroupingLevel().setMaxGroups(3).setExpression(MU<AttributeNode>("attr0")))
-                      .setFirstLevel(0)
-                      .setLastLevel(1);
+    Grouping expect;
+    expect.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(189)))
+                           .addChild(Group().setId(Int64ResultNode(21)).setRank(40.0))
+                           .addChild(Group().setId(Int64ResultNode(22)).setRank(150.0))
+                           .addChild(Group().setId(Int64ResultNode(32)).setRank(100.0)))
+            .addLevel(createGL(3, MU<AttributeNode>("attr0")))
+            .setFirstLevel(0)
+            .setLastLevel(1);
 
     session.continueExecution(context);
     GroupingContext::GroupingList list = context.getGroupingList();

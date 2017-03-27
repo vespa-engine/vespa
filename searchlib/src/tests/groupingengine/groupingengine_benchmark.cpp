@@ -204,7 +204,7 @@ Test::benchmarkIntegerSum(bool useEngine, size_t numDocs, size_t numQueries, int
     baseRequest.setFirstLevel(0)
                .setLastLevel(1)
                .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-               .addLevel(level);
+               .addLevel(std::move(level));
 
     for (size_t i(0); i < numQueries; i++) {
         testAggregation(ctx, baseRequest, useEngine);
@@ -233,7 +233,7 @@ Test::benchmarkIntegerCount(bool useEngine, size_t numDocs, size_t numQueries, i
     baseRequest.setFirstLevel(0)
                .setLastLevel(1)
                .setRoot(Group().addResult(CountAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
-               .addLevel(level);
+               .addLevel(std::move(level));
 
     for (size_t i(0); i < numQueries; i++) {
         testAggregation(ctx, baseRequest, useEngine);
