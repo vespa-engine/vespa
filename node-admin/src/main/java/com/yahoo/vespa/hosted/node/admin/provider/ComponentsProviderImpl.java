@@ -66,7 +66,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         Optional<StorageMaintainer> storageMaintainer = isRunningLocally ?
                 Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment));
         Optional<AclMaintainer> aclMaintainer = isRunningLocally ?
-                Optional.empty() : Optional.of(new AclMaintainer(dockerOperations, nodeRepository));
+                Optional.empty() : Optional.of(new AclMaintainer(dockerOperations, nodeRepository, baseHostName));
 
         Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
