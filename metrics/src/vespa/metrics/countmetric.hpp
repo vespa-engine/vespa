@@ -136,7 +136,7 @@ CountMetric<T, SumOnAdd>::dec(T value)
 template <typename T, bool SumOnAdd>
 void
 CountMetric<T, SumOnAdd>::addToSnapshot(
-        Metric& other, std::vector<Metric::LP>&) const
+        Metric& other, std::vector<Metric::UP> &) const
 {
     CountMetric<T, SumOnAdd>& o(
             reinterpret_cast<CountMetric<T, SumOnAdd>&>(other));

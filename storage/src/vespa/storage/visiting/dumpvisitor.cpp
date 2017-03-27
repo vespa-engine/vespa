@@ -69,7 +69,7 @@ DumpVisitor::createMultiOperation(const document::BucketId& bucketId,
 }
 
 void DumpVisitor::handleDocuments(const document::BucketId& bucketId,
-                                  std::vector<spi::DocEntry::LP>& entries,
+                                  std::vector<spi::DocEntry::UP>& entries,
                                   HitCounter& hitCounter)
 {
     LOG(debug, "Visitor %s handling block of %zu documents.",

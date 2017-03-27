@@ -3,11 +3,6 @@
 
 #include <memory>
 
-namespace vespalib {
-    template <typename T>
-    class LinkedPtr;
-}
-
 namespace config {
 
 class ConfigKey;
@@ -25,7 +20,6 @@ private:
     ConfigRequest& operator=(const ConfigRequest&);
 
 public:
-    typedef vespalib::LinkedPtr<ConfigRequest> LP;
     typedef std::unique_ptr<ConfigRequest> UP;
 
     ConfigRequest() { }

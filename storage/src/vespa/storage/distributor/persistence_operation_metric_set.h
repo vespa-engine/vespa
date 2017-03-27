@@ -28,7 +28,7 @@ public:
     metrics::LongCountMetric inconsistent_bucket;
     metrics::LongCountMetric notfound;
 
-    MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+    MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       metrics::MetricSet* owner, bool includeUnused) const;
 };
 
@@ -42,7 +42,7 @@ public:
     PersistenceOperationMetricSet(const std::string& name, metrics::MetricSet* owner = nullptr);
     ~PersistenceOperationMetricSet();
 
-    MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+    MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       metrics::MetricSet* owner, bool includeUnused) const override;
 
     /**

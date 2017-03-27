@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vector>
@@ -17,8 +16,8 @@ namespace matching {
 class PartialResult : public vespalib::DualMergeDirector::Source
 {
 public:
-    typedef vespalib::LinkedPtr<PartialResult> LP;
-    typedef std::pair<const char *, size_t> SortRef;
+    using UP = std::unique_ptr<PartialResult>;
+    using SortRef = std::pair<const char *, size_t>;
 
 private:
     std::vector<search::RankedHit> _hits;

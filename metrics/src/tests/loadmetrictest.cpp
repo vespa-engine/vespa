@@ -61,7 +61,7 @@ namespace {
               metric("tack", "", "", this)
         { }
 
-        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+        MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused = false) const override
         {
             if (copyType != CLONE) {
@@ -86,7 +86,7 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
     LoadMetric<MyMetricSet> metric(loadTypes, myset, &top);
     metric[loadTypes["foo"]].metric.addValue(5);
 
-    std::vector<Metric::LP> ownerList;
+    std::vector<Metric::UP> ownerList;
     MetricSet::UP copy(dynamic_cast<MetricSet*>(top.clone(ownerList, copyType, 0, true)));
     CPPUNIT_ASSERT(copy.get());
 
@@ -116,7 +116,7 @@ LoadMetricTest::testAdding()
     LoadMetric<MyMetricSet> metric(loadTypes, myset, &top);
     metric[loadTypes["foo"]].metric.addValue(5);
 
-    std::vector<Metric::LP> ownerList;
+    std::vector<Metric::UP> ownerList;
     MetricSet::UP copy(dynamic_cast<MetricSet*>(
                 top.clone(ownerList, Metric::INACTIVE, 0, false)));
     CPPUNIT_ASSERT(copy.get());

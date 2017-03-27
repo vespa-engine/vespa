@@ -12,46 +12,45 @@ LegacyAttributeMetrics::List::Entry::Entry(const std::string &name)
 {
 }
 
-LegacyAttributeMetrics::List::Entry::LP
+LegacyAttributeMetrics::List::Entry *
 LegacyAttributeMetrics::List::add(const std::string &name)
 {
     if (metrics.find(name) != metrics.end()) {
-        return Entry::LP(0);
+        return nullptr;
     }
-    Entry::LP entry(new Entry(name));
-    metrics[name] = entry;
-    return entry;
+    auto &pos = metrics[name];
+    pos = std::make_unique<Entry>(name);
+    return pos.get();
 }
 
-LegacyAttributeMetrics::List::Entry::LP
+LegacyAttributeMetrics::List::Entry *
 LegacyAttributeMetrics::List::get(const std::string &name) const
 {
-    std::map<std::string, Entry::LP>::const_iterator pos = metrics.find(name);
+    const auto pos = metrics.find(name);
     if (pos == metrics.end()) {
-        return Entry::LP(0);
+        return nullptr;
     }
-    return pos->second;
+    return pos->second.get();
 }
 
-LegacyAttributeMetrics::List::Entry::LP
+LegacyAttributeMetrics::List::Entry::UP
 LegacyAttributeMetrics::List::remove(const std::string &name)
 {
-    std::map<std::string, Entry::LP>::const_iterator pos = metrics.find(name);
+    auto pos = metrics.find(name);
     if (pos == metrics.end()) {
-        return Entry::LP(0);
+        return Entry::UP();
     }
-    Entry::LP retval = pos->second;
+    Entry::UP retval = std::move(pos->second);
     metrics.erase(name);
     return retval;
 }
 
-std::vector<LegacyAttributeMetrics::List::Entry::LP>
+std::vector<LegacyAttributeMetrics::List::Entry::UP>
 LegacyAttributeMetrics::List::release()
 {
-    std::vector<Entry::LP> entries;
-    std::map<std::string, Entry::LP>::const_iterator pos = metrics.begin();
-    for (; pos != metrics.end(); ++pos) {
-        entries.push_back(pos->second);
+    std::vector<Entry::UP> entries;
+    for (auto &pos: metrics) {
+        entries.push_back(std::move(pos.second));
     }
     metrics.clear();
     return entries;

@@ -81,7 +81,7 @@ MatchMaster::match(const MatchParams &params,
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
     threadBundle.run(targets);
-    ResultProcessor::Result::UP reply = resultProcessor.makeReply();
+    ResultProcessor::Result::UP reply = resultProcessor.makeReply(threadState[0]->extract_result());
     query_latency_time.stop();
     double query_time_s = query_latency_time.elapsed().sec();
     double rerank_time_s = timedCommunicator.rerank_time.elapsed().sec();

@@ -1497,7 +1497,7 @@ public abstract class ConformanceTest extends TestCase {
 //            }
 //
 //            size_t
-//            getRemoveEntryCount(const std::vector<spi::DocEntry::LP>& entries)
+//            getRemoveEntryCount(const std::vector<spi::DocEntry::UP>& entries)
 //            {
 //                size_t ret = 0;
 //                for (size_t i = 0; i < entries.size(); ++i) {
@@ -1511,7 +1511,7 @@ public abstract class ConformanceTest extends TestCase {
 //            List<DocEntry>
 //                    getEntriesFromChunks(const std::vector<Chunk>& chunks)
 //            {
-//                std::vector<spi::DocEntry::LP> ret;
+//                std::vector<spi::DocEntry::UP> ret;
 //                for (size_t chunk = 0; chunk < chunks.size(); ++chunk) {
 //                    for (size_t i = 0; i < chunks[chunk]._entries.size(); ++i) {
 //                        ret.push_back(chunks[chunk]._entries[i]);

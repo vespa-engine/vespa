@@ -26,7 +26,7 @@ private:
                              const std::vector<const document::Document*>& docs);
 
     void handleDocuments(const document::BucketId& bucketId,
-                         std::vector<spi::DocEntry::LP>& entries,
+                         std::vector<spi::DocEntry::UP>& entries,
                          HitCounter& hitCounter);
 
     std::unique_ptr<std::set<std::string> > _requestedFields;

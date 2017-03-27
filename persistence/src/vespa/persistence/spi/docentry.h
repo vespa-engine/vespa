@@ -14,7 +14,6 @@
 #pragma once
 
 #include <persistence/spi/types.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace storage {
 namespace spi {
@@ -35,8 +34,8 @@ private:
     DocumentIdUP _documentId;
     DocumentUP _document;
 public:
-    typedef vespalib::LinkedPtr<DocEntry> LP;
-    typedef std::unique_ptr<DocEntry> UP;
+    using UP = std::unique_ptr<DocEntry>;
+    using SP = std::shared_ptr<DocEntry>;
 
     DocEntry(Timestamp t, int metaFlags, DocumentUP doc);
 

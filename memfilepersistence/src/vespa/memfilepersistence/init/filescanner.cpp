@@ -71,7 +71,7 @@ FileScanner::buildBucketList(document::BucketId::List & list,
     }
         // Grab lock and update metrics
     vespalib::LockGuard lock(_globalLock);
-    std::vector<metrics::Metric::LP> newMetrics;
+    std::vector<metrics::Metric::UP> newMetrics;
     context._metrics.addToSnapshot(_globalMetrics, newMetrics);
     assert(newMetrics.empty());
 }

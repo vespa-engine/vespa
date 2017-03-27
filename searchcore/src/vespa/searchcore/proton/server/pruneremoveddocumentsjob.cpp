@@ -44,7 +44,7 @@ PruneRemovedDocumentsJob::flush(DocId lowLid, DocId nextLowLid,
         return;
     DocId docIdLimit = _metaStore.getCommittedDocIdLimit();
     PruneRemovedDocumentsOperation pruneOp(docIdLimit, _subDbId);
-    LidVectorContext::LP lvCtx(pruneOp.getLidsToRemove());
+    LidVectorContext::SP lvCtx(pruneOp.getLidsToRemove());
     for (std::vector<DocId>::const_iterator it = _pruneLids.begin(),
                                            ite = _pruneLids.end();
          it != ite; ++it) {

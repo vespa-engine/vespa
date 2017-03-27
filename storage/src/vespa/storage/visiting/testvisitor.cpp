@@ -44,7 +44,7 @@ TestVisitor::startingVisitor(const std::vector<document::BucketId>& buckets)
 
 void
 TestVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
-                             std::vector<spi::DocEntry::LP>& entries,
+                             std::vector<spi::DocEntry::UP>& entries,
                              HitCounter& /*hitCounter*/)
 {
     std::ostringstream ost;

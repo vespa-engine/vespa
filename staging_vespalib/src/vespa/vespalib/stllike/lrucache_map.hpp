@@ -17,6 +17,16 @@ lrucache_map<P>::insert(const K & key, const V & value) {
 }
 
 template< typename P >
+typename lrucache_map<P>::insert_result
+lrucache_map<P>::insert(const K & key, V && value) {
+    insert_result res = insert(value_type(key, LV(std::move(value))));
+    if (res.second) {
+        onInsert(key);
+    }
+    return res;
+}
+
+template< typename P >
 bool
 lrucache_map<P>::removeOldest(const value_type & v) {
     (void) v;

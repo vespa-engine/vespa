@@ -25,7 +25,7 @@ namespace memfile {
 
 class MemFileMapper : private Types {
 private:
-    std::map<FileVersion, VersionSerializer::LP> _serializers;
+    std::map<FileVersion, VersionSerializer::UP> _serializers;
     ThreadMetricProvider& _metricProvider;
     void setDefaultMemFileIO(MemFile& file,
                              vespalib::LazyFile::UP lf,
@@ -84,7 +84,7 @@ public:
     void removeAllSlotsExcept(MemFile& file, std::vector<Timestamp>& keep);
 
 private:
-    void addVersionSerializer(VersionSerializer::LP);
+    void addVersionSerializer(VersionSerializer::UP);
     VersionSerializer& getVersionSerializer(const MemFile& file);
 
     void loadFileImpl(MemFile&, Environment&);

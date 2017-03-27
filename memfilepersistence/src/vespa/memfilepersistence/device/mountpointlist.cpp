@@ -28,9 +28,9 @@ using vespalib::DirPointer;
 
 MountPointList::MountPointList(const std::string& vdsRoot,
                                const std::vector<vespalib::string>& diskPath,
-                               DeviceManager::LP manager)
+                               DeviceManager::UP manager)
   : framework::XmlStatusReporter("mountpointlist", "Disk directories"),
-    _deviceManager(manager),
+    _deviceManager(std::move(manager)),
     _vdsRoot(vdsRoot),
     _diskPath(diskPath),
     _mountPoints(0)
@@ -120,7 +120,7 @@ void
 MountPointList::scanForDisks()
 {
     _mountPoints.clear();
-    std::vector<Directory::LP> entries;
+    std::vector<Directory::SP> entries;
     DirPointer dir(opendir((_vdsRoot + "/disks").c_str()));
     struct dirent* entry;
     if (dir) while ((entry = readdir(dir))) {
@@ -245,7 +245,7 @@ namespace {
 void
 MountPointList::readFromFile()
 {
-    std::vector<Directory::LP> entries;
+    std::vector<Directory::SP> entries;
         // Read entries from disk
     std::ifstream is;
         // Throw exception if failing to read file
@@ -254,7 +254,7 @@ MountPointList::readFromFile()
     std::string line("EOF");
     while (std::getline(is, line)) {
         if (line == "EOF") { break; }
-        Directory::LP dir = _deviceManager->deserializeDirectory(line);
+        Directory::SP dir = _deviceManager->deserializeDirectory(line);
         int diskNr = getDiskNr(dir->getPath());
         if (diskNr == -1) {
             LOG(warning, "Found illegal disk entry '%s' in vds disk file %s.",
@@ -297,7 +297,7 @@ MountPointList::writeToFile() const
                          "disks.status file.", filename.c_str());
             return;
         }
-        for (std::vector<Directory::LP>::const_iterator it
+        for (std::vector<Directory::SP>::const_iterator it
                 = _mountPoints.begin(); it != _mountPoints.end(); ++it)
         {
             if (it->get() &&
@@ -453,10 +453,10 @@ MountPointList::verifyHealthyDisks(int mountPointCount)
 {
     WriteStatusFileIfFailing statusWriter(*this);
     int usable = 0, empty = 0;
-    std::map<uint32_t, Directory::LP> lackingChunkDef;
+    std::map<uint32_t, Directory::SP> lackingChunkDef;
         // Test disks and get chunkinfo
     for (uint32_t i=0, n=_mountPoints.size(); i<n; ++i) {
-        Directory::LP dir(_mountPoints[i]);
+        Directory::SP dir(_mountPoints[i]);
             // Insert NOT_FOUND disk if not found, such that operator[]
             // can return only valid pointers
         if (!dir.get()) {
@@ -567,10 +567,10 @@ MountPointList::verifyHealthyDisks(int mountPointCount)
         }
     }
         // Write chunkdef files where these are missing
-    for (std::map<uint32_t, Directory::LP>::const_iterator it
+    for (std::map<uint32_t, Directory::SP>::const_iterator it
             = lackingChunkDef.begin(); it != lackingChunkDef.end(); ++it)
     {
-        const Directory::LP& dir = it->second;
+        const Directory::SP &dir = it->second;
         Chunk c;
         c.nr = it->first;
         c.total = mountPointCount;
@@ -610,7 +610,7 @@ MountPointList::verifyHealthyDisks(int mountPointCount)
     for (int i = _mountPoints.size(); i < mountPointCount; ++i) {
         std::ostringstream ost;
         ost << _vdsRoot + "/disks/d" << i;
-        Directory::LP dir(_deviceManager->getDirectory(ost.str(), i));
+        Directory::SP dir(_deviceManager->getDirectory(ost.str(), i));
         dir->addEvent(Device::NOT_FOUND,
                       "Disk not found during scanning of disks directory",
                       VESPA_STRLOC);

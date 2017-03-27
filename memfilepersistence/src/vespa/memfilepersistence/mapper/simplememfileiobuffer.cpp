@@ -292,24 +292,24 @@ SimpleMemFileIOBuffer::allocateBuffer(DocumentPart part,
     // If the requested size is greater than or equal to our working buffer
     // size, simply allocate a separate buffer for it.
     if (sz >= WORKING_BUFFER_SIZE) {
-        return BufferAllocation(SharedBuffer::LP(new SharedBuffer(sz)), 0, sz);
+        return BufferAllocation(SharedBuffer::SP(new SharedBuffer(sz)), 0, sz);
     }
 
-    SharedBuffer::LP& bufLP(_workingBuffers[part]);
+    SharedBuffer::SP &bufSP(_workingBuffers[part]);
     bool requireNewBlock = false;
-    if (!bufLP.get()) {
+    if (!bufSP.get()) {
         requireNewBlock = true;
-    } else if (!bufLP->hasRoomFor(sz, align)) {
+    } else if (!bufSP->hasRoomFor(sz, align)) {
         requireNewBlock = true;
     }
 
     if (!requireNewBlock) {
-        return BufferAllocation(bufLP,
-                                static_cast<uint32_t>(bufLP->allocate(sz, align)),
+        return BufferAllocation(bufSP,
+                                static_cast<uint32_t>(bufSP->allocate(sz, align)),
                                 sz);
     } else {
-        SharedBuffer::LP newBuf(new SharedBuffer(WORKING_BUFFER_SIZE));
-        bufLP = newBuf;
+        SharedBuffer::SP newBuf(new SharedBuffer(WORKING_BUFFER_SIZE));
+        bufSP = newBuf;
         return BufferAllocation(newBuf,
                                 static_cast<uint32_t>(newBuf->allocate(sz, align)),
                                 sz);
@@ -384,7 +384,7 @@ SimpleMemFileIOBuffer::copyCache(const MemFileIOInterface& source,
 void
 SimpleMemFileIOBuffer::cacheLocation(DocumentPart part,
                                      DataLocation loc,
-                                     BufferType::LP& buf,
+                                     BufferType::SP buf,
                                      uint32_t bufferPos)
 {
     LOG(spam,
@@ -396,7 +396,7 @@ SimpleMemFileIOBuffer::cacheLocation(DocumentPart part,
         loc._size,
         buf.get(),
         bufferPos);
-    _data[part][loc] = Data(buf, bufferPos, true);
+    _data[part][loc] = Data(std::move(buf), bufferPos, true);
 }
 
 bool

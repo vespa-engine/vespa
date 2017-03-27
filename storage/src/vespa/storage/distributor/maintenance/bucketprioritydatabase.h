@@ -4,7 +4,6 @@
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/maintenance/prioritizedbucket.h>
 #include <boost/iterator/iterator_facade.hpp>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace storage {
 namespace distributor {
@@ -23,7 +22,7 @@ protected:
         virtual PrioritizedBucket dereference() const = 0;
     };
 
-    typedef vespalib::LinkedPtr<ConstIteratorImpl> ConstIteratorImplPtr;
+    using ConstIteratorImplPtr = std::unique_ptr<ConstIteratorImpl>;
 public:
     class ConstIterator
         : public boost::iterator_facade<
@@ -35,9 +34,11 @@ public:
     {
         ConstIteratorImplPtr _impl;
     public:
-        ConstIterator(const ConstIteratorImplPtr& impl)
-            : _impl(impl)
+        ConstIterator(ConstIteratorImplPtr impl)
+            : _impl(std::move(impl))
         {}
+        ConstIterator(const ConstIterator &) = delete;
+        ConstIterator(ConstIterator &&) = default;
 
         virtual ~ConstIterator() {}
     private:

@@ -21,15 +21,15 @@ LoadMetric<MetricType>::LoadMetric(const LoadTypeSet& loadTypes, const MetricTyp
     setTags(metric.getTags());
     Tags noTags;
     for (uint32_t i=0; i<loadTypes.size(); ++i) {
-        MetricTypeLP copy(dynamic_cast<MetricType*>(metric.clone(_ownerList, CLONE, 0, false)));
+        MetricTypeUP copy(dynamic_cast<MetricType*>(metric.clone(_ownerList, CLONE, 0, false)));
         assert(copy.get());
         copy->setName(loadTypes[i].getName());
         copy->setTags(noTags);
-        _metrics[loadTypes[i].getId()] = copy;
         registerMetric(*copy);
         _sum.addMetricToSum(*copy);
+        _metrics[loadTypes[i].getId()] = std::move(copy);
     }
-    trim(_ownerList);
+    _ownerList.shrink_to_fit();
 }
 
 template<typename MetricType>
@@ -42,15 +42,15 @@ LoadMetric<MetricType>::LoadMetric(const LoadMetric<MetricType>& other, MetricSe
     setTags(other.getTags());
     Tags noTags;
     for (const auto & metric : other._metrics) {
-        MetricTypeLP copy(dynamic_cast<MetricType*>(metric.second->clone(_ownerList, CLONE, 0, false)));
+        MetricTypeUP copy(dynamic_cast<MetricType*>(metric.second->clone(_ownerList, CLONE, 0, false)));
         assert(copy.get());
         copy->setName(metric.second->getName());
         copy->setTags(noTags);
-        _metrics[metric.first] = copy;
         registerMetric(*copy);
         _sum.addMetricToSum(*copy);
+        _metrics[metric.first] = std::move(copy);
     }
-    trim(_ownerList);
+    _ownerList.shrink_to_fit();
 }
 
 template<typename MetricType>
@@ -58,7 +58,7 @@ LoadMetric<MetricType>::~LoadMetric() { }
 
 template<typename MetricType>
 MetricSet*
-LoadMetric<MetricType>::clone(std::vector<Metric::LP>& ownerList,
+LoadMetric<MetricType>::clone(std::vector<Metric::UP> &ownerList,
                               CopyType copyType, MetricSet* owner,
                               bool includeUnused) const
 {
@@ -73,7 +73,7 @@ MetricType&
 LoadMetric<MetricType>::getMetric(const LoadType& type) {
     MetricType* metric;
 
-    typename vespalib::hash_map<uint32_t, MetricTypeLP>::iterator it(
+    typename vespalib::hash_map<uint32_t, MetricTypeUP>::iterator it(
             _metrics.find(type.getId()));
     if (it == _metrics.end()) {
         it = _metrics.find(0);
@@ -89,7 +89,7 @@ template<typename MetricType>
 void
 LoadMetric<MetricType>::addMemoryUsage(MemoryConsumption& mc) const {
     ++mc._loadMetricCount;
-    mc._loadMetricMeta += (sizeof(Metric::LP) * _ownerList.capacity())
+    mc._loadMetricMeta += (sizeof(Metric::UP) * _ownerList.capacity())
                         + (sizeof(typename MetricMap::value_type) * _metrics.capacity());
     _sum.addMemoryUsage(mc);
     mc._loadMetricMeta += sizeof(LoadMetric<MetricType>)

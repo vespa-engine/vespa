@@ -26,12 +26,12 @@ public:
 
     uint32_t getSubDbId() const { return _subDbId; }
 
-    void setLidsToRemove(const LidVectorContext::LP &lidsToRemove)
+    void setLidsToRemove(const LidVectorContext::SP &lidsToRemove)
     {
         RemoveDocumentsOperation::setLidsToRemove(_subDbId, lidsToRemove);
     }
 
-    const LidVectorContext::LP
+    const LidVectorContext::SP
     getLidsToRemove() const
     {
         return RemoveDocumentsOperation::getLidsToRemove(_subDbId);

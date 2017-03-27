@@ -17,7 +17,6 @@
 #include <map>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/bucket/bucketid.h>
@@ -86,7 +85,7 @@ public:
 
         bool _exists;
         bool _preExisted;
-        vespalib::LinkedPtr<LockKeeper> _lockKeeper;
+        std::unique_ptr<LockKeeper> _lockKeeper;
         mapped_type _value;
         const char* _clientId;
         friend class LockableMap<Map>;

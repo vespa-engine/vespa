@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace metrics {
 
@@ -15,7 +14,7 @@ class UpdateHook {
     friend class MetricManager;
 
 public:
-    typedef vespalib::LinkedPtr<UpdateHook> LP;
+    using UP = std::unique_ptr<UpdateHook>;
     using MetricLockGuard = vespalib::MonitorGuard;
 
     UpdateHook(const char* name) : _name(name), _nextCall(0), _period(0) {}

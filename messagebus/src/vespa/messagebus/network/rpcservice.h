@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/slobrok/imirrorapi.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include "rpcserviceaddress.h"
 
 namespace mbus {
@@ -26,7 +25,7 @@ private:
     AddressList   _addressList;
 
 public:
-    typedef vespalib::LinkedPtr<RPCService> LP;
+    using UP = std::unique_ptr<RPCService>;
     RPCService(const RPCService &) = delete;
     RPCService & operator = (const RPCService &) = delete;
     /**

@@ -20,7 +20,7 @@ public:
 
 private:
     void handleDocuments(const document::BucketId&,
-                         std::vector<spi::DocEntry::LP>&,
+                         std::vector<spi::DocEntry::UP>&,
                          HitCounter&);
 };
 

@@ -260,8 +260,8 @@ struct MemoryManagerLoadGiver : public document::Runnable,
     uint32_t _failed;
     uint32_t _ok;
     uint32_t _reduced;
-    typedef vespalib::LinkedPtr<MemoryToken> MemoryTokenPtr;
-    std::vector<MemoryTokenPtr> _tokens;
+    using MemoryTokenUP = std::unique_ptr<MemoryToken>;
+    std::vector<MemoryTokenUP> _tokens;
     vespalib::Lock _cacheLock;
 
     MemoryManagerLoadGiver(
@@ -302,7 +302,7 @@ struct MemoryManagerLoadGiver : public document::Runnable,
                 ++_ok;
             }
             uint32_t index = randomizer.nextUint32(0, _tokens.size() - 1);
-            _tokens[index] = MemoryTokenPtr(token.release());
+            _tokens[index] = MemoryTokenUP(token.release());
         }
     }
 };

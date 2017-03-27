@@ -21,7 +21,6 @@
 #include <vespa/memfilepersistence/device/directory.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vector>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 
 namespace storage {
@@ -37,7 +36,7 @@ struct MountPointList : public framework::XmlStatusReporter {
     /** Create a mount point list. */
     MountPointList(const std::string& vdsRoot,
                    const std::vector<vespalib::string>& diskPath,
-                   vespalib::LinkedPtr<DeviceManager>);
+                   std::unique_ptr<DeviceManager>);
 
     DeviceManager& getDeviceManager() { return *_deviceManager; }
 
@@ -122,10 +121,10 @@ struct MountPointList : public framework::XmlStatusReporter {
     spi::PartitionStateList getPartitionStates() const;
 
 private:
-    vespalib::LinkedPtr<DeviceManager> _deviceManager;
+    std::unique_ptr<DeviceManager> _deviceManager;
     std::string _vdsRoot;
     std::vector<vespalib::string> _diskPath;
-    std::vector<Directory::LP> _mountPoints;
+    std::vector<Directory::SP> _mountPoints;
 
     /** Get the name used for the disk status file. */
     std::string getDiskStatusFileName() const;

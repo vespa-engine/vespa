@@ -50,7 +50,7 @@ TestVisitorMessageSession::send(
     } else {
         pendingCount++;
         sentMessages.push_back(
-                vespalib::LinkedPtr<documentapi::DocumentMessage>(
+                std::unique_ptr<documentapi::DocumentMessage>(
                         message.release()));
         guard.broadcast();
         return mbus::Result();

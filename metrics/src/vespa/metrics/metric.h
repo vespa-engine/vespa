@@ -3,8 +3,8 @@
 
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/regexp.h>
+#include <assert.h>
 
 namespace metrics {
 
@@ -16,15 +16,6 @@ class MetricSnapshot;
 class XmlWriterMetricVisitor;
 class MemoryConsumption;
 class NameHash;
-
-template<typename T>
-void trim(std::vector<T>& v) {
-    if (v.size() < v.capacity()) {
-        std::vector<T> copy(v);
-        copy.swap(v);
-    }
-    assert(v.size() == v.capacity());
-}
 
 /** Implement class to visit metrics. */
 struct MetricVisitor {
@@ -107,7 +98,6 @@ public:
     using String = std::string;
     using stringref = vespalib::stringref;
     using UP = std::unique_ptr<Metric>;
-    using LP = vespalib::LinkedPtr<Metric>;
     using SP = std::shared_ptr<Metric>;
     using Tags = std::vector<Tag>;
 
@@ -151,7 +141,7 @@ public:
      *             unused metrics, but while generating sum metric sum in active
      *             metrics we want to. This has no affect if type is CLONE.
      */
-    virtual Metric* clone(std::vector<Metric::LP>& ownerList,
+    virtual Metric* clone(std::vector<Metric::UP> &ownerList,
                           CopyType type, MetricSet* owner,
                           bool includeUnused = false) const = 0;
 
@@ -200,7 +190,7 @@ public:
      * @param ownerList In case snapshot doesn't contain given metric, it can
      *                  create them and add them to ownerlist.
      */
-    virtual void addToSnapshot(Metric& m, std::vector<Metric::LP>& ownerList) const = 0;
+    virtual void addToSnapshot(Metric& m, std::vector<Metric::UP> &ownerList) const = 0;
 
     /**
      * For sum metrics to work with metric sets, metric sets need operator+=.

@@ -44,14 +44,14 @@ struct AttributeMetricsFixture {
         EXPECT_EQUAL(expNumMetrics, totalLegacyMetrics.list.getRegisteredMetrics().size());
     }
     void assertMetricsExists(const vespalib::string &attrName) {
-        EXPECT_TRUE(metrics.get(attrName).get() != nullptr);
-        EXPECT_TRUE(legacyMetrics.list.get(attrName).get() != nullptr);
-        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName).get() != nullptr);
+        EXPECT_TRUE(metrics.get(attrName) != nullptr);
+        EXPECT_TRUE(legacyMetrics.list.get(attrName) != nullptr);
+        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName) != nullptr);
     }
     void assertMetricsNotExists(const vespalib::string &attrName) {
-        EXPECT_TRUE(metrics.get(attrName).get() == nullptr);
-        EXPECT_TRUE(legacyMetrics.list.get(attrName).get() == nullptr);
-        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName).get() == nullptr);
+        EXPECT_TRUE(metrics.get(attrName) == nullptr);
+        EXPECT_TRUE(legacyMetrics.list.get(attrName) == nullptr);
+        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName) == nullptr);
     }
 };
 

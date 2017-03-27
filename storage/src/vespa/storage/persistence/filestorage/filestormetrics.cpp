@@ -20,7 +20,7 @@ FileStorThreadMetrics::Op::Op(const std::string& id, const std::string name, Met
 FileStorThreadMetrics::Op::~Op() { }
 
 MetricSet *
-FileStorThreadMetrics::Op::clone(std::vector<Metric::LP>& ownerList,
+FileStorThreadMetrics::Op::clone(std::vector<Metric::UP>& ownerList,
                                  CopyType copyType,
                                  MetricSet* owner,
                                  bool includeUnused) const
@@ -40,7 +40,7 @@ FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, con
 FileStorThreadMetrics::OpWithNotFound::~OpWithNotFound() { }
 
 MetricSet *
-FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::LP>& ownerList,
+FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList,
                                              CopyType copyType,
                                              MetricSet* owner,
                                              bool includeUnused) const
@@ -61,7 +61,7 @@ FileStorThreadMetrics::Update::Update(MetricSet* owner)
 FileStorThreadMetrics::Update::~Update() { }
 
 MetricSet *
-FileStorThreadMetrics::Update::clone(std::vector<Metric::LP>& ownerList,
+FileStorThreadMetrics::Update::clone(std::vector<Metric::UP>& ownerList,
                                      CopyType copyType,
                                      MetricSet* owner,
                                      bool includeUnused) const
@@ -80,7 +80,7 @@ FileStorThreadMetrics::Visitor::Visitor(MetricSet* owner)
 FileStorThreadMetrics::Visitor::~Visitor() { }
 
 MetricSet *
-FileStorThreadMetrics::Visitor::clone(std::vector<Metric::LP>& ownerList,
+FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList,
                                       CopyType copyType,
                                       MetricSet* owner,
                                       bool includeUnused) const

@@ -25,7 +25,7 @@ VisitorMetricSet::VisitorMetricSet(MetricSet* owner)
 VisitorMetricSet::~VisitorMetricSet() { }
 
 MetricSet *
-VisitorMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+VisitorMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                         MetricSet* owner, bool includeUnused) const
 {
     if (copyType == INACTIVE) {

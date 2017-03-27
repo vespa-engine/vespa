@@ -26,7 +26,7 @@ public:
     class StartValue
     {
     private:
-        std::vector<Metric::LP>     _startValueChildren;
+        std::vector<Metric::UP>     _startValueChildren;
         Metric::UP _startValue;
 
     public:
@@ -43,10 +43,10 @@ private:
 
 public:
     SumMetric(const String& name, const String& tags, const String& description, MetricSet* owner = 0);
-    SumMetric(const SumMetric<AddendMetric>& other, std::vector<Metric::LP>& ownerList, MetricSet* owner = 0);
+    SumMetric(const SumMetric<AddendMetric>& other, std::vector<Metric::UP> & ownerList, MetricSet* owner = 0);
     ~SumMetric();
 
-    Metric* clone( std::vector<Metric::LP>&, CopyType, MetricSet* owner, bool includeUnused = false) const override;
+    Metric* clone( std::vector<Metric::UP> &, CopyType, MetricSet* owner, bool includeUnused = false) const override;
 
     /**
      * If you want to support sums of collections of metrics that may
@@ -77,13 +77,13 @@ public:
     virtual void printDebug(std::ostream&, const std::string& indent="") const;
 
     virtual void addToPart(Metric&) const;
-    virtual void addToSnapshot(Metric&, std::vector<Metric::LP>&) const;
+    virtual void addToSnapshot(Metric&, std::vector<Metric::UP> &) const;
 
 private:
     friend class MetricManagerTest;
-    std::pair<std::vector<Metric::LP>, Metric::LP> generateSum() const;
+    std::pair<std::vector<Metric::UP>, Metric::UP> generateSum() const;
 
-    virtual void addTo(Metric&, std::vector<Metric::LP>* ownerList) const;
+    virtual void addTo(Metric&, std::vector<Metric::UP> *ownerList) const;
     bool isAddendType(const Metric* m) const;
 };
 

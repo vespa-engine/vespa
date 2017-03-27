@@ -14,7 +14,6 @@
 #pragma once
 
 #include <vespa/metrics/loadtype.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/documentapi/messagebus/priority.h>
 
 namespace vespalib {
@@ -28,7 +27,7 @@ class LoadType : public metrics::LoadType {
     Priority::Value _priority;
 
 public:
-    typedef vespalib::LinkedPtr<LoadType> LP;
+    using UP = std::unique_ptr<LoadType>;
 
     LoadType(uint32_t id, const string& name, Priority::Value priority)
         : metrics::LoadType(id, name), _priority(priority) {}

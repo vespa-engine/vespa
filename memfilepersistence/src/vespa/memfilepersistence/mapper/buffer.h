@@ -12,7 +12,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace storage {
 namespace memfile {
@@ -24,7 +23,7 @@ class Buffer
     size_t _size;
 
 public:
-    typedef vespalib::LinkedPtr<Buffer> LP;
+    using UP = std::unique_ptr<Buffer>;
 
     Buffer(const Buffer &) = delete;
     Buffer & operator = (const Buffer &) = delete;

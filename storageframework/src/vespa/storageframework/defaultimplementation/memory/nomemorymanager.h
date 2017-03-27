@@ -37,7 +37,7 @@ public:
 class NoMemoryManager : public MemoryManagerInterface
 {
     vespalib::Lock _typeLock;
-    std::map<std::string, MemoryAllocationType::LP> _types;
+    std::map<std::string, MemoryAllocationType::UP> _types;
 
 public:
     typedef std::unique_ptr<NoMemoryManager> UP;

@@ -14,7 +14,7 @@ class RPCNetwork;
  */
 class RPCServicePool {
 private:
-    typedef vespalib::lrucache_map< vespalib::LruParam<string, RPCService::LP> > ServiceCache;
+    typedef vespalib::lrucache_map< vespalib::LruParam<string, RPCService::UP> > ServiceCache;
 
     RPCNetwork    &_net;
     ServiceCache   _lru;

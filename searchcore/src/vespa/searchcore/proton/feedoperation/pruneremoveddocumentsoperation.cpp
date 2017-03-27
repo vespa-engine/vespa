@@ -26,7 +26,7 @@ PruneRemovedDocumentsOperation(DocumentIdT docIdLimit,
     : RemoveDocumentsOperation(FeedOperation::PRUNE_REMOVED_DOCUMENTS),
       _subDbId(subDbId)
 {
-    LidVectorContext::LP lidsToRemove(new LidVectorContext(docIdLimit));
+    LidVectorContext::SP lidsToRemove(new LidVectorContext(docIdLimit));
     setLidsToRemove(lidsToRemove);
 }
 
@@ -51,7 +51,7 @@ PruneRemovedDocumentsOperation::deserialize(vespalib::nbostream &is,
 }
 
 vespalib::string PruneRemovedDocumentsOperation::toString() const {
-    LidVectorContext::LP lids = getLidsToRemove();
+    LidVectorContext::SP lids = getLidsToRemove();
     return make_string("PruneRemovedDocuments(limitLid=%zu, subDbId=%d, "
                        "serialNum=%" PRIu64 ")",
                        lids.get() ? lids->getDocIdLimit() : 0,

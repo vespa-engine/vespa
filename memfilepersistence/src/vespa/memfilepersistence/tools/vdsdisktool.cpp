@@ -379,12 +379,12 @@ VdsDiskTool::run(int argc, const char * const * argv,
         }
         framework::defaultimplementation::RealClock clock;
         // Read the disk status file.
-        DeviceManager::LP devMan(new DeviceManager(
+        DeviceManager::UP devMan(new DeviceManager(
                 DeviceMapper::UP(new SimpleDeviceMapper),
                 clock));
         MountPointList mountPointList(options.getNodePath(nodeIndex),
                                       vector<vespalib::string>(),
-                                      devMan);
+                                      std::move(devMan));
         mountPointList.scanForDisks();
         if (options._mode == "enable" || options._mode == "disable") {
             if (mountPointList.getSize() <= options._diskIndex

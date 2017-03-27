@@ -96,7 +96,7 @@ void
 ConfigHandler::terminateServices(bool catchable, bool printDebug)
 {
     for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-        Service::LP service = it->second;
+        Service *service = it->second.get();
         if (printDebug && service->isRunning()) {
             LOG(info, "%s: killing", service->name().c_str());
         }
@@ -177,30 +177,15 @@ ConfigHandler::doConfigure()
         const vespalib::string name(serviceConfig.name);
         ServiceMap::iterator found(_services.find(name));
         if (found == _services.end()) {
-            services[name] = Service::LP(new Service(serviceConfig, config.application, _outputConnections, _startMetrics));
+            services[name] = Service::UP(new Service(serviceConfig, config.application, _outputConnections, _startMetrics));
         } else {
-            services[name] = found->second;
             found->second->reconfigure(serviceConfig);
+            services[name] = std::move(found->second);
         }
     }
-    stopOldServicesNotInMap(services);
     _services.swap(services);
     vespalib::ComponentConfigProducer::Config current("sentinel", _subscriber.getGeneration(), "ok");
     _stateApi.myComponents.addConfig(current);
-}
-
-void
-ConfigHandler::stopOldServicesNotInMap(const ServiceMap & newServices)
-{
-    for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-        const vespalib::string & key(it->first);
-        if (newServices.find(key) == newServices.end()) {
-            Service::LP service = it->second;
-            if (service->isRunning()) {
-                service->terminate(true);
-            }
-        }
-    }
 }
 
 
@@ -237,8 +222,8 @@ ConfigHandler::handleChildDeaths()
     pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         // A child process has exited. find it.
-        Service::LP service = serviceByPid(pid);
-        if (service.get() != NULL) {
+        Service *service = serviceByPid(pid);
+        if (service != NULL) {
             LOG(debug, "pid %d finished, Service:%s", (int)pid,
                 service->name().c_str());
             service->youExited(status);
@@ -348,26 +333,26 @@ ConfigHandler::handleCommands()
     _connections.erase(dst, _connections.end());
 }
 
-Service::LP
+Service *
 ConfigHandler::serviceByPid(pid_t pid)
 {
     for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-        Service::LP service = it->second;
+        Service *service = it->second.get();
         if (service->pid() == pid) {
             return service;
         }
     }
-    return Service::LP(NULL);
+    return NULL;
 }
 
-Service::LP
+Service *
 ConfigHandler::serviceByName(const vespalib::string & name)
 {
     ServiceMap::iterator found(_services.find(name));
     if (found != _services.end()) {
-        return found->second;
+        return found->second.get();
     }
-    return Service::LP(NULL);
+    return NULL;
 }
 
 
@@ -475,7 +460,7 @@ void
 ConfigHandler::doLs(CommandConnection *c, char *args)
 {
     for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-        Service::LP service = it->second;
+        Service *service = it->second.get();
         if (*args && strcmp(args, service->name().c_str()) != 0) {
             continue;
         }
@@ -502,8 +487,8 @@ ConfigHandler::doQuit(CommandConnection *c, char *)
 void
 ConfigHandler::doStart(CommandConnection *c, char *args)
 {
-    Service::LP service = serviceByName(args);
-    if (service.get() == NULL) {
+    Service *service = serviceByName(args);
+    if (service == NULL) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -528,8 +513,8 @@ ConfigHandler::doRestart(CommandConnection *c, char *args)
 void
 ConfigHandler::doRestart(CommandConnection *c, char *args, bool force)
 {
-    Service::LP service = serviceByName(args);
-    if (service.get() == NULL) {
+    Service *service = serviceByName(args);
+    if (service == NULL) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -565,8 +550,8 @@ ConfigHandler::doStop(CommandConnection *c, char *args)
 void
 ConfigHandler::doStop(CommandConnection *c, char *args, bool force)
 {
-    Service::LP service = serviceByName(args);
-    if (service.get() == NULL) {
+    Service *service = serviceByName(args);
+    if (service == NULL) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -589,8 +574,8 @@ ConfigHandler::doStop(CommandConnection *c, char *args, bool force)
 void
 ConfigHandler::doAuto(CommandConnection *c, char *args)
 {
-    Service::LP service = serviceByName(args);
-    if (service.get() == NULL) {
+    Service *service = serviceByName(args);
+    if (service == NULL) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -615,8 +600,8 @@ ConfigHandler::doAuto(CommandConnection *c, char *args)
 void
 ConfigHandler::doManual(CommandConnection *c, char *args)
 {
-    Service::LP service = serviceByName(args);
-    if (service.get() == NULL) {
+    Service *service = serviceByName(args);
+    if (service == NULL) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }

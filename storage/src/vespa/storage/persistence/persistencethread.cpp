@@ -443,7 +443,7 @@ PersistenceThread::handleGetIter(GetIterCommand& cmd)
                                            cmd.getMaxByteSize(), _context));
     if (checkForError(result, *tracker)) {
         GetIterReply::SP reply(new GetIterReply(cmd));
-        reply->getEntries() = result.getEntries();
+        reply->getEntries() = result.steal_entries();
         _env._metrics.visit[cmd.getLoadType()].
             documentsPerIterate.addValue(reply->getEntries().size());
         if (result.isCompleted()) {
@@ -1120,7 +1120,7 @@ bool hasBucketInfo(const api::StorageMessage& msg)
 void
 PersistenceThread::flushAllReplies(
         const document::BucketId& bucketId,
-        std::vector<vespalib::LinkedPtr<MessageTracker> >& replies)
+        std::vector<std::unique_ptr<MessageTracker> >& replies)
 {
     if (replies.empty()) {
         return;
@@ -1184,7 +1184,7 @@ PersistenceThread::flushAllReplies(
 
 void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
 {
-    std::vector<MessageTracker::LP> trackers;
+    std::vector<MessageTracker::UP> trackers;
     document::BucketId bucketId = lock.first->getBucketId();
 
     while (lock.second.get() != 0) {
@@ -1215,7 +1215,7 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
                 tracker->getReply()->toString().c_str(),
                 bucketId.toString().c_str());
 
-            trackers.push_back(MessageTracker::LP(tracker.release()));
+            trackers.push_back(MessageTracker::UP(tracker.release()));
 
             if (trackers.back()->getReply()->getResult().success()) {
                 _env._fileStorHandler.getNextMessage(

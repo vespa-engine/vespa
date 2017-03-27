@@ -69,7 +69,7 @@ SearchEnvironment::Env & SearchEnvironment::getEnv(const vespalib::string & sear
     if (_localEnvMap == NULL) {
         _localEnvMap = new EnvMap;
         vespalib::LockGuard guard(_lock);
-        _threadLocals.push_back(EnvMapLP(_localEnvMap));
+        _threadLocals.push_back(EnvMapUP(_localEnvMap));
     }
     EnvMap::iterator localFound = _localEnvMap->find(searchCluster);
     if (localFound == _localEnvMap->end()) {

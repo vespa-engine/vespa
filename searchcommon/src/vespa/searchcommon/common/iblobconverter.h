@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace search {
 namespace common {
@@ -12,7 +11,6 @@ class BlobConverter
 {
 public:
     using SP = std::shared_ptr<BlobConverter>;
-    using LP = vespalib::LinkedPtr<BlobConverter>;
     using UP = std::unique_ptr<BlobConverter>;
     using ConstBufferRef = vespalib::ConstBufferRef;
     virtual ~BlobConverter() { }

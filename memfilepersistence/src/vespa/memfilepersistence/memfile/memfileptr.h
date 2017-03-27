@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/linkedptr.h>
-
 namespace storage {
 namespace memfile {
 
@@ -33,7 +31,7 @@ public:
      * doing it, to prevent cyclic dependency with cache.
      */
     struct EntryGuard {
-        typedef vespalib::LinkedPtr<EntryGuard> LP;
+        using SP = std::shared_ptr<EntryGuard>;
 
         MemFile* _file;
 
@@ -46,11 +44,11 @@ public:
     };
 
 private:
-    EntryGuard::LP _entry;
+    EntryGuard::SP _entry;
 
 public:
     MemFilePtr() {};
-    MemFilePtr(EntryGuard::LP entry) : _entry(entry) {}
+    MemFilePtr(EntryGuard::SP entry) : _entry(std::move(entry)) {}
 
     // Behave like pointer to MemFile for ease of use.
     MemFile* operator->() { return _entry->_file; }

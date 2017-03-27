@@ -97,7 +97,7 @@ void addIterateResult(FRT_Values &ret, const IterateResult &result)
 {
     addResult(ret, result);
 
-    const vector<DocEntry::LP> &entries = result.getEntries();
+    const vector<DocEntry::UP> &entries = result.getEntries();
     uint64_t *timestamps = ret.AddInt64Array(entries.size());
     uint32_t *flags = ret.AddInt32Array(entries.size());
     assert(sizeof(DocEntry::SizeType) == sizeof(uint32_t));

@@ -132,8 +132,8 @@ void
 doAddAttribute(LegacyAttributeMetrics &attributes,
                const std::string &name)
 {
-    LegacyAttributeMetrics::List::Entry::LP entry = attributes.list.add(name);
-    if (entry.get() != 0) {
+    LegacyAttributeMetrics::List::Entry *entry = attributes.list.add(name);
+    if (entry != nullptr) {
         LOG(debug, "doAddAttribute(): name='%s', attributes=%p",
                 name.c_str(), (void*)&attributes);
         attributes.list.registerMetric(*entry);
@@ -146,7 +146,7 @@ void
 doRemoveAttribute(LegacyAttributeMetrics &attributes,
                   const std::string &name)
 {
-    LegacyAttributeMetrics::List::Entry::LP entry = attributes.list.remove(name);
+    LegacyAttributeMetrics::List::Entry::UP entry = attributes.list.remove(name);
     if (entry.get() != 0) {
         LOG(debug, "doRemoveAttribute(): name='%s', attributes=%p",
                 name.c_str(), (void*)&attributes);
@@ -159,7 +159,7 @@ doRemoveAttribute(LegacyAttributeMetrics &attributes,
 void
 doCleanAttributes(LegacyAttributeMetrics &attributes)
 {
-    std::vector<LegacyAttributeMetrics::List::Entry::LP> entries = attributes.list.release();
+    std::vector<LegacyAttributeMetrics::List::Entry::UP> entries = attributes.list.release();
     for (size_t i = 0; i < entries.size(); ++i) {
         attributes.list.unregisterMetric(*entries[i]);
     }
@@ -240,8 +240,7 @@ void MetricsEngine::addRankProfile(LegacyDocumentDBMetrics &owner,
                                    const std::string &name,
                                    size_t numDocIdPartitions) {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::LP &entry =
-        owner.matching.rank_profiles[name];
+    auto &entry = owner.matching.rank_profiles[name];
     if (entry.get()) {
         LOG(warning, "Two rank profiles have the same name: %s", name.c_str());
     } else {

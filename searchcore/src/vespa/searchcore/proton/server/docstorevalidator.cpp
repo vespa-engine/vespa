@@ -92,10 +92,10 @@ DocStoreValidator::killOrphans(search::IDocumentStore &store,
 }
 
 
-LidVectorContext::LP
+LidVectorContext::SP
 DocStoreValidator::getInvalidLids(void) const
 {
-    LidVectorContext::LP res(new LidVectorContext(_docIdLimit));
+    LidVectorContext::SP res(new LidVectorContext(_docIdLimit));
     assert(_invalid->size() == _docIdLimit);
     for (search::DocumentIdT lid(_invalid->getFirstTrueBit(1));
          lid < _docIdLimit;

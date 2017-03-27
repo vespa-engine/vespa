@@ -26,9 +26,8 @@ namespace matching {
 
         template <typename T>
         struct SessionCache : SessionCacheBase {
-            typedef typename T::LP EntryLP;
             typedef typename T::UP EntryUP;
-            vespalib::lrucache_map<vespalib::LruParam<SessionId, EntryLP> > _cache;
+            vespalib::lrucache_map<vespalib::LruParam<SessionId, EntryUP> > _cache;
 
             SessionCache(uint32_t max_size) : _cache(max_size) {}
 
@@ -38,7 +37,7 @@ namespace matching {
                 if (_cache.size() >= _cache.capacity()) {
                     entryDropped(id);
                 }
-                _cache.insert(id, EntryLP(session.release()));
+                _cache.insert(id, std::move(session));
                 _stats.numInsert++;
             }
             EntryUP pick(const SessionId & id) {
@@ -46,24 +45,23 @@ namespace matching {
                 EntryUP ret;
                 if (_cache.hasKey(id)) {
                     _stats.numPick++;
-                    EntryLP session(_cache.get(id));
+                    ret = std::move(_cache[id]);
                     _cache.erase(id);
-                    ret.reset(session.release());
                 }
                 return ret;
             }
             void pruneTimedOutSessions(fastos::TimeStamp currentTime) {
-                std::vector<EntryLP> toDestruct = stealTimedOutSessions(currentTime);
+                std::vector<EntryUP> toDestruct = stealTimedOutSessions(currentTime);
                 toDestruct.clear();
             }
-            std::vector<EntryLP> stealTimedOutSessions(fastos::TimeStamp currentTime) {
-                std::vector<EntryLP> toDestruct;
+            std::vector<EntryUP> stealTimedOutSessions(fastos::TimeStamp currentTime) {
+                std::vector<EntryUP> toDestruct;
                 vespalib::LockGuard guard(_lock);
                 toDestruct.reserve(_cache.size());
                 for (auto it(_cache.begin()), mt(_cache.end()); it != mt;) {
-                    EntryLP session = *it;
+                    auto &session = *it;
                     if (session->getTimeOfDoom() < currentTime) {
-                        toDestruct.push_back(session);
+                        toDestruct.push_back(std::move(session));
                         it = _cache.erase(it);
                         _stats.numTimedout++;
                     } else {

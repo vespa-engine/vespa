@@ -823,7 +823,7 @@ void
 FeedHandler::
 performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp)
 {
-    const LidVectorContext::LP lids_to_remove = pruneOp.getLidsToRemove();
+    const LidVectorContext::SP lids_to_remove = pruneOp.getLidsToRemove();
     if (lids_to_remove.get() && lids_to_remove->getNumLids() != 0) {
         storeOperation(pruneOp);
         _activeFeedView->handlePruneRemovedDocuments(pruneOp);

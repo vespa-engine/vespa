@@ -22,31 +22,31 @@ Test::Main()
         LegacyAttributeMetrics attrMetrics(0);
         EXPECT_EQUAL(0u, attrMetrics.list.release().size());
         {
-            LegacyAttributeMetrics::List::Entry::LP e1 = attrMetrics.list.add("foo");
-            LegacyAttributeMetrics::List::Entry::LP e2 = attrMetrics.list.add("bar");
-            LegacyAttributeMetrics::List::Entry::LP e3 = attrMetrics.list.add("foo");
-            EXPECT_TRUE(e1.get() != 0);
-            EXPECT_TRUE(e2.get() != 0);
-            EXPECT_TRUE(e3.get() == 0);
+            LegacyAttributeMetrics::List::Entry *e1 = attrMetrics.list.add("foo");
+            LegacyAttributeMetrics::List::Entry *e2 = attrMetrics.list.add("bar");
+            LegacyAttributeMetrics::List::Entry *e3 = attrMetrics.list.add("foo");
+            EXPECT_TRUE(e1 != nullptr);
+            EXPECT_TRUE(e2 != nullptr);
+            EXPECT_TRUE(e3 == nullptr);
         }
         {
             const LegacyAttributeMetrics &constMetrics = attrMetrics;
-            LegacyAttributeMetrics::List::Entry::LP e1 = constMetrics.list.get("foo");
-            LegacyAttributeMetrics::List::Entry::LP e2 = constMetrics.list.get("bar");
-            LegacyAttributeMetrics::List::Entry::LP e3 = constMetrics.list.get("baz");
-            EXPECT_TRUE(e1.get() != 0);
-            EXPECT_TRUE(e2.get() != 0);
-            EXPECT_TRUE(e3.get() == 0);
+            LegacyAttributeMetrics::List::Entry *e1 = constMetrics.list.get("foo");
+            LegacyAttributeMetrics::List::Entry *e2 = constMetrics.list.get("bar");
+            LegacyAttributeMetrics::List::Entry *e3 = constMetrics.list.get("baz");
+            EXPECT_TRUE(e1 != nullptr);
+            EXPECT_TRUE(e2 != nullptr);
+            EXPECT_TRUE(e3 == nullptr);
         }
         EXPECT_EQUAL(2u, attrMetrics.list.release().size());
         {
             const LegacyAttributeMetrics &constMetrics = attrMetrics;
-            LegacyAttributeMetrics::List::Entry::LP e1 = constMetrics.list.get("foo");
-            LegacyAttributeMetrics::List::Entry::LP e2 = constMetrics.list.get("bar");
-            LegacyAttributeMetrics::List::Entry::LP e3 = constMetrics.list.get("baz");
-            EXPECT_TRUE(e1.get() == 0);
-            EXPECT_TRUE(e2.get() == 0);
-            EXPECT_TRUE(e3.get() == 0);
+            LegacyAttributeMetrics::List::Entry *e1 = constMetrics.list.get("foo");
+            LegacyAttributeMetrics::List::Entry *e2 = constMetrics.list.get("bar");
+            LegacyAttributeMetrics::List::Entry *e3 = constMetrics.list.get("baz");
+            EXPECT_TRUE(e1 == nullptr);
+            EXPECT_TRUE(e2 == nullptr);
+            EXPECT_TRUE(e3 == nullptr);
         }
         EXPECT_EQUAL(0u, attrMetrics.list.release().size());
     }

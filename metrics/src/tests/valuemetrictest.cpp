@@ -178,7 +178,7 @@ void ValueMetricTest::testSmallAverage()
     m.addValue(0.0001);
     m.addValue(0.0002);
     m.addValue(0.0003);
-    std::vector<Metric::LP> ownerList;
+    std::vector<Metric::UP> ownerList;
     Metric::UP c(m.clone(ownerList, Metric::INACTIVE, 0, false));
     std::string expect("test average=0.0002 last=0.0003 min=0.0001 max=0.0003 count=3 total=0.0006");
     CPPUNIT_ASSERT_EQUAL(expect, m.toString());

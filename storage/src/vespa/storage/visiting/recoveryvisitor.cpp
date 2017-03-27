@@ -30,7 +30,7 @@ RecoveryVisitor::RecoveryVisitor(StorageComponent& component,
 
 void
 RecoveryVisitor::handleDocuments(const document::BucketId& bid,
-                                 std::vector<spi::DocEntry::LP>& entries,
+                                 std::vector<spi::DocEntry::UP>& entries,
                                  HitCounter& hitCounter)
 {
     vespalib::LockGuard guard(_mutex);
@@ -46,7 +46,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
         if (iter == _activeCommands.end()) {
             CommandPtr ptr(new documentapi::DocumentListMessage(bid));
             cmd = ptr.get();
-            _activeCommands[bid] = ptr;
+            _activeCommands[bid] = std::move(ptr);
         } else {
             cmd = iter->second.get();
         }

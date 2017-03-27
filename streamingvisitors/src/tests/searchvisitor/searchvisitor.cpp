@@ -44,15 +44,15 @@ SearchVisitorTest::SearchVisitorTest() :
     _component.reset(new StorageComponent(_componentRegister, "storage"));
 };
 
-std::vector<spi::DocEntry::LP>
+std::vector<spi::DocEntry::UP>
 createDocuments(const vespalib::string & dir)
 {
     (void) dir;
-    std::vector<spi::DocEntry::LP> documents;
+    std::vector<spi::DocEntry::UP> documents;
     spi::Timestamp ts;
     document::Document::UP doc(new document::Document());
-    spi::DocEntry::LP e(new spi::DocEntry(ts, 0, std::move(doc)));
-    documents.push_back(e);
+    spi::DocEntry::UP e(new spi::DocEntry(ts, 0, std::move(doc)));
+    documents.push_back(std::move(e));
     return documents;
 }
 
@@ -64,7 +64,7 @@ SearchVisitorTest::testCreateSearchVisitor(const vespalib::string & dir, const v
     std::unique_ptr<Visitor> sv(static_cast<SearchVisitor *>(factory.makeVisitor(*_component, _env, params)));
     document::OrderingSpecification orderSpec;
     document::BucketId bucketId;
-    std::vector<spi::DocEntry::LP> documents(createDocuments(dir));
+    std::vector<spi::DocEntry::UP> documents(createDocuments(dir));
     Visitor::HitCounter hitCounter(&orderSpec);
     sv->handleDocuments(bucketId, documents, hitCounter);
 }

@@ -63,7 +63,7 @@ public:
 
     struct Chunk
     {
-        std::vector<spi::DocEntry::LP> _entries;
+        std::vector<spi::DocEntry::UP> _entries;
     };
 
 private:
@@ -144,18 +144,12 @@ IteratorHandlerTest::doIterate(spi::IteratorId id,
     std::vector<Chunk> chunks;
 
     while (true) {
-        std::vector<spi::DocEntry::LP> entries;
-
         spi::IterateResult result(getPersistenceProvider().iterate(
                 id, maxByteSize, context));
         CPPUNIT_ASSERT_EQUAL(spi::Result::NONE, result.getErrorCode());
         CPPUNIT_ASSERT(result.getEntries().size() > 0 || allowEmptyResult);
 
-        for (size_t i = 0; i < result.getEntries().size(); ++i) {
-            entries.push_back(result.getEntries()[i]);
-        }
-        chunks.push_back(Chunk());
-        chunks.back()._entries.swap(entries);
+        chunks.push_back(Chunk{std::move(result.steal_entries())});
         if (result.isCompleted()
             || (maxChunks != 0 && chunks.size() >= maxChunks))
         {
@@ -178,7 +172,7 @@ getDocCount(const std::vector<IteratorHandlerTest::Chunk>& chunks)
 }
 
 size_t
-getRemoveEntryCount(const std::vector<spi::DocEntry::LP>& entries)
+getRemoveEntryCount(const std::vector<spi::DocEntry::UP>& entries)
 {
     size_t ret = 0;
     for (size_t i = 0; i < entries.size(); ++i) {
@@ -191,20 +185,20 @@ getRemoveEntryCount(const std::vector<spi::DocEntry::LP>& entries)
 
 struct DocEntryIndirectTimestampComparator
 {
-    bool operator()(const spi::DocEntry::LP& e1,
-                    const spi::DocEntry::LP& e2) const
+    bool operator()(const spi::DocEntry::UP& e1,
+                    const spi::DocEntry::UP& e2) const
     {
         return e1->getTimestamp() < e2->getTimestamp();
     }
 };
 
-std::vector<spi::DocEntry::LP>
+std::vector<spi::DocEntry::UP>
 getEntriesFromChunks(const std::vector<IteratorHandlerTest::Chunk>& chunks)
 {
-    std::vector<spi::DocEntry::LP> ret;
+    std::vector<spi::DocEntry::UP> ret;
     for (size_t chunk = 0; chunk < chunks.size(); ++chunk) {
         for (size_t i = 0; i < chunks[chunk]._entries.size(); ++i) {
-            ret.push_back(chunks[chunk]._entries[i]);
+            ret.push_back(spi::DocEntry::UP(chunks[chunk]._entries[i]->clone()));
         }
     }
     std::sort(ret.begin(),
@@ -233,7 +227,7 @@ IteratorHandlerTest::verifyDocs(const std::vector<DocAndTimestamp>& wanted,
                                 const std::vector<IteratorHandlerTest::Chunk>& chunks,
                                 const std::set<vespalib::string>& removes) const
 {
-    std::vector<spi::DocEntry::LP> retrieved(
+    std::vector<spi::DocEntry::UP> retrieved(
             getEntriesFromChunks(chunks));
     size_t removeCount = getRemoveEntryCount(retrieved);
     // Ensure that we've got the correct number of puts and removes
@@ -321,9 +315,7 @@ IteratorHandlerTest::testSomeSlotsRemovedBetweenInvocations()
 
     std::vector<Chunk> chunks2 = doIterate(iter.getIteratorId(), 10000);
     CPPUNIT_ASSERT_EQUAL(size_t(24), chunks2.size());
-    std::copy(chunks2.begin(),
-              chunks2.end(),
-              std::back_insert_iterator<std::vector<Chunk> >(chunks));
+    std::move(chunks2.begin(), chunks2.end(), std::back_inserter(chunks));
 
     verifyDocs(docs, chunks);
 
@@ -393,7 +385,7 @@ IteratorHandlerTest::testIterateMetadataOnly()
             create(b, sel, spi::NEWEST_DOCUMENT_OR_REMOVE, document::NoFields()));
 
     std::vector<Chunk> chunks = doIterate(iter.getIteratorId(), 4096);
-    std::vector<spi::DocEntry::LP> entries = getEntriesFromChunks(chunks);
+    std::vector<spi::DocEntry::UP> entries = getEntriesFromChunks(chunks);
     CPPUNIT_ASSERT_EQUAL(docs.size(), entries.size());
     std::vector<DocAndTimestamp>::const_iterator docIter(
             docs.begin());
@@ -495,9 +487,7 @@ IteratorHandlerTest::testDocumentsRemovedBetweenInvocations()
 
     std::vector<Chunk> chunks2 = doIterate(iter.getIteratorId(), 1);
     CPPUNIT_ASSERT_EQUAL(size_t(75), chunks2.size());
-    std::copy(chunks2.begin(),
-              chunks2.end(),
-              std::back_insert_iterator<std::vector<Chunk> >(chunks));
+    std::move(chunks2.begin(), chunks2.end(), std::back_inserter(chunks));
 
     verifyDocs(docs, chunks);
 
@@ -539,7 +529,7 @@ IteratorHandlerTest::doTestUnrevertableRemoveBetweenInvocations(bool includeRemo
     flush(b.getBucketId());
 
     std::vector<Chunk> chunks2 = doIterate(iter.getIteratorId(), 1);
-    std::vector<spi::DocEntry::LP> entries = getEntriesFromChunks(chunks2);
+    std::vector<spi::DocEntry::UP> entries = getEntriesFromChunks(chunks2);
     if (!includeRemoves) {
         CPPUNIT_ASSERT_EQUAL(nonRemovedDocs.size(), chunks2.size());
         verifyDocs(nonRemovedDocs, chunks2);
@@ -764,7 +754,7 @@ IteratorHandlerTest::testFieldSetFiltering()
     spi::CreateIteratorResult iter(
             create(b, sel, spi::NEWEST_DOCUMENT_ONLY,
                    *repo.parse(*getTypeRepo(), "testdoctype1:hstringval,content")));
-    std::vector<spi::DocEntry::LP> entries(
+    std::vector<spi::DocEntry::UP> entries(
             getEntriesFromChunks(doIterate(iter.getIteratorId(), 4096)));
     CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
     CPPUNIT_ASSERT_EQUAL(std::string("content: fancy content\n"

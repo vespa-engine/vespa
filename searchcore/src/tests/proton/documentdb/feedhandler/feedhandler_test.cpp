@@ -569,7 +569,7 @@ TEST_F("require that outdated put is ignored", FeedHandlerFixture)
 void
 addLidToRemove(RemoveDocumentsOperation &op)
 {
-    LidVectorContext::LP lids(new LidVectorContext(42));
+    LidVectorContext::SP lids(new LidVectorContext(42));
     lids->addLid(4);
     op.setLidsToRemove(0, lids);
 }

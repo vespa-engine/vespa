@@ -3,7 +3,6 @@
 #include "cpureporter.h"
 
 #include <vespa/log/log.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>

@@ -15,7 +15,6 @@
 #include <vespa/memfilepersistence/mapper/buffer.h>
 #include <vespa/memfilepersistence/mapper/mapperslotoperation.h>
 #include <vespa/memfilepersistence/memfile/memfile.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/memfilepersistence/memfile/memfileiointerface.h>
 
 namespace storage {
@@ -26,7 +25,7 @@ class MemFileEnvironment;
 class Options;
 
 struct VersionSerializer : protected Types {
-    typedef vespalib::LinkedPtr<VersionSerializer> LP;
+    using UP = std::unique_ptr<VersionSerializer>;
 
     virtual ~VersionSerializer() {}
 

@@ -695,7 +695,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op,
                                    bool immediateCommit)
 {
     const SerialNum serialNum = op.getSerialNum();
-    const LidVectorContext::LP &ctx = op.getLidsToRemove(_params._subDbId);
+    const LidVectorContext::SP &ctx = op.getLidsToRemove(_params._subDbId);
     if (!ctx.get()) {
         if (useDocumentMetaStore(serialNum)) {
             _metaStore.commit(serialNum, serialNum);
@@ -748,7 +748,7 @@ StoreOnlyFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
         bucket.toString().c_str(), lidsToRemove.size());
 
     if (!lidsToRemove.empty()) {
-        LidVectorContext::LP ctx
+        LidVectorContext::SP ctx
             (new LidVectorContext(_metaStore.getCommittedDocIdLimit(),
                                   lidsToRemove));
         delOp.setLidsToRemove(_params._subDbId, ctx);

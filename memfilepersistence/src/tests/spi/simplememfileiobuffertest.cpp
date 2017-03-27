@@ -31,13 +31,13 @@ class SimpleMemFileIOBufferTest : public SingleDiskMemFileTestUtils
     CPPUNIT_TEST_SUITE_END();
 
     using BufferType = SimpleMemFileIOBuffer::BufferType;
-    using BufferLP = BufferType::LP;
+    using BufferSP = BufferType::SP;
     using BufferAllocation = SimpleMemFileIOBuffer::BufferAllocation;
     using HeaderChunkEncoder = SimpleMemFileIOBuffer::HeaderChunkEncoder;
     using SimpleMemFileIOBufferUP = std::unique_ptr<SimpleMemFileIOBuffer>;
 
     BufferAllocation allocateBuffer(size_t sz) {
-        return BufferAllocation(BufferLP(new BufferType(sz)), 0, sz);
+        return BufferAllocation(BufferSP(new BufferType(sz)), 0, sz);
     }
 
     /**

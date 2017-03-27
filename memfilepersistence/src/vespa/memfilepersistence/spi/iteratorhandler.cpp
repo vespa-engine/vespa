@@ -60,7 +60,7 @@ IteratorHandler::createIterator(const spi::Bucket& bucket,
     // By default, no explicit prefetching is required.
     CachePrefetchRequirements prefetcher;
 
-    vespalib::LinkedPtr<document::select::Node> docSelection;
+    std::unique_ptr<document::select::Node> docSelection;
     if (!sel.getDocumentSelection().getDocumentSelection().empty()) {
         docSelection.reset(
                 parseDocumentSelection(
@@ -96,7 +96,7 @@ IteratorHandler::createIterator(const spi::Bucket& bucket,
                                         sel,
                                         document::FieldSet::UP(fields.clone()),
                                         versions,
-                                        docSelection,
+                                        std::move(docSelection),
                                         prefetcher))));
 
         assert(inserted.second); // Should never have duplicates
@@ -250,11 +250,11 @@ IteratorHandler::addMetaDataEntry(spi::IterateResult::List& result,
     totalSize += entrySize;
 
     int metaFlags = (slot.deleted() || slot.deletedInPlace()) ? spi::REMOVE_ENTRY : 0;
-    spi::DocEntry::LP docEntry(
+    spi::DocEntry::UP docEntry(
             new spi::DocEntry(
                     spi::Timestamp(slot.getTimestamp().getTime()),
                     metaFlags));
-    result.push_back(docEntry);
+    result.push_back(std::move(docEntry));
     return true;
 }
 
@@ -274,12 +274,12 @@ IteratorHandler::addRemoveEntry(spi::IterateResult::List& results,
     }
     totalSize += entrySize;
 
-    spi::DocEntry::LP docEntry(
+    spi::DocEntry::UP docEntry(
             new spi::DocEntry(
                     spi::Timestamp(slot.getTimestamp().getTime()),
                     spi::REMOVE_ENTRY,
                     did));
-    results.push_back(docEntry);
+    results.push_back(std::move(docEntry));
     return true;
 }
 
@@ -307,12 +307,12 @@ IteratorHandler::addPutEntry(spi::IterateResult::List& results,
     {
         document::FieldSet::stripFields(*doc, fieldsToKeep);
     }
-    spi::DocEntry::LP docEntry(
+    spi::DocEntry::UP docEntry(
             new spi::DocEntry(spi::Timestamp(slot.getTimestamp().getTime()),
                               0,
                               std::move(doc),
                               docSize));
-    results.push_back(docEntry);
+    results.push_back(std::move(docEntry));
     return true;
 }
 
@@ -338,7 +338,7 @@ IteratorHandler::iterate(spi::IteratorId id, uint64_t maxByteSize)
         assert(!iter->second.isActive());
         state = &iter->second;
         if (state->isCompleted()) {
-            return spi::IterateResult(results, true);
+            return spi::IterateResult(std::move(results), true);
         }
         state->setActive(true);
     }
@@ -422,10 +422,10 @@ IteratorHandler::iterate(spi::IteratorId id, uint64_t maxByteSize)
 
     if (remaining.empty()) {
         state->setCompleted();
-        return spi::IterateResult(results, true);
+        return spi::IterateResult(std::move(results), true);
     }
 
-    return spi::IterateResult(results, false);
+    return spi::IterateResult(std::move(results), false);
 }
 
 }

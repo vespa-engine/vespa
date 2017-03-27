@@ -52,7 +52,7 @@ public:
 StateChecker::Result
 StateChecker::Result::noMaintenanceNeeded()
 {
-    return Result(vespalib::LinkedPtr<ResultImpl>());
+    return Result(std::unique_ptr<ResultImpl>());
 }
 
 StateChecker::Result
@@ -60,7 +60,7 @@ StateChecker::Result::createStoredResult(
         IdealStateOperation::UP operation,
         MaintenancePriority::Priority priority)
 {
-    return Result(vespalib::LinkedPtr<ResultImpl>(new StoredResultImpl(std::move(operation), MaintenancePriority(priority))));
+    return Result(std::unique_ptr<ResultImpl>(new StoredResultImpl(std::move(operation), MaintenancePriority(priority))));
 }
 
 StateChecker::Context::Context(const DistributorComponent& c,

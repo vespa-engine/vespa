@@ -106,7 +106,7 @@ private:
     spi::Bucket getBucket(const DocumentId& id, const BucketId& bucket) const;
 
     void flushAllReplies(const document::BucketId& bucketId,
-                         std::vector<MessageTracker::LP>& trackers);
+                         std::vector<MessageTracker::UP>& trackers);
 
     friend class TestAndSetHelper;
     bool tasConditionExists(const api::TestAndSetCommand & cmd);

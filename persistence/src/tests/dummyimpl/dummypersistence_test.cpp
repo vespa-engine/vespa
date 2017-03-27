@@ -19,7 +19,7 @@ struct Fixture {
     BucketContent content;
 
     void insert(DocumentId id, Timestamp timestamp, int meta_flags) {
-        content.insert(DocEntry::LP(new DocEntry(timestamp, meta_flags, id)));
+        content.insert(DocEntry::UP(new DocEntry(timestamp, meta_flags, id)));
     }
 
     Fixture() {
@@ -37,14 +37,14 @@ TEST("require that empty BucketContent behaves") {
 }
 
 TEST_F("require that BucketContent can retrieve by timestamp", Fixture) {
-    DocEntry::LP entry = f.content.getEntry(Timestamp(1));
+    DocEntry::SP entry = f.content.getEntry(Timestamp(1));
     ASSERT_TRUE(entry.get());
     ASSERT_TRUE(entry->getDocumentId());
     ASSERT_EQUAL("doc:test:1", entry->getDocumentId()->toString());
 }
 
 TEST_F("require that BucketContent can retrieve by doc id", Fixture) {
-    DocEntry::LP entry = f.content.getEntry(DocumentId("doc:test:2"));
+    DocEntry::SP entry = f.content.getEntry(DocumentId("doc:test:2"));
     ASSERT_TRUE(entry.get());
     ASSERT_TRUE(entry->getDocumentId());
     ASSERT_EQUAL("doc:test:2", entry->getDocumentId()->toString());

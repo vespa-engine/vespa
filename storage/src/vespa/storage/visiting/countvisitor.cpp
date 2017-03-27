@@ -23,7 +23,7 @@ CountVisitor::CountVisitor(StorageComponent& component,
 
 void
 CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
-                              std::vector<spi::DocEntry::LP>& entries,
+                              std::vector<spi::DocEntry::UP>& entries,
                               HitCounter& hitCounter)
 {
     for (size_t i = 0; i < entries.size(); ++i) {

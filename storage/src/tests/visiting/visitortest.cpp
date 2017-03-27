@@ -342,8 +342,9 @@ VisitorTest::getMessagesAndReply(
         {
             vespalib::MonitorGuard guard(session.getMonitor());
             CPPUNIT_ASSERT(!session.sentMessages.empty());
-            vespalib::LinkedPtr<documentapi::DocumentMessage> msg(
-                    session.sentMessages.front());
+            std::unique_ptr<documentapi::DocumentMessage> msg(
+                    std::move(session.sentMessages.front()));
+            session.sentMessages.pop_front();
             CPPUNIT_ASSERT(msg->getPriority() < 16);
 
             switch (msg->getType()) {
@@ -369,7 +370,6 @@ VisitorTest::getMessagesAndReply(
             reply = msg->createReply();
             reply->swapState(*msg);
 
-            session.sentMessages.pop_front(); // Release linked ptr ref.
             reply->setMessage(mbus::Message::UP(msg.release()));
 
             if (result != api::ReturnCode::OK) {
@@ -443,7 +443,7 @@ VisitorTest::sendGetIterReply(GetIterCommand& cmd,
     size_t documentCount = maxDocuments != 0 ? maxDocuments : _documents.size();
     for (size_t i = 0; i < documentCount; ++i) {
         reply->getEntries().push_back(
-                spi::DocEntry::LP(
+                spi::DocEntry::UP(
                         new spi::DocEntry(
                                 spi::Timestamp(1000 + i),
                                 spi::NONE,

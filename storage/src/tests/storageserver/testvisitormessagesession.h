@@ -26,7 +26,7 @@ public:
 
     ~TestVisitorMessageSession();
 
-    std::deque<vespalib::LinkedPtr<documentapi::DocumentMessage> > sentMessages;
+    std::deque<std::unique_ptr<documentapi::DocumentMessage> > sentMessages;
 
     TestVisitorMessageSession(VisitorThread& t,
                               Visitor& v,

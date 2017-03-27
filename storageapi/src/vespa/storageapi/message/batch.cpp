@@ -46,21 +46,21 @@ BatchPutRemoveCommand::BatchPutRemoveCommand(const document::BucketId& bucketId)
 void
 BatchPutRemoveCommand::addPut(document::Document::SP document, uint64_t ts)
 {
-    _operations.push_back(vespalib::LinkedPtr<Operation>(new PutOperation(document, ts)));
+    _operations.push_back(std::unique_ptr<Operation>(new PutOperation(document, ts)));
     _approxSize += document->serialize()->getLength();
 }
 
 void
 BatchPutRemoveCommand::addHeaderUpdate(document::Document::SP document, uint64_t ts, uint64_t timestampToUpdate)
 {
-    _operations.push_back(vespalib::LinkedPtr<Operation>(new HeaderUpdateOperation(document, ts, timestampToUpdate)));
+    _operations.push_back(std::unique_ptr<Operation>(new HeaderUpdateOperation(document, ts, timestampToUpdate)));
     _approxSize += document->serialize()->getLength();
 }
 
 void
 BatchPutRemoveCommand::addRemove(const document::DocumentId& docId, uint64_t ts)
 {
-    _operations.push_back(vespalib::LinkedPtr<Operation>(new RemoveOperation(docId, ts)));
+    _operations.push_back(std::unique_ptr<Operation>(new RemoveOperation(docId, ts)));
     _approxSize += docId.toString().length();
 }
 

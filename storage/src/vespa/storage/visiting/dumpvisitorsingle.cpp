@@ -20,7 +20,7 @@ DumpVisitorSingle::DumpVisitorSingle(StorageComponent& component,
 }
 
 void DumpVisitorSingle::handleDocuments(const document::BucketId& /*bucketId*/,
-                                        std::vector<spi::DocEntry::LP>& entries,
+                                        std::vector<spi::DocEntry::UP>& entries,
                                         HitCounter& hitCounter)
 {
     LOG(debug, "Visitor %s handling block of %zu documents.",

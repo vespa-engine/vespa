@@ -33,7 +33,7 @@ struct InnerMetricSet : public MetricSet {
     InnerMetricSet(const char* name, const LoadTypeSet& lt, MetricSet* owner = 0);
     ~InnerMetricSet();
 
-    MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                   MetricSet* owner, bool includeUnused) const override;
 };
 
@@ -52,7 +52,7 @@ InnerMetricSet::InnerMetricSet(const char* name, const LoadTypeSet& lt, MetricSe
 InnerMetricSet::~InnerMetricSet() { }
 
     MetricSet*
-    InnerMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+    InnerMetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                      MetricSet* owner, bool includeUnused) const
 {
     if (copyType != CLONE) {
@@ -89,7 +89,7 @@ OuterMetricSet::OuterMetricSet(const LoadTypeSet& lt, MetricSet* owner)
 OuterMetricSet::~OuterMetricSet() { }
 
     struct Hammer : public document::Runnable {
-        typedef vespalib::LinkedPtr<Hammer> LP;
+        using UP = std::unique_ptr<Hammer>;
 
         OuterMetricSet& _metrics;
         const LoadTypeSet& _loadTypes;
@@ -141,9 +141,9 @@ StressTest::testStress()
 
     LOG(info, "Starting load givers");
     FastOS_ThreadPool threadPool(256 * 1024);
-    std::vector<Hammer::LP> hammers;
+    std::vector<Hammer::UP> hammers;
     for (uint32_t i=0; i<10; ++i) {
-        hammers.push_back(Hammer::LP(
+        hammers.push_back(Hammer::UP(
             new Hammer(metrics, loadTypes, threadPool)));
     }
     LOG(info, "Waiting to let loadgivers hammer a while");

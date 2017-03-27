@@ -110,12 +110,11 @@ DocumentIterator::iterate(size_t maxBytes)
     } else {
         IterateResult::List results;
         for (size_t sz(0); (_nextItem < _list.size()) && ((sz < maxBytes) || results.empty()); _nextItem++) {
-            DocEntry::LP & item = _list[_nextItem];
+            DocEntry::UP item = std::move(_list[_nextItem]);
             sz += item->getSize();
-            results.push_back(item);
-            item.reset();
+            results.push_back(std::move(item));
         }
-        return IterateResult(results, _nextItem >= _list.size());
+        return IterateResult(std::move(results), _nextItem >= _list.size());
     }
 }
 

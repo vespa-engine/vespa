@@ -21,7 +21,6 @@
 #include <memory>
 #include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/sync.h>
 
 namespace storage {
@@ -63,10 +62,10 @@ struct TickingLockGuard {
         virtual ~Impl() {}
         virtual void broadcast() = 0;
     };
-    TickingLockGuard(vespalib::LinkedPtr<Impl> impl) : _impl(impl) {}
+    TickingLockGuard(std::unique_ptr<Impl> impl) : _impl(std::move(impl)) {}
     void broadcast() { _impl->broadcast(); }
 private:
-    vespalib::LinkedPtr<Impl> _impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 struct ThreadLock {

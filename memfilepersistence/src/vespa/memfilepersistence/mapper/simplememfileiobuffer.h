@@ -74,7 +74,7 @@ public:
             ALIGN_512_BYTES
         };
 
-        typedef vespalib::LinkedPtr<SharedBuffer> LP;
+        using SP = std::shared_ptr<SharedBuffer>;
         explicit SharedBuffer(size_t totalSize)
             : _buf(vespalib::alloc::Alloc::allocMMap(totalSize)),
               _totalSize(totalSize),
@@ -123,8 +123,8 @@ public:
     {
         BufferAllocation() : pos(0), size(0) {}
 
-        BufferAllocation(const SharedBuffer::LP& b, uint32_t p, uint32_t sz)
-            : buf(b), pos(p), size(sz) { }
+        BufferAllocation(SharedBuffer::SP b, uint32_t p, uint32_t sz)
+            : buf(std::move(b)), pos(p), size(sz) { }
 
         /**
          * Get buffer area available to this specific allocation
@@ -136,11 +136,11 @@ public:
          * Get buffer that is (potentially) shared between many individual
          * allocations.
          */
-        SharedBuffer::LP& getSharedBuffer() { return buf; }
+        SharedBuffer::SP getSharedBuffer() { return buf; }
         uint32_t getBufferPosition() const { return pos; }
         uint32_t getSize() const { return size; }
 
-        SharedBuffer::LP buf;
+        SharedBuffer::SP buf;
         uint32_t pos;
         uint32_t size;
     };
@@ -250,7 +250,7 @@ public:
      */
     void cacheLocation(DocumentPart part,
                        DataLocation loc,
-                       BufferType::LP& buf,
+                       BufferType::SP buf,
                        uint32_t bufferPos);
 
     /**
@@ -319,10 +319,10 @@ private:
     struct Data {
         Data() : pos(0), persisted(false) {}
 
-        Data(const BufferType::LP& b, uint32_t p, bool isPersisted)
-            : buf(b), pos(p), persisted(isPersisted) {}
+        Data(BufferType::SP b, uint32_t p, bool isPersisted)
+            : buf(std::move(b)), pos(p), persisted(isPersisted) {}
 
-        BufferType::LP buf;
+        BufferType::SP buf;
         uint32_t pos;
         bool persisted;
     };
@@ -331,7 +331,7 @@ private:
 
     VersionSerializer& _reader;
     std::vector<DataMap> _data;
-    std::vector<SharedBuffer::LP> _workingBuffers;
+    std::vector<SharedBuffer::SP> _workingBuffers;
     vespalib::LazyFile::UP _file;
     FileInfo::UP _fileInfo;
     FileSpecification _fileSpec;

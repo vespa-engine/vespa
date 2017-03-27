@@ -187,12 +187,12 @@ public:
     }
 
     virtual TickingLockGuard freezeAllTicks() {
-        return TickingLockGuard(vespalib::LinkedPtr<TickingLockGuard::Impl>(
+        return TickingLockGuard(std::unique_ptr<TickingLockGuard::Impl>(
                 new FreezeGuard(*this)));
     }
 
     virtual TickingLockGuard freezeCriticalTicks() {
-        return TickingLockGuard(vespalib::LinkedPtr<TickingLockGuard::Impl>(
+        return TickingLockGuard(std::unique_ptr<TickingLockGuard::Impl>(
                 new CriticalGuard(_monitor)));
     }
 

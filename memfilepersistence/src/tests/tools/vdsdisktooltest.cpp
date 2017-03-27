@@ -14,7 +14,6 @@ namespace memfile {
 struct VdsDiskToolTest : public SingleDiskMemFileTestUtils
 {
     framework::defaultimplementation::FakeClock _clock;
-    DeviceManager::LP _deviceManager;
 
     void setUp();
     void setupRoot();
@@ -55,8 +54,6 @@ void
 VdsDiskToolTest::setUp()
 {
     system("rm -rf vdsroot");
-    _deviceManager.reset(new DeviceManager(
-            DeviceMapper::UP(new SimpleDeviceMapper), _clock));
 }
 
 void
@@ -94,7 +91,7 @@ VdsDiskToolTest::testSimple()
     createDisk(1);
     MountPointList mountPoints("vdsroot/mycluster/storage/3",
                                std::vector<vespalib::string>(),
-                               _deviceManager);
+                               std::make_unique<DeviceManager>(std::make_unique<SimpleDeviceMapper>(), _clock));
     mountPoints.scanForDisks();
     CPPUNIT_ASSERT_EQUAL(2u, mountPoints.getSize());
     mountPoints[1].addEvent(Device::IO_FAILURE, "Bad", "Found in test");

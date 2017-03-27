@@ -26,7 +26,7 @@ class OutputConnection;
 
 class ConfigHandler {
 private:
-    typedef std::map<vespalib::string, Service::LP> ServiceMap;
+    typedef std::map<vespalib::string, Service::UP> ServiceMap;
 
     ConfigSubscriber _subscriber;
     ConfigHandle<SentinelConfig>::UP _sentinelHandle;
@@ -41,8 +41,8 @@ private:
     ConfigHandler(const ConfigHandler&);
     ConfigHandler& operator =(const ConfigHandler&);
 
-    Service::LP serviceByPid(pid_t pid);
-    Service::LP serviceByName(const vespalib::string & name);
+    Service *serviceByPid(pid_t pid);
+    Service *serviceByName(const vespalib::string & name);
     void handleCommands();
     void handleCommand(CommandConnection *c);
     void handleOutputs();
@@ -65,7 +65,6 @@ private:
     void doQuit(CommandConnection *c, char *args);
 
     void terminateServices(bool catchable, bool printDebug = false);
-    void stopOldServicesNotInMap(const ServiceMap & newServices);
 
     void doConfigure();
 

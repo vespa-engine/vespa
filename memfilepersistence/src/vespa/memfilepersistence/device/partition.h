@@ -21,8 +21,8 @@ namespace memfile {
 class Partition : public Device {
     uint64_t _id;
     std::string _mountPoint;
-    Disk::LP _disk;
-    PartitionMonitor::LP _monitor;
+    Disk::SP _disk;
+    PartitionMonitor::UP _monitor;
 
     Partition(DeviceManager& manager, uint64_t id,
               const std::string& mountPoint);
@@ -30,7 +30,7 @@ class Partition : public Device {
     friend class DeviceManager;
 
 public:
-    typedef vespalib::LinkedPtr<Partition> LP;
+    using SP = std::shared_ptr<Partition>;
 
     void initializeMonitor();
 

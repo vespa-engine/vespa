@@ -25,15 +25,15 @@ public:
 
 private:
     void handleDocuments(const document::BucketId& bucketId,
-                         std::vector<spi::DocEntry::LP>& entries,
+                         std::vector<spi::DocEntry::UP>& entries,
                          HitCounter& hitCounter);
 
     void completedBucket(const document::BucketId&, HitCounter&);
 
     std::set<std::string> _requestedFields;
 
-    typedef vespalib::LinkedPtr<documentapi::DocumentListMessage> CommandPtr;
-    typedef std::map<document::BucketId, CommandPtr> CommandMap;
+    using CommandPtr = std::unique_ptr<documentapi::DocumentListMessage>;
+    using CommandMap = std::map<document::BucketId, CommandPtr>;
     CommandMap _activeCommands;
 
     vespalib::Lock _mutex;

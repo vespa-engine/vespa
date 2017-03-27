@@ -298,7 +298,7 @@ private:
 
     // Inherit doc from Visitor
     void handleDocuments(const document::BucketId&,
-                         std::vector<spi::DocEntry::LP>& entries,
+                         std::vector<spi::DocEntry::UP>& entries,
                          HitCounter& hitCounter) override;
 
     bool compatibleDocumentTypes(const document::DocumentType& typeA,

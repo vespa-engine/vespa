@@ -55,7 +55,7 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const
             _node.getComponentRegister(), 255, 0));
     for (uint32_t i = 0; i < numDisks; i++) {
         _diskEnvs.push_back(
-                vespalib::LinkedPtr<PersistenceUtil>(
+                std::unique_ptr<PersistenceUtil>(
                         new PersistenceUtil(
                                 _config.getConfigId(),
                                 _node.getComponentRegister(),

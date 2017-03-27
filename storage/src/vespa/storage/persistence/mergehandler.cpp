@@ -126,13 +126,13 @@ public:
 
 struct IndirectDocEntryTimestampPredicate
 {
-    bool operator()(const spi::DocEntry::LP& e1,
-                    const spi::DocEntry::LP& e2) const
+    bool operator()(const spi::DocEntry::UP& e1,
+                    const spi::DocEntry::UP& e2) const
     {
         return e1->getTimestamp() < e2->getTimestamp();
     }
 
-    bool operator()(const spi::DocEntry::LP& e,
+    bool operator()(const spi::DocEntry::UP& e,
                     const spi::Timestamp timestamp) const
     {
         return e->getTimestamp() < timestamp;
@@ -154,7 +154,7 @@ void
 MergeHandler::populateMetaData(
         const spi::Bucket& bucket,
         Timestamp maxTimestamp,
-        std::vector<spi::DocEntry::LP>& entries,
+        std::vector<spi::DocEntry::UP>& entries,
         spi::Context& context)
 {
     spi::DocumentSelection docSel("");
@@ -190,9 +190,8 @@ MergeHandler::populateMetaData(
                << result.getErrorMessage();
             throw std::runtime_error(ss.str());
         }
-        for (size_t i = 0; i < result.getEntries().size(); ++i) {
-            entries.push_back(result.getEntries()[i]);
-        }
+        auto list = result.steal_entries();
+        std::move(list.begin(), list.end(), std::back_inserter(entries));
         if (result.isCompleted()) {
             break;
         }
@@ -266,7 +265,7 @@ MergeHandler::buildBucketInfoList(
         }
     }
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, maxTimestamp, entries, context);
 
     for (size_t i = 0; i < entries.size(); ++i) {
@@ -444,7 +443,7 @@ MergeHandler::fetchLocalData(
     IteratorGuard iteratorGuard(_spi, iteratorId, context);
 
     // Fetch all entries
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
     entries.reserve(slots.size());
     bool fetchedAllLocalData = false;
     bool chunkLimitReached = false;
@@ -459,19 +458,20 @@ MergeHandler::fetchLocalData(
                << result.getErrorMessage();
             throw std::runtime_error(ss.str());
         }
-        for (size_t i = 0; i < result.getEntries().size(); ++i) {
-            if (result.getEntries()[i]->getSize() <= remainingSize
+        auto list = result.steal_entries();
+        for (size_t i = 0; i < list.size(); ++i) {
+            if (list[i]->getSize() <= remainingSize
                 || (entries.empty() && alreadyFilled == 0))
             {
-                entries.push_back(result.getEntries()[i]);
-                remainingSize -= result.getEntries()[i]->getSize();
+                remainingSize -= list[i]->getSize();
                 LOG(spam, "Added %s, remainingSize is %u",
                     entries.back()->toString().c_str(),
                     remainingSize);
+                entries.push_back(std::move(list[i]));
             } else {
                 LOG(spam, "Adding %s would exceed chunk size limit of %u; "
                     "not filling up any more diffs for current round",
-                    result.getEntries()[i]->toString().c_str(), _maxChunkSize);
+                    list[i]->toString().c_str(), _maxChunkSize);
                 chunkLimitReached = true;
                 break;
             }
@@ -610,7 +610,7 @@ MergeHandler::applyDiffLocally(
     uint32_t addedCount = 0;
     uint32_t notNeededByteCount = 0;
 
-    std::vector<spi::DocEntry::LP> entries;
+    std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
 
     FlushGuard flushGuard(_spi, bucket, context);

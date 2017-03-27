@@ -866,7 +866,7 @@ SearchVisitor::compatibleDocumentTypes(const document::DocumentType& typeA,
 
 void
 SearchVisitor::handleDocuments(const document::BucketId&,
-                               std::vector<spi::DocEntry::LP>& entries,
+                               std::vector<spi::DocEntry::UP>& entries,
                                HitCounter& hitCounter)
 {
     (void) hitCounter;

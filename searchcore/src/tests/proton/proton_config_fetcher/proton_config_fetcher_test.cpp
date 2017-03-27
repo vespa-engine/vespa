@@ -16,7 +16,6 @@
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
 
@@ -33,7 +32,6 @@ using document::DocumenttypesConfig;
 using document::DocumenttypesConfigBuilder;
 using search::TuneFileDocumentDB;
 using std::map;
-using vespalib::LinkedPtr;
 using vespalib::VarHolder;
 
 struct DoctypeFixture {

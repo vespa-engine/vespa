@@ -10,7 +10,7 @@ namespace proton {
 class RemoveDocumentsOperation : public FeedOperation
 {
 protected:
-    typedef std::map<uint32_t, LidVectorContext::LP> LidsToRemoveMap;
+    typedef std::map<uint32_t, LidVectorContext::SP> LidsToRemoveMap;
     LidsToRemoveMap _lidsToRemoveMap;
 
     RemoveDocumentsOperation(Type type);
@@ -20,17 +20,17 @@ protected:
 public:
     virtual ~RemoveDocumentsOperation() { }
 
-    void setLidsToRemove(uint32_t subDbId, const LidVectorContext::LP &lidsToRemove) {
+    void setLidsToRemove(uint32_t subDbId, const LidVectorContext::SP &lidsToRemove) {
         _lidsToRemoveMap[subDbId] = lidsToRemove;
     }
 
-    const LidVectorContext::LP
+    const LidVectorContext::SP
     getLidsToRemove(uint32_t subDbId) const {
         LidsToRemoveMap::const_iterator found(_lidsToRemoveMap.find(subDbId));
         if (found != _lidsToRemoveMap.end())
             return found->second;
         else
-            return LidVectorContext::LP();
+            return LidVectorContext::SP();
     }
 
 };

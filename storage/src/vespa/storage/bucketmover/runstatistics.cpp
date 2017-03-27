@@ -6,7 +6,6 @@
 #include <iomanip>
 #include <vespa/log/log.h>
 #include <vespa/storage/bucketmover/htmltable.h>
-#include <vespa/vespalib/util/linkedptr.h>
 
 LOG_SETUP(".bucketmover.run.statistics");
 

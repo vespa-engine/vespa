@@ -111,8 +111,6 @@ private:
     vespalib::string _originalFieldPath;
     vespalib::string _originalWhereClause;
 
-    // TODO: replace these with LinkedPtr? Need to verify updates cannot
-    // be shared between threads first
     vespalib::CloneablePtr<FieldPath> _fieldPath;
     std::shared_ptr<select::Node> _whereClause;
 };

@@ -94,7 +94,7 @@ void DeviceManagerTest::testEventSending()
     DeviceManager manager(DeviceMapper::UP(new SimpleDeviceMapper), _clock);
     Listener l;
     manager.addIOEventListener(l);
-    Directory::LP dir(manager.getDirectory("/home/foo/var", 0));
+    Directory::SP dir(manager.getDirectory("/home/foo/var", 0));
         // IO failures are disk events. Will mark all partitions and
         // directories on that disk bad
     dir->addEvent(IOEvent::createEventFromErrno(1, EIO, "/home/foo/var/foo"));
@@ -117,7 +117,7 @@ void DeviceManagerTest::testEventSending()
 void DeviceManagerTest::testXml()
 {
     DeviceManager manager(DeviceMapper::UP(new SimpleDeviceMapper), _clock);
-    Directory::LP dir(manager.getDirectory("/home/", 0));
+    Directory::SP dir(manager.getDirectory("/home/", 0));
     dir->getPartition().initializeMonitor();
     std::string xml = manager.toXml("  ");
     CPPUNIT_ASSERT_MSG(xml,

@@ -34,7 +34,6 @@ private:
     fastos::TimeStamp _timeOfDoom;
 
 public:
-    typedef vespalib::LinkedPtr<GroupingSession> LP;
     typedef std::unique_ptr<GroupingSession> UP;
 
     /**

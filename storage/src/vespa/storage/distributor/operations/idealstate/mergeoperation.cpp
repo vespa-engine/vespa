@@ -158,13 +158,13 @@ MergeOperation::onStart(DistributorMessageSender& sender)
     }
 
     const lib::ClusterState& clusterState(_manager->getDistributorComponent().getClusterState());
-    std::vector<vespalib::LinkedPtr<BucketCopy> > newCopies;
+    std::vector<std::unique_ptr<BucketCopy> > newCopies;
     std::vector<MergeMetaData> nodes;
 
     for (uint32_t i = 0; i < getNodes().size(); ++i) {
         const BucketCopy* copy = entry->getNode(getNodes()[i]);
         if (copy == 0) { // New copies?
-            newCopies.push_back(vespalib::LinkedPtr<BucketCopy>(
+            newCopies.push_back(std::unique_ptr<BucketCopy>(
                     new BucketCopy(0, getNodes()[i], api::BucketInfo())));
             copy = newCopies.back().get();
         }

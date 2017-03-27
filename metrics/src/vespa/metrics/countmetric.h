@@ -93,7 +93,7 @@ public:
     }
 
     virtual CountMetric * clone(
-            std::vector<Metric::LP>&, CopyType type, MetricSet* owner,
+            std::vector<Metric::UP> &, CopyType type, MetricSet* owner,
             bool /*includeUnused*/) const
         { return new CountMetric<T, SumOnAdd>(*this, type, owner); }
 
@@ -125,7 +125,7 @@ public:
     virtual void printDebug(std::ostream&, const std::string& indent) const;
 
     virtual void addToPart(Metric&) const;
-    virtual void addToSnapshot(Metric&, std::vector<Metric::LP>&) const;
+    virtual void addToSnapshot(Metric&, std::vector<Metric::UP> &) const;
 };
 
 typedef CountMetric<uint64_t, true> LongCountMetric;
