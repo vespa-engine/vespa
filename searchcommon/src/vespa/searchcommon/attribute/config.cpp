@@ -18,10 +18,7 @@ Config::Config() :
     _fastAccess(false),
     _growStrategy(),
     _compactionStrategy(),
-    _arity(8),
-    _lower_bound(LLONG_MIN),
-    _upper_bound(LLONG_MAX),
-    _dense_posting_list_threshold(0.4),
+    _predicateParams(),
     _tensorType(vespalib::eval::ValueType::error_type())
 {
 }
@@ -40,10 +37,7 @@ Config::Config(BasicType bt,
       _fastAccess(false),
       _growStrategy(),
       _compactionStrategy(),
-      _arity(8),
-      _lower_bound(LLONG_MIN),
-      _upper_bound(LLONG_MAX),
-      _dense_posting_list_threshold(0.4),
+      _predicateParams(),
       _tensorType(vespalib::eval::ValueType::error_type())
 {
 }

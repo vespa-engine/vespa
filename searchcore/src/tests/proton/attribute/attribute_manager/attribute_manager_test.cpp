@@ -761,9 +761,14 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     AVConfig dense_tensor(BasicType::TENSOR);
     dense_tensor.setTensorType(ValueType::from_spec("tensor(x[10])"));
     AVConfig predicate(BasicType::PREDICATE);
-    predicate.setArity(2);
+    using PredicateParams = search::attribute::PredicateParams;
+    PredicateParams predicateParams;
+    predicateParams.setArity(2);
+    predicate.setPredicateParams(predicateParams);
     AVConfig predicate2(BasicType::PREDICATE);
-    predicate2.setArity(4);
+    PredicateParams predicateParams2;
+    predicateParams2.setArity(4);
+    predicate2.setPredicateParams(predicateParams2);
 
     auto am1(std::make_shared<proton::AttributeManager>
              (test_dir, "test.subdb", TuneFileAttributes(),

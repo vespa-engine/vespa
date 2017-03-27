@@ -46,9 +46,10 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
             }
         }
         if (newConfig.basicType().type() == BasicType::PREDICATE) {
-            if ((oldConfig.arity() != newConfig.arity()) ||
-                (oldConfig.lower_bound() != newConfig.lower_bound()) ||
-                (oldConfig.upper_bound() != newConfig.upper_bound())) {
+            using Params = search::attribute::PersistentPredicateParams;
+            const Params &oldParams = oldConfig.predicateParams();
+            const Params &newParams = newConfig.predicateParams();
+            if (!(oldParams == newParams)) {
                 return false;
             }
         }
