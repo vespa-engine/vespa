@@ -46,17 +46,6 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
     }
 
     @Test
-    public void reference_field_can_reference_self_document_type() throws ParseException, IOException {
-        assertDocumentConfigs(new TestDocumentModelBuilder().build(joinLines(
-                "search ad {",
-                "  document ad {",
-                "    field self_ref type reference<ad> { indexing: attribute }",
-                "  }",
-                "}")),
-                "ref_to_self_type");
-    }
-
-    @Test
     public void reference_data_type_has_a_concrete_target_type() throws ParseException {
         DocumentModel model = new TestDocumentModelBuilder().addCampaign().build(joinLines(
                 "search ad {",

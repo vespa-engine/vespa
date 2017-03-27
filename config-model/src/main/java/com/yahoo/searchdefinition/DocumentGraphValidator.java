@@ -31,17 +31,15 @@ public class DocumentGraphValidator {
         try {
             currentDocument.getDocumentReferences().get()
                     .forEach(entry -> {
-                        DocumentReference documentReference = entry.getValue();
-                        if (!isSelfReference(documentReference, currentDocument)) {
-                            SDDocumentType referencedDocument = entry.getValue().targetSearch().getDocument();
-                            validateDocument(root, referencedDocument);
+                        SDDocumentType referencedDocument = entry.getValue().targetSearch().getDocument();
+                        validateDocument(root, referencedDocument);
+                    });
+            currentDocument.getInheritedTypes()
+                    .forEach(inheritedDocument -> {
+                        if (!isRootDocument(inheritedDocument)) {
+                            validateDocument(root, inheritedDocument);
                         }
                     });
-            currentDocument.getInheritedTypes().forEach(inheritedDocument -> {
-                if (!isRootDocument(inheritedDocument)) {
-                    validateDocument(root, inheritedDocument);
-                }
-            });
         } catch (DocumentGraphException e) {
             e.addParentDocument(currentDocument);
             throw e;
@@ -57,10 +55,6 @@ public class DocumentGraphValidator {
 
     private static boolean isRootDocument(SDDocumentType doc) {
         return doc.getName().equals("document");
-    }
-
-    private static boolean isSelfReference(DocumentReference documentReference, SDDocumentType document) {
-        return documentReference.targetSearch().getDocument().equals(document);
     }
 
     public static class DocumentGraphException extends IllegalArgumentException {
