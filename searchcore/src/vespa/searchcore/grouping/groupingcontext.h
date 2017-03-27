@@ -55,7 +55,7 @@ public:
      * Shallow copy of references
      **/
     GroupingContext(const GroupingContext & rhs);
-    
+
     GroupingContext &operator=(const GroupingContext &) = delete;
 
     /**

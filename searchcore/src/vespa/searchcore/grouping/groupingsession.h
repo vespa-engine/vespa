@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "groupingmanager.h"
+#include "groupingcontext.h"
+#include "sessionid.h"
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <map>
-#include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchcore/grouping/sessionid.h>
+
 
 namespace search {
 
