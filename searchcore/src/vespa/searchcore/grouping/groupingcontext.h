@@ -19,12 +19,10 @@ class GroupingContext
 {
 public:
     using UP = std::unique_ptr<GroupingContext>;
-    using  GroupingPtr =  std::shared_ptr<search::aggregation::Grouping>;
+    using GroupingPtr =  std::shared_ptr<search::aggregation::Grouping>;
     using GroupingList = std::vector<GroupingPtr>;
 
 private:
-    GroupingContext &operator=(const GroupingContext &);
-
     const vespalib::Clock     & _clock;
     fastos::TimeStamp           _timeOfDoom;
     vespalib::nbostream         _os;
@@ -57,6 +55,8 @@ public:
      * Shallow copy of references
      **/
     GroupingContext(const GroupingContext & rhs);
+    
+    GroupingContext &operator=(const GroupingContext &) = delete;
 
     /**
      * Add another grouping to this context.

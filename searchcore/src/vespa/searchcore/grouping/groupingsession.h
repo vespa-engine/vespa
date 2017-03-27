@@ -20,9 +20,6 @@ namespace grouping {
 class GroupingSession
 {
 private:
-    GroupingSession(const GroupingSession &);
-    GroupingSession &operator=(const GroupingSession &);
-
     typedef std::shared_ptr<search::aggregation::Grouping> GroupingPtr;
     typedef std::map<uint32_t, GroupingPtr>                    GroupingMap;
     typedef std::vector<GroupingPtr>                           GroupingList;
@@ -46,6 +43,8 @@ public:
     GroupingSession(const SessionId & sessionId,
                     GroupingContext & groupingContext,
                     const search::attribute::IAttributeContext &attrCtx);
+    GroupingSession(const GroupingSession &) = delete;
+    GroupingSession &operator=(const GroupingSession &) = delete;
 
     /**
      * Release resources

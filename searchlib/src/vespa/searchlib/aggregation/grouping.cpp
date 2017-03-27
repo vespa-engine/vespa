@@ -123,8 +123,7 @@ Grouping::Grouping()
 
 Grouping::Grouping(const Grouping &) = default;
 Grouping & Grouping::operator = (const Grouping &) = default;
-Grouping::Grouping(Grouping &&) noexcept = default;
-Grouping & Grouping::operator = (Grouping &&) noexcept = default;
+
 Grouping::~Grouping() { }
 
 void

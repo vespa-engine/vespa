@@ -10,6 +10,7 @@
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingsession.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
+#include <iostream>
 
 using namespace search::attribute;
 using namespace search::aggregation;
@@ -137,11 +138,15 @@ SessionId createSessionId(const std::string & s) {
 class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
 {
 public:
-    CheckAttributeReferences() : _numrefs(0) { }
+    CheckAttributeReferences(bool log=false) : _log(log), _numrefs(0) { }
+    bool _log;
     int _numrefs;
 private:
     void execute(vespalib::Identifiable &obj) override {
-        if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
+        if (_log) {
+            std::cerr << _numrefs << ": " << &obj << " = " << obj.asString() << std::endl;
+        }
+        if (static_cast<AttributeNode &>(obj).getAttribute() != nullptr) {
             _numrefs++;
         }
     }
@@ -319,10 +324,9 @@ TEST_F("testGroupingSession", DoomFixture()) {
     // Test initialization phase
     GroupingSession session(id, initContext, world.attributeContext);
     CheckAttributeReferences attrCheck2;
-    GroupingList &gl2(initContext.getGroupingList());
-    EXPECT_EQUAL(2u, gl2.size());
-    for (unsigned int i = 0; i < gl2.size(); i++) {
-        gl2[i]->select(attrCheck2, attrCheck2);
+    EXPECT_EQUAL(2u, initContext.getGroupingList().size());
+    for (const auto & g : initContext.getGroupingList()) {
+        g->select(attrCheck2, attrCheck2);
     }
     EXPECT_EQUAL(10u, attrCheck2._numrefs);
     RankedHit hit;

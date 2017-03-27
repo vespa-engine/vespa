@@ -44,8 +44,8 @@ public:
     Grouping();
     Grouping(const Grouping &);
     Grouping & operator = (const Grouping &);
-    Grouping(Grouping &&) noexcept;
-    Grouping & operator = (Grouping &&) noexcept;
+    Grouping(Grouping &&) = default;
+    Grouping & operator = (Grouping &&) = default;
     ~Grouping();
 
     Grouping unchain() const { return *this; }
