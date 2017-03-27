@@ -140,12 +140,12 @@ public:
     CheckAttributeReferences() : _numrefs(0) { }
     int _numrefs;
 private:
-    virtual void execute(vespalib::Identifiable &obj) {
+    void execute(vespalib::Identifiable &obj) override {
         if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
             _numrefs++;
         }
     }
-    virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(AttributeNode::classId); }
+    bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
 };
 
 struct DoomFixture {
@@ -305,9 +305,9 @@ TEST_F("testGroupingSession", DoomFixture()) {
 
     CheckAttributeReferences attrCheck;
     request1.select(attrCheck, attrCheck);
-    EXPECT_EQUAL(attrCheck._numrefs, 0);
+    EXPECT_EQUAL(0u, attrCheck._numrefs);
     request2.select(attrCheck, attrCheck);
-    EXPECT_EQUAL(attrCheck._numrefs, 0);
+    EXPECT_EQUAL(0u, attrCheck._numrefs);
 
     GroupingContext::GroupingPtr r1(new Grouping(request1));
     GroupingContext::GroupingPtr r2(new Grouping(request2));
@@ -320,10 +320,11 @@ TEST_F("testGroupingSession", DoomFixture()) {
     GroupingSession session(id, initContext, world.attributeContext);
     CheckAttributeReferences attrCheck2;
     GroupingList &gl2(initContext.getGroupingList());
+    EXPECT_EQUAL(2u, gl2.size());
     for (unsigned int i = 0; i < gl2.size(); i++) {
         gl2[i]->select(attrCheck2, attrCheck2);
     }
-    EXPECT_EQUAL(attrCheck2._numrefs, 10);
+    EXPECT_EQUAL(10u, attrCheck2._numrefs);
     RankedHit hit;
     hit._docId = 0;
     GroupingManager &manager(session.getGroupingManager());

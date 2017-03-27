@@ -18,9 +18,9 @@ namespace grouping {
 class GroupingContext
 {
 public:
-    typedef std::unique_ptr<GroupingContext>               UP;
-    typedef std::shared_ptr<search::aggregation::Grouping> GroupingPtr;
-    typedef std::vector<GroupingPtr>                       GroupingList;
+    using UP = std::unique_ptr<GroupingContext>;
+    using  GroupingPtr =  std::shared_ptr<search::aggregation::Grouping>;
+    using GroupingList = std::vector<GroupingPtr>;
 
 private:
     GroupingContext &operator=(const GroupingContext &);

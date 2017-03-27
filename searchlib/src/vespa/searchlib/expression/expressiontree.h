@@ -37,8 +37,8 @@ public:
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
-        virtual void execute(vespalib::Identifiable &obj);
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(ExpressionTree::classId); }
+        void execute(vespalib::Identifiable &obj) override;
+        bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(ExpressionTree::classId); }
     };
 
     ExpressionTree();
@@ -55,15 +55,15 @@ public:
     bool execute(const document::Document & doc, HitRank rank) const;
     const ExpressionNode * getRoot() const { return _root.get(); }
     ExpressionNode * getRoot() { return _root.get(); }
-    virtual const ResultNode & getResult() const { return _root->getResult(); }
+    const ResultNode & getResult() const override { return _root->getResult(); }
     friend vespalib::Serializer & operator << (vespalib::Serializer & os, const ExpressionTree & et);
     friend vespalib::Deserializer & operator >> (vespalib::Deserializer & is, ExpressionTree & et);
     void swap(ExpressionTree &);
 private:
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation);
-    virtual bool onExecute() const { return _root->execute(); }
-    virtual void onPrepare(bool preserveAccurateTypes);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
+    bool onExecute() const override { return _root->execute(); }
+    void onPrepare(bool preserveAccurateTypes) override;
 
     typedef std::vector<AttributeNode *> AttributeNodeList;
     typedef std::vector<DocumentAccessorNode *> DocumentAccessorNodeList;
@@ -71,7 +71,7 @@ private:
     typedef std::vector<InterpolatedLookup *> InterpolatedLookupList;
     typedef std::vector<ArrayAtLookup *> ArrayAtLookupList;
 
-    ExpressionNode::CP        _root;
+    vespalib::IdentifiableLinkedPtr<ExpressionNode>        _root;
     AttributeNodeList         _attributeNodes;
     DocumentAccessorNodeList  _documentAccessorNodes;
     RelevanceNodeList         _relevanceNodes;
@@ -79,7 +79,5 @@ private:
     ArrayAtLookupList         _arrayAtLookupNodes;
 };
 
-
 } // namespace expression
 } // namespace search
-

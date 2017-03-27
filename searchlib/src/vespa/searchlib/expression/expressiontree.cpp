@@ -131,6 +131,7 @@ void ExpressionTree::swap(ExpressionTree & e)
     _documentAccessorNodes.swap(e._documentAccessorNodes);
     _relevanceNodes.swap(e._relevanceNodes);
     _interpolatedLookupNodes.swap(e._interpolatedLookupNodes);
+    _arrayAtLookupNodes.swap(_arrayAtLookupNodes);
 }
 
 ExpressionTree::~ExpressionTree()

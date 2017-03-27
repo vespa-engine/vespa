@@ -75,8 +75,8 @@ public:
     GroupingLevelList &levels() { return _levels; }
     Group &root() { return _root; }
 
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate,
-                               vespalib::ObjectOperation &operation);
+    void selectMembers(const vespalib::ObjectPredicate &predicate,
+                       vespalib::ObjectOperation &operation) override;
 
     void merge(Grouping & b);
     void mergePartial(const Grouping & b);

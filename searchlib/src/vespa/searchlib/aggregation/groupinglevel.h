@@ -46,13 +46,13 @@ private:
     protected:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
-        virtual void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
-        virtual void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
-        virtual SingleValueGrouper * clone() const { return new SingleValueGrouper(*this); }
+        SingleValueGrouper * clone() const override { return new SingleValueGrouper(*this); }
     };
     class MultiValueGrouper : public SingleValueGrouper {
     public:
@@ -60,10 +60,10 @@ private:
     private:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
-        virtual void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
-        virtual void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
         virtual MultiValueGrouper * clone() const { return new MultiValueGrouper(*this); }
@@ -121,8 +121,8 @@ public:
         _grouper->group(g, result, doc, rank);
     }
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
 };
 
 }
