@@ -99,7 +99,7 @@ container_drain() {
 
 Resume() {
     # Always start vip for now
-    $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
+    $echo $VESPA_HOME/bin/vespa-routing vip -u node-admin in
 
     # Start filebeat if configured
     if [ -f /etc/filebeat/filebeat.yml ] ; then
@@ -142,7 +142,7 @@ Stop() {
 
 Suspend() {
     # Always stop vip for now
-    $echo $VESPA_HOME/bin/vespa-routing vip -u chef out
+    $echo $VESPA_HOME/bin/vespa-routing vip -u node-admin out
 
     if has_searchnode; then
         $echo $VESPA_HOME/bin/vespa-proton-cmd --local prepareRestart
