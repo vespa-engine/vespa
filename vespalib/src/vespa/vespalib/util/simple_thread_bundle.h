@@ -7,7 +7,6 @@
 #include "runnable.h"
 #include "thread_bundle.h"
 #include "noncopyable.hpp"
-#include "linkedptr.h"
 
 namespace vespalib {
 
