@@ -301,7 +301,7 @@ public class NodeAgentImplTest {
                         .withVespaVersion(vespaVersion));
     }
 
-    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State nodeState, Optional<Long> wantedRestartGeneration) throws Exception {
+    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State nodeState, Optional<Long> wantedRestartGeneration) {
         wantedRestartGeneration.ifPresent(restartGeneration -> nodeSpecBuilder
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration));
@@ -336,12 +336,12 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycled() throws Exception {
+    public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycled() {
         nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State.dirty, Optional.of(1L));
     }
 
     @Test
-    public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycledNoRestartGeneration() throws Exception {
+    public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycledNoRestartGeneration() {
         nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State.dirty, Optional.empty());
     }
 
@@ -473,7 +473,7 @@ public class NodeAgentImplTest {
     }
 
 
-    private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) throws Exception {
+    private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
         Optional<Container> container = dockerImage != null ?
                 Optional.of(new Container(
                         hostName,

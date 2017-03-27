@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 @SuppressWarnings("serial")
-public class OrchestratorException extends Exception {
+public class OrchestratorException extends RuntimeException {
     public OrchestratorException(String message) {
         super(message);
     }
