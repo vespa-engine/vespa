@@ -693,8 +693,8 @@ namespace {
                     }
                     CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
                     bucket = entries.begin()->first;
-                    auto *entry = &(*(entries.begin()->second));
                     auto *entry_wrapper = &(entries.begin()->second);
+                    auto *entry = entry_wrapper->get();
                     if (seed % 95 == 93) { // Delete bucket
                         if ((entry->getBucketInfo().getChecksum() & 2) == 0) {
                             cmd.reset(new api::DeleteBucketCommand(bucket));
