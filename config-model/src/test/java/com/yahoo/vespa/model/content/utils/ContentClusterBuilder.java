@@ -2,11 +2,8 @@
 package com.yahoo.vespa.model.content.utils;
 
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import org.w3c.dom.Document;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -66,11 +63,9 @@ public class ContentClusterBuilder {
     }
 
     public ContentClusterBuilder docTypes(String ... docTypes) {
-        List<DocType> result = new ArrayList<>();
-        for (String type : docTypes) {
-            result.add(new DocType(type));
-        }
-        this.docTypes = result;
+        this.docTypes = Arrays.asList(docTypes).stream().
+                map(type -> new DocType(type)).
+                collect(Collectors.toList());
         return this;
     }
 

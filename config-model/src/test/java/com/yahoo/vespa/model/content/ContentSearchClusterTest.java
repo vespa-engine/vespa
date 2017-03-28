@@ -7,10 +7,9 @@ import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
+import static com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder.createSearchDefinitions;
 import static junit.framework.TestCase.assertEquals;
 
 /**
@@ -27,21 +26,14 @@ public class ContentSearchClusterTest {
     }
 
     private static ContentCluster createClusterWithTwoDocumentType() throws Exception {
-        List<String> docTypes = Arrays.asList("foo", "bar");
         return createCluster(new ContentClusterBuilder().docTypes("foo", "bar").getXml(),
-                generateSearchDefinitions(docTypes));
+                createSearchDefinitions("foo", "bar"));
     }
 
     private static ContentCluster createClusterWithGlobalType() throws Exception {
         return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(new ContentClusterBuilder.DocType("global", true),
                 new ContentClusterBuilder.DocType("regular"))).getXml(),
-                generateSearchDefinitions(Arrays.asList("global", "regular")));
-    }
-
-    private static List<String> generateSearchDefinitions(List<String> docTypes) {
-        return docTypes.stream().
-                map(type -> new com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder().name(type).build()).
-                collect(Collectors.toList());
+                createSearchDefinitions("global", "regular"));
     }
 
     private static ProtonConfig getProtonConfig(ContentCluster cluster) {
