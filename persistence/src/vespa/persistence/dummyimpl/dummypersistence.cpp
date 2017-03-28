@@ -716,7 +716,7 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
     LOG(debug, "createBucket(%s)", b.toString().c_str());
     vespalib::MonitorGuard lock(_monitor);
     if (_content[b.getPartition()].find(b) == _content[b.getPartition()].end()) {
-        _content[b.getPartition()][b] = BucketContent::SP(new BucketContent);
+        _content[b.getPartition()][b] = std::make_shared<BucketContent>();
     } else {
         assert(!_content[b.getPartition()][b]->_inUse);
         LOG(debug, "%s already existed", b.toString().c_str());
