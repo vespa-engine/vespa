@@ -198,11 +198,7 @@ public class Search implements Serializable, ImmutableSearch {
 
     @Override
     public ImmutableSDField getField(String name) {
-        ImmutableSDField field = getExtraField(name);
-        if (field != null) {
-            return field;
-        }
-        field = (ImmutableSDField)docType.getField(name);
+        ImmutableSDField field = getConcreteField(name);
         if (field != null) {
             return field;
         }
