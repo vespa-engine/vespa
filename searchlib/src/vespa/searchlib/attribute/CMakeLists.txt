@@ -4,6 +4,7 @@ vespa_add_library(searchlib_attribute OBJECT
     address_space_usage.cpp
     attribute.cpp
     attribute_blueprint_factory.cpp
+    attribute_header.cpp
     attribute_weighted_set_blueprint.cpp
     attributecontext.cpp
     attributefactory.cpp

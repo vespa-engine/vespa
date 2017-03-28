@@ -3,7 +3,6 @@
 #pragma once
 
 #include "address_space_usage.h"
-#include "iattributesavetarget.h"
 #include "changevector.h"
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -46,6 +45,7 @@ namespace search {
     class AttributeWriteGuard;
     class AttributeSaver;
     class EnumStoreBase;
+    class IAttributeSaveTarget;
     class IDocumentWeightAttribute;
     class QueryTermSimple;
     class QueryTermBase;
@@ -55,6 +55,7 @@ namespace search {
     }
 
     namespace attribute {
+        class AttributeHeader;
         class IPostingListSearchContext;
         class IPostingListAttributeBase;
         class Interlock;
@@ -68,6 +69,7 @@ namespace search {
 }
 
 namespace search {
+
 
 using search::attribute::WeightedType;
 using search::attribute::Status;
@@ -439,7 +441,7 @@ public:
     /** Saves this attribute vector using the given saveTarget **/
     bool save(IAttributeSaveTarget & saveTarget);
 
-    IAttributeSaveTarget::Config createSaveTargetConfig() const;
+    attribute::AttributeHeader createAttributeHeader() const;
 
     /** Returns whether this attribute has load data files on disk **/
     bool hasLoadData() const;

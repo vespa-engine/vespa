@@ -103,7 +103,7 @@ GenericTensorAttribute::onInitSave()
                                              takeGuard());
     return std::make_unique<GenericTensorAttributeSaver>
         (std::move(guard),
-         this->createSaveTargetConfig(),
+         this->createAttributeHeader(),
          getRefCopy(),
          _genericTensorStore);
 }

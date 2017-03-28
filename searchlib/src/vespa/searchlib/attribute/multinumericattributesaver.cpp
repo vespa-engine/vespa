@@ -44,9 +44,9 @@ public:
 template <typename MultiValueT>
 MultiValueNumericAttributeSaver<MultiValueT>::
 MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
-                               const IAttributeSaveTarget::Config &cfg,
-                               const MultiValueMapping &mvMapping)
-    : Parent(std::move(guard), cfg, mvMapping),
+                                const attribute::AttributeHeader &header,
+                                const MultiValueMapping &mvMapping)
+    : Parent(std::move(guard), header, mvMapping),
       _mvMapping(mvMapping)
 {
 }

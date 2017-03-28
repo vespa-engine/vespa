@@ -4,9 +4,9 @@
 #include "generic_tensor_attribute_saver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include "generic_tensor_store.h"
+#include <vespa/searchlib/attribute/iattributesavetarget.h>
 
 using vespalib::GenerationHandler;
-using search::IAttributeSaveTarget;
 
 namespace search {
 
@@ -14,10 +14,10 @@ namespace tensor {
 
 GenericTensorAttributeSaver::
 GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
-                            const IAttributeSaveTarget::Config &cfg,
+                            const attribute::AttributeHeader &header,
                             RefCopyVector &&refs,
                             const GenericTensorStore &tensorStore)
-    : AttributeSaver(std::move(guard), cfg),
+    : AttributeSaver(std::move(guard), header),
       _refs(std::move(refs)),
       _tensorStore(tensorStore)
 {

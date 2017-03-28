@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/attributesaver.h>
-#include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include "tensor_attribute.h"
 
 namespace search {
@@ -27,9 +26,9 @@ private:
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
     GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
-                         const IAttributeSaveTarget::Config &cfg,
-                         RefCopyVector &&refs,
-                         const GenericTensorStore &tensorStore);
+                                const attribute::AttributeHeader &header,
+                                RefCopyVector &&refs,
+                                const GenericTensorStore &tensorStore);
 
     virtual ~GenericTensorAttributeSaver();
 };

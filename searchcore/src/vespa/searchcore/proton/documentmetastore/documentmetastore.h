@@ -12,7 +12,6 @@
 #include "raw_document_meta_data.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
-#include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/searchlib/queryeval/blueprint.h>

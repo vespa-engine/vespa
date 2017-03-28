@@ -3,6 +3,7 @@
 #include "singleenumattributesaver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/array.hpp>
+#include "iattributesavetarget.h"
 
 
 using vespalib::GenerationHandler;
@@ -11,10 +12,10 @@ namespace search {
 
 SingleValueEnumAttributeSaver::
 SingleValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
-                              const IAttributeSaveTarget::Config &cfg,
+                              const attribute::AttributeHeader &header,
                               EnumIndexCopyVector &&indices,
                               const EnumStoreBase &enumStore)
-    : AttributeSaver(std::move(guard), cfg),
+    : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _enumSaver(enumStore, false)
 {

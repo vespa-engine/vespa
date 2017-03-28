@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "attributesaver.h"
+#include "iattributesavetarget.h"
 
 
 using vespalib::GenerationHandler;
@@ -10,9 +11,9 @@ namespace search
 {
 
 AttributeSaver::AttributeSaver(GenerationHandler::Guard &&guard,
-                               const IAttributeSaveTarget::Config &cfg)
+                               const attribute::AttributeHeader &header)
     : _guard(std::move(guard)),
-      _cfg(cfg)
+      _header(header)
 {
 }
 
@@ -25,7 +26,7 @@ AttributeSaver::~AttributeSaver()
 bool
 AttributeSaver::save(IAttributeSaveTarget &saveTarget)
 {
-    saveTarget.setConfig(_cfg);
+    saveTarget.setHeader(_header);
     if (!saveTarget.setup()) {
         return false;
     }

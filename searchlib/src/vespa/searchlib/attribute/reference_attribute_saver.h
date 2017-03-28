@@ -7,7 +7,6 @@
 #include <vespa/searchlib/datastore/unique_store.h>
 #include <vespa/searchlib/datastore/unique_store_saver.h>
 #include <vespa/searchlib/common/rcuvector.h>
-#include "iattributesavetarget.h"
 #include "reference_attribute.h"
 
 namespace search {
@@ -41,7 +40,7 @@ private:
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
     ReferenceAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
-                            const IAttributeSaveTarget::Config &cfg,
+                            const attribute::AttributeHeader &header,
                             IndicesCopyVector &&indices,
                             const Store &store);
 

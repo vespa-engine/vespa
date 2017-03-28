@@ -310,7 +310,7 @@ SingleValueEnumAttribute<B>::onInitSave()
                                              takeGuard());
     return std::make_unique<SingleValueEnumAttributeSaver>
         (std::move(guard),
-         this->createSaveTargetConfig(),
+         this->createAttributeHeader(),
          getIndicesCopy(this->getCommittedDocIdLimit()),
          this->_enumStore);
 }

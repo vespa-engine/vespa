@@ -456,7 +456,7 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget)
         return saver->save(saveTarget);
     }
     // New style save not available, use old style save
-    saveTarget.setConfig(createSaveTargetConfig());
+    saveTarget.setHeader(createAttributeHeader());
     if (!saveTarget.setup()) {
         return false;
     }
@@ -465,9 +465,9 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
-IAttributeSaveTarget::Config
-AttributeVector::createSaveTargetConfig() const {
-    return IAttributeSaveTarget::Config(getBaseFileName(),
+attribute::AttributeHeader
+AttributeVector::createAttributeHeader() const {
+    return attribute::AttributeHeader(getBaseFileName(),
                                    getConfig().basicType().asString(),
                                    getConfig().collectionType().asString(),
                                    getConfig().basicType().type() == BasicType::Type::TENSOR

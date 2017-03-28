@@ -2,9 +2,9 @@
 
 #include <vespa/fastos/fastos.h>
 #include "singlenumericattributesaver.h"
+#include "iattributesavetarget.h"
 
 using vespalib::GenerationHandler;
-using search::IAttributeSaveTarget;
 
 namespace search {
 
@@ -17,9 +17,9 @@ const uint32_t MIN_ALIGNMENT = 4096;
 
 
 SingleValueNumericAttributeSaver::
-SingleValueNumericAttributeSaver(const IAttributeSaveTarget::Config &cfg,
+SingleValueNumericAttributeSaver(const attribute::AttributeHeader &header,
                                  const void *data, size_t size)
-  : AttributeSaver(vespalib::GenerationHandler::Guard(), cfg),
+  : AttributeSaver(vespalib::GenerationHandler::Guard(), header),
     _buf()
 {
     _buf = std::make_unique<BufferBuf>(size, MIN_ALIGNMENT);

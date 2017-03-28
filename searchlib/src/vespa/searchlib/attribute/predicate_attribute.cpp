@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include "iattributesavetarget.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_attribute");

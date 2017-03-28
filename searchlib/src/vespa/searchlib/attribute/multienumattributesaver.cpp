@@ -73,10 +73,10 @@ public:
 template <typename MultiValueT>
 MultiValueEnumAttributeSaver<MultiValueT>::
 MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
-                             const IAttributeSaveTarget::Config &cfg,
+                             const attribute::AttributeHeader &header,
                              const MultiValueMapping &mvMapping,
                              const EnumStoreBase &enumStore)
-    : Parent(std::move(guard), cfg, mvMapping),
+    : Parent(std::move(guard), header, mvMapping),
       _mvMapping(mvMapping),
       _enumSaver(enumStore, true)
 {

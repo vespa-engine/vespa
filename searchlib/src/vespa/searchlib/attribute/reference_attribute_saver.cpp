@@ -3,6 +3,7 @@
 #include "reference_attribute_saver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/array.hpp>
+#include "iattributesavetarget.h"
 
 
 using vespalib::GenerationHandler;
@@ -14,10 +15,10 @@ namespace attribute {
 
 ReferenceAttributeSaver::
 ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
-                        const IAttributeSaveTarget::Config &cfg,
+                        const attribute::AttributeHeader &header,
                         IndicesCopyVector &&indices,
                         const Store &store)
-    : AttributeSaver(std::move(guard), cfg),
+    : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _store(store),
       _saver(store.getSaver())

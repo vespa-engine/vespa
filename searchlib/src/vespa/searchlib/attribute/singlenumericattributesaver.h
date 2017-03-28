@@ -22,7 +22,7 @@ private:
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    SingleValueNumericAttributeSaver(const IAttributeSaveTarget::Config &cfg,
+    SingleValueNumericAttributeSaver(const attribute::AttributeHeader &header,
                                      const void *data, size_t size);
 
     virtual ~SingleValueNumericAttributeSaver();
