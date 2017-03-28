@@ -29,7 +29,7 @@ const Config int16_sv(BasicType::Type::INT16);
 const Config int32_array(BasicType::Type::INT32, CollectionType::Type::ARRAY);
 const Config predicate(BasicType::Type::PREDICATE);
 
-Config getPredicate2(uint32_t arity)
+Config getPredicateWithArity(uint32_t arity)
 {
     Config ret(predicate);
     search::attribute::PredicateParams predicateParams;
@@ -141,7 +141,7 @@ TEST("require that predicate attributes will not be initialized with mismatching
 {
     saveAttr("a", predicate, 10, 2);
     Fixture f;
-    auto av = f.createInitializer("a", getPredicate2(4), 5)->init();
+    auto av = f.createInitializer("a", getPredicateWithArity(4), 5)->init();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
