@@ -721,12 +721,6 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
-                <!-- WARNING: If you change this version, you also need to update
-                         zkfacade/src/main/java/org/apache/curator/**/package-info.java
-                     using something like
-                         find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
-                             xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 2, minor = 9, micro = 1/g'
-                -->
                 <version>${curator.version}</version>
             </dependency>
             <dependency>
@@ -1070,7 +1064,13 @@
         <aries.spifly.version>1.0.8</aries.spifly.version>
         <aries.util.version>1.0.0</aries.util.version>
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
-        <curator.version>2.9.1</curator.version>
+        <!-- WARNING: If you change curator version, you also need to update
+                 zkfacade/src/main/java/org/apache/curator/**/package-info.java
+             using something like
+                 find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
+                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 2, minor = 9, micro = 1/g'
+        -->
+        <curator.version>2.12.0</curator.version>
         <jackson2.version>2.8.3</jackson2.version>
         <jersey2.version>2.23.2</jersey2.version>
         <jetty.version>9.4.3.v20170317</jetty.version>
