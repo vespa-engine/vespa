@@ -159,7 +159,7 @@ public class SessionZooKeeperClient {
                 log.log(LogLevel.INFO, "Unable to locate application id at '" + path + "', returning default");
                 return ApplicationId.defaultId();
             }
-            return ApplicationId.fromSerializedForm(tenant, configCurator.getData(path));
+            return ApplicationId.fromSerializedForm(configCurator.getData(path));
         } catch (RuntimeException e) {
             throw new RuntimeException("Unable to read application id from '" + path + "'", e);
         }
