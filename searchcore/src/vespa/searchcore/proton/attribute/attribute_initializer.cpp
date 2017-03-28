@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -19,17 +20,9 @@ using search::IndexMetaInfo;
 
 namespace proton {
 
-typedef AttributeInitializer::AttributeHeader AttributeHeader;
+using search::attribute::AttributeHeader;
 
 namespace {
-
-const vespalib::string dataTypeTag = "datatype";
-const vespalib::string collectionTypeTag = "collectiontype";
-const vespalib::string createSerialNumTag = "createSerialNum";
-const vespalib::string tensorTypeTag = "tensortype";
-const vespalib::string predicateArityTag = "predicate.arity";
-const vespalib::string predicateLowerBoundTag = "predicate.lower_bound";
-const vespalib::string predicateUpperBoundTag = "predicate.upper_bound";
 
 vespalib::string
 extraPredicateType(const search::attribute::PersistentPredicateParams &params)
@@ -44,10 +37,10 @@ extraPredicateType(const search::attribute::PersistentPredicateParams &params)
 vespalib::string
 extraType(const Config &cfg)
 {
-    if (cfg.basicType().type() == BasicType::TENSOR) {
+    if (cfg.basicType().type() == BasicType::Type::TENSOR) {
         return cfg.tensorType().to_spec();
     }
-    if (cfg.basicType().type() == BasicType::PREDICATE) {
+    if (cfg.basicType().type() == BasicType::Type::PREDICATE) {
         return extraPredicateType(cfg.predicateParams());
     }
     return "";
@@ -56,51 +49,30 @@ extraType(const Config &cfg)
 vespalib::string
 extraType(const AttributeHeader &header)
 {
-    if (header._btString == "tensor") {
-        return header._ttString;
+    if (header.getBasicType().type() == BasicType::Type::TENSOR) {
+        return header.getTensorType().to_spec();
     }
-    if (header._btString == "predicate") {
-        if (header._predicateParamsSet) {
-            return extraPredicateType(header._predicateParams);
-        }
+    if (header.getBasicType().type() == BasicType::Type::PREDICATE) {
+        return extraPredicateType(header.getPredicateParams());
     }
     return "";
 }
 
-uint64_t
-extractCreateSerialNum(const vespalib::GenericHeader &header)
-{
-    if (header.hasTag(createSerialNumTag)) {
-        return header.getTag(createSerialNumTag).asInteger();
-    } else {
-        return 0u;
-    }
-}
-
 bool
-extractHeaderTypeOK(const vespalib::GenericHeader &header, const Config &cfg)
+headerTypeOK(const AttributeHeader &header, const Config &cfg)
 {
-    if (!header.hasTag(dataTypeTag) || !header.hasTag(collectionTypeTag)) {
+    if ((header.getBasicType().type() != cfg.basicType().type()) ||
+        (header.getCollectionType().type() != cfg.collectionType().type())) {
         return false;
     }
-    if ((header.getTag(dataTypeTag).asString() != cfg.basicType().asString()) ||
-        (header.getTag(collectionTypeTag).asString() != cfg.collectionType().asString())) {
-        return false;
-    }
-    if (cfg.basicType().type() == BasicType::TENSOR) {
-        if (!header.hasTag(tensorTypeTag)) {
-            return false;
-        }
-        if (header.getTag(tensorTypeTag).asString() != cfg.tensorType().to_spec()) {
+    if (cfg.basicType().type() == BasicType::Type::TENSOR) {
+        if (header.getTensorType() != cfg.tensorType()) {
             return false;
         }
     }
     if (cfg.basicType().type() == BasicType::PREDICATE) {
-        if (header.hasTag(predicateArityTag) && header.hasTag(predicateLowerBoundTag) && header.hasTag(predicateUpperBoundTag)) {
-            const auto &params = cfg.predicateParams();
-            if ((header.getTag(predicateArityTag).asInteger() != params.arity()) ||
-                (header.getTag(predicateLowerBoundTag).asInteger() != params.lower_bound()) ||
-                (header.getTag(predicateUpperBoundTag).asInteger() != params.upper_bound())) {
+        if (header.getPredicateParamsSet()) {
+            if (!(header.getPredicateParams() == cfg.predicateParams())) {
                 return false;
             }
         }
@@ -109,37 +81,13 @@ extractHeaderTypeOK(const vespalib::GenericHeader &header, const Config &cfg)
 }
 
 AttributeHeader
-extractHeader(const AttributeVector::SP &attr,
-              const vespalib::string &attrFileName)
+extractHeader(const vespalib::string &attrFileName)
 {
-
     auto df = search::FileUtil::openFile(attrFileName + ".dat");
     vespalib::FileHeader datHeader;
     datHeader.readFile(*df);
     AttributeHeader retval;
-    retval._createSerialNum = extractCreateSerialNum(datHeader);
-    retval._headerTypeOK = extractHeaderTypeOK(datHeader, attr->getConfig());
-    if (datHeader.hasTag(dataTypeTag)) {
-        retval._btString = datHeader.getTag(dataTypeTag).asString();
-    }
-    if (datHeader.hasTag(collectionTypeTag)) {
-        retval._ctString = datHeader.getTag(collectionTypeTag).asString();
-    }
-    if (datHeader.hasTag(tensorTypeTag)) {
-        retval._ttString = datHeader.getTag(tensorTypeTag).asString();
-    }
-    if (datHeader.hasTag(predicateArityTag)) {
-        retval._predicateParamsSet = true;
-        retval._predicateParams.setArity(datHeader.getTag(predicateArityTag).asInteger());
-    }
-    if (datHeader.hasTag(predicateLowerBoundTag)) {
-        retval._predicateParamsSet = true;
-        retval._predicateParams.setBounds(datHeader.getTag(predicateLowerBoundTag).asInteger(), retval._predicateParams.upper_bound());
-    }
-    if (datHeader.hasTag(predicateUpperBoundTag)) {
-        retval._predicateParamsSet = true;
-        retval._predicateParams.setBounds(retval._predicateParams.lower_bound(), datHeader.getTag(predicateUpperBoundTag).asInteger());
-    }
+    retval.extractTags(datHeader);
     return retval;
 }
 
@@ -149,9 +97,9 @@ logAttributeTooNew(const AttributeVector::SP &attr,
                    uint64_t serialNum)
 {
     LOG(info, "Attribute vector '%s' is too new (%" PRIu64 " > %" PRIu64 ")",
-            attr->getBaseFileName().c_str(),
-            header._createSerialNum,
-            serialNum);
+        attr->getBaseFileName().c_str(),
+        header.getCreateSerialNum(),
+        serialNum);
 }
 
 void
@@ -166,25 +114,12 @@ logAttributeWrongType(const AttributeVector::SP &attr,
             cfg.basicType().asString(),
             cfg.collectionType().asString(),
             extraCfgType.c_str(),
-            header._btString.c_str(),
-            header._ctString.c_str(),
+            header.getBasicType().asString(),
+            header.getCollectionType().asString(),
             extraHeaderType.c_str());
 }
 
 }
-
-AttributeInitializer::AttributeHeader::AttributeHeader()
-    : _createSerialNum(0),
-      _headerTypeOK(false),
-      _predicateParamsSet(false),
-      _btString("unknown"),
-      _ctString("unknown"),
-      _ttString("unknown"),
-      _predicateParams()
-{
-}
-
-AttributeInitializer::AttributeHeader::~AttributeHeader() {}
 
 AttributeVector::SP
 AttributeInitializer::tryLoadAttribute() const
@@ -193,8 +128,8 @@ AttributeInitializer::tryLoadAttribute() const
     vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
     if (serialNum != 0) {
-        AttributeHeader header = extractHeader(attr, attrFileName);
-        if (header._createSerialNum > _currentSerialNum || !header._headerTypeOK) {
+        AttributeHeader header = extractHeader(attrFileName);
+        if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig())) {
             setupEmptyAttribute(attr, serialNum, header);
             return attr;
         }
@@ -233,10 +168,10 @@ AttributeInitializer::setupEmptyAttribute(AttributeVector::SP &attr,
                                           search::SerialNum serialNum,
                                           const AttributeHeader &header) const
 {
-    if (header._createSerialNum > _currentSerialNum) {
+    if (header.getCreateSerialNum() > _currentSerialNum) {
         logAttributeTooNew(attr, header, _currentSerialNum);
     }
-    if (!header._headerTypeOK) {
+    if (!headerTypeOK(header, attr->getConfig())) {
         logAttributeWrongType(attr, header);
     }
     LOG(info, "Returning empty attribute vector for '%s'",

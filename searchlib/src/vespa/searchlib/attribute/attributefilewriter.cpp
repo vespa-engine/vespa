@@ -146,31 +146,8 @@ AttributeFileWriter::writeHeader()
 void
 AttributeFileWriter::addTags(vespalib::GenericHeader &header)
 {
-    typedef vespalib::GenericHeader::Tag Tag;
-    header.putTag(Tag("datatype", _header.getBasicType().asString()));
-    header.putTag(Tag("collectiontype", _header.getCollectionType().asString()));
-    header.putTag(Tag("uniqueValueCount", _header.getUniqueValueCount()));
-    header.putTag(Tag("totalValueCount", _header.getTotalValueCount()));
-    header.putTag(Tag("docIdLimit", _header.getNumDocs()));
-    header.putTag(Tag("frozen", 0));
-    header.putTag(Tag("fileBitSize", 0));
-    header.putTag(Tag("version", _header.getVersion()));
-    if (_header.getEnumerated()) {
-        header.putTag(Tag("enumerated", 1));
-    }
-    uint64_t createSerialNum = _header.getCreateSerialNum();
-    if (createSerialNum != 0u) {
-        header.putTag(Tag("createSerialNum", createSerialNum));
-    }
-    if (_header.getBasicType().type() == attribute::BasicType::Type::TENSOR) {
-        header.putTag(Tag("tensortype", _header.getTensorType().to_spec()));;
-    }
-    if (_header.getBasicType().type() == attribute::BasicType::Type::PREDICATE) {
-        const auto & params = _header.getPredicateParams();
-        header.putTag(Tag("predicate.arity", params.arity()));
-        header.putTag(Tag("predicate.lower_bound", params.lower_bound()));
-        header.putTag(Tag("predicate.upper_bound", params.upper_bound()));
-    }
+    _header.addTags(header);
+    using Tag = vespalib::GenericHeader::Tag;
     header.putTag(Tag("desc", _desc));
 }
 

@@ -8,22 +8,26 @@
 #include <vespa/searchcommon/attribute/predicate_params.h>
 #include <vespa/eval/eval/value_type.h>
 
+namespace vespalib { class GenericHeader; }
+
 namespace search {
 namespace attribute {
 
 /**
- * Attribute header class used by actual IAttributeTarget implementations.
+ * Attribute header class used by attribute savers and attribute initializer
+ * to convert to/from generic header tags.
  **/
 class AttributeHeader {
 private:
     vespalib::string _fileName;
-    attribute::BasicType _basicType;
-    attribute::CollectionType _collectionType;
+    BasicType _basicType;
+    CollectionType _collectionType;
     vespalib::eval::ValueType _tensorType;
     bool        _hasMultiValue;
     bool        _hasWeightedSetType;
     bool        _enumerated;
-    attribute::PersistentPredicateParams _predicateParams;
+    bool        _predicateParamsSet;
+    PersistentPredicateParams _predicateParams;
     uint32_t    _numDocs;
     uint32_t    _fixedWidth;
     uint64_t    _uniqueValueCount;
@@ -33,12 +37,12 @@ private:
 public:
     AttributeHeader();
     AttributeHeader(const vespalib::string &fileName,
-                    attribute::BasicType basicType,
-                    attribute::CollectionType collectionType,
+                    BasicType basicType,
+                    CollectionType collectionType,
                     const vespalib::eval::ValueType &tensorType,
                     bool multiValue, bool weightedSetType,
                     bool enumerated,
-                    const attribute::PersistentPredicateParams &predicateParams,
+                    const PersistentPredicateParams &predicateParams,
                     uint32_t numDocs,
                     uint32_t fixedWidth,
                     uint64_t uniqueValueCount,
@@ -48,8 +52,8 @@ public:
     ~AttributeHeader();
 
     const vespalib::string & getFileName() const { return _fileName; }
-    const attribute::BasicType & getBasicType() const { return _basicType; }
-    const attribute::CollectionType &getCollectionType() const { return _collectionType; }
+    const BasicType & getBasicType() const { return _basicType; }
+    const CollectionType &getCollectionType() const { return _collectionType; }
     const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
     bool hasMultiValue() const { return _hasMultiValue; }
     bool hasWeightedSetType() const { return _hasWeightedSetType; }
@@ -60,7 +64,10 @@ public:
     bool getEnumerated(void) const { return _enumerated; }
     uint64_t getCreateSerialNum(void) const { return _createSerialNum; }
     uint32_t getVersion() const  { return _version; }
-    const attribute::PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
+    const PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
+    bool getPredicateParamsSet() const { return _predicateParamsSet; }
+    void extractTags(const vespalib::GenericHeader &header);
+    void addTags(vespalib::GenericHeader &header) const;
 };
 
 } // namespace search::attribute

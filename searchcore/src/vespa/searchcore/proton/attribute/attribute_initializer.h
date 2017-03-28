@@ -8,6 +8,8 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 
+namespace search { namespace attribute { class AttributeHeader; } }
+
 namespace proton {
 
 class AttributeDirectory;
@@ -19,19 +21,6 @@ class AttributeInitializer
 {
 public:
     typedef std::unique_ptr<AttributeInitializer> UP;
-
-    struct AttributeHeader
-    {
-        uint64_t _createSerialNum;
-        bool _headerTypeOK;
-        bool _predicateParamsSet;
-        vespalib::string _btString;
-        vespalib::string _ctString;
-        vespalib::string _ttString;
-        search::attribute::PersistentPredicateParams _predicateParams;
-        AttributeHeader();
-        ~AttributeHeader();
-    };
 
 private:
     std::shared_ptr<AttributeDirectory> _attrDir;
@@ -47,7 +36,7 @@ private:
 
     void setupEmptyAttribute(search::AttributeVector::SP &attr,
                              search::SerialNum serialNum,
-                             const AttributeHeader &header) const;
+                             const search::attribute::AttributeHeader &header) const;
 
     search::AttributeVector::SP createAndSetupEmptyAttribute() const;
 
