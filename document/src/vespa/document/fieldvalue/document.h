@@ -150,6 +150,7 @@ public:
 
     void setFieldValue(const Field& field, FieldValue::UP data) override;
 private:
+    bool hasBodyField() const;
     bool hasFieldValue(const Field& field) const override { return _fields.hasValue(field); }
     void removeFieldValue(const Field& field) override { _fields.remove(field); }
     FieldValue::UP getFieldValue(const Field& field) const override { return _fields.getValue(field); }

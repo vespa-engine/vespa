@@ -379,9 +379,23 @@ void Document::serializeBody(ByteBuffer& buffer) const {
     buffer.putBytes(stream.peek(), stream.size());
 }
 
+bool Document::hasBodyField() const {
+    for (document::StructuredFieldValue::const_iterator it(getFields().begin()), mt(getFields().end());
+         it != mt;
+         ++it)
+    {
+        if ( ! it.field().isHeaderField() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Document::serializeBody(nbostream& stream) const {
-    VespaDocumentSerializer serializer(stream);
-    serializer.write(_fields, BodyFields());
+    if (hasBodyField()) {
+        VespaDocumentSerializer serializer(stream);
+        serializer.write(_fields, BodyFields());
+    }
 }
 
 void Document::deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & os) {
