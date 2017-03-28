@@ -6,6 +6,7 @@
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include "iattributesavetarget.h"
+#include "attribute_header.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_attribute");
@@ -184,8 +185,11 @@ bool PredicateAttribute::onLoad()
     buffer.moveFreeToData(size);
 
     const GenericHeader &header = loaded_buffer->getHeader();
-    uint32_t version = static_cast<uint32_t>(
-            header.hasTag("version") ? header.getTag("version").asInteger() : 0);
+    auto attributeHeader = attribute::AttributeHeader::extractTags(header);
+    uint32_t version = attributeHeader.getVersion();
+
+    setCreateSerialNum(attributeHeader.getCreateSerialNum());
+
     LOG(info, "Loading predicate attribute version %d. getVersion() = %d", version, getVersion());
 
     DocId highest_doc_id;

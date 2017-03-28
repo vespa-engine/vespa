@@ -32,6 +32,8 @@ private:
     uint64_t    _totalValueCount;
     uint64_t    _createSerialNum;
     uint32_t    _version;
+
+    void internalExtractTags(const vespalib::GenericHeader &header);
 public:
     AttributeHeader();
     AttributeHeader(const vespalib::string &fileName,
@@ -63,7 +65,7 @@ public:
     uint32_t getVersion() const  { return _version; }
     const PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
     bool getPredicateParamsSet() const { return _predicateParamsSet; }
-    void extractTags(const vespalib::GenericHeader &header);
+    static AttributeHeader extractTags(const vespalib::GenericHeader &header);
     void addTags(vespalib::GenericHeader &header) const;
 };
 

@@ -8,6 +8,7 @@ namespace attribute {
 
 namespace {
 
+const vespalib::string versionTag = "version";
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string createSerialNumTag = "createSerialNum";
@@ -68,7 +69,7 @@ AttributeHeader::~AttributeHeader()
 }
 
 void
-AttributeHeader::extractTags(const vespalib::GenericHeader &header)
+AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
 {
     if (header.hasTag(createSerialNumTag)) {
         _createSerialNum = header.getTag(createSerialNumTag).asInteger();
@@ -95,6 +96,17 @@ AttributeHeader::extractTags(const vespalib::GenericHeader &header)
             assert(!header.hasTag(predicateUpperBoundTag));
         }
     }
+    if (header.hasTag(versionTag)) {
+        _version = header.getTag(versionTag).asInteger();
+    }
+}
+
+AttributeHeader
+AttributeHeader::extractTags(const vespalib::GenericHeader &header)
+{
+    AttributeHeader result;
+    result.internalExtractTags(header);
+    return result;
 }
 
 void
@@ -108,7 +120,7 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
     header.putTag(Tag("docIdLimit", _numDocs));
     header.putTag(Tag("frozen", 0));
     header.putTag(Tag("fileBitSize", 0));
-    header.putTag(Tag("version", _version));
+    header.putTag(Tag(versionTag, _version));
     if (_enumerated) {
         header.putTag(Tag("enumerated", 1));
     }
