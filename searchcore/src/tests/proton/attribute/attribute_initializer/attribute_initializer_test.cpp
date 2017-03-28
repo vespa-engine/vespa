@@ -24,6 +24,9 @@ namespace proton
 
 namespace {
 
+const Config int32_sv(BasicType::Type::INT32);
+const Config int16_sv(BasicType::Type::INT16);
+const Config int32_array(BasicType::Type::INT32, CollectionType::Type::ARRAY);
 const Config predicate(BasicType::Type::PREDICATE);
 
 Config getPredicate2(uint32_t arity)
@@ -89,6 +92,32 @@ Fixture::createInitializer(const vespalib::string &name, const Config &cfg, Seri
     return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(name), "test.subdb", cfg, serialNum, _factory);
 }
 
+TEST("require that integer attribute can be initialized")
+{
+    saveAttr("a", int32_sv, 10, 2);
+    Fixture f;
+    auto av = f.createInitializer("a", int32_sv, 5)->init();
+    EXPECT_EQUAL(2, av->getCreateSerialNum());
+    EXPECT_EQUAL(2, av->getNumDocs());
+}
+
+TEST("require that mismatching base type is not loaded")
+{
+    saveAttr("a", int32_sv, 10, 2);
+    Fixture f;
+    auto av = f.createInitializer("a", int16_sv, 5)->init();
+    EXPECT_EQUAL(5, av->getCreateSerialNum());
+    EXPECT_EQUAL(1, av->getNumDocs());
+}
+
+TEST("require that mismatching collection type is not loaded")
+{
+    saveAttr("a", int32_sv, 10, 2);
+    Fixture f;
+    auto av = f.createInitializer("a", int32_array, 5)->init();
+    EXPECT_EQUAL(5, av->getCreateSerialNum());
+    EXPECT_EQUAL(1, av->getNumDocs());
+}
 
 TEST("require that predicate attributes can be initialized")
 {
