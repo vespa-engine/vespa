@@ -6,6 +6,7 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import org.w3c.dom.Document;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -18,10 +19,29 @@ import java.util.stream.Collectors;
  */
 public class ContentClusterBuilder {
 
+    public static class DocType {
+        private final String name;
+        private final boolean global;
+
+        public DocType(String name, boolean global) {
+            this.name = name;
+            this.global = global;
+        }
+
+        public DocType(String name) {
+            this(name, false);
+        }
+
+        public String toXml() {
+            return (global ? "<document mode='index' type='" + name + "' global='true'/>" :
+                    "<document mode='index' type='" + name + "'/>");
+        }
+    }
+
     private String name = "mycluster";
     private int redundancy = 1;
     private int searchableCopies = 1;
-    private List<String> docTypes = Arrays.asList("test");
+    private List<DocType> docTypes = Arrays.asList(new DocType("test"));
     private String groupXml = getSimpleGroupXml();
     private Optional<String> dispatchXml = Optional.empty();
     private Optional<Double> protonDiskLimit = Optional.empty();
@@ -45,7 +65,16 @@ public class ContentClusterBuilder {
         return this;
     }
 
-    public ContentClusterBuilder docTypes(List<String> docTypes) {
+    public ContentClusterBuilder docTypes(String ... docTypes) {
+        List<DocType> result = new ArrayList<>();
+        for (String type : docTypes) {
+            result.add(new DocType(type));
+        }
+        this.docTypes = result;
+        return this;
+    }
+
+    public ContentClusterBuilder docTypes(List<DocType> docTypes) {
         this.docTypes = docTypes;
         return this;
     }
@@ -78,7 +107,7 @@ public class ContentClusterBuilder {
         String xml = "<content version='1.0' id='" + name + "'>\n" +
                "  <redundancy>" + redundancy + "</redundancy>\n" +
                "  <documents>\n" +
-                docTypes.stream().map(type -> "    <document mode='index' type='" + type + "'/>\n").collect(Collectors.joining("\n")) +
+                docTypes.stream().map(type -> type.toXml()).collect(Collectors.joining("\n")) +
                "  </documents>\n" +
                "  <engine>\n" +
                "    <proton>\n" +

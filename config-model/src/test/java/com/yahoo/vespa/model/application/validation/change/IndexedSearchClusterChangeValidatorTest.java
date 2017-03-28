@@ -42,7 +42,7 @@ public class IndexedSearchClusterChangeValidatorTest {
 
         public static VespaModel newOneDocModel(String sdContent) {
             return new ApplicationPackageBuilder().
-                    addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList("d1"))).
+                    addCluster(new ContentClusterBuilder().name("foo").docTypes("d1")).
                     addSearchDefinition(new SearchDefinitionBuilder().
                             name("d1").content(sdContent).build()).buildCreator().create();
         }
@@ -53,7 +53,7 @@ public class IndexedSearchClusterChangeValidatorTest {
 
         public static VespaModel newTwoDocModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder().
-                    addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList("d1", "d2"))).
+                    addCluster(new ContentClusterBuilder().name("foo").docTypes("d1", "d2")).
                     addSearchDefinition(new SearchDefinitionBuilder().
                             name("d1").content(d1Content).build()).
                     addSearchDefinition(new SearchDefinitionBuilder().
@@ -67,8 +67,8 @@ public class IndexedSearchClusterChangeValidatorTest {
 
         public static VespaModel newTwoClusterModel(String d1Content, String d2Content) {
             return new ApplicationPackageBuilder().
-                    addCluster(new ContentClusterBuilder().name("foo").docTypes(Arrays.asList("d1"))).
-                    addCluster(new ContentClusterBuilder().name("bar").docTypes(Arrays.asList("d2"))).
+                    addCluster(new ContentClusterBuilder().name("foo").docTypes("d1")).
+                    addCluster(new ContentClusterBuilder().name("bar").docTypes("d2")).
                     addSearchDefinition(new SearchDefinitionBuilder().
                             name("d1").content(d1Content).build()).
                     addSearchDefinition(new SearchDefinitionBuilder().

@@ -112,7 +112,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                                                   globallyDistributedDocuments, routingSelection, redundancy,
                                                   ancestor.getRoot().getDeployState().getProperties().zone());
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
-            c.search = new ContentSearchCluster.Builder(documentDefinitions).build(c, contentElement.getXml());
+            c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(c, w3cContentElement);

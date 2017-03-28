@@ -34,7 +34,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private Redundancy redundancy;
 
     private final String clusterName;
-    Map<String, NewDocumentType> documentDefinitions;
+    private final Map<String, NewDocumentType> documentDefinitions;
+    private final Set<NewDocumentType> globallyDistributedDocuments;
 
     /** The search nodes of this if it does not have an indexed cluster */
     List<SearchNode> nonIndexed = new ArrayList<>();
@@ -54,9 +55,12 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;
+        private final Set<NewDocumentType> globallyDistributedDocuments;
 
-        public Builder(Map<String, NewDocumentType> documentDefinitions) {
+        public Builder(Map<String, NewDocumentType> documentDefinitions,
+                       Set<NewDocumentType> globallyDistributedDocuments) {
             this.documentDefinitions = documentDefinitions;
+            this.globallyDistributedDocuments = globallyDistributedDocuments;
         }
 
         @Override
@@ -65,7 +69,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             String clusterName = ContentCluster.getClusterName(clusterElem);
             Boolean flushOnShutdown = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
 
-            ContentSearchCluster search = new ContentSearchCluster(ancestor, clusterName, documentDefinitions, flushOnShutdown != null ? flushOnShutdown : false);
+            ContentSearchCluster search = new ContentSearchCluster(ancestor, clusterName, documentDefinitions, globallyDistributedDocuments,
+                    (flushOnShutdown != null ? flushOnShutdown : false));
 
             ModelElement tuning = clusterElem.getChildByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -144,11 +149,14 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     private ContentSearchCluster(AbstractConfigProducer parent,
                                  String clusterName,
-                                 Map<String, NewDocumentType> documentDefinitions, boolean flushOnShutdown)
+                                 Map<String, NewDocumentType> documentDefinitions,
+                                 Set<NewDocumentType> globallyDistributedDocuments,
+                                 boolean flushOnShutdown)
     {
         super(parent, "search");
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
+        this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.flushOnShutdown = flushOnShutdown;
     }
 
@@ -263,9 +271,11 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         double visibilityDelay = hasIndexedCluster() ? getIndexed().getVisibilityDelay() : 0.0;
         for (NewDocumentType type : documentDefinitions.values()) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
-            ddbB.inputdoctypename(type.getFullName().getName())
+            String docTypeName = type.getFullName().getName();
+            ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
-                .visibilitydelay(visibilityDelay);
+                .visibilitydelay(visibilityDelay)
+                .global(isGloballyDistributed(docTypeName));
             if (hasIndexedCluster()) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
             }
@@ -292,6 +302,10 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         if (redundancy != null) {
             redundancy.getConfig(builder);
         }
+    }
+
+    private boolean isGloballyDistributed(String docTypeName) {
+        return globallyDistributedDocuments.stream().anyMatch(type -> type.getFullName().getName().equals(docTypeName));
     }
 
     @Override

@@ -4,12 +4,11 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
-import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
-import junit.framework.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static junit.framework.TestCase.assertEquals;
@@ -29,8 +28,20 @@ public class ContentSearchClusterTest {
 
     private static ContentCluster createClusterWithTwoDocumentType() throws Exception {
         List<String> docTypes = Arrays.asList("foo", "bar");
-        return createCluster(new ContentClusterBuilder().docTypes(docTypes).getXml(),
-                ApplicationPackageUtils.generateSearchDefinitions(docTypes));
+        return createCluster(new ContentClusterBuilder().docTypes("foo", "bar").getXml(),
+                generateSearchDefinitions(docTypes));
+    }
+
+    private static ContentCluster createClusterWithGlobalType() throws Exception {
+        return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(new ContentClusterBuilder.DocType("global", true),
+                new ContentClusterBuilder.DocType("regular"))).getXml(),
+                generateSearchDefinitions(Arrays.asList("global", "regular")));
+    }
+
+    private static List<String> generateSearchDefinitions(List<String> docTypes) {
+        return docTypes.stream().
+                map(type -> new com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder().name(type).build()).
+                collect(Collectors.toList());
     }
 
     private static ProtonConfig getProtonConfig(ContentCluster cluster) {
@@ -67,6 +78,19 @@ public class ContentSearchClusterTest {
     public void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
         assertProtonResourceLimits(0.8, 0.77,
                 new ContentClusterBuilder().protonMemoryLimit(0.77).getXml());
+    }
+
+    @Test
+    public void requireThatGloballyDistributedDocumentTypeIsTaggedAsSuch() throws Exception {
+        ProtonConfig cfg = getProtonConfig(createClusterWithGlobalType());
+        assertEquals(2, cfg.documentdb().size());
+        assertDocumentDb("global", true, cfg.documentdb(0));
+        assertDocumentDb("regular", false, cfg.documentdb(1));
+    }
+
+    private static void assertDocumentDb(String expName, boolean expGlobal, ProtonConfig.Documentdb db) {
+        assertEquals(expName, db.inputdoctypename());
+        assertEquals(expGlobal, db.global());
     }
 
 }
