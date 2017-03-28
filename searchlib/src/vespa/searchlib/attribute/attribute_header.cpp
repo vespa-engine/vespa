@@ -23,8 +23,6 @@ AttributeHeader::AttributeHeader()
       _basicType(attribute::BasicType::Type::NONE),
       _collectionType(attribute::CollectionType::Type::SINGLE),
       _tensorType(vespalib::eval::ValueType::error_type()),
-      _hasMultiValue(false),
-      _hasWeightedSetType(false),
       _enumerated(false),
       _predicateParamsSet(false),
       _predicateParams(),
@@ -41,7 +39,6 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName,
                                  attribute::BasicType basicType,
                                  attribute::CollectionType collectionType,
                                  const vespalib::eval::ValueType &tensorType,
-                                 bool multiValue, bool weightedSetType,
                                  bool enumerated,
                                  const attribute::PersistentPredicateParams &predicateParams,
                                  uint32_t numDocs,
@@ -54,8 +51,6 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName,
       _basicType(basicType),
       _collectionType(collectionType),
       _tensorType(tensorType),
-      _hasMultiValue(multiValue),
-      _hasWeightedSetType(weightedSetType),
       _enumerated(enumerated),
       _predicateParamsSet(false),
       _predicateParams(predicateParams),
@@ -129,6 +124,18 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
         header.putTag(Tag(predicateLowerBoundTag, params.lower_bound()));
         header.putTag(Tag(predicateUpperBoundTag, params.upper_bound()));
     }
+}
+
+bool
+AttributeHeader::hasMultiValue() const
+{
+    return _collectionType.isMultiValue();
+}
+
+bool
+AttributeHeader::hasWeightedSetType() const
+{
+    return _collectionType.isWeightedSet();
 }
 
 } // namespace search::attribute

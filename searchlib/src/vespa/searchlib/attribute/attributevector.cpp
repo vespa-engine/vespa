@@ -473,8 +473,6 @@ AttributeVector::createAttributeHeader() const {
                                    getConfig().basicType().type() == BasicType::Type::TENSOR
                                       ? getConfig().tensorType()
                                       : vespalib::eval::ValueType::error_type(),
-                                   hasMultiValue(),
-                                   hasWeightedSetType(),
                                    getEnumeratedSave(),
                                    getConfig().predicateParams(),
                                    getCommittedDocIdLimit(),

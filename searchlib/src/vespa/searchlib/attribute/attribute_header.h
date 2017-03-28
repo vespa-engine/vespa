@@ -23,8 +23,6 @@ private:
     BasicType _basicType;
     CollectionType _collectionType;
     vespalib::eval::ValueType _tensorType;
-    bool        _hasMultiValue;
-    bool        _hasWeightedSetType;
     bool        _enumerated;
     bool        _predicateParamsSet;
     PersistentPredicateParams _predicateParams;
@@ -40,7 +38,6 @@ public:
                     BasicType basicType,
                     CollectionType collectionType,
                     const vespalib::eval::ValueType &tensorType,
-                    bool multiValue, bool weightedSetType,
                     bool enumerated,
                     const PersistentPredicateParams &predicateParams,
                     uint32_t numDocs,
@@ -55,8 +52,8 @@ public:
     const BasicType & getBasicType() const { return _basicType; }
     const CollectionType &getCollectionType() const { return _collectionType; }
     const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
-    bool hasMultiValue() const { return _hasMultiValue; }
-    bool hasWeightedSetType() const { return _hasWeightedSetType; }
+    bool hasMultiValue() const;
+    bool hasWeightedSetType() const;
     uint32_t getNumDocs() const { return _numDocs; }
     size_t getFixedWidth() const { return _fixedWidth; }
     uint64_t getUniqueValueCount(void) const { return _uniqueValueCount; }
