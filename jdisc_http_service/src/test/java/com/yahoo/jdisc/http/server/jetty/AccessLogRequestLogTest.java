@@ -60,4 +60,15 @@ public class AccessLogRequestLogTest {
 
     }
 
+    @Test
+    public void invalid_percent_escape_patterns_in_query_string_are_escaped() {
+        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        when(httpServletRequest.getRequestURI()).thenReturn("/search/");
+        when(httpServletRequest.getQueryString()).thenReturn("q=%%2");
+
+        AccessLogEntry accessLogEntry = new AccessLogEntry();
+        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
+        assertThat(accessLogEntry.getURI().toString(), is("/search/?q=%25%252"));
+    }
+
 }

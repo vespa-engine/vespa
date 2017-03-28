@@ -143,8 +143,10 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
         try {
             // inconsistent handling of semi-colon added here...
             return URLDecoder.decode(quotedQuery, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
+        } catch (IllegalArgumentException e) {
             return quotedQuery;
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // should not happen
         }
     }
 }
