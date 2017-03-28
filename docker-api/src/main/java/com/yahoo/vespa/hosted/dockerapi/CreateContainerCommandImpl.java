@@ -32,6 +32,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final List<Ulimit> ulimits = new ArrayList<>();
 
     private Optional<Long> memoryInB = Optional.empty();
+    private Optional<Integer> cpuShares = Optional.empty();
     private Optional<String> networkMode = Optional.empty();
     private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
@@ -107,6 +108,12 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     @Override
+    public Docker.CreateContainerCommand withCpuShares(int shares) {
+        cpuShares = Optional.of(shares);
+        return this;
+    }
+
+    @Override
     public Docker.CreateContainerCommand withNetworkMode(String mode) {
         networkMode = Optional.of(mode);
         return this;
@@ -150,6 +157,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .ifPresent(mode -> containerCmd.withMacAddress(generateRandomMACAddress()));
 
         memoryInB.ifPresent(containerCmd::withMemory);
+        cpuShares.ifPresent(containerCmd::withCpuShares);
         networkMode.ifPresent(containerCmd::withNetworkMode);
         ipv4Address.ifPresent(containerCmd::withIpv4Address);
         ipv6Address.ifPresent(containerCmd::withIpv6Address);
@@ -189,6 +197,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 + toRepeatedOption("--cap-add", addCapabilitiesList)
                 + toRepeatedOption("--cap-drop", dropCapabilitiesList)
                 + toOptionalOption("--memory", memoryInB)
+                + toOptionalOption("--cpu-shares", cpuShares)
                 + toOptionalOption("--net", networkMode)
                 + toOptionalOption("--ip", ipv4Address)
                 + toOptionalOption("--ip6", ipv6Address)

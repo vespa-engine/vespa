@@ -178,6 +178,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 }
             }
 
+            nodeSpec.minCpuCores.ifPresent(cpuShares -> command.withCpuShares((int) Math.round(10 * cpuShares)));
+
             logger.info("Starting new container with args: " + command);
             command.create();
 
