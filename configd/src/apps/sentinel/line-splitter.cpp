@@ -37,7 +37,7 @@ LineSplitter::resize()
 {
     _size = _size * 2;
     _buffer = static_cast<char *>(realloc(_buffer, _size));
-    return (_buffer != NULL);
+    return (_buffer != nullptr);
 }
 
 
@@ -105,7 +105,7 @@ LineSplitter::getLine()
             }
 	}
     } while (!_eof && fill());
-    return NULL;
+    return nullptr;
 }
 
 } // end namespace config::sentinel

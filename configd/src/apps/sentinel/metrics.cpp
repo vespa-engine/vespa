@@ -14,7 +14,7 @@ StartMetrics::StartMetrics()
       snapshotStart(0),
       snapshotEnd(0)
 {
-    snapshotEnd = time(NULL);
+    snapshotEnd = time(nullptr);
     lastLoggedTime = snapshotEnd - 55;
 }
 
@@ -39,7 +39,7 @@ StartMetrics::reset(unsigned long curTime)
 void
 StartMetrics::maybeLog()
 {
-    uint32_t curTime = time(NULL);
+    uint32_t curTime = time(nullptr);
     if (curTime > lastLoggedTime + 59) {
         output();
         reset(curTime);

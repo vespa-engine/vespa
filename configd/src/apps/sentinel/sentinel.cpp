@@ -77,7 +77,7 @@ main(int argc, char **argv)
     }
 
     struct timeval lastTv;
-    gettimeofday(&lastTv, NULL);
+    gettimeofday(&lastTv, nullptr);
     while (!stop) {
         try {
             pendingWait = 0;
@@ -97,12 +97,12 @@ main(int argc, char **argv)
             tv.tv_usec = 0;
 
             if (!pendingWait) {
-                select(maxNum, &fds, NULL, NULL, &tv);
+                select(maxNum, &fds, nullptr, nullptr, &tv);
             }
         }
 
         struct timeval tv;
-        gettimeofday(&tv, NULL);
+        gettimeofday(&tv, nullptr);
         double delta = tv.tv_sec - lastTv.tv_sec
                        + 1e-6 * tv.tv_usec - lastTv.tv_usec;
         if (delta < 0.01) {
@@ -140,6 +140,6 @@ sigPermanent(int sig, void(*handler)(int))
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0; // no SA_RESTART!
     sa.sa_handler = handler;
-    return sigaction(sig, &sa, NULL);
+    return sigaction(sig, &sa, nullptr);
 }
 

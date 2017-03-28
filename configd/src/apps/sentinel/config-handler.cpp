@@ -50,7 +50,7 @@ ConfigHandler::configure_port(int port)
         port = 19098;
         const char *portString = getenv("VESPA_SENTINEL_PORT");
         if (portString) {
-            port = strtoul(portString, NULL, 10);
+            port = strtoul(portString, nullptr, 10);
         }
     }
     if (port <= 0 || port > 65535) {
@@ -73,7 +73,7 @@ ConfigHandler::ConfigHandler()
       _commandSocket(listen(0)),
       _startMetrics()
 {
-    _startMetrics.startedTime = time(NULL);
+    _startMetrics.startedTime = time(nullptr);
 }
 
 ConfigHandler::~ConfigHandler()
@@ -113,12 +113,12 @@ ConfigHandler::terminate()
     // of them.
     terminateServices(true);
     struct timeval endTime;
-    gettimeofday(&endTime, NULL);
+    gettimeofday(&endTime, nullptr);
     endTime.tv_sec += 58;
     struct timeval tv = {0, 0};
 
     while (tv.tv_sec >= 0 && doWork()) {
-        gettimeofday(&tv, NULL);
+        gettimeofday(&tv, nullptr);
         tv.tv_sec = endTime.tv_sec - tv.tv_sec;
         tv.tv_usec = endTime.tv_usec - tv.tv_usec;
 
@@ -142,7 +142,7 @@ ConfigHandler::terminate()
 
         // Any child exiting will send SIGCHLD and break this select so
         // we handle the children exiting even quicker..
-        select(0, NULL, NULL, NULL, &tv);
+        select(0, nullptr, nullptr, nullptr, &tv);
     }
     for (int retry = 0; retry < 10 && doWork(); ++retry) {
         LOG(warning, "some services refuse to terminate cleanly, sending KILL");
@@ -223,7 +223,7 @@ ConfigHandler::handleChildDeaths()
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         // A child process has exited. find it.
         Service *service = serviceByPid(pid);
-        if (service != NULL) {
+        if (service != nullptr) {
             LOG(debug, "pid %d finished, Service:%s", (int)pid,
                 service->name().c_str());
             service->youExited(status);
@@ -342,7 +342,7 @@ ConfigHandler::serviceByPid(pid_t pid)
             return service;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 Service *
@@ -352,7 +352,7 @@ ConfigHandler::serviceByName(const vespalib::string & name)
     if (found != _services.end()) {
         return found->second.get();
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -420,7 +420,7 @@ ConfigHandler::updateMetrics()
                       _startMetrics.currentlyRunningServices);
     _stateApi.myMetrics.setMetrics(snapshot.asString());
 
-    vespalib::SimpleMetricSnapshot totals(_startMetrics.startedTime, time(NULL));
+    vespalib::SimpleMetricSnapshot totals(_startMetrics.startedTime, time(nullptr));
     totals.addCount("sentinel.restarts", "how many times sentinel restarted a service",
                     _startMetrics.totalRestartsCounter);
     totals.addGauge("sentinel.running", "how many services the sentinel has running currently",
@@ -488,7 +488,7 @@ void
 ConfigHandler::doStart(CommandConnection *c, char *args)
 {
     Service *service = serviceByName(args);
-    if (service == NULL) {
+    if (service == nullptr) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -514,7 +514,7 @@ void
 ConfigHandler::doRestart(CommandConnection *c, char *args, bool force)
 {
     Service *service = serviceByName(args);
-    if (service == NULL) {
+    if (service == nullptr) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -551,7 +551,7 @@ void
 ConfigHandler::doStop(CommandConnection *c, char *args, bool force)
 {
     Service *service = serviceByName(args);
-    if (service == NULL) {
+    if (service == nullptr) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -575,7 +575,7 @@ void
 ConfigHandler::doAuto(CommandConnection *c, char *args)
 {
     Service *service = serviceByName(args);
-    if (service == NULL) {
+    if (service == nullptr) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
@@ -601,7 +601,7 @@ void
 ConfigHandler::doManual(CommandConnection *c, char *args)
 {
     Service *service = serviceByName(args);
-    if (service == NULL) {
+    if (service == nullptr) {
         c->printf("Cannot find any service named '%s'\n", args);
         return;
     }
