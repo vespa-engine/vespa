@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
 import static junit.framework.TestCase.assertEquals;
@@ -20,33 +21,33 @@ import static junit.framework.TestCase.assertEquals;
 public class IndexedSearchNodeNamingTest {
 
     private ContentCluster getSingleNodeCluster() throws Exception {
-        String groupXml = "  <group>\n" +
-                          "    <node distribution-key='3' hostalias='mockhost'/>\n" +
-                          "  </group>\n";
+        String groupXml = joinLines("  <group>",
+                          "    <node distribution-key='3' hostalias='mockhost'/>",
+                          "  </group>", "");
         return createCluster(createClusterXml(groupXml, 1, 1));
     }
 
     private ContentCluster getMultiNodeCluster() throws Exception {
-        String groupXml = "  <group>\n" +
-                          "    <node distribution-key='5' hostalias='mockhost'/>\n" +
-                          "    <node distribution-key='3' hostalias='mockhost'/>\n" +
-                          "    <node distribution-key='7' hostalias='mockhost'/>\n" +
-                          "  </group>\n";
+        String groupXml = joinLines("  <group>",
+                          "    <node distribution-key='5' hostalias='mockhost'/>",
+                          "    <node distribution-key='3' hostalias='mockhost'/>",
+                          "    <node distribution-key='7' hostalias='mockhost'/>",
+                          "  </group>", "");
         return createCluster(createClusterXml(groupXml, 1, 1));
     }
 
     private ContentCluster getMultiGroupCluster() throws Exception {
-        String groupXml = "  <group>\n" +
-                          "    <distribution partitions='1|*'/>\n" +
-                          "    <group distribution-key='3' name='group0'>\n" +
-                          "      <node distribution-key='7' hostalias='mockhost'/>\n" +
-                          "      <node distribution-key='11' hostalias='mockhost'/>\n" +
-                          "    </group>\n" +
-                          "    <group distribution-key='5' name='group1'>\n" +
-                          "      <node distribution-key='17' hostalias='mockhost'/>\n" +
-                          "      <node distribution-key='13' hostalias='mockhost'/>\n" +
-                          "    </group>\n" +
-                          "  </group>\n";
+        String groupXml = joinLines("  <group>",
+                          "    <distribution partitions='1|*'/>",
+                          "    <group distribution-key='3' name='group0'>",
+                          "      <node distribution-key='7' hostalias='mockhost'/>",
+                          "      <node distribution-key='11' hostalias='mockhost'/>",
+                          "    </group>",
+                          "    <group distribution-key='5' name='group1'>",
+                          "      <node distribution-key='17' hostalias='mockhost'/>",
+                          "      <node distribution-key='13' hostalias='mockhost'/>",
+                          "    </group>",
+                          "  </group>", "");
         return createCluster(createClusterXml(groupXml, 2, 2));
     }
 

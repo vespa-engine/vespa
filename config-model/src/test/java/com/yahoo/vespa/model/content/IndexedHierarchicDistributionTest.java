@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -41,28 +42,28 @@ public class IndexedHierarchicDistributionTest {
     }
 
     private ContentCluster getOneGroupCluster() throws Exception {
-        String groupXml = "  <group>\n" +
-                          "    <node distribution-key='0' hostalias='mockhost'/>\n" +
-                          "    <node distribution-key='1' hostalias='mockhost'/>\n" +
-                          "    <node distribution-key='2' hostalias='mockhost'/>\n" +
-                          "  </group>\n";
+        String groupXml = joinLines("  <group>",
+                          "    <node distribution-key='0' hostalias='mockhost'/>",
+                          "    <node distribution-key='1' hostalias='mockhost'/>",
+                          "    <node distribution-key='2' hostalias='mockhost'/>",
+                          "  </group>", "");
         return addDispatcher(createCluster(createClusterXml(groupXml, 2, 2)));
     }
 
     private String getTwoGroupsXml(String partitions) {
-        return "  <group>\n" +
-               "    <distribution partitions='" + partitions + "'/>\n" +
-               "    <group distribution-key='0' name='group0'>\n" +
-               "      <node distribution-key='0' hostalias='mockhost'/>\n" +
-               "      <node distribution-key='1' hostalias='mockhost'/>\n" +
-               "      <node distribution-key='2' hostalias='mockhost'/>\n" +
-               "    </group>\n" +
-               "    <group distribution-key='1' name='group1'>\n" +
-               "      <node distribution-key='3' hostalias='mockhost'/>\n" +
-               "      <node distribution-key='4' hostalias='mockhost'/>\n" +
-               "      <node distribution-key='5' hostalias='mockhost'/>\n" +
-               "    </group>\n" +
-               "  </group>\n";
+        return joinLines("  <group>",
+               "    <distribution partitions='" + partitions + "'/>",
+               "    <group distribution-key='0' name='group0'>",
+               "      <node distribution-key='0' hostalias='mockhost'/>",
+               "      <node distribution-key='1' hostalias='mockhost'/>",
+               "      <node distribution-key='2' hostalias='mockhost'/>",
+               "    </group>",
+               "    <group distribution-key='1' name='group1'>",
+               "      <node distribution-key='3' hostalias='mockhost'/>",
+               "      <node distribution-key='4' hostalias='mockhost'/>",
+               "      <node distribution-key='5' hostalias='mockhost'/>",
+               "    </group>",
+               "  </group>", "");
     }
 
     private ContentCluster getTwoGroupsCluster() throws Exception {
@@ -155,58 +156,58 @@ public class IndexedHierarchicDistributionTest {
     }
 
     private ContentCluster getIllegalMultipleGroupsLevelCluster() throws Exception {
-        String groupXml = "  <group>\n" +
-                "    <distribution partitions='2|*'/>\n" +
-                "    <group distribution-key='0' name='group0'>\n" +
-                "      <distribution partitions='1|*'/>\n" +
-                "      <group distribution-key='0' name='group00'>\n" +
-                "        <node distribution-key='0' hostalias='mockhost'/>\n" +
-                "      </group>\n" +
-                "      <group distribution-key='1' name='group01'>\n" +
-                "        <node distribution-key='1' hostalias='mockhost'/>\n" +
-                "      </group>\n" +
-                "    </group>\n" +
-                "  </group>\n";
+        String groupXml = joinLines("  <group>",
+                "    <distribution partitions='2|*'/>",
+                "    <group distribution-key='0' name='group0'>",
+                "      <distribution partitions='1|*'/>",
+                "      <group distribution-key='0' name='group00'>",
+                "        <node distribution-key='0' hostalias='mockhost'/>",
+                "      </group>",
+                "      <group distribution-key='1' name='group01'>",
+                "        <node distribution-key='1' hostalias='mockhost'/>",
+                "      </group>",
+                "    </group>",
+                "  </group>", "");
         return createCluster(createClusterXml(groupXml, 2, 2));
     }
 
     private String getOddGroupsClusterXml() throws Exception {
-        return "  <group>\n" +
-                "    <distribution partitions='2|*'/>\n" +
-                "    <group distribution-key='0' name='group0'>\n" +
-                "      <node distribution-key='0' hostalias='mockhost'/>\n" +
-                "    </group>\n" +
-                "    <group distribution-key='1' name='group1'>\n" +
-                "      <node distribution-key='1' hostalias='mockhost'/>\n" +
-                "      <node distribution-key='2' hostalias='mockhost'/>\n" +
-                "    </group>\n" +
-                "  </group>\n";
+        return joinLines("  <group>",
+                "    <distribution partitions='2|*'/>",
+                "    <group distribution-key='0' name='group0'>",
+                "      <node distribution-key='0' hostalias='mockhost'/>",
+                "    </group>",
+                "    <group distribution-key='1' name='group1'>",
+                "      <node distribution-key='1' hostalias='mockhost'/>",
+                "      <node distribution-key='2' hostalias='mockhost'/>",
+                "    </group>",
+                "  </group>", "");
     }
     private ContentCluster getIllegalGroupsCluster() throws Exception {
         return createCluster(createClusterXml(getOddGroupsClusterXml(), 4, 4));
     }
 
     private String getRandomDispatchXml() {
-        return "<tuning>" +
-                "  <dispatch>" +
-                "    <dispatch-policy>random</dispatch-policy>" +
-                "  </dispatch>" +
-                "</tuning>";
+        return joinLines("<tuning>",
+                "  <dispatch>",
+                "    <dispatch-policy>random</dispatch-policy>",
+                "  </dispatch>",
+                "</tuning>");
     }
 
     private ContentCluster getOddGroupsCluster() throws Exception {
-        String groupXml = "  <group>\n" +
-                "    <distribution partitions='2|*'/>\n" +
-                "    <group distribution-key='0' name='group0'>\n" +
-                "      <node distribution-key='0' hostalias='mockhost'/>\n" +
-                "      <node distribution-key='1' hostalias='mockhost'/>\n" +
-                "    </group>\n" +
-                "    <group distribution-key='1' name='group1'>\n" +
-                "      <node distribution-key='3' hostalias='mockhost'/>\n" +
-                "      <node distribution-key='4' hostalias='mockhost'/>\n" +
-                "      <node distribution-key='5' hostalias='mockhost'/>\n" +
-                "    </group>\n" +
-                "  </group>\n";
+        String groupXml = joinLines("  <group>",
+                "    <distribution partitions='2|*'/>",
+                "    <group distribution-key='0' name='group0'>",
+                "      <node distribution-key='0' hostalias='mockhost'/>",
+                "      <node distribution-key='1' hostalias='mockhost'/>",
+                "    </group>",
+                "    <group distribution-key='1' name='group1'>",
+                "      <node distribution-key='3' hostalias='mockhost'/>",
+                "      <node distribution-key='4' hostalias='mockhost'/>",
+                "      <node distribution-key='5' hostalias='mockhost'/>",
+                "    </group>",
+                "  </group>", "");
         return createCluster(createClusterXml(groupXml, Optional.of(getRandomDispatchXml()), 4, 4));
     }
 

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+
 /**
  * Class for building a content cluster with indexed search (used for testing only).
  *
@@ -99,17 +101,17 @@ public class ContentClusterBuilder {
     }
 
     public String getXml() {
-        String xml = "<content version='1.0' id='" + name + "'>\n" +
-               "  <redundancy>" + redundancy + "</redundancy>\n" +
-               "  <documents>\n" +
-                docTypes.stream().map(type -> type.toXml()).collect(Collectors.joining("\n")) +
-               "  </documents>\n" +
-               "  <engine>\n" +
-               "    <proton>\n" +
-               "      <searchable-copies>" + searchableCopies + "</searchable-copies>\n" +
-               getResourceLimitsXml("      ") +
-               "    </proton>\n" +
-               "  </engine>\n";
+        String xml = joinLines("<content version='1.0' id='" + name + "'>",
+               "  <redundancy>" + redundancy + "</redundancy>",
+               "  <documents>",
+                docTypes.stream().map(type -> type.toXml()).collect(Collectors.joining("\n")),
+               "  </documents>",
+               "  <engine>",
+               "    <proton>",
+               "      <searchable-copies>" + searchableCopies + "</searchable-copies>",
+               getResourceLimitsXml("      "),
+               "    </proton>",
+               "  </engine>");
         if (dispatchXml.isPresent()) {
             xml += dispatchXml.get();
         }
@@ -118,17 +120,17 @@ public class ContentClusterBuilder {
     }
 
     private static String getSimpleGroupXml() {
-        return "  <group>\n" +
-                "    <node distribution-key='0' hostalias='mockhost'/>\n" +
-                "  </group>\n";
+        return joinLines("  <group>",
+                "    <node distribution-key='0' hostalias='mockhost'/>",
+                "  </group>");
     }
 
     private String getResourceLimitsXml(String indent) {
         if (protonDiskLimit.isPresent() || protonMemoryLimit.isPresent()) {
-            String xml = indent + "<resource-limits>\n" +
-                    getXmlLine("disk", protonDiskLimit, indent + "  ") +
-                    getXmlLine("memory", protonMemoryLimit, indent + "  ") +
-                    indent + "</resource-limits>\n";
+            String xml = joinLines(indent + "<resource-limits>",
+                    getXmlLine("disk", protonDiskLimit, indent + "  "),
+                    getXmlLine("memory", protonMemoryLimit, indent + "  "),
+                    indent + "</resource-limits>");
             return xml;
         }
         return "";
