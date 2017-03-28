@@ -3,7 +3,10 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/searchcommon/attribute/collectiontype.h>
 #include <vespa/searchcommon/attribute/predicate_params.h>
+#include <vespa/eval/eval/value_type.h>
 
 namespace search {
 namespace attribute {
@@ -14,9 +17,9 @@ namespace attribute {
 class AttributeHeader {
 private:
     vespalib::string _fileName;
-    vespalib::string _basicType;
-    vespalib::string _collectionType;
-    vespalib::string _tensorType;
+    attribute::BasicType _basicType;
+    attribute::CollectionType _collectionType;
+    vespalib::eval::ValueType _tensorType;
     bool        _hasMultiValue;
     bool        _hasWeightedSetType;
     bool        _enumerated;
@@ -30,9 +33,9 @@ private:
 public:
     AttributeHeader();
     AttributeHeader(const vespalib::string &fileName,
-                    const vespalib::string &basicType,
-                    const vespalib::string &collectionType,
-                    const vespalib::string &tensorType,
+                    attribute::BasicType basicType,
+                    attribute::CollectionType collectionType,
+                    const vespalib::eval::ValueType &tensorType,
                     bool multiValue, bool weightedSetType,
                     bool enumerated,
                     const attribute::PersistentPredicateParams &predicateParams,
@@ -45,9 +48,9 @@ public:
     ~AttributeHeader();
 
     const vespalib::string & getFileName() const { return _fileName; }
-    const vespalib::string & getBasicType() const { return _basicType; }
-    const vespalib::string &getCollectionType() const { return _collectionType; }
-    const vespalib::string &getTensorType() const { return _tensorType; }
+    const attribute::BasicType & getBasicType() const { return _basicType; }
+    const attribute::CollectionType &getCollectionType() const { return _collectionType; }
+    const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
     bool hasMultiValue() const { return _hasMultiValue; }
     bool hasWeightedSetType() const { return _hasWeightedSetType; }
     uint32_t getNumDocs() const { return _numDocs; }

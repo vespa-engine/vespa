@@ -468,11 +468,11 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget)
 attribute::AttributeHeader
 AttributeVector::createAttributeHeader() const {
     return attribute::AttributeHeader(getBaseFileName(),
-                                   getConfig().basicType().asString(),
-                                   getConfig().collectionType().asString(),
+                                   getConfig().basicType(),
+                                   getConfig().collectionType(),
                                    getConfig().basicType().type() == BasicType::Type::TENSOR
-                                       ? getConfig().tensorType().to_spec()
-                                       : "",
+                                      ? getConfig().tensorType()
+                                      : vespalib::eval::ValueType::error_type(),
                                    hasMultiValue(),
                                    hasWeightedSetType(),
                                    getEnumeratedSave(),

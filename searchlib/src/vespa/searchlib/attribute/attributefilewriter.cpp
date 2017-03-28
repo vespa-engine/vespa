@@ -147,8 +147,8 @@ void
 AttributeFileWriter::addTags(vespalib::GenericHeader &header)
 {
     typedef vespalib::GenericHeader::Tag Tag;
-    header.putTag(Tag("datatype", _header.getBasicType()));
-    header.putTag(Tag("collectiontype", _header.getCollectionType()));
+    header.putTag(Tag("datatype", _header.getBasicType().asString()));
+    header.putTag(Tag("collectiontype", _header.getCollectionType().asString()));
     header.putTag(Tag("uniqueValueCount", _header.getUniqueValueCount()));
     header.putTag(Tag("totalValueCount", _header.getTotalValueCount()));
     header.putTag(Tag("docIdLimit", _header.getNumDocs()));
@@ -162,11 +162,10 @@ AttributeFileWriter::addTags(vespalib::GenericHeader &header)
     if (createSerialNum != 0u) {
         header.putTag(Tag("createSerialNum", createSerialNum));
     }
-    const vespalib::string &tensorType = _header.getTensorType();
-    if (!tensorType.empty()) {
-        header.putTag(Tag("tensortype", tensorType));;
+    if (_header.getBasicType().type() == attribute::BasicType::Type::TENSOR) {
+        header.putTag(Tag("tensortype", _header.getTensorType().to_spec()));;
     }
-    if (_header.getBasicType() == "predicate") {
+    if (_header.getBasicType().type() == attribute::BasicType::Type::PREDICATE) {
         const auto & params = _header.getPredicateParams();
         header.putTag(Tag("predicate.arity", params.arity()));
         header.putTag(Tag("predicate.lower_bound", params.lower_bound()));

@@ -7,8 +7,9 @@ namespace attribute {
 
 AttributeHeader::AttributeHeader()
     : _fileName(""),
-      _basicType(""),
-      _collectionType(""),
+      _basicType(attribute::BasicType::Type::NONE),
+      _collectionType(attribute::CollectionType::Type::SINGLE),
+      _tensorType(vespalib::eval::ValueType::error_type()),
       _hasMultiValue(false),
       _hasWeightedSetType(false),
       _enumerated(false),
@@ -23,9 +24,9 @@ AttributeHeader::AttributeHeader()
 }
 
 AttributeHeader::AttributeHeader(const vespalib::string &fileName,
-                                 const vespalib::string &basicType,
-                                 const vespalib::string &collectionType,
-                                 const vespalib::string &tensorType,
+                                 attribute::BasicType basicType,
+                                 attribute::CollectionType collectionType,
+                                 const vespalib::eval::ValueType &tensorType,
                                  bool multiValue, bool weightedSetType,
                                  bool enumerated,
                                  const attribute::PersistentPredicateParams &predicateParams,
