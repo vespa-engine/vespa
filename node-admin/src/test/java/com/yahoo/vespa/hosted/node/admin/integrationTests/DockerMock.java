@@ -182,6 +182,11 @@ public class DockerMock implements Docker {
         }
 
         @Override
+        public CreateContainerCommand withCpuShares(int shares) {
+            return this;
+        }
+
+        @Override
         public CreateContainerCommand withNetworkMode(String mode) {
             return this;
         }
