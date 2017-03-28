@@ -6,6 +6,23 @@
 
 using vespalib::nbostream;
 
+namespace {
+
+bool hasBodyField(const document::Document & value) {
+    for (document::StructuredFieldValue::const_iterator it(value.getFields().begin()), mt(value.getFields().end());
+         it != mt;
+         ++it)
+    {
+        if ( ! it.field().isHeaderField() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+}
+
+
 namespace vdslib {
 MutableDocumentList::MutableDocumentList(const document::DocumentTypeRepo::SP & repo, char* buffer, uint32_t bufferSize, bool keepexisting)
     : DocumentList(repo, buffer, bufferSize, keepexisting)
@@ -49,7 +66,7 @@ MutableDocumentList::addPut(const document::Document& doc, Timestamp ts,
     doc.serializeHeader(stream);
     uint32_t headerSize = stream.size();
 
-    if (addBody) {
+    if (addBody && hasBodyField(doc)) {
         doc.serializeBody(stream);
     }
 

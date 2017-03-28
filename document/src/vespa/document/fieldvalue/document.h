@@ -15,10 +15,10 @@
  */
 #pragma once
 
+#include "structfieldvalue.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldvalue/structfieldvalue.h>
 
 namespace document {
 

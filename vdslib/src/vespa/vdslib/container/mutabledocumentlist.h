@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <vespa/vdslib/container/documentlist.h>
-#include <vespa/vdslib/container/operationlist.h>
+#include "documentlist.h"
+#include "operationlist.h"
 
 namespace vdslib {
 

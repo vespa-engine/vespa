@@ -26,7 +26,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 
-
 using std::make_pair;
 using std::pair;
 using std::vector;
