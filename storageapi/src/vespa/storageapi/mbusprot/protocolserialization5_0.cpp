@@ -4,17 +4,9 @@
 #include "serializationhelper.h"
 #include "storagecommand.h"
 #include "storagereply.h"
-#include "storageprotocol.h"
-#include <vespa/messagebus/blob.h>
-#include <vespa/messagebus/blobref.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/multioperation.h>
-#include <vespa/vespalib/util/growablebytebuffer.h>
-#include <vespa/document/select/orderingspecification.h>
-#include <vespa/storageapi/messageapi/returncode.h>
+
 
 namespace storage {
 namespace mbusprot {
