@@ -118,7 +118,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private Optional<ApplicationId> parseApplication(String appNode) {
         try {
-            return Optional.of(ApplicationId.fromSerializedForm(tenant, appNode));
+            return Optional.of(ApplicationId.fromSerializedForm(appNode));
         } catch (IllegalArgumentException e) {
             log.log(LogLevel.INFO, Tenants.logPre(tenant)+"Unable to parse application with id '" + appNode + "', ignoring.");
             return Optional.empty();
@@ -156,10 +156,10 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
         switch (event.getType()) {
             case CHILD_ADDED:
-                applicationAdded(ApplicationId.fromSerializedForm(tenant, Path.fromString(event.getData().getPath()).getName()));
+                applicationAdded(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                 break;
             case CHILD_REMOVED:
-                applicationRemoved(ApplicationId.fromSerializedForm(tenant, Path.fromString(event.getData().getPath()).getName()));
+                applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                 break;
         }
     }

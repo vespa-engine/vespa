@@ -113,7 +113,7 @@ public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
 
     private ApplicationId toApplicationId(String applicationIdString) {
         try {
-            return ApplicationId.fromSerializedForm(null, applicationIdString);
+            return ApplicationId.fromSerializedForm(applicationIdString);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
         }

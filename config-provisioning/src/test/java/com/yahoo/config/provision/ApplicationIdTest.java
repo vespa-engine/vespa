@@ -60,21 +60,15 @@ public class ApplicationIdTest {
 
     @Test
     public void require_that_idstring_can_be_parsed() {
-        ApplicationId id = ApplicationId.fromSerializedForm(TenantName.from("bim"), "foo:prod:baz:bim");
-        assertThat(id.application().value(), is("foo"));
-        assertThat(id.instance().value(), is("bim"));
-        assertThat(id.tenant().value(), is("bim"));
-
-        id = ApplicationId.fromSerializedForm(TenantName.from("unused"), "ten:foo:bim");
+        ApplicationId id = ApplicationId.fromSerializedForm("ten:foo:bim");
         assertThat(id.tenant().value(), is("ten"));
         assertThat(id.application().value(), is("foo"));
         assertThat(id.instance().value(), is("bim"));
     }
 
-    // TODO: Probably more test cases to break parsing.
     @Test(expected = IllegalArgumentException.class)
     public void require_that_invalid_idstring_throws_exception() {
-        ApplicationId.fromSerializedForm(TenantName.defaultName(), "foo:baz");
+        ApplicationId.fromSerializedForm("foo:baz");
     }
 
     @Test
