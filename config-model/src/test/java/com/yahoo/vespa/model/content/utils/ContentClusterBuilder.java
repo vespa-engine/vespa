@@ -104,7 +104,7 @@ public class ContentClusterBuilder {
         String xml = joinLines("<content version='1.0' id='" + name + "'>",
                "  <redundancy>" + redundancy + "</redundancy>",
                "  <documents>",
-                docTypes.stream().map(type -> type.toXml()).collect(Collectors.joining("\n")),
+                docTypes.stream().map(DocType::toXml).collect(Collectors.joining("\n")),
                "  </documents>",
                "  <engine>",
                "    <proton>",

@@ -275,7 +275,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
-                .global(isGloballyDistributed(docTypeName));
+                .global(isGloballyDistributed(type));
             if (hasIndexedCluster()) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
             }
@@ -304,8 +304,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
     }
 
-    private boolean isGloballyDistributed(String docTypeName) {
-        return globallyDistributedDocuments.stream().anyMatch(type -> type.getFullName().getName().equals(docTypeName));
+    private boolean isGloballyDistributed(NewDocumentType docType) {
+        return globallyDistributedDocuments.contains(docType);
     }
 
     @Override

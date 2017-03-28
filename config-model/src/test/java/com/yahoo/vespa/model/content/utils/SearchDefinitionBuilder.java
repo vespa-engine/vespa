@@ -39,10 +39,10 @@ public class SearchDefinitionBuilder {
     }
 
     public static List<String> createSearchDefinitions(String ... docTypes) {
-        return Arrays.asList(docTypes).
-                stream().
-                map(type -> new SearchDefinitionBuilder().name(type).build()).
-                collect(Collectors.toList());
+        return Arrays.asList(docTypes)
+                .stream()
+                .map(type -> new SearchDefinitionBuilder().name(type).build())
+                .collect(Collectors.toList());
     }
 
 }

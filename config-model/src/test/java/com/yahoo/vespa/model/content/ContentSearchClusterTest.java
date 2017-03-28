@@ -31,7 +31,8 @@ public class ContentSearchClusterTest {
     }
 
     private static ContentCluster createClusterWithGlobalType() throws Exception {
-        return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(new ContentClusterBuilder.DocType("global", true),
+        return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(
+                new ContentClusterBuilder.DocType("global", true),
                 new ContentClusterBuilder.DocType("regular"))).getXml(),
                 createSearchDefinitions("global", "regular"));
     }
