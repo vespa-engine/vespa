@@ -203,7 +203,7 @@ MemFileCache::get(const BucketId& id, Environment& env, Directory& dir,
         // in the common case that there's a bucket file on the disk. The
         // content layer shall guarantee that no concurrent operations happen
         // for a single bucket, so this should be fully thread safe.
-        Entry::SP entry(new Entry(file, env, createIfNotExisting));
+        auto entry = std::make_shared<Entry>(file, env, createIfNotExisting);
 
         vespalib::LockGuard reLock(_cacheLock);
         std::pair<LRUCache::iterator, bool> inserted(

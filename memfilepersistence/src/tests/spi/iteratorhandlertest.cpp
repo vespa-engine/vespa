@@ -149,7 +149,7 @@ IteratorHandlerTest::doIterate(spi::IteratorId id,
         CPPUNIT_ASSERT_EQUAL(spi::Result::NONE, result.getErrorCode());
         CPPUNIT_ASSERT(result.getEntries().size() > 0 || allowEmptyResult);
 
-        chunks.push_back(Chunk{std::move(result.steal_entries())});
+        chunks.push_back(Chunk{result.steal_entries()});
         if (result.isCompleted()
             || (maxChunks != 0 && chunks.size() >= maxChunks))
         {

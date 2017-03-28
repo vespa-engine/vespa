@@ -150,7 +150,7 @@ doIterate(PersistenceProvider& spi,
 
         CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
 
-        chunks.push_back(Chunk{std::move(result.steal_entries())});
+        chunks.push_back(Chunk{result.steal_entries()});
         if (result.isCompleted()
             || (maxChunks != 0 && chunks.size() >= maxChunks))
         {

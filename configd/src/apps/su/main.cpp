@@ -17,11 +17,11 @@ int main(int argc, char** argv)
         exit(1);
     }
     const char *username = getenv("VESPA_USER");
-    if (username == NULL) {
+    if (username == nullptr) {
         username = "yahoo";
     }
     struct passwd *p = getpwnam(username);
-    if (p == NULL) {
+    if (p == nullptr) {
         fprintf(stderr, "FATAL error: user '%s' missing in passwd file\n", username);
         exit(1);
     }

@@ -1215,7 +1215,7 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
                 tracker->getReply()->toString().c_str(),
                 bucketId.toString().c_str());
 
-            trackers.push_back(MessageTracker::UP(tracker.release()));
+            trackers.push_back(std::move(tracker));
 
             if (trackers.back()->getReply()->getResult().success()) {
                 _env._fileStorHandler.getNextMessage(

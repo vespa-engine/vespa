@@ -161,7 +161,7 @@ Service::start()
         return -1;
     }
 
-    fflush(NULL);
+    fflush(nullptr);
     _pid = fork();
     if (_pid == -1) {
         LOG(error, "%s: Attempted to start, but fork() failed: %s", name().c_str(),
@@ -342,7 +342,7 @@ Service::runChild(int pipes[2])
     }
     fcntl(0, F_SETFD, 0); // Don't close on exec
 
-    execl("/bin/sh", "/bin/sh", "-c", _config->command.c_str(), NULL);
+    execl("/bin/sh", "/bin/sh", "-c", _config->command.c_str(), nullptr);
 
     char buf[200];
     snprintf(buf, sizeof buf, "exec error: %s for /bin/sh -c '%s'",

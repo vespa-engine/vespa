@@ -401,10 +401,10 @@ void doUpdate(FRT_RPCRequest *req, PersistenceProvider *provider,
     Bucket bucket = getBucket(params[0], params[1]);
     Timestamp timestamp(params[2]._intval64);
     ByteBuffer buffer(params[3]._data._buf, params[3]._data._len);
-    DocumentUpdate::SP update(new DocumentUpdate(*repo, buffer,
-                                                 DocumentUpdate::
-                                                 SerializeVersion::
-                                                 SERIALIZE_HEAD));
+    auto update = std::make_shared<DocumentUpdate>(*repo, buffer,
+                                                   DocumentUpdate::
+                                                   SerializeVersion::
+                                                   SERIALIZE_HEAD);
 
     FRT_Values &ret = *req->GetReturn();
     Context context(defaultLoadType, Priority(0x80), Trace::TraceLevel(0));

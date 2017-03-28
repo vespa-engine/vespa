@@ -54,6 +54,10 @@ public:
         const mapped_type* operator->() const { return &_value; }
         mapped_type& operator*() { return _value; }
         const mapped_type& operator*() const { return _value; }
+
+        const mapped_type *get() const { return &_value; }
+        mapped_type *get() { return &_value; }
+
         void write();
         void remove();
         void unlock();

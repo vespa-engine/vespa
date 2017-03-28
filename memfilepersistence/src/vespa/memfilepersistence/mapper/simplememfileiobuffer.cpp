@@ -292,7 +292,7 @@ SimpleMemFileIOBuffer::allocateBuffer(DocumentPart part,
     // If the requested size is greater than or equal to our working buffer
     // size, simply allocate a separate buffer for it.
     if (sz >= WORKING_BUFFER_SIZE) {
-        return BufferAllocation(SharedBuffer::SP(new SharedBuffer(sz)), 0, sz);
+        return BufferAllocation(std::make_shared<SharedBuffer>(sz), 0, sz);
     }
 
     SharedBuffer::SP &bufSP(_workingBuffers[part]);
@@ -308,7 +308,7 @@ SimpleMemFileIOBuffer::allocateBuffer(DocumentPart part,
                                 static_cast<uint32_t>(bufSP->allocate(sz, align)),
                                 sz);
     } else {
-        SharedBuffer::SP newBuf(new SharedBuffer(WORKING_BUFFER_SIZE));
+        auto newBuf = std::make_shared<SharedBuffer>(WORKING_BUFFER_SIZE);
         bufSP = newBuf;
         return BufferAllocation(newBuf,
                                 static_cast<uint32_t>(newBuf->allocate(sz, align)),
