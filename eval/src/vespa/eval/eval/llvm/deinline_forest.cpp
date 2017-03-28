@@ -10,6 +10,7 @@ namespace gbdt {
 DeinlineForest::DeinlineForest(const std::vector<const nodes::Node *> &trees)
 {
     size_t idx = 0;
+    size_t num_fragments = 0;
     while (idx < trees.size()) {
         size_t fragment_size = 0;
         std::vector<const nodes::Node *> fragment;
@@ -18,8 +19,13 @@ DeinlineForest::DeinlineForest(const std::vector<const nodes::Node *> &trees)
             fragment.push_back(trees[idx++]);
         }
         ForestStats stats(fragment);
-        void *address = _llvm_wrapper.compile_forest_fragment(stats.num_params, fragment);
-        _fragments.push_back((array_function)address);
+        size_t id = _llvm_wrapper.make_forest_fragment(stats.num_params, fragment);
+        assert(id == num_fragments);
+        ++num_fragments;
+    }
+    _llvm_wrapper.compile();
+    for (size_t id = 0; id < num_fragments; ++id) {
+        _fragments.push_back((array_function)_llvm_wrapper.get_function_address(id));
     }
 }
 

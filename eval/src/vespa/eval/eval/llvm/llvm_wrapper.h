@@ -8,7 +8,6 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/PassManager.h>
 #include <mutex>
 
 extern "C" {
@@ -43,23 +42,25 @@ struct PluginState {
 class LLVMWrapper
 {
 private:
-    llvm::LLVMContext         *_context;
-    llvm::Module              *_module; // owned by engine
-    llvm::ExecutionEngine     *_engine;
-    size_t                     _num_functions;
-    std::vector<gbdt::Forest::UP> _forests;
-    std::vector<PluginState::UP> _plugin_state;
+    std::unique_ptr<llvm::LLVMContext>     _context;
+    std::unique_ptr<llvm::Module>          _module;
+    std::unique_ptr<llvm::ExecutionEngine> _engine;
+    std::vector<llvm::Function*>           _functions;
+    std::vector<gbdt::Forest::UP>          _forests;
+    std::vector<PluginState::UP>           _plugin_state;
 
     static std::recursive_mutex _global_llvm_lock;
 
 public:
     LLVMWrapper();
-    LLVMWrapper(LLVMWrapper &&rhs);
-    void *compile_function(size_t num_params, PassParams pass_params, const nodes::Node &root,
-                           const gbdt::Optimize::Chain &forest_optimizers);
-    void *compile_forest_fragment(size_t num_params, const std::vector<const nodes::Node *> &fragment);
+    LLVMWrapper(LLVMWrapper &&rhs) = default;
+
+    size_t make_function(size_t num_params, PassParams pass_params, const nodes::Node &root,
+                         const gbdt::Optimize::Chain &forest_optimizers);
+    size_t make_forest_fragment(size_t num_params, const std::vector<const nodes::Node *> &fragment);
     const std::vector<gbdt::Forest::UP> &get_forests() const { return _forests; }
-    void dump() const { _module->dump(); }
+    void compile(bool dump_module = false);
+    void *get_function_address(size_t function_id);
     ~LLVMWrapper();
 };
 

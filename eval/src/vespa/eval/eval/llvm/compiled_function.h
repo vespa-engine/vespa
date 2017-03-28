@@ -61,7 +61,6 @@ public:
     const std::vector<gbdt::Forest::UP> &get_forests() const {
         return _llvm_wrapper.get_forests();
     }
-    void dump() const { _llvm_wrapper.dump(); }
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
 };

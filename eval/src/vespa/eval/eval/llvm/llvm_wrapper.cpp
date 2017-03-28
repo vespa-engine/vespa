@@ -4,7 +4,8 @@
 #include "llvm_wrapper.h"
 #include <vespa/eval/eval/node_visitor.h>
 #include <vespa/eval/eval/node_traverser.h>
-#include <llvm/Analysis/Verifier.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/TargetSelect.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -68,7 +69,6 @@ struct SetMemberHash : PluginState {
 
 struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
-    llvm::ExecutionEngine    &engine;
     llvm::LLVMContext        &context;
     llvm::Module             &module;
     llvm::IRBuilder<>         builder;
@@ -119,8 +119,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         return llvm::PointerType::get(function_type, 0);
     }
 
-    FunctionBuilder(llvm::ExecutionEngine &engine_in,
-                    llvm::LLVMContext &context_in,
+    FunctionBuilder(llvm::LLVMContext &context_in,
                     llvm::Module &module_in,
                     const vespalib::string &name_in,
                     size_t num_params_in,
@@ -128,8 +127,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
                     const gbdt::Optimize::Chain &forest_optimizers_in,
                     std::vector<gbdt::Forest::UP> &forests_out,
                     std::vector<PluginState::UP> &plugin_state_out)
-        : engine(engine_in),
-          context(context_in),
+        : context(context_in),
           module(module_in),
           builder(context),
           params(),
@@ -160,7 +158,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::BasicBlock *block = llvm::BasicBlock::Create(context, "entry", function);
         builder.SetInsertPoint(block);
         for (llvm::Function::arg_iterator itr = function->arg_begin(); itr != function->arg_end(); ++itr) {
-            params.push_back(itr);
+            params.push_back(&(*itr));
         }
     }
     ~FunctionBuilder();
@@ -180,7 +178,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         }
         assert(pass_params == PassParams::LAZY);
         assert(params.size() == 2);
-        return builder.CreateCall2(params[0], params[1], builder.getInt64(idx), "resolve_param");
+        return builder.CreateCall(params[0], {params[1], builder.getInt64(idx)}, "resolve_param");
     }
 
     //-------------------------------------------------------------------------
@@ -232,12 +230,12 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::Value *eval_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)eval_ptr), eval_funptr_t, "inject_eval");
         llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getVoidTy()->getPointerTo(), "inject_ctx");
         if (pass_params == PassParams::ARRAY) {
-            push(builder.CreateCall2(eval_fun, ctx, params[0], "call_eval"));
+	    push(builder.CreateCall(eval_fun, {ctx, params[0]}, "call_eval"));
         } else {
             assert(pass_params == PassParams::LAZY);
             llvm::PointerType *proxy_funptr_t = make_eval_forest_proxy_funptr_t();
             llvm::Value *proxy_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)vespalib_eval_forest_proxy), proxy_funptr_t, "inject_eval_proxy");
-            push(builder.CreateCall5(proxy_fun, eval_fun, ctx, params[0], params[1], builder.getInt64(stats.num_params)));
+            push(builder.CreateCall(proxy_fun, {eval_fun, ctx, params[0], params[1], builder.getInt64(stats.num_params)}));
         }
         return true;
     }
@@ -292,11 +290,11 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         inside_forest = false;
     }
 
-    void *compile() {
+    llvm::Function *build() {
         builder.CreateRet(pop_double());
         assert(values.empty());
         llvm::verifyFunction(*function);
-        return engine.getPointerToFunction(function);
+        return function;
     }
 
     //-------------------------------------------------------------------------
@@ -334,7 +332,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         }
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
-        push(builder.CreateCall2(fun, a, b));
+        push(builder.CreateCall(fun, {a, b}));
     }
     void make_call_2(const llvm::Intrinsic::ID &id) {
         make_call_2(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
@@ -511,7 +509,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
                 llvm::PointerType *funptr_t = make_check_membership_funptr_t();
                 llvm::Value *call_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)call_ptr), funptr_t, "inject_call_addr");
                 llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), builder.getVoidTy()->getPointerTo(), "inject_ctx");
-                push(builder.CreateCall2(call_fun, ctx, lhs, "call_check_membership"));
+                push(builder.CreateCall(call_fun, {ctx, lhs}, "call_check_membership"));
             } else {
                 // build explicit code to check all set members
                 llvm::Value *found = builder.getFalse();
@@ -625,70 +623,84 @@ FunctionBuilder::~FunctionBuilder() { }
 
 struct InitializeNativeTarget {
     InitializeNativeTarget() {
-        LLVMInitializeNativeTarget();
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmPrinter();
+        llvm::InitializeNativeTargetAsmParser();
     }
 } initialize_native_target;
 
 std::recursive_mutex LLVMWrapper::_global_llvm_lock;
 
 LLVMWrapper::LLVMWrapper()
-    : _context(nullptr),
-      _module(nullptr),
-      _engine(nullptr),
-      _num_functions(0),
+    : _context(),
+      _module(),
+      _engine(),
+      _functions(),
       _forests(),
       _plugin_state()
 {
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
-    _context = new llvm::LLVMContext();
-    _module = new llvm::Module("LLVMWrapper", *_context);
-    _engine = llvm::EngineBuilder(_module).setOptLevel(llvm::CodeGenOpt::Aggressive).create();
-    assert(_engine != nullptr && "llvm jit not available for your platform");
+    _context = std::make_unique<llvm::LLVMContext>();
+    _module = std::make_unique< llvm::Module>("LLVMWrapper", *_context);
 }
 
-LLVMWrapper::LLVMWrapper(LLVMWrapper &&rhs)
-    : _context(rhs._context),
-      _module(rhs._module),
-      _engine(rhs._engine),
-      _num_functions(rhs._num_functions),
-      _forests(std::move(rhs._forests)),
-      _plugin_state(std::move(rhs._plugin_state))
-{
-    rhs._context = nullptr;
-    rhs._module = nullptr;
-    rhs._engine = nullptr;
-}
 
-void *
-LLVMWrapper::compile_function(size_t num_params, PassParams pass_params, const Node &root,
-                              const gbdt::Optimize::Chain &forest_optimizers)
-{
+size_t
+LLVMWrapper::make_function(size_t num_params, PassParams pass_params, const Node &root,
+                           const gbdt::Optimize::Chain &forest_optimizers)
+{ 
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
-    FunctionBuilder builder(*_engine, *_context, *_module,
-                            vespalib::make_string("f%zu", ++_num_functions),
+    size_t function_id = _functions.size();
+    FunctionBuilder builder(*_context, *_module,
+                            vespalib::make_string("f%zu", function_id),
                             num_params, pass_params,
                             forest_optimizers, _forests, _plugin_state);
     builder.build_root(root);
-    return builder.compile();
+    _functions.push_back(builder.build());
+    return function_id;
 }
 
-void *
-LLVMWrapper::compile_forest_fragment(size_t num_params, const std::vector<const Node *> &fragment)
+size_t
+LLVMWrapper::make_forest_fragment(size_t num_params, const std::vector<const Node *> &fragment)
 {
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
-    FunctionBuilder builder(*_engine, *_context, *_module,
-                            vespalib::make_string("f%zu", ++_num_functions),
+    size_t function_id = _functions.size();
+    FunctionBuilder builder(*_context, *_module,
+                            vespalib::make_string("f%zu", function_id),
                             num_params, PassParams::ARRAY,
                             gbdt::Optimize::none, _forests, _plugin_state);
     builder.build_forest_fragment(fragment);
-    return builder.compile();
+    _functions.push_back(builder.build());
+    return function_id;
+}
+
+void
+LLVMWrapper::compile(bool dump_module)
+{
+    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
+    if (dump_module) {
+        _module->dump();
+    }
+    _engine.reset(llvm::EngineBuilder(std::move(_module)).setOptLevel(llvm::CodeGenOpt::Aggressive).create());
+    assert(_engine && "llvm jit not available for your platform");
+    _engine->finalizeObject();
+}
+
+void *
+LLVMWrapper::get_function_address(size_t function_id)
+{
+    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
+    return _engine->getPointerToFunction(_functions[function_id]);
 }
 
 LLVMWrapper::~LLVMWrapper() {
     std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
-    delete _engine;
-    // _module is owned by _engine
-    delete _context;
+    _plugin_state.clear();
+    _forests.clear();
+    _functions.clear();
+    _engine.reset();
+    _module.reset();
+    _context.reset();
 }
 
 } // namespace vespalib::eval
