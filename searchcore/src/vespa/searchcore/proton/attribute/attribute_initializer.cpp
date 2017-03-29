@@ -101,6 +101,17 @@ logAttributeTooNew(const AttributeVector::SP &attr,
 }
 
 void
+logAttributeTooOld(const AttributeVector::SP &attr,
+                   search::SerialNum flushedSerialNum,
+                   uint64_t serialNum)
+{
+    LOG(info, "Attribute vector '%s' is too old (%" PRIu64 " < %" PRIu64 ")",
+        attr->getBaseFileName().c_str(),
+        flushedSerialNum,
+        serialNum);
+}
+
+void
 logAttributeWrongType(const AttributeVector::SP &attr,
                       const AttributeHeader &header)
 {
@@ -127,7 +138,7 @@ AttributeInitializer::tryLoadAttribute() const
     AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
     if (serialNum != 0) {
         AttributeHeader header = extractHeader(attrFileName);
-        if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig())) {
+        if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig()) || (serialNum < _currentSerialNum)) {
             setupEmptyAttribute(attr, serialNum, header);
             return attr;
         }
@@ -168,6 +179,9 @@ AttributeInitializer::setupEmptyAttribute(AttributeVector::SP &attr,
 {
     if (header.getCreateSerialNum() > _currentSerialNum) {
         logAttributeTooNew(attr, header, _currentSerialNum);
+    }
+    if (serialNum < _currentSerialNum) {
+        logAttributeTooOld(attr, serialNum, _currentSerialNum);
     }
     if (!headerTypeOK(header, attr->getConfig())) {
         logAttributeWrongType(attr, header);

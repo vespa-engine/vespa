@@ -173,6 +173,15 @@ TEST("require that tensor attributes will not be initialized with mismatching ty
     EXPECT_EQUAL(1, av->getNumDocs());
 }
 
+TEST("require that too old attribute is not loaded")
+{
+    saveAttr("a", int32_sv, 3, 2);
+    Fixture f;
+    auto av = f.createInitializer("a", int32_sv, 5)->init();
+    EXPECT_EQUAL(5, av->getCreateSerialNum());
+    EXPECT_EQUAL(1, av->getNumDocs());
+}
+
 }
 
 TEST_MAIN()
