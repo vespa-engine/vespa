@@ -145,7 +145,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .createContainerCmd(dockerImage.asString())
                 .withName(containerName.asString())
                 .withHostName(hostName)
-                .withDomainName(findDomainName(hostName))
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds)
@@ -219,9 +218,5 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         }
 
         return sb.substring(1);
-    }
-
-    private String findDomainName(String hostName) {
-        return hostName.substring(hostName.indexOf(".") + 1);
     }
 }
