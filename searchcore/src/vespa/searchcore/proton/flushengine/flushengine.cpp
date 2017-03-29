@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+
 #include "cachedflushtarget.h"
 #include "flush_all_strategy.h"
 #include "flushengine.h"
@@ -9,8 +8,8 @@
 #include "tls_stats_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/jsonwriter.h>
-#include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.flushengine");
 
 using vespalib::MonitorGuard;
@@ -84,7 +83,6 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
 FlushEngine::~FlushEngine()
 {
     close();
-    _executor.sync();
 }
 
 FlushEngine &
@@ -106,6 +104,8 @@ FlushEngine::close()
         guard.broadcast();
     }
     _threadPool.Close();
+    _executor.shutdown();
+    _executor.sync();
     return *this;
 }
 
