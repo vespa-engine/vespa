@@ -275,7 +275,6 @@ Test::Main()
     LOG(info, "sizeof(CountAggregationResult) = %ld", sizeof(CountAggregationResult));
     LOG(info, "sizeof(Int64ResultNode) = %ld", sizeof(Int64ResultNode));
 
-    LOG(info, "sizeof(Group::ExpressionVector) = %ld", sizeof(Group::ExpressionVector));
     fastos::TimeStamp start(fastos::ClockSystem::now());
     if (idType == "int") {
         if (aggrType == "sum") {
