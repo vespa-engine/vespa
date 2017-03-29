@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "iattributesavetarget.h"
 #include "iattributefilewriter.h"
+#include <vespa/vespalib/stllike/string.h>
 
 class FastOS_FileInterface;
 
@@ -12,6 +12,7 @@ namespace vespalib { class GenericHeader; }
 namespace search {
 
 namespace common { class FileHeaderContext; }
+namespace attribute { class AttributeHeader; }
 
 class TuneFileAttributes;
 
@@ -24,7 +25,7 @@ class AttributeFileWriter : public IAttributeFileWriter
     std::unique_ptr<FastOS_FileInterface> _file;
     const TuneFileAttributes &_tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    const IAttributeSaveTarget::Config &_cfg;
+    const attribute::AttributeHeader &_header;
     vespalib::string _desc;
     uint64_t _fileBitSize;
 
@@ -34,7 +35,7 @@ class AttributeFileWriter : public IAttributeFileWriter
 public:
     AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
                         const search::common::FileHeaderContext & fileHeaderContext,
-                        const IAttributeSaveTarget::Config &cfg,
+                        const attribute::AttributeHeader &header,
                         const vespalib::string &desc);
     ~AttributeFileWriter();
     virtual Buffer allocBuf(size_t size) override;

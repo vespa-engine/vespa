@@ -64,7 +64,7 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                     IDocumentTypeInspector::SP(new DocumentTypeInspector(*newDocType))),
             ARIConfig(oldView->getAttributeWriter()->getAttributeManager(), *oldConfig.getSchemaSP(),
                     IDocumentTypeInspector::SP(new DocumentTypeInspector(*oldDocType))),
-                    _subDbName));
+            _subDbName, attrSpec.getCurrentSerialNum()));
 }
 
 } // namespace proton

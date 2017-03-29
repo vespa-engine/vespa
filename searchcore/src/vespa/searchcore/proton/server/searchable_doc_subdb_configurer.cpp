@@ -164,7 +164,8 @@ createAttributeReprocessingInitializer(const DocumentDBConfig &newConfig,
                                        const IAttributeManager::SP &newAttrMgr,
                                        const DocumentDBConfig &oldConfig,
                                        const IAttributeManager::SP &oldAttrMgr,
-                                       const vespalib::string &subDbName)
+                                       const vespalib::string &subDbName,
+                                       search::SerialNum serialNum)
 {
     const document::DocumentType *newDocType = newConfig.getDocumentType();
     const document::DocumentType *oldDocType = oldConfig.getDocumentType();
@@ -175,7 +176,7 @@ createAttributeReprocessingInitializer(const DocumentDBConfig &newConfig,
                     IDocumentTypeInspector::SP(new DocumentTypeInspector(*newDocType))),
                     ARIConfig(oldAttrMgr, *oldConfig.getSchemaSP(),
                     IDocumentTypeInspector::SP(new DocumentTypeInspector(*oldDocType))),
-                    subDbName));
+            subDbName, serialNum));
 }
 
 }
@@ -216,7 +217,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         attrWriter = newAttrWriter;
         shouldFeedViewChange = true;
         initializer.reset(createAttributeReprocessingInitializer(newConfig, newAttrMgr,
-                oldConfig, oldAttrMgr, _subDbName).release());
+                                                                 oldConfig, oldAttrMgr, _subDbName, attrSpec.getCurrentSerialNum()).release());
     }
 
     ISummaryManager::ISummarySetup::SP sumSetup =

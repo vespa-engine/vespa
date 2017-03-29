@@ -7,6 +7,7 @@ LOG_SETUP("attributefilewriter_test");
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/attribute/attributefilewriter.h>
 #include <vespa/searchlib/attribute/attributefilebufferwriter.h>
+#include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -29,18 +30,18 @@ void removeTestFile() { FastOS_File::Delete(testFileName.c_str()); }
 struct Fixture {
     TuneFileAttributes _tuneFileAttributes;
     DummyFileHeaderContext _fileHeaderContext;
-    IAttributeSaveTarget::Config _cfg;
+    attribute::AttributeHeader _header;
     const vespalib::string _desc;
     AttributeFileWriter _writer;
 
     Fixture()
         : _tuneFileAttributes(),
           _fileHeaderContext(),
-          _cfg(),
+          _header(),
           _desc("Attribute file sample description"),
           _writer(_tuneFileAttributes,
                   _fileHeaderContext,
-                  _cfg,
+                  _header,
                   _desc)
     {
         removeTestFile();

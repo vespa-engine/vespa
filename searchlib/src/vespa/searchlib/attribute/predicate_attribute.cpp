@@ -5,6 +5,8 @@
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include "iattributesavetarget.h"
+#include "attribute_header.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_attribute");
@@ -55,7 +57,7 @@ int64_t adjustUpperBound(int32_t arity, int64_t upper_bound) {
 }
 
 SimpleIndexConfig createSimpleIndexConfig(const search::attribute::Config &config) {
-    return SimpleIndexConfig(config.dense_posting_list_threshold(), config.getGrowStrategy());
+    return SimpleIndexConfig(config.predicateParams().dense_posting_list_threshold(), config.getGrowStrategy());
 }
 
 }  // namespace
@@ -66,9 +68,9 @@ PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name,
       _base_file_name(base_file_name),
       _limit_provider(*this),
       _index(new PredicateIndex(getGenerationHandler(), getGenerationHolder(),
-                                _limit_provider, createSimpleIndexConfig(config), config.arity())),
-      _lower_bound(adjustLowerBound(config.arity(), config.lower_bound())),
-      _upper_bound(adjustUpperBound(config.arity(), config.upper_bound())),
+                                _limit_provider, createSimpleIndexConfig(config), config.predicateParams().arity())),
+      _lower_bound(adjustLowerBound(config.predicateParams().arity(), config.predicateParams().lower_bound())),
+      _upper_bound(adjustUpperBound(config.predicateParams().arity(), config.predicateParams().upper_bound())),
       _min_feature(config.getGrowStrategy(), getGenerationHolder()),
       _interval_range_vector(config.getGrowStrategy(), getGenerationHolder()),
       _max_interval_range(1)
@@ -183,8 +185,11 @@ bool PredicateAttribute::onLoad()
     buffer.moveFreeToData(size);
 
     const GenericHeader &header = loaded_buffer->getHeader();
-    uint32_t version = static_cast<uint32_t>(
-            header.hasTag("version") ? header.getTag("version").asInteger() : 0);
+    auto attributeHeader = attribute::AttributeHeader::extractTags(header);
+    uint32_t version = attributeHeader.getVersion();
+
+    setCreateSerialNum(attributeHeader.getCreateSerialNum());
+
     LOG(info, "Loading predicate attribute version %d. getVersion() = %d", version, getVersion());
 
     DocId highest_doc_id;

@@ -4,9 +4,9 @@
 #include "dense_tensor_attribute_saver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include "dense_tensor_store.h"
+#include <vespa/searchlib/attribute/iattributesavetarget.h>
 
 using vespalib::GenerationHandler;
-using search::IAttributeSaveTarget;
 
 namespace search {
 
@@ -21,10 +21,10 @@ static const uint8_t tensorIsPresent = 1;
 
 DenseTensorAttributeSaver::
 DenseTensorAttributeSaver(GenerationHandler::Guard &&guard,
-                     const IAttributeSaveTarget::Config &cfg,
-                     RefCopyVector &&refs,
-                     const DenseTensorStore &tensorStore)
-    : AttributeSaver(std::move(guard), cfg),
+                          const attribute::AttributeHeader &header,
+                          RefCopyVector &&refs,
+                          const DenseTensorStore &tensorStore)
+    : AttributeSaver(std::move(guard), header),
       _refs(std::move(refs)),
       _tensorStore(tensorStore)
 {

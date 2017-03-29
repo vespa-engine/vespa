@@ -65,15 +65,17 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     cType.removeIfZero(cfg.removeifzero);
     cType.createIfNonExistant(cfg.createifnonexistent);
     Config retval(bType, cType);
+    PredicateParams predicateParams;
     retval.setFastSearch(cfg.fastsearch);
     retval.setHuge(cfg.huge);
     retval.setEnableBitVectors(cfg.enablebitvectors);
     retval.setEnableOnlyBitVector(cfg.enableonlybitvector);
     retval.setIsFilter(cfg.enableonlybitvector);
     retval.setFastAccess(cfg.fastaccess);
-    retval.setArity(cfg.arity);
-    retval.setBounds(cfg.lowerbound, cfg.upperbound);
-    retval.setDensePostingListThreshold(cfg.densepostinglistthreshold);
+    predicateParams.setArity(cfg.arity);
+    predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
+    predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
+    retval.setPredicateParams(predicateParams);
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
         if (!cfg.tensortype.empty()) {
             retval.setTensorType(ValueType::from_spec(cfg.tensortype));

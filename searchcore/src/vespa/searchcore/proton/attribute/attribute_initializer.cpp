@@ -7,64 +7,86 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_initializer");
 
+using search::attribute::BasicType;
 using search::attribute::Config;
 using search::AttributeVector;
 using search::IndexMetaInfo;
 
 namespace proton {
 
-typedef AttributeInitializer::AttributeHeader AttributeHeader;
+using search::attribute::AttributeHeader;
 
 namespace {
 
-const vespalib::string dataTypeTag = "datatype";
-const vespalib::string collectionTypeTag = "collectiontype";
-const vespalib::string createSerialNumTag = "createSerialNum";
-
-uint64_t
-extractCreateSerialNum(const vespalib::GenericHeader &header)
+vespalib::string
+extraPredicateType(const search::attribute::PersistentPredicateParams &params)
 {
-    if (header.hasTag(createSerialNumTag)) {
-        return header.getTag(createSerialNumTag).asInteger();
-    } else {
-        return 0u;
+    vespalib::asciistream os;
+    os << "arity=" << params.arity();
+    os << ",lower_bound=" << params.lower_bound();
+    os << ",upper_bound=" << params.upper_bound();
+    return os.str();
+}
+
+vespalib::string
+extraType(const Config &cfg)
+{
+    if (cfg.basicType().type() == BasicType::Type::TENSOR) {
+        return cfg.tensorType().to_spec();
     }
+    if (cfg.basicType().type() == BasicType::Type::PREDICATE) {
+        return extraPredicateType(cfg.predicateParams());
+    }
+    return "";
+}
+
+vespalib::string
+extraType(const AttributeHeader &header)
+{
+    if (header.getBasicType().type() == BasicType::Type::TENSOR) {
+        return header.getTensorType().to_spec();
+    }
+    if (header.getBasicType().type() == BasicType::Type::PREDICATE) {
+        return extraPredicateType(header.getPredicateParams());
+    }
+    return "";
 }
 
 bool
-extractHeaderTypeOK(const vespalib::GenericHeader &header, const Config &cfg)
+headerTypeOK(const AttributeHeader &header, const Config &cfg)
 {
-    return header.hasTag(dataTypeTag) &&
-        header.hasTag(collectionTypeTag) &&
-        header.getTag(dataTypeTag).asString() ==
-        cfg.basicType().asString() &&
-        header.getTag(collectionTypeTag).asString() ==
-        cfg.collectionType().asString();
+    if ((header.getBasicType().type() != cfg.basicType().type()) ||
+        (header.getCollectionType().type() != cfg.collectionType().type())) {
+        return false;
+    }
+    if (cfg.basicType().type() == BasicType::Type::TENSOR) {
+        if (header.getTensorType() != cfg.tensorType()) {
+            return false;
+        }
+    }
+    if (cfg.basicType().type() == BasicType::PREDICATE) {
+        if (header.getPredicateParamsSet()) {
+            if (!(header.getPredicateParams() == cfg.predicateParams())) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 AttributeHeader
-extractHeader(const AttributeVector::SP &attr,
-              const vespalib::string &attrFileName)
+extractHeader(const vespalib::string &attrFileName)
 {
-
     auto df = search::FileUtil::openFile(attrFileName + ".dat");
     vespalib::FileHeader datHeader;
     datHeader.readFile(*df);
-    AttributeHeader retval;
-    retval._createSerialNum = extractCreateSerialNum(datHeader);
-    retval._headerTypeOK = extractHeaderTypeOK(datHeader, attr->getConfig());
-    if (datHeader.hasTag(dataTypeTag)) {
-        retval._btString = datHeader.getTag(dataTypeTag).asString();
-    }
-    if (datHeader.hasTag(collectionTypeTag)) {
-        retval._ctString = datHeader.getTag(collectionTypeTag).asString();
-    }
-    return retval;
+    return AttributeHeader::extractTags(datHeader);
 }
 
 void
@@ -73,9 +95,9 @@ logAttributeTooNew(const AttributeVector::SP &attr,
                    uint64_t serialNum)
 {
     LOG(info, "Attribute vector '%s' is too new (%" PRIu64 " > %" PRIu64 ")",
-            attr->getBaseFileName().c_str(),
-            header._createSerialNum,
-            serialNum);
+        attr->getBaseFileName().c_str(),
+        header.getCreateSerialNum(),
+        serialNum);
 }
 
 void
@@ -83,25 +105,19 @@ logAttributeWrongType(const AttributeVector::SP &attr,
                       const AttributeHeader &header)
 {
     const Config &cfg(attr->getConfig());
-    LOG(info, "Attribute vector '%s' is of wrong type (expected %s/%s, got %s/%s)",
+    vespalib::string extraCfgType = extraType(cfg);
+    vespalib::string extraHeaderType = extraType(header);
+    LOG(info, "Attribute vector '%s' is of wrong type (expected %s/%s/%s, got %s/%s/%s)",
             attr->getBaseFileName().c_str(),
             cfg.basicType().asString(),
             cfg.collectionType().asString(),
-            header._btString.c_str(),
-            header._ctString.c_str());
+            extraCfgType.c_str(),
+            header.getBasicType().asString(),
+            header.getCollectionType().asString(),
+            extraHeaderType.c_str());
 }
 
 }
-
-AttributeInitializer::AttributeHeader::AttributeHeader()
-    : _createSerialNum(0),
-      _headerTypeOK(false),
-      _btString("unknown"),
-      _ctString("unknown")
-{
-}
-
-AttributeInitializer::AttributeHeader::~AttributeHeader() {}
 
 AttributeVector::SP
 AttributeInitializer::tryLoadAttribute() const
@@ -110,8 +126,8 @@ AttributeInitializer::tryLoadAttribute() const
     vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
     AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
     if (serialNum != 0) {
-        AttributeHeader header = extractHeader(attr, attrFileName);
-        if (header._createSerialNum > _currentSerialNum || !header._headerTypeOK) {
+        AttributeHeader header = extractHeader(attrFileName);
+        if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig())) {
             setupEmptyAttribute(attr, serialNum, header);
             return attr;
         }
@@ -150,10 +166,10 @@ AttributeInitializer::setupEmptyAttribute(AttributeVector::SP &attr,
                                           search::SerialNum serialNum,
                                           const AttributeHeader &header) const
 {
-    if (header._createSerialNum > _currentSerialNum) {
+    if (header.getCreateSerialNum() > _currentSerialNum) {
         logAttributeTooNew(attr, header, _currentSerialNum);
     }
-    if (!header._headerTypeOK) {
+    if (!headerTypeOK(header, attr->getConfig())) {
         logAttributeWrongType(attr, header);
     }
     LOG(info, "Returning empty attribute vector for '%s'",

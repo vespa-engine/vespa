@@ -197,7 +197,7 @@ SingleValueNumericAttribute<B>::onInitSave()
     const uint32_t numDocs(this->getCommittedDocIdLimit());
     assert(numDocs <= _data.size());
     return std::make_unique<SingleValueNumericAttributeSaver>
-        (this->createSaveTargetConfig(), &_data[0], numDocs * sizeof(T));
+        (this->createAttributeHeader(), &_data[0], numDocs * sizeof(T));
 }
 
 template <typename B>

@@ -3,6 +3,7 @@
 #include "documentmetastoresaver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include "document_meta_store_versions.h"
+#include <vespa/searchlib/attribute/iattributesavetarget.h>
 
 using vespalib::GenerationHandler;
 using search::IAttributeSaveTarget;
@@ -67,15 +68,15 @@ public:
 
 DocumentMetaStoreSaver::
 DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
-                             const search::IAttributeSaveTarget::Config &cfg,
-                             const GidIterator &gidIterator,
-                             const MetaDataStore &metaDataStore)
-    : AttributeSaver(std::move(guard), cfg),
+                       const search::attribute::AttributeHeader &header,
+                       const GidIterator &gidIterator,
+                       const MetaDataStore &metaDataStore)
+    : AttributeSaver(std::move(guard), header),
       _gidIterator(gidIterator),
       _metaDataStore(metaDataStore),
       _writeDocSize(true)
 {
-    if (cfg.getVersion() == documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION) {
+    if (header.getVersion() == documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION) {
         _writeDocSize = false;
     }
 }

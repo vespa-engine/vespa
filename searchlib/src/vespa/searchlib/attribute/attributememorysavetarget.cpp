@@ -59,17 +59,17 @@ writeToFile(const TuneFileAttributes &tuneFileAttributes,
             const FileHeaderContext &fileHeaderContext)
 {
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    saveTarget.setConfig(_cfg);
+    saveTarget.setHeader(_header);
     if (!saveTarget.setup()) {
         return false;
     }
     _datWriter.writeTo(saveTarget.datWriter());
-    if (_cfg.getEnumerated()) {
+    if (_header.getEnumerated()) {
         _udatWriter.writeTo(saveTarget.udatWriter());
     }
-    if (_cfg.hasMultiValue()) {
+    if (_header.hasMultiValue()) {
         _idxWriter.writeTo(saveTarget.idxWriter());
-        if (_cfg.hasWeightedSetType()) {
+        if (_header.hasWeightedSetType()) {
             _weightWriter.writeTo(saveTarget.weightWriter());
         }
     }

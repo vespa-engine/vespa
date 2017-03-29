@@ -16,13 +16,9 @@ Config::Config() :
     _enableOnlyBitVector(false),
     _isFilter(false),
     _fastAccess(false),
-    _maxInternalBlobSize(defaultMaxInternalBlobSize),
     _growStrategy(),
     _compactionStrategy(),
-    _arity(8),
-    _lower_bound(LLONG_MIN),
-    _upper_bound(LLONG_MAX),
-    _dense_posting_list_threshold(0.4),
+    _predicateParams(),
     _tensorType(vespalib::eval::ValueType::error_type())
 {
 }
@@ -39,13 +35,9 @@ Config::Config(BasicType bt,
       _enableOnlyBitVector(false),
       _isFilter(false),
       _fastAccess(false),
-      _maxInternalBlobSize(defaultMaxInternalBlobSize),
       _growStrategy(),
       _compactionStrategy(),
-      _arity(8),
-      _lower_bound(LLONG_MIN),
-      _upper_bound(LLONG_MAX),
-      _dense_posting_list_threshold(0.4),
+      _predicateParams(),
       _tensorType(vespalib::eval::ValueType::error_type())
 {
 }

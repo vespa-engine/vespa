@@ -169,7 +169,7 @@ DenseTensorAttribute::onInitSave()
                                              takeGuard());
     return std::make_unique<DenseTensorAttributeSaver>
         (std::move(guard),
-         this->createSaveTargetConfig(),
+         this->createAttributeHeader(),
          getRefCopy(),
          _denseTensorStore);
 }

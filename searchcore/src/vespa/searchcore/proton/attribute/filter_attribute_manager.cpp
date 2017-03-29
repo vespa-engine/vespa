@@ -6,8 +6,29 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 using search::AttributeGuard;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
+
+namespace {
+
+const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.");
+
+bool isAttributeFlushTarget(const IFlushTarget::SP &flushTarget) {
+    const vespalib::string &targetName = flushTarget->getName();
+    if ((flushTarget->getType() != IFlushTarget::Type::SYNC) ||
+        (flushTarget->getComponent() != IFlushTarget::Component::ATTRIBUTE)) {
+        return false;
+    }
+    return (targetName.substr(0, FLUSH_TARGET_NAME_PREFIX.size()) == FLUSH_TARGET_NAME_PREFIX);
+}
+
+vespalib::string attributeFlushTargetAttributeName(const IFlushTarget::SP &flushTarget) {
+    const vespalib::string &targetName = flushTarget->getName();
+    return targetName.substr(FLUSH_TARGET_NAME_PREFIX.size());
+}
+
+}
 
 bool
 FilterAttributeManager::acceptAttribute(const vespalib::string &name) const
@@ -43,10 +64,22 @@ IAttributeManager::SP
 FilterAttributeManager::create(const AttributeCollectionSpec &) const {
     throw vespalib::IllegalArgumentException("Not implemented");
 }
+
 std::vector<searchcorespi::IFlushTarget::SP>
 FilterAttributeManager::getFlushTargets() const {
-    throw vespalib::IllegalArgumentException("Not implemented");
+    std::vector<searchcorespi::IFlushTarget::SP> completeList = _mgr->getFlushTargets();
+    std::vector<searchcorespi::IFlushTarget::SP> list;
+    list.reserve(completeList.size());
+    for (const auto &flushTarget : completeList) {
+        if (isAttributeFlushTarget(flushTarget)) {
+            if (acceptAttribute(attributeFlushTargetAttributeName(flushTarget))) {
+                list.push_back(flushTarget);
+            }
+        }
+    }
+    return list;
 }
+
 search::SerialNum
 FilterAttributeManager::getOldestFlushedSerialNumber() const {
     throw vespalib::IllegalArgumentException("Not implemented");

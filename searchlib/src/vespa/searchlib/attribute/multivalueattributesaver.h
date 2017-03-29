@@ -3,7 +3,6 @@
 #pragma once
 
 #include "attributesaver.h"
-#include "iattributesavetarget.h"
 #include "multi_value_mapping.h"
 
 namespace search {
@@ -21,7 +20,7 @@ protected:
 
 public:
     MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
-                             const IAttributeSaveTarget::Config &cfg,
+                             const attribute::AttributeHeader &header,
                              const MvMappingBase &mvMapping);
 
     virtual ~MultiValueAttributeSaver();

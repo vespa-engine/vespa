@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "iattributesavetarget.h"
+
 namespace search {
 
 namespace multivalueattributesaver {

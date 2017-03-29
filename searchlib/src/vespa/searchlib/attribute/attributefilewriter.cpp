@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include "attribute_header.h"
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -96,12 +97,12 @@ FileBackedBufferWriter::onFlush(size_t nowLen) {
 AttributeFileWriter::
 AttributeFileWriter(const TuneFileAttributes &tuneFileAttributes,
                     const FileHeaderContext &fileHeaderContext,
-                    const IAttributeSaveTarget::Config &cfg,
+                    const attribute::AttributeHeader &header,
                     const vespalib::string &desc)
     : _file(new FastOS_File()),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
-      _cfg(cfg),
+      _header(header),
       _desc(desc),
       _fileBitSize(0)
 { }
@@ -145,26 +146,8 @@ AttributeFileWriter::writeHeader()
 void
 AttributeFileWriter::addTags(vespalib::GenericHeader &header)
 {
-    typedef vespalib::GenericHeader::Tag Tag;
-    header.putTag(Tag("datatype", _cfg.getBasicType()));
-    header.putTag(Tag("collectiontype", _cfg.getCollectionType()));
-    header.putTag(Tag("uniqueValueCount", _cfg.getUniqueValueCount()));
-    header.putTag(Tag("totalValueCount", _cfg.getTotalValueCount()));
-    header.putTag(Tag("docIdLimit", _cfg.getNumDocs()));
-    header.putTag(Tag("frozen", 0));
-    header.putTag(Tag("fileBitSize", 0));
-    header.putTag(Tag("version", _cfg.getVersion()));
-    if (_cfg.getEnumerated()) {
-        header.putTag(Tag("enumerated", 1));
-    }
-    uint64_t createSerialNum = _cfg.getCreateSerialNum();
-    if (createSerialNum != 0u) {
-        header.putTag(Tag("createSerialNum", createSerialNum));
-    }
-    const vespalib::string &tensorType = _cfg.getTensorType();
-    if (!tensorType.empty()) {
-        header.putTag(Tag("tensortype", tensorType));;
-    }
+    _header.addTags(header);
+    using Tag = vespalib::GenericHeader::Tag;
     header.putTag(Tag("desc", _desc));
 }
 

@@ -26,7 +26,7 @@ class MultiValueNumericAttributeSaver : public MultiValueAttributeSaver
 public:
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
     MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
-                                    const IAttributeSaveTarget::Config &cfg,
+                                    const attribute::AttributeHeader &header,
                                     const MultiValueMapping &mvMapping);
 
     virtual ~MultiValueNumericAttributeSaver();

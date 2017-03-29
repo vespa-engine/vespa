@@ -127,7 +127,7 @@ ReferenceAttribute::onInitSave()
                                              takeGuard());
     return std::make_unique<ReferenceAttributeSaver>
         (std::move(guard),
-         createSaveTargetConfig(),
+         createAttributeHeader(),
          getIndicesCopy(getCommittedDocIdLimit()),
          _store);
 }

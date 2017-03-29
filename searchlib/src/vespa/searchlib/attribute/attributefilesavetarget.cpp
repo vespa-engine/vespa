@@ -23,13 +23,13 @@ AttributeFileSaveTarget::
 AttributeFileSaveTarget(const TuneFileAttributes &tuneFileAttributes,
                         const FileHeaderContext &fileHeaderContext)
     : IAttributeSaveTarget(),
-      _datWriter(tuneFileAttributes, fileHeaderContext, _cfg,
+      _datWriter(tuneFileAttributes, fileHeaderContext, _header,
                  "Attribute vector data file"),
-      _idxWriter(tuneFileAttributes, fileHeaderContext, _cfg,
+      _idxWriter(tuneFileAttributes, fileHeaderContext, _header,
                  "Attribute vector idx file"),
-      _weightWriter(tuneFileAttributes, fileHeaderContext, _cfg,
+      _weightWriter(tuneFileAttributes, fileHeaderContext, _header,
                     "Attribute vector weight file"),
-      _udatWriter(tuneFileAttributes, fileHeaderContext, _cfg,
+      _udatWriter(tuneFileAttributes, fileHeaderContext, _header,
                   "Attribute vector unique data file")
 {
 }
@@ -40,23 +40,23 @@ AttributeFileSaveTarget::~AttributeFileSaveTarget() {
 bool
 AttributeFileSaveTarget::setup()
 {
-    const vespalib::string & baseFileName = _cfg.getFileName();
+    const vespalib::string & baseFileName = _header.getFileName();
     vespalib::string datFileName(baseFileName + ".dat");
     if (!_datWriter.open(datFileName)) {
         return false;
     }
-    if (_cfg.getEnumerated()) {
+    if (_header.getEnumerated()) {
         vespalib::string udatFileName(baseFileName + ".udat");
         if (!_udatWriter.open(udatFileName)) {
             return false;
         }
     }
-    if (_cfg.hasMultiValue()) {
+    if (_header.hasMultiValue()) {
         vespalib::string idxFileName(baseFileName + ".idx");
         if (!_idxWriter.open(idxFileName)) {
             return false;
         }
-        if (_cfg.hasWeightedSetType()) {
+        if (_header.hasWeightedSetType()) {
             vespalib::string weightFileName(baseFileName + ".weight");
             if (!_weightWriter.open(weightFileName)) {
                 return false;

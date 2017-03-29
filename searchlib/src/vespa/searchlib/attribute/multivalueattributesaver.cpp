@@ -4,16 +4,15 @@
 #include "multivalueattributesaver.h"
 
 using vespalib::GenerationHandler;
-using search::IAttributeSaveTarget;
 
 namespace search {
 
 MultiValueAttributeSaver::
 MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
-                         const IAttributeSaveTarget::Config &cfg,
+                         const attribute::AttributeHeader &header,
                          const MvMappingBase &mvMapping)
-    : AttributeSaver(std::move(guard), cfg),
-      _frozenIndices(mvMapping.getRefCopy(cfg.getNumDocs()))
+    : AttributeSaver(std::move(guard), header),
+      _frozenIndices(mvMapping.getRefCopy(header.getNumDocs()))
 {
 }
 

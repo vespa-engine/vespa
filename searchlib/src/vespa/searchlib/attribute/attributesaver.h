@@ -3,10 +3,12 @@
 #pragma once
 
 #include <vespa/vespalib/util/generationhandler.h>
-#include "iattributesavetarget.h"
+#include "attribute_header.h"
 
 namespace search
 {
+
+class IAttributeSaveTarget;
 
 /*
  * Abstract class used to hold data outside attribute vector needed
@@ -18,11 +20,11 @@ class AttributeSaver
 {
 private:
     vespalib::GenerationHandler::Guard _guard;
-    IAttributeSaveTarget::Config _cfg;
+    attribute::AttributeHeader _header;
 
 protected:
     AttributeSaver(vespalib::GenerationHandler::Guard &&guard,
-                         const IAttributeSaveTarget::Config &cfg);
+                   const attribute::AttributeHeader &header);
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) = 0;
 

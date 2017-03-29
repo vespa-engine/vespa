@@ -23,6 +23,7 @@ struct MyProcessor : public ReprocessingType
         _lid = lid;
         _docId = doc.getId();
     }
+    virtual void done() { }
 };
 
 typedef MyProcessor<IReprocessingReader, const Document &> MyReader;

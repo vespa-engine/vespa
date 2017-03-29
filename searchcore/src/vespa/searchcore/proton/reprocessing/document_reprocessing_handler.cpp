@@ -45,4 +45,12 @@ DocumentReprocessingHandler::visit(uint32_t lid)
     (void) lid;
 }
 
+void
+DocumentReprocessingHandler::done()
+{
+    for (const auto &reader : _readers) {
+        reader->done();
+    }
+}
+
 } // namespace proton

@@ -7,6 +7,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/util/filekit.h>
+#include "iattributesavetarget.h"
 
 LOG_SETUP(".attrvector");
 

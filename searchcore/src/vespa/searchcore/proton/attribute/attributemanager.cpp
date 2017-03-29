@@ -27,8 +27,39 @@ using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
 using search::index::Schema;
+using search::attribute::BasicType;
 
 namespace proton {
+
+namespace {
+
+bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Config &newConfig) {
+    if (av) {
+        const auto &oldConfig = av->getConfig();
+        if ((oldConfig.basicType() != newConfig.basicType()) ||
+            (oldConfig.collectionType() != newConfig.collectionType())) {
+            return false;
+        }
+        if (newConfig.basicType().type() == BasicType::TENSOR) {
+            if (oldConfig.tensorType() != newConfig.tensorType()) {
+                return false;
+            }
+        }
+        if (newConfig.basicType().type() == BasicType::PREDICATE) {
+            using Params = search::attribute::PersistentPredicateParams;
+            const Params &oldParams = oldConfig.predicateParams();
+            const Params &newParams = newConfig.predicateParams();
+            if (!(oldParams == newParams)) {
+                return false;
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+}
 
 AttributeVector::SP
 AttributeManager::internalAddAttribute(const vespalib::string &name,
@@ -86,7 +117,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
 {
     for (const auto &aspec : newSpec.getAttributes()) {
         AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
-        if (av.get() != NULL) { // transfer attribute
+        if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
             LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
                        av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
             addAttribute(av);

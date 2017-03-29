@@ -16,6 +16,7 @@ private:
     AttributeWriter  _writer;
     search::SerialNum _initSerialNum;
     search::SerialNum _currSerialNum;
+    search::SerialNum _configSerialNum;
     vespalib::string  _subDbName;
 
     search::SerialNum nextSerialNum();
@@ -27,13 +28,15 @@ public:
 
     AttributePopulator(const proton::IAttributeManager::SP &mgr,
                        search::SerialNum initSerialNum,
-                       const vespalib::string &subDbName);
+                       const vespalib::string &subDbName,
+                       search::SerialNum configSerialNum);
     ~AttributePopulator();
 
     const IAttributeWriter &getWriter() const { return _writer; }
 
     // Implements IReprocessingReader
-    virtual void handleExisting(uint32_t lid, const document::Document &doc);
+    virtual void handleExisting(uint32_t lid, const document::Document &doc) override;
+    virtual void done() override;
 };
 
 } // namespace proton

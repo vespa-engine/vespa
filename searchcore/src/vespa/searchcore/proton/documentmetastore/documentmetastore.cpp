@@ -235,7 +235,7 @@ DocumentMetaStore::onInitSave()
 {
     GenerationHandler::Guard guard(getGuard());
     return std::make_unique<DocumentMetaStoreSaver>
-        (std::move(guard), createSaveTargetConfig(),
+        (std::move(guard), createAttributeHeader(),
          _gidToLidMap.getFrozenView().begin(), _metaDataStore);
 }
 

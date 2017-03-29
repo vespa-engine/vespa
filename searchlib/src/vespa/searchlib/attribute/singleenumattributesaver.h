@@ -3,7 +3,6 @@
 #pragma once
 
 #include "attributesaver.h"
-#include "iattributesavetarget.h"
 #include "singleenumattribute.h"
 #include "enumattributesaver.h"
 
@@ -23,7 +22,7 @@ private:
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
     SingleValueEnumAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
-                                  const IAttributeSaveTarget::Config &cfg,
+                                  const attribute::AttributeHeader &header,
                                   EnumIndexCopyVector &&indices,
                                   const EnumStoreBase &enumStore);
 

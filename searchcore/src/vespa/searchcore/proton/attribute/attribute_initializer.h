@@ -6,6 +6,9 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchcommon/attribute/persistent_predicate_params.h>
+
+namespace search { namespace attribute { class AttributeHeader; } }
 
 namespace proton {
 
@@ -18,16 +21,6 @@ class AttributeInitializer
 {
 public:
     typedef std::unique_ptr<AttributeInitializer> UP;
-
-    struct AttributeHeader
-    {
-        uint64_t _createSerialNum;
-        bool _headerTypeOK;
-        vespalib::string _btString;
-        vespalib::string _ctString;
-        AttributeHeader();
-        ~AttributeHeader();
-    };
 
 private:
     std::shared_ptr<AttributeDirectory> _attrDir;
@@ -43,7 +36,7 @@ private:
 
     void setupEmptyAttribute(search::AttributeVector::SP &attr,
                              search::SerialNum serialNum,
-                             const AttributeHeader &header) const;
+                             const search::attribute::AttributeHeader &header) const;
 
     search::AttributeVector::SP createAndSetupEmptyAttribute() const;
 

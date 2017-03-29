@@ -217,6 +217,8 @@ private:
     void
     testCreateSerialNum(void);
 
+    void testPredicateHeaderTags();
+
     template <typename VectorType, typename BufferType>
     void
     testCompactLidSpace(const Config &config,
@@ -1994,6 +1996,21 @@ AttributeTest::testCreateSerialNum()
     EXPECT_EQUAL(42u, attr2->getCreateSerialNum());
 }
 
+void
+AttributeTest::testPredicateHeaderTags()
+{
+    Config cfg(BasicType::PREDICATE);
+    AttributePtr attr = createAttribute("predicate", cfg);
+    attr->addReservedDoc();
+    EXPECT_TRUE(attr->save());
+    auto df = search::FileUtil::openFile(baseFileName("predicate.dat"));
+    vespalib::FileHeader datHeader;
+    datHeader.readFile(*df);
+    EXPECT_TRUE(datHeader.hasTag("predicate.arity"));
+    EXPECT_TRUE(datHeader.hasTag("predicate.lower_bound"));
+    EXPECT_TRUE(datHeader.hasTag("predicate.upper_bound"));
+    EXPECT_EQUAL(8u, datHeader.getTag("predicate.arity").asInteger());
+}
 
 template <typename VectorType, typename BufferType>
 void
@@ -2341,6 +2358,7 @@ int AttributeTest::Main()
     testNullProtection();
     testGeneration();
     testCreateSerialNum();
+    testPredicateHeaderTags();
     TEST_DO(testCompactLidSpace());
     TEST_DO(requireThatAddressSpaceUsageIsReported());
     testReaderDuringLastUpdate();

@@ -15,6 +15,7 @@ namespace proton {
 search::SerialNum
 AttributePopulator::nextSerialNum()
 {
+    assert(_currSerialNum <= _configSerialNum);
     return _currSerialNum++;
 }
 
@@ -32,10 +33,12 @@ AttributePopulator::getNames() const
 
 AttributePopulator::AttributePopulator(const proton::IAttributeManager::SP &mgr,
                                        search::SerialNum initSerialNum,
-                                       const vespalib::string &subDbName)
+                                       const vespalib::string &subDbName,
+                                       search::SerialNum configSerialNum)
     : _writer(mgr),
       _initSerialNum(initSerialNum),
       _currSerialNum(initSerialNum),
+      _configSerialNum(configSerialNum),
       _subDbName(subDbName)
 {
     if (LOG_WOULD_LOG(event)) {
@@ -56,6 +59,20 @@ AttributePopulator::handleExisting(uint32_t lid, const document::Document &doc)
 {
     search::SerialNum serialNum(nextSerialNum());
     _writer.put(serialNum, doc, lid, true, std::shared_ptr<IDestructorCallback>());
+}
+
+void
+AttributePopulator::done()
+{
+    auto mgr = _writer.getAttributeManager();
+    auto flushTargets = mgr->getFlushTargets();
+    for (const auto &flushTarget : flushTargets) {
+        assert(flushTarget->getFlushedSerialNum() < _configSerialNum);
+        auto task = flushTarget->initFlush(_configSerialNum);
+        assert(task);
+        task->run();
+        assert(flushTarget->getFlushedSerialNum() == _configSerialNum);
+    }
 }
 
 } // namespace proton
