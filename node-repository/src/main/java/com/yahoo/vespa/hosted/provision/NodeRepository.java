@@ -404,10 +404,18 @@ public class NodeRepository extends AbstractComponent {
     }
 
     private Node move(Node node, Node.State toState, Optional<String> reason) {
-        if (toState == Node.State.active && !node.allocation().isPresent()) {
+        if (toState == Node.State.active && ! node.allocation().isPresent())
             throw new IllegalArgumentException("Could not set " + node.hostname() + " active. It has no allocation.");
-        }
+
         try (Mutex lock = lock(node)) {
+            if (toState == Node.State.active) {
+                for (Node currentActive : getNodes(node.allocation().get().owner(), Node.State.active)) {
+                    if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
+                        && node.allocation().get().membership().index() == currentActive.allocation().get().membership().index())
+                        throw new IllegalArgumentException("Could not move " + node + " to active:" +
+                                                           "It has the same cluster and index as an existing node");
+                }
+            }
             return zkClient.writeTo(toState, node, reason);
         }
     }
