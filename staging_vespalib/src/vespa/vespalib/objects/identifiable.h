@@ -118,8 +118,8 @@
                               cclass::createAsIdentifiable, cclass::typeId, cclass::tryCast, "")
 
 #define DECLARE_NBO_SERIALIZE                            \
-  virtual vespalib::Serializer & onSerialize(vespalib::Serializer & os) const; \
-  virtual vespalib::Deserializer & onDeserialize(vespalib::Deserializer & is);
+    vespalib::Serializer & onSerialize(vespalib::Serializer & os) const override; \
+    vespalib::Deserializer & onDeserialize(vespalib::Deserializer & is) override;
 
 
 namespace vespalib {

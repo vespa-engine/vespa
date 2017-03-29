@@ -281,6 +281,7 @@ Test::testMerge(const Grouping &a, const Grouping &b, const Grouping &c,
 void
 Test::testAggregationSimple()
 {
+    EXPECT_EQUAL(64u, sizeof(Group));
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
     ctx.add(IntAttrBuilder("int").add(3).add(7).add(15).sp());
@@ -1889,11 +1890,11 @@ struct RunDiff { ~RunDiff() { system("diff -u lhs.out rhs.out > diff.txt"); }};
 int
 Test::Main()
 {
-    RunDiff runDiff;
-    (void) runDiff;
-    TEST_DEBUG("lhs.out", "rhs.out");
+    //RunDiff runDiff;
+    //(void) runDiff;
+    //TEST_DEBUG("lhs.out", "rhs.out");
     TEST_INIT("grouping_test");
-    testAggregationSimple();
+    TEST_DO(testAggregationSimple());
     testAggregationLevels();
     testAggregationMaxGroups();
     testAggregationGroupOrder();
