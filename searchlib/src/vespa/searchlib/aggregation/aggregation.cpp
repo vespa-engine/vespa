@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "aggregation.h"
 #include "expressioncountaggregationresult.h"
 #include <vespa/searchlib/expression/resultvector.h>
@@ -42,19 +43,8 @@ AggregationResult::AggregationResult() :
     _tag(-1)
 { }
 
-AggregationResult::AggregationResult(const AggregationResult & rhs) :
-    _expressionTree(rhs._expressionTree),
-    _tag(-1)
-{
-}
-
-AggregationResult &
-AggregationResult::operator=(const AggregationResult & rhs) {
-    _expressionTree = rhs._expressionTree;
-    _tag = rhs._tag;
-    return *this;
-}
-
+AggregationResult::AggregationResult(const AggregationResult &) = default;
+AggregationResult & AggregationResult::operator = (const AggregationResult &) = default;
 
 AggregationResult::~AggregationResult() { }
 

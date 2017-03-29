@@ -29,9 +29,9 @@ namespace document {
 class FieldValue : public vespalib::Identifiable
 {
 protected:
-    FieldValue(const FieldValue&) : Identifiable() { }
-    FieldValue& operator=(const FieldValue&) { return *this; }
-    typedef vespalib::IArrayT<FieldValue> IArray;
+    FieldValue(const FieldValue&) = default;
+    FieldValue& operator=(const FieldValue&) = default;
+    using IArray = vespalib::IArrayT<FieldValue>;
     static IArray::UP createArray(const DataType & baseType);
 
 public:
