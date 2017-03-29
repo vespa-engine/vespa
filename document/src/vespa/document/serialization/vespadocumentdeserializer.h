@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/document/fieldvalue/fieldvaluevisitor.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <memory>
 
 namespace vespalib { class nbostream; }
 

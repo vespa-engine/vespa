@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -16,13 +15,18 @@ using document::config_builder::Map;
 namespace document {
 
 struct StructFieldValueTest : public CppUnit::TestFixture {
+    DocumentTypeRepo doc_repo;
+    StructFieldValueTest();
     void setUp() {}
     void tearDown() {}
 
     void testStruct();
+    void testEmptyStruct();
 
     CPPUNIT_TEST_SUITE(StructFieldValueTest);
     CPPUNIT_TEST(testStruct);
+    CPPUNIT_TEST(testEmptyStruct);
+
     CPPUNIT_TEST_SUITE_END();
 
 };
@@ -38,18 +42,44 @@ void deserialize(const ByteBuffer &buffer, T &value, const FixedTypeRepo &repo)
     VespaDocumentDeserializer deserializer(repo, stream, version);
     deserializer.read(value);
 }
-}  // namespace
 
-void StructFieldValueTest::testStruct()
-{
+config_builder::DocumenttypesConfigBuilderHelper
+createBuilder() {
     config_builder::DocumenttypesConfigBuilderHelper builder;
     builder.document(42, "test",
                      Struct("test.header")
-                     .addField("int", DataType::T_INT)
-                     .addField("long", DataType::T_LONG)
-                     .addField("content", DataType::T_STRING),
+                             .addField("int", DataType::T_INT)
+                             .addField("long", DataType::T_LONG)
+                             .addField("content", DataType::T_STRING),
                      Struct("test.body"));
-    DocumentTypeRepo doc_repo(builder.config());
+    return builder;
+}
+
+}  // namespace
+
+StructFieldValueTest::StructFieldValueTest()
+    : doc_repo(createBuilder().config())
+{}
+
+void StructFieldValueTest::testEmptyStruct()
+{
+    FixedTypeRepo repo(doc_repo, *doc_repo.getDocumentType(42));
+    const DataType &type = *repo.getDataType("test.header");
+    StructFieldValue value(type);
+
+    // Serialize & equality
+    std::unique_ptr<ByteBuffer> buffer(value.serialize());
+    buffer->flip();
+
+    CPPUNIT_ASSERT_EQUAL(buffer->getLength(), buffer->getLimit());
+    StructFieldValue value2(type);
+
+    deserialize(*buffer, value2, repo);
+    CPPUNIT_ASSERT(value == value2);
+}
+
+void StructFieldValueTest::testStruct()
+{
     const DocumentType *doc_type = doc_repo.getDocumentType(42);
     CPPUNIT_ASSERT(doc_type);
     FixedTypeRepo repo(doc_repo, *doc_type);

@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
 /**
  * \class document::StructFieldValue
  * \ingroup fieldvalue
  *
  * \brief Stores a set of predefined field <-> fieldvalue mappings.
  */
-#pragma once
 
-    // Not strictly needed to include exceptions.h, but to avoid clients needing
-    // to to catch FieldNotFoundException
-#include <vespa/document/datatype/structdatatype.h>
-#include <vespa/document/fieldvalue/structuredfieldvalue.h>
+#include "structuredfieldvalue.h"
+#include "serializablearray.h"
 #include <vespa/document/util/compressionconfig.h>
-#include <vespa/document/fieldvalue/serializablearray.h>
+#include <vespa/document/datatype/structdatatype.h>
 #include <vector>
 
 namespace document {
