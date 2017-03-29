@@ -1,19 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <cppunit/extensions/HelperMacros.h>
-#include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/fastos/file.h>
-
-using document::VespaDocumentDeserializer;
-using document::VespaDocumentSerializer;
-using vespalib::nbostream;
 
 namespace document {
 
@@ -45,8 +37,8 @@ CPPUNIT_TEST_SUITE_REGISTRATION(DocumentIdTest);
 namespace {
     void writeGlobalIdBucketId(std::ostream& out, const std::string& id) {
         BucketIdFactory factory;
-        out << id << " - " << document::DocumentId(id).getGlobalId()
-            << " - " << factory.getBucketId(document::DocumentId(id)).toString()
+        out << id << " - " << DocumentId(id).getGlobalId()
+            << " - " << factory.getBucketId(DocumentId(id)).toString()
             << "\n";
     }
 }
