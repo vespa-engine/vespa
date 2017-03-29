@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for documentid.
 
-#include <vespa/log/log.h>
-LOG_SETUP("documentid_test");
-#include <vespa/fastos/fastos.h>
-
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -178,6 +174,20 @@ TEST("require that key-value pairs in id id are preserved") {
 
     const string id_str2 = "id:ns:type:g=mygroup:foo";
     EXPECT_EQUAL(id_str2, DocumentId(id_str2).toString());
+}
+
+void verifyGroupLocation(string s, string group, uint64_t location) {
+    DocumentId d(s);
+    EXPECT_TRUE(d.getScheme().hasGroup());
+    EXPECT_EQUAL(s, d.toString());
+    EXPECT_EQUAL(group, d.getScheme().getGroup());
+    EXPECT_EQUAL(location, d.getScheme().getLocation()&0xffffffff);
+}
+
+TEST("require that = is handled correctly in group ids") {
+    TEST_DO(verifyGroupLocation("id:x:foo:g=X:bar",  "X",  0xb89b1202));
+    TEST_DO(verifyGroupLocation("id:x:foo:g=X=:bar", "X=", 0xb61ca7e1));
+    TEST_DO(verifyGroupLocation("id:x:foo:g=X=:foo", "X=", 0xb61ca7e1));
 }
 
 TEST("require that id strings reports features (hasNumber, hasGroup)") {

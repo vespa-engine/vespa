@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <vespa/document/base/idstring.h>
-#include <vespa/document/base/globalid.h>
+#include "idstring.h"
+#include "globalid.h"
 #include <vespa/document/util/printable.h>
 
 namespace vespalib { class nbostream; }
