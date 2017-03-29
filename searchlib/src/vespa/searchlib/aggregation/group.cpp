@@ -637,10 +637,8 @@ Group::operator = (const Group & rhs) {
 
 Group &
 Group::operator = (Group && rhs) noexcept {
-    if (&rhs != this) {
-        Group g(rhs);
-        swap(g);
-    }
+    Group g(std::move(rhs));
+    swap(g);
     return *this;
 }
 
