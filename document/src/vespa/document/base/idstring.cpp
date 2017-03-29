@@ -322,10 +322,12 @@ IdIdString::IdIdString(const stringref & id)
     char key(0);
     string::size_type pos = 0;
     bool has_set_location = false;
+    bool hasFoundKey(false);
     for (string::size_type i = 0; i < key_values.size(); ++i) {
-        if (key_values[i] == '=') {
+        if (!hasFoundKey && (key_values[i] == '=')) {
             key = key_values[i-1];
             pos = i + 1;
+            hasFoundKey = true;
         } else if (key_values[i] == ',' || i == key_values.size() - 1) {
             stringref value(key_values.substr(pos, i - pos + (i == key_values.size() - 1)));
             if (key == 'n') {
@@ -341,6 +343,7 @@ IdIdString::IdIdString(const stringref & id)
                 throw IdParseException(make_string("Illegal key '%c'", key));
             }
             pos = i + 1;
+            hasFoundKey = false;
         }
     }
 
