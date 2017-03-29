@@ -9,6 +9,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/md5.h>
+#include <vespa/fastos/file.h>
 
 using document::VespaDocumentDeserializer;
 using document::VespaDocumentSerializer;
