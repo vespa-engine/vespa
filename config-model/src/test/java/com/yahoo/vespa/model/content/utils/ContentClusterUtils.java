@@ -15,7 +15,6 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Yamas;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import org.w3c.dom.Document;
 
 import java.util.Collections;
@@ -29,7 +28,7 @@ import java.util.Optional;
 public class ContentClusterUtils {
 
     public static MockRoot createMockRoot(String[] hosts) throws Exception {
-        return createMockRoot(hosts, ApplicationPackageUtils.generateSearchDefinition("test"));
+        return createMockRoot(hosts, SearchDefinitionBuilder.createSearchDefinitions("test"));
     }
 
     private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions) {
@@ -65,7 +64,7 @@ public class ContentClusterUtils {
     }
 
     public static ContentCluster createCluster(String clusterXml) throws Exception {
-        return createCluster(clusterXml, ApplicationPackageUtils.generateSearchDefinitions("test"));
+        return createCluster(clusterXml, SearchDefinitionBuilder.createSearchDefinitions("test"));
     }
 
     public static String createClusterXml(String groupXml, int redundancy, int searchableCopies) {

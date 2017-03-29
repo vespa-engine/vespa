@@ -1,6 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.utils;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+
 /**
  * Class for building a search definition (used for testing only).
  *
@@ -25,11 +31,18 @@ public class SearchDefinitionBuilder {
     }
 
     public String build() {
-        return "search " + name + " {\n" +
-                "  document " + name + " {\n" +
-                content + "\n" +
-                "  }\n" +
-                "}";
+        return joinLines("search " + name + " {",
+                "  document " + name + " {",
+                content,
+                "  }",
+                "}");
+    }
+
+    public static List<String> createSearchDefinitions(String ... docTypes) {
+        return Arrays.asList(docTypes)
+                .stream()
+                .map(type -> new SearchDefinitionBuilder().name(type).build())
+                .collect(Collectors.toList());
     }
 
 }

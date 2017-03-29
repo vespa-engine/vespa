@@ -284,6 +284,8 @@ documentdb[].inputdoctypename string restart
 documentdb[].configid string restart
 ## How many seconds is allowed from document is received to it is visible in the index.
 documentdb[].visibilitydelay double default=0.0
+## Whether this document type is globally distributed or not.
+documentdb[].global bool default=false restart
 
 ## The interval of when periodic tasks should be run
 periodic.interval double default=3600.0

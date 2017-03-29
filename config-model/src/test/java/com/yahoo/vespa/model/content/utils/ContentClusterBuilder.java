@@ -2,14 +2,14 @@
 package com.yahoo.vespa.model.content.utils;
 
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import org.w3c.dom.Document;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 /**
  * Class for building a content cluster with indexed search (used for testing only).
@@ -18,10 +18,29 @@ import java.util.stream.Collectors;
  */
 public class ContentClusterBuilder {
 
+    public static class DocType {
+        private final String name;
+        private final boolean global;
+
+        public DocType(String name, boolean global) {
+            this.name = name;
+            this.global = global;
+        }
+
+        public DocType(String name) {
+            this(name, false);
+        }
+
+        public String toXml() {
+            return (global ? "<document mode='index' type='" + name + "' global='true'/>" :
+                    "<document mode='index' type='" + name + "'/>");
+        }
+    }
+
     private String name = "mycluster";
     private int redundancy = 1;
     private int searchableCopies = 1;
-    private List<String> docTypes = Arrays.asList("test");
+    private List<DocType> docTypes = Arrays.asList(new DocType("test"));
     private String groupXml = getSimpleGroupXml();
     private Optional<String> dispatchXml = Optional.empty();
     private Optional<Double> protonDiskLimit = Optional.empty();
@@ -45,7 +64,14 @@ public class ContentClusterBuilder {
         return this;
     }
 
-    public ContentClusterBuilder docTypes(List<String> docTypes) {
+    public ContentClusterBuilder docTypes(String ... docTypes) {
+        this.docTypes = Arrays.asList(docTypes).stream().
+                map(type -> new DocType(type)).
+                collect(Collectors.toList());
+        return this;
+    }
+
+    public ContentClusterBuilder docTypes(List<DocType> docTypes) {
         this.docTypes = docTypes;
         return this;
     }
@@ -75,17 +101,17 @@ public class ContentClusterBuilder {
     }
 
     public String getXml() {
-        String xml = "<content version='1.0' id='" + name + "'>\n" +
-               "  <redundancy>" + redundancy + "</redundancy>\n" +
-               "  <documents>\n" +
-                docTypes.stream().map(type -> "    <document mode='index' type='" + type + "'/>\n").collect(Collectors.joining("\n")) +
-               "  </documents>\n" +
-               "  <engine>\n" +
-               "    <proton>\n" +
-               "      <searchable-copies>" + searchableCopies + "</searchable-copies>\n" +
-               getResourceLimitsXml("      ") +
-               "    </proton>\n" +
-               "  </engine>\n";
+        String xml = joinLines("<content version='1.0' id='" + name + "'>",
+               "  <redundancy>" + redundancy + "</redundancy>",
+               "  <documents>",
+                docTypes.stream().map(DocType::toXml).collect(Collectors.joining("\n")),
+               "  </documents>",
+               "  <engine>",
+               "    <proton>",
+               "      <searchable-copies>" + searchableCopies + "</searchable-copies>",
+               getResourceLimitsXml("      "),
+               "    </proton>",
+               "  </engine>");
         if (dispatchXml.isPresent()) {
             xml += dispatchXml.get();
         }
@@ -94,17 +120,17 @@ public class ContentClusterBuilder {
     }
 
     private static String getSimpleGroupXml() {
-        return "  <group>\n" +
-                "    <node distribution-key='0' hostalias='mockhost'/>\n" +
-                "  </group>\n";
+        return joinLines("  <group>",
+                "    <node distribution-key='0' hostalias='mockhost'/>",
+                "  </group>");
     }
 
     private String getResourceLimitsXml(String indent) {
         if (protonDiskLimit.isPresent() || protonMemoryLimit.isPresent()) {
-            String xml = indent + "<resource-limits>\n" +
-                    getXmlLine("disk", protonDiskLimit, indent + "  ") +
-                    getXmlLine("memory", protonMemoryLimit, indent + "  ") +
-                    indent + "</resource-limits>\n";
+            String xml = joinLines(indent + "<resource-limits>",
+                    getXmlLine("disk", protonDiskLimit, indent + "  "),
+                    getXmlLine("memory", protonMemoryLimit, indent + "  "),
+                    indent + "</resource-limits>");
             return xml;
         }
         return "";
