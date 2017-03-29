@@ -122,12 +122,18 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
         return version;
     }
 
+    /** Returns the remove address, or null if unresolved */
     @Override
     public String getRemoteHostAddress() {
-        if (remoteAddress instanceof InetSocketAddress)
-            return ((InetSocketAddress) remoteAddress).getAddress().getHostAddress();
-        else
+        if (remoteAddress instanceof InetSocketAddress) {
+            InetAddress remoteInetAddress =  ((InetSocketAddress) remoteAddress).getAddress();
+            if (remoteInetAddress == null)
+                return null;
+            return remoteInetAddress.getHostAddress();
+        }
+        else {
             throw new RuntimeException("Unknown SocketAddress class: " + remoteAddress.getClass().getName());
+        }
     }
 
     @Override

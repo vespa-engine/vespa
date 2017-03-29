@@ -14,19 +14,6 @@
     Library for use in Java components of Vespa. Shared code which did
     not fit anywhere else.
   </description>
-  <repositories>
-    <repository>
-      <id>apache-org</id>
-      <name>apache.org Repository for Maven</name>
-      <url>https://repository.apache.org/content/groups/public</url>
-      <releases>
-        <updatePolicy>never</updatePolicy>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 
   <dependencies>
     <dependency>
