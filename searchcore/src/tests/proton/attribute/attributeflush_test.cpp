@@ -498,8 +498,8 @@ Test::requireThatLastFlushTimeIsReported(void)
         AttributeVector::SP av = amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
         EXPECT_EQUAL(0, ft->getLastFlushTime().time());
-        ft->initFlush(5)->run();
-        EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-5", &stat));
+        ft->initFlush(200)->run();
+        EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
         EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().time());
     }
     { // snapshot flushed
@@ -511,7 +511,7 @@ Test::requireThatLastFlushTimeIsReported(void)
         { // updated flush time after nothing to flush
             FastOS_Thread::Sleep(8000);
             fastos::TimeStamp now = fastos::ClockSystem::now();
-            Executor::Task::UP task = ft->initFlush(5);
+            Executor::Task::UP task = ft->initFlush(200);
             EXPECT_TRUE(task.get() == NULL);
             EXPECT_LESS(stat._modifiedTime, ft->getLastFlushTime().time());
             EXPECT_APPROX(now.time(), ft->getLastFlushTime().time(), 8);
@@ -587,7 +587,7 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
         }
         av->commit();
         IFlushTarget::SP ft = am.getFlushable(attrName);
-        ft->initFlush(5)->run();
+        ft->initFlush(200)->run();
     }
     {
         AttributeManagerFixture amf(f);

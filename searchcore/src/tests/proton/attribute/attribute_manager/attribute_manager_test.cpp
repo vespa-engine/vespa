@@ -279,20 +279,20 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         proton::AttributeManager &am = amf._m;
         AttributeVector::SP a1 = amf.addAttribute("a1");
         EXPECT_EQUAL(1u, a1->getNumDocs());	// Resized to size of attributemanager
-        fillAttribute(a1, 1, 3, 2, 10);
+        fillAttribute(a1, 1, 3, 2, 100);
         EXPECT_EQUAL(3u, a1->getNumDocs());	// Resized to size of attributemanager
         AttributeVector::SP a2 = amf.addAttribute("a2");
         EXPECT_EQUAL(1u, a2->getNumDocs());	// Not resized to size of attributemanager
-        fillAttribute(a2, 1, 5, 4, 10);
+        fillAttribute(a2, 1, 5, 4, 100);
         EXPECT_EQUAL(5u, a2->getNumDocs());	// Increased
         EXPECT_TRUE(!ia1.load());
         EXPECT_TRUE(!ia2.load());
         EXPECT_TRUE(!ia3.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(10u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia2.load());
-        EXPECT_EQUAL(10u, ia2.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(100u, ia2.getBestSnapshot().syncToken);
     }
     {
         AttributeManagerFixture amf(f);
@@ -300,7 +300,7 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         AttributeVector::SP a1 = amf.addAttribute("a1"); // loaded
 
         EXPECT_EQUAL(3u, a1->getNumDocs());
-        fillAttribute(a1, 1, 2, 20);
+        fillAttribute(a1, 1, 2, 200);
         EXPECT_EQUAL(4u, a1->getNumDocs());
         AttributeVector::SP a2 = amf.addAttribute("a2"); // loaded
         EXPECT_EQUAL(5u, a2->getNumDocs());
@@ -308,26 +308,26 @@ TEST_F("require that attributes are flushed and loaded", BaseFixture)
         amf._aw.onReplayDone(5u);
         EXPECT_EQUAL(5u, a2->getNumDocs());
         EXPECT_EQUAL(5u, a1->getNumDocs());
-        fillAttribute(a2, 1, 4, 20);
+        fillAttribute(a2, 1, 4, 200);
         EXPECT_EQUAL(6u, a2->getNumDocs());
         AttributeVector::SP a3 = amf.addAttribute("a3"); // not-loaded
         EXPECT_EQUAL(1u, a3->getNumDocs());
         amf._aw.onReplayDone(6);
         EXPECT_EQUAL(6u, a3->getNumDocs());
-        fillAttribute(a3, 1, 7, 6, 20);
+        fillAttribute(a3, 1, 7, 6, 200);
         EXPECT_EQUAL(7u, a3->getNumDocs());
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(10u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia2.load());
-        EXPECT_EQUAL(10u, ia2.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(100u, ia2.getBestSnapshot().syncToken);
         EXPECT_TRUE(!ia3.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(20u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(200u, ia1.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia2.load());
-        EXPECT_EQUAL(20u, ia2.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(200u, ia2.getBestSnapshot().syncToken);
         EXPECT_TRUE(ia3.load());
-        EXPECT_EQUAL(20u, ia3.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(200u, ia3.getBestSnapshot().syncToken);
     }
     {
         AttributeManagerFixture amf(f);
@@ -364,14 +364,14 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         uint32_t doc_id;
         a1->addDoc(doc_id);
         index.indexEmptyDocument(doc_id);
-        pa.commit(10, 10);
+        pa.commit(100, 100);
 
         EXPECT_EQUAL(2u, a1->getNumDocs());
 
         EXPECT_TRUE(!ia1.load());
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(10u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
     }
     {
         AttributeManagerFixture amf(f);
@@ -388,14 +388,14 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         PredicateTreeAnnotations annotations(3);
         annotations.interval_map[123] = {{ 0x0001ffff }};
         index.indexDocument(1, annotations);
-        pa.commit(20, 20);
+        pa.commit(200, 200);
 
         EXPECT_EQUAL(3u, a1->getNumDocs());
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(10u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(100u, ia1.getBestSnapshot().syncToken);
         am.flushAll(0);
         EXPECT_TRUE(ia1.load());
-        EXPECT_EQUAL(20u, ia1.getBestSnapshot().syncToken);
+        EXPECT_EQUAL(200u, ia1.getBestSnapshot().syncToken);
     }
 }
 
@@ -639,14 +639,14 @@ populateAndFlushAttributes(AttributeManagerFixture &f)
     fillAttribute(a2, 1, 10, attrValue, createSerialNum);
     AttributeVector::SP a3 = f.addAttribute("a3");
     fillAttribute(a3, 1, 10, attrValue, createSerialNum);
-    f._m.flushAll(createSerialNum + 3);
+    f._m.flushAll(createSerialNum + 10);
 }
 
 void
 validateAttribute(const AttributeVector &attr)
 {
     ASSERT_EQUAL(10u, attr.getNumDocs());
-    EXPECT_EQUAL(createSerialNum + 3, attr.getStatus().getLastSyncToken());
+    EXPECT_EQUAL(createSerialNum + 10, attr.getStatus().getLastSyncToken());
     for (uint32_t docId = 1; docId < 10; ++docId) {
         EXPECT_EQUAL(7, attr.getInt(docId));
     }
