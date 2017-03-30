@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mapfieldvalue.h"
-#include "arrayfieldvalue.h"
 #include "weightedsetfieldvalue.h"
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/vespalib/objects/identifiable.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.map");

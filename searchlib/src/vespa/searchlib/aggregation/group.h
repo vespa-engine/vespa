@@ -65,54 +65,111 @@ public:
         size_t operator() (const ResultNode & arg) const { return arg.hash(); }
     };
 
-    typedef ExpressionNode::CP * ExpressionVector;
-    typedef vespalib::hash_set<uint32_t, GroupHasher, GroupEqual > GroupHash;
     typedef std::vector<GroupingLevel>         GroupingLevelList;
 
 private:
+
+    class Value {
+    public:
+        Value();
+        Value(const Value & rhs);
+        Value & operator =(const Value & rhs);
+        Value(Value &&) noexcept;
+        Value & operator = (Value &&) noexcept;
+        ~Value() noexcept;
+        void swap(Value & rhs);
+
+        VESPA_DLL_LOCAL int cmp(const Value & rhs) const;
+        void addExpressionResult(ExpressionNode::UP expressionNode);
+        void addAggregationResult(ExpressionNode::UP aggr);
+        void addResult(ExpressionNode::UP aggr);
+        void setupAggregationReferences();
+        void addOrderBy(ExpressionNode::UP orderBy, bool ascending);
+        void select(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation);
+        void preAggregate();
+        void postAggregate();
+        void executeOrderBy();
+        void sortById();
+        void mergeCollectors(const Value & rhs);
+        void execute();
+        bool needResort() const;
+        void assertIdOrder() const;
+        void visitMembers(vespalib::ObjectVisitor &visitor) const;
+        vespalib::Serializer & serialize(vespalib::Serializer & os) const;
+        vespalib::Deserializer & deserialize(vespalib::Deserializer & is);
+        void mergeLevel(const Group & protoType, const Value & b);
+        void mergePartial(const GroupingLevelList &levels, uint32_t firstLevel, uint32_t lastLevel,
+                          uint32_t currentLevel, const Value & b);
+        void merge(const GroupingLevelList & levels, uint32_t firstLevel, uint32_t currentLevel, const Value & rhs);
+        void prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel);
+        void postMerge(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t currentLevel);
+        void partialCopy(const Value & rhs);
+        VESPA_DLL_LOCAL Group * groupSingle(const ResultNode & selectResult, HitRank rank, const GroupingLevel & level);
+
+        GroupList groups() const { return _children; }
+        void addChild(Group * child);
+        uint32_t getAggrSize()    const { return _packedLength & 0x0f; }
+        uint32_t getOrderBySize() const { return (_packedLength >> 6) & 0x03; }
+        uint32_t getChildrenSize()   const { return (_packedLength >> 8); }
+        uint32_t getExpr(uint32_t i) const { return getAggrSize() + i; }
+        int32_t getOrderBy(uint32_t i) const {
+            int32_t v((_orderBy[i/2] >> (4*(i%2))) & 0x0f);
+            return (v & 0x8) ? -(v&0x7) : v;
+        }
+
+        const AggregationResult & getAggregationResult(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
+        AggregationResult & getAggregationResult(size_t i) { return static_cast<AggregationResult &>(*_aggregationResults[i]); }
+        uint32_t getExprSize()    const { return (_packedLength >> 4) & 0x03; }
+        const Group & getChild(size_t i) const { return *_children[i]; }
+
+        template <typename Doc>
+        void collect(const Doc & docId, HitRank rank);
+    private:
+
+        using  ExpressionVector = ExpressionNode::CP *;
+        using GroupHash = vespalib::hash_set<uint32_t, GroupHasher, GroupEqual >;
+        void setAggrSize(uint32_t v)    { _packedLength = (_packedLength & ~0x0f) | v; }
+        void setExprSize(uint32_t v)    { _packedLength = (_packedLength & ~0x30) | (v << 4); }
+        void setOrderBySize(uint32_t v) { _packedLength = (_packedLength & ~0xc0) | (v << 6); }
+        void setChildrenSize(uint32_t v) { _packedLength = (_packedLength & ~0xffffff00) | (v << 8); }
+        AggregationResult * getAggr(size_t i) { return static_cast<AggregationResult *>(_aggregationResults[i].get()); }
+        const AggregationResult & getAggr(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
+        const ExpressionNode::CP & getAggrCP(size_t i) const { return _aggregationResults[i]; }
+        const ExpressionNode::CP & getExprCP(size_t i) const { return _aggregationResults[getExpr(i)]; }
+        ExpressionNode & expr(size_t i)  { return *_aggregationResults[getExpr(i)]; }
+        const ExpressionNode & expr(size_t i)  const { return *_aggregationResults[getExpr(i)]; }
+        size_t getAllChildrenSize() const { return std::max(static_cast<size_t>(getChildrenSize()), _childInfo._allChildren); }
+        void setOrderBy(uint32_t i, int32_t v) {
+            if (v < 0) {
+                v = -v;
+                v = v | 0x8;
+            }
+            _orderBy[i/2]  = (_orderBy[i/2] & (0xf0 >> (4*(i%2)))) | (v << (4*(i%2)));
+        }
+        bool needFullRank() const { return getOrderBySize() != 0; }
+
+        uint32_t         _packedLength;    // Length of the 3 vectors below
+        uint32_t         _tag;             // Opaque tag used to identify the group by the client.
+
+        // The collectors and expressions stored by this group. Currently, both aggregation results and expressions used by orderby() are stored in this
+        // array to save 8 bytes in the Group size. This makes it important to use the getAggr() and expr() methods for accessing elements,
+        // as they will correctly offset the index to the correct place in the array.
+        ExpressionVector _aggregationResults;
+
+        ChildP          *_children;             // the sub-groups of this group. Great care must be taken to ensure proper destruct.
+        union ChildInfo {
+            GroupHash *_childMap;               // child map used during aggregation
+            size_t     _allChildren;            // Keep real number of children.
+        }                _childInfo;
+        uint8_t          _orderBy[2];           // How this group is ranked, negative means reverse rank.
+    };
+
     ResultNode::CP   _id;                   // the label of this group, separating it from other groups
     RawRank          _rank;                 // The default rank taken from the highest hit relevance.
-    uint32_t         _packedLength;         // Length of the 3 vectors below
-    uint32_t         _tag;                  // Opaque tag used to identify the group by the client.
+    Value            _aggr;
 
-   // The collectors and expressions stored by this group. Currently, both aggregation results and expressions used by orderby() are stored in this
-   // array to save 8 bytes in the Group size. This makes it important to use the getAggr() and expr() methods for accessing elements,
-   // as they will correctly offset the index to the correct place in the array.
-    ExpressionVector _aggregationResults;
-
-    uint8_t          _orderBy[2];           // How this group is ranked, negative means reverse rank.
-    ChildP          *_children;             // the sub-groups of this group. Great care must be taken to ensure proper destruct.
-    union ChildInfo {
-        GroupHash *_childMap;               // child map used during aggregation
-        size_t     _allChildren;            // Keep real number of children.
-    }                _childInfo;
-
-    bool needFullRank() const { return getOrderBySize() != 0; }
     Group & partialCopy(const Group & rhs);
-    void setOrderBy(uint32_t i, int32_t v) {
-        if (v < 0) {
-            v = -v;
-            v = v | 0x8;
-        }
-        _orderBy[i/2]  = (_orderBy[i/2] & (0xf0 >> (4*(i%2)))) | (v << (4*(i%2)));
-    }
-    uint32_t getExprSize()    const { return (_packedLength >> 4) & 0x03; }
-    void setAggrSize(uint32_t v)    { _packedLength = (_packedLength & ~0x0f) | v; }
-    void setExprSize(uint32_t v)    { _packedLength = (_packedLength & ~0x30) | (v << 4); }
-    void setOrderBySize(uint32_t v) { _packedLength = (_packedLength & ~0xc0) | (v << 6); }
-    void setChildrenSize(uint32_t v) { _packedLength = (_packedLength & ~0xffffff00) | (v << 8); }
-    AggregationResult * getAggr(size_t i) { return static_cast<AggregationResult *>(_aggregationResults[i].get()); }
-    const AggregationResult & getAggr(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
-    const ExpressionNode::CP & getAggrCP(size_t i) const { return _aggregationResults[i]; }
-    const ExpressionNode::CP & getExprCP(size_t i) const { return _aggregationResults[getExpr(i)]; }
-    ExpressionNode & expr(size_t i)  { return *_aggregationResults[getExpr(i)]; }
-    const ExpressionNode & expr(size_t i)  const { return *_aggregationResults[getExpr(i)]; }
-    static void reset(Group * & v) { v = NULL; }
-    static void destruct(Group * v) { if (v) { delete v; } }
-    static void destruct(GroupList & l, size_t sz);
-    void addChild(Group * child);
-    void setupAggregationReferences();
-    size_t getAllChildrenSize() const { return std::max(static_cast<size_t>(getChildrenSize()), _childInfo._allChildren); }
+
     template <typename Doc>
     VESPA_DLL_LOCAL void groupNext(const GroupingLevel & level, const Doc & docId, HitRank rank);
 public:
@@ -122,8 +179,9 @@ public:
     Group();
     Group(const Group & rhs);
     Group & operator =(const Group & rhs);
-    virtual ~Group();
-    void swap(Group & rhs);
+    Group(Group &&) = default;
+    Group & operator = (Group &&) = default;
+    ~Group();
 
     int cmpId(const Group &rhs) const { return _id->cmpFast(*rhs._id); }
     int cmpRank(const Group &rhs) const;
@@ -131,7 +189,9 @@ public:
     Group & updateRank(RawRank r);
     RawRank getRank() const { return _rank; }
 
-    VESPA_DLL_LOCAL Group * groupSingle(const ResultNode & result, HitRank rank, const GroupingLevel & level);
+    Group * groupSingle(const ResultNode & result, HitRank rank, const GroupingLevel & level) {
+        return _aggr.groupSingle(result, rank, level);
+    }
 
     bool hasId() const { return (_id.get() != NULL); }
     const ResultNode &getId() const { return *_id; }
@@ -139,12 +199,35 @@ public:
     Group unchain() const { return *this; }
 
     Group &setId(const ResultNode &id)  { _id.reset(static_cast<ResultNode *>(id.clone())); return *this; }
-    Group &addAggregationResult(const ExpressionNode::CP &result);
-    Group &addResult(const ExpressionNode::CP &aggr);
-    Group &addExpressionResult(const ExpressionNode::CP &expressionNode);
-    Group &addOrderBy(const ExpressionNode::CP & orderBy, bool ascending);
-    Group &addChild(const Group &child) { addChild(new Group(child)); return *this; }
-    Group &addChild(Group::UP child) { addChild(child.release()); return *this; }
+    Group &addAggregationResult(ExpressionNode::UP result) {
+        _aggr.addAggregationResult(std::move(result));
+        return *this;
+    }
+    Group &addResult(ExpressionNode::UP aggr) {
+        _aggr.addResult(std::move(aggr));
+        return *this;
+    }
+    Group &addResult(const ExpressionNode & aggr) { return addResult(ExpressionNode::UP(aggr.clone())); }
+
+    Group &addOrderBy(ExpressionNode::UP orderBy, bool ascending) {
+        _aggr.addOrderBy(std::move(orderBy), ascending); return *this;
+    }
+    Group &addOrderBy(const ExpressionNode & orderBy, bool ascending) {
+        return addOrderBy(ExpressionNode::UP(orderBy.clone()), ascending);
+    }
+    Group &addChild(const Group &child) { _aggr.addChild(new Group(child)); return *this; }
+    Group &addChild(Group::UP child) { _aggr.addChild(child.release()); return *this; }
+
+    GroupList groups()               const { return _aggr.groups(); }
+    uint32_t getAggrSize()           const { return _aggr.getAggrSize(); }
+    uint32_t getOrderBySize()        const { return _aggr.getOrderBySize(); }
+    uint32_t getExpr(uint32_t i)     const { return _aggr.getExpr(i); }
+    int32_t  getOrderBy(uint32_t i)  const { return _aggr.getOrderBy(i); }
+    uint32_t getChildrenSize()       const { return _aggr.getChildrenSize(); }
+    const Group & getChild(size_t i) const { return _aggr.getChild(i); }
+
+    const AggregationResult & getAggregationResult(size_t i) const { return _aggr.getAggregationResult(i); }
+    AggregationResult &       getAggregationResult(size_t i)       { return _aggr.getAggregationResult(i); }
 
     /**
      * Prunes this tree, keeping only the nodes found in another
@@ -160,20 +243,20 @@ public:
      * Recursively checks if any itself or any children needs a full resort.
      * Then all hits must be processed and should be doen before any hit sorting.
      */
-    bool needResort() const;
+    bool needResort() const { return _aggr.needResort(); }
 
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate,
-                               vespalib::ObjectOperation &operation);
+    void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
 
-    void preAggregate();
+    void preAggregate() { return _aggr.preAggregate(); }
     template <typename Doc>
     VESPA_DLL_LOCAL void aggregate(const Grouping & grouping, uint32_t currentLevel, const Doc & docId, HitRank rank);
 
     template <typename Doc>
-    void collect(const Doc & docId, HitRank rank);
-    void postAggregate();
+    void collect(const Doc & docId, HitRank rank) { _aggr.collect(docId, rank); }
+    void postAggregate() { _aggr.postAggregate(); }
     void merge(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t currentLevel, Group &b);
-    void executeOrderBy();
+    void executeOrderBy() { _aggr.executeOrderBy(); }
+    void sortById() { _aggr.sortById(); }
 
     /**
      * Merge children and results of another tree within the unfrozen parts of
@@ -184,20 +267,10 @@ public:
      * @param lastLevel The last level to merge.
      * @param currentLevel The current level on which merging should be done.
      **/
-    void mergePartial(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t lastLevel, uint32_t currentLevel, const Group & b);
-    void postMerge(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t currentLevel);
-    void sortById();
-    uint32_t getChildrenSize()   const { return (_packedLength >> 8); }
-    const Group & getChild(size_t i) const { return *_children[i]; }
-    GroupList groups() const { return _children; }
-    const AggregationResult & getAggregationResult(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
-    AggregationResult & getAggregationResult(size_t i) { return static_cast<AggregationResult &>(*_aggregationResults[i]); }
-    uint32_t getAggrSize()    const { return _packedLength & 0x0f; }
-    uint32_t getOrderBySize() const { return (_packedLength >> 6) & 0x03; }
-    uint32_t getExpr(uint32_t i) const { return getAggrSize() + i; }
-    int32_t getOrderBy(uint32_t i) const {
-        int32_t v((_orderBy[i/2] >> (4*(i%2))) & 0x0f);
-        return (v & 0x8) ? -(v&0x7) : v;
+    void mergePartial(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t lastLevel,
+                      uint32_t currentLevel, const Group & b);
+    void postMerge(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t currentLevel) {
+        _aggr.postMerge(levels, firstLevel, currentLevel);
     }
 };
 

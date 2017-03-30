@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "expressionnode.h"
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/searchlib/common/hitrank.h>
-#include <vespa/searchlib/expression/expressionnode.h>
 
 namespace document {
     class DocumentType;
@@ -34,33 +34,36 @@ class ExpressionTree : public ExpressionNode
 {
 public:
     DECLARE_EXPRESSIONNODE(ExpressionTree);
-    typedef vespalib::LinkedPtr<ExpressionTree> LP;
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
-        virtual void execute(vespalib::Identifiable &obj);
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(ExpressionTree::classId); }
+        void execute(vespalib::Identifiable &obj) override;
+        bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(ExpressionTree::classId); }
     };
 
     ExpressionTree();
     ExpressionTree(const ExpressionNode & root);
-    ExpressionTree(const ExpressionNode::CP & root);
+    ExpressionTree(ExpressionNode::UP root);
     ExpressionTree(const ExpressionTree & rhs);
+    ExpressionTree(ExpressionTree &&) = default;
     ~ExpressionTree();
+    ExpressionTree & operator = (ExpressionNode::UP rhs);
     ExpressionTree & operator = (const ExpressionTree & rhs);
+    ExpressionTree & operator = (ExpressionTree &&) = default;
+
     bool execute(DocId docId, HitRank rank) const;
     bool execute(const document::Document & doc, HitRank rank) const;
     const ExpressionNode * getRoot() const { return _root.get(); }
     ExpressionNode * getRoot() { return _root.get(); }
-    virtual const ResultNode & getResult() const { return _root->getResult(); }
+    const ResultNode & getResult() const override { return _root->getResult(); }
     friend vespalib::Serializer & operator << (vespalib::Serializer & os, const ExpressionTree & et);
     friend vespalib::Deserializer & operator >> (vespalib::Deserializer & is, ExpressionTree & et);
     void swap(ExpressionTree &);
 private:
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation);
-    virtual bool onExecute() const { return _root->execute(); }
-    virtual void onPrepare(bool preserveAccurateTypes);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
+    bool onExecute() const override { return _root->execute(); }
+    void onPrepare(bool preserveAccurateTypes) override;
 
     typedef std::vector<AttributeNode *> AttributeNodeList;
     typedef std::vector<DocumentAccessorNode *> DocumentAccessorNodeList;
@@ -68,15 +71,13 @@ private:
     typedef std::vector<InterpolatedLookup *> InterpolatedLookupList;
     typedef std::vector<ArrayAtLookup *> ArrayAtLookupList;
 
-    vespalib::IdentifiableLinkedPtr<ExpressionNode>  _root;
-    AttributeNodeList        _attributeNodes;
-    DocumentAccessorNodeList _documentAccessorNodes;
-    RelevanceNodeList        _relevanceNodes;
-    InterpolatedLookupList   _interpolatedLookupNodes;
-    ArrayAtLookupList        _arrayAtLookupNodes;
+    vespalib::IdentifiableLinkedPtr<ExpressionNode>        _root;
+    AttributeNodeList         _attributeNodes;
+    DocumentAccessorNodeList  _documentAccessorNodes;
+    RelevanceNodeList         _relevanceNodes;
+    InterpolatedLookupList    _interpolatedLookupNodes;
+    ArrayAtLookupList         _arrayAtLookupNodes;
 };
-
 
 } // namespace expression
 } // namespace search
-

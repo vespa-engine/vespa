@@ -33,11 +33,11 @@ struct SortByGroupRank {
     }
 };
 
-}
+void reset(Group * & v) { v = NULL; }
+void destruct(Group * v) { if (v) { delete v; } }
 
-IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, Group, vespalib::Identifiable);
-
-void Group::destruct(GroupList & l, size_t m)
+void
+destruct(Group::GroupList & l, size_t m)
 {
     for (size_t i(0); i < m; i++) {
         destruct(l[i]);
@@ -46,13 +46,14 @@ void Group::destruct(GroupList & l, size_t m)
     l = NULL;
 }
 
-int Group::cmpRank(const Group &rhs) const
+}
+
+IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, Group, vespalib::Identifiable);
+
+int
+Group::cmpRank(const Group &rhs) const
 {
-    int diff(0);
-    for(size_t i(0), m(getOrderBySize()); (diff == 0) && (i < m); i++) {
-        uint32_t index = std::abs(getOrderBy(i)) - 1;
-        diff = expr(index).getResult().cmp(rhs.expr(index).getResult())*getOrderBy(i);
-    }
+    int diff(_aggr.cmp(rhs._aggr));
     return diff
                ? diff
                : ((_rank > rhs._rank)
@@ -60,114 +61,12 @@ int Group::cmpRank(const Group &rhs) const
                    : ((_rank < rhs._rank) ? 1 : 0));
 }
 
-Group & Group::addOrderBy(const ExpressionNode::CP & orderBy, bool ascending)
-{
-    assert(getOrderBySize() < sizeof(_orderBy)*2-1);
-    assert(getExprSize() < 15);
-    addExpressionResult(orderBy);
-    setOrderBy(getOrderBySize(), (ascending ? getExprSize() : -getExprSize()));
-    setOrderBySize(getOrderBySize() + 1);
-    setupAggregationReferences();
-    return *this;
-}
-
-Group & Group::addAggregationResult(const ExpressionNode::CP & aggr)
-{
-    assert(getAggrSize() < 15);
-    size_t newSize = getAggrSize() + 1 + getExprSize();
-    ExpressionVector n = new ExpressionNode::CP[newSize];
-    for (size_t i(0), m(getAggrSize()); i < m; i++) {
-        n[i] = _aggregationResults[i];
-    }
-    n[getAggrSize()] = aggr;
-    // Copy expressions after aggregationresults
-    for (size_t i(getAggrSize()); i < newSize - 1; i++) {
-        n[i + 1] = _aggregationResults[i];
-    }
-    delete [] _aggregationResults;
-    _aggregationResults = n;
-    setAggrSize(getAggrSize() + 1);
-    return *this;
-}
-
-Group & Group::addExpressionResult(const ExpressionNode::CP & expressionNode)
-{
-    uint32_t newSize = getAggrSize() + getExprSize() + 1;
-    ExpressionVector n = new ExpressionNode::CP[newSize];
-    for (uint32_t i(0); i < (newSize - 1); i++) {
-        n[i] = _aggregationResults[i];
-    }
-    n[newSize - 1] = expressionNode;
-    delete [] _aggregationResults;
-    _aggregationResults = n;
-    setExprSize(getExprSize()+1);
-    return *this;
-}
-
-void Group::setupAggregationReferences()
-{
-    AggregationRefNode::Configure exprRefSetup(_aggregationResults);
-    select(exprRefSetup, exprRefSetup);
-}
-
-Group & Group::addResult(const ExpressionNode::CP & aggr)
-{
-    assert(getExprSize() < 15);
-    addAggregationResult(aggr);
-    addExpressionResult(ExpressionNode::CP(new AggregationRefNode(getAggrSize() - 1)));
-    setupAggregationReferences();
-    return *this;
-}
-
-void Group::addChild(Group * child)
-{
-    const size_t sz(getChildrenSize());
-    assert(sz < 0xffffff);
-    if (_children == 0) {
-        _children = new ChildP[4];
-    } else if ((sz >=4) && vespalib::Optimized::msbIdx(sz) == vespalib::Optimized::lsbIdx(sz)) {
-        GroupList n = new ChildP[sz*2];
-        for (size_t i(0), m(getChildrenSize()); i < m; i++) {
-            n[i] = _children[i];
-        }
-        delete [] _children;
-        _children = n;
-    }
-    _children[sz] = child;
-    setChildrenSize(sz + 1);
-}
-
 void
-Group::selectMembers(const vespalib::ObjectPredicate &predicate,
-                     vespalib::ObjectOperation &operation)
-{
+Group::selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) {
     if (_id.get()) {
         _id->select(predicate, operation);
     }
-    uint32_t totalSize = getAggrSize() + getExprSize();
-    for (uint32_t i(0); i < totalSize; i++) {
-        _aggregationResults[i]->select(predicate, operation);
-    }
-}
-
-void
-Group::preAggregate()
-{
-    assert(_childInfo._childMap == NULL);
-    _childInfo._childMap = new GroupHash(getChildrenSize()*2, GroupHasher(&_children), GroupEqual(&_children));
-    GroupHash & childMap = *_childInfo._childMap;
-    for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
-        (*it)->preAggregate();
-        childMap.insert(it - _children);
-    }
-}
-
-template <typename Doc>
-void Group::collect(const Doc & doc, HitRank rank)
-{
-    for(size_t i(0), m(getAggrSize()); i < m; i++) {
-        getAggr(i)->aggregate(doc, rank);
-    }
+    _aggr.select(predicate, operation);
 }
 
 template <typename Doc>
@@ -194,7 +93,8 @@ Group::groupNext(const GroupingLevel & level, const Doc & doc, HitRank rank)
     level.group(*this, selectResult, doc, rank);
 }
 
-Group * Group::groupSingle(const ResultNode & selectResult, HitRank rank, const GroupingLevel & level)
+Group *
+Group::Value::groupSingle(const ResultNode & selectResult, HitRank rank, const GroupingLevel & level)
 {
     if (_childInfo._childMap == NULL) {
         assert(getChildrenSize() == 0);
@@ -221,7 +121,212 @@ Group * Group::groupSingle(const ResultNode & selectResult, HitRank rank, const 
 }
 
 void
-Group::postAggregate()
+Group::merge(const GroupingLevelList &levels, uint32_t firstLevel, uint32_t currentLevel, Group &b) {
+    bool frozen = (currentLevel < firstLevel);    // is this level frozen ?
+    _rank = std::max(_rank, b._rank);
+
+    if (!frozen) { // should we merge collectors for this level ?
+        _aggr.mergeCollectors(b._aggr);
+    }
+    _aggr.merge(levels, firstLevel, currentLevel, b._aggr);
+}
+
+void
+Group::prune(const Group & b, uint32_t lastLevel, uint32_t currentLevel) {
+    if (currentLevel >= lastLevel) {
+        return;
+    }
+    _aggr.prune(b._aggr, lastLevel, currentLevel);
+}
+
+void
+Group::mergePartial(const GroupingLevelList &levels, uint32_t firstLevel, uint32_t lastLevel,
+                    uint32_t currentLevel, const Group & b) {
+    bool frozen = (currentLevel < firstLevel);
+
+    if (!frozen) {
+        _aggr.mergeCollectors(b._aggr);
+        _aggr.execute();
+
+        // At this level, we must create a copy of the other nodes children.
+        if (currentLevel >= lastLevel) {
+            _aggr.mergeLevel(levels[currentLevel].getGroupPrototype(), b._aggr);
+            return;
+        }
+    }
+    _aggr.mergePartial(levels, firstLevel, lastLevel, currentLevel, b._aggr);
+}
+
+Group &
+Group::setRank(RawRank r)
+{
+    _rank = std::isnan(r) ? -HUGE_VAL : r;
+    return *this;
+}
+
+Group &
+Group::updateRank(RawRank r)
+{
+    return setRank(std::max(_rank, r));
+}
+
+Serializer &
+Group::onSerialize(Serializer & os) const {
+    _aggr.assertIdOrder();
+    os << _id << _rank;
+    _aggr.serialize(os);
+    return os;
+}
+
+Deserializer &
+Group::onDeserialize(Deserializer & is) {
+    is >> _id >> _rank;
+    _aggr.deserialize(is);
+    _aggr.assertIdOrder();
+    return is;
+}
+
+void
+Group::visitMembers(vespalib::ObjectVisitor &visitor) const {
+    visit(visitor, "id", _id);
+    visit(visitor, "rank", _rank);
+    _aggr.visitMembers(visitor);
+}
+
+Group::Group() :
+    _id(),
+    _rank(0),
+    _aggr()
+{ }
+
+Group::Group(const Group & rhs) = default;
+Group & Group::operator = (const Group & rhs) = default;
+
+Group::~Group() { }
+
+Group &
+Group::partialCopy(const Group & rhs) {
+    setId(*rhs._id);
+    _rank = rhs._rank;
+    _aggr.partialCopy(rhs._aggr);
+    return *this;
+}
+
+template void Group::aggregate(const Grouping & grouping, uint32_t currentLevel, const DocId & doc, HitRank rank);
+template void Group::aggregate(const Grouping & grouping, uint32_t currentLevel, const document::Document & doc, HitRank rank);
+
+int
+Group::Value::cmp(const Value & rhs) const {
+    int diff(0);
+    for (size_t i(0), m(getOrderBySize()); (diff == 0) && (i < m); i++) {
+        uint32_t index = std::abs(getOrderBy(i)) - 1;
+        diff = expr(index).getResult().cmp(rhs.expr(index).getResult()) * getOrderBy(i);
+    }
+    return diff;
+}
+
+void
+Group::Value::addExpressionResult(ExpressionNode::UP expressionNode)
+{
+    uint32_t newSize = getAggrSize() + getExprSize() + 1;
+    ExpressionVector n = new ExpressionNode::CP[newSize];
+    for (uint32_t i(0); i < (newSize - 1); i++) {
+        n[i] = std::move(_aggregationResults[i]);
+    }
+    n[newSize - 1].reset(expressionNode.release());
+    delete [] _aggregationResults;
+    _aggregationResults = n;
+    setExprSize(getExprSize()+1);
+    setupAggregationReferences();
+}
+
+void
+Group::Value::addAggregationResult(ExpressionNode::UP aggr)
+{
+    assert(getAggrSize() < 15);
+    size_t newSize = getAggrSize() + 1 + getExprSize();
+    ExpressionVector n = new ExpressionNode::CP[newSize];
+    for (size_t i(0), m(getAggrSize()); i < m; i++) {
+        n[i] = std::move(_aggregationResults[i]);
+    }
+    n[getAggrSize()].reset(aggr.release());
+    // Copy expressions after aggregationresults
+    for (size_t i(getAggrSize()); i < newSize - 1; i++) {
+        n[i + 1] = std::move(_aggregationResults[i]);
+    }
+    delete [] _aggregationResults;
+    _aggregationResults = n;
+    setAggrSize(getAggrSize() + 1);
+}
+
+template <typename Doc>
+void Group::Value::collect(const Doc & doc, HitRank rank)
+{
+    for(size_t i(0), m(getAggrSize()); i < m; i++) {
+        getAggr(i)->aggregate(doc, rank);
+    }
+}
+
+void
+Group::Value::addResult(ExpressionNode::UP aggr)
+{
+    assert(getExprSize() < 15);
+    addAggregationResult(std::move(aggr));
+    addExpressionResult(ExpressionNode::UP(new AggregationRefNode(getAggrSize() - 1)));
+    setupAggregationReferences();
+}
+
+void
+Group::Value::addOrderBy(ExpressionNode::UP orderBy, bool ascending)
+{
+    assert(getOrderBySize() < sizeof(_orderBy)*2-1);
+    assert(getExprSize() < 15);
+    addExpressionResult(std::move(orderBy));
+    setOrderBy(getOrderBySize(), (ascending ? getExprSize() : -getExprSize()));
+    setOrderBySize(getOrderBySize() + 1);
+}
+
+void
+Group::Value::addChild(Group * child)
+{
+    const size_t sz(getChildrenSize());
+    assert(sz < 0xffffff);
+    if (_children == 0) {
+        _children = new ChildP[4];
+    } else if ((sz >=4) && vespalib::Optimized::msbIdx(sz) == vespalib::Optimized::lsbIdx(sz)) {
+        GroupList n = new ChildP[sz*2];
+        for (size_t i(0), m(getChildrenSize()); i < m; i++) {
+            n[i] = _children[i];
+        }
+        delete [] _children;
+        _children = n;
+    }
+    _children[sz] = child;
+    setChildrenSize(sz + 1);
+}
+
+void
+Group::Value::select(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) {
+    uint32_t totalSize = getAggrSize() + getExprSize();
+    for (uint32_t i(0); i < totalSize; i++) {
+        _aggregationResults[i]->select(predicate, operation);
+    }
+}
+
+void
+Group::Value::preAggregate()
+{
+    assert(_childInfo._childMap == NULL);
+    _childInfo._childMap = new GroupHash(getChildrenSize()*2, GroupHasher(&_children), GroupEqual(&_children));
+    GroupHash & childMap = *_childInfo._childMap;
+    for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
+        (*it)->preAggregate();
+        childMap.insert(it - _children);
+    }
+}
+
+void
+Group::Value::postAggregate()
 {
     delete _childInfo._childMap;
     _childInfo._childMap = NULL;
@@ -231,7 +336,7 @@ Group::postAggregate()
 }
 
 void
-Group::executeOrderBy()
+Group::Value::executeOrderBy()
 {
     for (size_t i(0), m(getExprSize()); i < m; i++) {
         ExpressionNode & e(expr(i));
@@ -240,7 +345,8 @@ Group::executeOrderBy()
     }
 }
 
-void Group::sortById()
+void
+Group::Value::sortById()
 {
     std::sort(_children, _children + getChildrenSize(), SortByGroupId());
     for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
@@ -249,17 +355,32 @@ void Group::sortById()
 }
 
 void
-Group::merge(const std::vector<GroupingLevel> &levels,
-             uint32_t firstLevel, uint32_t currentLevel, Group &b)
-{
-    bool frozen  = (currentLevel < firstLevel);    // is this level frozen ?
-    _rank = std::max(_rank, b._rank);
-
-    if (!frozen) { // should we merge collectors for this level ?
-        for(size_t i(0), m(getAggrSize()); i < m; i++) {
-            getAggr(i)->merge(*b.getAggr(i));
-        }
+Group::Value::mergeCollectors(const Value &rhs) {
+    for(size_t i(0), m(getAggrSize()); i < m; i++) {
+        getAggr(i)->merge(rhs.getAggr(i));
     }
+}
+
+void
+Group::Value::execute() {
+    for (size_t i(0), m(getExprSize()); i < m; i++) {
+        expr(i).execute();
+    }
+}
+
+void
+Group::Value::mergeLevel(const Group & protoType, const Value & b) {
+    for (ChildP *it(b._children), *mt(b._children + b.getChildrenSize()); it != mt; ++it) {
+        ChildP g(new Group(protoType));
+        g->partialCopy(**it);
+        addChild(g);
+    }
+}
+
+void
+Group::Value::merge(const std::vector<GroupingLevel> &levels,
+                    uint32_t firstLevel, uint32_t currentLevel, const Value &b)
+{
     GroupList z = new ChildP[getChildrenSize() + b.getChildrenSize()];
     size_t kept(0);
     ChildP * px = _children;
@@ -299,12 +420,7 @@ Group::merge(const std::vector<GroupingLevel> &levels,
 }
 
 void
-Group::prune(const Group & b, uint32_t lastLevel, uint32_t currentLevel)
-{
-    if (currentLevel >= lastLevel) {
-        return;
-    }
-
+Group::Value::prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel) {
     GroupList keep = new ChildP[b.getChildrenSize()];
     size_t kept(0);
     ChildP * px = _children;
@@ -332,34 +448,9 @@ Group::prune(const Group & b, uint32_t lastLevel, uint32_t currentLevel)
 }
 
 void
-Group::mergePartial(const std::vector<GroupingLevel> &levels,
-                    uint32_t firstLevel,
-                    uint32_t lastLevel,
-                    uint32_t currentLevel,
-                    const Group & b)
+Group::Value::mergePartial(const GroupingLevelList &levels, uint32_t firstLevel, uint32_t lastLevel,
+                           uint32_t currentLevel, const Value & b)
 {
-    bool frozen  = (currentLevel < firstLevel);
-
-    if (!frozen) {
-        for(size_t i(0), m(getAggrSize()); i < m; i++) {
-            getAggr(i)->merge(b.getAggr(i));
-        }
-        for(size_t i(0), m(getExprSize()); i < m; i++) {
-            expr(i).execute();
-        }
-
-
-        // At this level, we must create a copy of the other nodes children.
-        if (currentLevel >= lastLevel) {
-            for (ChildP *it(b._children), *mt(b._children + b.getChildrenSize()); it != mt; ++it) {
-                ChildP g(new Group(levels[currentLevel].getGroupPrototype()));
-                g->partialCopy(**it);
-                addChild(g);
-            }
-            return;
-        }
-    }
-
     ChildP * px = _children;
     ChildP * ex = _children + getChildrenSize();
     const ChildP * py = b._children;
@@ -379,9 +470,7 @@ Group::mergePartial(const std::vector<GroupingLevel> &levels,
 }
 
 void
-Group::postMerge(const std::vector<GroupingLevel> &levels,
-                 uint32_t firstLevel,
-                 uint32_t currentLevel)
+Group::Value::postMerge(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t currentLevel)
 {
     bool frozen = (currentLevel < firstLevel);    // is this level frozen ?
 
@@ -412,18 +501,8 @@ Group::postMerge(const std::vector<GroupingLevel> &levels,
     }
 }
 
-Group & Group::setRank(RawRank r)
-{
-    _rank = std::isnan(r) ? -HUGE_VAL : r;
-    return *this;
-}
-
-Group & Group::updateRank(RawRank r)
-{
-    return setRank(std::max(_rank, r));
-}
-
-bool Group::needResort() const
+bool
+Group::Value::needResort() const
 {
     bool resort(needFullRank());
     for (const ChildP *it(_children), *mt(_children + getChildrenSize()); !resort && (it != mt); ++it) {
@@ -432,14 +511,18 @@ bool Group::needResort() const
     return resort;
 }
 
-Serializer & Group::onSerialize(Serializer & os) const
-{
+void
+Group::Value::assertIdOrder() const {
     if (getChildrenSize() > 1) {
         for (size_t i(1), m(getChildrenSize()); i < m; i++) {
             assert(_children[i]->cmpId(*_children[i-1]) > 0);
         }
     }
-    os << _id << _rank;
+}
+
+Serializer &
+Group::Value::serialize(Serializer & os) const {
+
     os << uint32_t(getOrderBySize());
     for (size_t i(0), m(getOrderBySize()); i < m; i++) {
         os << int32_t(getOrderBy(i));
@@ -459,10 +542,10 @@ Serializer & Group::onSerialize(Serializer & os) const
     return os << _tag;
 }
 
-Deserializer & Group::onDeserialize(Deserializer & is)
-{
+Deserializer &
+Group::Value::deserialize(Deserializer & is) {
     uint32_t count(0);
-    is >> _id >> _rank >> count;
+    is >> count;
     assert(count < sizeof(_orderBy)*2);
     setOrderBySize(count);
     for(uint32_t i(0); i < count; i++) {
@@ -492,13 +575,13 @@ Deserializer & Group::onDeserialize(Deserializer & is)
         _aggregationResults[i] = tmpAggregationResults[i];
     }
     delete [] tmpAggregationResults;
+    setupAggregationReferences();
 
     assert(exprSize < 16);
     setExprSize(exprSize);
     for (uint32_t i(aggrSize); i < aggrSize + exprSize; i++) {
         is >> _aggregationResults[i];
     }
-    setupAggregationReferences();
     is >> count;
     destruct(_children, getAllChildrenSize());
     _childInfo._allChildren = 0;
@@ -510,19 +593,11 @@ Deserializer & Group::onDeserialize(Deserializer & is)
         _children[i] = group;
     }
     is >> _tag;
-    if (getChildrenSize() > 1) {
-        for (size_t i(1), m(getChildrenSize()); i < m; i++) {
-            assert(_children[i]->cmpId(*_children[i-1]) > 0);
-        }
-    }
     return is;
 }
 
 void
-Group::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
-    visit(visitor, "id",                    _id);
-    visit(visitor, "rank",                  _rank);
+Group::Value::visitMembers(vespalib::ObjectVisitor &visitor) const {
 //    visit(visitor, "orderBy",               _orderBy);
     visitor.openStruct("orderBy", "[]");
     visit(visitor, "size", getOrderBySize());
@@ -554,30 +629,25 @@ Group::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "tag",                   _tag);
 }
 
-Group::Group() :
-    _id(),
-    _rank(0),
+Group::Value::Value() :
     _packedLength(0),
     _tag(-1),
     _aggregationResults(NULL),
-    _orderBy(),
     _children(NULL),
-    _childInfo()
+    _childInfo(),
+    _orderBy()
 {
     memset(_orderBy, 0, sizeof(_orderBy));
     _childInfo._childMap = NULL;
 }
 
-Group::Group(const Group & rhs) :
-    Identifiable(rhs),
-    _id(rhs._id),
-    _rank(rhs._rank),
+Group::Value::Value(const Value & rhs) :
     _packedLength(rhs._packedLength),
     _tag(rhs._tag),
     _aggregationResults(NULL),
-    _orderBy(),
     _children(NULL),
-    _childInfo()
+    _childInfo(),
+    _orderBy()
 {
     _childInfo._childMap = NULL;
     memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
@@ -599,7 +669,46 @@ Group::Group(const Group & rhs) :
     }
 }
 
-Group::~Group()
+Group::Value::Value(Value && rhs) noexcept :
+    _packedLength(std::move(rhs._packedLength)),
+    _tag(std::move(rhs._tag)),
+    _aggregationResults(std::move(rhs._aggregationResults)),
+    _children(std::move(rhs._children)),
+    _childInfo(std::move(rhs._childInfo)),
+    _orderBy()
+{
+    memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
+
+    rhs.setChildrenSize(0);
+    rhs._aggregationResults = nullptr;
+    rhs._childInfo._allChildren = 0;
+    rhs._children = nullptr;
+}
+
+Group::Value &
+Group::Value::operator =(Value && rhs) noexcept {
+    _packedLength = std::move(rhs._packedLength);
+    _tag = std::move(rhs._tag);
+    _aggregationResults = std::move(rhs._aggregationResults);
+    _children = std::move(rhs._children);
+    _childInfo = std::move(rhs._childInfo);
+    memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
+
+    rhs.setChildrenSize(0);
+    rhs._aggregationResults = nullptr;
+    rhs._childInfo._allChildren = 0;
+    rhs._children = nullptr;
+    return *this;
+}
+
+Group::Value &
+Group::Value::operator =(const Value & rhs) {
+    Value tmp(rhs);
+    tmp.swap(*this);
+    return *this;
+}
+
+Group::Value::~Value()
 {
     destruct(_children, getAllChildrenSize());
     setChildrenSize(0);
@@ -607,39 +716,9 @@ Group::~Group()
     delete [] _aggregationResults;
 }
 
-Group & Group::operator =(const Group & rhs)
+void
+Group::Value::swap(Value & rhs)
 {
-    if (&rhs != this) {
-        Group g(rhs);
-        swap(g);
-    }
-    return *this;
-}
-
-Group &
-Group::partialCopy(const Group & rhs)
-{
-    setId(*rhs._id);
-    _rank = rhs._rank;
-    uint32_t totalAggrSize = getAggrSize() + getExprSize();
-    for(size_t i(0), m(totalAggrSize); i < m; i++) {
-        _aggregationResults[i] = rhs._aggregationResults[i];
-    }
-    for(size_t i(0), m(getAggrSize()); i < m; i++) {
-        getAggr(i)->reset();
-    }
-    setAggrSize(rhs.getAggrSize());
-    setOrderBySize(rhs.getOrderBySize());
-    setExprSize(rhs.getExprSize());
-    setupAggregationReferences();
-    memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
-    return *this;
-}
-
-void Group::swap(Group & rhs)
-{
-    _id.swap(rhs._id);
-    std::swap(_rank, rhs._rank);
     std::swap(_aggregationResults, rhs._aggregationResults);
     std::swap(_children, rhs._children);
     std::swap(_childInfo._childMap, rhs._childInfo._childMap);
@@ -653,8 +732,29 @@ void Group::swap(Group & rhs)
     std::swap(_packedLength, rhs._packedLength);
 }
 
-template void Group::aggregate(const Grouping & grouping, uint32_t currentLevel, const DocId & doc, HitRank rank);
-template void Group::aggregate(const Grouping & grouping, uint32_t currentLevel, const document::Document & doc, HitRank rank);
+
+void
+Group::Value::partialCopy(const Value & rhs) {
+    uint32_t totalAggrSize = getAggrSize() + getExprSize();
+    for(size_t i(0), m(totalAggrSize); i < m; i++) {
+        _aggregationResults[i] = rhs._aggregationResults[i];
+    }
+    for(size_t i(0), m(getAggrSize()); i < m; i++) {
+        getAggr(i)->reset();
+    }
+    setAggrSize(rhs.getAggrSize());
+    setOrderBySize(rhs.getOrderBySize());
+    setExprSize(rhs.getExprSize());
+    setupAggregationReferences();
+    memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
+}
+
+void
+Group::Value::setupAggregationReferences()
+{
+    AggregationRefNode::Configure exprRefSetup(_aggregationResults);
+    select(exprRefSetup, exprRefSetup);
+}
 
 }
 }

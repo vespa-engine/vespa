@@ -20,8 +20,8 @@ DebugWaitFunctionNode::~DebugWaitFunctionNode()
 {
 }
 
-DebugWaitFunctionNode::DebugWaitFunctionNode(const ExpressionNode::CP & arg, double waitTime, bool busyWait)
-    : UnaryFunctionNode(arg),
+DebugWaitFunctionNode::DebugWaitFunctionNode(ExpressionNode::UP arg, double waitTime, bool busyWait)
+    : UnaryFunctionNode(std::move(arg)),
       _waitTime(waitTime),
       _busyWait(busyWait)
 {

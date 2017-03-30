@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "groupingmanager.h"
+#include "groupingcontext.h"
+#include "sessionid.h"
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <map>
-#include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchcore/grouping/sessionid.h>
+
 
 namespace search {
 
@@ -20,9 +21,6 @@ namespace grouping {
 class GroupingSession
 {
 private:
-    GroupingSession(const GroupingSession &);
-    GroupingSession &operator=(const GroupingSession &);
-
     typedef std::shared_ptr<search::aggregation::Grouping> GroupingPtr;
     typedef std::map<uint32_t, GroupingPtr>                    GroupingMap;
     typedef std::vector<GroupingPtr>                           GroupingList;
@@ -46,6 +44,8 @@ public:
     GroupingSession(const SessionId & sessionId,
                     GroupingContext & groupingContext,
                     const search::attribute::IAttributeContext &attrCtx);
+    GroupingSession(const GroupingSession &) = delete;
+    GroupingSession &operator=(const GroupingSession &) = delete;
 
     /**
      * Release resources

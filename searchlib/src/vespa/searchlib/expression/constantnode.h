@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/expressionnode.h>
-#include <vespa/searchlib/expression/resultnode.h>
+#include "expressionnode.h"
+#include "resultnode.h"
 
 namespace search {
 namespace expression {
@@ -13,7 +13,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(ConstantNode);
     ConstantNode() : ExpressionNode(), _result() { }
-    ConstantNode(const ResultNode::CP & r) : ExpressionNode(), _result(r) { }
+    ConstantNode(ResultNode::UP r) : ExpressionNode(), _result(r.release()) { }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     virtual const ResultNode & getResult() const { return *_result; }
 private:

@@ -24,18 +24,16 @@ InterpolatedLookup::~InterpolatedLookup()
 {
 }
 
-InterpolatedLookup::InterpolatedLookup(const vespalib::string &attribute,
-                                       const ExpressionNode::CP &arg)
-    : UnaryFunctionNode(arg),
+InterpolatedLookup::InterpolatedLookup(const vespalib::string &attribute, ExpressionNode::UP arg)
+    : UnaryFunctionNode(std::move(arg)),
       _attributeName(attribute),
       _attribute(0),
       _docId(0)
 {
 }
 
-InterpolatedLookup::InterpolatedLookup(const search::attribute::IAttributeVector &attr,
-                                       const ExpressionNode::CP &lookupArg)
-    : UnaryFunctionNode(lookupArg),
+InterpolatedLookup::InterpolatedLookup(const attribute::IAttributeVector &attr, ExpressionNode::UP lookupArg)
+    : UnaryFunctionNode(std::move(lookupArg)),
       _attributeName(attr.getName()),
       _attribute(&attr),
       _docId(0)
@@ -53,7 +51,8 @@ InterpolatedLookup::InterpolatedLookup(const InterpolatedLookup &rhs) :
     _docId = 0;
 }
 
-InterpolatedLookup & InterpolatedLookup::operator= (const InterpolatedLookup &rhs)
+InterpolatedLookup &
+InterpolatedLookup::operator= (const InterpolatedLookup &rhs)
 {
     if (this != &rhs) {
         UnaryFunctionNode::operator =(rhs);

@@ -15,7 +15,11 @@ public:
     DECLARE_EXPRESSIONNODE(TimeStampFunctionNode);
     DECLARE_NBO_SERIALIZE;
     TimeStampFunctionNode() : _timePart(Year), _isGmt(true) { }
-    TimeStampFunctionNode(const ExpressionNode::CP & arg, TimePart timePart, bool gmt=true) : UnaryFunctionNode(arg), _timePart(timePart), _isGmt(gmt) { }
+    TimeStampFunctionNode(ExpressionNode::UP arg, TimePart timePart, bool gmt=true)
+        : UnaryFunctionNode(std::move(arg)),
+          _timePart(timePart),
+          _isGmt(gmt)
+    { }
     TimeStampFunctionNode(const TimeStampFunctionNode & rhs);
     TimeStampFunctionNode & operator = (const TimeStampFunctionNode & rhs);
     unsigned int getTime() const { return getResult().getInteger(); } // Not valid until after node has been prepared

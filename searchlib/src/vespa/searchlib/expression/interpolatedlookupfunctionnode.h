@@ -18,10 +18,10 @@ public:
     ~InterpolatedLookup();
 
     InterpolatedLookup(const vespalib::string &attribute,
-                       const ExpressionNode::CP & arg);
+                       ExpressionNode::UP arg);
 
     InterpolatedLookup(const search::attribute::IAttributeVector &attr,
-                       const ExpressionNode::CP &lookupArg);
+                       ExpressionNode::UP lookupArg);
 
     InterpolatedLookup(const InterpolatedLookup &rhs);
 

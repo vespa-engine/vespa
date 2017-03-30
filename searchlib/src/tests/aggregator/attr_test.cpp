@@ -114,13 +114,11 @@ struct StringAttrFixture {
     }
 };
 
+#define MU std::make_unique
 
 TEST_F("testArrayAt", AttributeFixture()) {
     for (int i = 0; i < 11; i++) {
-        ExpressionNode::CP cn(new ConstantNode(new Int64ResultNode(i)));
-        ExpressionNode::CP ln(new ArrayAtLookup(*f1.guard, cn));
-
-        ExpressionTree et(ln);
+        ExpressionTree et(MU<ArrayAtLookup>(*f1.guard, MU<ConstantNode>(MU<Int64ResultNode>(i))));
         ExpressionTree::Configure treeConf;
         et.select(treeConf, treeConf);
         EXPECT_TRUE(et.getResult().getClass().inherits(FloatResultNode::classId));
@@ -134,15 +132,11 @@ TEST_F("testArrayAt", AttributeFixture()) {
 
 TEST_F("testArrayAtInt", IntAttrFixture()) {
     for (int i = 0; i < 3; i++) {
-        ExpressionNode::CP othercn(new ConstantNode(new Int64ResultNode(4567)));
-        ArrayAtLookup *x = new ArrayAtLookup(*f1.guard, othercn);
-        ExpressionNode::CP cn(new ConstantNode(new Int64ResultNode(i)));
-        ArrayAtLookup *y = new ArrayAtLookup(*f1.guard, cn);
+        auto x = MU<ArrayAtLookup>(*f1.guard, MU<ConstantNode>(MU<Int64ResultNode>(4567)));
+        auto y = MU<ArrayAtLookup>(*f1.guard, MU<ConstantNode>(MU<Int64ResultNode>(i)));
         *x = *y;
-        delete y;
-        ExpressionNode::CP ln(x);
 
-        ExpressionTree et(ln);
+        ExpressionTree et(std::move(x));
         ExpressionTree::Configure treeConf;
         et.select(treeConf, treeConf);
         EXPECT_TRUE(et.getResult().getClass().inherits(IntegerResultNode::classId));
@@ -156,10 +150,7 @@ TEST_F("testArrayAtInt", IntAttrFixture()) {
 
 
 TEST_F("testArrayAtString", StringAttrFixture()) {
-    ExpressionNode::CP cn(new ConstantNode(new Int64ResultNode(1)));
-    ExpressionNode::CP ln(new ArrayAtLookup(*f1.guard, cn));
-
-    ExpressionTree et(ln);
+    ExpressionTree et(MU<ArrayAtLookup>(*f1.guard, MU<ConstantNode>(MU<Int64ResultNode>(1))));
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
     EXPECT_TRUE(et.getResult().getClass().inherits(StringResultNode::classId));
@@ -177,15 +168,11 @@ TEST_F("testArrayAtString", StringAttrFixture()) {
 struct ArrayAtExpressionFixture :
     public AttributeFixture
 {
-    ExpressionNode::CP cn;
-    ExpressionNode::CP ln;
     ExpressionTree et;
 
     ArrayAtExpressionFixture(int i) :
         AttributeFixture(),
-        cn(new ConstantNode(new Int64ResultNode(i))),
-        ln(new ArrayAtLookup(*guard, cn)),
-        et(ln)
+        et(MU<ArrayAtLookup>(*guard, MU<ConstantNode>(MU<Int64ResultNode>(i))))
     {
         ExpressionTree::Configure treeConf;
         et.select(treeConf, treeConf);
@@ -212,11 +199,7 @@ TEST_F("testArrayAtAboveRange", ArrayAtExpressionFixture(17)) {
 }
 
 TEST_F("testInterpolatedLookup", AttributeFixture()) {
-
-    ExpressionNode::CP c1(new ConstantNode(new FloatResultNode(f1.doc0attr[2])));
-    ExpressionNode::CP l1(new InterpolatedLookup(*f1.guard, c1));
-
-    ExpressionTree et(l1);
+    ExpressionTree et(MU<InterpolatedLookup>(*f1.guard, MU<ConstantNode>(MU<FloatResultNode>(f1.doc0attr[2]))));
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
 
@@ -230,11 +213,7 @@ TEST_F("testInterpolatedLookup", AttributeFixture()) {
 }
 
 TEST_F("testWithRelevance", AttributeFixture()) {
-
-    ExpressionNode::CP r1(new RelevanceNode());
-    ExpressionNode::CP l1(new InterpolatedLookup(*f1.guard, r1));
-
-    ExpressionTree et(l1);
+    ExpressionTree et(MU<InterpolatedLookup>(*f1.guard, MU<RelevanceNode>()));
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
 

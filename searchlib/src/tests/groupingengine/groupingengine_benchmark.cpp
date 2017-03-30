@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
@@ -14,6 +13,7 @@
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/util/rusage.h>
+#include <vespa/log/log.h>
 LOG_SETUP("grouping_benchmark");
 
 using namespace vespalib;
@@ -41,7 +41,7 @@ public:
         for (uint32_t docid = 0; docid < numDocs; ++docid) {
             T val;
             uint32_t res = rhs._attr->get(docid, &val, 1);
-            LOG_ASSERT(res == 1);
+            assert(res == 1);
             add(val);
         }
     }
@@ -180,6 +180,8 @@ Test::testAggregation(AggregationContext &ctx, const Grouping &request, bool use
     return true;
 }
 
+#define MU std::make_unique
+
 void
 Test::benchmarkIntegerSum(bool useEngine, size_t numDocs, size_t numQueries, int64_t maxGroups)
 {
@@ -193,18 +195,16 @@ Test::benchmarkIntegerSum(bool useEngine, size_t numDocs, size_t numQueries, int
     }
     ctx.add(attrB.sp());
     GroupingLevel level;
-    level.setExpression(AttributeNode("attr0")).setMaxGroups(maxGroups);
-    level.addResult(SumAggregationResult().setExpression(AttributeNode("attr0")));
+    level.setExpression(MU<AttributeNode>("attr0")).setMaxGroups(maxGroups);
+    level.addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")));
     if (maxGroups >= 0) {
-        level.addOrderBy(AggregationRefNode(0), false);
+        level.addOrderBy(MU<AggregationRefNode>(0), false);
     }
-    Grouping baseRequest = Grouping()
-                           .setFirstLevel(0)
-                           .setLastLevel(1)
-                           .setRoot(Group()
-                                    .addResult(SumAggregationResult()
-                                            .setExpression(AttributeNode("attr0"))))
-                           .addLevel(level);
+    Grouping baseRequest;
+    baseRequest.setFirstLevel(0)
+               .setLastLevel(1)
+               .setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+               .addLevel(std::move(level));
 
     for (size_t i(0); i < numQueries; i++) {
         testAggregation(ctx, baseRequest, useEngine);
@@ -224,18 +224,16 @@ Test::benchmarkIntegerCount(bool useEngine, size_t numDocs, size_t numQueries, i
     }
     ctx.add(attrB.sp());
     GroupingLevel level;
-    level.setExpression(AttributeNode("attr0")).setMaxGroups(maxGroups);
-    level.addResult(CountAggregationResult().setExpression(AttributeNode("attr0")));
+    level.setExpression(MU<AttributeNode>("attr0")).setMaxGroups(maxGroups);
+    level.addResult(CountAggregationResult().setExpression(MU<AttributeNode>("attr0")));
     if (maxGroups >= 0) {
-        level.addOrderBy(AggregationRefNode(0), false);
+        level.addOrderBy(MU<AggregationRefNode>(0), false);
     }
-    Grouping baseRequest = Grouping()
-                           .setFirstLevel(0)
-                           .setLastLevel(1)
-                           .setRoot(Group()
-                                    .addResult(CountAggregationResult()
-                                            .setExpression(AttributeNode("attr0"))))
-                           .addLevel(level);
+    Grouping baseRequest;
+    baseRequest.setFirstLevel(0)
+               .setLastLevel(1)
+               .setRoot(Group().addResult(CountAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+               .addLevel(std::move(level));
 
     for (size_t i(0); i < numQueries; i++) {
         testAggregation(ctx, baseRequest, useEngine);
@@ -277,7 +275,6 @@ Test::Main()
     LOG(info, "sizeof(CountAggregationResult) = %ld", sizeof(CountAggregationResult));
     LOG(info, "sizeof(Int64ResultNode) = %ld", sizeof(Int64ResultNode));
 
-    LOG(info, "sizeof(Group::ExpressionVector) = %ld", sizeof(Group::ExpressionVector));
     fastos::TimeStamp start(fastos::ClockSystem::now());
     if (idType == "int") {
         if (aggrType == "sum") {

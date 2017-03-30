@@ -136,6 +136,13 @@ public:
     /** @brief destructor, calls free() on owned pointer */
     ~MallocAutoPtr() { cleanup(); }
 
+    MallocAutoPtr(MallocAutoPtr && rhs) : _p(rhs._p) { rhs._p = nullptr; }
+    MallocAutoPtr & operator = (MallocAutoPtr && rhs) {
+        cleanup();
+        std::swap(_p, rhs._p);
+        return *this;
+    }
+
     /**
      * @brief "copy" contructor
      *
@@ -288,9 +295,9 @@ public:
     void
     realloc(size_t sz)
     {
-	if (sz == 0) {
-	    cleanup();
-	} else {
+        if (sz == 0) {
+            cleanup();
+        } else {
             void *p = ::realloc(_p, sz);
             if (p != nullptr) {
                 _p = p;
@@ -326,8 +333,15 @@ public:
     /** @brief construct (from pointer) */
     CloneablePtr(T * p=nullptr) : _p(p) { }
 
+    CloneablePtr(CloneablePtr && rhs) noexcept : _p(rhs._p) { rhs._p = nullptr; }
+    CloneablePtr & operator = (CloneablePtr && rhs) noexcept {
+        cleanup();
+        std::swap(_p, rhs._p);
+        return *this;
+    }
+
     /** @brief destructor doing delete on owned pointer */
-    ~CloneablePtr() { cleanup(); }
+    ~CloneablePtr() noexcept { cleanup(); }
 
     /** @brief copy constructor, does deep copy using clone() */
     CloneablePtr(const CloneablePtr & rhs) : _p(nullptr) {
@@ -373,7 +387,7 @@ public:
     /** @brief release owned pointer */
     T * release()                   { T * p(_p); _p = nullptr; return p; }
 private:
-    void cleanup() {
+    void cleanup() noexcept {
         if (_p) {
             delete _p;
             _p = nullptr;

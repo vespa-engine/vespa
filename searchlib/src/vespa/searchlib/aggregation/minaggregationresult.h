@@ -12,11 +12,14 @@ class MinAggregationResult : public AggregationResult
 public:
     using SingleResultNode = expression::SingleResultNode;
     DECLARE_AGGREGATIONRESULT(MinAggregationResult);
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const SingleResultNode & getMin() const { return *_min; }
+    MinAggregationResult();
+    MinAggregationResult(const ResultNode::CP &result);
+    ~MinAggregationResult();
 private:
-    virtual const ResultNode & onGetRank() const { return getMin(); }
-    virtual void onPrepare(const ResultNode & result, bool useForInit);
+    const ResultNode & onGetRank() const override { return getMin(); }
+    void onPrepare(const ResultNode & result, bool useForInit) override;
     SingleResultNode::CP _min;
 };
 

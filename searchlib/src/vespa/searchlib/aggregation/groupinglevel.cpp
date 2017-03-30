@@ -22,15 +22,21 @@ GroupingLevel::GroupingLevel() :
     _classify(),
     _collect(),
     _grouper(NULL)
-{
-}
+{ }
 
-Serializer & GroupingLevel::onSerialize(Serializer & os) const
+GroupingLevel::~GroupingLevel() { }
+
+GroupingLevel::GroupingLevel(const GroupingLevel &) = default;
+GroupingLevel & GroupingLevel::operator =(const GroupingLevel &) = default;
+
+Serializer &
+GroupingLevel::onSerialize(Serializer & os) const
 {
     return os << _maxGroups << _precision << _classify << _collect;
 }
 
-Deserializer & GroupingLevel::onDeserialize(Deserializer & is)
+Deserializer &
+GroupingLevel::onDeserialize(Deserializer & is)
 {
     return is >> _maxGroups >> _precision >> _classify >> _collect;
 }

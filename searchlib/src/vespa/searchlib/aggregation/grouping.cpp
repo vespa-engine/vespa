@@ -121,6 +121,11 @@ Grouping::Grouping()
 {
 }
 
+Grouping::Grouping(const Grouping &) = default;
+Grouping & Grouping::operator = (const Grouping &) = default;
+
+Grouping::~Grouping() { }
+
 void
 Grouping::selectMembers(const vespalib::ObjectPredicate &predicate,
                         vespalib::ObjectOperation &operation)

@@ -14,6 +14,8 @@
 #include <cmath>
 #include <iostream>
 
+#define MU std::make_unique
+
 using namespace search;
 using namespace search::expression;
 using namespace search::aggregation;
@@ -34,13 +36,13 @@ void testCmp(const T & small, const T & medium, const T & large);
 void testMin(const ResultNode & a, const ResultNode & b) {
     ASSERT_TRUE(a.cmp(b) < 0);
     MinFunctionNode func;
-    func.appendArg(ConstantNode(a)).appendArg(ConstantNode(b)).prepare(false)
-        .execute();
+    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
     ASSERT_TRUE(func.getResult().cmp(a) == 0);
 
     MinFunctionNode funcR;
-    funcR.appendArg(ConstantNode(b)).appendArg(ConstantNode(a)).prepare(false)
-        .execute();
+    funcR.appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
+         .appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false).execute();
     ASSERT_TRUE(funcR.getResult().cmp(a) == 0);
 }
 
@@ -55,13 +57,15 @@ TEST("testMin") {
 void testMax(const ResultNode & a, const ResultNode & b) {
     ASSERT_TRUE(a.cmp(b) < 0);
     MaxFunctionNode func;
-    func.appendArg(ConstantNode(a)).appendArg(ConstantNode(b)).prepare(false)
+    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false)
         .execute();
     ASSERT_TRUE(func.getResult().cmp(b) == 0);
 
     MaxFunctionNode funcR;
-    funcR.appendArg(ConstantNode(b)).appendArg(ConstantNode(a)).prepare(false)
-        .execute();
+    funcR.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
+         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false)
+         .execute();
     ASSERT_TRUE(funcR.getResult().cmp(b) == 0);
 }
 
@@ -91,16 +95,14 @@ ExpressionCountAggregationResult getExpressionCountWithNormalSketch() {
 }
 
 void testExpressionCount(const ResultNode &a, uint32_t bucket, uint8_t val) {
-    ExpressionCountAggregationResult func =
-        getExpressionCountWithNormalSketch();
-    func.setExpression(ConstantNode(a));
+    ExpressionCountAggregationResult func = getExpressionCountWithNormalSketch();
+    func.setExpression(MU<ConstantNode>(ResultNode::UP(a.clone())));
     func.aggregate(DocId(42), HitRank(21));
 
     const auto &sketch = func.getSketch();
     auto normal = dynamic_cast<const NormalSketch<>&>(sketch);
     for (uint32_t i = 0; i < sketch.BUCKET_COUNT; ++i) {
-        TEST_STATE(make_string("Bucket %u. Expected bucket %u=%u",
-                               i, bucket, val).c_str());
+        TEST_STATE(make_string("Bucket %u. Expected bucket %u=%u", i, bucket, val).c_str());
         EXPECT_EQUAL(i == bucket? val : 0, (int) normal.bucket[i]);
     }
 }
@@ -114,14 +116,10 @@ TEST("require that expression count can operate on different results") {
 }
 
 TEST("require that expression counts can be merged") {
-    ExpressionCountAggregationResult func1 =
-        getExpressionCountWithNormalSketch();
-    func1.setExpression(ConstantNode(Int64ResultNode(67)))
-        .aggregate(DocId(42), HitRank(21));
-    ExpressionCountAggregationResult func2 =
-        getExpressionCountWithNormalSketch();
-    func2.setExpression(ConstantNode(FloatResultNode(67)))
-        .aggregate(DocId(42), HitRank(21));
+    ExpressionCountAggregationResult func1 = getExpressionCountWithNormalSketch();
+    func1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67))).aggregate(DocId(42), HitRank(21));
+    ExpressionCountAggregationResult func2 = getExpressionCountWithNormalSketch();
+    func2.setExpression(MU<ConstantNode>(MU<FloatResultNode>(67))).aggregate(DocId(42), HitRank(21));
 
     EXPECT_EQUAL(2, func1.getRank().getInteger());
     func1.merge(func2);
@@ -134,10 +132,8 @@ TEST("require that expression counts can be merged") {
 
 TEST("require that expression counts can be serialized") {
     ExpressionCountAggregationResult func;
-    func.setExpression(ConstantNode(Int64ResultNode(67)))
-        .aggregate(DocId(42), HitRank(21));
-    func.setExpression(ConstantNode(Int64ResultNode(68)))
-        .aggregate(DocId(42), HitRank(21));
+    func.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67))).aggregate(DocId(42), HitRank(21));
+    func.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(68))).aggregate(DocId(42), HitRank(21));
 
     nbostream os;
     NBOSerializer nos(os);
@@ -149,24 +145,20 @@ TEST("require that expression counts can be serialized") {
 }
 
 TEST("require that expression count estimates rank") {
-    ExpressionCountAggregationResult func =
-        getExpressionCountWithNormalSketch();
+    ExpressionCountAggregationResult func = getExpressionCountWithNormalSketch();
     EXPECT_EQUAL(0, func.getRank().getInteger());
-    func.setExpression(ConstantNode(Int64ResultNode(67)))
-        .aggregate(DocId(42), HitRank(21));
+    func.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67))).aggregate(DocId(42), HitRank(21));
     EXPECT_EQUAL(2, func.getRank().getInteger());
-    func.setExpression(ConstantNode(FloatResultNode(67)))
-        .aggregate(DocId(42), HitRank(21));
+    func.setExpression(MU<ConstantNode>(MU<FloatResultNode>(67))).aggregate(DocId(42), HitRank(21));
     EXPECT_EQUAL(3, func.getRank().getInteger());
-    func.setExpression(ConstantNode(FloatResultNode(67)))
-        .aggregate(DocId(42), HitRank(21));
+    func.setExpression(MU<ConstantNode>(MU<FloatResultNode>(67))).aggregate(DocId(42), HitRank(21));
     EXPECT_EQUAL(3, func.getRank().getInteger());
 }
 
 void testAdd(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     AddFunctionNode func;
-    func.appendArg(ConstantNode(a)).appendArg(ConstantNode(b)).prepare(false)
-        .execute();
+    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
     EXPECT_EQUAL(func.getResult().asString(), c.asString());
     EXPECT_EQUAL(func.getResult().cmp(c), 0);
     EXPECT_EQUAL(c.cmp(func.getResult()), 0);
@@ -175,17 +167,14 @@ void testAdd(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
 TEST("testAdd") {
     testAdd(Int64ResultNode(67), Int64ResultNode(68), Int64ResultNode(67+68));
     testAdd(FloatResultNode(67), FloatResultNode(68), FloatResultNode(67+68));
-    testAdd(StringResultNode("67"), StringResultNode("68"),
-            StringResultNode("lo"));
-    testAdd(RawResultNode("67", 2), RawResultNode("68", 2),
-            RawResultNode("lo", 2));
+    testAdd(StringResultNode("67"), StringResultNode("68"), StringResultNode("lo"));
+    testAdd(RawResultNode("67", 2), RawResultNode("68", 2), RawResultNode("lo", 2));
 }
 
-void testDivide(const ResultNode &a, const ResultNode &b,
-                const ResultNode &c) {
+void testDivide(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     DivideFunctionNode func;
-    func.appendArg(ConstantNode(a)).appendArg(ConstantNode(b)).prepare(false)
-        .execute();
+    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
     EXPECT_EQUAL(func.getResult().asString(), c.asString());
     EXPECT_EQUAL(func.getResult().getFloat(), c.getFloat());
     EXPECT_EQUAL(func.getResult().cmp(c), 0);
@@ -193,17 +182,15 @@ void testDivide(const ResultNode &a, const ResultNode &b,
 }
 
 TEST("testDivide") {
-    testDivide(Int64ResultNode(6), FloatResultNode(12.0),
-               FloatResultNode(0.5));
+    testDivide(Int64ResultNode(6), FloatResultNode(12.0), FloatResultNode(0.5));
     testDivide(Int64ResultNode(6), Int64ResultNode(1), Int64ResultNode(6));
     testDivide(Int64ResultNode(6), Int64ResultNode(0), Int64ResultNode(0));
 }
 
-void testModulo(const ResultNode &a, const ResultNode &b,
-                const ResultNode &c) {
+void testModulo(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     ModuloFunctionNode func;
-    func.appendArg(ConstantNode(a)).appendArg(ConstantNode(b)).prepare(false)
-        .execute();
+    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
     EXPECT_EQUAL(func.getResult().asString(), c.asString());
     EXPECT_EQUAL(func.getResult().getFloat(), c.getFloat());
     EXPECT_EQUAL(func.getResult().cmp(c), 0);
@@ -228,7 +215,7 @@ TEST("testModulo") {
 
 void testNegate(const ResultNode & a, const ResultNode & b) {
     NegateFunctionNode func;
-    func.appendArg(ConstantNode(a)).prepare(false).execute();
+    func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false).execute();
     EXPECT_EQUAL(func.getResult().asString(), b.asString());
     EXPECT_EQUAL(func.getResult().cmp(b), 0);
     EXPECT_EQUAL(b.cmp(func.getResult()), 0);
@@ -491,10 +478,7 @@ TEST("testTimeStamp") {
 namespace {
 
 std::string
-getVespaChecksumV2(
-        const std::string& ymumid,
-        int fid,
-        const std::string& flags_str)
+getVespaChecksumV2(const std::string& ymumid, int fid, const std::string& flags_str)
 {
     if (fid == 6 || fid == 0 || fid == 5) {
         return 0;
@@ -537,10 +521,8 @@ TEST("testMailChecksumExpression") {
     std::string flags = "RWA";
     std::string ymumid = "barmuda";
 
-    document::Document::UP doc =
-        testDocMan.createDocument("foo", "userdoc:footype:1234:" + ymumid);
-    document::WeightedSetFieldValue
-        ws(doc->getField("byteweightedset").getDataType());
+    document::Document::UP doc = testDocMan.createDocument("foo", "userdoc:footype:1234:" + ymumid);
+    document::WeightedSetFieldValue ws(doc->getField("byteweightedset").getDataType());
 
     for (uint32_t i = 0; i < flags.size(); i++) {
         ws.add(document::ByteFieldValue(flags[i]));
@@ -548,42 +530,33 @@ TEST("testMailChecksumExpression") {
     doc->setValue("headerval", document::IntFieldValue(folder));
     doc->setValue("byteweightedset", ws);
 
-    CatFunctionNode e;
+    std::unique_ptr<CatFunctionNode> e = MU<CatFunctionNode>();
 
     // YMUMID
-    GetDocIdNamespaceSpecificFunctionNode* ns =
-        new GetDocIdNamespaceSpecificFunctionNode(
-                ResultNode::UP(new StringResultNode));
-    e.appendArg(ExpressionNode::CP(ns));
+    e->appendArg(MU<GetDocIdNamespaceSpecificFunctionNode>(MU<StringResultNode>()));
 
     // Folder
-    e.appendArg(DocumentFieldNode("headerval"));
+    e->appendArg(MU<DocumentFieldNode>("headerval"));
 
     // Flags
-    e.appendArg(SortFunctionNode(DocumentFieldNode("byteweightedset")));
+    e->appendArg(MU<SortFunctionNode>(MU<DocumentFieldNode>("byteweightedset")));
 
-    MD5BitFunctionNode node(e, 32);
+    MD5BitFunctionNode node(std::move(e), 32);
 
-    CatFunctionNode &cfn =
-        static_cast<CatFunctionNode&>(*node.expressionNodeVector()[0]);
-    MultiArgFunctionNode::ExpressionNodeVector &xe =
-        cfn.expressionNodeVector();
+    CatFunctionNode &cfn = static_cast<CatFunctionNode&>(*node.expressionNodeVector()[0]);
+    MultiArgFunctionNode::ExpressionNodeVector &xe = cfn.expressionNodeVector();
 
     for (uint32_t i = 0; i < xe.size(); i++) {
-        DocumentAccessorNode* rf =
-            dynamic_cast<DocumentAccessorNode *>(xe[i].get());
+        DocumentAccessorNode* rf = dynamic_cast<DocumentAccessorNode *>(xe[i].get());
         if (rf) {
             rf->setDocType(doc->getType());
             rf->prepare(true);
             rf->setDoc(*doc);
         } else {
-            MultiArgFunctionNode * mf =
-                dynamic_cast<MultiArgFunctionNode *>(xe[i].get());
-            MultiArgFunctionNode::ExpressionNodeVector& se =
-                mf->expressionNodeVector();
+            MultiArgFunctionNode * mf = dynamic_cast<MultiArgFunctionNode *>(xe[i].get());
+            MultiArgFunctionNode::ExpressionNodeVector& se = mf->expressionNodeVector();
             for (uint32_t j = 0; j < se.size(); j++) {
-                DocumentAccessorNode* tf =
-                    dynamic_cast<DocumentAccessorNode *>(se[j].get());
+                DocumentAccessorNode* tf = dynamic_cast<DocumentAccessorNode *>(se[j].get());
                 tf->setDocType(doc->getType());
                 tf->prepare(true);
                 tf->setDoc(*doc);
@@ -595,8 +568,7 @@ TEST("testMailChecksumExpression") {
     cfn.prepare(false);
 
     cfn.execute();
-    ConstBufferRef ref =
-        static_cast<const RawResultNode &>(cfn.getResult()).get();
+    ConstBufferRef ref = static_cast<const RawResultNode &>(cfn.getResult()).get();
 
     std::string cmp = getVespaChecksumV2(ymumid, folder, flags);
 
@@ -623,152 +595,129 @@ TEST("testMailChecksumExpression") {
 
 TEST("testDebugFunction") {
     {
-        AddFunctionNode add;
-        add.appendArg(ConstantNode(Int64ResultNode(3)));
-        add.appendArg(ConstantNode(Int64ResultNode(4)));
-        DebugWaitFunctionNode n(add, 1.3, false);
+        std::unique_ptr<AddFunctionNode> add = MU<AddFunctionNode>();
+        add->appendArg(MU<ConstantNode>(MU<Int64ResultNode>(3)));
+        add->appendArg(MU<ConstantNode>(MU<Int64ResultNode>(4)));
+        DebugWaitFunctionNode n(std::move(add), 1.3, false);
         n.prepare(false);
 
         FastOS_Time time;
         time.SetNow();
         n.execute();
         EXPECT_TRUE(time.MilliSecsToNow() > 1000.0);
-        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(),
-                     7);
+        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
     }
     {
-        AddFunctionNode add;
-        add.appendArg(ConstantNode(Int64ResultNode(3)));
-        add.appendArg(ConstantNode(Int64ResultNode(4)));
-        DebugWaitFunctionNode n(add, 1.3, true);
+        std::unique_ptr<AddFunctionNode> add = MU<AddFunctionNode>();
+        add->appendArg(MU<ConstantNode>(MU<Int64ResultNode>(3)));
+        add->appendArg(MU<ConstantNode>(MU<Int64ResultNode>(4)));
+        DebugWaitFunctionNode n(std::move(add), 1.3, true);
         n.prepare(false);
 
         FastOS_Time time;
         time.SetNow();
         n.execute();
         EXPECT_TRUE(time.MilliSecsToNow() > 1000.0);
-        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(),
-                     7);
+        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
     }
+}
+
+template<typename V>
+ResultNode::UP
+createIntRV(std::vector<int64_t> values) {
+    using T = typename V::BaseType;
+    std::unique_ptr<V> r = MU<V>();
+    for (int64_t v : values) {
+        r->push_back(T(v));
+    }
+    return r;
 }
 
 TEST("testDivExpressions") {
     {
-        StrLenFunctionNode e(ConstantNode(Int64ResultNode(238686)));
+        StrLenFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(e.getResult()).get(),
-                     6);
+        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(e.getResult()).get(), 6);
     }
     {
-        NormalizeSubjectFunctionNode
-            e(ConstantNode(StringResultNode("Re: Your mail")));
+        NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Re: Your mail")));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const StringResultNode &>(e.getResult()).get(),
-                "Your mail");
+        EXPECT_EQUAL(static_cast<const StringResultNode &>(e.getResult()).get(), "Your mail");
     }
     {
-        NormalizeSubjectFunctionNode
-            e(ConstantNode(StringResultNode("Your mail")));
+        NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Your mail")));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const StringResultNode &>(e.getResult()).get(),
-                "Your mail");
+        EXPECT_EQUAL(static_cast<const StringResultNode &>(e.getResult()).get(), "Your mail");
     }
     {
-        StrCatFunctionNode e(ConstantNode(Int64ResultNode(238686)));
-        e.appendArg(ConstantNode(StringResultNode("ARG 2")));
+        StrCatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
+        e.appendArg(MU<ConstantNode>(MU<StringResultNode>("ARG 2")));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const StringResultNode &>(e.getResult()).get(),
-                "238686ARG 2");
+        EXPECT_EQUAL(static_cast<const StringResultNode &>(e.getResult()).get(), "238686ARG 2");
     }
 
     {
-        ToStringFunctionNode e(ConstantNode(Int64ResultNode(238686)));
+        ToStringFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(strcmp(static_cast<const StringResultNode &>(
-                                e.getResult()).get().c_str(), "238686"), 0);
+        EXPECT_EQUAL(strcmp(static_cast<const StringResultNode &>(e.getResult()).get().c_str(), "238686"), 0);
     }
 
     {
-        ToRawFunctionNode e(ConstantNode(Int64ResultNode(238686)));
+        ToRawFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(strcmp(static_cast<const RawResultNode &>(
-                                e.getResult()).get().c_str(), "238686"), 0);
+        EXPECT_EQUAL(strcmp(static_cast<const RawResultNode &>(e.getResult()).get().c_str(), "238686"), 0);
     }
 
     {
-        CatFunctionNode e(ConstantNode(Int64ResultNode(238686)));
+        CatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                8u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 8u);
     }
     {
-        CatFunctionNode e(ConstantNode(Int32ResultNode(23886)));
+        CatFunctionNode e(MU<ConstantNode>(MU<Int32ResultNode>(23886)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                4u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 4u);
     }
     {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
-        MD5BitFunctionNode
-            e(ConstantNode(RawResultNode(buf, sizeof(buf))), 16*8);
+        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 16*8);
         e.prepare(false);
         e.execute();
         ASSERT_TRUE(e.getResult().getClass().inherits(RawResultNode::classId));
-        const RawResultNode &
-            r(static_cast<const RawResultNode &>(e.getResult()));
+        const RawResultNode &r(static_cast<const RawResultNode &>(e.getResult()));
         EXPECT_EQUAL(r.get().size(), 16u);
     }
     {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
-        MD5BitFunctionNode
-            e(ConstantNode(RawResultNode(buf, sizeof(buf))), 2*8);
+        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 2u);
     }
     {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
-        XorBitFunctionNode
-            e(ConstantNode(RawResultNode(buf, sizeof(buf))), 1*8);
+        XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 1*8);
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                1u);
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(
-                        e.getResult()).get().c_str()[0],
-                     0x7);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 1u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().c_str()[0], 0x7);
     }
     {
         const uint8_t buf[4] = { 6, 0, 7, 7 };
-        XorBitFunctionNode
-            e(ConstantNode(RawResultNode(buf, sizeof(buf))), 2*8);
+        XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                2u);
-        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(
-                        e.getResult()).get().c_str()[0],
-                     0x1);
-        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(
-                        e.getResult()).get().c_str()[1],
-                     0x7);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 2u);
+        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(e.getResult()).get().c_str()[0], 0x1);
+        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(e.getResult()).get().c_str()[1], 0x7);
     }
     {
         const uint8_t wantedBuf[14]  =
@@ -783,13 +732,11 @@ TEST("testDivExpressions") {
             { 0, 0, 0, 22, 0, 0, 0, 7, 98, 97, 114, 109, 117, 100, 97, 0,
               0, 0, 32, 0 , 0, 0, 3, 65, 82, 87 };
 
-        MD5BitFunctionNode
-            e(ConstantNode(RawResultNode(wantedBuf, sizeof(wantedBuf))), 16*8);
+        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(wantedBuf, sizeof(wantedBuf))), 16*8);
         e.prepare(false);
         e.execute();
         ASSERT_TRUE(e.getResult().getClass().inherits(RawResultNode::classId));
-        const RawResultNode &
-            r(static_cast<const RawResultNode &>(e.getResult()));
+        const RawResultNode &r(static_cast<const RawResultNode &>(e.getResult()));
         EXPECT_EQUAL(r.get().size(), 16u);
         uint8_t md5[16];
         fastc_md5sum(currentBuf, sizeof(currentBuf), md5);
@@ -799,87 +746,62 @@ TEST("testDivExpressions") {
         fastc_md5sum(thomasBuf, sizeof(thomasBuf), md5);
         EXPECT_TRUE(memcmp(r.get().data(), md5, sizeof(md5)) != 0);
 
-        MD5BitFunctionNode
-            finalCheck(
-                    CatFunctionNode(ConstantNode(StringResultNode("barmuda")))
-                    .appendArg(ConstantNode(Int32ResultNode(32)))
-                    .appendArg(SortFunctionNode(
-                                    ConstantNode(Int8ResultNodeVector()
-                                            .push_back(Int8ResultNode(87))
-                                            .push_back(Int8ResultNode(65))
-                                            .push_back(Int8ResultNode(82))
-                                                 )
-                                                )
-                               ), 32);
+        std::unique_ptr<CatFunctionNode> cat = MU<CatFunctionNode>(MU<ConstantNode>(MU<StringResultNode>("barmuda")));
+        cat->appendArg(MU<ConstantNode>(MU<Int32ResultNode>(32)));
+        cat->appendArg(MU<SortFunctionNode>(MU<ConstantNode>(createIntRV<Int8ResultNodeVector>({87, 65, 82}))));
+
+        MD5BitFunctionNode finalCheck(std::move(cat), 32);
         finalCheck.prepare(false);
         finalCheck.execute();
-        const RawResultNode &
-            rr(static_cast<const RawResultNode &>(finalCheck.getResult()));
+        const RawResultNode &rr(static_cast<const RawResultNode &>(finalCheck.getResult()));
         EXPECT_EQUAL(rr.get().size(), 4u);
         fastc_md5sum(wantedBuf, sizeof(wantedBuf), md5);
         EXPECT_TRUE(memcmp(md5facit, md5, sizeof(md5)) == 0);
         EXPECT_TRUE(memcmp(rr.get().data(), md5, rr.get().size()) == 0);
     }
     {
-        CatFunctionNode e(ConstantNode(Int16ResultNode(23886)));
+        CatFunctionNode e(MU<ConstantNode>(MU<Int16ResultNode>(23886)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 2u);
     }
     {
-        CatFunctionNode
-            e(ConstantNode(Int8ResultNodeVector().push_back(Int8ResultNode(86))
-                           .push_back(Int8ResultNode(14))));
+        CatFunctionNode e(MU<ConstantNode>(createIntRV<Int8ResultNodeVector>({86, 14})));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                1*2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 1*2u);
     }
     {
-        CatFunctionNode
-            e(ConstantNode(Int32ResultNodeVector()
-                           .push_back(Int32ResultNode(238686))
-                           .push_back(Int32ResultNode(2133214))));
+        CatFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(
-                static_cast<const RawResultNode &>(e.getResult()).get().size(),
-                4*2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 4*2u);
     }
     {
-        NumElemFunctionNode e(ConstantNode(Int64ResultNode(238686)));
+        NumElemFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
         EXPECT_EQUAL(e.getResult().getInteger(), 1);
     }
     {
-        NumElemFunctionNode
-            e(ConstantNode(Int32ResultNodeVector()
-                           .push_back(Int32ResultNode(238686))
-                           .push_back(Int32ResultNode(2133214))));
+        NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
         e.execute();
         EXPECT_EQUAL(e.getResult().getInteger(), 2);
     }
     {
-        NumElemFunctionNode
-            e(ConstantNode(Int32ResultNodeVector()
-                           .push_back(Int32ResultNode(238686))
-                           .push_back(Int32ResultNode(2133214))));
+        NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
         e.execute();
         EXPECT_EQUAL(e.getResult().getInteger(), 2);
     }
 }
 
-bool test1MultivalueExpression(const MultiArgFunctionNode &exprConst,
-                               const ExpressionNode::CP &mv,
-                               const ResultNode & expected) {
+bool test1MultivalueExpression(const MultiArgFunctionNode &exprConst, ExpressionNode::UP mv,
+                               const ResultNode & expected)
+{
    MultiArgFunctionNode & expr(const_cast<MultiArgFunctionNode &>(exprConst));
-   expr.appendArg(mv);
+   expr.appendArg(std::move(mv));
    expr.prepare(false);
    bool ok = EXPECT_TRUE(expr.execute()) &&
              EXPECT_EQUAL(0, expr.getResult().cmp(expected));
@@ -891,40 +813,43 @@ bool test1MultivalueExpression(const MultiArgFunctionNode &exprConst,
 }
 
 bool test1MultivalueExpressionException(const MultiArgFunctionNode & exprConst,
-                                        const ExpressionNode::CP & mv,
+                                        ExpressionNode::UP mv,
                                         const char * expected) {
    try {
-       test1MultivalueExpression(exprConst, mv, NullResultNode());
+       test1MultivalueExpression(exprConst, std::move(mv), NullResultNode());
        return EXPECT_TRUE(false);
    } catch (std::runtime_error & e) {
-       return EXPECT_TRUE(std::string(e.what()).find(expected)
-                          != std::string::npos);
+       return EXPECT_TRUE(std::string(e.what()).find(expected) != std::string::npos);
    }
 }
 
 TEST("testMultivalueExpression") {
-   IntegerResultNodeVector iv;
-   iv.push_back(Int64ResultNode(7))
-       .push_back(Int64ResultNode(17)).push_back(Int64ResultNode(117));
-   ExpressionNode::CP mv(new ConstantNode(iv));
+    std::vector<int64_t> IV = {7, 17, 117};
 
-   EXPECT_TRUE(test1MultivalueExpression(AddFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(AddFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          Int64ResultNode(7 + 17 + 117)));
-   EXPECT_TRUE(test1MultivalueExpression(MultiplyFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(MultiplyFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          Int64ResultNode(7 * 17 * 117)));
-   EXPECT_TRUE(test1MultivalueExpressionException(DivideFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpressionException(DivideFunctionNode(),
+                                                  MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                                   "DivideFunctionNode"));
-   EXPECT_TRUE(test1MultivalueExpressionException(ModuloFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpressionException(ModuloFunctionNode(),
+                                                  MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                                   "ModuloFunctionNode"));
-   EXPECT_TRUE(test1MultivalueExpression(MinFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(MinFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          Int64ResultNode(7)));
-   EXPECT_TRUE(test1MultivalueExpression(MaxFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(MaxFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          Int64ResultNode(117)));
 
    EXPECT_TRUE(
            test1MultivalueExpression(
                    FixedWidthBucketFunctionNode()
-                   .setWidth(Int64ResultNode(1)), mv,
+                   .setWidth(Int64ResultNode(1)),
+                   MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                    IntegerBucketResultNodeVector()
                    .push_back(IntegerBucketResultNode(7,8))
                    .push_back(IntegerBucketResultNode(17,18))
@@ -938,7 +863,7 @@ TEST("testMultivalueExpression") {
                            .push_back(IntegerBucketResultNode(0,10))
                            .push_back(IntegerBucketResultNode(20,30))
                            .push_back(IntegerBucketResultNode(100,120))),
-                   mv,
+                   MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                    IntegerBucketResultNodeVector()
                    .push_back(IntegerBucketResultNode(0,10))
                    .push_back(IntegerBucketResultNode(0,0))
@@ -947,105 +872,105 @@ TEST("testMultivalueExpression") {
    EXPECT_TRUE(
            test1MultivalueExpression(
                    TimeStampFunctionNode()
-                   .setTimePart(TimeStampFunctionNode::Second), mv,
+                   .setTimePart(TimeStampFunctionNode::Second),
+                   MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                    IntegerResultNodeVector()
                    .push_back(Int64ResultNode(7))
                    .push_back(Int64ResultNode(17))
                    .push_back(Int64ResultNode(117%60))));
 
    EXPECT_TRUE(
-           test1MultivalueExpression(NegateFunctionNode(), mv,
+           test1MultivalueExpression(NegateFunctionNode(),
+                                     MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                      IntegerResultNodeVector()
                                      .push_back(Int64ResultNode(-7))
                                      .push_back(Int64ResultNode(-17))
                                      .push_back(Int64ResultNode(-117))));
-   EXPECT_TRUE(test1MultivalueExpression(SortFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(SortFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          IntegerResultNodeVector()
                                          .push_back(Int64ResultNode(7))
                                          .push_back(Int64ResultNode(17))
                                          .push_back(Int64ResultNode(117))));
-   EXPECT_TRUE(test1MultivalueExpression(ReverseFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(ReverseFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          IntegerResultNodeVector()
                                          .push_back(Int64ResultNode(117))
                                          .push_back(Int64ResultNode(17))
                                          .push_back(Int64ResultNode(7))));
    EXPECT_TRUE(test1MultivalueExpression(SortFunctionNode(),
-                                         ReverseFunctionNode(mv),
+                                         MU<ReverseFunctionNode>(MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV))),
                                          IntegerResultNodeVector()
                                          .push_back(Int64ResultNode(7))
                                          .push_back(Int64ResultNode(17))
                                          .push_back(Int64ResultNode(117))));
-   EXPECT_TRUE(test1MultivalueExpression(AndFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(AndFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          Int64ResultNode(7 & 17 & 117)));
-   EXPECT_TRUE(test1MultivalueExpression(OrFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(OrFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          Int64ResultNode(7 | 17 | 117)));
-   EXPECT_TRUE(test1MultivalueExpression(XorFunctionNode(), mv,
+   EXPECT_TRUE(test1MultivalueExpression(XorFunctionNode(),
+                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
                                          Int64ResultNode(7 ^ 17 ^ 117)));
 }
 
+ExpressionNode::UP createScalarInt(int64_t v) { return MU<ConstantNode>(MU<Int64ResultNode>(v)); }
+ExpressionNode::UP createScalarFloat(double v) { return MU<ConstantNode>(MU<FloatResultNode>(v)); }
+ExpressionNode::UP createScalarString(const char * v) { return MU<ConstantNode>(MU<StringResultNode>(v)); }
+ExpressionNode::UP createScalarRaw(const char * v) { return MU<ConstantNode>(MU<RawResultNode>(v, strlen(v))); }
+
 TEST("testArithmeticNodes") {
     AttributeGuard attr1 = createInt64Attribute();
-    ExpressionNode::CP i1(new ConstantNode(new Int64ResultNode(1)));
-    ExpressionNode::CP i2(new ConstantNode(new Int64ResultNode(2)));
-    ExpressionNode::CP f1(new ConstantNode(new FloatResultNode(1.1)));
-    ExpressionNode::CP f2(new ConstantNode(new FloatResultNode(9.9)));
-    ExpressionNode::CP s1(new ConstantNode(new StringResultNode("1")));
-    ExpressionNode::CP s2(new ConstantNode(new StringResultNode("2")));
-    ExpressionNode::CP r1(new ConstantNode(new RawResultNode("1", 1)));
-    ExpressionNode::CP r2(new ConstantNode(new RawResultNode("2", 1)));
-    ExpressionNode::CP a1(new AttributeNode(*attr1));
-    ExpressionNode::CP a2(new AttributeNode(*attr1));
+    constexpr int64_t I1 = 1, I2 = 2;
+    constexpr double F1 = 1.1, F2 = 9.9;
+    constexpr const char * S2 = "2";
+
     AddFunctionNode add1;
-    add1.appendArg(i1);
-    add1.appendArg(i2);
+    add1.appendArg(createScalarInt(I1));
+    add1.appendArg(createScalarInt(I2));
     ExpressionTree et(add1);
 
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
 
-    EXPECT_TRUE(
-            et.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(et.getResult().getClass().inherits(IntegerResultNode::classId));
     EXPECT_TRUE(et.ExpressionNode::execute());
     EXPECT_EQUAL(et.getResult().getInteger(), 3);
     EXPECT_TRUE(et.ExpressionNode::execute());
     EXPECT_EQUAL(et.getResult().getInteger(), 3);
     AddFunctionNode add2;
-    add2.appendArg(i1);
-    add2.appendArg(f2);
+    add2.appendArg(createScalarInt(I1));
+    add2.appendArg(createScalarFloat(F2));
     add2.prepare(false);
-    EXPECT_TRUE(
-            add2.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(add2.getResult().getClass().inherits(FloatResultNode::classId));
     AddFunctionNode add3;
-    add3.appendArg(i1);
-    add3.appendArg(s2);
+    add3.appendArg(createScalarInt(I1));
+    add3.appendArg(createScalarString(S2));
     add3.prepare(false);
-    EXPECT_TRUE(
-            add3.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(add3.getResult().getClass().inherits(IntegerResultNode::classId));
     AddFunctionNode add4;
-    add4.appendArg(i1);
-    add4.appendArg(r2);
+    add4.appendArg(createScalarInt(I1));
+    add4.appendArg(createScalarRaw(S2));
     add4.prepare(false);
-    EXPECT_TRUE(
-            add4.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(add4.getResult().getClass().inherits(IntegerResultNode::classId));
     AddFunctionNode add5;
-    add5.appendArg(i1);
-    add5.appendArg(a1);
+    add5.appendArg(createScalarInt(I1));
+    add5.appendArg(MU<AttributeNode>(*attr1));
     add5.prepare(false);
-    EXPECT_TRUE(
-            add5.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(add5.getResult().getClass().inherits(IntegerResultNode::classId));
     AddFunctionNode add6;
-    add6.appendArg(f1);
-    add6.appendArg(a1);
+    add6.appendArg(createScalarFloat(F1));
+    add6.appendArg(MU<AttributeNode>(*attr1));
     add6.prepare(false);
-    EXPECT_TRUE(
-            add6.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(add6.getResult().getClass().inherits(FloatResultNode::classId));
 }
 
-void testArith(MultiArgFunctionNode &op, const ExpressionNode::CP &arg1,
-                     const ExpressionNode::CP & arg2, int64_t intResult,
-                     double floatResult) {
-    op.appendArg(arg1);
-    op.appendArg(arg2);
+void testArith(MultiArgFunctionNode &op, ExpressionNode::UP arg1, ExpressionNode::UP arg2,
+               int64_t intResult, double floatResult)
+{
+    op.appendArg(std::move(arg1));
+    op.appendArg(std::move(arg2));
     op.prepare(false);
     op.execute();
     EXPECT_EQUAL(intResult, op.getResult().getInteger());
@@ -1053,73 +978,57 @@ void testArith(MultiArgFunctionNode &op, const ExpressionNode::CP &arg1,
     EXPECT_EQUAL(floatResult, op.getResult().getFloat());
 }
 
-void testArith2(MultiArgFunctionNode &op, int64_t intResult,
-                double floatResult) {
-    op.prepare(false);
-    op.execute();
-    EXPECT_EQUAL(intResult, op.getResult().getInteger());
-    ASSERT_TRUE(intResult == op.getResult().getInteger());
-    EXPECT_EQUAL(floatResult, op.getResult().getFloat());
-}
-
-void testAdd(const ExpressionNode::CP &arg1,
-             const ExpressionNode::CP &arg2,
-             int64_t intResult, double floatResult){
+void testAdd(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
+             int64_t intResult, double floatResult)
+{
     AddFunctionNode add;
-    testArith(add, arg1, arg2, intResult, floatResult);
+    testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
 }
 
-void testMultiply(const ExpressionNode::CP & arg1,
-                  const ExpressionNode::CP & arg2,
-                  int64_t intResult, double floatResult) {
+void testMultiply(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
+                  int64_t intResult, double floatResult)
+{
     MultiplyFunctionNode add;
-    testArith(add, arg1, arg2, intResult, floatResult);
+    testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
 }
 
-void testDivide(const ExpressionNode::CP & arg1,
-                const ExpressionNode::CP & arg2,
-                int64_t intResult, double floatResult) {
+void testDivide(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
+                int64_t intResult, double floatResult)
+{
     DivideFunctionNode add;
-    testArith(add, arg1, arg2, intResult, floatResult);
+    testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
 }
 
-void testModulo(const ExpressionNode::CP & arg1,
-                const ExpressionNode::CP & arg2,
-                int64_t intResult, double floatResult) {
+void testModulo(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
+                int64_t intResult, double floatResult)
+{
     ModuloFunctionNode add;
-    testArith(add, arg1, arg2, intResult, floatResult);
+    testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
+}
+
+ExpressionNode::UP
+createVectorInt(const std::vector<double> & v) {
+    std::unique_ptr<IntegerResultNodeVector> r = MU<IntegerResultNodeVector>();
+    for (double d : v) {
+        r->push_back(Int64ResultNode(static_cast<int64_t>(d)));
+    }
+    return MU<ConstantNode>(std::move(r));
+}
+ExpressionNode::UP
+createVectorFloat(const std::vector<double> & v) {
+    std::unique_ptr<FloatResultNodeVector> r = MU<FloatResultNodeVector>();
+    for (double d : v) {
+        r->push_back(FloatResultNode(d));
+    }
+    return MU<ConstantNode>(std::move(r));
 }
 
 void testArithmeticArguments(NumericFunctionNode &function,
-                             std::vector<double> & arg1,
-                             std::vector<double> & arg2,
+                             const std::vector<double> & arg1,
+                             const std::vector<double> & arg2,
                              const std::vector<double> & result,
-                             double flattenResult) {
-    ExpressionNode::CP scalarInt1(new ConstantNode(new Int64ResultNode(
-                            static_cast<int64_t>(arg1[0]))));
-    ExpressionNode::CP scalarInt2(new ConstantNode(new Int64ResultNode(
-                            static_cast<int64_t>(arg2[0]))));
-    ExpressionNode::CP scalarFloat1(new ConstantNode(new FloatResultNode(
-                            arg1[0])));
-    ExpressionNode::CP scalarFloat2(new ConstantNode(new FloatResultNode(
-                            arg2[0])));
-
-    IntegerResultNodeVector iv1;
-    for (size_t i(0), m(arg1.size()); i<m; i++) {
-        iv1.push_back(Int64ResultNode(static_cast<int64_t>(arg1[i])));
-    }
-    IntegerResultNodeVector iv2;
-    for (size_t i(0), m(arg2.size()); i<m; i++) {
-        iv2.push_back(Int64ResultNode(static_cast<int64_t>(arg2[i])));
-    }
-    FloatResultNodeVector fv1;
-    for (size_t i(0), m(arg1.size()); i<m; i++) {
-        fv1.push_back(FloatResultNode(arg1[i]));
-    }
-    FloatResultNodeVector fv2;
-    for (size_t i(0), m(arg2.size()); i<m; i++) {
-        fv2.push_back(FloatResultNode(arg2[i]));
-    }
+                             double flattenResult)
+{
     IntegerResultNodeVector ir;
     for (size_t i(0), m(result.size()); i<m; i++) {
         ir.push_back(Int64ResultNode((int64_t)result[i]));
@@ -1128,128 +1037,105 @@ void testArithmeticArguments(NumericFunctionNode &function,
     for (size_t i(0), m(result.size()); i<m; i++) {
         fr.push_back(FloatResultNode(result[i]));
     }
-    ExpressionNode::CP vectorInt1(new ConstantNode(iv1));
-    ExpressionNode::CP vectorInt2(new ConstantNode(iv2));
-    ExpressionNode::CP vectorFloat1(new ConstantNode(fv1));
-    ExpressionNode::CP vectorFloat2(new ConstantNode(fv2));
-    function.appendArg(scalarInt1).appendArg(scalarInt2);
+    function.appendArg(createScalarInt(arg1[0])).appendArg(createScalarInt(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(
-            function.getResult().getClass().equal(Int64ResultNode::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(Int64ResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getInteger(),
-                 static_cast<int64_t>(result[0]));
+    EXPECT_EQUAL(function.getResult().getInteger(), static_cast<int64_t>(result[0]));
 
     function.reset();
 
-    function.appendArg(scalarInt1).appendArg(scalarFloat2);
+    function.appendArg(createScalarInt(arg1[0])).appendArg(createScalarFloat(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(
-            function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
     EXPECT_EQUAL(function.getResult().getFloat(), result[0]);
 
     function.reset();
 
-    function.appendArg(scalarFloat1).appendArg(scalarInt2);
+    function.appendArg(createScalarFloat(arg1[0])).appendArg(createScalarInt(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(
-            function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
     EXPECT_EQUAL(function.getResult().getFloat(), result[0]);
 
     function.reset();
 
-    function.appendArg(scalarFloat1).appendArg(scalarFloat2);
+    function.appendArg(createScalarFloat(arg1[0])).appendArg(createScalarFloat(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(
-            function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
     EXPECT_EQUAL(function.getResult().getFloat(), result[0]);
 
     function.reset();
 
-    function.appendArg(vectorInt1);
+    function.appendArg(createVectorInt(arg1));
     function.prepare(false);
-    EXPECT_TRUE(
-            function.getResult().getClass().equal(Int64ResultNode::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(Int64ResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getInteger(),
-                 static_cast<int64_t>(flattenResult));
+    EXPECT_EQUAL(function.getResult().getInteger(), static_cast<int64_t>(flattenResult));
 
     function.reset();
 
-    function.appendArg(vectorFloat1);
+    function.appendArg(createVectorFloat(arg1));
     function.prepare(false);
-    EXPECT_TRUE(
-            function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
     EXPECT_EQUAL(function.getResult().getFloat(), flattenResult);
 
     function.reset();
 
-    function.appendArg(vectorInt1).appendArg(vectorInt2);
+    function.appendArg(createVectorInt(arg1)).appendArg(createVectorInt(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(IntegerResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(IntegerResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(IntegerResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const IntegerResultNodeVector &>(
-                    function.getResult()).size(), 7u);
+    EXPECT_TRUE(function.getResult().getClass().equal(IntegerResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const IntegerResultNodeVector &>(function.getResult()).size(), 7u);
     EXPECT_EQUAL(0, function.getResult().cmp(ir));
 
     function.reset();
 
-    function.appendArg(vectorFloat1).appendArg(vectorFloat2);
+    function.appendArg(createVectorFloat(arg1)).appendArg(createVectorFloat(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(FloatResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(FloatResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(
-                    function.getResult()).size(), 7u);
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(function.getResult()).size(), 7u);
     EXPECT_EQUAL(0, function.getResult().cmp(fr));
 
     function.reset();
 
-    function.appendArg(vectorInt1).appendArg(vectorFloat2);
+    function.appendArg(createVectorInt(arg1)).appendArg(createVectorFloat(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(FloatResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(FloatResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(
-                    function.getResult()).size(), 7u);
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(function.getResult()).size(), 7u);
     EXPECT_EQUAL(0, function.getResult().cmp(fr));
 
     function.reset();
 
-    function.appendArg(vectorFloat1).appendArg(vectorInt2);
+    function.appendArg(createVectorFloat(arg1)).appendArg(createVectorInt(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(FloatResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass()
-                .equal(FloatResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(
-                    function.getResult()).size(), 7u);
+    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(function.getResult()).size(), 7u);
     EXPECT_EQUAL(0, function.getResult().cmp(fr));
 }
 
 TEST("testArithmeticOperations") {
-    ExpressionNode::CP i1(new ConstantNode(new Int64ResultNode(1793253241)));
-    ExpressionNode::CP i2(new ConstantNode(new Int64ResultNode(1676521321)));
-    ExpressionNode::CP f1(new ConstantNode(new FloatResultNode(1.1109876)));
-    ExpressionNode::CP f2(new ConstantNode(new FloatResultNode(9.767681239)));
-    testAdd(i1, i2, 3469774562ull, 3469774562ull);
-    testAdd(i1, f2, 1793253251ull, 1793253250.767681239);
-    testAdd(f1, f2, 11, 10.878668839 );
-    testMultiply(i1, i2, 3006427292488851361ull, 3006427292488851361ull);
-    testMultiply(i1, f2, 17515926039ull, 1793253241.0*9.767681239);
-    testMultiply(f1, f2, 11, 10.8517727372816364 );
+    constexpr int64_t I1 = 1793253241;
+    constexpr int64_t I2 = 1676521321;
+    constexpr double F1 = 1.1109876;
+    constexpr double F2 = 9.767681239;
+
+    testAdd(createScalarInt(I1), createScalarInt(I2), 3469774562ull, 3469774562ull);
+    testAdd(createScalarInt(I1), createScalarFloat(F2), 1793253251ull, 1793253250.767681239);
+    testAdd(createScalarFloat(F1), createScalarFloat(F2), 11, 10.878668839 );
+    testMultiply(createScalarInt(I1), createScalarInt(I2), 3006427292488851361ull, 3006427292488851361ull);
+    testMultiply(createScalarInt(I1), createScalarFloat(F2), 17515926039ull, 1793253241.0*9.767681239);
+    testMultiply(createScalarFloat(F1), createScalarFloat(F2), 11, 10.8517727372816364 );
 
     std::vector<double> a(5), b(7);
     a[0] = b[0] = 1;
@@ -1284,57 +1170,52 @@ TEST("testArithmeticOperations") {
     }
 }
 
-TEST("testAggregatorsInExpressions") {
-    CountAggregationResult *c = new CountAggregationResult();
-    c->setCount(3);
-    SumAggregationResult *s = new SumAggregationResult();
-    ResultNode::CP r1(new Int64ResultNode(7)),
-                   r2(new Int64ResultNode(22));
-    ExpressionNode::CP i1(new ConstantNode(new Int64ResultNode(7))),
-                       i2(c),
-                       i3(s),
-                       i4(new ConstantNode(new Int64ResultNode(22)));
+ExpressionNode::UP createCountAggr(int64_t initial) { return MU<CountAggregationResult>(initial); }
+ExpressionNode::UP createMinAggr(const ResultNode & initial) { return MU<MinAggregationResult>(initial); }
+
+constexpr int64_t I1 = 7, I2 = 3, I4 = 22;
+
+ExpressionNode::UP createSumAggr() {
+    std::unique_ptr<SumAggregationResult> s = MU<SumAggregationResult>();
     AggregationResult::Configure conf;
-    s->setExpression(i4).select(conf, conf);
+    s->setExpression(createScalarInt(I4)).select(conf, conf);
     s->aggregate(0, 0);
+    return s;
+}
 
-    testAdd(i1, i2, 10, 10);
-    testMultiply(i1, i2, 21, 21);
-    testMultiply(i2, i3, 66, 66);
-    testDivide(i3, i2, 7, 7);
-    testDivide(i3, i1, 3, 3);
-    testModulo(i3, i2, 1, 1);
-    testModulo(i3, i1, 1, 1);
+TEST("testAggregatorsInExpressions") {
+    Int64ResultNode r1(I1);
+    Int64ResultNode r2(I4);
 
-    MinAggregationResult *min = new MinAggregationResult();
-    min->setResult(r2);
-    ExpressionNode::CP imin(min);
-    testAdd(imin, i1, 29, 29);
 
-    MaxAggregationResult *max = new MaxAggregationResult();
-    max->setResult(r1);
-    ExpressionNode::CP imax(max);
-    testAdd(imin, imax, 29, 29);
+    testAdd(createScalarInt(I1), createCountAggr(I2), 10, 10);
+    testMultiply(createScalarInt(I1), createCountAggr(I2), 21, 21);
+    testMultiply(createCountAggr(I2), createSumAggr(), 66, 66);
+    testDivide(createSumAggr(), createCountAggr(I2), 7, 7);
+    testDivide(createSumAggr(), createScalarInt(I1), 3, 3);
+    testModulo(createSumAggr(), createCountAggr(I2), 1, 1);
+    testModulo(createSumAggr(), createScalarInt(I1), 1, 1);
 
+    testAdd(MU<MinAggregationResult>(r2), createScalarInt(I1), 29, 29);
+    testAdd(MU<MinAggregationResult>(r2), MU<MaxAggregationResult>(r1), 29, 29);
+
+    AggregationResult::Configure conf;
     XorAggregationResult *x = new XorAggregationResult();
-    x->setExpression(i4).select(conf, conf);
+    x->setExpression(createScalarInt(I4)).select(conf, conf);
     x->aggregate(0, 0);
-    ExpressionNode::CP ix(x);
-    testAdd(ix, i1, 29, 29);
+    testAdd(ExpressionNode::UP(x), createScalarInt(I1), 29, 29);
 
     AverageAggregationResult *avg = new AverageAggregationResult();
-    avg->setExpression(i4).select(conf, conf);
+    avg->setExpression(createScalarInt(I4)).select(conf, conf);
     avg->aggregate(0, 0);
-    ExpressionNode::CP iavg(avg);
-    testAdd(iavg, i1, 29, 29);
+    testAdd(ExpressionNode::UP(avg), createScalarInt(I1), 29, 29);
 }
 
 void testAggregationResult(AggregationResult & aggr, const AggrGetter & g,
                            const ResultNode & v, const ResultNode & i,
                            const ResultNode & m, const ResultNode & s) {
-    ExpressionNode::CP scalarInt1(new ConstantNode(v));
     AggregationResult::Configure conf;
-    aggr.setExpression(scalarInt1).select(conf, conf);
+    aggr.setExpression(MU<ConstantNode>(ResultNode::UP(v.clone()))).select(conf, conf);
     EXPECT_TRUE(g(aggr).getClass().equal(i.getClass().id()));
     EXPECT_EQUAL(0, i.cmp(g(aggr)));
     aggr.aggregate(0,0);
@@ -1368,135 +1249,100 @@ TEST("testAggregationResults") {
 
 TEST("testGrouping") {
     AttributeGuard attr1 = createInt64Attribute();
-    ExpressionNode::CP select1(new AttributeNode(*attr1));
-    ExpressionNode::CP result1(new CountAggregationResult());
-    (static_cast<AggregationResult &>(*result1)).setExpression(select1);
-    ExpressionNode::CP result2( new SumAggregationResult());
-    (static_cast<AggregationResult &>(*result2)).setExpression(select1);
+    ExpressionNode::UP result1(new CountAggregationResult());
+    (static_cast<AggregationResult &>(*result1)).setExpression(MU<AttributeNode>(*attr1));
+    ExpressionNode::UP result2( new SumAggregationResult());
+    (static_cast<AggregationResult &>(*result2)).setExpression(MU<AttributeNode>(*attr1));
 
-    Grouping grouping = Grouping()
-                        .setFirstLevel(0)
-                        .setLastLevel(1)
-                        .addLevel(GroupingLevel()
-                                  .setExpression(select1)
-                                  .addResult(result1)
-                                  .addResult(result2));
+    Grouping grouping;
+    grouping.setFirstLevel(0)
+            .setLastLevel(1)
+            .addLevel(std::move(GroupingLevel()
+                                        .setExpression(MU<AttributeNode>(*attr1))
+                                        .addResult(std::move(result1))
+                                        .addResult(std::move(result2))));
 
     grouping.configureStaticStuff(ConfigureStaticParams(0, 0));
     grouping.aggregate(0u, 10u);
     const Group::GroupList &groups = grouping.getRoot().groups();
     EXPECT_EQUAL(grouping.getRoot().getChildrenSize(), 9u);
-    ASSERT_TRUE(groups[0]->getAggregationResult(0).getClass().id() ==
-                CountAggregationResult::classId);
-    ASSERT_TRUE(groups[0]->getAggregationResult(1).getClass().id() ==
-                SumAggregationResult::classId);
+    ASSERT_TRUE(groups[0]->getAggregationResult(0).getClass().id() == CountAggregationResult::classId);
+    ASSERT_TRUE(groups[0]->getAggregationResult(1).getClass().id() == SumAggregationResult::classId);
     EXPECT_EQUAL(groups[0]->getId().getInteger(), 6u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[0]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[0]->getAggregationResult(1)).getSum().getInteger(),
-                 6);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[0]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[0]->getAggregationResult(1)).getSum().getInteger(), 6);
     EXPECT_EQUAL(groups[1]->getId().getInteger(), 7u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[1]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[1]->getAggregationResult(1)).getSum().getInteger(),
-                 7);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[1]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[1]->getAggregationResult(1)).getSum().getInteger(), 7);
     EXPECT_EQUAL(groups[2]->getId().getInteger(), 11u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[2]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[2]->getAggregationResult(1)).getSum().getInteger(),
-                 11);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[2]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[2]->getAggregationResult(1)).getSum().getInteger(), 11);
     EXPECT_EQUAL(groups[3]->getId().getInteger(), 13u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[3]->getAggregationResult(0)).getCount(), 2u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[3]->getAggregationResult(1)).getSum().getInteger(),
-                 26);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[3]->getAggregationResult(0)).getCount(), 2u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[3]->getAggregationResult(1)).getSum().getInteger(), 26);
     EXPECT_EQUAL(groups[4]->getId().getInteger(), 17u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[4]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[4]->getAggregationResult(1)).getSum().getInteger(),
-                 17);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[4]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[4]->getAggregationResult(1)).getSum().getInteger(), 17);
     EXPECT_EQUAL(groups[5]->getId().getInteger(), 27u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[5]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[5]->getAggregationResult(1)).getSum().getInteger(),
-                 27);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[5]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[5]->getAggregationResult(1)).getSum().getInteger(), 27);
     EXPECT_EQUAL(groups[6]->getId().getInteger(), 34u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[6]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[6]->getAggregationResult(1)).getSum().getInteger(),
-                 34);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[6]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[6]->getAggregationResult(1)).getSum().getInteger(), 34);
     EXPECT_EQUAL(groups[7]->getId().getInteger(), 67891u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[7]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[7]->getAggregationResult(1)).getSum().getInteger(),
-                 67891);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[7]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[7]->getAggregationResult(1)).getSum().getInteger(), 67891);
     EXPECT_EQUAL(groups[8]->getId().getInteger(), 67892u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[8]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(
-                    groups[8]->getAggregationResult(1)).getSum().getInteger(),
-                 67892);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[8]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const SumAggregationResult &>(groups[8]->getAggregationResult(1)).getSum().getInteger(), 67892);
     testStreaming(grouping);
 }
 
-TEST("testGrouping2") {
-    AttributeGuard attr1 = createInt64Attribute();
 
-    RangeBucketPreDefFunctionNode *predef(
-            new RangeBucketPreDefFunctionNode(AttributeNode(*attr1)));
+ExpressionNode::UP
+createPredefRangeBucket(const AttributeGuard & guard) {
+    RangeBucketPreDefFunctionNode *predef(new RangeBucketPreDefFunctionNode(MU<AttributeNode>(*guard)));
     IntegerBucketResultNodeVector prevec;
     prevec.getVector().push_back(IntegerBucketResultNode(6,7));
     prevec.getVector().push_back(IntegerBucketResultNode(7,14));
     prevec.getVector().push_back(IntegerBucketResultNode(18,50)); //30
-    prevec.getVector()
-        .push_back(IntegerBucketResultNode(80,50000000000ull)); //30
+    prevec.getVector().push_back(IntegerBucketResultNode(80,50000000000ull)); //30
     predef->setBucketList(prevec);
-    ExpressionNode::CP select1(predef);
-    ExpressionNode::CP result1( new CountAggregationResult());
-    (static_cast<AggregationResult &>(*result1)).setExpression(select1);
+    return ExpressionNode::UP(predef);
+}
 
-    Grouping grouping = Grouping()
-                        .setFirstLevel(0)
-                        .setLastLevel(1)
-                        .addLevel(GroupingLevel()
-                                  .setExpression(select1)
-                                  .addResult(result1));
+TEST("testGrouping2") {
+    AttributeGuard attr1 = createInt64Attribute();
+    ExpressionNode::UP result1( new CountAggregationResult());
+    (static_cast<AggregationResult &>(*result1)).setExpression(createPredefRangeBucket(attr1));
+
+    Grouping grouping;
+    grouping.setFirstLevel(0)
+            .setLastLevel(1)
+            .addLevel(std::move(GroupingLevel()
+                              .setExpression(createPredefRangeBucket(attr1))
+                              .addResult(std::move(result1))));
 
     grouping.configureStaticStuff(ConfigureStaticParams(0, 0));
     grouping.aggregate(0u, 10u);
     const Group::GroupList &groups = grouping.getRoot().groups();
     EXPECT_EQUAL(grouping.getRoot().getChildrenSize(), 5u);
-    ASSERT_TRUE(groups[0]->getAggregationResult(0).getClass().id()
-                == CountAggregationResult::classId);
+    ASSERT_TRUE(groups[0]->getAggregationResult(0).getClass().id() == CountAggregationResult::classId);
     EXPECT_EQUAL(groups[0]->getId().getInteger(), 0u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[0]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[0]->getAggregationResult(0)).getCount(), 1u);
     EXPECT_EQUAL(groups[1]->getId().getInteger(), 0u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[1]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[1]->getAggregationResult(0)).getCount(), 1u);
     EXPECT_EQUAL(groups[2]->getId().getInteger(), 0u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[2]->getAggregationResult(0)).getCount(), 4u);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[2]->getAggregationResult(0)).getCount(), 4u);
     EXPECT_EQUAL(groups[3]->getId().getInteger(), 0u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[3]->getAggregationResult(0)).getCount(), 2u);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[3]->getAggregationResult(0)).getCount(), 2u);
     EXPECT_EQUAL(groups[4]->getId().getInteger(), 0u);
-    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(
-                    groups[4]->getAggregationResult(0)).getCount(), 2u);
+    EXPECT_EQUAL(static_cast<const CountAggregationResult &>(groups[4]->getAggregationResult(0)).getCount(), 2u);
     testStreaming(grouping);
 }
 
 AttributeGuard createInt64Attribute() {
-    SingleInt64ExtAttribute *selectAttr1(
-            new SingleInt64ExtAttribute("selectAttr1"));
+    SingleInt64ExtAttribute *selectAttr1(new SingleInt64ExtAttribute("selectAttr1"));
     DocId docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
@@ -1525,8 +1371,7 @@ AttributeGuard createInt64Attribute() {
 }
 
 AttributeGuard createInt32Attribute() {
-    SingleInt32ExtAttribute *selectAttr1(
-            new SingleInt32ExtAttribute("selectAttr1"));
+    SingleInt32ExtAttribute *selectAttr1(new SingleInt32ExtAttribute("selectAttr1"));
     DocId docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
@@ -1555,8 +1400,7 @@ AttributeGuard createInt32Attribute() {
 }
 
 AttributeGuard createInt16Attribute() {
-    SingleInt16ExtAttribute *selectAttr1(
-            new SingleInt16ExtAttribute("selectAttr1"));
+    SingleInt16ExtAttribute *selectAttr1(new SingleInt16ExtAttribute("selectAttr1"));
     DocId docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
@@ -1585,8 +1429,7 @@ AttributeGuard createInt16Attribute() {
 }
 
 AttributeGuard createInt8Attribute() {
-    SingleInt8ExtAttribute *selectAttr1(
-            new SingleInt8ExtAttribute("selectAttr1"));
+    SingleInt8ExtAttribute *selectAttr1(new SingleInt8ExtAttribute("selectAttr1"));
     DocId docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
@@ -1640,38 +1483,28 @@ TEST("testIntegerTypes") {
                  .prepare(true).getResult().getClass().id(),
                  uint32_t(Int64ResultNode::classId));
 
-    EXPECT_EQUAL(
-            AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt8ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt8ExtAttribute("test"))))
             .prepare(false).getResult().getClass().id(),
             uint32_t(Int64ResultNodeVector::classId));
-    EXPECT_EQUAL(
-            AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt8ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt8ExtAttribute("test"))))
             .prepare(true).getResult().getClass().id(),
             uint32_t(Int8ResultNodeVector::classId));
-    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt16ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt16ExtAttribute("test"))))
                  .prepare(false).getResult().getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
-    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt16ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt16ExtAttribute("test"))))
                  .prepare(true).getResult().getClass().id(),
                  uint32_t(Int16ResultNodeVector::classId));
-    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt32ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt32ExtAttribute("test"))))
                  .prepare(false).getResult().getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
-    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt32ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt32ExtAttribute("test"))))
                  .prepare(true).getResult().getClass().id(),
                  uint32_t(Int32ResultNodeVector::classId));
-    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt64ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt64ExtAttribute("test"))))
                  .prepare(false).getResult().getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
-    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(
-                                    new MultiInt64ExtAttribute("test"))))
+    EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt64ExtAttribute("test"))))
                  .prepare(true).getResult().getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
 }

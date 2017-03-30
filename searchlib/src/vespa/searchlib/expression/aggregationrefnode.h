@@ -18,8 +18,8 @@ public:
     public:
         Configure(ExpressionNodeArray & exprVec) : _exprVec(exprVec) { }
     private:
-        virtual void execute(vespalib::Identifiable &obj) { static_cast<AggregationRefNode&>(obj).locateExpression(_exprVec); }
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(AggregationRefNode::classId); }
+        virtual void execute(vespalib::Identifiable &obj) override { static_cast<AggregationRefNode&>(obj).locateExpression(_exprVec); }
+        virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AggregationRefNode::classId); }
         ExpressionNodeArray & _exprVec;
     };
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
@@ -31,9 +31,9 @@ public:
     AggregationRefNode & operator = (const AggregationRefNode & exprref);
 
     ExpressionNode *getExpression() { return _expressionNode; }
-    virtual const ResultNode & getResult() const { return _expressionNode->getResult(); }
-    virtual void onPrepare(bool preserveAccurateTypes) { _expressionNode->prepare(preserveAccurateTypes); }
-    virtual bool onExecute() const;
+    const ResultNode & getResult() const override { return _expressionNode->getResult(); }
+    void onPrepare(bool preserveAccurateTypes) override { _expressionNode->prepare(preserveAccurateTypes); }
+    bool onExecute() const override;
 
 private:
     void locateExpression(ExpressionNodeArray & exprVec) const;

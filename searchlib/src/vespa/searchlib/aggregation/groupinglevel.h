@@ -46,13 +46,13 @@ private:
     protected:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
-        virtual void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
-        virtual void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
-        virtual SingleValueGrouper * clone() const { return new SingleValueGrouper(*this); }
+        SingleValueGrouper * clone() const override { return new SingleValueGrouper(*this); }
     };
     class MultiValueGrouper : public SingleValueGrouper {
     public:
@@ -60,10 +60,10 @@ private:
     private:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
-        virtual void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
-        virtual void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const {
+        void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
         virtual MultiValueGrouper * clone() const { return new MultiValueGrouper(*this); }
@@ -77,8 +77,12 @@ private:
 
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:
-
     GroupingLevel();
+    GroupingLevel(GroupingLevel &&) = default;
+    GroupingLevel & operator =(GroupingLevel &&) = default;
+    GroupingLevel(const GroupingLevel &);
+    GroupingLevel & operator =(const GroupingLevel &);
+    ~GroupingLevel();
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, GroupingLevel);
     DECLARE_NBO_SERIALIZE;
 
@@ -93,10 +97,11 @@ public:
     }
     GroupingLevel & freeze() { _frozen = true; return *this; }
     GroupingLevel &setPresicion(int64_t precision) { _precision = precision; return *this; }
-    GroupingLevel &setExpression(const ExpressionNode::CP &root) { _classify = root; return *this; }
-    GroupingLevel &addResult(const ExpressionNode::CP &result) { _collect.addResult(result); return *this; }
-    GroupingLevel &addAggregationResult(const ExpressionNode::CP &aggr) { _collect.addAggregationResult(aggr); return *this; }
-    GroupingLevel &addOrderBy(const ExpressionNode::CP & orderBy, bool ascending) { _collect.addOrderBy(orderBy, ascending); return *this; }
+    GroupingLevel &setExpression(ExpressionNode::UP root) { _classify = std::move(root); return *this; }
+    GroupingLevel &addResult(ExpressionNode::UP result) { _collect.addResult(std::move(result)); return *this; }
+    GroupingLevel &addResult(const ExpressionNode & result) { return addResult(ExpressionNode::UP(result.clone())); }
+    GroupingLevel &addAggregationResult(ExpressionNode::UP aggr) { _collect.addAggregationResult(std::move(aggr)); return *this; }
+    GroupingLevel &addOrderBy(ExpressionNode::UP orderBy, bool ascending) { _collect.addOrderBy(std::move(orderBy), ascending); return *this; }
     bool needResort() const { return _collect.needResort(); }
 
     int64_t getMaxGroups() const { return _maxGroups; }
@@ -116,8 +121,8 @@ public:
         _grouper->group(g, result, doc, rank);
     }
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
 };
 
 }

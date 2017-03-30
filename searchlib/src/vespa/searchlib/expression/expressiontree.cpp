@@ -15,9 +15,9 @@ using vespalib::Deserializer;
 
 IMPLEMENT_EXPRESSIONNODE(ExpressionTree, ExpressionNode);
 
-void ExpressionTree::Configure::execute(vespalib::Identifiable &obj)
-{
-    ExpressionTree & e(static_cast<ExpressionTree &>(obj));
+void
+ExpressionTree::Configure::execute(vespalib::Identifiable &obj) {
+    ExpressionTree &e(static_cast<ExpressionTree &>(obj));
     if (e.getRoot()) {
         e.getRoot()->prepare(false);
     }
@@ -35,7 +35,7 @@ ExpressionTree::ExpressionTree() :
     prepare(false);
 }
 
-ExpressionTree::ExpressionTree(const ExpressionNode & root) :
+ExpressionTree::ExpressionTree(const ExpressionNode &root) :
     _root(root.clone()),
     _attributeNodes(),
     _documentAccessorNodes(),
@@ -46,21 +46,24 @@ ExpressionTree::ExpressionTree(const ExpressionNode & root) :
     prepare(false);
 }
 
+namespace {
+
 template<typename NODE>
-class Gather : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
-{
+class Gather : public vespalib::ObjectOperation, public vespalib::ObjectPredicate {
     std::vector<NODE *> &_list;
 public:
     Gather(std::vector<NODE *> &list) : _list(list) { _list.clear(); }
 
-    void from(ExpressionNode & root) {
+    void from(ExpressionNode &root) {
         root.select(*this, *this);
     }
+
 private:
-    virtual void execute(vespalib::Identifiable &obj) {
+    void execute(vespalib::Identifiable &obj) override {
         _list.push_back(&static_cast<NODE &>(obj));
     }
-    virtual bool check(const vespalib::Identifiable &obj) const {
+
+    bool check(const vespalib::Identifiable &obj) const override {
         return obj.inherits(NODE::classId);
     }
 };
@@ -71,8 +74,10 @@ gather(std::vector<NODE *> &list) {
     return Gather<NODE>(list);
 }
 
+}
 
-void ExpressionTree::onPrepare(bool preserveAccurateTypes)
+void
+ExpressionTree::onPrepare(bool preserveAccurateTypes)
 {
     (void) preserveAccurateTypes;
     if (_root.get() != NULL) {
@@ -84,8 +89,9 @@ void ExpressionTree::onPrepare(bool preserveAccurateTypes)
     }
 }
 
-ExpressionTree::ExpressionTree(const ExpressionNode::CP & root) :
-    _root(root->clone()),
+ExpressionTree::ExpressionTree(ExpressionNode::UP root) :
+    ExpressionNode(),
+    _root(root.release()),
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),
@@ -101,12 +107,14 @@ ExpressionTree::ExpressionTree(const ExpressionTree & rhs) :
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),
-    _interpolatedLookupNodes()
+    _interpolatedLookupNodes(),
+    _arrayAtLookupNodes()
 {
     prepare(false);
 }
 
-ExpressionTree & ExpressionTree::operator = (const ExpressionTree & rhs)
+ExpressionTree &
+ExpressionTree::operator = (const ExpressionTree & rhs)
 {
     if (this != & rhs) {
         ExpressionTree eTree(rhs);
@@ -115,20 +123,31 @@ ExpressionTree & ExpressionTree::operator = (const ExpressionTree & rhs)
     return *this;
 }
 
-void ExpressionTree::swap(ExpressionTree & e)
+ExpressionTree &
+ExpressionTree::operator = (ExpressionNode::UP rhs)
+{
+    ExpressionTree eTree(std::move(rhs));
+    swap(eTree);
+    return *this;
+}
+
+void
+ExpressionTree::swap(ExpressionTree & e)
 {
     std::swap(_root, e._root);
     _attributeNodes.swap(e._attributeNodes);
     _documentAccessorNodes.swap(e._documentAccessorNodes);
     _relevanceNodes.swap(e._relevanceNodes);
     _interpolatedLookupNodes.swap(e._interpolatedLookupNodes);
+    _arrayAtLookupNodes.swap(_arrayAtLookupNodes);
 }
 
 ExpressionTree::~ExpressionTree()
 {
 }
 
-bool ExpressionTree::execute(const document::Document & doc, HitRank rank) const
+bool
+ExpressionTree::execute(const document::Document & doc, HitRank rank) const
 {
     for(DocumentAccessorNodeList::const_iterator it(_documentAccessorNodes.begin()), mt(_documentAccessorNodes.end()); it != mt; it++) {
         (*it)->setDoc(doc);
@@ -162,7 +181,8 @@ struct RankSetter {
 };
 
 
-bool ExpressionTree::execute(DocId docId, HitRank rank) const
+bool
+ExpressionTree::execute(DocId docId, HitRank rank) const
 {
     DocIdSetter setDocId(docId);
     RankSetter setHitRank(rank);
@@ -180,7 +200,8 @@ ExpressionTree::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "root", _root.get());
 }
 
-void ExpressionTree::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
+void
+ExpressionTree::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
 {
     if (_root.get()) {
         _root->select(predicate, operation);
@@ -188,12 +209,14 @@ void ExpressionTree::selectMembers(const vespalib::ObjectPredicate & predicate, 
 }
 
 
-Serializer & operator << (Serializer & os, const ExpressionTree & et)
+Serializer &
+operator << (Serializer & os, const ExpressionTree & et)
 {
     return os << et._root;
 }
 
-Deserializer & operator >> (Deserializer & is, ExpressionTree & et)
+Deserializer &
+operator >> (Deserializer & is, ExpressionTree & et)
 {
     is >> et._root;
     et.prepare(false);

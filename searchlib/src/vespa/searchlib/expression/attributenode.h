@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/functionnode.h>
-#include <vespa/searchlib/expression/resultvector.h>
+#include "functionnode.h"
+#include "resultvector.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
@@ -24,16 +24,16 @@ public:
     const search::attribute::IAttributeVector *getAttribute() const { return _attribute; }
     DocId getDocId() const { return _docId; }
 private:
-    virtual int64_t onGetInteger(size_t index) const { (void) index; return _attribute->getInt(_docId); }
-    virtual double onGetFloat(size_t index)    const { (void) index; return _attribute->getFloat(_docId); }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
+    int64_t onGetInteger(size_t index) const override { (void) index; return _attribute->getInt(_docId); }
+    double onGetFloat(size_t index)    const override { (void) index; return _attribute->getFloat(_docId); }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
         (void) index;
         const char * t = _attribute->getString(_docId, buf.str(), buf.size());
         return ConstBufferRef(t, strlen(t));
     }
     int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_attribute->getEnum(_docId))); }
-    virtual void set(const search::expression::ResultNode&) { }
-    virtual size_t hash() const { return _docId; }
+    void set(const search::expression::ResultNode&) override { }
+    size_t hash() const override { return _docId; }
 
     const search::attribute::IAttributeVector * _attribute;
     DocId          _docId;
@@ -50,11 +50,11 @@ public:
     public:
         Configure(const search::attribute::IAttributeContext & attrCtx) : _attrCtx(attrCtx) { }
     private:
-        virtual void execute(vespalib::Identifiable &obj) {
+        void execute(vespalib::Identifiable &obj) override {
             static_cast<ExpressionNode &>(obj).wireAttributes(_attrCtx);
             obj.selectMembers(*this, *this);
         }
-        virtual bool check(const vespalib::Identifiable &obj) const {
+        bool check(const vespalib::Identifiable &obj) const override {
             return obj.inherits(ExpressionNode::classId);
         }
         const search::attribute::IAttributeContext & _attrCtx;
@@ -63,8 +63,8 @@ public:
     class CleanupAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
-        virtual void execute(vespalib::Identifiable &obj) { static_cast<AttributeNode &>(obj).cleanup(); }
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(AttributeNode::classId); }
+        void execute(vespalib::Identifiable &obj) override { static_cast<AttributeNode &>(obj).cleanup(); }
+        bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
     };
 
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
@@ -84,9 +84,9 @@ public:
     bool hasMultiValue() const { return _hasMultiValue; }
 private:
     void cleanup();
-    virtual void wireAttributes(const search::attribute::IAttributeContext & attrCtx);
-    virtual void onPrepare(bool preserveAccurateTypes);
-    virtual bool onExecute() const;
+    void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
+    void onPrepare(bool preserveAccurateTypes) override;
+    bool onExecute() const override;
     class Handler
     {
     public:
@@ -101,7 +101,7 @@ private:
             _vector(((IntegerResultNodeVector &)result).getVector()),
             _wVector()
         { }
-        virtual void handle(const AttributeResult & r);
+        void handle(const AttributeResult & r) override;
     private:
         IntegerResultNodeVector::Vector & _vector;
         mutable std::vector<search::attribute::IAttributeVector::WeightedInt> _wVector;
@@ -114,7 +114,7 @@ private:
             _vector(((FloatResultNodeVector &)result).getVector()),
             _wVector()
         { }
-        virtual void handle(const AttributeResult & r);
+        void handle(const AttributeResult & r) override;
     private:
         FloatResultNodeVector::Vector & _vector;
         mutable std::vector<search::attribute::IAttributeVector::WeightedFloat> _wVector;
@@ -127,7 +127,7 @@ private:
             _vector(((StringResultNodeVector &)result).getVector()),
             _wVector()
         { }
-        virtual void handle(const AttributeResult & r);
+        void handle(const AttributeResult & r) override;
     private:
         StringResultNodeVector::Vector & _vector;
         mutable std::vector<search::attribute::IAttributeVector::WeightedConstChar> _wVector;
@@ -140,7 +140,7 @@ private:
             _vector(((EnumResultNodeVector &)result).getVector()),
             _wVector()
         { }
-        virtual void handle(const AttributeResult & r);
+        void handle(const AttributeResult & r) override;
     private:
         EnumResultNodeVector::Vector &_vector;
         mutable std::vector<search::attribute::IAttributeVector::WeightedEnum> _wVector;

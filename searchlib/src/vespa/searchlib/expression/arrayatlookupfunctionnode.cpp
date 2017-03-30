@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/expression/arrayatlookupfunctionnode.h>
-#include <vespa/searchlib/expression/floatresultnode.h>
-#include <vespa/searchlib/expression/integerresultnode.h>
-#include <vespa/searchlib/expression/stringresultnode.h>
+#include "arrayatlookupfunctionnode.h"
+#include "floatresultnode.h"
+#include "integerresultnode.h"
+#include "stringresultnode.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/common/converters.h>
-#include <vespa/vespalib/util/stringfmt.h>
+
 
 namespace search {
 namespace expression {
@@ -24,16 +22,15 @@ ArrayAtLookup::~ArrayAtLookup()
 {
 }
 
-ArrayAtLookup::ArrayAtLookup(const vespalib::string &attribute,
-                             const ExpressionNode::CP &arg)
-    : UnaryFunctionNode(arg),
+ArrayAtLookup::ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP arg)
+    : UnaryFunctionNode(std::move(arg)),
       _attributeName(attribute)
 {
 }
 
 ArrayAtLookup::ArrayAtLookup(const search::attribute::IAttributeVector &attr,
-                             const ExpressionNode::CP &indexArg)
-    : UnaryFunctionNode(indexArg),
+                             ExpressionNode::UP indexArg)
+    : UnaryFunctionNode(std::move(indexArg)),
       _attributeName(attr.getName()),
       _attribute(&attr)
 {

@@ -118,8 +118,8 @@
                               cclass::createAsIdentifiable, cclass::typeId, cclass::tryCast, "")
 
 #define DECLARE_NBO_SERIALIZE                            \
-  virtual vespalib::Serializer & onSerialize(vespalib::Serializer & os) const; \
-  virtual vespalib::Deserializer & onDeserialize(vespalib::Deserializer & is);
+    vespalib::Serializer & onSerialize(vespalib::Serializer & os) const override; \
+    vespalib::Deserializer & onDeserialize(vespalib::Deserializer & is) override;
 
 
 namespace vespalib {
@@ -172,6 +172,11 @@ public:
         RuntimeInfo * _rt;
     };
     DECLARE_IDENTIFIABLE(Identifiable);
+    Identifiable() { }
+    Identifiable(Identifiable &&) = default;
+    Identifiable & operator = (Identifiable &&) = default;
+    Identifiable(const Identifiable &) = default;
+    Identifiable & operator = (const Identifiable &) = default;
     virtual ~Identifiable() { }
 
     /**
@@ -293,8 +298,7 @@ public:
      * @param operation component performing some operation
      *                  on the selected (sub-)objects
      **/
-    void select(const ObjectPredicate &predicate,
-                ObjectOperation &operation);
+    void select(const ObjectPredicate &predicate, ObjectOperation &operation);
 
     /**
      * Invoke @ref select on any member objects this object wants to

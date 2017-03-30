@@ -1,41 +1,41 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchlib/expression/integerresultnode.h>
-#include <vespa/searchlib/expression/floatresultnode.h>
-#include <vespa/searchlib/expression/stringresultnode.h>
-#include <vespa/searchlib/expression/rawresultnode.h>
-#include <vespa/searchlib/expression/enumresultnode.h>
-#include <vespa/searchlib/expression/constantnode.h>
-#include <vespa/searchlib/expression/relevancenode.h>
-#include <vespa/searchlib/expression/addfunctionnode.h>
-#include <vespa/searchlib/expression/dividefunctionnode.h>
-#include <vespa/searchlib/expression/multiplyfunctionnode.h>
-#include <vespa/searchlib/expression/modulofunctionnode.h>
-#include <vespa/searchlib/expression/minfunctionnode.h>
-#include <vespa/searchlib/expression/maxfunctionnode.h>
-#include <vespa/searchlib/expression/andfunctionnode.h>
-#include <vespa/searchlib/expression/orfunctionnode.h>
-#include <vespa/searchlib/expression/xorfunctionnode.h>
-#include <vespa/searchlib/expression/negatefunctionnode.h>
-#include <vespa/searchlib/expression/sortfunctionnode.h>
-#include <vespa/searchlib/expression/reversefunctionnode.h>
-#include <vespa/searchlib/expression/strlenfunctionnode.h>
-#include <vespa/searchlib/expression/numelemfunctionnode.h>
-#include <vespa/searchlib/expression/tostringfunctionnode.h>
-#include <vespa/searchlib/expression/torawfunctionnode.h>
-#include <vespa/searchlib/expression/catfunctionnode.h>
-#include <vespa/searchlib/expression/tointfunctionnode.h>
-#include <vespa/searchlib/expression/tofloatfunctionnode.h>
-#include <vespa/searchlib/expression/strcatfunctionnode.h>
-#include <vespa/searchlib/expression/xorbitfunctionnode.h>
-#include <vespa/searchlib/expression/md5bitfunctionnode.h>
-#include <vespa/searchlib/expression/binaryfunctionnode.h>
-#include <vespa/searchlib/expression/nullresultnode.h>
-#include <vespa/searchlib/expression/positiveinfinityresultnode.h>
-#include <vespa/searchlib/expression/resultvector.h>
-#include <vespa/searchlib/expression/catserializer.h>
-#include <vespa/searchlib/expression/strcatserializer.h>
-#include <vespa/searchlib/expression/normalizesubjectfunctionnode.h>
-#include <vespa/searchlib/expression/arrayoperationnode.h>
+#include "integerresultnode.h"
+#include "floatresultnode.h"
+#include "stringresultnode.h"
+#include "rawresultnode.h"
+#include "enumresultnode.h"
+#include "constantnode.h"
+#include "relevancenode.h"
+#include "addfunctionnode.h"
+#include "dividefunctionnode.h"
+#include "multiplyfunctionnode.h"
+#include "modulofunctionnode.h"
+#include "minfunctionnode.h"
+#include "maxfunctionnode.h"
+#include "andfunctionnode.h"
+#include "orfunctionnode.h"
+#include "xorfunctionnode.h"
+#include "negatefunctionnode.h"
+#include "sortfunctionnode.h"
+#include "reversefunctionnode.h"
+#include "strlenfunctionnode.h"
+#include "numelemfunctionnode.h"
+#include "tostringfunctionnode.h"
+#include "torawfunctionnode.h"
+#include "catfunctionnode.h"
+#include "tointfunctionnode.h"
+#include "tofloatfunctionnode.h"
+#include "strcatfunctionnode.h"
+#include "xorbitfunctionnode.h"
+#include "md5bitfunctionnode.h"
+#include "binaryfunctionnode.h"
+#include "nullresultnode.h"
+#include "positiveinfinityresultnode.h"
+#include "resultvector.h"
+#include "catserializer.h"
+#include "strcatserializer.h"
+#include "normalizesubjectfunctionnode.h"
+#include "arrayoperationnode.h"
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -487,8 +487,8 @@ bool CatFunctionNode::onExecute() const
     return true;
 }
 
-XorBitFunctionNode::XorBitFunctionNode(const ExpressionNode::CP & arg, unsigned numBits) :
-    UnaryBitFunctionNode(arg, numBits),
+XorBitFunctionNode::XorBitFunctionNode(ExpressionNode::UP arg, unsigned numBits) :
+    UnaryBitFunctionNode(std::move(arg), numBits),
     _tmpXor(getNumBytes(), 0)
 {
 }
@@ -592,6 +592,12 @@ Deserializer & MultiArgFunctionNode::onDeserialize(Deserializer & is)
     FunctionNode::onDeserialize(is);
     return is >> _args;
 }
+
+MultiArgFunctionNode::MultiArgFunctionNode() : FunctionNode() { }
+MultiArgFunctionNode::MultiArgFunctionNode(const MultiArgFunctionNode &) = default;
+MultiArgFunctionNode & MultiArgFunctionNode::operator = (const MultiArgFunctionNode &) = default;
+
+MultiArgFunctionNode::~MultiArgFunctionNode() {}
 
 void
 MultiArgFunctionNode::visitMembers(vespalib::ObjectVisitor &visitor) const
