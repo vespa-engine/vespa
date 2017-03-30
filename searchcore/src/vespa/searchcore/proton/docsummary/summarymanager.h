@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
+#include "isummarymanager.h"
+#include "fieldcacherepo.h"
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
@@ -10,9 +10,9 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/docstore/idatastore.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include "fieldcacherepo.h"
-#include "isummarymanager.h"
 
 namespace search {
 

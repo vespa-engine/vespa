@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "flushcontext.h"
+#include "iflushstrategy.h"
 #include <vespa/searchcore/proton/common/handlermap.hpp>
-#include <vespa/searchcore/proton/flushengine/flushcontext.h>
-#include <vespa/searchcore/proton/flushengine/iflushstrategy.h>
-#include <set>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchcore/proton/common/doctypename.h>
+#include <set>
 
 namespace proton {
 
@@ -129,8 +129,7 @@ public:
      */
     void triggerFlush();
 
-    void
-    kick(void);
+    void kick(void);
 
     /**
      * Registers a new flush handler for the given document type. If another

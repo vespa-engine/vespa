@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/docstore/filechunk.h>
+#include "filechunk.h"
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/fastos/file.h>

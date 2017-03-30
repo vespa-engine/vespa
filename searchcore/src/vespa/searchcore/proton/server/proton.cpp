@@ -480,17 +480,17 @@ Proton::~Proton()
     _customComponentRootToken.reset();
     _customComponentBindToken.reset();
     _stateServer.reset();
-    if (_metricsEngine.get() != NULL) {
+    if (_metricsEngine) {
         _metricsEngine->removeMetricsHook(_metricsHook);
         _metricsEngine->stop();
     }
-    if (_matchEngine.get() != NULL) {
+    if (_matchEngine) {
         _matchEngine->close();
     }
-    if (_summaryEngine.get() != NULL) {
+    if (_summaryEngine) {
         _summaryEngine->close();
     }
-    if (_rpcHooks.get() != NULL) {
+    if (_rpcHooks) {
         _rpcHooks->close();
     }
     if (_memoryFlushConfigUpdater) {
@@ -499,20 +499,20 @@ Proton::~Proton()
     _executor.shutdown();
     _executor.sync();
     _rpcHooks.reset();
-    if (_flushEngine.get() != NULL) {
+    if (_flushEngine) {
         _flushEngine->close();
     }
-    if (_warmupExecutor.get() != NULL) {
+    if (_warmupExecutor) {
         _warmupExecutor->sync();
     }
-    if (_summaryExecutor.get() != NULL) {
+    if (_summaryExecutor) {
         _summaryExecutor->sync();
     }
     LOG(debug, "Shutting down fs4 interface");
-    if (_metricsEngine.get() != NULL) {
+    if (_metricsEngine) {
         _metricsEngine->removeExternalMetrics(_fs4Server->getMetrics());
     }
-    if (_fs4Server.get() != NULL) {
+    if (_fs4Server) {
         _fs4Server->shutDown();
     }
     _persistenceProxy.reset();
