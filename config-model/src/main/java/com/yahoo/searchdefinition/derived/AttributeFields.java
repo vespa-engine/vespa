@@ -67,7 +67,6 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     /**
      * Derives one attribute. TODO: Support non-default named attributes
-     * @param field
      */
     private void deriveAttributes(ImmutableSDField field) {
         for (Attribute fieldAttribute : field.getAttributes().values()) {
