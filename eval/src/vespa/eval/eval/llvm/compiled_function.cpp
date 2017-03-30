@@ -33,10 +33,12 @@ CompiledFunction::CompiledFunction(const Function &function_in, PassParams pass_
       _num_params(function_in.num_params()),
       _pass_params(pass_params_in)
 {
-    _address = _llvm_wrapper.compile_function(function_in.num_params(),
-                                              _pass_params,
-                                              function_in.root(),
-                                              forest_optimizers);
+    size_t id = _llvm_wrapper.make_function(function_in.num_params(),
+                                            _pass_params,
+                                            function_in.root(),
+                                            forest_optimizers);
+    _llvm_wrapper.compile();
+    _address = _llvm_wrapper.get_function_address(id);
 }
 
 CompiledFunction::CompiledFunction(CompiledFunction &&rhs)
