@@ -146,6 +146,16 @@ Test::testTag()
             tag = tmp;
         }
     }
+    {
+        GenericHeader::Tag trueTag("foo", true);
+        GenericHeader::Tag falseTag("foo", false);
+        EXPECT_EQUAL(GenericHeader::Tag::TYPE_INTEGER, trueTag.getType());
+        EXPECT_EQUAL(GenericHeader::Tag::TYPE_INTEGER, falseTag.getType());
+        EXPECT_EQUAL(1, trueTag.asInteger());
+        EXPECT_EQUAL(0, falseTag.asInteger());
+        EXPECT_TRUE(trueTag.asBool());
+        EXPECT_FALSE(falseTag.asBool());
+    }
 }
 
 void
