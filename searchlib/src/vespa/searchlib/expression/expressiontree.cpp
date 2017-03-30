@@ -90,7 +90,7 @@ ExpressionTree::onPrepare(bool preserveAccurateTypes)
 }
 
 ExpressionTree::ExpressionTree(ExpressionNode::UP root) :
-    ExpressionTree(),
+    ExpressionNode(),
     _root(root.release()),
     _attributeNodes(),
     _documentAccessorNodes(),

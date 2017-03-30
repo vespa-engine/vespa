@@ -33,12 +33,11 @@ struct SortByGroupRank {
     }
 };
 
-}
-
-IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, Group, vespalib::Identifiable);
+void reset(Group * & v) { v = NULL; }
+void destruct(Group * v) { if (v) { delete v; } }
 
 void
-Group::destruct(GroupList & l, size_t m)
+destruct(Group::GroupList & l, size_t m)
 {
     for (size_t i(0); i < m; i++) {
         destruct(l[i]);
@@ -46,6 +45,10 @@ Group::destruct(GroupList & l, size_t m)
     delete [] l;
     l = NULL;
 }
+
+}
+
+IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, Group, vespalib::Identifiable);
 
 int
 Group::cmpRank(const Group &rhs) const
@@ -58,30 +61,12 @@ Group::cmpRank(const Group &rhs) const
                    : ((_rank < rhs._rank) ? 1 : 0));
 }
 
-Group &
-Group::addResult(ExpressionNode::UP aggr)
-{
-    assert(_aggr.getExprSize() < 15);
-    addAggregationResult(std::move(aggr));
-    addExpressionResult(ExpressionNode::UP(new AggregationRefNode(getAggrSize() - 1)));
-    _aggr.setupAggregationReferences();
-    return *this;
-}
-
 void
 Group::selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) {
     if (_id.get()) {
         _id->select(predicate, operation);
     }
     _aggr.select(predicate, operation);
-}
-
-template <typename Doc>
-void Group::Value::collect(const Doc & doc, HitRank rank)
-{
-    for(size_t i(0), m(getAggrSize()); i < m; i++) {
-        getAggr(i)->aggregate(doc, rank);
-    }
 }
 
 template <typename Doc>
@@ -272,6 +257,23 @@ Group::Value::addAggregationResult(ExpressionNode::UP aggr)
     delete [] _aggregationResults;
     _aggregationResults = n;
     setAggrSize(getAggrSize() + 1);
+}
+
+template <typename Doc>
+void Group::Value::collect(const Doc & doc, HitRank rank)
+{
+    for(size_t i(0), m(getAggrSize()); i < m; i++) {
+        getAggr(i)->aggregate(doc, rank);
+    }
+}
+
+void
+Group::Value::addResult(ExpressionNode::UP aggr)
+{
+    assert(getExprSize() < 15);
+    addAggregationResult(std::move(aggr));
+    addExpressionResult(ExpressionNode::UP(new AggregationRefNode(getAggrSize() - 1)));
+    setupAggregationReferences();
 }
 
 void

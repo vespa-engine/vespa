@@ -82,6 +82,7 @@ private:
         VESPA_DLL_LOCAL int cmp(const Value & rhs) const;
         void addExpressionResult(ExpressionNode::UP expressionNode);
         void addAggregationResult(ExpressionNode::UP aggr);
+        void addResult(ExpressionNode::UP aggr);
         void setupAggregationReferences();
         void addOrderBy(ExpressionNode::UP orderBy, bool ascending);
         void select(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation);
@@ -169,10 +170,6 @@ private:
 
     Group & partialCopy(const Group & rhs);
 
-    static void reset(Group * & v) { v = NULL; }
-    static void destruct(Group * v) { if (v) { delete v; } }
-    static void destruct(GroupList & l, size_t sz);
-    void setupAggregationReferences();
     template <typename Doc>
     VESPA_DLL_LOCAL void groupNext(const GroupingLevel & level, const Doc & docId, HitRank rank);
 public:
@@ -206,12 +203,12 @@ public:
         _aggr.addAggregationResult(std::move(result));
         return *this;
     }
-    Group &addResult(ExpressionNode::UP aggr);
-    Group &addResult(const ExpressionNode & aggr) { return addResult(ExpressionNode::UP(aggr.clone())); }
-    Group &addExpressionResult(ExpressionNode::UP expressionNode) {
-        _aggr.addExpressionResult(std::move(expressionNode));
+    Group &addResult(ExpressionNode::UP aggr) {
+        _aggr.addResult(std::move(aggr));
         return *this;
     }
+    Group &addResult(const ExpressionNode & aggr) { return addResult(ExpressionNode::UP(aggr.clone())); }
+
     Group &addOrderBy(ExpressionNode::UP orderBy, bool ascending) {
         _aggr.addOrderBy(std::move(orderBy), ascending); return *this;
     }
