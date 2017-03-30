@@ -131,10 +131,6 @@ public class NodePatcher {
         return field.asBool();
     }
 
-    private Optional<Status.HardwareFailureType> toHardwareFailureType(boolean failure) {
-        return failure ? Optional.of(Status.HardwareFailureType.unknown) : Optional.empty();
-    }
-
     private Optional<Status.HardwareFailureType> toHardwareFailureType(String failureType) {
         switch (failureType) {
             case "memory_mcelog" : return Optional.of(Status.HardwareFailureType.memory_mcelog);

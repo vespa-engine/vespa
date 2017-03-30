@@ -15,7 +15,9 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * A component which sets up all the node repo maintenance jobs.
@@ -23,6 +25,9 @@ import java.util.Optional;
  * @author bratseth
  */
 public class NodeRepositoryMaintenance extends AbstractComponent {
+
+    private static final Logger log = Logger.getLogger(NodeRepositoryMaintenance.class.getName());
+    private static final String envPrefix = "vespa_node_repository__";
 
     private final NodeFailer nodeFailer;
     private final ApplicationMaintainer applicationMaintainer;
@@ -46,21 +51,16 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, fromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator);
-        applicationMaintainer = new ApplicationMaintainer(deployer, nodeRepository, fromEnv("redeploy_frequency").orElse(defaults.redeployFrequency));
-        zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, fromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval));
-        reservationExpirer = new ReservationExpirer(nodeRepository, clock, fromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
-        retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, fromEnv("retired_expiry").orElse(defaults.retiredExpiry));
-        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, fromEnv("inactive_expiry").orElse(defaults.inactiveExpiry));
-        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, fromEnv("failed_expiry").orElse(defaults.failedExpiry));
-        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, fromEnv("dirty_expiry").orElse(defaults.dirtyExpiry));
-        nodeRebooter = new NodeRebooter(nodeRepository, clock, fromEnv("reboot_interval").orElse(defaults.rebootInterval));
-        metricsReporter = new MetricsReporter(nodeRepository, metric, fromEnv("metrics_interval").orElse(defaults.metricsInterval));
-    }
-
-    private Optional<Duration> fromEnv(String envVariable) {
-        String prefix = "vespa_node_repository__";
-        return Optional.ofNullable(System.getenv(prefix + envVariable)).map(Long::parseLong).map(Duration::ofSeconds);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy));
+        applicationMaintainer = new ApplicationMaintainer(deployer, nodeRepository, durationFromEnv("redeploy_frequency").orElse(defaults.redeployFrequency));
+        zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, durationFromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval));
+        reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
+        retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry));
+        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry));
+        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, durationFromEnv("failed_expiry").orElse(defaults.failedExpiry));
+        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry));
+        nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval));
+        metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval));
     }
 
     @Override
@@ -75,6 +75,21 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
         metricsReporter.deconstruct();
+    }
+
+    private static Optional<Duration> durationFromEnv(String envVariable) {
+        return Optional.ofNullable(System.getenv(envPrefix + envVariable)).map(Long::parseLong).map(Duration::ofSeconds);
+    }
+
+    private static Optional<NodeFailer.ThrottlePolicy> throttlePolicyFromEnv(String envVariable) {
+        String policyName = System.getenv(envPrefix + envVariable);
+        try {
+            return Optional.ofNullable(policyName).map(NodeFailer.ThrottlePolicy::valueOf);
+        } catch (IllegalArgumentException e) {
+            log.info(String.format("Ignoring invalid throttle policy name: '%s'. Must be one of %s", policyName,
+                                   Arrays.toString(NodeFailer.ThrottlePolicy.values())));
+            return Optional.empty();
+        }
     }
 
     private static class DefaultTimes {
@@ -95,6 +110,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration rebootInterval;
         private final Duration metricsInterval;
 
+        private final NodeFailer.ThrottlePolicy throttlePolicy;
+
         DefaultTimes(Environment environment) {
             if (environment.equals(Environment.prod)) {
                 // These values are to avoid losing data (retired), and to be able to return an application
@@ -109,6 +126,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
                 rebootInterval = Duration.ofDays(30);
                 metricsInterval = Duration.ofMinutes(1);
+                throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             } else {
                 // These values ensure tests and development is not delayed due to nodes staying around
                 // Use non-null values as these also determine the maintenance interval
@@ -122,6 +140,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 dirtyExpiry = Duration.ofMinutes(30);
                 rebootInterval = Duration.ofDays(30);
                 metricsInterval = Duration.ofMinutes(1);
+                throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             }
         }
 

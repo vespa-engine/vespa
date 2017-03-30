@@ -115,7 +115,7 @@ public class History {
 
         public enum Type { 
             // State move events
-            readied, reserved, activated, deactivated, failed, deallocated, 
+            readied, reserved, activated, deactivated, deallocated,
             // The active node was retired
             retired,
             // The active node went down according to the service monitor
@@ -123,7 +123,9 @@ public class History {
             // The node made a config request, indicating it is live
             requested,
             // The node was rebooted
-            rebooted(false);
+            rebooted(false),
+            // The node was failed
+            failed(false);
             
             private final boolean applicationLevel;
             

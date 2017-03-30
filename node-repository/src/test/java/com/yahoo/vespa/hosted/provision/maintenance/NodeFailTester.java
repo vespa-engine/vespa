@@ -5,9 +5,11 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -29,8 +31,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -52,6 +52,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -85,7 +86,7 @@ public class NodeFailTester {
     private final NodeRepositoryProvisioner provisioner;
     private final Curator curator;
 
-    public NodeFailTester() {
+    private NodeFailTester() {
         clock = new ManualClock();
         curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup());
@@ -173,6 +174,14 @@ public class NodeFailTester {
         return tester;
     }
 
+    public static NodeFailTester withNoApplications() {
+        NodeFailTester tester = new NodeFailTester();
+        tester.deployer = new MockDeployer(tester.provisioner, Collections.emptyMap());
+        tester.serviceMonitor = new ServiceMonitorStub(Collections.emptyMap(), tester.nodeRepository);
+        tester.failer = tester.createFailer();
+        return tester;
+    }
+
     public void suspend(ApplicationId app) {
         try {
             orchestrator.suspend(app);
@@ -183,41 +192,44 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator);
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted);
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
-        Set<Node> deadNodes = new HashSet<>(Arrays.asList(deadNodeArray));
+        allNodesMakeAConfigRequestExcept(Arrays.asList(deadNodeArray));
+    }
+
+    public void allNodesMakeAConfigRequestExcept(List<Node> deadNodes) {
         for (Node node : nodeRepository.getNodes(NodeType.tenant)) {
             if ( ! deadNodes.contains(node) && node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 hostLivenessTracker.receivedRequestFrom(node.hostname());
         }
     }
 
-    public void createReadyNodes(int count) {
-        createReadyNodes(count, 0);
+    public List<Node> createReadyNodes(int count) {
+        return createReadyNodes(count, 0);
     }
 
-    public void createReadyNodes(int count, NodeType nodeType) {
-        createReadyNodes(count, 0, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), nodeType);
+    public List<Node> createReadyNodes(int count, NodeType nodeType) {
+        return createReadyNodes(count, 0, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), nodeType);
     }
 
-    public void createReadyNodes(int count, int startIndex) {
-        createReadyNodes(count, startIndex, "default");
+    public List<Node> createReadyNodes(int count, int startIndex) {
+        return createReadyNodes(count, startIndex, "default");
     }
 
-    public void createReadyNodes(int count, int startIndex, String flavor) {
-        createReadyNodes(count, startIndex, Optional.empty(), nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant);
+    public List<Node> createReadyNodes(int count, int startIndex, String flavor) {
+        return createReadyNodes(count, startIndex, Optional.empty(), nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant);
     }
 
-    private void createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
+    private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < startIndex + count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, parentHostname, flavor, nodeType));
 
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
+        return nodeRepository.setReady(nodes);
     }
 
     private List<Node> createHostNodes(int count) {
