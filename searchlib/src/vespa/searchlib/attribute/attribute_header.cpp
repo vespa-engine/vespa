@@ -11,6 +11,8 @@ namespace {
 const vespalib::string versionTag = "version";
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
+const vespalib::string createIfNonExistentTag = "collectiontype.createIfNonExistent";
+const vespalib::string removeIfZeroTag = "collectiontype.removeIfZero";
 const vespalib::string createSerialNumTag = "createSerialNum";
 const vespalib::string tensorTypeTag = "tensortype";
 const vespalib::string predicateArityTag = "predicate.arity";
@@ -25,6 +27,7 @@ AttributeHeader::AttributeHeader()
       _collectionType(attribute::CollectionType::Type::SINGLE),
       _tensorType(vespalib::eval::ValueType::error_type()),
       _enumerated(false),
+      _collectionTypeParamsSet(false),
       _predicateParamsSet(false),
       _predicateParams(),
       _numDocs(0),
@@ -53,6 +56,7 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName,
       _collectionType(collectionType),
       _tensorType(tensorType),
       _enumerated(enumerated),
+      _collectionTypeParamsSet(false),
       _predicateParamsSet(false),
       _predicateParams(predicateParams),
       _numDocs(numDocs),
@@ -79,6 +83,16 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
     }
     if (header.hasTag(collectionTypeTag)) {
         _collectionType = CollectionType(header.getTag(collectionTypeTag).asString());
+    }
+    if (_collectionType.type() == attribute::CollectionType::WSET) {
+        if (header.hasTag(createIfNonExistentTag)) {
+            assert(header.hasTag(removeIfZeroTag));
+            _collectionTypeParamsSet = true;
+            _collectionType.createIfNonExistant(header.getTag(createIfNonExistentTag).asBool());
+            _collectionType.removeIfZero(header.getTag(removeIfZeroTag).asBool());
+        } else {
+            assert(!header.hasTag(removeIfZeroTag));
+        }
     }
     if (_basicType.type() == BasicType::Type::TENSOR) {
         assert(header.hasTag(tensorTypeTag));
@@ -115,6 +129,10 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
     using Tag = vespalib::GenericHeader::Tag;
     header.putTag(Tag(dataTypeTag, _basicType.asString()));
     header.putTag(Tag(collectionTypeTag, _collectionType.asString()));
+    if (_collectionType.type() == attribute::CollectionType::WSET) {
+        header.putTag(Tag(createIfNonExistentTag, _collectionType.createIfNonExistant()));
+        header.putTag(Tag(removeIfZeroTag, _collectionType.removeIfZero()));
+    }
     header.putTag(Tag("uniqueValueCount", _uniqueValueCount));
     header.putTag(Tag("totalValueCount", _totalValueCount));
     header.putTag(Tag("docIdLimit", _numDocs));
