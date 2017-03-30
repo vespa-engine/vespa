@@ -72,6 +72,7 @@ public class Processing {
                 TensorFieldProcessor::new,
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
+                AddAttributeTransformToSummaryOfImportedFields::new,
 
                 // These two should be last.
                 IndexingValidation::new,
