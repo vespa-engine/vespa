@@ -125,6 +125,26 @@ GenericHeader::Tag::Tag(const vespalib::string &name, uint64_t val) :
     // empty
 }
 
+GenericHeader::Tag::Tag(const vespalib::string &name, bool val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val ? 1 : 0),
+      _sVal("")
+{
+    // empty
+}
+
+GenericHeader::Tag::Tag(const vespalib::string &name, const char *val)
+    : _type(TYPE_STRING),
+      _name(name),
+      _fVal(0),
+      _iVal(0),
+      _sVal(val)
+{
+    // empty
+}
+
 GenericHeader::Tag::Tag(const vespalib::string &name, const vespalib::string &val) :
     _type(TYPE_STRING),
     _name(name),

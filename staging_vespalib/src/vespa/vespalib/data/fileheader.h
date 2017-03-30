@@ -59,6 +59,8 @@ public:
         Tag(const vespalib::string &name, uint32_t val);
         Tag(const vespalib::string &name, int64_t val);
         Tag(const vespalib::string &name, uint64_t val);
+        Tag(const vespalib::string &name, bool val);
+        Tag(const vespalib::string &name, const char *val);
         Tag(const vespalib::string &name, const vespalib::string &val);
         ~Tag();
 
@@ -73,6 +75,7 @@ public:
         double             asFloat()   const { return _fVal; }
         int64_t            asInteger() const { return _iVal; }
         const vespalib::string &asString()  const { return _sVal; }
+        bool               asBool()    const { return _iVal != 0; }
     };
 
     /**
