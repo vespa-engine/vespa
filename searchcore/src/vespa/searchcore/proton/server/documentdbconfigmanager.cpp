@@ -98,6 +98,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
     ProtonConfig &proton(bootstrapConfig->getProtonConfig());
 
     TimeStamp visibilityDelay;
+    bool isDocumentTypeGlobal = false;
     // Use document type to find document db config in proton config
     uint32_t index;
     for (index = 0; index < proton.documentdb.size(); ++index) {
@@ -111,6 +112,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
     if (index < proton.documentdb.size()) {
         const DdbConfig &ddbConfig = proton.documentdb[index];
         visibilityDelay = TimeStamp::Seconds(std::min(proton.maxvisibilitydelay, ddbConfig.visibilitydelay));
+        isDocumentTypeGlobal = ddbConfig.global;
     }
     return DocumentDBMaintenanceConfig::SP(
             new DocumentDBMaintenanceConfig(
@@ -126,7 +128,8 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     DocumentDBLidSpaceCompactionConfig(
                             proton.lidspacecompaction.interval,
                             proton.lidspacecompaction.allowedlidbloat,
-                            proton.lidspacecompaction.allowedlidbloatfactor),
+                            proton.lidspacecompaction.allowedlidbloatfactor,
+                            isDocumentTypeGlobal),
                     AttributeUsageFilterConfig(
                             proton.writefilter.attribute.enumstorelimit,
                             proton.writefilter.attribute.multivaluelimit),

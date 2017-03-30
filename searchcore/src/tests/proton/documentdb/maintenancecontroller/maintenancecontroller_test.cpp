@@ -1,31 +1,32 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/index/docbuilder.h>
-#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/server/idocumentmovehandler.h>
+#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/server/i_operation_storer.h>
-#include <vespa/searchcore/proton/server/ipruneremoveddocumentshandler.h>
+#include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
+#include <vespa/searchcore/proton/server/idocumentmovehandler.h>
 #include <vespa/searchcore/proton/server/iheartbeathandler.h>
+#include <vespa/searchcore/proton/server/ipruneremoveddocumentshandler.h>
 #include <vespa/searchcore/proton/server/maintenance_controller_explorer.h>
 #include <vespa/searchcore/proton/server/maintenance_jobs_injector.h>
 #include <vespa/searchcore/proton/server/maintenancecontroller.h>
-#include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchcore/proton/test/buckethandler.h>
+#include <vespa/searchcore/proton/test/clusterstatehandler.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
-#include <vespa/searchcore/proton/test/clusterstatehandler.h>
-#include <vespa/searchcore/proton/test/buckethandler.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("maintenancecontroller_test");
@@ -401,6 +402,21 @@ struct MyAttributeManager : public proton::IAttributeManager
     }
 };
 
+struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
+{
+    vespalib::string name;
+
+    MockLidSpaceCompactionHandler(const vespalib::string &name_) : name(name_) {}
+    virtual vespalib::string getName() const override { return name; }
+    virtual uint32_t getSubDbId() const override { return 0; }
+    virtual search::LidUsageStats getLidStatus() const override { return search::LidUsageStats(); }
+    virtual IDocumentScanIterator::UP getIterator() const override { return IDocumentScanIterator::UP(); }
+    virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &, uint32_t) const override { return MoveOperation::UP(); }
+    virtual void handleMove(const MoveOperation &) override {}
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
+};
+
+
 class MaintenanceControllerFixture : public ICommitable
 {
 public:
@@ -418,6 +434,7 @@ public:
     MyDocumentSubDB               _notReady;
     MySessionCachePruner          _gsp;
     MyFeedHandler                 _fh;
+    ILidSpaceCompactionHandler::Vector _lscHandlers;
     DocumentDBMaintenanceConfig::SP _mcCfg;
     bool                          _injectDefaultJobs;
     DocumentDBJobTrackers         _jobTrackers;
@@ -548,6 +565,21 @@ public:
         forwardMaintenanceConfig();
     }
 
+    void setLidSpaceCompactionConfig(const DocumentDBLidSpaceCompactionConfig &cfg) {
+        DocumentDBMaintenanceConfig::SP
+            newCfg(new DocumentDBMaintenanceConfig(
+                           _mcCfg->getPruneRemovedDocumentsConfig(),
+                           _mcCfg->getHeartBeatConfig(),
+                           _mcCfg->getWipeOldRemovedFieldsConfig(),
+                           _mcCfg->getSessionCachePruneInterval(),
+                           _mcCfg->getVisibilityDelay(),
+                           cfg,
+                           _mcCfg->getAttributeUsageFilterConfig(),
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getResourceLimitFactor()));
+        _mcCfg = newCfg;
+        forwardMaintenanceConfig();
+    }
 
     void
     performNotifyBucketStateChanged(document::BucketId bucketId,
@@ -894,6 +926,7 @@ MaintenanceControllerFixture::MaintenanceControllerFixture(void)
                 _docTypeName),
       _gsp(),
       _fh(_executor._threadId),
+      _lscHandlers(),
       _mcCfg(new DocumentDBMaintenanceConfig),
       _injectDefaultJobs(true),
       _jobTrackers(),
@@ -966,9 +999,8 @@ void
 MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
-        ILidSpaceCompactionHandler::Vector lscHandlers;
         MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _fh, _gsp, _fh,
-                                            lscHandlers, _fh, _mc, _docTypeName.getName(),
+                                            _lscHandlers, _fh, _mc, _docTypeName.getName(),
                                             _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
                                             _calc,
                                             _diskMemUsageNotifier,
@@ -1418,6 +1450,31 @@ TEST("Verify FrozenBucketsMap interface") {
         auto guard = m.acquireExclusiveBucket(a);
         EXPECT_TRUE(bool(guard));
         EXPECT_EQUAL(a, guard->getBucket());
+    }
+}
+
+bool
+containsJob(const MaintenanceController::JobList &jobs, const vespalib::string &jobName)
+{
+    auto itr = std::find_if(jobs.begin(), jobs.end(),
+                            [&](const auto &job){ return job->getJob().getName() == jobName; });
+    return itr != jobs.end();
+}
+
+TEST_F("require that lid space compaction jobs can be disabled", MaintenanceControllerFixture)
+{
+    f._lscHandlers.push_back(std::make_unique<MockLidSpaceCompactionHandler>("my_handler"));
+    f.forwardMaintenanceConfig();
+    {
+        auto jobs = f._mc.getJobList();
+        EXPECT_EQUAL(7u, jobs.size());
+        EXPECT_TRUE(containsJob(jobs, "lid_space_compaction.my_handler"));
+    }
+    f.setLidSpaceCompactionConfig(DocumentDBLidSpaceCompactionConfig::createDisabled());
+    {
+        auto jobs = f._mc.getJobList();
+        EXPECT_EQUAL(6u, jobs.size());
+        EXPECT_FALSE(containsJob(jobs, "lid_space_compaction.my_handler"));
     }
 }
 

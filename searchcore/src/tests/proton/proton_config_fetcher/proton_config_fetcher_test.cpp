@@ -72,7 +72,7 @@ struct ConfigTestFixture {
         addDocType("_alwaysthere_");
     }
 
-    DoctypeFixture *addDocType(const std::string & name) {
+    DoctypeFixture *addDocType(const std::string &name, bool isGlobal = false) {
         DocumenttypesConfigBuilder::Documenttype dt;
         dt.bodystruct = -1270491200;
         dt.headerstruct = 306916075;
@@ -84,6 +84,7 @@ struct ConfigTestFixture {
         ProtonConfigBuilder::Documentdb db;
         db.inputdoctypename = name;
         db.configid = configId + "/" + name;
+        db.global = isGlobal;
         protonBuilder.documentdb.push_back(db);
 
         DoctypeFixture::UP fixture = std::make_unique<DoctypeFixture>();
@@ -306,6 +307,19 @@ TEST_FFF("require that proton config fetcher reconfigures dbowners",
     ASSERT_TRUE(f2.waitUntilConfigured(60000));
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
     f3.close();
+}
+
+TEST_FF("require that lid space compaction is disabled for globally distributed document type",
+        ConfigTestFixture("search"),
+        DocumentDBConfigManager(f1.configId + "/global", "global"))
+{
+    f1.addDocType("global", true);
+
+    ConfigRetriever retriever(f2.createConfigKeySet(), f1.context);
+    f2.forwardConfig(f1.getBootstrapConfig(1));
+    f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
+    auto config = f2.getConfig();
+    EXPECT_TRUE(config->getMaintenanceConfigSP()->getLidSpaceCompactionConfig().isDisabled());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
