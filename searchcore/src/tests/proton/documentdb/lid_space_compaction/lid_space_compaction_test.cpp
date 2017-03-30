@@ -248,7 +248,7 @@ struct JobFixture
                double resourceLimitFactor = RESOURCE_LIMIT_FACTOR)
         : _handler(),
           _job(DocumentDBLidSpaceCompactionConfig(JOB_DELAY,
-                  allowedLidBloat, allowedLidBloatFactor, maxDocsToScan),
+                  allowedLidBloat, allowedLidBloatFactor, false, maxDocsToScan),
                _handler, _storer, _frozenHandler, _diskMemUsageNotifier, resourceLimitFactor),
           _jobRunner(_job)
     {

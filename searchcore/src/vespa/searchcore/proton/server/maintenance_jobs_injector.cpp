@@ -4,18 +4,18 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenance_jobs_injector");
 
+#include "bucketmovejob.h"
+#include "documentbucketmover.h"
+#include "documentdb_commit_job.h"
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
 #include "lid_space_compaction_job.h"
 #include "maintenance_jobs_injector.h"
 #include "prune_session_cache_job.h"
+#include "pruneremoveddocumentsjob.h"
+#include "sample_attribute_usage_job.h"
 #include "wipe_old_removed_fields_job.h"
 #include <vespa/fastos/timestamp.h>
-#include "pruneremoveddocumentsjob.h"
-#include "documentdb_commit_job.h"
-#include "documentbucketmover.h"
-#include "bucketmovejob.h"
-#include "sample_attribute_usage_job.h"
 
 using fastos::ClockSystem;
 using fastos::TimeStamp;
@@ -50,7 +50,6 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                 std::move(job))));
     }
 }
-
 
 void
 injectBucketMoveJob(MaintenanceController &controller,
@@ -95,21 +94,16 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     const vespalib::string &docTypeName,
                                     IPruneRemovedDocumentsHandler &prdHandler,
                                     IDocumentMoveHandler &moveHandler,
-                                    IBucketModifiedHandler &
-                                    bucketModifiedHandler,
-                                    IClusterStateChangedNotifier &
-                                    clusterStateChangedNotifier,
-                                    IBucketStateChangedNotifier &
-                                    bucketStateChangedNotifier,
-                                    const std::shared_ptr<IBucketStateCalculator> & calc,
+                                    IBucketModifiedHandler &bucketModifiedHandler,
+                                    IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                                    IBucketStateChangedNotifier &bucketStateChangedNotifier,
+                                    const std::shared_ptr<IBucketStateCalculator> &calc,
                                     IDiskMemUsageNotifier &diskMemUsageNotifier,
                                     DocumentDBJobTrackers &jobTrackers,
-                                    ICommitable & commit,
+                                    ICommitable &commit,
                                     IAttributeManagerSP readyAttributeManager,
-                                    IAttributeManagerSP
-                                    notReadyAttributeManager,
-                                    AttributeUsageFilter &attributeUsageFilter)
-{
+                                    IAttributeManagerSP notReadyAttributeManager,
+                                    AttributeUsageFilter &attributeUsageFilter) {
     typedef IMaintenanceJob::UP MUP;
     controller.registerJob(MUP(new HeartBeatJob(hbHandler, config.getHeartBeatConfig())));
     controller.registerJob(MUP(new PruneSessionCacheJob(scPruner, config.getSessionCachePruneInterval())));
@@ -121,9 +115,11 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     MUP pruneRDjob(new PruneRemovedDocumentsJob(config.getPruneRemovedDocumentsConfig(), *mRemSubDB._metaStore,
                                                 mRemSubDB._subDbId, docTypeName, prdHandler, fbHandler));
     controller.registerJob(std::move(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob))));
-    injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer,
-                                 fbHandler, jobTrackers.getLidSpaceCompact(),
-                                 diskMemUsageNotifier);
+    if (!config.getLidSpaceCompactionConfig().isDisabled()) {
+        injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer,
+                                     fbHandler, jobTrackers.getLidSpaceCompact(),
+                                     diskMemUsageNotifier);
+    }
     injectBucketMoveJob(controller, fbHandler, docTypeName, moveHandler, bucketModifiedHandler,
                         clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers, diskMemUsageNotifier, config.getResourceLimitFactor());
     controller.registerJob(std::make_unique<SampleAttributeUsageJob>

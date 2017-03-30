@@ -48,6 +48,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
     : _interval(3600),
       _allowedLidBloat(1000000000),
       _allowedLidBloatFactor(1.0),
+      _disabled(false),
       _maxDocsToScan(10000)
 {
 }
@@ -55,12 +56,22 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
 DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(double interval,
                                                                        uint32_t allowedLidBloat,
                                                                        double allowedLidBloatFactor,
+                                                                       bool disabled,
                                                                        uint32_t maxDocsToScan)
     : _interval(interval),
       _allowedLidBloat(allowedLidBloat),
       _allowedLidBloatFactor(allowedLidBloatFactor),
+      _disabled(disabled),
       _maxDocsToScan(maxDocsToScan)
 {
+}
+
+DocumentDBLidSpaceCompactionConfig
+DocumentDBLidSpaceCompactionConfig::createDisabled()
+{
+    DocumentDBLidSpaceCompactionConfig result;
+    result._disabled = true;
+    return result;
 }
 
 bool
@@ -68,7 +79,8 @@ DocumentDBLidSpaceCompactionConfig::operator==(const DocumentDBLidSpaceCompactio
 {
    return _interval == rhs._interval &&
            _allowedLidBloat == rhs._allowedLidBloat &&
-           _allowedLidBloatFactor == rhs._allowedLidBloatFactor;
+           _allowedLidBloatFactor == rhs._allowedLidBloatFactor &&
+           _disabled == rhs._disabled;
 }
 
 DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig(void)
