@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -20,13 +21,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests automatic failing of nodes.
  *
  * @author bratseth
+ * @author mpolden
  */
 public class NodeFailerTest {
 
@@ -49,7 +51,7 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void test_node_failing() throws InterruptedException {
+    public void node_failing() throws InterruptedException {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // For a day all nodes work so nothing happens
@@ -90,13 +92,11 @@ public class NodeFailerTest {
             assertEquals( 2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         }
         tester.serviceMonitor.setHostUp(downHost1);
-        for (int minutes = 0; minutes < 30; minutes +=5 ) {
-            tester.failer.run();
-            tester.clock.advance(Duration.ofMinutes(5));
-            tester.allNodesMakeAConfigRequestExcept();
-        }
 
         // downHost2 should now be failed and replaced, but not downHost1
+        tester.clock.advance(Duration.ofDays(1));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
         assertEquals( 1, tester.deployer.redeployments);
         assertEquals(12, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
         assertEquals( 3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
@@ -144,6 +144,8 @@ public class NodeFailerTest {
 
         // A new node is available
         tester.createReadyNodes(1, 16);
+        tester.clock.advance(Duration.ofDays(1));
+        tester.allNodesMakeAConfigRequestExcept();
         tester.failer.run();
         // The node is now failed
         assertEquals( 3, tester.deployer.redeployments);
@@ -157,7 +159,7 @@ public class NodeFailerTest {
     }
     
     @Test
-    public void testFailingReadyNodes() {
+    public void failing_ready_nodes() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // Add ready docker node
@@ -177,9 +179,9 @@ public class NodeFailerTest {
         // Two ready nodes die and a ready docker node "dies" 
         // (Vespa does not run when in ready state for docker node, so it does not make config requests)
         tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerNode = ready.stream().filter(node -> node.flavor() == NodeFailTester.nodeFlavors.getFlavorOrThrow("docker")).findFirst().get();
+        Node dockerNode = ready.stream().filter(node -> node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER).findFirst().get();
         List<Node> otherNodes = ready.stream()
-                               .filter(node -> node.flavor() != NodeFailTester.nodeFlavors.getFlavorOrThrow("docker"))
+                               .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                                .collect(Collectors.toList());
         tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode);
         tester.failer.run();
@@ -187,7 +189,7 @@ public class NodeFailerTest {
         assertEquals( 2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
 
         // Another ready node die
-        tester.clock.advance(Duration.ofMinutes(180));
+        tester.clock.advance(Duration.ofDays(1));
         tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode, otherNodes.get(3));
         tester.failer.run();
         assertEquals( 2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
@@ -201,7 +203,7 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void testFailingDockerHost() {
+    public void failing_docker_hosts() {
         NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(7);
 
         // For a day all nodes work so nothing happens
@@ -284,7 +286,7 @@ public class NodeFailerTest {
         String downHost3 = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2, downTenant1.parentHostname().get());
         tester.serviceMonitor.setHostDown(downHost3);
         tester.failer.run();
-        tester.clock.advance(Duration.ofMinutes(90));
+        tester.clock.advance(Duration.ofDays(1));
         tester.allNodesMakeAConfigRequestExcept();
         tester.failer.run();
 
@@ -296,7 +298,7 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void testFailingProxyNodes() {
+    public void failing_proxy_nodes() {
         NodeFailTester tester = NodeFailTester.withProxyApplication();
 
         // For a day all nodes work so nothing happens
@@ -350,12 +352,92 @@ public class NodeFailerTest {
         assertTrue(downHosts.contains(failedHost2));
     }
 
+    @Test
+    public void node_failing_throttle() {
+        // Throttles based on a absolute number in small zone
+        {
+            NodeFailTester tester = NodeFailTester.withNoApplications();
+            List<Node> readyNodes = tester.createReadyNodes(50);
+            List<Node> readyDockerNodes = tester.createReadyNodes(50, 50, "docker");
+
+            List<Node> deadNodes = readyNodes.subList(0, 4);
+            // Fail 10 Docker containers, should not impact throttling policy
+            readyDockerNodes.subList(0, 10)
+                    .forEach(node -> tester.nodeRepository.fail(node.hostname(), "Failed in test"));
+
+            // 2 hours pass, 4 nodes die
+            for (int minutes = 0, interval = 30; minutes < 2 * 60; minutes += interval) {
+                tester.clock.advance(Duration.ofMinutes(interval));
+                tester.allNodesMakeAConfigRequestExcept(deadNodes);
+            }
+
+            // 2 nodes are failed (the minimum amount that are always allowed to fail)
+            tester.failer.run();
+            assertEquals(2, getNonDockerFailedNodes(tester.nodeRepository).size());
+
+            // 6 more hours pass, no more nodes are failed
+            for (int minutes = 0, interval = 30; minutes < 6 * 60; minutes += interval) {
+                tester.clock.advance(Duration.ofMinutes(interval));
+                tester.allNodesMakeAConfigRequestExcept(deadNodes);
+            }
+            tester.failer.run();
+            assertEquals(2, getNonDockerFailedNodes(tester.nodeRepository).size());
+
+            // 18 more hours pass, it's now 24 hours since the first 2 failed. The remaining 2 are failed
+            for (int minutes = 0, interval = 30; minutes < 18 * 60; minutes += interval) {
+                tester.clock.advance(Duration.ofMinutes(interval));
+                tester.allNodesMakeAConfigRequestExcept(deadNodes);
+            }
+            tester.failer.run();
+            assertEquals(4, getNonDockerFailedNodes(tester.nodeRepository).size());
+        }
+
+        // Throttles based on percentage in large zone
+        {
+            NodeFailTester tester = NodeFailTester.withNoApplications();
+            List<Node> readyNodes = tester.createReadyNodes(500);
+            List<Node> deadNodes = readyNodes.subList(0, 10);
+
+            // 2 hours pass, 10 nodes (2%) die
+            for (int minutes = 0, interval = 30; minutes < 2 * 60; minutes += interval) {
+                tester.clock.advance(Duration.ofMinutes(interval));
+                tester.allNodesMakeAConfigRequestExcept(deadNodes);
+            }
+            tester.failer.run();
+            // 1% are allowed to fail
+            assertEquals(5, tester.nodeRepository.getNodes(Node.State.failed).size());
+
+            // 6 more hours pass, no more nodes are failed
+            for (int minutes = 0, interval = 30; minutes < 6 * 60; minutes += interval) {
+                tester.clock.advance(Duration.ofMinutes(interval));
+                tester.allNodesMakeAConfigRequestExcept(deadNodes);
+            }
+            tester.failer.run();
+            assertEquals(5, tester.nodeRepository.getNodes(Node.State.failed).size());
+
+            // 18 more hours pass, 24 hours since the first 5 nodes were failed. The remaining 5 are failed
+            for (int minutes = 0, interval = 30; minutes < 18 * 60; minutes += interval) {
+                tester.clock.advance(Duration.ofMinutes(interval));
+                tester.allNodesMakeAConfigRequestExcept(deadNodes);
+            }
+            tester.failer.run();
+            assertEquals(10, tester.nodeRepository.getNodes(Node.State.failed).size());
+        }
+    }
+
+    /** Get all failed nodes that are not Docker containers */
+    private static List<Node> getNonDockerFailedNodes(NodeRepository nodeRepository) {
+        return nodeRepository.getNodes(Node.State.failed).stream()
+                .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Selects the first parent host that:
      *  - has exactly n nodes in state 'active'
      *  - is not present in the 'except' array
      */
-    private String selectFirstParentHostWithNActiveNodesExcept(NodeRepository nodeRepository, int n, String... except) {
+    private static String selectFirstParentHostWithNActiveNodesExcept(NodeRepository nodeRepository, int n, String... except) {
         Set<String> exceptSet = Arrays.stream(except).collect(Collectors.toSet());
         return nodeRepository.getNodes(NodeType.tenant, Node.State.active).stream()
                 .collect(Collectors.groupingBy(Node::parentHostname))

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
@@ -11,7 +12,6 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -35,10 +35,12 @@ import java.util.stream.Collectors;
  * and fails nodes which have not responded within the given time limit.
  *
  * @author bratseth
+ * @author mpolden
  */
 public class NodeFailer extends Maintainer {
 
     private static final Logger log = Logger.getLogger(NodeFailer.class.getName());
+    private static final Duration nodeRequestInterval = Duration.ofMinutes(10);
 
     /** Provides information about the status of ready hosts */
     private final HostLivenessTracker hostLivenessTracker;
@@ -50,13 +52,13 @@ public class NodeFailer extends Maintainer {
     private final Duration downTimeLimit;
     private final Clock clock;
     private final Orchestrator orchestrator;
-
-    private final Duration nodeRequestInterval = Duration.ofMinutes(10);
     private final Instant constructionTime;
+    private final ThrottlePolicy throttlePolicy;
 
     public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
-                      Duration downTimeLimit, Clock clock, Orchestrator orchestrator) {
+                      Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
+                      ThrottlePolicy throttlePolicy) {
         // check ping status every five minutes, but at least twice as often as the down time limit
         super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)));
         this.deployer = deployer;
@@ -65,26 +67,28 @@ public class NodeFailer extends Maintainer {
         this.downTimeLimit = downTimeLimit;
         this.clock = clock;
         this.orchestrator = orchestrator;
-        constructionTime = clock.instant();
+        this.constructionTime = clock.instant();
+        this.throttlePolicy = throttlePolicy;
     }
 
     @Override
     protected void maintain() {
         // Ready nodes
         updateNodeLivenessEventsForReadyNodes();
-        for (Node node : readyNodesWhichAreDead( )) {
+        for (Node node : readyNodesWhichAreDead()) {
             // Docker hosts and nodes do not run Vespa services
             if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER || node.type() == NodeType.host) continue;
-            nodeRepository().fail(node.hostname(), "Not receiving config requests from node");
+            if (!throttle(node)) nodeRepository().fail(node.hostname(), "Not receiving config requests from node");
         }
+
         for (Node node : readyNodesWithHardwareFailure())
-            nodeRepository().fail(node.hostname(), "Node has hardware failure");
+            if (!throttle(node)) nodeRepository().fail(node.hostname(), "Node has hardware failure");
 
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
             if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node) && failAllowedFor(node.type()))
-                failActive(node, "Node has been down longer than " + downTimeLimit);
+                if (!throttle(node)) failActive(node, "Node has been down longer than " + downTimeLimit);
         }
     }
 
@@ -249,7 +253,51 @@ public class NodeFailer extends Maintainer {
         }
     }
 
+    /** Returns true if node failing should be throttled */
+    private boolean throttle(Node node) {
+        if (throttlePolicy == ThrottlePolicy.disabled) return false;
+        Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
+        List<Node> nodes = nodeRepository().getNodes().stream()
+                // Do not consider Docker containers when throttling
+                .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                .collect(Collectors.toList());
+        long recentlyFailedNodes = nodes.stream()
+                .map(n -> n.history().event(History.Event.Type.failed))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(failedEvent -> failedEvent.at().isAfter(startOfThrottleWindow))
+                .count();
+        boolean throttle = recentlyFailedNodes >= Math.max(nodes.size() * throttlePolicy.fractionAllowedToFail,
+                                                           throttlePolicy.minimumAllowedToFail);
+        if (throttle) {
+            log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
+                                   throttlePolicy.toHumanReadableString()));
+        }
+        return throttle;
+    }
+
     @Override
     public String toString() { return "Node failer"; }
+
+    public enum ThrottlePolicy {
+
+        hosted(Duration.ofDays(1), 0.01, 2),
+        disabled(Duration.ZERO, 0, 0);
+
+        public final Duration throttleWindow;
+        public final double fractionAllowedToFail;
+        public final int minimumAllowedToFail;
+
+        ThrottlePolicy(Duration throttleWindow, double fractionAllowedToFail, int minimumAllowedToFail) {
+            this.throttleWindow = throttleWindow;
+            this.fractionAllowedToFail = fractionAllowedToFail;
+            this.minimumAllowedToFail = minimumAllowedToFail;
+        }
+
+        public String toHumanReadableString() {
+            return String.format("Max %.0f%% or %d nodes can fail over a period of %s", fractionAllowedToFail*100,
+                                 minimumAllowedToFail, throttleWindow);
+        }
+    }
 
 }
