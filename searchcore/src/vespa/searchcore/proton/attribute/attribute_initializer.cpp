@@ -14,6 +14,7 @@
 LOG_SETUP(".proton.attribute.attribute_initializer");
 
 using search::attribute::BasicType;
+using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::AttributeVector;
 using search::IndexMetaInfo;
@@ -58,11 +59,38 @@ extraType(const AttributeHeader &header)
     return "";
 }
 
+vespalib::string
+collectionTypeString(const CollectionType &type, bool detailed)
+{
+    vespalib::asciistream os;
+    os << type.asString();
+    if (type.type() == CollectionType::Type::WSET && detailed) {
+        os << "(";
+        bool first = true;
+        if (type.createIfNonExistant()) {
+            os << "add";
+            first = false;
+        }
+        if (type.removeIfZero()) {
+            if (!first) {
+                os << ",";
+            }
+            os << "remove";
+        }
+        os << ")";
+    }
+    return os.str();
+}
+
 bool
 headerTypeOK(const AttributeHeader &header, const Config &cfg)
 {
     if ((header.getBasicType().type() != cfg.basicType().type()) ||
         (header.getCollectionType().type() != cfg.collectionType().type())) {
+        return false;
+    }
+    if (header.getCollectionTypeParamsSet() &&
+        (header.getCollectionType() != cfg.collectionType())) {
         return false;
     }
     if (cfg.basicType().type() == BasicType::Type::TENSOR) {
@@ -118,13 +146,15 @@ logAttributeWrongType(const AttributeVector::SP &attr,
     const Config &cfg(attr->getConfig());
     vespalib::string extraCfgType = extraType(cfg);
     vespalib::string extraHeaderType = extraType(header);
+    vespalib::string cfgCollStr = collectionTypeString(cfg.collectionType(), true);
+    vespalib::string headerCollStr = collectionTypeString(header.getCollectionType(), header.getCollectionTypeParamsSet());
     LOG(info, "Attribute vector '%s' is of wrong type (expected %s/%s/%s, got %s/%s/%s)",
             attr->getBaseFileName().c_str(),
             cfg.basicType().asString(),
-            cfg.collectionType().asString(),
+            cfgCollStr.c_str(),
             extraCfgType.c_str(),
             header.getBasicType().asString(),
-            header.getCollectionType().asString(),
+            headerCollStr.c_str(),
             extraHeaderType.c_str());
 }
 

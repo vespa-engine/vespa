@@ -24,6 +24,7 @@ private:
     CollectionType _collectionType;
     vespalib::eval::ValueType _tensorType;
     bool        _enumerated;
+    bool        _collectionTypeParamsSet;
     bool        _predicateParamsSet;
     PersistentPredicateParams _predicateParams;
     uint32_t    _numDocs;
@@ -65,6 +66,7 @@ public:
     uint32_t getVersion() const  { return _version; }
     const PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
     bool getPredicateParamsSet() const { return _predicateParamsSet; }
+    bool getCollectionTypeParamsSet() const { return _collectionTypeParamsSet; }
     static AttributeHeader extractTags(const vespalib::GenericHeader &header);
     void addTags(vespalib::GenericHeader &header) const;
 };

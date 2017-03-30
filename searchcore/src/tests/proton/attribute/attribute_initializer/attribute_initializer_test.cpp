@@ -27,7 +27,10 @@ namespace {
 const Config int32_sv(BasicType::Type::INT32);
 const Config int16_sv(BasicType::Type::INT16);
 const Config int32_array(BasicType::Type::INT32, CollectionType::Type::ARRAY);
+const Config string_wset(BasicType::Type::STRING, CollectionType::Type::WSET);
 const Config predicate(BasicType::Type::PREDICATE);
+const CollectionType wset2(CollectionType::Type::WSET, false, true);
+const Config string_wset2(BasicType::Type::STRING, wset2);
 
 Config getPredicateWithArity(uint32_t arity)
 {
@@ -117,6 +120,19 @@ TEST("require that mismatching collection type is not loaded")
     auto av = f.createInitializer("a", int32_array, 5)->init();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
+}
+
+TEST("require that mismatching weighted set collection type params is not loaded")
+{
+    saveAttr("a", string_wset, 10, 2);
+    saveAttr("b", string_wset2, 10, 2);
+    Fixture f;
+    auto av = f.createInitializer("a", string_wset2, 5)->init();
+    EXPECT_EQUAL(5, av->getCreateSerialNum());
+    EXPECT_EQUAL(1, av->getNumDocs());
+    auto av2 = f.createInitializer("b", string_wset, 5)->init();
+    EXPECT_EQUAL(5, av2->getCreateSerialNum());
+    EXPECT_EQUAL(1, av2->getNumDocs());
 }
 
 TEST("require that predicate attributes can be initialized")
