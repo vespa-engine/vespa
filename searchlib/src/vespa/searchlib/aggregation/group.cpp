@@ -575,13 +575,13 @@ Group::Value::deserialize(Deserializer & is) {
         _aggregationResults[i] = tmpAggregationResults[i];
     }
     delete [] tmpAggregationResults;
-    setupAggregationReferences();
 
     assert(exprSize < 16);
     setExprSize(exprSize);
     for (uint32_t i(aggrSize); i < aggrSize + exprSize; i++) {
         is >> _aggregationResults[i];
     }
+    setupAggregationReferences();
     is >> count;
     destruct(_children, getAllChildrenSize());
     _childInfo._allChildren = 0;

@@ -18,11 +18,11 @@ public:
     public:
         Configure(ExpressionNodeArray & exprVec) : _exprVec(exprVec) { }
     private:
-        virtual void execute(vespalib::Identifiable &obj) override { static_cast<AggregationRefNode&>(obj).locateExpression(_exprVec); }
-        virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AggregationRefNode::classId); }
+        void execute(vespalib::Identifiable &obj) override { static_cast<AggregationRefNode&>(obj).locateExpression(_exprVec); }
+        bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AggregationRefNode::classId); }
         ExpressionNodeArray & _exprVec;
     };
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
     DECLARE_EXPRESSIONNODE(AggregationRefNode);
     AggregationRefNode() : _index(0), _expressionNode(NULL) { }
