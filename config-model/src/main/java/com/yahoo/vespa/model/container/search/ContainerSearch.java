@@ -130,8 +130,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             if (owningCluster.getHostClusterId().isPresent())
                 internalBuilder.heapSizeAsPercentageOfPhysicalMemory(17);
             else
-        	    internalBuilder.heapSizeAsPercentageOfPhysicalMemory(33);
-    	}
+                internalBuilder.heapSizeAsPercentageOfPhysicalMemory(60);
+        }
         qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
     }
 

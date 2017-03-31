@@ -176,8 +176,7 @@ public class ModelProvisioningTest {
 
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 1, model.getContainerClusters().get("container1").getContainers().size());
-        assertEquals("Heap size is lowered with combined clusters",
-                     33, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertEquals("Heap size for container", 60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
     }
 
     @Test
