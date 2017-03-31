@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 public class CustomCollectorsTest {
 
     @Rule
-    public ExpectedException thrown= ExpectedException.none();
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void linked_map_collector_returns_map_with_insertion_order() {
