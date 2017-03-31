@@ -75,7 +75,7 @@ public class CustomCollectors {
         return (u,v) -> { throw new DuplicateKeyException(u); };
     }
 
-    public static class DuplicateKeyException extends RuntimeException {
+    public static class DuplicateKeyException extends IllegalStateException {
         private static final long serialVersionUID = 1L;
 
         DuplicateKeyException(Object key) {
