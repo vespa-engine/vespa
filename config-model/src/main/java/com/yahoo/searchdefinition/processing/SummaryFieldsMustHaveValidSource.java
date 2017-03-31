@@ -57,15 +57,14 @@ public class SummaryFieldsMustHaveValidSource extends Processor {
         }
     }
 
-    private static boolean isNotInThisSummaryClass(DocumentSummary summary, String name) {
+    private boolean isNotInThisSummaryClass(DocumentSummary summary, String name) {
         return summary.getSummaryField(name) == null;
     }
-
-    private static boolean isInThisSummaryClass(DocumentSummary summary, String name) {
+    private boolean isInThisSummaryClass(DocumentSummary summary, String name) {
         return summary.getSummaryField(name) != null;
     }
     private boolean isDocumentField(String name) {
-        return search.getField(name) != null;
+        return search.getConcreteField(name) != null;
     }
 
     private boolean isSummaryField(String name) {

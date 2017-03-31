@@ -2,11 +2,12 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.DataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.document.DataType;
+import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -31,12 +32,12 @@ public class ValidateFieldTypes extends Processor {
     public void process() {
         String searchName = search.getName();
         Map<String, DataType> seenFields = new HashMap<>();
-        search.allFields().forEach(field -> {
+        for (SDField field : search.allConcreteFields()) {
             checkFieldType(searchName, "index field", field.getName(), field.getDataType(), seenFields);
             for (Map.Entry<String, Attribute> entry : field.getAttributes().entrySet()) {
                 checkFieldType(searchName, "attribute", entry.getKey(), entry.getValue().getDataType(), seenFields);
             }
-        });
+        }
         for (DocumentSummary summary : search.getSummaries().values()) {
             for (SummaryField field : summary.getSummaryFields()) {
                 checkFieldType(searchName, "summary field", field.getName(), field.getDataType(), seenFields);
@@ -56,7 +57,7 @@ public class ValidateFieldTypes extends Processor {
         }
     }
 
-    private static boolean compatibleTypes(DataType seenType, DataType fieldType) {
+    private boolean compatibleTypes(DataType seenType, DataType fieldType) {
         // legacy tag field type compatibility; probably not needed any more (Oct 2016)
         if ("tag".equals(seenType.getName())) {
             return "tag".equals(fieldType.getName()) || "WeightedSet<string>".equals(fieldType.getName());

@@ -8,7 +8,6 @@ import com.yahoo.document.Field;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -59,14 +58,12 @@ public class AddExtraFieldsToDocument extends Processor {
     private void addSummaryField(Search search, SDDocumentType document, SummaryField field) {
         Field docField = document.getField(field.getName());
         if (docField == null) {
-            ImmutableSDField existingField = search.getField(field.getName());
-            if (existingField == null) {
-                SDField newField = new SDField(document, field.getName(), field.getDataType(), field.isHeader(), true);
+            SDField newField = search.getConcreteField(field.getName());
+            if (newField == null) {
+                newField = new SDField(document, field.getName(), field.getDataType(), field.isHeader(), true);
                 newField.setIsExtraField(true);
-                document.addField(newField);
-            } else if (!existingField.isImportedField()) {
-                document.addField(existingField.asField());
             }
+            document.addField(newField);
         } else if (!docField.getDataType().equals(field.getDataType())) {
             throw newProcessException(search, field, "Summary field has conflicting type.");
         }
