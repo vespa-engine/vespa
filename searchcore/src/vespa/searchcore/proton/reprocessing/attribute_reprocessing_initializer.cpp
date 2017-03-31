@@ -37,6 +37,7 @@ bool fastPartialUpdateAttribute(const schema::DataType &attrType) {
 FilterAttributeManager::AttributeSet
 getAttributeSetToPopulate(const ARIConfig &newCfg,
                           const ARIConfig &oldCfg,
+                          const IDocumentTypeInspector &inspector,
                           search::SerialNum serialNum)
 {
     FilterAttributeManager::AttributeSet attrsToPopulate;
@@ -45,11 +46,11 @@ getAttributeSetToPopulate(const ARIConfig &newCfg,
     for (const auto &guard : attrList) {
         const vespalib::string &name = guard->getName();
         bool inOldAttrMgr = oldCfg.getAttrMgr()->getAttribute(name)->valid();
-        bool inOldSchema = oldCfg.getInspector()->hasField(name);
+        bool unchangedField = inspector.hasUnchangedField(name);
         search::SerialNum flushedSerialNum = newCfg.getAttrMgr()->getFlushedSerialNum(name);
-        bool populateAttribute = !inOldAttrMgr && inOldSchema && (flushedSerialNum < serialNum);
-        LOG(debug, "getAttributeSetToPopulate(): name='%s', inOldAttrMgr=%s, inOldSchema=%s, populate=%s",
-                name.c_str(), toStr(inOldAttrMgr), toStr(inOldSchema), toStr(populateAttribute));
+        bool populateAttribute = !inOldAttrMgr && unchangedField && (flushedSerialNum < serialNum);
+        LOG(debug, "getAttributeSetToPopulate(): name='%s', inOldAttrMgr=%s, unchangedField=%s, populate=%s",
+                name.c_str(), toStr(inOldAttrMgr), toStr(unchangedField), toStr(populateAttribute));
         if (populateAttribute) {
             attrsToPopulate.insert(name);
         }
@@ -60,11 +61,12 @@ getAttributeSetToPopulate(const ARIConfig &newCfg,
 IReprocessingReader::SP
 getAttributesToPopulate(const ARIConfig &newCfg,
                         const ARIConfig &oldCfg,
+                        const IDocumentTypeInspector &inspector,
                         const vespalib::string &subDbName,
                         search::SerialNum serialNum)
 {
     FilterAttributeManager::AttributeSet attrsToPopulate =
-        getAttributeSetToPopulate(newCfg, oldCfg, serialNum);
+        getAttributeSetToPopulate(newCfg, oldCfg, inspector, serialNum);
     if (!attrsToPopulate.empty()) {
         return IReprocessingReader::SP(new AttributePopulator
                 (IAttributeManager::SP(new FilterAttributeManager
@@ -85,6 +87,7 @@ getAttributeField(const Schema &schema, const vespalib::string &name)
 std::vector<IReprocessingRewriter::SP>
 getFieldsToPopulate(const ARIConfig &newCfg,
                     const ARIConfig &oldCfg,
+                    const IDocumentTypeInspector &inspector,
                     const vespalib::string &subDbName)
 {
     std::vector<IReprocessingRewriter::SP> fieldsToPopulate;
@@ -95,16 +98,16 @@ getFieldsToPopulate(const ARIConfig &newCfg,
         Schema::AttributeField attrField = getAttributeField(oldCfg.getSchema(), name);
         Schema::DataType attrType(attrField.getDataType());
         bool inNewAttrMgr = newCfg.getAttrMgr()->getAttribute(name)->valid();
-        bool inNewSchema = newCfg.getInspector()->hasField(name);
+        bool unchangedField = inspector.hasUnchangedField(name);
         // NOTE: If it is a string and index field we shall
         // keep the original in order to preserve annotations.
         bool isStringIndexField = attrField.getDataType() == schema::STRING &&
                 newCfg.getSchema().isIndexField(name);
-        bool populateField = !inNewAttrMgr && inNewSchema && !isStringIndexField &&
+        bool populateField = !inNewAttrMgr && unchangedField && !isStringIndexField &&
                              fastPartialUpdateAttribute(attrType);
-        LOG(debug, "getFieldsToPopulate(): name='%s', inNewAttrMgr=%s, inNewSchema=%s, "
+        LOG(debug, "getFieldsToPopulate(): name='%s', inNewAttrMgr=%s, unchangedField=%s, "
                 "isStringIndexField=%s, dataType=%s, populate=%s",
-                name.c_str(), toStr(inNewAttrMgr), toStr(inNewSchema),
+                name.c_str(), toStr(inNewAttrMgr), toStr(unchangedField),
             toStr(isStringIndexField),
             schema::getTypeName(attrType).c_str(),
             toStr(populateField));
@@ -122,10 +125,11 @@ getFieldsToPopulate(const ARIConfig &newCfg,
 AttributeReprocessingInitializer::
 AttributeReprocessingInitializer(const Config &newCfg,
                                  const Config &oldCfg,
+                                 const IDocumentTypeInspector &inspector,
                                  const vespalib::string &subDbName,
                                  search::SerialNum serialNum)
-    : _attrsToPopulate(getAttributesToPopulate(newCfg, oldCfg, subDbName, serialNum)),
-      _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, subDbName))
+    : _attrsToPopulate(getAttributesToPopulate(newCfg, oldCfg, inspector, subDbName, serialNum)),
+      _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, inspector, subDbName))
 {
 }
 

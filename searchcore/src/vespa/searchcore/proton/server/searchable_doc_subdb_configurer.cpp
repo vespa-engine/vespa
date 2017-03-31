@@ -171,12 +171,11 @@ createAttributeReprocessingInitializer(const DocumentDBConfig &newConfig,
     const document::DocumentType *oldDocType = oldConfig.getDocumentType();
     assert(newDocType != nullptr);
     assert(oldDocType != nullptr);
-    return IReprocessingInitializer::UP(new AttributeReprocessingInitializer(
-            ARIConfig(newAttrMgr, *newConfig.getSchemaSP(),
-                    IDocumentTypeInspector::SP(new DocumentTypeInspector(*newDocType))),
-                    ARIConfig(oldAttrMgr, *oldConfig.getSchemaSP(),
-                    IDocumentTypeInspector::SP(new DocumentTypeInspector(*oldDocType))),
-            subDbName, serialNum));
+    DocumentTypeInspector inspector(*oldDocType, *newDocType);
+    return std::make_unique<AttributeReprocessingInitializer>
+        (ARIConfig(newAttrMgr, *newConfig.getSchemaSP()),
+         ARIConfig(oldAttrMgr, *oldConfig.getSchemaSP()),
+         inspector, subDbName, serialNum);
 }
 
 }

@@ -59,12 +59,11 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     const document::DocumentType *oldDocType = oldConfig.getDocumentType();
     assert(newDocType != nullptr);
     assert(oldDocType != nullptr);
-    return IReprocessingInitializer::UP(new AttributeReprocessingInitializer(
-            ARIConfig(writer->getAttributeManager(), *newConfig.getSchemaSP(),
-                    IDocumentTypeInspector::SP(new DocumentTypeInspector(*newDocType))),
-            ARIConfig(oldView->getAttributeWriter()->getAttributeManager(), *oldConfig.getSchemaSP(),
-                    IDocumentTypeInspector::SP(new DocumentTypeInspector(*oldDocType))),
-            _subDbName, attrSpec.getCurrentSerialNum()));
+    DocumentTypeInspector inspector(*oldDocType, *newDocType);
+    return std::make_unique<AttributeReprocessingInitializer>
+        (ARIConfig(writer->getAttributeManager(), *newConfig.getSchemaSP()),
+         ARIConfig(oldView->getAttributeWriter()->getAttributeManager(), *oldConfig.getSchemaSP()),
+         inspector, _subDbName, attrSpec.getCurrentSerialNum());
 }
 
 } // namespace proton

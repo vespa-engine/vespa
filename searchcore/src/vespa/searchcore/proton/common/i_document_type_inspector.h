@@ -15,7 +15,7 @@ struct IDocumentTypeInspector
 
     virtual ~IDocumentTypeInspector() {}
 
-    virtual bool hasField(const vespalib::string &name) const = 0;
+    virtual bool hasUnchangedField(const vespalib::string &name) const = 0;
 };
 
 } // namespace proton

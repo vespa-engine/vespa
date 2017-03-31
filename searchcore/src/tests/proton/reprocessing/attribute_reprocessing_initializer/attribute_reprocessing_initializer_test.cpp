@@ -44,16 +44,6 @@ struct MyReprocessingHandler : public IReprocessingHandler
     }
 };
 
-struct MyDocTypeInspector : public IDocumentTypeInspector
-{
-    typedef std::shared_ptr<MyDocTypeInspector> SP;
-    std::set<vespalib::string> _fields;
-    MyDocTypeInspector() : _fields() {}
-    virtual bool hasField(const vespalib::string &name) const {
-        return _fields.count(name) > 0;
-    }
-};
-
 struct MyConfig
 {
     DummyFileHeaderContext _fileHeaderContext;
@@ -61,12 +51,12 @@ struct MyConfig
     HwInfo _hwInfo;
     AttributeManager::SP _mgr;
     search::index::Schema _schema;
-    MyDocTypeInspector::SP _inspector;
+    std::set<vespalib::string> _fields;
     MyConfig();
     ~MyConfig();
     void addFields(const StringVector &fields) {
         for (auto field : fields) {
-            _inspector->_fields.insert(field);
+            _fields.insert(field);
         }
     }
     void addAttrs(const StringVector &attrs) {
@@ -95,10 +85,24 @@ MyConfig::MyConfig()
       _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                 _fileHeaderContext,
                                 _attributeFieldWriter, _hwInfo)),
-      _schema(),
-      _inspector(new MyDocTypeInspector())
+      _schema()
 {}
 MyConfig::~MyConfig() {}
+
+struct MyDocTypeInspector : public IDocumentTypeInspector
+{
+    const MyConfig &_oldCfg;
+    const MyConfig &_newCfg;
+    MyDocTypeInspector(const MyConfig &oldCfg, const MyConfig &newCfg)
+        : _oldCfg(oldCfg),
+          _newCfg(newCfg)
+    {
+    }
+    virtual bool hasUnchangedField(const vespalib::string &name) const {
+        return _oldCfg._fields.count(name) > 0 &&
+            _newCfg._fields.count(name) > 0;
+    }
+};
 
 struct Fixture
 {
@@ -109,6 +113,7 @@ struct Fixture
     AttributeManager::SP _mgr;
     MyConfig _oldCfg;
     MyConfig _newCfg;
+    MyDocTypeInspector _inspector;
     AttributeReprocessingInitializer::UP _initializer;
     MyReprocessingHandler _handler;
     Fixture()
@@ -119,6 +124,9 @@ struct Fixture
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeaderContext,
                                     _attributeFieldWriter, _hwInfo)),
+          _oldCfg(),
+          _newCfg(),
+          _inspector(_oldCfg, _newCfg),
           _initializer(),
           _handler()
     {
@@ -126,8 +134,9 @@ struct Fixture
     ~Fixture() { }
     void init() {
         _initializer.reset(new AttributeReprocessingInitializer
-                (ARIConfig(_newCfg._mgr, _newCfg._schema, _newCfg._inspector),
-                 ARIConfig(_oldCfg._mgr, _oldCfg._schema, _oldCfg._inspector), "test", INIT_SERIAL_NUM));
+                           (ARIConfig(_newCfg._mgr, _newCfg._schema),
+                            ARIConfig(_oldCfg._mgr, _oldCfg._schema),
+                            _inspector, "test", INIT_SERIAL_NUM));
         _initializer->initialize(_handler);
     }
     Fixture &addOldConfig(const StringVector &fields,

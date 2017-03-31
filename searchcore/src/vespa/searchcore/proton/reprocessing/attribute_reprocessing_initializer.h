@@ -24,19 +24,15 @@ public:
     private:
         proton::IAttributeManager::SP _attrMgr;
         const search::index::Schema &_schema;
-        IDocumentTypeInspector::SP _inspector;
     public:
         Config(const proton::IAttributeManager::SP &attrMgr,
-               const search::index::Schema &schema,
-               const IDocumentTypeInspector::SP &inspector)
+               const search::index::Schema &schema)
             : _attrMgr(attrMgr),
-              _schema(schema),
-              _inspector(inspector)
+              _schema(schema)
         {
         }
         const proton::IAttributeManager::SP &getAttrMgr() const { return _attrMgr; }
         const search::index::Schema &getSchema() const { return _schema; }
-        const IDocumentTypeInspector::SP &getInspector() const { return _inspector; }
     };
 
 private:
@@ -46,6 +42,7 @@ private:
 public:
     AttributeReprocessingInitializer(const Config &newCfg,
                                      const Config &oldCfg,
+                                     const IDocumentTypeInspector &inspector,
                                      const vespalib::string &subDbName,
                                      search::SerialNum serialNum);
 
