@@ -580,7 +580,7 @@ public class ProvisioningTest {
             // Nodes with retired flavor are retired
             NodeList retired = tester.getNodes(application).retired();
             assertEquals(4, retired.size());
-            assertTrue("Nodes are retired by system", retired.asList().stream().allMatch(retiredBy(History.RetiredEvent.Agent.system)));
+            assertTrue("Nodes are retired by system", retired.asList().stream().allMatch(retiredBy(History.Event.Agent.system)));
         }
     }
 
@@ -638,7 +638,7 @@ public class ProvisioningTest {
 
             List<Node> retiredNodes = tester.getNodes(application).retired().asList();
             assertEquals(2, retiredNodes.size());
-            assertTrue("Nodes are retired by system", retiredNodes.stream().allMatch(retiredBy(History.RetiredEvent.Agent.system)));
+            assertTrue("Nodes are retired by system", retiredNodes.stream().allMatch(retiredBy(History.Event.Agent.system)));
         }
     }
 
@@ -808,10 +808,9 @@ public class ProvisioningTest {
     }
 
     /** A predicate that returns whether a node has been retired by the given agent */
-    private static Predicate<Node> retiredBy(History.RetiredEvent.Agent agent) {
+    private static Predicate<Node> retiredBy(History.Event.Agent agent) {
         return (node) -> node.history().event(History.Event.Type.retired)
-                .filter(e -> e instanceof History.RetiredEvent)
-                .map(e -> (History.RetiredEvent) e)
+                .filter(e -> e.type() == History.Event.Type.retired)
                 .filter(e -> e.agent() == agent)
                 .isPresent();
     }

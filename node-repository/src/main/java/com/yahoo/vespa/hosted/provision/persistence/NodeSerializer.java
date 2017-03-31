@@ -135,8 +135,7 @@ public class NodeSerializer {
     private void toSlime(History.Event event, Cursor object) {
         object.setString(historyEventTypeKey, toString(event.type()));
         object.setLong(atKey, event.at().toEpochMilli());
-        if (event instanceof History.RetiredEvent)
-            object.setString(agentKey, toString(((History.RetiredEvent)event).agent()));
+        object.setString(agentKey, toString(event.agent()));
     }
 
     private void toSlime(Set<String> ipAddresses, Cursor array) {
@@ -206,11 +205,8 @@ public class NodeSerializer {
         History.Event.Type type = eventTypeFromString(object.field(historyEventTypeKey).asString());
         if (type == null) return null;
         Instant at = Instant.ofEpochMilli(object.field(atKey).asLong());
-        if (type.equals(History.Event.Type.retired))
-            return new History.RetiredEvent(at, eventAgentFromString(object.field(agentKey).asString()));
-        else
-            return new History.Event(type, at);
-
+        History.Event.Agent agent = eventAgentFromSlime(object.field(agentKey));
+        return new History.Event(type, at, agent);
     }
 
     private Generation generationFromSlime(Inspector object, String wantedField, String currentField) {
@@ -275,17 +271,21 @@ public class NodeSerializer {
         throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
     }
 
-    private History.RetiredEvent.Agent eventAgentFromString(String eventAgentString) {
-        switch (eventAgentString) {
-            case "application" : return History.RetiredEvent.Agent.application;
-            case "system" : return History.RetiredEvent.Agent.system;
+    private History.Event.Agent eventAgentFromSlime(Inspector eventAgentField) {
+        if ( ! eventAgentField.valid()) return History.Event.Agent.system; // TODO: Remove after April 2017
+
+        switch (eventAgentField.asString()) {
+            case "application" : return History.Event.Agent.application;
+            case "system" : return History.Event.Agent.system;
+            case "operator" : return History.Event.Agent.operator;
         }
-        throw new IllegalArgumentException("Unknown node event agent '" + eventAgentString + "'");
+        throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
-    private String toString(History.RetiredEvent.Agent agent) {
+    private String toString(History.Event.Agent agent) {
         switch (agent) {
             case application : return "application";
             case system : return "system";
+            case operator : return "operator";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

@@ -161,8 +161,8 @@ public class SerializationTest {
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(2, copy.history().events().size());
         assertEquals(clock.instant(), copy.history().event(History.Event.Type.retired).get().at());
-        assertEquals(History.RetiredEvent.Agent.application,
-                     ((History.RetiredEvent) copy.history().event(History.Event.Type.retired).get()).agent());
+        assertEquals(History.Event.Agent.application,
+                     (copy.history().event(History.Event.Type.retired).get()).agent());
         assertTrue(copy.allocation().get().membership().retired());
 
         Node removable = copy.with(node.allocation().get().removable());

@@ -100,11 +100,20 @@ public class History {
     public static class Event {
 
         private final Instant at;
-        private final Event.Type type;
+        private final Type type;
+        private final Agent agent;
 
+        public enum Agent { system, application, operator }
+
+        /** Creates an event caused by the system */
         public Event(Event.Type type, Instant at) {
+            this(type, at, Agent.system);
+        }
+
+        public Event(Event.Type type, Instant at, Agent agent) {
             this.type = type;
             this.at = at;
+            this.agent = agent;
         }
 
         /** Returns the type of event */
@@ -112,6 +121,9 @@ public class History {
 
         /** Returns the instant this even took place */
         public Instant at() { return at; }
+        
+        /** Returns the agent causing this event */
+        public Agent agent() { return agent; }
 
         public enum Type { 
             // State move events
@@ -144,23 +156,6 @@ public class History {
 
         @Override
         public String toString() { return "'" + type + "' event at " + at; }
-
-    }
-
-    /** A retired event includes additional information about the causing agent. */
-    public static class RetiredEvent extends Event {
-
-        private final RetiredEvent.Agent agent;
-
-        public RetiredEvent(Instant at, RetiredEvent.Agent agent) {
-            super(Type.retired, at);
-            this.agent = agent;
-        }
-
-        /** Returns the agent which caused retirement */
-        public RetiredEvent.Agent agent() { return agent; }
-
-        public enum Agent { system, application }
 
     }
 

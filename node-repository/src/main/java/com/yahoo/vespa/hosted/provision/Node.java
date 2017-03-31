@@ -126,14 +126,14 @@ public final class Node {
     public Node retireByApplication(Instant retiredAt) {
         if (allocation().get().membership().retired()) return this;
         return with(allocation.get().retire())
-               .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.application)));
+               .with(history.with(new History.Event(History.Event.Type.retired, retiredAt, History.Event.Agent.application)));
     }
 
     /** Returns a copy of this node which is retired by the system */
     public Node retireBySystem(Instant retiredAt) {
         if (allocation().get().membership().retired()) return this;
         return with(allocation.get().retire())
-               .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.system)));
+               .with(history.with(new History.Event(History.Event.Type.retired, retiredAt, History.Event.Agent.system)));
     }
 
     /** Returns a copy of this node which is retired */
