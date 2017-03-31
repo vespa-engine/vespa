@@ -523,7 +523,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestContentCloseNondeterministicExceptionWithAsyncCompletion() throws Throwable {
-        new TestRunner().expect(anyOf(success(), serverError()))
+        new TestRunner().expect(anyOf(success(), serverError(), successNoContent()))
                         .execute();
     }
 
