@@ -47,6 +47,7 @@ public class Processing {
                 SummaryConsistency::new,
                 SummaryNamesFieldCollisions::new,
                 SummaryFieldsMustHaveValidSource::new,
+                AddAttributeTransformToSummaryOfImportedFields::new,
                 MakeDefaultSummaryTheSuperSet::new,
                 Bolding::new,
                 AttributeProperties::new,
@@ -72,7 +73,6 @@ public class Processing {
                 TensorFieldProcessor::new,
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
-                AddAttributeTransformToSummaryOfImportedFields::new,
 
                 // These two should be last.
                 IndexingValidation::new,
