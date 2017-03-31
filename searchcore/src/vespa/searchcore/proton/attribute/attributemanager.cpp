@@ -79,18 +79,18 @@ AttributeManager::internalAddAttribute(const vespalib::string &name,
 void
 AttributeManager::addAttribute(const AttributeWrap &attribute)
 {
-    LOG(debug, "Adding attribute vector '%s'", attribute->getBaseFileName().c_str());
-    _attributes[attribute->getName()] = attribute;
-    assert(attribute->getInterlock() == _interlock);
+    LOG(debug, "Adding attribute vector '%s'", attribute.getAttribute()->getBaseFileName().c_str());
+    _attributes[attribute.getAttribute()->getName()] = attribute;
+    assert(attribute.getAttribute()->getInterlock() == _interlock);
     if ( ! attribute.isExtra() ) {
         // Flushing of extra attributes is handled elsewhere
-        _flushables[attribute->getName()] = FlushableAttribute::SP
-                                            (new FlushableAttribute(attribute, _diskLayout->createAttributeDir(attribute->getName()),
+        _flushables[attribute.getAttribute()->getName()] = FlushableAttribute::SP
+                                                           (new FlushableAttribute(attribute.getAttribute(), _diskLayout->createAttributeDir(attribute.getAttribute()->getName()),
                                         _tuneFileAttributes,
                                         _fileHeaderContext,
                                         _attributeFieldWriter,
                                         _hwInfo));
-        _writableAttributes.push_back(attribute.get());
+        _writableAttributes.push_back(attribute.getAttribute().get());
     }
 }
 
@@ -99,7 +99,7 @@ AttributeManager::findAttribute(const vespalib::string &name) const
 {
     AttributeMap::const_iterator itr = _attributes.find(name);
     return (itr != _attributes.end())
-        ? static_cast<const AttributeVector::SP &>(itr->second)
+        ? static_cast<const AttributeVector::SP &>(itr->second.getAttribute())
         : AttributeVector::SP();
 }
 
@@ -285,7 +285,7 @@ AttributeManager::getNumDocs() const
 {
     return _attributes.empty()
         ? 0
-        : _attributes.begin()->second->getNumDocs();
+        : _attributes.begin()->second.getAttribute()->getNumDocs();
 }
 
 void
@@ -331,7 +331,7 @@ AttributeManager::getAttributeList(std::vector<AttributeGuard> &list) const
     list.reserve(_attributes.size());
     for (const auto &kv : _attributes) {
         if (!kv.second.isExtra()) {
-            list.push_back(AttributeGuard(kv.second));
+            list.push_back(AttributeGuard(kv.second.getAttribute()));
         }
     }
 }
@@ -440,7 +440,7 @@ AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
 {
     list.reserve(_attributes.size());
     for (const auto &kv : _attributes) {
-        list.push_back(AttributeGuard(kv.second));
+        list.push_back(AttributeGuard(kv.second.getAttribute()));
     }
 }
 
@@ -470,7 +470,7 @@ AttributeManager::getWritableAttribute(const vespalib::string &name) const
     if (itr == _attributes.end() || itr->second.isExtra()) {
         return nullptr;
     }
-    return itr->second.get();
+    return itr->second.getAttribute().get();
 }
 
 
@@ -489,7 +489,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
         if (attr.second.isExtra()) {
             continue;
         }
-        AttributeVector::SP attrsp = attr.second;
+        AttributeVector::SP attrsp = attr.second.getAttribute();
         _attributeFieldWriter.
             execute(attr.first, [attrsp, func]() { (*func)(*attrsp); });
     }

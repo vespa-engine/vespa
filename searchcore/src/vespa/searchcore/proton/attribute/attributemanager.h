@@ -40,17 +40,19 @@ private:
     typedef search::SerialNum SerialNum;
     typedef AttributeCollectionSpec Spec;
 
-    class AttributeWrap : public search::AttributeVector::SP
+    class AttributeWrap
     {
     private:
+        search::AttributeVector::SP _attr;
         bool _isExtra;
     public:
-        AttributeWrap() : search::AttributeVector::SP(), _isExtra(false) { }
+        AttributeWrap() : _attr(), _isExtra(false) { }
         AttributeWrap(const search::AttributeVector::SP & a, bool isExtra_ = false) : 
-            search::AttributeVector::SP(a),
+            _attr(a),
             _isExtra(isExtra_)
         { }
         bool isExtra() const { return _isExtra; }
+        const search::AttributeVector::SP getAttribute() const { return _attr; }
     };
 
     typedef vespalib::hash_map<vespalib::string, AttributeWrap> AttributeMap;
