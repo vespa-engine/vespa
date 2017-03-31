@@ -10,6 +10,7 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_manager_explorer.cpp
     attribute_manager_initializer.cpp
     attribute_populator.cpp
+    attribute_spec.cpp
     attribute_usage_filter.cpp
     attribute_usage_sampler_context.cpp
     attribute_usage_sampler_functor.cpp

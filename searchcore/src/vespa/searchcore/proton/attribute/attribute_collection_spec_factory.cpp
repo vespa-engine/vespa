@@ -39,7 +39,7 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
         }
         grow.setDocsGrowDelta(grow.getDocsGrowDelta() + skew);
         cfg.setGrowStrategy(grow);
-        attrs.push_back(AttributeCollectionSpec::Attribute(attr.name, cfg));
+        attrs.push_back(AttributeSpec(attr.name, cfg));
     }
     return AttributeCollectionSpec::UP(new AttributeCollectionSpec(attrs,
                                                                    docIdLimit,

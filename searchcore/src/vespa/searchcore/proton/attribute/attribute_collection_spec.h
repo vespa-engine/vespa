@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchcommon/attribute/config.h>
+#include "attribute_spec.h"
 #include <vespa/searchlib/common/serialnum.h>
 #include <memory>
 #include <vector>
@@ -17,24 +17,7 @@ class AttributeCollectionSpec
 public:
     typedef std::unique_ptr<AttributeCollectionSpec> UP;
 
-    class Attribute
-    {
-    private:
-        vespalib::string _name;
-        search::attribute::Config _cfg;
-    public:
-        Attribute(const vespalib::string &name,
-                  const search::attribute::Config &cfg);
-        Attribute(const Attribute &);
-        Attribute & operator=(const Attribute &);
-        Attribute(Attribute &&);
-        Attribute & operator=(Attribute &&);
-        ~Attribute();
-        const vespalib::string &getName() const { return _name; }
-        const search::attribute::Config &getConfig() const { return _cfg; }
-    };
-
-    typedef std::vector<Attribute> AttributeList;
+    typedef std::vector<AttributeSpec> AttributeList;
 
 private:
     typedef search::SerialNum SerialNum;

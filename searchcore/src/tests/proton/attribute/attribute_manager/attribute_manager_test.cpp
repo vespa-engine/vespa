@@ -64,7 +64,6 @@ using vespa::config::search::AttributesConfigBuilder;
 using vespalib::eval::ValueType;
 
 typedef search::attribute::Config AVConfig;
-typedef proton::AttributeCollectionSpec::Attribute AttrSpec;
 typedef proton::AttributeCollectionSpec::AttributeList AttrSpecList;
 typedef proton::AttributeCollectionSpec AttrMgrSpec;
 
@@ -415,9 +414,9 @@ TEST_F("require that reconfig can add attributes", Fixture)
     f._m.addExtraAttribute(ex);
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttrSpec("a1", INT32_SINGLE));
-    newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
-    newSpec.push_back(AttrSpec("a3", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a3", INT32_SINGLE));
 
     SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, f._m.getNumDocs(), 10));
     std::vector<AttributeGuard> list;
@@ -440,7 +439,7 @@ TEST_F("require that reconfig can remove attributes", Fixture)
     AttributeVector::SP a3 = f.addAttribute("a3");
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
 
     SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 10));
     std::vector<AttributeGuard> list;
@@ -461,9 +460,9 @@ TEST_F("require that new attributes after reconfig are initialized", Fixture)
     EXPECT_EQUAL(3u, a1->getNumDocs());
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttrSpec("a1", INT32_SINGLE));
-    newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
-    newSpec.push_back(AttrSpec("a3", INT32_ARRAY));
+    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a3", INT32_ARRAY));
 
     SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 3, 4));
     AttributeGuard::UP a2ap = sam.mgr.getAttribute("a2");
@@ -501,7 +500,7 @@ TEST_F("require that removed attributes cannot resurrect", BaseFixture)
     am1.reset();
 
     AttrSpecList ns2;
-    ns2.push_back(AttrSpec("a1", INT32_SINGLE));
+    ns2.push_back(AttributeSpec("a1", INT32_SINGLE));
     // 2 new documents added since a1 was removed
     SequentialAttributeManager am3(am2.mgr, AttrMgrSpec(ns2, 5, 20));
 
@@ -535,7 +534,7 @@ TEST_F("require that history can be wiped", Fixture)
     f._m.flushAll(10);
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
     SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 11));
     sam.mgr.wipeHistory(11);
 
@@ -662,9 +661,9 @@ TEST_F("require that attributes can be initialized and loaded in sequence", Base
         AttributeManagerFixture amf(f);
 
         AttrSpecList newSpec;
-        newSpec.push_back(AttrSpec("a1", INT32_SINGLE));
-        newSpec.push_back(AttrSpec("a2", INT32_SINGLE));
-        newSpec.push_back(AttrSpec("a3", INT32_SINGLE));
+        newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
+        newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
+        newSpec.push_back(AttributeSpec("a3", INT32_SINGLE));
 
         SequentialAttributeManager newMgr(amf._m, AttrMgrSpec(newSpec, 10, createSerialNum + 5));
 
@@ -780,12 +779,12 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     am1->addAttribute("a5", predicate, 5);
     am1->addAttribute("a6", predicate, 6);
     AttrSpecList newSpec;
-    newSpec.push_back(AttrSpec("a1", INT32_SINGLE));
-    newSpec.push_back(AttrSpec("a2", INT32_ARRAY));
-    newSpec.push_back(AttrSpec("a3", generic_tensor));
-    newSpec.push_back(AttrSpec("a4", dense_tensor));
-    newSpec.push_back(AttrSpec("a5", predicate));
-    newSpec.push_back(AttrSpec("a6", predicate2));
+    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
+    newSpec.push_back(AttributeSpec("a2", INT32_ARRAY));
+    newSpec.push_back(AttributeSpec("a3", generic_tensor));
+    newSpec.push_back(AttributeSpec("a4", dense_tensor));
+    newSpec.push_back(AttributeSpec("a5", predicate));
+    newSpec.push_back(AttributeSpec("a6", predicate2));
     SequentialAttributeManager am2(*am1, AttrMgrSpec(newSpec, 5, 20));
     TEST_DO(assertCreateSerialNum(*am1, "a1", 1));
     TEST_DO(assertCreateSerialNum(*am1, "a2", 2));

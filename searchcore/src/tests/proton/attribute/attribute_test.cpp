@@ -60,9 +60,6 @@ using vespalib::tensor::TensorDimensions;
 typedef search::attribute::Config AVConfig;
 typedef search::attribute::BasicType AVBasicType;
 typedef search::attribute::CollectionType AVCollectionType;
-typedef proton::AttributeCollectionSpec::Attribute AttrSpec;
-typedef proton::AttributeCollectionSpec::AttributeList AttrSpecList;
-typedef proton::AttributeCollectionSpec AttrMgrSpec;
 typedef SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t> > Int32AttributeVector;
 
 namespace
