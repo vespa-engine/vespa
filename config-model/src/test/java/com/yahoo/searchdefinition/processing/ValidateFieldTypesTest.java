@@ -23,14 +23,17 @@ import java.util.Collections;
 public class ValidateFieldTypesTest {
 
     private static final String IMPORTED_FIELD_NAME = "imported_myfield";
-    private static final String DOCUMENT_NAME = "mydoc";
+    private static final String DOCUMENT_NAME = "my_doc";
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void throws_exception_if_type_of_document_field_does_not_match_summary_field() {
-        Search search = createDocumentWithImportedFieldInDocumentSummary();
+        Search search = createSearchWithDocument(DOCUMENT_NAME);
+        search.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME, DataType.INT));
+        search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING));
+
         ValidateFieldTypes validator = new ValidateFieldTypes(search, null, null, null);
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
@@ -39,21 +42,24 @@ public class ValidateFieldTypesTest {
         validator.process();
     }
 
-    private static Search createDocumentWithImportedFieldInDocumentSummary() {
-        // Create search with a single imported field
-        Search search = new Search(DOCUMENT_NAME, MockApplicationPackage.createEmpty());
-        SDDocumentType document = new SDDocumentType("mydoc", search);
+    private static Search createSearchWithDocument(String documentName) {
+        Search search = new Search(documentName, MockApplicationPackage.createEmpty());
+        SDDocumentType document = new SDDocumentType(documentName, search);
         search.addDocument(document);
-        Search targetDocument = new Search("otherdoc", MockApplicationPackage.createEmpty());
-        SDField targetField = new SDField("myfield", DataType.INT);
-        DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetDocument);
-        ImportedField importedField = new ImportedField(IMPORTED_FIELD_NAME, documentReference, targetField);
-        search.setImportedFields(new ImportedFields(Collections.singletonMap(IMPORTED_FIELD_NAME, importedField)));
-
-        // Create document summary
-        DocumentSummary summary = new DocumentSummary("mysummary");
-        summary.add(new SummaryField(IMPORTED_FIELD_NAME, DataType.STRING));
-        search.addSummary(summary);
         return search;
+    }
+
+    private static ImportedFields createSingleImportedField(String fieldName, DataType dataType) {
+        Search targetSearch = new Search("target_doc", MockApplicationPackage.createEmpty());
+        SDField targetField = new SDField("target_field", dataType);
+        DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
+        ImportedField importedField = new ImportedField(fieldName, documentReference, targetField);
+        return new ImportedFields(Collections.singletonMap(fieldName, importedField));
+    }
+
+    private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType) {
+        DocumentSummary summary = new DocumentSummary("mysummary");
+        summary.add(new SummaryField(fieldName, dataType));
+        return summary;
     }
 }
