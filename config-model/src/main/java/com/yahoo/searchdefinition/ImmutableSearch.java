@@ -2,9 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.vespa.documentmodel.SummaryField;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -20,6 +18,4 @@ public interface ImmutableSearch {
     ImmutableSDField getField(String name);
 
     Stream<ImmutableSDField> allFields();
-
-    Map<String, SummaryField> getSummaryFields(ImmutableSDField field);
 }

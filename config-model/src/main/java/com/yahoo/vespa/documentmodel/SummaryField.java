@@ -249,9 +249,6 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
     }
 
     public boolean hasSource(String name) {
-        if (sources.isEmpty() && name.equals(getName())) {
-            return true;
-        }
         for (Source s : sources) {
             if (s.getName().equals(name)) {
                 return true;

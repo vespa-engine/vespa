@@ -9,10 +9,4 @@ search ad {
   fieldset myfieldset {
     fields: my_budget, my_person_name
   }
-
-  document-summary mysummary {
-    summary campaign_ref type reference<campaign> {}
-    summary my_budget type int {}
-    summary my_person_name type string {}
-  }
 }

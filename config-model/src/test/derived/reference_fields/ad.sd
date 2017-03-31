@@ -6,11 +6,5 @@ search ad {
     field other_ref type reference<campaign> {
       indexing: attribute
     }
-    field yet_another_ref type reference<campaign> {
-      indexing: attribute
-    }
-  }
-  document-summary explicit_summary {
-    summary yet_another_ref type reference<campaign> {}
   }
 }
