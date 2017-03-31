@@ -110,7 +110,7 @@ public class ContainerClusterTest {
     public void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
         boolean hosted = true;
         boolean combined = true; // a cluster running on content nodes (only relevant with hosted)
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, Optional.empty(), 33);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, Optional.empty(), 60);
         verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, Optional.empty(), 17);
         verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, Optional.empty(), 0);
         
