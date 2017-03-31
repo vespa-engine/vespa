@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
  * The purpose of this class is to fill gaps in the Java {@link Collectors} api
  * by offering convenient ways to retrieve implementations of {@link Collector}.
  *
- * <p>For example, to get a collector that accumulates elements into an insertion
- * order map:
+ * <p>For example, to get a collector that accumulates elements into a map with
+ * predictable iteration order:
  * <pre>{@code
  *
  *     Map<String, Person> idToPerson =
@@ -29,7 +29,7 @@ public class CustomCollectors {
 
     /**
      * Returns a {@code Collector} that accumulates elements into a {@code Map}
-     * with predictable iteration order. This a convenience that can be used
+     * that provides insertion order iteration. This a convenience that can be used
      * instead of calling {@link java.util.stream.Collectors#toMap(Function, Function, BinaryOperator, Supplier)}.
      * with a merger that throws upon duplicate keys.
      *
@@ -38,7 +38,7 @@ public class CustomCollectors {
      * @param <T> Type of the input elements.
      * @param <K> Output type of the key mapping function.
      * @param <U> Output type of the value mapping function.
-     * @return A collector which collects elements into a map with predictable iteration order.
+     * @return A collector which collects elements into a map with insertion order iteration.
      * @throws DuplicateKeyException If two elements map to the same key.
      */
     public static <T, K, U>
