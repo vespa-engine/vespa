@@ -17,6 +17,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
@@ -96,7 +97,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.remove(7);
         nodes = setDirty(nodes);
         setReady(nodes);
-        fail("host5.yahoo.com", "Failing to unit test");
+        fail("host5.yahoo.com", Agent.system, "Failing to unit test");
         setDirty("host55.yahoo.com");
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));

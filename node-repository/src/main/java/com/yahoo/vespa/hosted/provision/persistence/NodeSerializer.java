@@ -15,6 +15,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -205,8 +206,8 @@ public class NodeSerializer {
         History.Event.Type type = eventTypeFromString(object.field(historyEventTypeKey).asString());
         if (type == null) return null;
         Instant at = Instant.ofEpochMilli(object.field(atKey).asLong());
-        History.Event.Agent agent = eventAgentFromSlime(object.field(agentKey));
-        return new History.Event(type, at, agent);
+        Agent agent = eventAgentFromSlime(object.field(agentKey));
+        return new History.Event(type, agent, at);
     }
 
     private Generation generationFromSlime(Inspector object, String wantedField, String currentField) {
@@ -271,17 +272,17 @@ public class NodeSerializer {
         throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
     }
 
-    private History.Event.Agent eventAgentFromSlime(Inspector eventAgentField) {
-        if ( ! eventAgentField.valid()) return History.Event.Agent.system; // TODO: Remove after April 2017
+    private Agent eventAgentFromSlime(Inspector eventAgentField) {
+        if ( ! eventAgentField.valid()) return Agent.system; // TODO: Remove after April 2017
 
         switch (eventAgentField.asString()) {
-            case "application" : return History.Event.Agent.application;
-            case "system" : return History.Event.Agent.system;
-            case "operator" : return History.Event.Agent.operator;
+            case "application" : return Agent.application;
+            case "system" : return Agent.system;
+            case "operator" : return Agent.operator;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
-    private String toString(History.Event.Agent agent) {
+    private String toString(Agent agent) {
         switch (agent) {
             case application : return "application";
             case system : return "system";

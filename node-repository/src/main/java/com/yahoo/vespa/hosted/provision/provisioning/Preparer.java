@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -113,7 +114,7 @@ class Preparer {
         List<Node> retired = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
             if ( ! node.allocation().get().isRemovable())
-                retired.add(node.retireByApplication(clock.instant()));
+                retired.add(node.retire(Agent.application, clock.instant()));
         }
         return retired;
     }

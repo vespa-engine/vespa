@@ -23,6 +23,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -68,9 +69,9 @@ public class ApplicationMaintainerTest {
         fixture.activate();
 
         // Fail and park some nodes
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), "Failing to unit test");
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname(), "Failing to unit test");
-        nodeRepository.park(nodeRepository.getNodes(fixture.app2).get(4).hostname());
+        nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
+        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname(), Agent.system, "Failing to unit test");
+        nodeRepository.park(nodeRepository.getNodes(fixture.app2).get(4).hostname(), Agent.system);
         int failedInApp1 = 1;
         int failedOrParkedInApp2 = 2;
         assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
@@ -86,9 +87,9 @@ public class ApplicationMaintainerTest {
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
 
         // Reactivate the previously failed nodes
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system);
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system);
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system);
         int reactivatedInApp1 = 1;
         int reactivatedInApp2 = 2;
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());

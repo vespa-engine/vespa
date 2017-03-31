@@ -21,6 +21,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
@@ -173,7 +174,7 @@ public class ProvisioningTester implements AutoCloseable {
 
     public void fail(HostSpec host) {
         int beforeFailCount = nodeRepository.getNode(host.hostname(), Node.State.active).get().status().failCount();
-        Node failedNode = nodeRepository.fail(host.hostname(), "Failing to unit test");
+        Node failedNode = nodeRepository.fail(host.hostname(), Agent.system, "Failing to unit test");
         assertTrue(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }

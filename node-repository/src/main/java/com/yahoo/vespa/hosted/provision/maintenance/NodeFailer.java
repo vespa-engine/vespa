@@ -12,6 +12,7 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -78,11 +79,13 @@ public class NodeFailer extends Maintainer {
         for (Node node : readyNodesWhichAreDead()) {
             // Docker hosts and nodes do not run Vespa services
             if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER || node.type() == NodeType.host) continue;
-            if (!throttle(node)) nodeRepository().fail(node.hostname(), "Not receiving config requests from node");
+            if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
+                                                         Agent.system, "Not receiving config requests from node");
         }
 
         for (Node node : readyNodesWithHardwareFailure())
-            if (!throttle(node)) nodeRepository().fail(node.hostname(), "Node has hardware failure");
+            if ( ! throttle(node)) nodeRepository().fail(node.hostname(),
+                                                         Agent.system, "Node has hardware failure");
 
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
@@ -103,6 +106,7 @@ public class NodeFailer extends Maintainer {
                 Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
                 if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
                     History updatedHistory = node.history().with(new History.Event(History.Event.Type.requested,
+                                                                                   Agent.system,
                                                                                    lastLocalRequest.get()));
                     nodeRepository().write(node.with(updatedHistory));
                 }
@@ -232,12 +236,12 @@ public class NodeFailer extends Maintainer {
                 if (failingTenantNode.state() == Node.State.active) {
                     allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode, reason);
                 } else {
-                    nodeRepository().fail(failingTenantNode.hostname(), reason);
+                    nodeRepository().fail(failingTenantNode.hostname(), Agent.system, reason);
                 }
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            node = nodeRepository().fail(node.hostname(), reason);
+            node = nodeRepository().fail(node.hostname(), Agent.system, reason);
             try {
                 deployment.get().activate();
                 return true;
@@ -245,7 +249,7 @@ public class NodeFailer extends Maintainer {
             catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
                 // In that case we should leave the node in the active state to avoid failing additional nodes.
-                nodeRepository().reactivate(node.hostname());
+                nodeRepository().reactivate(node.hostname(), Agent.system);
                 log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
                                        ", but redeploying without the node failed", e);
                 return false;

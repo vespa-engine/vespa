@@ -47,7 +47,7 @@
     {
       "event": "reserved",
       "at": 123,
-      "agent": "system"
+      "agent": "application"
     },
     {
       "event": "rebooted",

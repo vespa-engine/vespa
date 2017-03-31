@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
@@ -363,7 +364,7 @@ public class NodeFailerTest {
             List<Node> deadNodes = readyNodes.subList(0, 4);
             // Fail 10 Docker containers, should not impact throttling policy
             readyDockerNodes.subList(0, 10)
-                    .forEach(node -> tester.nodeRepository.fail(node.hostname(), "Failed in test"));
+                    .forEach(node -> tester.nodeRepository.fail(node.hostname(), Agent.system, "Failed in test"));
 
             // 2 hours pass, 4 nodes die
             for (int minutes = 0, interval = 30; minutes < 2 * 60; minutes += interval) {

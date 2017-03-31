@@ -17,6 +17,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
