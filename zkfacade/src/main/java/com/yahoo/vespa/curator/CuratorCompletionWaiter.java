@@ -75,18 +75,7 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     }
 
     private void notifyInternal() throws Exception {
-        try {
-            curator.create().forPath(myId);
-        } catch (RuntimeException e) {
-            // Throw only if we get something else than NoNodeException -- NoNodeException might happen when
-            // an application have been deleted and this method has not been called yet for the previous deployment
-            // on a minority of the config servers (see awaitInternal() method in this class)
-            if (e.getCause().getClass() != KeeperException.NoNodeException.class) {
-                throw e;
-            } else {
-                log.log(LogLevel.INFO, "Not able to notify completion at path: " + myId +", node has been deleted");
-            }
-        }
+        curator.create().forPath(myId);
     }
 
     @Override
