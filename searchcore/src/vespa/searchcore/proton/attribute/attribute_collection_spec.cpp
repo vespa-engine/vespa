@@ -4,25 +4,6 @@
 
 namespace proton {
 
-AttributeCollectionSpec::Attribute::Attribute(const vespalib::string &name,
-                                              const search::attribute::Config &cfg)
-    : _name(name),
-      _cfg(cfg)
-{
-}
-
-AttributeCollectionSpec::Attribute::Attribute(const Attribute &) = default;
-
-AttributeCollectionSpec::Attribute &
-AttributeCollectionSpec::Attribute::operator=(const Attribute &) = default;
-
-AttributeCollectionSpec::Attribute::Attribute(Attribute &&) = default;
-
-AttributeCollectionSpec::Attribute &
-AttributeCollectionSpec::Attribute::operator=(Attribute &&) = default;
-
-AttributeCollectionSpec::Attribute::~Attribute() { }
-
 AttributeCollectionSpec::AttributeCollectionSpec(const AttributeList &attributes,
                                                  uint32_t docIdLimit,
                                                  SerialNum currentSerialNum)
