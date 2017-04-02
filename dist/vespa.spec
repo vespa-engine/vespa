@@ -25,7 +25,7 @@ BuildRequires: lz4-devel
 BuildRequires: zlib-devel
 BuildRequires: maven
 BuildRequires: libicu-devel
-BuildRequires: llvm-devel
+BuildRequires: llvm3.9-devel
 BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: openssl-devel
 BuildRequires: rpm-build
@@ -40,7 +40,7 @@ Requires: Judy
 Requires: lz4
 Requires: zlib
 Requires: libicu
-Requires: llvm
+Requires: llvm3.9
 Requires: java-1.8.0-openjdk
 Requires: openssl
 Requires: vespa-boost >= 1.59
@@ -66,8 +66,8 @@ sh bootstrap.sh
 mvn install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
-       -DEXTRA_LINK_DIRECTORY="/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib64/llvm" \
-       -DEXTRA_INCLUDE_DIRECTORY="/opt/yahoo/vespa-boost/include;/opt/yahoo/vespa-libtorrent/include;/opt/yahoo/vespa-zookeeper-c-client/include;/opt/yahoo/vespa-cppunit/include" \
+       -DEXTRA_LINK_DIRECTORY="/usr/lib64/llvm3.9/lib;/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib" \
+       -DEXTRA_INCLUDE_DIRECTORY="/usr/include/llvm3.9;/opt/yahoo/vespa-boost/include;/opt/yahoo/vespa-libtorrent/include;/opt/yahoo/vespa-zookeeper-c-client/include;/opt/yahoo/vespa-cppunit/include" \
        -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64;/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
        -DCMAKE_BUILD_RPATH=%{_prefix}/lib64 \
        .

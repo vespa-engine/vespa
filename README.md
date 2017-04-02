@@ -21,9 +21,9 @@ C++ building is supported on CentOS 7.
 #### Install required build dependencies
     sudo yum -y install epel-release centos-release-scl yum-utils
     sudo yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
-    sudo yum -y install devtoolset-4-gcc-c++ devtoolset-4-libatomic-devel \
-        Judy-devel cmake3 ccache lz4-devel zlib-devel maven libicu-devel llvm-devel \
-        llvm-static java-1.8.0-openjdk-devel openssl-devel rpm-build make \
+    sudo yum -y --enablerepo=epel-testing install devtoolset-6-gcc-c++ devtoolset-6-libatomic-devel devtoolset-6-binutils \
+        Judy-devel cmake3 ccache lz4-devel zlib-devel maven libicu-devel llvm3.9-devel \
+        llvm3.9-static java-1.8.0-openjdk-devel openssl-devel rpm-build make \
         vespa-boost-devel vespa-libtorrent-devel vespa-zookeeper-c-client-devel vespa-cppunit-devel
 or use the prebuilt docker image
 
@@ -36,9 +36,17 @@ Java modules can be built on any environment having Java and Maven:
     mvn install
 
 ### Build C++ modules
-    source /opt/rh/devtoolset-4/enable
+    source /opt/rh/devtoolset-6/enable
     sh bootstrap.sh full
-    cmake .
+    mkdir <builddir>
+    cd <builddir>
+    cmake3 -DCMAKE_INSTALL_PREFIX=/opt/yahoo/vespa \
+          -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
+          -DEXTRA_LINK_DIRECTORY="/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib64/llvm3.9/lib" \
+          -DEXTRA_INCLUDE_DIRECTORY="/opt/yahoo/vespa-boost/include;/opt/yahoo/vespa-libtorrent/include;/opt/yahoo/vespa-zookeeper-c-client/include;/opt/yahoo/vespa-cppunit/include;/usr/include/llvm3.9" \
+          -DCMAKE_INSTALL_RPATH="/opt/yahoo/vespa/lib64;/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
+          -DCMAKE_BUILD_RPATH=/opt/yahoo/vespa/lib64 \
+          <builddir>
     make
     make test
 
