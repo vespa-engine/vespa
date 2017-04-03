@@ -24,7 +24,8 @@ enum DataType { UINT1 = 0,
     RAW = 10,
     //FEATURE = 11,
     BOOLEANTREE = 12,
-    TENSOR = 13
+    TENSOR = 13,
+    REFERENCE = 14
 };
 
 /**

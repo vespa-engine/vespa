@@ -13,12 +13,14 @@ namespace proton {
 class DocumentTypeInspector : public IDocumentTypeInspector
 {
 private:
-    const document::DocumentType &_docType;
+    const document::DocumentType &_oldDocType;
+    const document::DocumentType &_newDocType;
 
 public:
-    DocumentTypeInspector(const document::DocumentType &docType);
+    DocumentTypeInspector(const document::DocumentType &oldDocType,
+                          const document::DocumentType &newDocType);
 
-    virtual bool hasField(const vespalib::string &name) const;
+    virtual bool hasUnchangedField(const vespalib::string &name) const override;
 };
 
 } // namespace proton

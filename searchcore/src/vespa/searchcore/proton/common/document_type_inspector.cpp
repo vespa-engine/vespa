@@ -8,15 +8,22 @@ LOG_SETUP(".proton.common.document_type_inspector");
 
 namespace proton {
 
-DocumentTypeInspector::DocumentTypeInspector(const document::DocumentType &docType)
-    : _docType(docType)
+DocumentTypeInspector::DocumentTypeInspector(const document::DocumentType &oldDocType,
+                                             const document::DocumentType &newDocType)
+    : _oldDocType(oldDocType),
+      _newDocType(newDocType)
 {
 }
 
 bool
-DocumentTypeInspector::hasField(const vespalib::string &name) const
+DocumentTypeInspector::hasUnchangedField(const vespalib::string &name) const
 {
-    return _docType.hasField(name);
+    if (!_oldDocType.hasField(name) || !_newDocType.hasField(name)) {
+        return false;
+    }
+    const document::Field &oldField = _oldDocType.getField(name);
+    const document::Field &newField = _newDocType.getField(name);
+    return oldField == newField;
 }
 
 } // namespace proton
