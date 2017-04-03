@@ -4,6 +4,7 @@ package com.yahoo.vespa.curator;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.zookeeper.KeeperException;
 
 import java.time.Clock;
 import java.time.Duration;

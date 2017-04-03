@@ -8,6 +8,7 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
+import org.apache.zookeeper.KeeperException;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -44,7 +45,7 @@ public class RemoteSession extends Session {
     public void loadPrepared() {
         Curator.CompletionWaiter waiter = zooKeeperClient.getPrepareWaiter();
         ensureApplicationLoaded();
-        waiter.notifyCompletion();
+        notifyCompletion(waiter);
     }
 
     private ApplicationSet loadApplication() {
@@ -74,7 +75,7 @@ public class RemoteSession extends Session {
         log.log(LogLevel.DEBUG, logPre() + "Reloading config for " + app);
         reloadHandler.reloadConfig(app);
         log.log(LogLevel.DEBUG, logPre() + "Notifying " + waiter);
-        waiter.notifyCompletion();
+        notifyCompletion(waiter);
         log.log(LogLevel.DEBUG, logPre() + "Session activated: " + app);
     }
     
@@ -90,8 +91,24 @@ public class RemoteSession extends Session {
     public void confirmUpload() {
         Curator.CompletionWaiter waiter = zooKeeperClient.getUploadWaiter();
         log.log(LogLevel.DEBUG, "Notifying upload waiter for session " + getSessionId());
-        waiter.notifyCompletion();
+        notifyCompletion(waiter);
         log.log(LogLevel.DEBUG, "Done notifying for session " + getSessionId());
+    }
+
+    private void notifyCompletion(Curator.CompletionWaiter completionWaiter) {
+        try {
+            completionWaiter.notifyCompletion();
+        } catch (RuntimeException e) {
+            // Throw only if we get something else than NoNodeException -- NoNodeException might happen when
+            // the session is no longer in use (e.g. the app using this session has been deleted) and this method
+            // has not been called yet for the previous session operation
+            // on a minority of the config servers (see awaitInternal() method in this class)
+            if (e.getCause().getClass() != KeeperException.NoNodeException.class) {
+                throw e;
+            } else {
+                log.log(LogLevel.INFO, "Not able to notify completion for session: " + getSessionId() + ", node has been deleted");
+            }
+        }
     }
 
 }
