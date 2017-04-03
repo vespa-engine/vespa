@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/expressionnode.h>
-#include <vespa/searchlib/expression/serializer.h>
+#include "expressionnode.h"
+#include "serializer.h"
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/buffer.h>
 
@@ -58,7 +58,7 @@ private:
 
 public:
     DECLARE_ABSTRACT_RESULTNODE(ResultNode);
-    virtual ~ResultNode() { }
+    ~ResultNode() { }
     typedef std::unique_ptr<ResultNode> UP;
     typedef vespalib::IdentifiablePtr<ResultNode> CP;
     virtual void set(const ResultNode & rhs) = 0;

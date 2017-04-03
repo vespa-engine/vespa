@@ -92,7 +92,7 @@ private:
         search::AttributeVector &      _attribute;
         search::AttributeVector::DocId _docId;
 
-        virtual void onPrimitive(const IteratorContent & c);
+        void onPrimitive(uint32_t fid, const IteratorContent & c) override;
 
     public:
         AttributeInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
@@ -103,8 +103,8 @@ private:
         PositionInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
         ~PositionInserter();
     private:
-        virtual void onPrimitive(const IteratorContent & c);
-        virtual void onStructStart(const Content & fv);
+        void onPrimitive(uint32_t fid, const IteratorContent & c) override;
+        void onStructStart(const Content & fv) override;
         document::Field _fieldX;
         document::Field _fieldY;
         document::IntFieldValue _valueX;

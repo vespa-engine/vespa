@@ -41,7 +41,7 @@ SnippetModifier::considerSeparator()
 }
 
 void
-SnippetModifier::onPrimitive(const Content & c)
+SnippetModifier::onPrimitive(uint32_t, const Content & c)
 {
     considerSeparator();
     _searcher->onValue(c.getValue());

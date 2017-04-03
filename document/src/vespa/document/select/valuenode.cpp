@@ -286,13 +286,12 @@ FieldValueNode::IteratorHandler::getValues() {
 }
 
 void
-FieldValueNode::IteratorHandler::onPrimitive(const Content& fv) {
-    if (!_firstValue.get() && getVariables().empty()) {
+FieldValueNode::IteratorHandler::onPrimitive(uint32_t fid, const Content& fv) {
+    (void) fid;
+    if (!_firstValue && getVariables().empty()) {
         _firstValue = getInternalValue(fv.getValue());
     } else {
-        _values.push_back(ArrayValue::VariableValue(
-                                  getVariables(),
-                                  Value::SP(getInternalValue(fv.getValue()).release())));
+        _values.emplace_back(getVariables(), Value::SP(getInternalValue(fv.getValue()).release()));
     }
 }
 
@@ -303,86 +302,73 @@ FieldValueNode::IteratorHandler::getInternalValue(const FieldValue& fval) const
         case document::IntFieldValue::classId:
         {
             const IntFieldValue& val(dynamic_cast<const IntFieldValue&>(fval));
-            return std::unique_ptr<Value>(
-                    new IntegerValue(val.getAsInt(), false));
+            return std::make_unique<IntegerValue>(val.getAsInt(), false);
         }
         case document::ByteFieldValue::classId:
         {
             const ByteFieldValue& val(dynamic_cast<const ByteFieldValue&>(fval));
-            return std::unique_ptr<Value>(
-                    new IntegerValue(val.getAsByte(), false));
+            return std::make_unique<IntegerValue>(val.getAsByte(), false);
         }
         case LongFieldValue::classId:
         {
-            const LongFieldValue& val(
-                    dynamic_cast<const LongFieldValue&>(fval));
-            return std::unique_ptr<Value>(
-                    new IntegerValue(val.getAsLong(), false));
+            const LongFieldValue& val(dynamic_cast<const LongFieldValue&>(fval));
+            return std::make_unique<IntegerValue>(val.getAsLong(), false);
         }
         case FloatFieldValue::classId:
         {
-            const FloatFieldValue& val(
-                    dynamic_cast<const FloatFieldValue&>(fval));
-            return std::unique_ptr<Value>(new FloatValue(val.getAsFloat()));
+            const FloatFieldValue& val(dynamic_cast<const FloatFieldValue&>(fval));
+            return std::make_unique<FloatValue>(val.getAsFloat());
         }
         case DoubleFieldValue::classId:
-
-       {
-            const DoubleFieldValue& val(
-                    dynamic_cast<const DoubleFieldValue&>(fval));
-            return std::unique_ptr<Value>(new FloatValue(val.getAsDouble()));
+        {
+            const DoubleFieldValue& val(dynamic_cast<const DoubleFieldValue&>(fval));
+            return std::make_unique<FloatValue>(val.getAsDouble());
         }
         case StringFieldValue::classId:
         {
-            const StringFieldValue& val(
-                    dynamic_cast<const StringFieldValue&>(fval));
-            return std::unique_ptr<Value>(new StringValue(val.getAsString()));
+            const StringFieldValue& val(dynamic_cast<const StringFieldValue&>(fval));
+            return std::make_unique<StringValue>(val.getAsString());
         }
         case ArrayFieldValue::classId:
         {
-            const ArrayFieldValue& val(
-                    dynamic_cast<const ArrayFieldValue&>(fval));
+            const ArrayFieldValue& val(dynamic_cast<const ArrayFieldValue&>(fval));
             if (val.size() == 0) {
-                return std::unique_ptr<Value>(new NullValue());
+                return std::make_unique<NullValue>();
             } else {
                 std::vector<ArrayValue::VariableValue> values;
                 // TODO: Array comparison.
-                return std::unique_ptr<Value>(new ArrayValue(values));
+                return std::make_unique<ArrayValue>(values);
             }
         }
         case StructFieldValue::classId:
         {
-            const StructFieldValue& val(
-                    dynamic_cast<const StructFieldValue&>(fval));
+            const StructFieldValue& val(dynamic_cast<const StructFieldValue&>(fval));
             if (val.empty()) {
-                return std::unique_ptr<Value>(new NullValue());
+                return std::make_unique<NullValue>();
             } else {
                 StructValue::ValueMap values;
-                for (StructFieldValue::const_iterator it(val.begin());
-                     it != val.end(); ++it)
-                {
+                for (StructFieldValue::const_iterator it(val.begin()); it != val.end(); ++it) {
                     FieldValue::UP fv(val.getValue(it.field()));
                     values[it.field().getName()] = Value::SP(getInternalValue(*fv).release());
                 }
-                return std::unique_ptr<Value>(new StructValue(values));
+                return std::make_unique<StructValue>(values);
             }
         }
         case MapFieldValue::classId:
         {
-            const MapFieldValue& val(
-                    static_cast<const MapFieldValue&>(fval));
+            const MapFieldValue& val(static_cast<const MapFieldValue&>(fval));
             if (val.isEmpty()) {
-                return std::unique_ptr<Value>(new NullValue());
+                return std::make_unique<NullValue>();
             } else {
                 std::vector<ArrayValue::VariableValue> values;
                 // TODO: Map comparison
-                return std::unique_ptr<Value>(new ArrayValue(values));
+                return std::make_unique<ArrayValue>(values);
             }
         }
     }
     LOG(warning, "Tried to use unsupported datatype %s in field comparison",
                  fval.getDataType()->toString().c_str());
-    return std::unique_ptr<Value>(new InvalidValue());
+    return std::make_unique<InvalidValue>();
 }
 
 

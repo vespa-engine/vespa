@@ -220,12 +220,36 @@ FieldValue::IteratorHandler::IndexValue::toString() const {
     }
 }
 
-void FieldValue::IteratorHandler::handlePrimitive(const FieldValue & fv) { onPrimitive(Content(fv, getWeight())); }
-bool FieldValue::IteratorHandler::handleComplex(const FieldValue & fv) { return onComplex(Content(fv, getWeight())); }
-void FieldValue::IteratorHandler::handleCollectionStart(const FieldValue & fv) { onCollectionStart(Content(fv, getWeight())); }
-void FieldValue::IteratorHandler::handleCollectionEnd(const FieldValue & fv) { onCollectionEnd(Content(fv, getWeight())); }
-void FieldValue::IteratorHandler::handleStructStart(const FieldValue & fv) { onStructStart(Content(fv, getWeight())); }
-void FieldValue::IteratorHandler::handleStructEnd(const FieldValue & fv) { onStructEnd(Content(fv, getWeight())); }
+void
+FieldValue::IteratorHandler::handlePrimitive(const FieldValue & fv) {
+    onPrimitive(-1, Content(fv, getWeight()));
+}
+bool
+FieldValue::IteratorHandler::handleComplex(const FieldValue & fv) {
+    return onComplex(Content(fv, getWeight()));
+}
+void
+FieldValue::IteratorHandler::handleCollectionStart(const FieldValue & fv) {
+    onCollectionStart(Content(fv, getWeight()));
+}
+void
+FieldValue::IteratorHandler::handleCollectionEnd(const FieldValue & fv) {
+    onCollectionEnd(Content(fv, getWeight()));
+}
+void
+FieldValue::IteratorHandler::handleStructStart(const FieldValue & fv) {
+    onStructStart(Content(fv, getWeight()));
+}
+void
+FieldValue::IteratorHandler::handleStructEnd(const FieldValue & fv) {
+    onStructEnd(Content(fv, getWeight()));
+}
+
+void
+FieldValue::IteratorHandler::onPrimitive(uint32_t fid, const Content & fv) {
+    (void) fid;
+    (void) fv;
+}
 
 std::string
 FieldValue::IteratorHandler::toString(const VariableMap& vars) {

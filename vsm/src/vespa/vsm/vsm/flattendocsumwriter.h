@@ -19,7 +19,7 @@ private:
     bool        _useSeparator;
 
     void considerSeparator();
-    virtual void onPrimitive(const Content & c);
+    void onPrimitive(uint32_t, const Content & c) override;
 
 public:
     FlattenDocsumWriter(const vespalib::string & separator = " ");

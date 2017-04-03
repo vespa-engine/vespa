@@ -110,11 +110,11 @@ public:
     ~Handler();
     const std::string & getResult() const { return _result; }
 private:
-    virtual void onPrimitive(const Content&)       { _result += 'P'; }
-    virtual void onCollectionStart(const Content&) { _result += '['; }
-    virtual void onCollectionEnd(const Content&)   { _result += ']'; }
-    virtual void onStructStart(const Content&)     { _result += '<'; }
-    virtual void onStructEnd(const Content&)       { _result += '>'; }
+    void onPrimitive(uint32_t, const Content&) override { _result += 'P'; }
+    void onCollectionStart(const Content&)     override { _result += '['; }
+    void onCollectionEnd(const Content&)       override { _result += ']'; }
+    void onStructStart(const Content&)         override { _result += '<'; }
+    void onStructEnd(const Content&)           override { _result += '>'; }
     std::string _result;
 };
 
@@ -190,7 +190,7 @@ public:
     ~VariableIteratorHandler();
     std::string retVal;
 
-    virtual void onPrimitive(const Content & fv) {
+    void onPrimitive(uint32_t, const Content & fv) override {
         for (VariableMap::iterator iter = getVariables().begin(); iter != getVariables().end(); iter++) {
             retVal += vespalib::make_string("%s: %s,", iter->first.c_str(), iter->second.toString().c_str());
         }

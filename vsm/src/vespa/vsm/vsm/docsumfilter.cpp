@@ -21,7 +21,7 @@ public:
 struct IntResultHandler : public Handler {
     int32_t value;
     IntResultHandler() : value(0) {}
-    virtual void onPrimitive(const Content & c) {
+    void onPrimitive(uint32_t, const Content & c) override {
         value = c.getValue().getAsInt();
     }
 };
@@ -29,7 +29,7 @@ struct IntResultHandler : public Handler {
 struct LongResultHandler : public Handler {
     int64_t value;
     LongResultHandler() : value(0) {}
-    virtual void onPrimitive(const Content & c) {
+    void onPrimitive(uint32_t, const Content & c) override {
         value = c.getValue().getAsLong();
     }
 };
@@ -37,7 +37,7 @@ struct LongResultHandler : public Handler {
 struct FloatResultHandler : public Handler {
     float value;
     FloatResultHandler() : value(0) {}
-    virtual void onPrimitive(const Content & c) {
+    void onPrimitive(uint32_t, const Content & c) override {
         value = c.getValue().getAsFloat();
     }
 };
@@ -45,7 +45,7 @@ struct FloatResultHandler : public Handler {
 struct DoubleResultHandler : public Handler {
     double value;
     DoubleResultHandler() : value(0) {}
-    virtual void onPrimitive(const Content & c) {
+    void onPrimitive(uint32_t, const Content & c) override {
         value = c.getValue().getAsDouble();
     }
 };
@@ -69,7 +69,7 @@ private:
 
 public:
     StringResultHandler(ResType t, ResultPacker & p) : _type(t), _packer(p) {}
-    virtual void onPrimitive(const Content & c) {
+    void onPrimitive(uint32_t, const Content & c) override {
         const document::FieldValue & fv = c.getValue();
         if (fv.getClass().inherits(document::LiteralFieldValueB::classId)) {
             const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
@@ -89,7 +89,7 @@ private:
 
 public:
     RawResultHandler(ResType t, ResultPacker & p) : _type(t), _packer(p) {}
-    virtual void onPrimitive(const Content & c) {
+    void onPrimitive(uint32_t, const Content & c) override {
         const document::FieldValue & fv = c.getValue();
         try {
             std::pair<const char *, size_t> buf = fv.getAsRaw();
@@ -106,8 +106,7 @@ public:
                 }
             }
         } catch (document::InvalidDataTypeConversionException & e) {
-            LOG(warning, "RawResultHandler: Could not get field value '%s' as raw. Skipping writing this field",
-                fv.toString().c_str());
+            LOG(warning, "RawResultHandler: Could not get field value '%s' as raw. Skipping writing this field", fv.toString().c_str());
             _packer.AddEmpty();
         }
     }

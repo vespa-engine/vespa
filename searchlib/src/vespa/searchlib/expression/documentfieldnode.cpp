@@ -1,14 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/expression/documentfieldnode.h>
-#include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
-#include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
+#include "documentfieldnode.h"
+#include "getdocidnamespacespecificfunctionnode.h"
+#include "getymumchecksumfunctionnode.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <stdexcept>
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/encoding/base64.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".searchlib.documentfieldnode");
 
 namespace search {
@@ -45,7 +42,8 @@ DocumentFieldNode & DocumentFieldNode::operator = (const DocumentFieldNode & rhs
     return *this;
 }
 
-std::unique_ptr<ResultNode> deduceResultNode(const vespalib::stringref & fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
+std::unique_ptr<ResultNode>
+deduceResultNode(const vespalib::stringref & fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
 {
     std::unique_ptr<ResultNode> value;
     const Identifiable::RuntimeClass & cInfo = fv.getClass();
@@ -147,9 +145,9 @@ class FieldValue2ResultNode : public ResultNode
 public:
     DECLARE_EXPRESSIONNODE(FieldValue2ResultNode);
     FieldValue2ResultNode(const FieldValue * fv=NULL) : _fv(fv) { }
-    virtual int64_t onGetInteger(size_t index) const { (void) index; return _fv ? _fv->getAsLong() : 0; }
-    virtual double  onGetFloat(size_t index)   const { (void) index; return _fv ? _fv->getAsDouble() : 0; }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
+    int64_t onGetInteger(size_t index) const override { (void) index; return _fv ? _fv->getAsLong() : 0; }
+    double  onGetFloat(size_t index)   const override { (void) index; return _fv ? _fv->getAsDouble() : 0; }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
         (void) index;
         if (_fv) {
             std::pair<const char*, size_t>  raw = _fv->getAsRaw();
@@ -157,12 +155,9 @@ public:
         }
         return buf;
     }
-    virtual void min(const ResultNode & b) { (void) b; }
-    virtual void max(const ResultNode & b) { (void) b; }
-    virtual void add(const ResultNode & b) { (void) b; }
 private:
-    virtual void set(const ResultNode&);
-    virtual size_t hash() const { return 0; }
+    virtual void set(const ResultNode&) override;
+    virtual size_t hash() const override { return 0; }
     const FieldValue * _fv;
 };
 
@@ -196,7 +191,7 @@ bool DocumentFieldNode::onExecute() const
 DefaultValue DocumentFieldNode::SingleHandler::_defaultValue;
 
 void
-DocumentFieldNode::SingleHandler::onPrimitive(const Content & c)
+DocumentFieldNode::SingleHandler::onPrimitive(uint32_t, const Content & c)
 {
     LOG(spam, "SingleHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
     FieldValue2ResultNode converter(&c.getValue());
@@ -204,7 +199,7 @@ DocumentFieldNode::SingleHandler::onPrimitive(const Content & c)
 }
 
 void
-DocumentFieldNode::MultiHandler::onPrimitive(const Content & c)
+DocumentFieldNode::MultiHandler::onPrimitive(uint32_t, const Content & c)
 {
     LOG(spam, "MultiHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
     FieldValue2ResultNode converter(&c.getValue());

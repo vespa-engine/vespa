@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/objects/cloneable.h>
+#include "updatevisitor.h"
+#include "valueupdate.h"
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/util/serializable.h>
 #include <vespa/document/util/xmlserializable.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/select/resultlist.h>
-#include <vespa/document/update/updatevisitor.h>
-#include <vespa/document/update/valueupdate.h>
+#include <vespa/vespalib/objects/cloneable.h>
 
 namespace document {
 
@@ -72,7 +72,7 @@ public:
     /** @return Whether or not the first field path element is a body field */
     bool affectsDocumentBody() const;
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(FieldPathUpdate);
 
@@ -96,8 +96,7 @@ protected:
      * @param buffer The byte buffer that contains the serialized object.
      * @param version The serialization version of the object to deserialize.
      */
-    virtual void deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
+    virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type,
                              ByteBuffer& buffer, uint16_t version);
 
     /** @return the datatype of the last path element in the field path */
