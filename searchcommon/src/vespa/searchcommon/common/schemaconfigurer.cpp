@@ -71,6 +71,8 @@ SchemaBuilder::convert(const AttributesConfig::Attribute::Datatype &type)
         return schema::BOOLEANTREE;
     case AttributesConfig::Attribute::TENSOR:
         return schema::TENSOR;
+    case AttributesConfig::Attribute::REFERENCE:
+        return schema::REFERENCE;
     default:
         break;
     }

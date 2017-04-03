@@ -26,6 +26,7 @@ dataTypeFromName(const vespalib::stringref &name) {
     else if (name == "RAW")     { return RAW; }
     else if (name == "BOOLEANTREE") { return BOOLEANTREE; }
     else if (name == "TENSOR") { return TENSOR; }
+    else if (name == "REFERENCE") { return REFERENCE; }
     else {
         throw InvalidConfigException("Illegal enum value '" + name + "'");
     }
@@ -44,7 +45,8 @@ const char *datatype_str[] = { "UINT1",
                                "RAW",
                                "FEATURE_NOTUSED",
                                "BOOLEANTREE",
-                               "TENSOR" };
+                               "TENSOR",
+                               "REFERENCE"};
 
 vespalib::string
 getTypeName(DataType type) {
