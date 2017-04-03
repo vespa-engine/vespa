@@ -67,6 +67,14 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals("1.2.3.qualifier",new Version(1,2,3,"qualifier").toString());
     }
 
+    public void testToFullString() {
+        assertEquals("0.0.0",new Version().toFullString());
+        assertEquals("1.0.0",new Version(1).toFullString());
+        assertEquals("1.2.0",new Version(1,2).toFullString());
+        assertEquals("1.2.3",new Version(1,2,3).toFullString());
+        assertEquals("1.2.3.qualifier",new Version(1,2,3,"qualifier").toFullString());
+    }
+
     public void testOrder() {
         assertTrue(new Version("1.2.3").compareTo(new Version("1.2.3"))==0);
         assertTrue(new Version("1.2.3").compareTo(new Version("1.2.4"))<0);
