@@ -30,7 +30,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private static final String envPrefix = "vespa_node_repository__";
 
     private final NodeFailer nodeFailer;
-    private final ApplicationMaintainer applicationMaintainer;
+    private final PeriodicApplicationMaintainer periodicApplicationMaintainer;
+    private final OperatorChangeApplicationMaintainer operatorChangeApplicationMaintainer;
     private final ZooKeeperAccessMaintainer zooKeeperAccessMaintainer;
     private final ReservationExpirer reservationExpirer;
     private final InactiveExpirer inactiveExpirer;
@@ -52,7 +53,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy));
-        applicationMaintainer = new ApplicationMaintainer(deployer, nodeRepository, durationFromEnv("redeploy_frequency").orElse(defaults.redeployFrequency));
+        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval));
+        operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval));
         zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, durationFromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval));
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
         retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry));
@@ -66,7 +68,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     @Override
     public void deconstruct() {
         nodeFailer.deconstruct();
-        applicationMaintainer.deconstruct();
+        periodicApplicationMaintainer.deconstruct();
+        operatorChangeApplicationMaintainer.deconstruct();
         zooKeeperAccessMaintainer.deconstruct();
         reservationExpirer.deconstruct();
         inactiveExpirer.deconstruct();
@@ -94,8 +97,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
     private static class DefaultTimes {
 
-        /** All applications are redeployed with this frequency */
-        private final Duration redeployFrequency;
+        /** All applications are redeployed with this period */
+        private final Duration periodicRedeployInterval;
+        /** Applications are redeployed after manual operator changes within this time period */
+        private final Duration operatorChangeRedeployInterval;
 
         /** The time a node must be continuously nonresponsive before it is failed */
         private final Duration failGrace;
@@ -117,7 +122,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 // These values are to avoid losing data (retired), and to be able to return an application
                 // back to a previous state fast (inactive)
                 failGrace = Duration.ofMinutes(60);
-                redeployFrequency = Duration.ofMinutes(30);
+                periodicRedeployInterval = Duration.ofMinutes(30);
+                operatorChangeRedeployInterval = Duration.ofMinutes(1);
                 zooKeeperAccessMaintenanceInterval = Duration.ofMinutes(1);
                 reservationExpiry = Duration.ofMinutes(20); // same as deployment timeout
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
@@ -131,7 +137,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 // These values ensure tests and development is not delayed due to nodes staying around
                 // Use non-null values as these also determine the maintenance interval
                 failGrace = Duration.ofMinutes(60);
-                redeployFrequency = Duration.ofMinutes(30);
+                periodicRedeployInterval = Duration.ofMinutes(30);
+                operatorChangeRedeployInterval = Duration.ofMinutes(1);
                 zooKeeperAccessMaintenanceInterval = Duration.ofSeconds(10);
                 reservationExpiry = Duration.ofMinutes(10); // Need to be long enough for deployment to be finished for all config model versions
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
