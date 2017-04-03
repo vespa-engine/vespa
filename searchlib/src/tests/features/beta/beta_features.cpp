@@ -41,6 +41,7 @@ LOG_SETUP("beta_features_test");
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
+using CollectionType = FieldInfo::CollectionType;
 
 //---------------------------------------------------------------------------------------------------------------------
 // TermPositionList

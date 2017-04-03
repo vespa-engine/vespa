@@ -9,6 +9,7 @@ LOG_SETUP(".prod_features_framework");
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
+using CollectionType = FieldInfo::CollectionType;
 
 void
 Test::testFramework()

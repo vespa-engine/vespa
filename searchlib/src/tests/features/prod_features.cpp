@@ -62,11 +62,11 @@ using search::StringAttribute;
 using search::WeightedSetStringExtAttribute;
 using search::attribute::WeightedEnumContent;
 
-typedef AttributeVector::SP             AttributePtr;
-
-typedef search::attribute::Config         AVC;
-typedef search::attribute::BasicType      AVBT;
-typedef search::attribute::CollectionType AVCT;
+using AttributePtr = AttributeVector::SP;
+using AVC = search::attribute::Config;
+using AVBT = search::attribute::BasicType;
+using AVCT = search::attribute::CollectionType;
+using CollectionType = FieldInfo::CollectionType;
 
 const double EPS = 10e-6;
 

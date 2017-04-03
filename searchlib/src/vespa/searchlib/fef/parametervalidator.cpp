@@ -12,6 +12,8 @@ using vespalib::make_vespa_string;
 namespace search {
 namespace fef {
 
+using CollectionType = FieldInfo::CollectionType;
+
 namespace {
 
 bool checkCollectionType(ParameterCollection::Enum accept, CollectionType actual) {

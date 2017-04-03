@@ -4,7 +4,6 @@ vespa_add_library(searchlib_fef OBJECT
     blueprint.cpp
     blueprintfactory.cpp
     blueprintresolver.cpp
-    collection_type.cpp
     feature_type.cpp
     featureexecutor.cpp
     featurenamebuilder.cpp

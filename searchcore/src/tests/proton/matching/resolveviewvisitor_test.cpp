@@ -15,7 +15,6 @@ LOG_SETUP("resolveviewvisitor_test");
 #include <string>
 
 namespace fef_test = search::fef::test;
-using search::fef::CollectionType;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::test::IndexEnvironment;
@@ -23,6 +22,7 @@ using search::query::Node;
 using search::query::QueryBuilder;
 using std::string;
 using namespace proton::matching;
+using CollectionType = FieldInfo::CollectionType;
 
 namespace {
 

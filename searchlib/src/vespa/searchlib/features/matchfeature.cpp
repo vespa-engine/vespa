@@ -13,6 +13,7 @@ LOG_SETUP(".features.matchfeature");
 #include "utils.h"
 
 using namespace search::fef;
+using CollectionType = FieldInfo::CollectionType;
 
 namespace search {
 namespace features {

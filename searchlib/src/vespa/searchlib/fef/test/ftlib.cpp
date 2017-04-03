@@ -352,7 +352,7 @@ FtTestApp::setupFieldMatch(FtFeatureTest & ft, const vespalib::string & indexNam
                            const fieldmatch::Params * params, uint32_t totalTermWeight, feature_t totalSignificance,
                            uint32_t docId)
 {
-    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, indexName);
+    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, FieldInfo::CollectionType::SINGLE, indexName);
 
     if (params != NULL) {
         Properties & p = ft.getIndexEnv().getProperties();

@@ -27,6 +27,7 @@ typedef search::attribute::BasicType AVBT;
 typedef search::attribute::CollectionType AVCT;
 typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
+using CollectionType = FieldInfo::CollectionType;
 
 struct SetupFixture
 {

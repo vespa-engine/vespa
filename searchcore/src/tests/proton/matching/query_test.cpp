@@ -34,7 +34,6 @@ LOG_SETUP("query_test");
 #include <vector>
 
 using document::PositionDataType;
-using search::fef::CollectionType;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::ITermData;
@@ -65,6 +64,7 @@ using search::queryeval::ParallelWeakAndBlueprint;
 using std::string;
 using std::vector;
 namespace fef_test = search::fef::test;
+using CollectionType = FieldInfo::CollectionType;
 
 namespace proton {
 namespace matching {

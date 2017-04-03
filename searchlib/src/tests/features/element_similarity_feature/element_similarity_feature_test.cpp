@@ -13,6 +13,7 @@
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
+using CollectionType = FieldInfo::CollectionType;
 
 const vespalib::string DEFAULT   = "elementSimilarity(foo)";
 const vespalib::string PROXIMITY = "elementSimilarity(foo).proximity";

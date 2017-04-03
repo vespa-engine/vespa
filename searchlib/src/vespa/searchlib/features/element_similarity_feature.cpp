@@ -8,6 +8,9 @@
 LOG_SETUP(".features.elementsimilarity");
 
 namespace search {
+
+using CollectionType = fef::FieldInfo::CollectionType;
+
 namespace features {
 
 namespace {
@@ -359,7 +362,7 @@ ElementSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const fef::FieldInfo &field = *env.getField(i);
         if ((field.type() == fef::FieldType::INDEX) &&
-            (field.collection() != fef::CollectionType::SINGLE) &&
+            (field.collection() != CollectionType::SINGLE) &&
             ( ! field.isFilter()))
         {
             fef::FeatureNameBuilder fnb;
