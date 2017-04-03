@@ -593,7 +593,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
      * in config and not remove it again if they reduce the node count.
      */
     public int distributionBits() {
-        if (zone.region().equals(RegionName.from("us-west-1"))) return 16; // TODO: (March 2017): Enable for all hosted zones (i.e when zone isn't default)
+        if (zone.region().equals(RegionName.from("us-west-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
+        if (zone.region().equals(RegionName.from("us-central-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
         return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
     }
 
