@@ -160,7 +160,7 @@ class NodesResponse extends HttpResponse {
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> {
-            if (! version.toString().isEmpty()) object.setString("vespaVersion", version.toString());
+            if (! version.toString().isEmpty()) object.setString("vespaVersion", version.toFullString());
         });
         node.status().hostedVersion().ifPresent(version -> object.setString("hostedVersion", version.toString()));
         node.status().dockerImage().ifPresent(image -> object.setString("currentDockerImage", image));
