@@ -104,8 +104,8 @@ public class NodeSerializer {
         object.setString(flavorKey, node.flavor().name());
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
-        node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toFullString()));
-        node.status().hostedVersion().ifPresent(version -> object.setString(hostedVersionKey, version.toFullString()));
+        node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
+        node.status().hostedVersion().ifPresent(version -> object.setString(hostedVersionKey, version.toString()));
         node.status().stateVersion().ifPresent(version -> object.setString(stateVersionKey, version));
         node.status().dockerImage().ifPresent(image -> object.setString(dockerImageKey, image));
         object.setLong(failCountKey, node.status().failCount());
