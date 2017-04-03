@@ -17,7 +17,7 @@ private:
 
 public:
     RunnablePair(Runnable &first, Runnable &second);
-    virtual void run();
+    void run() override;
 };
 
 } // namespace vesaplib

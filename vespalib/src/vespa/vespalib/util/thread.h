@@ -42,9 +42,9 @@ private:
 public:
     Thread(Runnable &runnable);
     ~Thread();
-    virtual void start();
-    virtual Thread &stop();
-    virtual void join();
+    void start() override;
+    Thread &stop() override;
+    void join() override;
     bool stopped() const { return _stopped; }
     bool slumber(double s);
     static Thread &currentThread();

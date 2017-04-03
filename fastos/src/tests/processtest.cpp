@@ -42,7 +42,7 @@ public:
       _counterLock->Unlock();
    }
 
-   void OnReceiveData (const void *data, size_t length)
+   void OnReceiveData (const void *data, size_t length) override
    {
       _receivedBytes += length;
       if(data != NULL)
@@ -78,7 +78,7 @@ public:
    {
    }
 
-   void Run (FastOS_ThreadInterface *thisThread, void *arg)
+   void Run (FastOS_ThreadInterface *thisThread, void *arg) override
    {
       (void)thisThread;
       (void)arg;
@@ -110,15 +110,11 @@ public:
 class ProcessTest : public BaseTest
 {
 private:
-   virtual bool useProcessStarter() const { return true; }
-   virtual bool useIPCHelper() const { return true; }
-   ProcessTest(const ProcessTest&);
-   ProcessTest& operator=(const ProcessTest&);
-
-   int GetLastError ()
-   {
-      return errno;
-   }
+    bool useProcessStarter() const override { return true; }
+    bool useIPCHelper() const override { return true; }
+    ProcessTest(const ProcessTest&);
+    ProcessTest& operator=(const ProcessTest&);
+    int GetLastError () const { return errno; }
 
    // Flag which indicates whether an IPC message is received
    // or not.
@@ -135,7 +131,7 @@ public:
    {
    }
 
-   void OnReceivedIPCMessage (const void *data, size_t length)
+   void OnReceivedIPCMessage (const void *data, size_t length) override
    {
       //      printf("Data: [%s]\n", static_cast<const char *>(data));
 
@@ -441,7 +437,7 @@ public:
       PrintSeparator();
    }
 
-   int Main ()
+   int Main () override
    {
       // This process is started as either a parent or a child.
       // When the parent role is desired, a child program is supplied

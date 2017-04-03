@@ -29,7 +29,7 @@ private:
     FastOS_UNIX_IPCHelper *_ipcHelper;
 
 protected:
-    virtual bool PreThreadInit ();
+    bool PreThreadInit () override;
 public:
     FastOS_UNIX_Application ();
     virtual ~FastOS_UNIX_Application();
@@ -66,11 +66,10 @@ public:
     static unsigned int GetCurrentProcessId ();
 
     FastOS_UNIX_ProcessStarter *GetProcessStarter ();
-    virtual bool Init ();
-    virtual void Cleanup ();
-    bool SendParentIPCMessage (const void *data, size_t length);
-    bool SendIPCMessage (FastOS_UNIX_Process *xproc, const void *buffer,
-                         int length);
+    bool Init () override;
+    void Cleanup () override;
+    bool SendParentIPCMessage (const void *data, size_t length) override;
+    bool SendIPCMessage (FastOS_UNIX_Process *xproc, const void *buffer, int length);
     void AddToIPCComm (FastOS_UNIX_Process *process);
     void RemoveFromIPCComm (FastOS_UNIX_Process *process);
 };

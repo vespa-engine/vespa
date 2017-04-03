@@ -24,19 +24,19 @@ protected:
     pthread_mutex_t _mutex;
 
 public:
-    FastOS_UNIX_Mutex(void);
+    FastOS_UNIX_Mutex();
 
-    ~FastOS_UNIX_Mutex(void);
+    ~FastOS_UNIX_Mutex();
 
-    bool TryLock (void) {
+    bool TryLock () override {
         return pthread_mutex_trylock(&_mutex) == 0;
     }
 
-    void Lock(void) {
+    void Lock() override {
         pthread_mutex_lock(&_mutex);
     }
 
-    void Unlock(void) {
+    void Unlock() override {
         pthread_mutex_unlock(&_mutex);
     }
 };

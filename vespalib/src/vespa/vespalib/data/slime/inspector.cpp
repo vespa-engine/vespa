@@ -21,7 +21,7 @@ class EqualObject : public ObjectTraverser, public Equal {
 public:
     EqualObject(const Inspector & rhs) : Equal(rhs) { }
 private:
-    virtual void field(const Memory &symbol, const Inspector &inspector) {
+    void field(const Memory &symbol, const Inspector &inspector) override {
         if ( _equal ) {
             _equal = (inspector == _rhs[symbol]);
         }
@@ -32,7 +32,7 @@ class EqualArray : public ArrayTraverser, public Equal {
 public:
     EqualArray(const Inspector & rhs) : Equal(rhs) { }
 private:
-    virtual void entry(size_t idx, const Inspector &inspector) {
+    void entry(size_t idx, const Inspector &inspector) override {
         if ( _equal ) {
             _equal = (inspector == _rhs[idx]);
         }

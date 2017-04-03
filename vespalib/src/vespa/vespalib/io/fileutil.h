@@ -233,24 +233,24 @@ public:
         { _autoCreateDirectories = autoCreate; }
     bool autoCreateDirectories() const { return _autoCreateDirectories; }
 
-    int getFileDescriptor() const {
+    int getFileDescriptor() const override {
         if (!isOpen()) {
             const_cast<LazyFile&>(*this).open(_flags, _autoCreateDirectories);
         }
         return File::getFileDescriptor();
     }
 
-    void resize(off_t size) {
+    void resize(off_t size) override {
         if (!isOpen()) { open(_flags, _autoCreateDirectories); }
         File::resize(size);
     }
 
-    off_t write(const void *buf, size_t bufsize, off_t offset) {
+    off_t write(const void *buf, size_t bufsize, off_t offset) override {
         if (!isOpen()) { open(_flags, _autoCreateDirectories); }
         return File::write(buf, bufsize, offset);
     }
 
-    size_t read(void *buf, size_t bufsize, off_t offset) const {
+    size_t read(void *buf, size_t bufsize, off_t offset) const override {
         if (!isOpen()) {
             const_cast<LazyFile&>(*this).open(_flags, _autoCreateDirectories);
         }

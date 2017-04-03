@@ -68,7 +68,7 @@ private:
 public:
    virtual ~TypeTest() {};
 
-   int Main ()
+   int Main () override
    {
       printf("grep for the string '%s' to detect failures.\n\n", failString);
 

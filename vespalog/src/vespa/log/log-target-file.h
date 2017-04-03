@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "log-target.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-
-
-#include "log-target.h"
 
 namespace ns_log {
 
@@ -22,8 +20,8 @@ private:
 
 public:
     explicit LogTargetFile(const char *target);
-    virtual ~LogTargetFile();
-    virtual int write(const char *buf, int len);
+    ~LogTargetFile();
+    int write(const char *buf, int len) override;
 };
 
 

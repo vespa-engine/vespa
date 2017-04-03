@@ -17,26 +17,26 @@ class BasicBoolValue : public Value {
     bool _value;
 public:
     BasicBoolValue(bool bit) : _value(bit) {}
-    virtual bool asBool() const { return _value; }
-    virtual Type type() const { return BOOL::instance; }
+    bool asBool() const override { return _value; }
+    Type type() const override { return BOOL::instance; }
 };
 
 class BasicLongValue : public Value {
     int64_t _value;
 public:
     BasicLongValue(int64_t l) : _value(l) {}
-    virtual int64_t asLong() const { return _value; }
-    virtual double asDouble() const { return _value; }
-    virtual Type type() const { return LONG::instance; }
+    int64_t asLong() const override { return _value; }
+    double asDouble() const override { return _value; }
+    Type type() const override { return LONG::instance; }
 };
 
 class BasicDoubleValue : public Value {
     double _value;
 public:
     BasicDoubleValue(double d) : _value(d) {}
-    virtual double asDouble() const { return _value; }
-    virtual int64_t asLong() const { return _value; }
-    virtual Type type() const { return DOUBLE::instance; }
+    double asDouble() const override { return _value; }
+    int64_t asLong() const override { return _value; }
+    Type type() const override { return DOUBLE::instance; }
 };
 
 class BasicStringValue : public Value {
@@ -45,8 +45,8 @@ public:
     BasicStringValue(Memory str, Stash & stash);
     BasicStringValue(const BasicStringValue &) = delete;
     BasicStringValue & operator = (const BasicStringValue &) = delete;
-    virtual Memory asString() const { return _value; }
-    virtual Type type() const { return STRING::instance; }
+    Memory asString() const override { return _value; }
+    Type type() const override { return STRING::instance; }
 };
 
 class BasicDataValue : public Value {
@@ -55,8 +55,8 @@ public:
     BasicDataValue(Memory data, Stash & stash);
     BasicDataValue(const BasicDataValue &) = delete;
     BasicDataValue & operator = (const BasicDataValue &) = delete;
-    virtual Memory asData() const { return _value; }
-    virtual Type type() const { return DATA::instance; }
+    Memory asData() const override { return _value; }
+    Type type() const override { return DATA::instance; }
 };
 
 } // namespace vespalib::slime

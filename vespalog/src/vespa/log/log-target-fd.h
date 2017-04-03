@@ -15,9 +15,9 @@ private:
 
 public:
     explicit LogTargetFd(const char *target);
-    virtual int write(const char *buf, int len);
-    virtual ~LogTargetFd();
-    virtual bool makeHumanReadable() const { return _istty; }
+    int write(const char *buf, int len) override;
+    ~LogTargetFd();
+    bool makeHumanReadable() const override { return _istty; }
 };
 
 

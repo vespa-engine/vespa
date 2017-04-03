@@ -20,7 +20,7 @@ private:
 public:
     NamedSymbolInserter(SymbolTable &table, const Memory &name)
         : _table(table), _name(name) {}
-    virtual Symbol insert() {
+    Symbol insert() override {
         return _table.insert(_name);
     }
 };

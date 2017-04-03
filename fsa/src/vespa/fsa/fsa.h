@@ -811,7 +811,7 @@ public:
      *
      * @return        True if the resulting state is valid.
      */
-    virtual bool start()
+    bool start() override
     {
       _hash = 0;
       return State::start();
@@ -825,7 +825,7 @@ public:
      * @param  in     Input symbol.
      * @return        True if the resulting state is valid.
      */
-    virtual bool delta(symbol_t in)
+    bool delta(symbol_t in) override
     {
       _hash += _fsa->hashDelta(_state,in);
       return State::delta(in);
@@ -842,7 +842,7 @@ public:
      *
      * @return Hash value.
      */
-    virtual hash_t hash() const
+    hash_t hash() const override
     {
       return _hash;
     }
@@ -958,7 +958,7 @@ public:
      *
      * @return        True if the resulting state is valid.
      */
-    virtual bool start()
+    bool start() override
     {
       _counter = 0;
       return State::start();
@@ -972,7 +972,7 @@ public:
      * @param  in     Input symbol.
      * @return        True if the resulting state is valid.
      */
-    virtual bool delta(symbol_t in)
+    bool delta(symbol_t in) override
     {
       bool ok = State::delta(in);
       if(ok)
@@ -1075,7 +1075,7 @@ public:
      *
      * @return        True if the resulting state is valid.
      */
-    virtual bool start()
+    bool start() override
     {
       _counter = 0;
       return State::start();
@@ -1090,7 +1090,7 @@ public:
      * @param  in     Input word.
      * @return        True if the resulting state is valid.
      */
-    virtual bool startWord(const std::string &in)
+    bool startWord(const std::string &in) override
     {
       start();
       return deltaWord(in);
@@ -1106,7 +1106,7 @@ public:
      * @param  in     Input word.
      * @return        True if the resulting state is valid.
      */
-    virtual bool deltaWord(const std::string &in)
+    bool deltaWord(const std::string &in) override
     {
       if(in.length()==0){
         return _state!=0;
@@ -1275,7 +1275,7 @@ public:
      *
      * @return        True if the resulting state is valid.
      */
-    virtual bool start()
+    bool start() override
     {
 #if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
       _memory.clear();
@@ -1293,7 +1293,7 @@ public:
      * @param  in     Input symbol.
      * @return        True if the resulting state is valid.
      */
-    virtual bool delta(symbol_t in)
+    bool delta(symbol_t in) override
     {
       bool ok = State::delta(in);
       if(ok)
@@ -1460,7 +1460,7 @@ public:
      *
      * @return        True if the resulting state is valid.
      */
-    virtual bool start()
+    bool start() override
     {
       _hash = 0;
 #if ((__GNUG__ == 3 && __GNUC_MINOR__ >= 1) || __GNUG__ > 3)
@@ -1479,7 +1479,7 @@ public:
      * @param  in     Input symbol.
      * @return        True if the resulting state is valid.
      */
-    virtual bool delta(symbol_t in)
+    bool delta(symbol_t in) override
     {
       _hash += _fsa->hashDelta(_state,in);
       bool ok = State::delta(in);
@@ -1499,7 +1499,7 @@ public:
      *
      * @return Hash value.
      */
-    virtual hash_t hash() const
+    hash_t hash() const override
     {
       return _hash;
     }
@@ -1641,7 +1641,7 @@ public:
      *
      * @return        True if the resulting state is valid.
      */
-    virtual bool start()
+    bool start() override
     {
       _hash = 0;
       _counter = 0;
@@ -1657,7 +1657,7 @@ public:
      * @param  in     Input symbol.
      * @return        True if the resulting state is valid.
      */
-    virtual bool delta(symbol_t in)
+    bool delta(symbol_t in) override
     {
       _hash += _fsa->hashDelta(_state,in);
       bool ok = State::delta(in);
@@ -1677,7 +1677,7 @@ public:
      *
      * @return Hash value.
      */
-    virtual hash_t hash() const
+    hash_t hash() const override
     {
       return _hash;
     }
@@ -1780,7 +1780,7 @@ public:
      * @param  in     Input symbol.
      * @return        True if the resulting state is valid.
      */
-    virtual bool delta(symbol_t in)
+    bool delta(symbol_t in) override
     {
       _hash += _fsa->hashDelta(_state,in);
       bool ok = State::delta(in);
@@ -1830,7 +1830,7 @@ public:
      *
      * @return        True if the resulting state is valid.
      */
-    virtual bool start()
+    bool start() override
     {
       _hash = 0;
       _counter = 0;
@@ -1846,7 +1846,7 @@ public:
      * @param  in     Input word.
      * @return        True if the resulting state is valid.
      */
-    virtual bool startWord(const std::string &in)
+    bool startWord(const std::string &in) override
     {
       start();
       return deltaWord(in);
@@ -1862,7 +1862,7 @@ public:
      * @param  in     Input word.
      * @return        True if the resulting state is valid.
      */
-    virtual bool deltaWord(const std::string &in)
+    bool deltaWord(const std::string &in) override
     {
       if(in.length()==0){
         return _state!=0;
@@ -1886,7 +1886,7 @@ public:
      *
      * @return Hash value.
      */
-    virtual hash_t hash() const
+    hash_t hash() const override
     {
       return _hash;
     }

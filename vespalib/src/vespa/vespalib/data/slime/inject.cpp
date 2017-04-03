@@ -4,7 +4,7 @@
 #include "cursor.h"
 #include "array_traverser.h"
 #include "object_traverser.h"
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace vespalib {
 namespace slime {
@@ -15,8 +15,8 @@ struct NestedInjector : ArrayTraverser, ObjectTraverser {
     Cursor &cursor;
     const Inspector *guard;
     NestedInjector(Cursor &c, const Inspector *g) : cursor(c), guard(g) {}
-    virtual void entry(size_t, const Inspector &inspector);
-    virtual void field(const Memory &symbol_name, const Inspector &inspector);
+    void entry(size_t, const Inspector &inspector) override;
+    void field(const Memory &symbol_name, const Inspector &inspector) override;
 };
 
 void injectNix(const Inserter &inserter) { inserter.insertNix(); }

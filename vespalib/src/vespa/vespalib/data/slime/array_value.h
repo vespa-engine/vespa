@@ -24,7 +24,7 @@ private:
     std::vector<Value*>  _values;
 
 protected:
-    virtual Cursor &addLeaf(const ValueFactory &input) {
+    Cursor &addLeaf(const ValueFactory &input) override {
         Value *value = input.create(_stash);
         _values.push_back(value);
         return *value;
@@ -35,23 +35,23 @@ public:
     ArrayValue(const ArrayValue &) = delete;
     ArrayValue &operator=(const ArrayValue &) = delete;
 
-    virtual Type type() const { return ARRAY::instance; }
-    virtual size_t children() const { return _values.size(); }
-    virtual size_t entries() const { return _values.size(); }
-    virtual void traverse(ArrayTraverser &at) const;
+    Type type() const override { return ARRAY::instance; }
+    size_t children() const override { return _values.size(); }
+    size_t entries() const override { return _values.size(); }
+    void traverse(ArrayTraverser &at) const override;
 
-    virtual Cursor &operator[](size_t idx) const {
+    Cursor &operator[](size_t idx) const override {
         if (idx < _values.size()) {
             return *_values[idx];
         }
         return *NixValue::invalid();
     }
 
-    virtual Cursor &addArray();
-    virtual Cursor &addObject();
-    virtual Symbol resolve(Memory symbol_name);
+    Cursor &addArray() override;
+    Cursor &addObject() override;
+    Symbol resolve(Memory symbol_name) override;
 
-    virtual ~ArrayValue() { }
+    ~ArrayValue() { }
 };
 
 } // namespace vespalib::slime

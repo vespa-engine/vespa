@@ -53,9 +53,8 @@ protected:
     static ConnCloseReader _instance;
   public:
     ConnCloseReader() {}
-    virtual ~ConnCloseReader() {}
     static ReaderInterface *GetInstance() { return &_instance; }
-    ssize_t Read(HTTPClient &client, void *buf, size_t len);
+    ssize_t Read(HTTPClient &client, void *buf, size_t len) override;
   };
   friend class HTTPClient::ConnCloseReader;
 
@@ -69,9 +68,8 @@ protected:
     static ContentLengthReader _instance;
   public:
     ContentLengthReader() {}
-    virtual ~ContentLengthReader() {}
     static ReaderInterface *GetInstance() { return &_instance; }
-    ssize_t Read(HTTPClient &client, void *buf, size_t len);
+    ssize_t Read(HTTPClient &client, void *buf, size_t len) override;
   };
   friend class HTTPClient::ContentLengthReader;
 
@@ -85,9 +83,8 @@ protected:
     static ChunkedReader _instance;
   public:
     ChunkedReader() {}
-    virtual ~ChunkedReader() {}
     static ReaderInterface *GetInstance() { return &_instance; }
-    ssize_t Read(HTTPClient &client, void *buf, size_t len);
+    ssize_t Read(HTTPClient &client, void *buf, size_t len) override;
   };
   friend class HTTPClient::ChunkedReader;
 

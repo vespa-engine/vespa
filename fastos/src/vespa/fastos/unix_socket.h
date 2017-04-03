@@ -9,9 +9,9 @@ class FastOS_UNIX_Socket : public FastOS_SocketInterface
 public:
     ~FastOS_UNIX_Socket();
 
-    bool Close ();
-    bool Shutdown();
-    bool SetSoBlocking (bool blockingEnabled);
+    bool Close () override;
+    bool Shutdown() override;
+    bool SetSoBlocking (bool blockingEnabled) override;
     ssize_t Read (void *readBuffer, size_t bufferSize) override;
     ssize_t Write (const void *writeBuffer, size_t bufferSize) override;
 

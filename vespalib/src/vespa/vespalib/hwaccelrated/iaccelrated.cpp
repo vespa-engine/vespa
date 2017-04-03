@@ -21,27 +21,27 @@ public:
 
 class GenericFactory :public Factory{
 public:
-    virtual IAccelrated::UP create() const { return IAccelrated::UP(new GenericAccelrator()); }
+    IAccelrated::UP create() const override { return IAccelrated::UP(new GenericAccelrator()); }
 };
 
 class Sse2Factory :public Factory{
 public:
-    virtual IAccelrated::UP create() const { return IAccelrated::UP(new Sse2Accelrator()); }
+    IAccelrated::UP create() const override { return IAccelrated::UP(new Sse2Accelrator()); }
 };
 
 class AvxFactory :public Factory{
 public:
-    virtual IAccelrated::UP create() const { return IAccelrated::UP(new AvxAccelrator()); }
+    IAccelrated::UP create() const override { return IAccelrated::UP(new AvxAccelrator()); }
 };
 
 class Avx2Factory :public Factory{
 public:
-    virtual IAccelrated::UP create() const { return IAccelrated::UP(new Avx2Accelrator()); }
+    IAccelrated::UP create() const override { return IAccelrated::UP(new Avx2Accelrator()); }
 };
 
 class Avx512Factory :public Factory{
 public:
-    virtual IAccelrated::UP create() const { return IAccelrated::UP(new Avx512Accelrator()); }
+    IAccelrated::UP create() const override { return IAccelrated::UP(new Avx512Accelrator()); }
 };
 
 template<typename T>

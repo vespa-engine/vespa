@@ -17,14 +17,14 @@ public:
    }
    virtual ~ThreadTestBase() {};
 
-   void PrintProgress (char *string)
+   void PrintProgress (char *string) override
    {
       printMutex.Lock();
       BaseTest::PrintProgress(string);
       printMutex.Unlock();
    }
 
-   void Run (FastOS_ThreadInterface *thread, void *arg);
+   void Run (FastOS_ThreadInterface *thread, void *arg) override;
 
    void WaitForThreadsToFinish (Job *jobs, int count)
    {

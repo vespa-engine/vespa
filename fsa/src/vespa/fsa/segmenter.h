@@ -437,7 +437,7 @@ public:
      */
     void add(const NGram &text,
              unsigned int from, int length,
-             const FSA::State &state)
+             const FSA::State &state) override
     {
       (void)text;
       unsigned int to=from+length;

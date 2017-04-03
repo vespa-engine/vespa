@@ -20,20 +20,20 @@ private:
     pthread_cond_t _cond;
 
 public:
-    FastOS_UNIX_Cond (void);
+    FastOS_UNIX_Cond ();
 
-    ~FastOS_UNIX_Cond(void);
+    ~FastOS_UNIX_Cond();
 
-    void Wait(void);
+    void Wait() override;
 
-    bool TimedWait(int milliseconds);
+    bool TimedWait(int milliseconds) override;
 
-    void Signal(void)
+    void Signal() override
     {
         pthread_cond_signal(&_cond);
     }
 
-    void Broadcast(void)
+    void Broadcast() override
     {
         pthread_cond_broadcast(&_cond);
     }

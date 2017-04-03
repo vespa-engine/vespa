@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/fastos/backtrace.h>
 #include <assert.h>
 #include <string.h>
@@ -63,16 +63,16 @@ public:
 class Tracker2: public Tracker
 {
 protected:
-    virtual void deepFill20();
-    virtual void deepFill18();
-    virtual void deepFill16();
-    virtual void deepFill14();
-    virtual void deepFill12();
-    virtual void deepFill10();
-    virtual void deepFill8();
-    virtual void deepFill6();
-    virtual void deepFill4();
-    virtual void deepFill2();
+    void deepFill20() override;
+    void deepFill18() override;
+    void deepFill16() override;
+    void deepFill14() override;
+    void deepFill12() override;
+    void deepFill10() override;
+    void deepFill8() override;
+    void deepFill6() override;
+    void deepFill4() override;
+    void deepFill2() override;
 };
 
 
@@ -104,7 +104,7 @@ public:
         PrintSeparator();
     }
 
-    int Main ()
+    int Main () override
     {
         TestBackTrace();
         return allWasOk() ? 0 : 1;

@@ -10,11 +10,9 @@
 
 #include <iostream>
 #include <iomanip>
-#include <string>
 
 #include <vespa/fsa/fsa.h>
 #include <vespa/fsa/detector.h>
-#include <vespa/fsa/ngram.h>
 
 using namespace fsa;
 
@@ -25,7 +23,7 @@ public:
 
   void add(const NGram &text,
            unsigned int from, int length,
-           const FSA::State &)
+           const FSA::State &) override
   {
     std::cout << "detected: [" << from << "," << from+length-1 << "], '"
               << text.join(" ",from,length) << "'\n";

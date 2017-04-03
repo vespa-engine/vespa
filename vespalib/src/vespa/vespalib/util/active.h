@@ -24,9 +24,6 @@ struct Active : Joinable {
      **/
     virtual Joinable &stop() = 0;
 
-    // inherits documentation from Joinable
-    virtual void join() = 0;
-
     /**
      * Empty virtual destructor to enable subclassing.
      **/

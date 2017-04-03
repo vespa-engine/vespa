@@ -20,7 +20,7 @@ private:
 public:
     NamedSymbolLookup(const SymbolTable &table, const Memory &name)
         : _table(table), _name(name) {}
-    virtual Symbol lookup() const {
+    Symbol lookup() const override {
         return _table.lookup(_name);
     }
 };
