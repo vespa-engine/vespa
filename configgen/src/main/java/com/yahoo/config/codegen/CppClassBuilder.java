@@ -295,11 +295,11 @@ public class CppClassBuilder implements ClassBuilder {
 
     void writeHeaderFunctionDeclarations(Writer w, String className, CNode node, String indent) throws IOException {
         w.write(""
-                + indent + "const vespalib::string & defName() const { return CONFIG_DEF_NAME; }\n"
-                + indent + "const vespalib::string & defVersion() const { return CONFIG_DEF_VERSION; }\n"
-                + indent + "const vespalib::string & defMd5() const { return CONFIG_DEF_MD5; }\n"
-                + indent + "const vespalib::string & defNamespace() const { return CONFIG_DEF_NAMESPACE; }\n"
-                + indent + "void serialize(::config::ConfigDataBuffer & __buffer) const;\n");
+                + indent + "const vespalib::string & defName() const override { return CONFIG_DEF_NAME; }\n"
+                + indent + "const vespalib::string & defVersion() const override { return CONFIG_DEF_VERSION; }\n"
+                + indent + "const vespalib::string & defMd5() const override { return CONFIG_DEF_MD5; }\n"
+                + indent + "const vespalib::string & defNamespace() const override { return CONFIG_DEF_NAMESPACE; }\n"
+                + indent + "void serialize(::config::ConfigDataBuffer & __buffer) const override;\n");
         writeConfigClassFunctionDeclarations(w, "Internal" + className + "Type", node, indent);
     }
 
