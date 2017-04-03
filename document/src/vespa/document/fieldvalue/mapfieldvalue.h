@@ -29,9 +29,9 @@ private:
                         FieldValue::IteratorHandler::ModificationStatus status,
                         bool wasModified,
                         std::vector<const FieldValue*>& keysToRemove) const;
-    virtual IteratorHandler::ModificationStatus onIterateNested(
+    IteratorHandler::ModificationStatus onIterateNested(
             FieldPath::const_iterator start, FieldPath::const_iterator end,
-            IteratorHandler & handler) const;
+            IteratorHandler & handler) const override;
     // Utility method to avoid constant explicit casting
     const MapDataType& getMapType() const { return *_type; }
 
@@ -127,14 +127,13 @@ public:
             const FieldValue& complexFieldValue) const;
 
     // FieldValue implementation
-    virtual FieldValue& assign(const FieldValue&);
-    virtual MapFieldValue* clone() const { return new MapFieldValue(*this); }
-    virtual int compare(const FieldValue&) const;
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const;
-    virtual bool hasChanged() const;
-    virtual const DataType *getDataType() const { return _type; }
-
-    virtual void printXml(XmlOutputStream& out) const;
+    FieldValue& assign(const FieldValue&) override;
+    MapFieldValue* clone() const override { return new MapFieldValue(*this); }
+    int compare(const FieldValue&) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    bool hasChanged() const override;
+    const DataType *getDataType() const override { return _type; }
+    void printXml(XmlOutputStream& out) const override;
 
     const_iterator begin() const { return const_iterator(*this, 0); }
     iterator begin() { return iterator(*this, 0); }

@@ -93,8 +93,8 @@ public:
     const StructFieldValue& getFields() const { return _fields; }
     StructFieldValue& getFields() { return _fields; }
 
-    const Field& getField(const vespalib::stringref & name) const { return _fields.getField(name); }
-    bool hasField(const vespalib::stringref & name) const { return _fields.hasField(name); }
+    const Field& getField(const vespalib::stringref & name) const override { return _fields.getField(name); }
+    bool hasField(const vespalib::stringref & name) const override { return _fields.hasField(name); }
 
     void clear() override;
 
@@ -142,7 +142,7 @@ public:
     /** Undo fieldvalue's toXml override for document. */
     std::string toXml(const std::string& indent = "") const override;
 
-    bool empty() const { return _fields.empty(); }
+    bool empty() const override { return _fields.empty(); }
 
     uint32_t calculateChecksum() const;
 

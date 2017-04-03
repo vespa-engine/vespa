@@ -68,8 +68,7 @@ public:
         SnapShot() : vespalib::Printable() { clear(); }
         SnapShot(const SnapShot& o) : vespalib::Printable() { (*this) = o; }
 
-        void print(std::ostream& out, bool verbose,
-                   const std::string& indent) const;
+        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
         void clear() {
             _usedMemory = 0;
@@ -104,8 +103,7 @@ private:
 public:
     MemoryState(Clock& clock, uint64_t maxMemory);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void setMaximumMemoryUsage(uint64_t max) { _maxMemory = max; }
     void setMinJumpToUpdateMax(uint32_t bytes) { _minJumpToUpdateMax = bytes; }

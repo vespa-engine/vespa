@@ -65,15 +65,13 @@ public:
     }
 
     // ValueUpdate implementation
-    virtual void checkCompatibility(const Field& field) const;
-    virtual bool applyTo(FieldValue& value) const;
-    virtual void printXml(XmlOutputStream& xos) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual void deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
-                             ByteBuffer& buffer, uint16_t version);
-    virtual AddValueUpdate* clone() const { return new AddValueUpdate(*this); }
+    void checkCompatibility(const Field& field) const override;
+    bool applyTo(FieldValue& value) const override;
+    void printXml(XmlOutputStream& xos) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
+                     ByteBuffer& buffer, uint16_t version) override;
+    AddValueUpdate* clone() const override { return new AddValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(AddValueUpdate);
 

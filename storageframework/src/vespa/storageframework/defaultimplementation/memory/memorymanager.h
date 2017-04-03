@@ -122,7 +122,7 @@ public:
 
         // vespalib::Printable implementation
     virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const = 0;
+                       const std::string& indent) const override = 0;
 };
 
 class MemoryManager : public vespalib::Printable,
@@ -138,28 +138,20 @@ public:
     MemoryManager(AllocationLogic::UP);
     ~MemoryManager();
 
-    virtual void setMaximumMemoryUsage(uint64_t max);
+    void setMaximumMemoryUsage(uint64_t max) override;
     virtual void getState(MemoryState& state, bool resetMax = false);
 
-    virtual const MemoryAllocationType&
-    registerAllocationType(const MemoryAllocationType& type);
+    const MemoryAllocationType&registerAllocationType(const MemoryAllocationType& type) override;
+    const MemoryAllocationType&getAllocationType(const std::string& name) const override;
 
-    virtual const MemoryAllocationType&
-    getAllocationType(const std::string& name) const;
+    std::vector<const MemoryAllocationType*> getAllocationTypes() const override;
 
-    virtual std::vector<const MemoryAllocationType*> getAllocationTypes() const;
-
-    MemoryToken::UP allocate(
-            const MemoryAllocationType&,
-            uint64_t min,
-            uint64_t max,
-            uint8_t p,
-            ReduceMemoryUsageInterface* = 0);
+    MemoryToken::UP allocate(const MemoryAllocationType&, uint64_t min, uint64_t max,
+                             uint8_t p, ReduceMemoryUsageInterface* = 0) override;
     
-    virtual uint64_t getMemorySizeFreeForPriority(uint8_t priority) const;
+    uint64_t getMemorySizeFreeForPriority(uint8_t priority) const override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 };
 

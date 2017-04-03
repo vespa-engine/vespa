@@ -25,21 +25,15 @@ private:
 public:
     explicit Constant(const vespalib::stringref & value);
 
-    virtual ResultList
-    contains(const Context&) const
-    {
+    ResultList contains(const Context&) const override {
         return ResultList(Result::get(_value));
     }
 
-    virtual ResultList
-    trace(const Context&, std::ostream& trace) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual void visit(Visitor& v) const;
-
+    ResultList trace(const Context&, std::ostream& trace) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
     bool getConstantValue() const { return _value; }
-
-    Node::UP clone() const { return wrapParens(new Constant(_name)); }
+    Node::UP clone() const override { return wrapParens(new Constant(_name)); }
 
 };
 

@@ -112,7 +112,7 @@ public:
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    bool empty() const;
+    bool empty() const override;
 
     bool hasChanged() const override { return _hasChanged; }
 

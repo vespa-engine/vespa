@@ -105,9 +105,8 @@ class Component : private ManagedComponent
     }
 
     // ManagedComponent implementation
-    metrics::Metric* getMetric() { return _metric; }
-    std::pair<MetricUpdateHook*, SecondTime> getMetricUpdateHook()
-        { return _metricUpdateHook; }
+    metrics::Metric* getMetric() override { return _metric; }
+    std::pair<MetricUpdateHook*, SecondTime> getMetricUpdateHook() override { return _metricUpdateHook; }
     const StatusReporter* getStatusReporter() { return _status; }
     void setMetricRegistrator(MetricRegistrator& mr);
     void setMemoryManager(MemoryManagerInterface& mm) { _memoryManager = &mm; }

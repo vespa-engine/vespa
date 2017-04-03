@@ -55,7 +55,7 @@ public:
           _operator(update._operator),
           _operand(update._operand) {}
 
-    virtual bool operator==(const ValueUpdate& other) const;
+    bool operator==(const ValueUpdate& other) const override;
 
     /** @return the operator of this arithmetic update. */
     Operator getOperator() const { return _operator; }
@@ -88,16 +88,13 @@ public:
     long applyTo(int64_t value) const;
 
     // ValueUpdate implementation
-    virtual void checkCompatibility(const Field& field) const;
-    virtual bool applyTo(FieldValue& value) const;
-    virtual void printXml(XmlOutputStream& xos) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual void deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
-                             ByteBuffer& buffer, uint16_t version);
-    virtual ArithmeticValueUpdate* clone() const
-        { return new ArithmeticValueUpdate(*this); }
+    void checkCompatibility(const Field& field) const override;
+    bool applyTo(FieldValue& value) const override;
+    void printXml(XmlOutputStream& xos) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
+                     ByteBuffer& buffer, uint16_t version) override;
+    ArithmeticValueUpdate* clone() const override { return new ArithmeticValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(ArithmeticValueUpdate);
 

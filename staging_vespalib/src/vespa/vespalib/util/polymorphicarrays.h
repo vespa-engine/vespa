@@ -77,16 +77,16 @@ class PrimitiveArrayT : public IArrayT<B>
     using typename IArrayT<B>::iterator;
 public:
     PrimitiveArrayT() : _array() { }
-    virtual ~PrimitiveArrayT() { }
-    virtual const T & operator [] (size_t i) const { return _array[i]; }
-    virtual T & operator [] (size_t i) { return _array[i]; }
-    virtual void resize(size_t sz) { _array.resize(sz); }
-    virtual void reserve(size_t sz) { _array.reserve(sz); }
-    virtual void clear() { _array.clear(); }
-    virtual IArrayT<B> * clone() const { return new PrimitiveArrayT<T, B>(*this); }
-    virtual size_t size() const { return _array.size(); }
-    virtual iterator erase(iterator it)  { _array.erase(_array.begin() + (it - this->begin())); return it; }
-    virtual void push_back(const B & v) {
+    ~PrimitiveArrayT() { }
+    const T & operator [] (size_t i) const override { return _array[i]; }
+    T & operator [] (size_t i) override { return _array[i]; }
+    void resize(size_t sz) override { _array.resize(sz); }
+    void reserve(size_t sz) override { _array.reserve(sz); }
+    void clear() override { _array.clear(); }
+    IArrayT<B> * clone() const override { return new PrimitiveArrayT<T, B>(*this); }
+    size_t size() const override { return _array.size(); }
+    iterator erase(iterator it) override  { _array.erase(_array.begin() + (it - this->begin())); return it; }
+    void push_back(const B & v) override {
         size_t sz(_array.size());
         _array.resize(sz + 1);
         _array[sz].assign(v);

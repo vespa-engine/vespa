@@ -30,36 +30,26 @@ private:
     const Operator& _operator;
     const BucketIdFactory& _bucketIdFactory;
 
-    bool isLeafNode() const { return false; }
+    bool isLeafNode() const override { return false; }
 public:
     Compare(std::unique_ptr<ValueNode> left, const Operator& op,
             std::unique_ptr<ValueNode> right,
             const BucketIdFactory& bucketidfactory);
-    virtual ~Compare();
+    ~Compare();
 
-    virtual ResultList
-    contains(const Context &context) const;
-
-    virtual ResultList
-    trace(const Context &context,
-          std::ostream& trace) const;
-
-    virtual void print(std::ostream&, bool verbose,
-                       const std::string& indent) const;
-    virtual void visit(Visitor& v) const;
+    ResultList contains(const Context &context) const override;
+    ResultList trace(const Context &context, std::ostream& trace) const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
 
     const Operator& getOperator() const { return _operator; }
 
     const ValueNode& getLeft() const { return *_left; }
     const ValueNode& getRight() const { return *_right; }
 
-    Node::UP clone() const;
+    Node::UP clone() const override;
 
-    const BucketIdFactory &
-    getBucketIdFactory(void) const
-    {
-        return _bucketIdFactory;
-    }
+    const BucketIdFactory &getBucketIdFactory(void) const { return _bucketIdFactory; }
 };
 
 } // select

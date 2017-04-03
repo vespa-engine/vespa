@@ -40,8 +40,7 @@ public:
     bool operator!=(const Operator& op) const
         { return (_name != op._name); }
 
-    virtual void print(std::ostream&, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
 };
 
 class FunctionOperator : public Operator {
@@ -53,8 +52,8 @@ public:
                 ResultList (Value::*comparator)(const Value&) const)
         : Operator(name), _comparator(comparator) {}
 
-    virtual ResultList compare(const Value& a, const Value& b) const;
-    virtual ResultList trace(const Value&, const Value&, std::ostream& trace) const;
+    ResultList compare(const Value& a, const Value& b) const override;
+    ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
 
     static const FunctionOperator GT;
     static const FunctionOperator GEQ;
@@ -69,8 +68,8 @@ public:
     RegexOperator(const vespalib::stringref & name);
 
     // Delegates to Value::regexCompare
-    virtual ResultList compare(const Value& a, const Value& b) const;
-    virtual ResultList trace(const Value&, const Value&, std::ostream& trace) const;
+    ResultList compare(const Value& a, const Value& b) const override;
+    ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
     ResultList match(const vespalib::string & val, const vespalib::stringref & expr) const;
 
     static const RegexOperator REGEX;
@@ -88,8 +87,8 @@ public:
     GlobOperator(const vespalib::stringref & name);
 
     // Delegates to Value::globCompare
-    virtual ResultList compare(const Value& a, const Value& b) const;
-    virtual ResultList trace(const Value&, const Value&, std::ostream& trace) const;
+    ResultList compare(const Value& a, const Value& b) const override;
+    ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
     vespalib::string convertToRegex(const vespalib::stringref & globpattern) const;
     static bool containsVariables(const vespalib::stringref & expression);
 

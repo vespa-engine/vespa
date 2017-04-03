@@ -16,7 +16,7 @@ public:
     SlimeOutputToVector();
     ~SlimeOutputToVector();
 
-    vespalib::WritableMemory reserve(size_t reserve) {
+    vespalib::WritableMemory reserve(size_t reserve) override {
         if (_size + reserve > _buf.size()) {
             _buf.resize(_size + reserve);
         }

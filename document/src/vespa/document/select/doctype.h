@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <vespa/document/datatype/documenttype.h>
 #include "node.h"
 
 namespace document {
@@ -26,13 +25,12 @@ private:
 public:
     DocType(const vespalib::stringref& doctype);
 
-    virtual ResultList contains(const Context&) const;
-    virtual ResultList trace(const Context&, std::ostream& trace) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual void visit(Visitor& v) const;
+    ResultList contains(const Context&) const override;
+    ResultList trace(const Context&, std::ostream& trace) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
 
-    Node::UP clone() const { return wrapParens(new DocType(_doctype)); }
+    Node::UP clone() const override { return wrapParens(new DocType(_doctype)); }
 
 };
 
