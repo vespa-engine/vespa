@@ -147,6 +147,9 @@
         <configuration>
           <testNGArtifactName>org.testng:testng</testNGArtifactName>
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
+          <systemPropertyVariables>
+            <jdisc.logger.level>INFO</jdisc.logger.level>
+          </systemPropertyVariables>
         </configuration>
         <executions>
           <execution>
