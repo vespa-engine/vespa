@@ -2,12 +2,12 @@
 package com.yahoo.config.provision;
 
 import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -16,24 +16,24 @@ public class ClusterMembershipTest {
 
     @Test
     public void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty());
         assertContainerService(ClusterMembership.from(cluster, 3));
     }
 
     @Test
     public void testContainerServiceInstanceFromString() {
-        assertContainerService(ClusterMembership.from("container/id1/3", Optional.empty()));
+        assertContainerService(ClusterMembership.fromVersion("container/id1/3", Optional.empty()));
     }
 
     @Test
     public void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
         assertContentService(ClusterMembership.from(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceFromString() {
-        assertContentService(ClusterMembership.from("content/id1/37", Optional.empty()));
+        assertContentService(ClusterMembership.fromVersion("content/id1/37", Optional.empty()));
     }
 
     @Test
@@ -50,7 +50,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 

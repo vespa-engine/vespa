@@ -10,10 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -25,7 +21,7 @@ public class ProvisionInfoTest {
     private final HostSpec h1 = new HostSpec("host1", Optional.empty());
     private final HostSpec h2 = new HostSpec("host2", Optional.empty());
     private final HostSpec h3 = new HostSpec("host3", Optional.of(ClusterMembership.from("container/test/0", Optional.empty())));
-    private final HostSpec h4 = new HostSpec("host4", Optional.of(ClusterMembership.from("container/test/1", Optional.of("dockerImg"))));
+    private final HostSpec h4 = new HostSpec("host4", Optional.of(ClusterMembership.from("container/test/1", Optional.of("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1"))));
 
     @Test
     public void testProvisionInfoSerialization() throws IOException {
@@ -61,7 +57,7 @@ public class ProvisionInfoTest {
         assertTrue(serializedInfo.getHosts().contains(h4));
         assertTrue(!getHost(h1.hostname(), serializedInfo.getHosts()).membership().isPresent());
         assertEquals("container/test/0", getHost(h3.hostname(), serializedInfo.getHosts()).membership().get().stringValue());
-        assertEquals("dockerImg", getHost(h4.hostname(), serializedInfo.getHosts()).membership().get().cluster().dockerImage().get());
+        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", getHost(h4.hostname(), serializedInfo.getHosts()).membership().get().cluster().dockerImage().get());
     }
 
     private HostSpec getHost(String hostname, Set<HostSpec> hosts) {

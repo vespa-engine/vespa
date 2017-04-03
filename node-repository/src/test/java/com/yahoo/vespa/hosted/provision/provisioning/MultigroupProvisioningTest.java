@@ -196,7 +196,7 @@ public class MultigroupProvisioningTest {
         assertEquals("No additional groups are retained containing retired nodes", wantedGroups, allGroups.size());
     }
 
-    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty()); }
+    private ClusterSpec cluster() { return ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty()); }
 
     private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, int groupCount, ProvisioningTester tester) {
         return new HashSet<>(tester.prepare(application, cluster(), capacity, groupCount));

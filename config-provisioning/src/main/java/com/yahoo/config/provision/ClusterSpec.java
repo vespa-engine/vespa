@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.Version;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -18,13 +19,13 @@ public final class ClusterSpec {
     /** The group id of these hosts, or empty if this is represents a request for hosts */
     private final Optional<Group> groupId;
 
-    private final Optional<String> dockerImage;
+    private final Optional<Version> vespaVersion;
 
-    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Optional<String> dockerImage) {
+    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Optional<Version> vespaVersion) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
-        this.dockerImage = dockerImage;
+        this.vespaVersion = vespaVersion;
     }
 
     /** Returns the cluster type */
@@ -33,27 +34,39 @@ public final class ClusterSpec {
     /** Returns the cluster id */
     public Id id() { return id; }
 
-    public Optional<String> dockerImage() { return dockerImage; }
+    public Optional<Version> vespaVersion() { return vespaVersion; }
+
+    public Optional<String> dockerImage() {
+        return vespaVersion.map(DockerImage.defaultImage::withTag).map(DockerImage::toString);
+    }
 
     /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */
     public Optional<Group> group() { return groupId; }
 
-    public ClusterSpec changeGroup(Optional<Group> newGroup) { return new ClusterSpec(type, id, newGroup, dockerImage); }
+    public ClusterSpec changeGroup(Optional<Group> newGroup) { return new ClusterSpec(type, id, newGroup, vespaVersion); }
 
-    /** Create a specification <b>specifying</b> an existing cluster group having these attributes */
-    public static ClusterSpec from(Type type, Id id, Group groupId, Optional<String> dockerImage) {
-        return new ClusterSpec(type, id, Optional.of(groupId), dockerImage);
+    /** Create a specification <b>requesting</b> a cluster with these attributes */
+    @Deprecated
+    // TODO: April 2017 - Remove this we no longer have old config-models using it
+    public static ClusterSpec request(Type type, Id id, Optional<String> dockerImage) {
+        return requestVersion(type, id, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion));
     }
 
     /** Create a specification <b>requesting</b> a cluster with these attributes */
-    public static ClusterSpec request(Type type, Id id, Optional<String> dockerImage) {
-        return new ClusterSpec(type, id, Optional.empty(), dockerImage);
+    public static ClusterSpec requestVersion(Type type, Id id, Optional<Version> vespaVersion) {
+        return new ClusterSpec(type, id, Optional.empty(), vespaVersion);
+    }
+
+    /** Create a specification <b>specifying</b> an existing cluster group having these attributes */
+    public static ClusterSpec from(Type type, Id id, Group groupId, Optional<Version> vespaVersion) {
+        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion);
     }
 
     @Override
     public String toString() {
-        return String.join(" ", type.toString(),  id.toString(),
-                           groupId.map(Group::toString).orElse(""), dockerImage.orElse(""));
+        return String.join(" ", type.toString(), id.toString(),
+                           groupId.map(Group::toString).orElse(""),
+                           vespaVersion.orElse(Version.emptyVersion).toString());
     }
 
     @Override
@@ -67,12 +80,12 @@ public final class ClusterSpec {
         if ( ! other.type.equals(this.type)) return false;
         if ( ! other.id.equals(this.id)) return false;
         if ( ! other.groupId.equals(this.groupId)) return false;
-        if ( ! other.dockerImage.equals(this.dockerImage)) return false;
+        if ( ! other.vespaVersion.equals(this.vespaVersion)) return false;
         return true;
     }
 
-    /** Returns whether this is equal, disregarding the group value and wanted docker image */
-    public boolean equalsIgnoringGroupAndDockerImage(Object o) {
+    /** Returns whether this is equal, disregarding the group value and wanted Vespa version */
+    public boolean equalsIgnoringGroupAndVespaVersion(Object o) {
         if (o == this) return true;
         if ( ! (o instanceof ClusterSpec)) return false;
         ClusterSpec other = (ClusterSpec)o;

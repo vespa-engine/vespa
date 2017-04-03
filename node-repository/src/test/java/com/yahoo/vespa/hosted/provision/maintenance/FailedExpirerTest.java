@@ -105,7 +105,7 @@ public class FailedExpirerTest {
         List<Node> provisioned = nodeRepository.getNodes(NodeType.tenant, Node.State.provisioned);
         nodeRepository.setReady(nodeRepository.setDirty(provisioned));
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(3), 1, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, ProvisioningTester.toHostSpecs(nodes));

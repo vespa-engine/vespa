@@ -4,12 +4,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
@@ -85,9 +83,9 @@ public class NodeTypeProvisioningTest {
 
     private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {
         return tester.prepare(application, 
-                              ClusterSpec.request(ClusterSpec.Type.container,
-                                                  ClusterSpec.Id.from("test"),
-                                                  Optional.empty()),
+                              ClusterSpec.requestVersion(ClusterSpec.Type.container,
+                                                         ClusterSpec.Id.from("test"),
+                                                         Optional.empty()),
                               Capacity.fromRequiredNodeType(NodeType.proxy),
                               1);
         
