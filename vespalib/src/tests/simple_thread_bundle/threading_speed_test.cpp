@@ -22,7 +22,7 @@ struct Worker : Runnable {
         iter = n;
         input = i;
     }
-    virtual void run() {
+    void run() override {
         uint64_t value = input;
         for (size_t i = 0; i < iter; ++i) {
             value = doWork(value);

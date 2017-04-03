@@ -13,7 +13,7 @@ private:
     template<typename T>
     void testLsbIdx();
 public:
-    int Main();
+    int Main() override;
 };
 
 template<typename T>

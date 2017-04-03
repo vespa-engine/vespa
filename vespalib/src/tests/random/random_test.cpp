@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("random_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/random.h>
 
@@ -15,7 +13,7 @@ public:
     void testJavaCompatibility();
     void testFloatingPoint();
     void testNormalDistribution();
-    int Main();
+    int Main() override;
 };
 
 bool eqD(double a, double b) {

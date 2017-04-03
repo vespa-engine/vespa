@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <limits>
-#include <vespa/log/log.h>
-LOG_SETUP("identifiable_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -14,7 +11,7 @@ using namespace vespalib;
 class AsciistreamTest : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
     template <typename T>
     void verify(T first, T second, const char * firstResult, const char * secondResult, char delim);
     template <typename T>

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("rwlock_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rwlock.h>
 
@@ -10,7 +8,7 @@ using namespace vespalib;
 class RWLockTest : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
     static RWLockReader rbvReader(RWLock & lock) { RWLockReader r(lock); return r; }
     static RWLockWriter rbvWriter(RWLock & lock) { RWLockWriter r(lock); return r; }
 };

@@ -10,8 +10,8 @@ struct Foo : public vespalib::Printable {
 
     Foo(int v, std::string o) : val(v), other(o) {}
 
-    virtual void print(std::ostream& out, bool verbose = false,
-                       const std::string& indent = "") const
+    void print(std::ostream& out, bool verbose = false,
+               const std::string& indent = "") const override
     {
         out << "Foo(val = " << val;
         if (verbose) {
@@ -28,8 +28,8 @@ struct Bar : public Foo {
 
     Bar(int j, int v, std::string o) : Foo(v, o), i(j) {}
 
-    virtual void print(std::ostream& out, bool verbose = false,
-                       const std::string& indent = "") const
+    void print(std::ostream& out, bool verbose = false,
+               const std::string& indent = "") const override
     {
         out << "Bar(" << i << ")";
         if (verbose) {
@@ -44,8 +44,8 @@ struct AsciiFoo : public vespalib::AsciiPrintable {
 
     AsciiFoo(int v) : val(v) {}
 
-    virtual void print(vespalib::asciistream& out,
-                       const PrintProperties& p) const
+    void print(vespalib::asciistream& out,
+               const PrintProperties& p) const override
     {
         if (p.verbose()) {
             out << "AsciiFoo(" << val << ")";
@@ -60,8 +60,8 @@ struct AsciiBar : public vespalib::AsciiPrintable {
 
     AsciiBar(int v) : _foo(v) {}
 
-    virtual void print(vespalib::asciistream& out,
-                       const PrintProperties& p) const
+    void print(vespalib::asciistream& out,
+               const PrintProperties& p) const override
     {
         if (p.verbose()) {
             out << "AsciiBar() {"
@@ -79,7 +79,7 @@ class Test : public vespalib::TestApp
 public:
     void testSimple();
     void testAsciiVariant();
-    int Main();
+    int Main() override;
 };
 
 void

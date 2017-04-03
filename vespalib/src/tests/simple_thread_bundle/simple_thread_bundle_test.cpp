@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -12,7 +11,7 @@ using namespace vespalib::fixed_thread_bundle;
 struct Cnt : Runnable {
     size_t x;
     Cnt() : x(0) {}
-    virtual void run() { ++x; }
+    void run() override { ++x; }
 };
 
 struct State {
@@ -38,7 +37,7 @@ struct State {
 
 struct Blocker : Runnable {
     Gate start;
-    virtual void run() {
+    void run() override {
         start.await();
     }
     Gate done; // set externally

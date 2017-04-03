@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("executor_test");
-#include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -27,7 +24,7 @@ struct CPUTask : public Executor::Task {
     uint32_t taskSize;
     uint32_t &result;
     CPUTask(uint32_t size, uint32_t &res) : taskSize(size), result(res) {}
-    virtual void run() {
+    void run() override {
         uint32_t res = 0;
         for (uint32_t i = 0; i < taskSize; ++i) {
             res += doStuff(i);
@@ -40,7 +37,7 @@ struct SyncTask : public Executor::Task {
     Gate &gate;
     CountDownLatch &latch;
     SyncTask(Gate &g, CountDownLatch &l) : gate(g), latch(l) {}
-    virtual void run() {
+    void run() override {
         latch.countDown();
         gate.await();
     }
@@ -55,7 +52,7 @@ public:
     Test() : _result(0) {}
     uint32_t calibrate(double ms);
     void stress(Executor &executor, uint32_t taskSize, uint32_t numTasks);
-    int Main();
+    int Main() override;
 };
 
 uint32_t

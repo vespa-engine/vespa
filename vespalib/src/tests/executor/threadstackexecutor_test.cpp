@@ -15,12 +15,12 @@ struct MyTask : public Executor::Task {
     static uint32_t runCnt;
     static uint32_t deleteCnt;
     MyTask(Gate &g, CountDownLatch &l) : gate(g), latch(l) {}
-    virtual void run() {
+    void run() override {
         Atomic::postInc(&runCnt);
         latch.countDown();
         gate.await();
     }
-    virtual ~MyTask() {
+    ~MyTask() {
         Atomic::postInc(&deleteCnt);
     }
     static void resetStats() {
@@ -120,7 +120,7 @@ TEST_F("requireThatNewTasksAreDroppedAfterShutdown", MyState()) {
 struct WaitTask : public Executor::Task {
     Gate &gate;
     WaitTask(Gate &g) : gate(g) {}
-    virtual void run() { gate.await(); }
+    void run() override { gate.await(); }
 };
 
 struct WaitState {

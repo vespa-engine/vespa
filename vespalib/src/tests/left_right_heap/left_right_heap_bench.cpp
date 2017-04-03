@@ -1,13 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/inline.h>
-#include <stdlib.h>
-#include <algorithm>
-#include <vector>
-#include <memory>
 
 using namespace vespalib;
 
@@ -210,10 +205,10 @@ struct Benchmark {
 
 template <typename H, typename D>
 struct BenchmarkHD : Benchmark {
-    virtual std::string legend() const {
+    std::string legend() const override {
         return make_string("[%s, %s]", Name<H>::value(), D::name());
     }
-    virtual double fiddle(size_t heapSize, size_t cnt, size_t loop, bool adjust) {
+    double fiddle(size_t heapSize, size_t cnt, size_t loop, bool adjust) override {
         Timer t;
         for (size_t i = 0; i < loop; ++i) {
             D d(cnt * 2);
@@ -224,7 +219,7 @@ struct BenchmarkHD : Benchmark {
         }
         return t.minTime;
     }
-    virtual std::pair<double, double> sort(size_t maxHeapSize, size_t loop) {
+    std::pair<double, double> sort(size_t maxHeapSize, size_t loop) override {
         Timer t1;
         Timer t2;
         for (size_t i = 0; i < loop; ++i) {
@@ -236,12 +231,12 @@ struct BenchmarkHD : Benchmark {
         }
         return std::make_pair(t1.minTime, t2.minTime);
     }
-    virtual void runSortBench(size_t maxHeapSize, size_t loop) {
+    void runSortBench(size_t maxHeapSize, size_t loop) override {
         std::pair<double, double> t = sort(maxHeapSize, loop);
         fprintf(stderr, "  sort bench (size=%zu): %g ms [%g ms (push) %g ms (pop)]\n",
                 maxHeapSize, (t.first + t.second), t.first, t.second);
     }
-    virtual void runFiddleBench(size_t heapSize, size_t cnt, size_t loop, bool adjust) {
+    void runFiddleBench(size_t heapSize, size_t cnt, size_t loop, bool adjust) override {
         double t = fiddle(heapSize, cnt, loop, adjust);
         fprintf(stderr, "  fiddle bench (size=%zu, cnt=%zu, use adjust='%s'): %g ms\n",
                 heapSize, cnt, adjust? "yes":"no", t);
