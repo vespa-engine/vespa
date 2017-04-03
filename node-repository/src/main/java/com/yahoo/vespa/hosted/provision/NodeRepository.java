@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
  * Changes to the set of active nodes must be accompanied by changes to the config model of the application.
  * Such changes are not handled by the node repository but by the classes calling it - see
  * {@link com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner} for such changes initiated
- * by the application package and {@link com.yahoo.vespa.hosted.provision.maintenance.ApplicationMaintainer}
+ * by the application package and {@link PeriodicApplicationMaintainer}
  * for changes initiated by the node repository.
  * Refer to {@link com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance} for timing details
  * of the node state transitions.

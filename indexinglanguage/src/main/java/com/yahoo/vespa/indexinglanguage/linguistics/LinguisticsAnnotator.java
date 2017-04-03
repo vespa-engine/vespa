@@ -16,7 +16,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 /**
  * This is a tool for adding {@link AnnotationTypes} type annotations to {@link StringFieldValue} objects.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class LinguisticsAnnotator {
 

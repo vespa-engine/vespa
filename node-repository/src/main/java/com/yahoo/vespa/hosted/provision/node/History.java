@@ -148,7 +148,7 @@ public class History {
         public Instant at() { return at; }
 
         @Override
-        public String toString() { return "'" + type + "' event at " + at; }
+        public String toString() { return "'" + type + "' event at " + at + " by " + agent; }
 
     }
 

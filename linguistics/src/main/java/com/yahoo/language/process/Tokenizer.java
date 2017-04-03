@@ -6,7 +6,7 @@ import com.yahoo.language.Language;
 /**
  * Language-sensitive tokenization of a text string.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public interface Tokenizer {
 

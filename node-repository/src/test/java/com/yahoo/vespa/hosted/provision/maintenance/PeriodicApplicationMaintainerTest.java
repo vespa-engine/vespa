@@ -36,15 +36,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class ApplicationMaintainerTest {
+public class PeriodicApplicationMaintainerTest {
 
     private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
 
@@ -115,16 +113,14 @@ public class ApplicationMaintainerTest {
         fixture.activate();
 
         // Freeze active nodes to simulate an application being deleted during a maintenance run
-        Set<ApplicationId> frozenActiveApplications = nodeRepository.getNodes(Node.State.active).stream()
-                .map(n -> n.allocation().get().owner())
-                .collect(Collectors.toSet());
+        List<Node> frozenActiveNodes = nodeRepository.getNodes(Node.State.active);
 
         // Remove one application without letting the application maintainer know about it
         fixture.remove(fixture.app2);
         assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
 
         // Nodes belonging to app2 are inactive after maintenance
-        fixture.runApplicationMaintainer(Optional.of(frozenActiveApplications));
+        fixture.runApplicationMaintainer(Optional.of(frozenActiveNodes));
         assertEquals("Inactive nodes were incorrectly activated after maintenance", fixture.wantedNodesApp2,
                      nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
     }
@@ -190,14 +186,14 @@ public class ApplicationMaintainerTest {
             runApplicationMaintainer(Optional.empty());
         }
 
-        void runApplicationMaintainer(Optional<Set<ApplicationId>> overriddenActiveApplications) {
+        void runApplicationMaintainer(Optional<List<Node>> overriddenNodesNeedingMaintenance) {
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
             apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
                                                                Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
                                                                Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
-            new TestableApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenActiveApplications).run();
+            new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenNodesNeedingMaintenance).run();
         }
 
         NodeList getNodes(Node.State ... states) {
@@ -206,28 +202,28 @@ public class ApplicationMaintainerTest {
 
     }
     
-    private static class TestableApplicationMaintainer extends ApplicationMaintainer {
+    private static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
 
-        private Optional<Set<ApplicationId>> overriddenActiveApplications;
+        private Optional<List<Node>> overriddenNodesNeedingMaintenance;
         
-        TestableApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
-                                      Optional<Set<ApplicationId>> overriddenActiveApplications) {
+        TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
+                                              Optional<List<Node>> overriddenNodesNeedingMaintenance) {
             super(deployer, nodeRepository, interval);
-            this.overriddenActiveApplications = overriddenActiveApplications;
+            this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
         }
 
         @Override
-        protected void deployAsynchronously(Deployment deployment) {
+        protected void deploy(ApplicationId application, Deployment deployment) {
             deployment.activate();
         }
 
         protected void throttle(int applicationCount) { }
 
         @Override
-        protected Set<ApplicationId> activeApplications() {
-            if (overriddenActiveApplications.isPresent())
-                return overriddenActiveApplications.get();
-            return super.activeApplications();
+        protected List<Node> nodesNeedingMaintenance() {
+            if (overriddenNodesNeedingMaintenance.isPresent())
+                return overriddenNodesNeedingMaintenance.get();
+            return super.nodesNeedingMaintenance();
         }
 
     }

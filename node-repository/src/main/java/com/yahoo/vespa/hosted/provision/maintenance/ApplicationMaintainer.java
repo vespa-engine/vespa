@@ -1,4 +1,3 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -15,33 +14,26 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
- * The application maintainer regularly redeploys all applications.
- * This is necessary because applications may gain and lose active nodes due to nodes being moved to and from the
- * failed state. This is corrected by redeploying the applications periodically.
- * It can not (at this point) be done reliably synchronously as part of the fail/reactivate call due to the need for this
- * to happen at a node having the deployer.
- *
  * @author bratseth
  */
-public class ApplicationMaintainer extends Maintainer {
+public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Deployer deployer;
 
     private final Executor deploymentExecutor = Executors.newCachedThreadPool();
-    
-    public ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
+
+    protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
         super(nodeRepository, interval);
         this.deployer = deployer;
     }
 
     @Override
     protected void maintain() {
-        Set<ApplicationId> applications = activeApplications();
+        Set<ApplicationId> applications = applicationsNeedingMaintenance();
         for (ApplicationId application : applications) {
             try {
                 // An application might change it's state between the time the set of applications is retrieved and the
@@ -53,8 +45,7 @@ public class ApplicationMaintainer extends Maintainer {
                     Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
                     if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-                    // deploy asynchronously to make sure we do all applications even when deployments are slow
-                    deployAsynchronously(deployment.get()); 
+                    deploy(application, deployment.get());
                 }
                 throttle(applications.size());
             }
@@ -63,8 +54,13 @@ public class ApplicationMaintainer extends Maintainer {
             }
         }
     }
-    
-    protected void deployAsynchronously(Deployment deployment) {
+
+    /**
+     * Redeploy this application using the provided deployer.
+     * The default implementation deploys asynchronously to make sure we do all applications timely 
+     * even when deployments are slow.
+     */
+    protected void deploy(ApplicationId applicationId, Deployment deployment) {
         deploymentExecutor.execute(() -> {
             try {
                 deployment.activate();
@@ -74,23 +70,24 @@ public class ApplicationMaintainer extends Maintainer {
             }
         });
     }
-    
-    protected void throttle(int applicationCount) {
-        // Sleep for a length of time that will spread deployment evenly over the maintenance period
-        try { Thread.sleep(interval().toMillis() / applicationCount); } catch (InterruptedException e) { return; }
-    }
 
-    protected Set<ApplicationId> activeApplications() {
-        return nodeRepository().getNodes(Node.State.active).stream()
+    /** Block in this method until the next application should be maintained */
+    protected abstract void throttle(int applicationCount);
+
+    private Set<ApplicationId> applicationsNeedingMaintenance() {
+        return nodesNeedingMaintenance().stream()
                 .map(node -> node.allocation().get().owner())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
+    /** 
+     * Returns the nodes whose applications should be maintained by this now. 
+     * This should be some subset of the allocated nodes. 
+     */
+    protected abstract List<Node> nodesNeedingMaintenance();
+
     private boolean isActive(ApplicationId application) {
         return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
     }
-
-    @Override
-    public String toString() { return "Periodic application redeployer"; }
 
 }
