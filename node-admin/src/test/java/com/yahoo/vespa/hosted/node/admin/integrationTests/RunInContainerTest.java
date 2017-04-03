@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -23,10 +24,17 @@ import java.io.StringWriter;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 /**
  * @author dybis
@@ -105,25 +113,57 @@ public class RunInContainerTest {
         waitForJdiscContainerToServe();
         assertThat(doPutCall("resume"), is(true));
 
-        // No nodes to suspend, always successful
-        assertThat(doPutCall("suspend"), is(true));
+        // No nodes are allocated to this host yet, so freezing should be fine, but orchestrator doesnt allow node-admin suspend
+        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com")).thenReturn(false);
+        assertFalse(doPutCall("suspend/node-admin"));
 
-        ComponentsProviderWithMocks.nodeRepositoryMock
-                .addContainerNodeSpec(new ContainerNodeSpec.Builder()
-                                              .hostname("host1.test.yahoo.com")
-                                              .wantedDockerImage(new DockerImage("dockerImage"))
-                                              .nodeState(Node.State.active)
-                                              .nodeType("tenant")
-                                              .nodeFlavor("docker")
-                                              .wantedRestartGeneration(1L)
-                                              .currentRestartGeneration(1L)
-                                              .build());
-        ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
-        assertThat(doPutCall("suspend"), is(false));
-        ComponentsProviderWithMocks.callOrderVerifier
-                .assertInOrder("Suspend with parent: localhost and hostnames: [host1.test.yahoo.com] - Forced response: Optional[Denied]");
+        // Ochestrator changes its mind, allows node-admin to suspend
+        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com")).thenReturn(true);
+        Thread.sleep(50);
+        assertTrue(doPutCall("suspend/node-admin")); // Tick loop should've run several times by now, expect to be suspended
 
-        assertThat(doGetInfoCall(), is("{\"dockerHostHostName\":\"localhost\",\"NodeAdmin\":{\"isFrozen\":true,\"NodeAgents\":[]}}"));
+        // Lets try to suspend everything now
+        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
+        assertFalse(doPutCall("suspend"));
+        Thread.sleep(50);
+        assertTrue(doPutCall("suspend"));
+
+        // Back to resume
+        assertFalse(doPutCall("resume"));
+        Thread.sleep(50);
+        assertTrue(doPutCall("resume"));
+
+        // Lets try the same, but with an active container running on this host
+        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(
+                Collections.singletonList(new ContainerNodeSpec.Builder()
+                        .hostname("host1.test.yahoo.com")
+                        .wantedDockerImage(new DockerImage("dockerImage"))
+                        .nodeState(Node.State.active)
+                        .nodeType("tenant")
+                        .nodeFlavor("docker")
+                        .build()));
+        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com",
+                Collections.singletonList("host1.test.yahoo.com"))).thenReturn(Optional.of("Cant suspend because..."));
+
+        // Suspending node-admin is still independent of suspending containers, so this should succeed
+        assertFalse(doPutCall("suspend/node-admin"));
+        Thread.sleep(50);
+        assertTrue(doPutCall("suspend/node-admin"));
+
+        // Fails because orchestrator wont allow to suspend the container
+        assertFalse(doPutCall("suspend"));
+        Thread.sleep(50);
+        assertFalse(doPutCall("suspend"));
+
+        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com",
+                Collections.singletonList("host1.test.yahoo.com"))).thenReturn(Optional.empty());
+        doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
+                .trySuspendNode(eq(new ContainerName("host1")));
+        doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
+                .stopServicesOnNode(eq(new ContainerName("host1")));
+
+        Thread.sleep(50);
+        assertTrue(doPutCall("suspend"));
     }
 
 

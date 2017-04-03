@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -21,21 +20,13 @@ public interface NodeAdmin {
     void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun);
 
     /**
-     * Causes the NodeAgents to freeze, meaning they will not pick up any changes from NodeRepository.
-     * @return if NodeAgent is frozen.
+     * Attempts to freeze/unfreeze all NodeAgents and itself. To freeze a NodeAgent means that
+     * they will not pick up any changes from NodeRepository.
+     *
+     * @param frozen whether NodeAgents and NodeAdmin should be frozen
+     * @return True if all the NodeAgents and NodeAdmin has converged to the desired state
      */
-    boolean freezeNodeAgentsAndCheckIfAllFrozen();
-
-    /**
-     * Causes the NodeAgent to unfreeze and start picking up changes from NodeRepository.
-     */
-    void unfreezeNodeAgents();
-
-    /**
-     * Stop services on these nodes
-     * @return empty if successful, otherwise an error
-     */
-    Optional<String> stopServices(List<String> nodes);
+    boolean setFrozen(boolean frozen);
 
     /**
      * Returns whether the NodeAdmin itself is currently frozen, meaning it will not pick up any changes
@@ -44,9 +35,10 @@ public interface NodeAdmin {
     boolean isFrozen();
 
     /**
-     * Sets the current frozen status for NodeAdmin
+     * Stop services on these nodes
+     * @param nodes List of hostnames to suspend
      */
-    void setFrozen(boolean frozen);
+    void stopNodeAgentServices(List<String> nodes);
 
     /**
      * Returns list of hosts.

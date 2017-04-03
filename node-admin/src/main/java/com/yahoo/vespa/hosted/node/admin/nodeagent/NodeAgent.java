@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-
 import java.util.Map;
 
 /**
@@ -14,27 +12,13 @@ import java.util.Map;
  */
 public interface NodeAgent {
     /**
-     * Freeze will eventually cause the NodeAgent to not pick up changes. Check isFrozen to see state.
+     * Will eventually freeze/unfreeze the node agent
+     * @param frozen whether node agent should be frozen
+     * @return True if node agent has converged to the desired state
      */
-    void freeze();
+    boolean setFrozen(boolean frozen);
 
-    /**
-     * start picking up changes again.
-     */
-    void unfreeze();
-
-    void stopServices(ContainerName containerName);
-
-    /**
-     * Make NodeAgent check for work to be done.
-     */
-    void signalWorkToBeDone();
-
-
-    /**
-     * Returns true if NodeAgent is frozen.
-     */
-    boolean isFrozen();
+    void stopServices();
 
     /**
      * Returns a map containing all relevant NodeAgent variables and their current values.
@@ -58,8 +42,6 @@ public interface NodeAgent {
      * Updates metric receiver with the latest node-agent stats
      */
     void updateContainerNodeMetrics(int numAllocatedContainersOnHost);
-
-    ContainerName getContainerName();
 
     String getHostname();
 

@@ -1,90 +1,142 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-import com.yahoo.prelude.semantics.RuleBaseException;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Mockito.doAnswer;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Basic test of ActiveContainersRefresherTest
- * @author dybis
+ * Basic test of NodeAdminStateUpdater
+ * @author freva
  */
 public class NodeAdminStateUpdaterTest {
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testExceptionIsCaughtAndDataIsPassedAndFreeze() throws Exception {
-        NodeRepository nodeRepository = mock(NodeRepository.class);
-        NodeAdmin nodeAdmin = mock(NodeAdmin.class);
-        final List<ContainerNodeSpec> accumulatedArgumentList = Collections.synchronizedList(new ArrayList<>());
-        doAnswer(
-                invocation -> {
-                    List<ContainerNodeSpec> containersToRunInArgument = (List<ContainerNodeSpec>) invocation.getArguments()[0];
-                    containersToRunInArgument.forEach(accumulatedArgumentList::add);
-                    if (accumulatedArgumentList.size() == 2) {
-                        throw new RuleBaseException("This exception is expected, and should show up in the log.");
-                    }
-                    return null;
-                }
-        ).when(nodeAdmin).refreshContainersToRun(anyList());
+    private final String parentHostname = "basehost1.test.yahoo.com";
 
-        final List<ContainerNodeSpec> containersToRun = new ArrayList<>();
-        containersToRun.add(createSample());
+    private final ManualClock clock = new ManualClock();
+    private final NodeRepository nodeRepository = mock(NodeRepository.class);
+    private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
+    private final Orchestrator orchestrator = mock(Orchestrator.class);
+    private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
+            nodeRepository, nodeAdmin, clock, orchestrator, parentHostname));
+
+
+    @Test
+    public void testStateConvergence() throws IOException {
+        List<ContainerNodeSpec> containersToRun = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            containersToRun.add(
+                    new ContainerNodeSpec.Builder()
+                            .hostname("host" + i + ".test.yahoo.com")
+                            .nodeState(i % 3 == 0 ? Node.State.active : Node.State.ready)
+                            .nodeType("tenant")
+                            .nodeFlavor("docker")
+                            .build());
+        }
+        List<String> activeHostnames = Arrays.asList(
+                "host0.test.yahoo.com", "host3.test.yahoo.com", "host6.test.yahoo.com", "host9.test.yahoo.com");
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
-        CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
-        NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(
-                nodeRepository, nodeAdmin, Long.MAX_VALUE, Long.MAX_VALUE, orchestratorMock, "basehostname");
 
-        // Non-frozen
-        refresher.fetchContainersToRunFromNodeRepository();
-        refresher.fetchContainersToRunFromNodeRepository();
+        // Initially we start with everything running and we want to continue running, therefore we are converged
+        // and ticks should complete without ever calling NodeAdmin
+        tickAfter(0);
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        tickAfter(35);
+        tickAfter(35);
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        verify(refresher, never()).signalWorkToBeDone(); // No attempt in changing state
 
-        when(nodeAdmin.isFrozen()).thenReturn(true);
-        int numberOfElementsBeforeFreeze = accumulatedArgumentList.size();
+        // Lets try to suspend node admin only, immediately we get false back, and need to wait until next
+        // tick before any change can happen
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
+        verify(refresher, times(1)).signalWorkToBeDone();
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN)); // Still no change
+        verify(refresher, times(1)).signalWorkToBeDone(); // We already notified of work, dont need to do it again
 
-        // Frozen
-        refresher.fetchContainersToRunFromNodeRepository();
-        refresher.fetchContainersToRunFromNodeRepository();
-        refresher.fetchContainersToRunFromNodeRepository();
+        when(nodeAdmin.setFrozen(eq(true))).thenReturn(false);
+        tickAfter(0);
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
+        verify(refresher, times(1)).signalWorkToBeDone(); // No change in desired state
 
-        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
-                is(Optional.of("Not all node agents are frozen.")));
+        when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
+        when(orchestrator.suspend(eq(parentHostname))).thenReturn(false).thenReturn(true);
+        tickAfter(35);
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
+        verify(refresher, times(1)).signalWorkToBeDone();
+        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // Roll back
 
-        assertThat(numberOfElementsBeforeFreeze, is(2));
-        assertThat(accumulatedArgumentList.size(), is(numberOfElementsBeforeFreeze));
+        tickAfter(35);
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
+        verify(nodeAdmin, times(1)).setFrozen(eq(false));
+        verify(orchestrator, never()).suspend(any(), any());
+
+        // Lets just suspend everything...
+        when(orchestrator.suspend(eq(parentHostname), eq(activeHostnames)))
+                .thenReturn(Optional.of("Cannot allow to suspend becuase some reason"))
+                .thenReturn(Optional.empty());
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
+        tickAfter(0); // Change in wanted state, no need to wait
+        verify(refresher, times(2)).signalWorkToBeDone();
+        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Another roll back
+
+        // At this point orchestrator says its OK to suspend, but something goes wrong when we try to stop services
+        doThrow(new RuntimeException("Failed to stop services")).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
+        tickAfter(35);
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
+        verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
+        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure we dont roll back
+
+        // Finally we are successful in transitioning to frozen
+        tickAfter(35);
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
+
+        // We are in desired state, no changes will happen
+        reset(nodeAdmin);
+        tickAfter(35);
+        tickAfter(35);
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
+        verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
+        verifyNoMoreInteractions(nodeAdmin);
 
 
-        assertThat(accumulatedArgumentList.get(0), is(createSample()));
-        when(nodeAdmin.isFrozen()).thenReturn(false);
+        // Lets try going back to resumed
+        when(nodeAdmin.setFrozen(eq(false))).thenReturn(false); // NodeAgents not converged to yet
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        tickAfter(35);
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
 
-        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED),
-                is(Optional.empty()));
-        refresher.deconstruct();
+        when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED)); // Still false before tick
+        tickAfter(35);
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
     }
 
-    private ContainerNodeSpec createSample() {
-        return new ContainerNodeSpec.Builder()
-                .hostname("host1.test.yahoo.com")
-                .nodeState(Node.State.active)
-                .nodeType("tenant")
-                .nodeFlavor("docker")
-                .build();
+    private void tickAfter(int seconds) {
+        clock.advance(Duration.ofSeconds(seconds));
+        refresher.tick();
     }
 }
