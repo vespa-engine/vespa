@@ -6,7 +6,7 @@ import com.yahoo.language.process.StemMode;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class AnnotatorConfig implements Cloneable {
 
