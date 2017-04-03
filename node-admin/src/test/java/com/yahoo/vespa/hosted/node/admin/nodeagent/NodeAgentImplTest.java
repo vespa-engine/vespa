@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Collections;
@@ -357,6 +358,27 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
         verify(nodeRepository, times(1)).markAsDirty(eq(hostName));
+    }
+
+    @Test
+    public void testRestartDeadContainerAfterNodeAdminRestart() throws IOException {
+        final ContainerNodeSpec nodeSpec = nodeSpecBuilder
+                .wantedDockerImage(dockerImage)
+                .nodeState(Node.State.active)
+                .vespaVersion(vespaVersion)
+                .build();
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, false);
+
+        when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
+        when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
+        when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
+
+        nodeAgent.tick();
+
+        verify(dockerOperations, times(1)).removeContainer(any());
+        verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
+
     }
 
     @Test
