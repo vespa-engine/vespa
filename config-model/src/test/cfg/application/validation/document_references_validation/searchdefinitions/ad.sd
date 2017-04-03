@@ -1,0 +1,9 @@
+# Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search ad {
+  document ad {
+    field campaign_ref type reference<campaign> {
+      indexing: attribute | summary
+    }
+  }
+  import field campaign_ref.budget as my_budget {}
+}

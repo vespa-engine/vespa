@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+    <admin version="2.0">
+        <adminserver hostalias="node1" />
+        <logserver hostalias="node1" />
+    </admin>
+    <content version="1.0">
+        <redundancy>1</redundancy>
+        <documents>
+            <document type='ad' mode="streaming"/>
+            <document type='campaign' mode="streaming" global="true"/>
+        </documents>
+        <nodes>
+            <node hostalias='node1' distribution-key='0'/>
+        </nodes>
+    </content>
+</services>
