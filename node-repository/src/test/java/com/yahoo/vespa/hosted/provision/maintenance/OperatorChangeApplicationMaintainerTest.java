@@ -77,7 +77,7 @@ public class OperatorChangeApplicationMaintainerTest {
         clock.advance(Duration.ofSeconds(1));
         nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(4).hostname(), Agent.operator, "Manual node failing");
         clock.advance(Duration.ofMinutes(2));
-        maintainer.maintain(); // XXX
+        maintainer.maintain();
         assertEquals("Operator change -> redeployment", 1, fixture.deployer.redeployments);
 
         clock.advance(Duration.ofMinutes(2));

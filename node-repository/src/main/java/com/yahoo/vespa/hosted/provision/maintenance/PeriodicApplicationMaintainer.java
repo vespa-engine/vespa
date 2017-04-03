@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 /**
  * The application maintainer regularly redeploys all applications to make sure the node repo and application
- * model is in sync and to trigger backgroun node allocation changes such as allocation optimizations and
+ * model is in sync and to trigger background node allocation changes such as allocation optimizations and
  * flavor retirement.
  *
  * @author bratseth

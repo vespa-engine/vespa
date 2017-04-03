@@ -57,7 +57,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     /**
      * Redeploy this application using the provided deployer.
-     * The default implementatyion deploys asynchronously to make sure we do all applications timely 
+     * The default implementation deploys asynchronously to make sure we do all applications timely 
      * even when deployments are slow.
      */
     protected void deploy(ApplicationId applicationId, Deployment deployment) {
