@@ -198,11 +198,7 @@ public class Search implements Serializable, ImmutableSearch {
 
     @Override
     public ImmutableSDField getField(String name) {
-        ImmutableSDField field = getExtraField(name);
-        if (field != null) {
-            return field;
-        }
-        field = (ImmutableSDField)docType.getField(name);
+        ImmutableSDField field = getConcreteField(name);
         if (field != null) {
             return field;
         }
@@ -512,7 +508,8 @@ public class Search implements Serializable, ImmutableSearch {
      * @param field The source field.
      * @return The map of summary fields found.
      */
-    public Map<String, SummaryField> getSummaryFields(SDField field) {
+    @Override
+    public Map<String, SummaryField> getSummaryFields(ImmutableSDField field) {
         Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>();
         for (DocumentSummary documentSummary : summaries.values()) {
             for (SummaryField summaryField : documentSummary.getSummaryFields()) {
