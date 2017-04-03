@@ -30,7 +30,7 @@ toStr(bool value)
 
 bool fastPartialUpdateAttribute(const schema::DataType &attrType) {
     // Partial update to tensor or predicate attribute must update document
-    return ((attrType != schema::BOOLEANTREE) && (attrType != schema::TENSOR));
+    return ((attrType != schema::BOOLEANTREE) && (attrType != schema::TENSOR) && (attrType != schema::DataType::REFERENCE));
 }
 
 
