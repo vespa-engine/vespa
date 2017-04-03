@@ -3,8 +3,7 @@
 #pragma once
 
 #include "annotationtype.h"
-#include <memory>
-#include <vespa/document/datatype/datatype.h>
+#include "datatype.h"
 
 namespace document {
 
@@ -18,11 +17,10 @@ public:
     AnnotationReferenceDataType(const AnnotationType &type, int id);
 
     const AnnotationType &getAnnotationType() const;
-    virtual void print(std::ostream &out, bool verbose,
-                       const std::string &indent) const;
-    virtual AnnotationReferenceDataType *clone() const;
-    virtual std::unique_ptr<FieldValue> createFieldValue() const;
-    virtual FieldPath::UP onBuildFieldPath(const vespalib::stringref &remainFieldName) const;
+    void print(std::ostream &out, bool verbose, const std::string &indent) const override;
+    AnnotationReferenceDataType *clone() const override;
+    std::unique_ptr<FieldValue> createFieldValue() const override;
+    FieldPath::UP onBuildFieldPath(const vespalib::stringref &remainFieldName) const override;
 
     DECLARE_IDENTIFIABLE(AnnotationReferenceDataType);
 };

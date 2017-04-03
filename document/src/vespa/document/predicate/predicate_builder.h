@@ -12,16 +12,16 @@ class PredicateNode;
 class PredicateBuilder : private PredicateSlimeVisitor {
     std::vector<PredicateNode *>_nodes;
 
-    virtual void visitFeatureSet(const vespalib::slime::Inspector &i);
-    virtual void visitFeatureRange(const vespalib::slime::Inspector &i);
-    virtual void visitNegation(const vespalib::slime::Inspector &i);
-    virtual void visitConjunction(const vespalib::slime::Inspector &i);
-    virtual void visitDisjunction(const vespalib::slime::Inspector &i);
-    virtual void visitTrue(const vespalib::slime::Inspector &i);
-    virtual void visitFalse(const vespalib::slime::Inspector &i);
+    void visitFeatureSet(const Inspector &i) override;
+    void visitFeatureRange(const Inspector &i) override;
+    void visitNegation(const Inspector &i) override;
+    void visitConjunction(const Inspector &i) override;
+    void visitDisjunction(const Inspector &i) override;
+    void visitTrue(const Inspector &i) override;
+    void visitFalse(const Inspector &i) override;
 
 public:
-    std::unique_ptr<PredicateNode> build(const vespalib::slime::Inspector &i);
+    std::unique_ptr<PredicateNode> build(const Inspector &i);
 };
 
 }  // namespace document

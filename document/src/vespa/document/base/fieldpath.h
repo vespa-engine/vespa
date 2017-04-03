@@ -84,7 +84,7 @@ public:
 
     FieldValue * getFieldValueToSetPtr() const { return _fillInVal.get(); }
     FieldValue& getFieldValueToSet() const { return *_fillInVal; }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     /**
      * Parses a string of the format {["]escaped string["]} to its unescaped value.
      * @param key is the incoming value, and contains what is left when done.
@@ -156,7 +156,7 @@ public:
         return _path[i];
     }
 
-    FieldPath* clone() const {
+    FieldPath* clone() const override {
         return new FieldPath(*this);
     }
 

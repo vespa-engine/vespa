@@ -12,8 +12,8 @@
  */
 #pragma once
 
+#include "collectionfieldvalue.h"
 #include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/fieldvalue/collectionfieldvalue.h>
 
 namespace document {
 
@@ -21,17 +21,17 @@ class ArrayFieldValue : public CollectionFieldValue {
 private:
     IArray::UP _array;
 
-    virtual bool addValue(const FieldValue&);
-    virtual bool containsValue(const FieldValue& val) const;
-    virtual bool removeValue(const FieldValue& val);
+    bool addValue(const FieldValue&) override;
+    bool containsValue(const FieldValue& val) const override;
+    bool removeValue(const FieldValue& val) override;
     IteratorHandler::ModificationStatus iterateSubset(
             int startPos, int endPos, const vespalib::stringref & variable,
             FieldPath::const_iterator nextPos,
             FieldPath::const_iterator end_,
             IteratorHandler& handler) const;
-    virtual IteratorHandler::ModificationStatus onIterateNested(
+    IteratorHandler::ModificationStatus onIterateNested(
             FieldPath::const_iterator start, FieldPath::const_iterator end,
-            IteratorHandler & handler) const;
+            IteratorHandler & handler) const override;
 public:
     typedef IArray::const_iterator const_iterator;
     typedef IArray::iterator iterator;
@@ -44,7 +44,7 @@ public:
      */
     ArrayFieldValue(const DataType &arrayType);
     ArrayFieldValue(const ArrayFieldValue&);
-    virtual ~ArrayFieldValue();
+    ~ArrayFieldValue();
 
     ArrayFieldValue& operator=(const ArrayFieldValue&);
 
@@ -58,22 +58,18 @@ public:
     void remove(uint32_t index);
     bool remove(const FieldValue& val) { return removeValue(val); }
 
-        // CollectionFieldValue implementation
-    virtual bool isEmpty() const { return _array->empty(); }
-    virtual size_t size() const { return _array->size(); }
-    virtual void clear() { _array->clear(); }
+    bool isEmpty() const override { return _array->empty(); }
+    size_t size() const override { return _array->size(); }
+    void clear() override { _array->clear(); }
     void reserve(size_t sz) { _array->reserve(sz); }
     void resize(size_t sz) { _array->resize(sz); }
 
-        // FieldValue implementation
-    virtual FieldValue& assign(const FieldValue&);
-    virtual ArrayFieldValue* clone() const
-        { return new ArrayFieldValue(*this); }
-    virtual int compare(const FieldValue&) const;
-    virtual void printXml(XmlOutputStream& out) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual bool hasChanged() const;
+    FieldValue& assign(const FieldValue&) override;
+    ArrayFieldValue* clone() const override { return new ArrayFieldValue(*this); }
+    int compare(const FieldValue&) const override;
+    void printXml(XmlOutputStream& out) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    bool hasChanged() const override;
     void swap(ArrayFieldValue & other) { _array.swap(other._array); }
 
         // Iterator functionality

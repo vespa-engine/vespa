@@ -32,7 +32,7 @@ public:
     ResultList operator||(const ResultList& other) const;
     ResultList operator!() const;
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     bool isEmpty() const { return _results.empty(); }
 

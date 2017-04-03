@@ -10,8 +10,8 @@
  */
 #pragma once
 
+#include "fieldvalue.h"
 #include <vespa/document/datatype/collectiondatatype.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
 
@@ -38,7 +38,7 @@ public:
         return *this;
     }
 
-    virtual const DataType *getDataType() const { return _type; }
+    const DataType *getDataType() const override { return _type; }
 
     FieldValue::UP createNested() const {
         return getNestedType().createFieldValue();

@@ -15,21 +15,18 @@
  */
 #pragma once
 
-#include <vespa/document/datatype/datatype.h>
+#include "datatype.h"
 
 namespace document {
 
 class PrimitiveDataType : public DataType {
-    virtual FieldPath::UP onBuildFieldPath(
-            const vespalib::stringref & remainFieldName) const;
+    FieldPath::UP onBuildFieldPath(const vespalib::stringref & remainFieldName) const override;
 public:
     PrimitiveDataType(Type _type);
 
-        // Implementation of DataType
-    virtual std::unique_ptr<FieldValue> createFieldValue() const;
-    virtual PrimitiveDataType* clone() const
-        { return new PrimitiveDataType(*this); }
-    virtual void print(std::ostream&, bool verbose, const std::string& indent) const;
+    std::unique_ptr<FieldValue> createFieldValue() const override;
+    PrimitiveDataType* clone() const override { return new PrimitiveDataType(*this); }
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(PrimitiveDataType);
 };

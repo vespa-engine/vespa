@@ -18,7 +18,7 @@ class ThreadImpl : public Thread
     struct BackendThread : public document::Runnable {
         ThreadImpl& _impl;
         BackendThread(ThreadImpl& impl) : _impl(impl) {}
-        virtual void run() { _impl.run(); }
+        void run() override { _impl.run(); }
     };
 
     /**
@@ -59,32 +59,28 @@ public:
 	       int ticksBeforeWait);
     ~ThreadImpl();
 
-    virtual bool interrupted() const;
-    virtual bool joined() const;
-    virtual void interrupt();
-    virtual void join();
-    virtual void registerTick(CycleType, MilliSecTime);
-    virtual uint64_t getWaitTime() const {
+    bool interrupted() const override;
+    bool joined() const override;
+    void interrupt() override;
+    void join() override;
+    void registerTick(CycleType, MilliSecTime) override;
+    uint64_t getWaitTime() const override {
         return _properties.getWaitTime();
     }
-    virtual int getTicksBeforeWait() const {
+    int getTicksBeforeWait() const override {
         return _properties.getTicksBeforeWait();
     }
-    virtual uint64_t getMaxProcessTime() const {
+    uint64_t getMaxProcessTime() const override {
         return _properties.getMaxProcessTime();
     }
 
-    virtual void updateParameters(uint64_t waitTime,
-                                  uint64_t maxProcessTime,
-                                  int ticksBeforeWait);
+    void updateParameters(uint64_t waitTime, uint64_t maxProcessTime, int ticksBeforeWait) override;
 
     void setTickData(const ThreadTickData&);
     ThreadTickData getTickData() const;
-    const ThreadProperties& getProperties() const
-        { return _properties; }
+    const ThreadProperties& getProperties() const { return _properties; }
 };
 
 } // defaultimplementation
 } // framework
 } // storage
-

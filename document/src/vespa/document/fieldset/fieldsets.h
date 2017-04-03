@@ -5,97 +5,46 @@
 
 namespace document {
 
-class AllFields : public FieldSet
+class AllFields final : public FieldSet
 {
 public:
-    virtual bool contains(const FieldSet&) const {
-        return true;
-    }
-
-    /**
-     * @return Returns the type of field set this is.
-     */
-    virtual Type getType() const {
-        return ALL;
-    }
-
-    virtual FieldSet* clone() const {
-        return new AllFields();
-    }
+    bool contains(const FieldSet&) const override { return true; }
+    Type getType() const override { return ALL; }
+    FieldSet* clone() const override { return new AllFields(); }
 };
 
-class NoFields : public FieldSet
+class NoFields final : public FieldSet
 {
 public:
-    virtual bool contains(const FieldSet& f) const {
-        return f.getType() == NONE;
-    }
-
-    /**
-     * @return Returns the type of field set this is.
-     */
-    virtual Type getType() const {
-        return NONE;
-    }
-
-    virtual FieldSet* clone() const {
-        return new NoFields();
-    }
+    bool contains(const FieldSet& f) const override { return f.getType() == NONE; }
+    Type getType() const override { return NONE; }
+    FieldSet* clone() const override { return new NoFields(); }
 };
 
-class DocIdOnly : public FieldSet
+class DocIdOnly final : public FieldSet
 {
 public:
-    virtual bool contains(const FieldSet& fields) const {
+    bool contains(const FieldSet& fields) const override {
         return fields.getType() == DOCID || fields.getType() == NONE;
     }
-
-    /**
-     * @return Returns the type of field set this is.
-     */
-    virtual Type getType() const {
-        return DOCID;
-    }
-
-    virtual FieldSet* clone() const {
-        return new DocIdOnly();
-    }
-
+    Type getType() const override { return DOCID; }
+    FieldSet* clone() const override { return new DocIdOnly(); }
 };
 
-class HeaderFields : public FieldSet
+class HeaderFields final : public FieldSet
 {
 public:
-    virtual bool contains(const FieldSet& fields) const;
-
-    /**
-     * @return Returns the type of field set this is.
-     */
-    virtual Type getType() const {
-        return HEADER;
-    }
-
-    virtual FieldSet* clone() const {
-        return new HeaderFields();
-    }
-
+    bool contains(const FieldSet& fields) const override;
+    Type getType() const override { return HEADER; }
+    FieldSet* clone() const override { return new HeaderFields(); }
 };
 
-class BodyFields : public FieldSet
+class BodyFields final : public FieldSet
 {
 public:
-    virtual bool contains(const FieldSet& fields) const;
-
-    /**
-     * @return Returns the type of field set this is.
-     */
-    virtual Type getType() const {
-        return BODY;
-    }
-
-    virtual FieldSet* clone() const {
-        return new BodyFields();
-    }
+    bool contains(const FieldSet& fields) const override;
+    Type getType() const override { return BODY; }
+    FieldSet* clone() const override { return new BodyFields(); }
 };
 
 class FieldCollection : public FieldSet
@@ -103,19 +52,11 @@ class FieldCollection : public FieldSet
 public:
     typedef std::unique_ptr<FieldCollection> UP;
 
-    FieldCollection(const DocumentType& docType)
-        : _docType(docType) {};
-
+    FieldCollection(const DocumentType& docType) : _docType(docType) {};
     FieldCollection(const DocumentType& docType, const Field::Set& set);
 
-    virtual bool contains(const FieldSet& fields) const;
-
-    /**
-     * @return Returns the type of field set this is.
-     */
-    virtual Type getType() const {
-        return SET;
-    }
+    bool contains(const FieldSet& fields) const override;
+    Type getType() const override { return SET; }
 
     /**
      * @return Returns the document type the collection is associated with.
@@ -139,15 +80,11 @@ public:
      */
     const Field::Set& getFields() const { return _set; }
 
-    virtual FieldSet* clone() const {
-        return new FieldCollection(*this);
-    }
+    FieldSet* clone() const override { return new FieldCollection(*this); }
 
 private:
     Field::Set _set;
     const DocumentType& _docType;
 };
 
-
 }
-

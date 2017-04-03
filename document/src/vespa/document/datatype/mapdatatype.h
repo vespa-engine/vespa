@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <vespa/document/datatype/datatype.h>
+#include "datatype.h"
 
 namespace document {
 
@@ -23,14 +23,13 @@ public:
     const DataType& getKeyType() const { return *_keyType; }
     const DataType& getValueType() const { return *_valueType; }
 
-    virtual std::unique_ptr<FieldValue> createFieldValue() const;
-    virtual void print(std::ostream&, bool verbose,
-                       const std::string& indent) const;
-    virtual bool operator==(const DataType& other) const;
-    virtual MapDataType* clone() const { return new MapDataType(*this); }
+    std::unique_ptr<FieldValue> createFieldValue() const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    bool operator==(const DataType& other) const override;
+    MapDataType* clone() const override { return new MapDataType(*this); }
 
     FieldPath::UP onBuildFieldPath(
-            const vespalib::stringref &remainFieldName) const;
+            const vespalib::stringref &remainFieldName) const override;
     static FieldPath::UP buildFieldPathImpl(
             const DataType& dataType,
             const vespalib::stringref &remainFieldName,

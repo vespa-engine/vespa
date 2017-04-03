@@ -109,10 +109,10 @@ public:
         virtual ~Factory() { }
     };
     explicit ComplexArrayT(typename Factory::UP factory) : _array(), _factory(factory.release()) { }
-    virtual ~ComplexArrayT() { }
-    virtual const B & operator [] (size_t i) const { return *_array[i]; }
-    virtual B & operator [] (size_t i) { return *_array[i]; }
-    virtual void resize(size_t sz) {
+    ~ComplexArrayT() { }
+    const B & operator [] (size_t i) const override { return *_array[i]; }
+    B & operator [] (size_t i) override { return *_array[i]; }
+    void resize(size_t sz) override {
         _array.resize(sz);
         for (auto & cp : _array) {
             if ( cp.get() == nullptr) {
@@ -120,12 +120,12 @@ public:
             }
         }
     }
-    virtual void reserve(size_t sz) { _array.reserve(sz); }
-    virtual void clear() { _array.clear(); }
-    virtual IArrayT<B> * clone() const { return new ComplexArrayT<B>(*this); }
-    virtual size_t size() const { return _array.size(); }
-    virtual iterator erase(iterator it)  { _array.erase(_array.begin() + (it - this->begin())); return it; }
-    virtual void push_back(const B & v) { _array.push_back(v.clone()); }
+    void reserve(size_t sz) override { _array.reserve(sz); }
+    void clear() override { _array.clear(); }
+    IArrayT<B> * clone() const override { return new ComplexArrayT<B>(*this); }
+    size_t size() const override { return _array.size(); }
+    iterator erase(iterator it) override  { _array.erase(_array.begin() + (it - this->begin())); return it; }
+    void push_back(const B & v) override { _array.push_back(v.clone()); }
 private:
     typedef vespalib::CloneablePtr<B> CP;
     std::vector<CP> _array;

@@ -10,8 +10,8 @@
  */
 #pragma once
 
+#include "datatype.h"
 #include <vespa/document/base/field.h>
-#include <vespa/document/datatype/datatype.h>
 
 namespace document {
 
@@ -38,9 +38,8 @@ public:
 
     virtual Field::Set getFieldSet() const = 0;
 
-        // Implementation of DataType
-    virtual StructuredDataType* clone() const = 0;
-    virtual bool operator==(const DataType& type) const;
+    virtual StructuredDataType* clone() const override = 0;
+    bool operator==(const DataType& type) const override;
 
     static int32_t createId(const vespalib::stringref &name);
 
@@ -49,4 +48,3 @@ public:
 };
 
 }
-

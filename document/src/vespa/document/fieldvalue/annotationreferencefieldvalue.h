@@ -25,13 +25,12 @@ public:
 
     int32_t getAnnotationIndex() const { return _annotation_index; }
 
-    virtual int compare(const FieldValue& other) const;
-    virtual void print(std::ostream &out, bool verbose,
-                       const std::string &indent) const;
-    virtual AnnotationReferenceFieldValue *clone() const;
-    virtual const DataType *getDataType() const { return _type; }
-    virtual void printXml(XmlOutputStream &out) const;
-    virtual bool hasChanged() const;
+    int compare(const FieldValue& other) const override;
+    void print(std::ostream &out, bool verbose, const std::string &indent) const override;
+    AnnotationReferenceFieldValue *clone() const override;
+    const DataType *getDataType() const override { return _type; }
+    void printXml(XmlOutputStream &out) const override;
+    bool hasChanged() const override;
 };
 
 }  // namespace document

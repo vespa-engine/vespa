@@ -16,11 +16,6 @@
  *
  */
 
-#include <string>
-#include <vector>
-#include <memory>
-#include <typeinfo>
-
 #define CID_Identifiable 1
 
 #include "ids.h"
@@ -34,12 +29,19 @@
 #define IDENTIFIABLE_CLASSID_NS2(ns1, ns2, cclass) CID_##ns1##_##ns2##_##cclass
 #define IDENTIFIABLE_CLASSID_NS3(ns1, ns2, ns3, cclass) CID_##ns1##_##ns2##_##ns3##_##cclass
 
-#define DECLARE_IDENTIFIABLE_BASE_COMMON(cclass) \
+#define DECLARE_IDENTIFIABLE_STATIC_BASE_COMMON(cclass) \
   static  vespalib::Identifiable::RuntimeInfo  _RTInfo; \
   static  vespalib::Identifiable::RuntimeClass _RTClass; \
   static const std::type_info & typeId() { return typeid(cclass); } \
   static bool tryCast(const vespalib::Identifiable * v) { return dynamic_cast<const cclass *>(v) != NULL; } \
-  static cclass *identifyClassAsIdentifiable() { return NULL; } /* no implementation */ \
+  static cclass *identifyClassAsIdentifiable() { return NULL; } /* no implementation */
+
+#define DECLARE_IDENTIFIABLE_BASE_COMMON(cclass) \
+  DECLARE_IDENTIFIABLE_STATIC_BASE_COMMON(cclass) \
+  const vespalib::Identifiable::RuntimeClass & getClass() const override;
+
+#define DECLARE_IDENTIFIABLE_BASE_COMMON_ROOT(cclass) \
+  DECLARE_IDENTIFIABLE_STATIC_BASE_COMMON(cclass) \
   virtual const vespalib::Identifiable::RuntimeClass & getClass() const;
 
 #define DECLARE_IDENTIFIABLE_BASE(cclass, classid) \
@@ -47,19 +49,35 @@
    enum { classId=classid };                       \
   DECLARE_IDENTIFIABLE_BASE_COMMON(cclass)
 
+#define DECLARE_IDENTIFIABLE_BASE_ROOT(cclass, classid) \
+  public:                                          \
+   enum { classId=classid };                       \
+  DECLARE_IDENTIFIABLE_BASE_COMMON_ROOT(cclass)
+
 #define DECLARE_IDENTIFIABLE_ABSTRACT(cclass)               DECLARE_IDENTIFIABLE_BASE(cclass, IDENTIFIABLE_CLASSID(cclass))
 #define DECLARE_IDENTIFIABLE_ABSTRACT_NS(ns, cclass)        DECLARE_IDENTIFIABLE_BASE(ns::cclass, IDENTIFIABLE_CLASSID_NS(ns, cclass))
 #define DECLARE_IDENTIFIABLE_ABSTRACT_NS2(ns1, ns2, cclass) DECLARE_IDENTIFIABLE_BASE(ns1::ns2::cclass, IDENTIFIABLE_CLASSID_NS2(ns1, ns2, cclass))
 #define DECLARE_IDENTIFIABLE_ABSTRACT_NS3(ns1, ns2, ns3, cclass) DECLARE_IDENTIFIABLE_BASE(ns1::ns2::ns3::cclass, IDENTIFIABLE_CLASSID_NS3(ns1, ns2, ns3, cclass))
 
-#define DECLARE_IDENTIFIABLE_COMMON(cclass)                                      \
-  virtual void assign(const vespalib::Identifiable & rhs);                      \
+#define DECLARE_IDENTIFIABLE_STATIC_COMMON(cclass)                               \
   static cclass *       create()               { return new cclass(); }          \
   static Identifiable * createAsIdentifiable() { return cclass::create(); }
+
+#define DECLARE_IDENTIFIABLE_COMMON(cclass)                  \
+  void assign(const vespalib::Identifiable & rhs) override;  \
+  DECLARE_IDENTIFIABLE_STATIC_COMMON(cclass)
+
+#define DECLARE_IDENTIFIABLE_COMMON_ROOT(cclass)            \
+  virtual void assign(const vespalib::Identifiable & rhs);  \
+  DECLARE_IDENTIFIABLE_STATIC_COMMON(cclass)
 
 #define DECLARE_IDENTIFIABLE(cclass)                                             \
   DECLARE_IDENTIFIABLE_BASE(cclass, IDENTIFIABLE_CLASSID(cclass))                \
   DECLARE_IDENTIFIABLE_COMMON(cclass)
+
+#define DECLARE_IDENTIFIABLE_ROOT(cclass)                                             \
+  DECLARE_IDENTIFIABLE_BASE_ROOT(cclass, IDENTIFIABLE_CLASSID(cclass))                \
+  DECLARE_IDENTIFIABLE_COMMON_ROOT(cclass)
 
 #define DECLARE_IDENTIFIABLE_NS(ns, cclass)                                      \
   DECLARE_IDENTIFIABLE_BASE(ns::cclass, IDENTIFIABLE_CLASSID_NS(ns, cclass))     \
@@ -171,7 +189,7 @@ public:
         stringref getName() const override { return stringref(_rt->_name); }
         RuntimeInfo * _rt;
     };
-    DECLARE_IDENTIFIABLE(Identifiable);
+    DECLARE_IDENTIFIABLE_ROOT(Identifiable);
     Identifiable() { }
     Identifiable(Identifiable &&) = default;
     Identifiable & operator = (Identifiable &&) = default;

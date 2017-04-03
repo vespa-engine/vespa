@@ -296,7 +296,7 @@ public class CppClassBuilder implements ClassBuilder {
     void writeHeaderFunctionDeclarations(Writer w, String className, CNode node, String indent) throws IOException {
         w.write(""
                 + indent + "const vespalib::string & defName() const override { return CONFIG_DEF_NAME; }\n"
-                + indent + "const vespalib::string & defVersion() const override { return CONFIG_DEF_VERSION; }\n"
+                + indent + "const vespalib::string & defVersion() const { return CONFIG_DEF_VERSION; }\n"
                 + indent + "const vespalib::string & defMd5() const override { return CONFIG_DEF_MD5; }\n"
                 + indent + "const vespalib::string & defNamespace() const override { return CONFIG_DEF_NAMESPACE; }\n"
                 + indent + "void serialize(::config::ConfigDataBuffer & __buffer) const override;\n");
@@ -560,13 +560,13 @@ public class CppClassBuilder implements ClassBuilder {
             w.write("#include <" + subdir + "/" + getFileName(root, "h") + ">");
         }
         w.write("\n");
-        w.write("#include <set>\n");
         w.write("#include <vespa/config/common/configparser.h>\n");
-        w.write("#include <vespa/vespalib/data/slime/convenience.h>\n");
-        w.write("#include <vespa/vespalib/stllike/asciistream.h>\n");
-        w.write("#include <vespa/vespalib/stllike/asciistream.h>\n");
         w.write("#include <vespa/config/configgen/vector_inserter.h>\n");
         w.write("#include <vespa/config/configgen/map_inserter.h>\n");
+        w.write("#include <vespa/vespalib/data/slime/convenience.h>\n");
+        w.write("#include <vespa/vespalib/data/slime/slime.h>\n");
+        w.write("#include <vespa/vespalib/stllike/asciistream.h>\n");
+        w.write("#include <set>\n");
         w.write("\n\n");
         writeNameSpaceBegin(w, generateCppNameSpace(root));
         w.write("\n");

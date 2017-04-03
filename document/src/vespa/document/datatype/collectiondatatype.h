@@ -26,10 +26,9 @@ protected:
                        const DataType &nestedType, int32_t id);
 
 public:
-    virtual ~CollectionDataType();
+    ~CollectionDataType();
 
-    bool operator==(const DataType&) const;
-
+    bool operator==(const DataType&) const override;
     const DataType &getNestedType() const { return *_nestedType; }
 
     DECLARE_IDENTIFIABLE_ABSTRACT(CollectionDataType);

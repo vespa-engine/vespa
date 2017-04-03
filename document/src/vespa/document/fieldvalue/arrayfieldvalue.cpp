@@ -1,18 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/predicatefieldvalue.h>
-
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/util/serializable.h>
+#include "arrayfieldvalue.h"
+#include "intfieldvalue.h"
+#include "stringfieldvalue.h"
+#include "predicatefieldvalue.h"
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".document.fieldvalue.array");
@@ -297,8 +288,8 @@ class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory
 {
 public:
     FieldValueFactory(DataType::UP dataType) : _dataType(dataType.release()) { }
-    FieldValue * create() { return _dataType->createFieldValue().release(); }
-    virtual FieldValueFactory * clone() const { return new FieldValueFactory(*this); }
+    FieldValue * create() override { return _dataType->createFieldValue().release(); }
+    FieldValueFactory * clone() const override { return new FieldValueFactory(*this); }
 private:
     DataType::CP _dataType;
 };

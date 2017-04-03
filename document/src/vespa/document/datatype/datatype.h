@@ -110,7 +110,7 @@ public:
      * Create a field value using this datatype.
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
-    virtual DataType* clone() const = 0;
+    virtual DataType* clone() const override = 0;
 
     /**
      * Whether another datatype is a supertype of this one. Document types may

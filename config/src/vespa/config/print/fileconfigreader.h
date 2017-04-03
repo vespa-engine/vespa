@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/config/common/misc.h>
-#include <vespa/config/common/configvalue.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include "configreader.h"
 
 namespace config {
@@ -15,7 +11,7 @@ public:
     FileConfigReader(const vespalib::string & fileName);
 
     // Implements ConfigReader
-    std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter);
+    std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter) override;
 
     /**
      * Read config from this file using old config format.
