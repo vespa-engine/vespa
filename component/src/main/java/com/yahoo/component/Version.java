@@ -3,7 +3,6 @@ package com.yahoo.component;
 
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
-import com.yahoo.text.Utf8String;
 
 import java.nio.ByteBuffer;
 
@@ -226,7 +225,7 @@ public final class Version implements Comparable<Version> {
 
     private String toStringValue() {
         StringBuilder b = new StringBuilder();
-        if (! qualifier.equals("")) {
+        if (! qualifier.isEmpty()) {
             b.append(getMajor());
             b.append(".");
             b.append(getMinor());
@@ -250,6 +249,26 @@ public final class Version implements Comparable<Version> {
         return b.toString();
     }
 
+    /**
+     * Returns the string representation of this version identifier as major.minor.micro.qualifier,
+     * omitting .qualifier if qualifier was empty or unspecified
+     */
+    public String toFullString() {
+        StringBuilder b = new StringBuilder();
+        b.append(getMajor());
+        b.append(".");
+        b.append(getMinor());
+        b.append(".");
+        b.append(getMicro());
+
+        if (! qualifier.isEmpty()) {
+            b.append(".");
+            b.append(qualifier);
+        }
+
+        return b.toString();
+    }
+
     /** Returns the major component of this version, or 0 if not specified */
     public int getMajor() { return major; }
 
@@ -264,7 +283,8 @@ public final class Version implements Comparable<Version> {
 
     /**
      * Returns the string representation of this version identifier as major.minor.micro.qualifier,
-     * omitting .qualifier if qualifier was empty or unspecified
+     * omitting the remaining parts after reaching the first unspecified component.
+     * Unspecified version component is equivalent to 0 (or the empty string for qualifier).
      */
     public String toString() { return stringValue; }
 
