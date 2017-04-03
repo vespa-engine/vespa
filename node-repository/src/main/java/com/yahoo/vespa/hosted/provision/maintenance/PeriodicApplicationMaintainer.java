@@ -32,6 +32,11 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         super(deployer, nodeRepository, interval);
     }
 
+    protected void throttle(int applicationCount) {
+        // Sleep for a length of time that will spread deployment evenly over the maintenance period
+        try { Thread.sleep(interval().toMillis() / applicationCount); } catch (InterruptedException e) { return; }
+    }
+
     @Override
     protected List<Node> nodesNeedingMaintenance() {
         return nodeRepository().getNodes(Node.State.active);

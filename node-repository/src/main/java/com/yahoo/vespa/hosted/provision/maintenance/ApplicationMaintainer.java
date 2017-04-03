@@ -45,8 +45,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
                     Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
                     if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-                    // deploy asynchronously to make sure we do all applications even when deployments are slow
-                    deployAsynchronously(deployment.get());
+                    deploy(application, deployment.get());
                 }
                 throttle(applications.size());
             }
@@ -56,7 +55,12 @@ public abstract class ApplicationMaintainer extends Maintainer {
         }
     }
 
-    protected void deployAsynchronously(Deployment deployment) {
+    /**
+     * Redeploy this application using the provided deployer.
+     * The default implementatyion deploys asynchronously to make sure we do all applications timely 
+     * even when deployments are slow.
+     */
+    protected void deploy(ApplicationId applicationId, Deployment deployment) {
         deploymentExecutor.execute(() -> {
             try {
                 deployment.activate();
@@ -67,10 +71,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
         });
     }
 
-    protected void throttle(int applicationCount) {
-        // Sleep for a length of time that will spread deployment evenly over the maintenance period
-        try { Thread.sleep(interval().toMillis() / applicationCount); } catch (InterruptedException e) { return; }
-    }
+    /** Block in this method until the next application should be maintained */
+    protected abstract void throttle(int applicationCount);
 
     private Set<ApplicationId> applicationsNeedingMaintenance() {
         return nodesNeedingMaintenance().stream()
@@ -80,7 +82,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     /** 
      * Returns the nodes whose applications should be maintained by this now. 
-     * This should be some subset of active nodes. 
+     * This should be some subset of the allocated nodes. 
      */
     protected abstract List<Node> nodesNeedingMaintenance();
 

@@ -213,7 +213,7 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         @Override
-        protected void deployAsynchronously(Deployment deployment) {
+        protected void deploy(ApplicationId application, Deployment deployment) {
             deployment.activate();
         }
 

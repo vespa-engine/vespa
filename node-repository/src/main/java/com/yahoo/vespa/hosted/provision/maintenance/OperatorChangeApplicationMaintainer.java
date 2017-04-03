@@ -51,7 +51,8 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
         Instant windowEnd = clock.instant();
         Instant windowStart = previousRun;
         previousRun = windowEnd;
-        return nodeRepository().getNodes(Node.State.active).stream()
+        return nodeRepository().getNodes().stream()
+                               .filter(node -> node.allocation().isPresent())
                                .filter(node -> hasManualStateChangeSince(windowStart, node))
                                .collect(Collectors.toList());
     }
@@ -61,13 +62,17 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                 .anyMatch(event -> event.agent() == Agent.operator && event.at().isAfter(instant));
     }
 
+    protected void throttle(int applicationCount) { }
+
     /** 
      * Deploy in the maintenance thread to avoid scheduling multiple deployments of the same application if it takes
      * longer to deploy than the (short) maintenance interval of this
      */
     @Override
-    protected void deployAsynchronously(Deployment deployment) {
+    protected void deploy(ApplicationId applicationId, Deployment deployment) {
         deployment.activate();
+        log.info("Redeployed application " + applicationId.toShortString() + 
+                 " as a manual change was made to its nodes");
     }
 
     @Override
