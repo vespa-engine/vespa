@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.log.LogLevel.DEBUG;
@@ -31,6 +32,8 @@ import static com.yahoo.log.LogLevel.DEBUG;
  * @author gjoranv
  */
 public class HostSystem extends AbstractConfigProducer<Host> {
+
+    private static Logger log = Logger.getLogger(HostSystem.class.getName());
 
     private Map<String,String> ipAddresses = new LinkedHashMap<>();
     private Map<String,String> hostnames = new LinkedHashMap<>();
