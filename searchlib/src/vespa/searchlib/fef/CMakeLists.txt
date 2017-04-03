@@ -13,7 +13,6 @@ vespa_add_library(searchlib_fef OBJECT
     fef.cpp
     fieldinfo.cpp
     fieldpositionsiterator.cpp
-    fieldtype.cpp
     filetablefactory.cpp
     functiontablefactory.cpp
     indexproperties.cpp
