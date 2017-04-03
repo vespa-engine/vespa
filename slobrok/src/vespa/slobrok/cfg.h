@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vector>
-#include <memory>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/config/config.h>

@@ -72,10 +72,10 @@ private:
     MirrorAPI &operator=(const MirrorAPI &);
 
     /** from FNET_Task, polls slobrok **/
-    void PerformTask();
+    void PerformTask() override;
 
     /** from FRT_IRequestWait **/
-    void RequestDone(FRT_RPCRequest *req);
+    void RequestDone(FRT_RPCRequest *req) override;
 
     void updateTo(SpecList& newSpecs, uint32_t newGen);
 

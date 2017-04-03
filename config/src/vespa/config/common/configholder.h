@@ -14,11 +14,11 @@ class ConfigHolder : public IConfigHolder
 public:
     ConfigHolder();
 
-    ConfigUpdate::UP provide();
-    void handle(ConfigUpdate::UP update);
-    bool wait(uint64_t timeoutInMillis);
-    bool poll();
-    void interrupt();
+    ConfigUpdate::UP provide() override;
+    void handle(ConfigUpdate::UP update) override;
+    bool wait(uint64_t timeoutInMillis) override;
+    bool poll() override;
+    void interrupt() override;
 public:
     vespalib::Monitor _monitor;
     ConfigUpdate::UP _current;

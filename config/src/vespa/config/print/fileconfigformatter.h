@@ -12,9 +12,9 @@ namespace config {
 class FileConfigFormatter : public ConfigFormatter {
 public:
     // Inherits ConfigFormatter
-    void encode(ConfigDataBuffer & buffer) const;
+    void encode(ConfigDataBuffer & buffer) const override;
     // Inherits ConfigFormatter
-    size_t decode(ConfigDataBuffer & buffer) const;
+    size_t decode(ConfigDataBuffer & buffer) const override;
 };
 
 } // namespace config

@@ -15,7 +15,7 @@ class ClosureTask : public Executor::Task {
 
 public:
     ClosureTask(std::unique_ptr<Closure> closure) : _closure(std::move(closure)) {}
-    virtual void run() { _closure->call(); }
+    void run() override { _closure->call(); }
 };
 
 /**

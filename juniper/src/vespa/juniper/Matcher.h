@@ -68,8 +68,8 @@ public:
     void set_log(unsigned long log_mask);
 
     /** Token handlers to be called by tokenization step */
-    virtual void handle_token(Token& token);
-    virtual void handle_end(Token& token);
+    void handle_token(Token& token) override;
+    void handle_end(Token& token) override;
 
     /** Utilities for dump to standard output */
     void dump_matches(int printcount = 10, bool best = false);

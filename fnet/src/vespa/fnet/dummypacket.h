@@ -23,36 +23,36 @@ public:
     /**
      * @return false
      **/
-    virtual bool IsRegularPacket();
+    bool IsRegularPacket() override;
 
     /**
      * @return false
      **/
-    virtual bool IsControlPacket();
+    bool IsControlPacket() override;
 
     /**
      * @return FNET_NOID
      **/
-    virtual uint32_t GetPCODE();
+    uint32_t GetPCODE() override;
 
     /**
      * @return 0
      **/
-    virtual uint32_t GetLength();
+    uint32_t GetLength() override;
 
     /**
      * This method should never be called and will abort the program.
      **/
-    virtual void Encode(FNET_DataBuffer *);
+    void Encode(FNET_DataBuffer *) override;
 
     /**
      * This method should never be called and will abort the program.
      **/
-    virtual bool Decode(FNET_DataBuffer *, uint32_t);
+    bool Decode(FNET_DataBuffer *, uint32_t) override;
 
     /**
      * Identify as dummy packet.
      **/
-    virtual vespalib::string Print(uint32_t indent = 0);
+    vespalib::string Print(uint32_t indent = 0) override;
 };
 

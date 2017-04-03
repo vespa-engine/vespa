@@ -48,10 +48,10 @@ private:
         Reconnecter &operator=(const Reconnecter &); // not used
     public:
         explicit Reconnecter(FNET_Scheduler *sched, RemoteSlobrok &owner);
-        virtual ~Reconnecter();
+        ~Reconnecter();
         void scheduleTryConnect();
         void disable();
-        virtual void PerformTask();
+        void PerformTask() override;
     };
 
 private:
@@ -74,7 +74,7 @@ private:
 public:
     RemoteSlobrok(const char *name, const char *spec,
                   ExchangeManager &manager);
-    virtual ~RemoteSlobrok();
+    ~RemoteSlobrok();
 
     void fail();
     bool isConnected() const { return (_remote != NULL); }
@@ -87,13 +87,12 @@ public:
     const char *getSpec() const { return _rpcserver.getSpec(); }
 
     // interfaces implemented:
-    virtual void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg);
-    virtual void notifyOkRpcSrv(ManagedRpcServer *rpcsrv);
-    virtual void RequestDone(FRT_RPCRequest *req);
-    virtual FRT_Supervisor *getSupervisor();
+    void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;
+    void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) override;
+    void RequestDone(FRT_RPCRequest *req) override;
+    FRT_Supervisor *getSupervisor() override;
 };
 
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

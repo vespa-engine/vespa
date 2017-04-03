@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configinstancesourcefactory.h"
-#include <vespa/config/common/source.h>
-#include <vespa/config/common/misc.h>
 
 namespace {
 
@@ -13,14 +11,14 @@ public:
           _buffer(buffer),
           _generation(-1)
     { }
-    virtual void close() { }
-    virtual void getConfig() {
+    void close() override { }
+    void getConfig() override {
         std::vector<vespalib::string> lines(_buffer.getlines());
         std::string currentMd5(config::calculateContentMd5(lines));
         _holder->handle(config::ConfigUpdate::UP(new config::ConfigUpdate(config::ConfigValue(lines, currentMd5), true, _generation)));
 
     }
-    virtual void reload(int64_t generation) { _generation = generation; }
+    void reload(int64_t generation) override { _generation = generation; }
 private:
     config::IConfigHolder::SP _holder;
     vespalib::asciistream _buffer;

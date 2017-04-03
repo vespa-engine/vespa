@@ -22,7 +22,7 @@ public:
     SlobrokServer(uint32_t port);
     ~SlobrokServer();
 
-    virtual void run();
+    void run() override;
 
     void stop() { _env.shutdown(); }
 };

@@ -10,7 +10,7 @@ namespace {
 struct ConfigRenderer : ComponentConfigProducer::Consumer {
     JSONStringer &json;
     ConfigRenderer(JSONStringer &j) : json(j) {}
-    virtual void add(const ComponentConfigProducer::Config &config) {
+    void add(const ComponentConfigProducer::Config &config) override {
         json.appendKey(config.name);
         json.beginObject();
         json.appendKey("generation");
@@ -27,7 +27,7 @@ struct ConfigGenerationObserver : ComponentConfigProducer::Consumer {
     size_t maxGen;
     bool seenSome;
     ConfigGenerationObserver() : maxGen(0), seenSome(false) {}
-    virtual void add(const ComponentConfigProducer::Config &config) {
+    void add(const ComponentConfigProducer::Config &config) override {
         if (seenSome) {
             maxGen = std::max(maxGen, config.gen);
         } else {

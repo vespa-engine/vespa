@@ -39,9 +39,9 @@ struct Value {
 };
 
 struct ErrorValue : public Value {
-    virtual bool is_error() const override { return true; }
-    virtual double as_double() const { return error_value; }
-    virtual bool equal(const Value &) const override { return false; }
+    bool is_error() const override { return true; }
+    double as_double() const override { return error_value; }
+    bool equal(const Value &) const override { return false; }
     ValueType type() const override { return ValueType::error_type(); }
 };
 

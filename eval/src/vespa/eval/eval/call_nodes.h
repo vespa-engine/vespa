@@ -30,14 +30,14 @@ public:
     Call(const vespalib::string &name_in, size_t num_params_in)
         : _name(name_in), _num_params(num_params_in), _is_const(false) {}
     ~Call();
-    virtual bool is_const() const override { return _is_const; }
+    bool is_const() const override { return _is_const; }
     const vespalib::string &name() const { return _name; }
     size_t num_params() const { return _num_params; }
     size_t num_args() const { return _args.size(); }
     const Node &arg(size_t i) const { return *_args[i]; }
-    virtual size_t num_children() const override { return num_args(); }
-    virtual const Node &get_child(size_t idx) const override { return arg(idx); }
-    virtual void detach_children(NodeHandler &handler) override {
+    size_t num_children() const override { return num_args(); }
+    const Node &get_child(size_t idx) const override { return arg(idx); }
+    void detach_children(NodeHandler &handler) override {
         for (size_t i = 0; i < _args.size(); ++i) {
             handler.handle(std::move(_args[i]));
         }
@@ -51,7 +51,7 @@ public:
         }
         _args.push_back(std::move(arg_in));
     }
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += _name;
         str += "(";
@@ -106,7 +106,7 @@ struct CallHelper : Call {
     typedef CallHelper<T> Helper;
     CallHelper(const vespalib::string &name_in, size_t num_params_in)
         : Call(name_in, num_params_in) {}
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
     static Call_UP create() { return Call_UP(new T()); }
 };
 

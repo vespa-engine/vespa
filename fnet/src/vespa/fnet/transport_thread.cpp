@@ -18,7 +18,7 @@ namespace {
 struct Sync : public FNET_IExecutable
 {
     vespalib::Gate gate;
-    virtual void execute() {
+    void execute() override {
         gate.countDown();
     }
 };

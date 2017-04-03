@@ -62,42 +62,42 @@ public:
     /**
      * This method is empty.
      **/
-    virtual void Free();
+    void Free() override;
 
     /**
      * @return false
      **/
-    virtual bool IsRegularPacket();
+    bool IsRegularPacket() override;
 
     /**
      * @return true
      **/
-    virtual bool IsControlPacket();
+    bool IsControlPacket() override;
 
-    virtual uint32_t GetCommand();
-    virtual bool IsChannelLostCMD();
-    virtual bool IsTimeoutCMD();
-    virtual bool IsBadPacketCMD();
+    uint32_t GetCommand() override;
+    bool IsChannelLostCMD() override;
+    bool IsTimeoutCMD() override;
+    bool IsBadPacketCMD() override;
 
     /**
      * @return FNET_NOID
      **/
-    virtual uint32_t GetPCODE();
+    uint32_t GetPCODE() override;
 
     /**
      * @return 0
      **/
-    virtual uint32_t GetLength();
+    uint32_t GetLength() override;
 
     /**
      * This method should never be called and will abort the program.
      **/
-    virtual void Encode(FNET_DataBuffer *);
+    void Encode(FNET_DataBuffer *) override;
 
     /**
      * This method should never be called and will abort the program.
      **/
-    virtual bool Decode(FNET_DataBuffer *, uint32_t);
-    virtual vespalib::string Print(uint32_t indent = 0);
+    bool Decode(FNET_DataBuffer *, uint32_t) override;
+    vespalib::string Print(uint32_t indent = 0) override;
 };
 

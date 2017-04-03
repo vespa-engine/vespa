@@ -5,7 +5,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/memory.h>
 #include "exceptions.h"
 
 using vespalib::Memory;
@@ -72,7 +71,7 @@ private:
     Cursor & _dest;
 public:
     CopyObjectTraverser(Cursor & dest) : _dest(dest) {}
-    void field(const Memory & symbol, const Inspector & inspector) {
+    void field(const Memory & symbol, const Inspector & inspector) override {
         switch(inspector.type().getId()) {
             case NIX::ID:
                 _dest.addNix();
@@ -108,7 +107,7 @@ private:
     Cursor & _dest;
 public:
     CopyArrayTraverser(Cursor & dest) : _dest(dest) {}
-    void entry(size_t idx, const Inspector & inspector) {
+    void entry(size_t idx, const Inspector & inspector) override {
         (void) idx;
         switch(inspector.type().getId()) {
             case NIX::ID:

@@ -515,7 +515,7 @@ struct Input : TensorFunction::Input {
         ASSERT_GREATER(tensors.size(), offset);
         return tensors[offset];
     }
-    const UnaryOperation &get_map_operation(size_t id) const {
+    const UnaryOperation &get_map_operation(size_t id) const override {
         ASSERT_TRUE(map_op != nullptr);
         ASSERT_EQUAL(id, map_operation_id);
         return *map_op;

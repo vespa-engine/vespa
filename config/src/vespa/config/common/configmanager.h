@@ -25,13 +25,13 @@ public:
     ~ConfigManager();
 
     // Implements IConfigManager
-    ConfigSubscription::SP subscribe(const ConfigKey & key, uint64_t timeoutInMillis);
+    ConfigSubscription::SP subscribe(const ConfigKey & key, uint64_t timeoutInMillis) override;
 
     // Implements IConfigManager
-    void unsubscribe(const ConfigSubscription::SP & subscription);
+    void unsubscribe(const ConfigSubscription::SP & subscription) override;
 
     // Implements IConfigManager
-    void reload(int64_t generation);
+    void reload(int64_t generation) override;
 
 private:
     SubscriptionId _idGenerator;

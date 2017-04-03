@@ -38,7 +38,7 @@ public:
     virtual ~FRT_SingleReqWait();
 
     void WaitReq();
-    virtual void RequestDone(FRT_RPCRequest *req);
+    void RequestDone(FRT_RPCRequest *req) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FRT_ITimeoutHandler(void) {}
+    virtual ~FRT_ITimeoutHandler() {}
 
     virtual void HandleTimeout() = 0;
 };
@@ -80,9 +80,9 @@ public:
 
     void HandleDone(bool freeChannel);
     bool Invoke(bool freeChannel);
-    virtual void HandleReturn();
-    virtual FNET_Connection *GetConnection();
-    virtual void Run(FastOS_ThreadInterface *, void *);
+    void HandleReturn() override;
+    FNET_Connection *GetConnection() override;
+    void Run(FastOS_ThreadInterface *, void *) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -109,8 +109,8 @@ public:
     }
 
     void Invoke();
-    virtual void HandleReturn();
-    virtual FNET_Connection *GetConnection();
+    void HandleReturn() override;
+    FNET_Connection *GetConnection() override;
 };
 
 //-----------------------------------------------------------------------------
@@ -136,9 +136,9 @@ public:
 
     void HandleDone();
 
-    virtual bool HandleAbort();
-    virtual void PerformTask();
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context);
+    bool HandleAbort() override;
+    void PerformTask() override;
+    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 };
 
 //-----------------------------------------------------------------------------

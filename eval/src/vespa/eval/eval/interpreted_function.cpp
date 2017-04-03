@@ -239,10 +239,10 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    virtual void visit(const Number &node) {
+    void visit(const Number&node) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<DoubleValue>(node.value())));
     }
-    virtual void visit(const Symbol &node) {
+    void visit(const Symbol&node) override {
         if (node.id() >= 0) { // param value
             program.emplace_back(op_load_param, node.id());
         } else { // let binding
@@ -250,19 +250,19 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             program.emplace_back(op_load_let, let_offset);
         }
     }
-    virtual void visit(const String &node) {
+    void visit(const String&node) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<DoubleValue>(node.hash())));
     }
-    virtual void visit(const Array &node) {
+    void visit(const Array&node) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<DoubleValue>(node.size())));
     }
-    virtual void visit(const Neg &) {
+    void visit(const Neg &) override {
         program.emplace_back(op_unary<operation::Neg>);
     }
-    virtual void visit(const Not &) {
+    void visit(const Not &) override {
         program.emplace_back(op_unary<operation::Not>);
     }
-    virtual void visit(const If &node) {
+    void visit(const If&node) override {
         node.cond().traverse(*this);
         size_t after_cond = program.size();
         program.emplace_back(op_skip_if_false);
@@ -273,16 +273,16 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         program[after_cond].update_param(after_true - after_cond);
         program[after_true].update_param(program.size() - after_true - 1);
     }
-    virtual void visit(const Let &node) {
+    void visit(const Let&node) override {
         node.value().traverse(*this);
         program.emplace_back(op_store_let);
         node.expr().traverse(*this);
         program.emplace_back(op_evict_let);
     }
-    virtual void visit(const Error &) {
+    void visit(const Error &) override {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));
     }
-    virtual void visit(const TensorSum &node) {
+    void visit(const TensorSum&node) override {
         if (is_typed(node) && is_typed_tensor_product_of_params(node.get_child(0))) {
             assert(program.size() >= 3); // load,load,mul
             program.pop_back(); // mul
@@ -307,23 +307,23 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
                                  wrap_param<vespalib::string>(stash.create<vespalib::string>(node.dimension())));
         }
     }
-    virtual void visit(const TensorMap &node) {
+    void visit(const TensorMap&node) override {
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
         program.emplace_back(op_tensor_map, wrap_param<CompiledFunction>(token.get()->get()));
     }
-    virtual void visit(const TensorJoin &node) {
+    void visit(const TensorJoin&node) override {
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
         program.emplace_back(op_tensor_join, wrap_param<CompiledFunction>(token.get()->get()));
     }
-    virtual void visit(const TensorReduce &node) {
+    void visit(const TensorReduce&node) override {
         ReduceParams &params = stash.create<ReduceParams>(node.aggr(), node.dimensions());
         program.emplace_back(op_tensor_reduce, wrap_param<ReduceParams>(params));
     }
-    virtual void visit(const TensorRename &node) {
+    void visit(const TensorRename&node) override {
         RenameParams &params = stash.create<RenameParams>(node.from(), node.to());
         program.emplace_back(op_tensor_rename, wrap_param<RenameParams>(params));
     }
-    virtual void visit(const TensorLambda &node) {
+    void visit(const TensorLambda&node) override {
         const auto &type = node.type();
         TensorSpec spec(type.to_spec());
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::ARRAY));
@@ -340,47 +340,47 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         auto tensor = tensor_engine.create(spec);
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<TensorValue>(std::move(tensor))));
     }
-    virtual void visit(const TensorConcat &node) {
+    void visit(const TensorConcat&node) override {
         vespalib::string &dimension = stash.create<vespalib::string>(node.dimension());
         program.emplace_back(op_tensor_concat, wrap_param<vespalib::string>(dimension));
     }
-    virtual void visit(const Add &) {
+    void visit(const Add &) override {
         program.emplace_back(op_binary<operation::Add>);
     }
-    virtual void visit(const Sub &) {
+    void visit(const Sub &) override {
         program.emplace_back(op_binary<operation::Sub>);
     }
-    virtual void visit(const Mul &) {
+    void visit(const Mul &) override {
         program.emplace_back(op_binary<operation::Mul>);
     }
-    virtual void visit(const Div &) {
+    void visit(const Div &) override {
         program.emplace_back(op_binary<operation::Div>);
     }
-    virtual void visit(const Pow &) {
+    void visit(const Pow &) override {
         program.emplace_back(op_binary<operation::Pow>);
     }
-    virtual void visit(const Equal &) {
+    void visit(const Equal &) override {
         program.emplace_back(op_binary<operation::Equal>);
     }
-    virtual void visit(const NotEqual &) {
+    void visit(const NotEqual &) override {
         program.emplace_back(op_binary<operation::NotEqual>);
     }
-    virtual void visit(const Approx &) {
+    void visit(const Approx &) override {
         program.emplace_back(op_binary<operation::Approx>);
     }
-    virtual void visit(const Less &) {
+    void visit(const Less &) override {
         program.emplace_back(op_binary<operation::Less>);
     }
-    virtual void visit(const LessEqual &) {
+    void visit(const LessEqual &) override {
         program.emplace_back(op_binary<operation::LessEqual>);
     }
-    virtual void visit(const Greater &) {
+    void visit(const Greater &) override {
         program.emplace_back(op_binary<operation::Greater>);
     }
-    virtual void visit(const GreaterEqual &) {
+    void visit(const GreaterEqual &) override {
         program.emplace_back(op_binary<operation::GreaterEqual>);
     }
-    virtual void visit(const In &node) {
+    void visit(const In&node) override {
         std::vector<size_t> checks;
         node.lhs().traverse(*this);
         auto array = as<Array>(node.rhs());
@@ -400,91 +400,91 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         }
         program.emplace_back(op_not_member);
     }
-    virtual void visit(const And &) {
+    void visit(const And &) override {
         program.emplace_back(op_binary<operation::And>);
     }
-    virtual void visit(const Or &) {
+    void visit(const Or &) override {
         program.emplace_back(op_binary<operation::Or>);
     }
-    virtual void visit(const Cos &) {
+    void visit(const Cos &) override {
         program.emplace_back(op_unary<operation::Cos>);
     }
-    virtual void visit(const Sin &) {
+    void visit(const Sin &) override {
         program.emplace_back(op_unary<operation::Sin>);
     }
-    virtual void visit(const Tan &) {
+    void visit(const Tan &) override {
         program.emplace_back(op_unary<operation::Tan>);
     }
-    virtual void visit(const Cosh &) {
+    void visit(const Cosh &) override {
         program.emplace_back(op_unary<operation::Cosh>);
     }
-    virtual void visit(const Sinh &) {
+    void visit(const Sinh &) override {
         program.emplace_back(op_unary<operation::Sinh>);
     }
-    virtual void visit(const Tanh &) {
+    void visit(const Tanh &) override {
         program.emplace_back(op_unary<operation::Tanh>);
     }
-    virtual void visit(const Acos &) {
+    void visit(const Acos &) override {
         program.emplace_back(op_unary<operation::Acos>);
     }
-    virtual void visit(const Asin &) {
+    void visit(const Asin &) override {
         program.emplace_back(op_unary<operation::Asin>);
     }
-    virtual void visit(const Atan &) {
+    void visit(const Atan &) override {
         program.emplace_back(op_unary<operation::Atan>);
     }
-    virtual void visit(const Exp &) {
+    void visit(const Exp &) override {
         program.emplace_back(op_unary<operation::Exp>);
     }
-    virtual void visit(const Log10 &) {
+    void visit(const Log10 &) override {
         program.emplace_back(op_unary<operation::Log10>);
     }
-    virtual void visit(const Log &) {
+    void visit(const Log &) override {
         program.emplace_back(op_unary<operation::Log>);
     }
-    virtual void visit(const Sqrt &) {
+    void visit(const Sqrt &) override {
         program.emplace_back(op_unary<operation::Sqrt>);
     }
-    virtual void visit(const Ceil &) {
+    void visit(const Ceil &) override {
         program.emplace_back(op_unary<operation::Ceil>);
     }
-    virtual void visit(const Fabs &) {
+    void visit(const Fabs &) override {
         program.emplace_back(op_unary<operation::Fabs>);
     }
-    virtual void visit(const Floor &) {
+    void visit(const Floor &) override {
         program.emplace_back(op_unary<operation::Floor>);
     }
-    virtual void visit(const Atan2 &) {
+    void visit(const Atan2 &) override {
         program.emplace_back(op_binary<operation::Atan2>);
     }
-    virtual void visit(const Ldexp &) {
+    void visit(const Ldexp &) override {
         program.emplace_back(op_binary<operation::Ldexp>);
     }
-    virtual void visit(const Pow2 &) {
+    void visit(const Pow2 &) override {
         program.emplace_back(op_binary<operation::Pow>);
     }
-    virtual void visit(const Fmod &) {
+    void visit(const Fmod &) override {
         program.emplace_back(op_binary<operation::Fmod>);
     }
-    virtual void visit(const Min &) {
+    void visit(const Min &) override {
         program.emplace_back(op_binary<operation::Min>);
     }
-    virtual void visit(const Max &) {
+    void visit(const Max &) override {
         program.emplace_back(op_binary<operation::Max>);
     }
-    virtual void visit(const IsNan &) {
+    void visit(const IsNan &) override {
         program.emplace_back(op_unary<operation::IsNan>);
     }
-    virtual void visit(const Relu &) {
+    void visit(const Relu &) override {
         program.emplace_back(op_unary<operation::Relu>);
     }
-    virtual void visit(const Sigmoid &) {
+    void visit(const Sigmoid &) override {
         program.emplace_back(op_unary<operation::Sigmoid>);
     }
 
     //-------------------------------------------------------------------------
 
-    virtual bool open(const Node &node) {
+    bool open(const Node&node) override {
         if (check_type<Array, If, Let, In>(node)) {
             node.accept(*this);
             return false;
@@ -492,7 +492,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         return true;
     }
 
-    virtual void close(const Node &node) {
+    void close(const Node&node) override {
         node.accept(*this);
     }
 };

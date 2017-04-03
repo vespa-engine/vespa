@@ -49,9 +49,9 @@ struct MetricSource {
 
         void checkForPrefixMatch(const Metric& metric);
 
-        bool visitMetricSet(const MetricSet& set, bool);
-        void doneVisitingMetricSet(const MetricSet&) { --_pathIndex; }
-        bool visitMetric(const Metric& metric, bool);
+        bool visitMetricSet(const MetricSet& set, bool) override;
+        void doneVisitingMetricSet(const MetricSet&) override { --_pathIndex; }
+        bool visitMetric(const Metric& metric, bool) override;
     };
 
     const Metric* getMetric(const String& name);

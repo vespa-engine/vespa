@@ -14,9 +14,9 @@ class RawSource : public Source {
 public:
     RawSource(const IConfigHolder::SP & holder, const vespalib::string & payload);
 
-    void getConfig();
-    void reload(int64_t generation);
-    void close();
+    void getConfig() override;
+    void reload(int64_t generation) override;
+    void close() override;
 private:
     IConfigHolder::SP _holder;
     std::vector<vespalib::string> readConfig();

@@ -109,10 +109,10 @@ public:
     virtual bool is_const() const override { return true; }
     virtual double get_const_value() const override { return value(); }
     double value() const { return _value; }
-    virtual vespalib::string dump(DumpContext &) const {
+    vespalib::string dump(DumpContext &) const override {
         return make_string("%g", _value);
     }
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class Symbol : public Leaf {
@@ -122,10 +122,10 @@ public:
     static const int UNDEF = std::numeric_limits<int>::max();
     explicit Symbol(int id_in) : _id(id_in) {}
     int id() const { return _id; }
-    virtual bool is_param() const override {
+    bool is_param() const override {
         return (_id >= 0);
     }
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         if (_id >= 0) { // param value
             assert(size_t(_id) < ctx.param_names.size());
             return ctx.param_names[_id];
@@ -135,7 +135,7 @@ public:
             return ctx.let_names[let_offset];
         }
     }
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class String : public Leaf {
@@ -143,12 +143,12 @@ private:
     vespalib::string _value;
 public:
     String(const vespalib::string &value_in) : _value(value_in) {}
-    virtual bool is_const() const override { return true; }
-    virtual double get_const_value() const override { return hash(); }
+    bool is_const() const override { return true; }
+    double get_const_value() const override { return hash(); }
     const vespalib::string value() const { return _value; }
     uint32_t hash() const { return hash_code(_value.data(), _value.size()); }
-    virtual vespalib::string dump(DumpContext &ctx) const;
-    virtual void accept(NodeVisitor &visitor) const override;
+    vespalib::string dump(DumpContext &ctx) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class Array : public Node {
@@ -157,12 +157,12 @@ private:
     bool _is_const;
 public:
     Array() : _nodes(), _is_const(false) {}
-    virtual bool is_const() const override { return _is_const; }
+    bool is_const() const override { return _is_const; }
     size_t size() const { return _nodes.size(); }
     const Node &get(size_t i) const { return *_nodes[i]; }
-    virtual size_t num_children() const override { return size(); }
-    virtual const Node &get_child(size_t idx) const override { return get(idx); }
-    virtual void detach_children(NodeHandler &handler) override {
+    size_t num_children() const override { return size(); }
+    const Node &get_child(size_t idx) const override { return get(idx); }
+    void detach_children(NodeHandler &handler) override {
         for (size_t i = 0; i < _nodes.size(); ++i) {
             handler.handle(std::move(_nodes[i]));
         }
@@ -176,7 +176,7 @@ public:
         }
         _nodes.push_back(std::move(node));
     }
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "[";
         CommaTracker node_list;
@@ -187,7 +187,7 @@ public:
         str += "]";
         return str;
     }
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class Neg : public Node {
@@ -196,25 +196,25 @@ private:
     bool _is_const;
 public:
     Neg(Node_UP child_in) : _child(std::move(child_in)), _is_const(_child->is_const()) {}
-    virtual bool is_const() const override { return _is_const; }
+    bool is_const() const override { return _is_const; }
     const Node &child() const { return *_child; }
-    virtual size_t num_children() const override { return _child ? 1 : 0; }
-    virtual const Node &get_child(size_t idx) const override {
+    size_t num_children() const override { return _child ? 1 : 0; }
+    const Node &get_child(size_t idx) const override {
         (void) idx;
         assert(idx == 0);
         return child();
     }
-    virtual void detach_children(NodeHandler &handler) override {
+    void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "(-";
         str += _child->dump(ctx);
         str += ")";
         return str;
     }
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class Not : public Node {
@@ -223,25 +223,25 @@ private:
     bool _is_const;
 public:
     Not(Node_UP child_in) : _child(std::move(child_in)), _is_const(_child->is_const()) {}
-    virtual bool is_const() const override { return _is_const; }
+    bool is_const() const override { return _is_const; }
     const Node &child() const { return *_child; }
-    virtual size_t num_children() const override { return _child ? 1 : 0; }
-    virtual const Node &get_child(size_t idx) const override {
+    size_t num_children() const override { return _child ? 1 : 0; }
+    const Node &get_child(size_t idx) const override {
         (void) idx;
         assert(idx == 0);
         return child();
     }
-    virtual void detach_children(NodeHandler &handler) override {
+    void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "(!";
         str += _child->dump(ctx);
         str += ")";
         return str;
     }
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class If : public Node {
@@ -257,11 +257,11 @@ public:
     const Node &true_expr() const { return *_true_expr; }
     const Node &false_expr() const { return *_false_expr; }
     double p_true() const { return _p_true; }
-    virtual bool is_tree() const override { return _is_tree; }
-    virtual size_t num_children() const override {
+    bool is_tree() const override { return _is_tree; }
+    size_t num_children() const override {
         return (_cond && _true_expr && _false_expr) ? 3 : 0;
     }
-    virtual const Node &get_child(size_t idx) const override {
+    const Node &get_child(size_t idx) const override {
         assert(idx < 3);
         if (idx == 0) {
             return cond();
@@ -271,12 +271,12 @@ public:
             return false_expr();
         }
     }
-    virtual void detach_children(NodeHandler &handler) override {
+    void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_cond));
         handler.handle(std::move(_true_expr));
         handler.handle(std::move(_false_expr));
     }
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "if(";
         str += _cond->dump(ctx);
@@ -290,7 +290,7 @@ public:
         str += ")";
         return str;
     }
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class Let : public Node {
@@ -304,16 +304,16 @@ public:
     const vespalib::string &name() const { return _name; }
     const Node &value() const { return *_value; }
     const Node &expr() const { return *_expr; }
-    virtual size_t num_children() const override { return (_value && _expr) ? 2 : 0; }
-    virtual const Node &get_child(size_t idx) const override {
+    size_t num_children() const override { return (_value && _expr) ? 2 : 0; }
+    const Node &get_child(size_t idx) const override {
         assert(idx < 2);
         return (idx == 0) ? value() : expr();
     }
-    virtual void detach_children(NodeHandler &handler) override {
+    void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_value));
         handler.handle(std::move(_expr));
     }
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "let(";
         str += _name;
@@ -326,7 +326,7 @@ public:
         str += ")";
         return str;
     }
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
 };
 
 class Error : public Leaf {
@@ -335,8 +335,8 @@ private:
 public:
     Error(const vespalib::string &message_in) : _message(message_in) {}
     const vespalib::string &message() const { return _message; }
-    virtual vespalib::string dump(DumpContext &) const { return _message; }
-    virtual void accept(NodeVisitor &visitor) const override;
+    vespalib::string dump(DumpContext &) const override { return _message; }
+    void accept(NodeVisitor &visitor) const override;
 };
 
 } // namespace vespalib::eval::nodes

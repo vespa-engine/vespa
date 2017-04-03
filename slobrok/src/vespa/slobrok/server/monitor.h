@@ -28,14 +28,14 @@ private:
 public:
     explicit Monitor(IMonitoredServer& owner,
                      FRT_Supervisor &supervisor);
-    virtual ~Monitor();
+    ~Monitor();
     void enable(FRT_Target *monitorTarget);
     void disable();
 private:
     void disconnect();
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet,
-                                    FNET_Context context);
-    virtual void PerformTask();
+    HP_RetCode HandlePacket(FNET_Packet *packet,
+                            FNET_Context context) override;
+    void PerformTask() override;
 };
 
 //-----------------------------------------------------------------------------

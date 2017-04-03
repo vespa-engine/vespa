@@ -10,9 +10,9 @@ private:
 
 public:
     QueryVisitor(juniper::SpecialTokenRegistry & registry) : _registry(registry) {}
-    virtual void VisitQueryNode(QueryNode *) { }
-    virtual void RevisitQueryNode(QueryNode *) { }
-    virtual void VisitQueryTerm(QueryTerm * t) {
+    void VisitQueryNode(QueryNode *) override { }
+    void RevisitQueryNode(QueryNode *) override { }
+    void VisitQueryTerm(QueryTerm * t) override {
         if (t->isSpecialToken()) {
             _registry.addSpecialToken(t);
         }

@@ -107,19 +107,19 @@ public:
     // Create a copy of the node n wrt. arity etc, but without adding any children..
     explicit QueryNode(QueryNode* n);
 
-    virtual ~QueryNode();
-    virtual QueryNode* AddChild(QueryExpr* child);
-    virtual int Limit();
-    inline bool Complete() { return _arity == _nchild; }
-    virtual void Dump(std::string&);
-    virtual bool StackComplete();
-    virtual void ComputeThreshold();
-    virtual QueryNode* AsNode();
-    virtual QueryTerm* AsTerm();
-    virtual bool Complex();
-    virtual int MaxArity();
+    ~QueryNode();
+    QueryNode* AddChild(QueryExpr* child) override;
+    int Limit() override;
+    bool Complete() const { return _arity == _nchild; }
+    void Dump(std::string&) override;
+    bool StackComplete() override;
+    void ComputeThreshold() override;
+    QueryNode* AsNode() override;
+    QueryTerm* AsTerm() override;
+    bool Complex() override;
+    int MaxArity() override;
 
-    virtual void Accept(IQueryExprVisitor& v);
+    void Accept(IQueryExprVisitor& v) override;
 
     // return true if a match for n should lead to creation of a new candidate node
     // corresponding to this query tree node:
@@ -147,16 +147,16 @@ class QueryTerm : public QueryExpr
 public:
     QueryTerm(const char* t, int length, int ix, int weight = 100);
     explicit QueryTerm(QueryTerm* const);
-    virtual ~QueryTerm();
-    virtual int Limit();
-    virtual QueryNode* AddChild(QueryExpr* child);
-    virtual void Dump(std::string&);
-    virtual bool StackComplete();
-    virtual QueryNode* AsNode();
-    virtual QueryTerm* AsTerm();
-    virtual bool Complex();
+    ~QueryTerm();
+    int Limit() override;
+    QueryNode* AddChild(QueryExpr* child) override;
+    void Dump(std::string&) override;
+    bool StackComplete() override;
+    QueryNode* AsNode() override;
+    QueryTerm* AsTerm() override;
+    bool Complex() override;
 
-    virtual void Accept(IQueryExprVisitor& v);
+    void Accept(IQueryExprVisitor& v) override;
     inline const char* term() { return _rep; }
     inline const ucs4_t* ucs4_term() { return _ucs4_term; }
     inline bool is_prefix() { return _options & X_PREFIX; }
@@ -183,4 +183,3 @@ private:
  *  with arity 1 or non-terms with arity 0
  */
 void SimplifyStack(QueryExpr*& orig_stack);
-

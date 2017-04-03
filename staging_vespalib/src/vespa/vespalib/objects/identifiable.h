@@ -168,7 +168,7 @@ public:
         bool equal(unsigned cid) const { return id() == cid; }
         int compare(const RuntimeClass& other) const { return (id() - other.id()); }
     private:
-        virtual stringref getName() const { return stringref(_rt->_name); }
+        stringref getName() const override { return stringref(_rt->_name); }
         RuntimeInfo * _rt;
     };
     DECLARE_IDENTIFIABLE(Identifiable);

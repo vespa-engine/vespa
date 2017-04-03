@@ -23,11 +23,11 @@ public:
     FRTConfigResponse(FRT_RPCRequest * request);
     virtual ~FRTConfigResponse();
 
-    bool validateResponse();
-    bool hasValidResponse() const;
-    vespalib::string errorMessage() const;
-    int errorCode() const;
-    bool isError() const;
+    bool validateResponse() override;
+    bool hasValidResponse() const override;
+    vespalib::string errorMessage() const override;
+    int errorCode() const override;
+    bool isError() const override;
     virtual const vespalib::string & getResponseTypes() const = 0;
 
 private:
@@ -45,20 +45,20 @@ private:
 public:
     FRTConfigResponseV1(FRT_RPCRequest * request);
 
-    const ConfigKey & getKey() const { return _key; }
-    const ConfigValue & getValue() const { return _value; }
-    const Trace & getTrace() const { return _trace; }
+    const ConfigKey & getKey() const override { return _key; }
+    const ConfigValue & getValue() const override { return _value; }
+    const Trace & getTrace() const override { return _trace; }
 
-    const ConfigState & getConfigState() const { return _state; }
+    const ConfigState & getConfigState() const override { return _state; }
 
-    void fill();
+    void fill() override;
 
 private:
     static const vespalib::string RESPONSE_TYPES;
 
     const std::vector<vespalib::string> getPayLoad() const;
     const ConfigKey readKey() const;
-    const vespalib::string & getResponseTypes() const;
+    const vespalib::string & getResponseTypes() const override;
 
     ConfigKey _key;
     ConfigValue _value;

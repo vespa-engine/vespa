@@ -90,62 +90,62 @@ struct NodeVisitor {
  * of all types not specifically handled.
  **/
 struct EmptyNodeVisitor : NodeVisitor {
-    virtual void visit(const nodes::Number       &) {}
-    virtual void visit(const nodes::Symbol       &) {}
-    virtual void visit(const nodes::String       &) {}
-    virtual void visit(const nodes::Array        &) {}
-    virtual void visit(const nodes::Neg          &) {}
-    virtual void visit(const nodes::Not          &) {}
-    virtual void visit(const nodes::If           &) {}
-    virtual void visit(const nodes::Let          &) {}
-    virtual void visit(const nodes::Error        &) {}
-    virtual void visit(const nodes::TensorSum    &) {}
-    virtual void visit(const nodes::TensorMap    &) {}
-    virtual void visit(const nodes::TensorJoin   &) {}
-    virtual void visit(const nodes::TensorReduce &) {}
-    virtual void visit(const nodes::TensorRename &) {}
-    virtual void visit(const nodes::TensorLambda &) {}
-    virtual void visit(const nodes::TensorConcat &) {}
-    virtual void visit(const nodes::Add          &) {}
-    virtual void visit(const nodes::Sub          &) {}
-    virtual void visit(const nodes::Mul          &) {}
-    virtual void visit(const nodes::Div          &) {}
-    virtual void visit(const nodes::Pow          &) {}
-    virtual void visit(const nodes::Equal        &) {}
-    virtual void visit(const nodes::NotEqual     &) {}
-    virtual void visit(const nodes::Approx       &) {}
-    virtual void visit(const nodes::Less         &) {}
-    virtual void visit(const nodes::LessEqual    &) {}
-    virtual void visit(const nodes::Greater      &) {}
-    virtual void visit(const nodes::GreaterEqual &) {}
-    virtual void visit(const nodes::In           &) {}
-    virtual void visit(const nodes::And          &) {}
-    virtual void visit(const nodes::Or           &) {}
-    virtual void visit(const nodes::Cos          &) {}
-    virtual void visit(const nodes::Sin          &) {}
-    virtual void visit(const nodes::Tan          &) {}
-    virtual void visit(const nodes::Cosh         &) {}
-    virtual void visit(const nodes::Sinh         &) {}
-    virtual void visit(const nodes::Tanh         &) {}
-    virtual void visit(const nodes::Acos         &) {}
-    virtual void visit(const nodes::Asin         &) {}
-    virtual void visit(const nodes::Atan         &) {}
-    virtual void visit(const nodes::Exp          &) {}
-    virtual void visit(const nodes::Log10        &) {}
-    virtual void visit(const nodes::Log          &) {}
-    virtual void visit(const nodes::Sqrt         &) {}
-    virtual void visit(const nodes::Ceil         &) {}
-    virtual void visit(const nodes::Fabs         &) {}
-    virtual void visit(const nodes::Floor        &) {}
-    virtual void visit(const nodes::Atan2        &) {}
-    virtual void visit(const nodes::Ldexp        &) {}
-    virtual void visit(const nodes::Pow2         &) {}
-    virtual void visit(const nodes::Fmod         &) {}
-    virtual void visit(const nodes::Min          &) {}
-    virtual void visit(const nodes::Max          &) {}
-    virtual void visit(const nodes::IsNan        &) {}
-    virtual void visit(const nodes::Relu         &) {}
-    virtual void visit(const nodes::Sigmoid      &) {}
+    virtual void visit(const nodes::Number       &) override {}
+    virtual void visit(const nodes::Symbol       &) override {}
+    virtual void visit(const nodes::String       &) override {}
+    virtual void visit(const nodes::Array        &) override {}
+    virtual void visit(const nodes::Neg          &) override {}
+    virtual void visit(const nodes::Not          &) override {}
+    virtual void visit(const nodes::If           &) override {}
+    virtual void visit(const nodes::Let          &) override {}
+    void visit(const nodes::Error        &) override {}
+    void visit(const nodes::TensorSum    &) override {}
+    void visit(const nodes::TensorMap    &) override {}
+    void visit(const nodes::TensorJoin   &) override {}
+    void visit(const nodes::TensorReduce &) override {}
+    void visit(const nodes::TensorRename &) override {}
+    void visit(const nodes::TensorLambda &) override {}
+    void visit(const nodes::TensorConcat &) override {}
+    void visit(const nodes::Add          &) override {}
+    void visit(const nodes::Sub          &) override {}
+    void visit(const nodes::Mul          &) override {}
+    void visit(const nodes::Div          &) override {}
+    void visit(const nodes::Pow          &) override {}
+    void visit(const nodes::Equal        &) override {}
+    void visit(const nodes::NotEqual     &) override {}
+    void visit(const nodes::Approx       &) override {}
+    void visit(const nodes::Less         &) override {}
+    void visit(const nodes::LessEqual    &) override {}
+    void visit(const nodes::Greater      &) override {}
+    void visit(const nodes::GreaterEqual &) override {}
+    void visit(const nodes::In           &) override {}
+    void visit(const nodes::And          &) override {}
+    void visit(const nodes::Or           &) override {}
+    void visit(const nodes::Cos          &) override {}
+    void visit(const nodes::Sin          &) override {}
+    void visit(const nodes::Tan          &) override {}
+    void visit(const nodes::Cosh         &) override {}
+    void visit(const nodes::Sinh         &) override {}
+    void visit(const nodes::Tanh         &) override {}
+    void visit(const nodes::Acos         &) override {}
+    void visit(const nodes::Asin         &) override {}
+    void visit(const nodes::Atan         &) override {}
+    void visit(const nodes::Exp          &) override {}
+    void visit(const nodes::Log10        &) override {}
+    void visit(const nodes::Log          &) override {}
+    void visit(const nodes::Sqrt         &) override {}
+    void visit(const nodes::Ceil         &) override {}
+    void visit(const nodes::Fabs         &) override {}
+    void visit(const nodes::Floor        &) override {}
+    void visit(const nodes::Atan2        &) override {}
+    void visit(const nodes::Ldexp        &) override {}
+    void visit(const nodes::Pow2         &) override {}
+    void visit(const nodes::Fmod         &) override {}
+    void visit(const nodes::Min          &) override {}
+    void visit(const nodes::Max          &) override {}
+    void visit(const nodes::IsNan        &) override {}
+    void visit(const nodes::Relu         &) override {}
+    void visit(const nodes::Sigmoid      &) override {}
 };
 
 } // namespace vespalib::eval

@@ -26,10 +26,10 @@ class FRTConfigAgent : public ConfigAgent
 {
 public:
     FRTConfigAgent(const IConfigHolder::SP & holder, const TimingValues & timingValues);
-    void handleResponse(const ConfigRequest & request, ConfigResponse::UP response);
-    uint64_t getTimeout() const;
-    uint64_t getWaitTime() const;
-    const ConfigState & getConfigState() const;
+    void handleResponse(const ConfigRequest & request, ConfigResponse::UP response) override;
+    uint64_t getTimeout() const override;
+    uint64_t getWaitTime() const override;
+    const ConfigState & getConfigState() const override;
 private:
     void handleUpdatedGeneration(const ConfigKey & key, const ConfigState & newState, const ConfigValue & configValue);
     void handleOKResponse(ConfigResponse::UP response);

@@ -2,6 +2,7 @@
 
 #include "ostreamconfigwriter.h"
 #include "fileconfigformatter.h"
+#include <ostream>
 
 namespace config {
 

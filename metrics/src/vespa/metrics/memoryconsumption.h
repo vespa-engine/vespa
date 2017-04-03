@@ -90,7 +90,7 @@ public:
     void addSnapShotUsage(const std::string& name, uint32_t usage);
 
     uint32_t getTotalMemoryUsage() const;
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     static std::string bval(uint32_t bytes);
 private:

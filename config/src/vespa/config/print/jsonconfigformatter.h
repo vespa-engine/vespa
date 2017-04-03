@@ -12,9 +12,9 @@ class JsonConfigFormatter : public ConfigFormatter {
 public:
     JsonConfigFormatter(bool compact = false);
     // Inherits ConfigFormatter
-    void encode(ConfigDataBuffer & buffer) const;
+    void encode(ConfigDataBuffer & buffer) const override;
     // Inherits ConfigFormatter
-    size_t decode(ConfigDataBuffer & buffer) const;
+    size_t decode(ConfigDataBuffer & buffer) const override;
 private:
     const bool _compact;
 };

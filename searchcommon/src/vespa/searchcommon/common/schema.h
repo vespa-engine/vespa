@@ -98,9 +98,9 @@ public:
         IndexField &setAvgElemLen(uint32_t avgElemLen)
         { _avgElemLen = avgElemLen; return *this; }
 
-        virtual void
+        void
         write(vespalib::asciistream &os,
-              const vespalib::stringref &prefix) const;
+              const vespalib::stringref &prefix) const override;
 
         bool hasPrefix() const { return _prefix; }
         bool hasPhrases() const { return _phrases; }

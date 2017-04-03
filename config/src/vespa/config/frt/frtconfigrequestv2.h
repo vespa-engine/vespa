@@ -22,7 +22,7 @@ public:
                        const vespalib::string & hostName,
                        int64_t serverTimeout,
                        const Trace & trace);
-    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const;
+    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override;
 };
 
 }

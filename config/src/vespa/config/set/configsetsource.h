@@ -21,9 +21,9 @@ public:
     ConfigSetSource(const IConfigHolder::SP & holder, const ConfigKey & key, const BuilderMapSP & builderMap);
     ~ConfigSetSource();
 
-    void getConfig();
-    void reload(int64_t generation);
-    void close();
+    void getConfig() override;
+    void reload(int64_t generation) override;
+    void close() override;
 private:
     IConfigHolder::SP _holder;
     const ConfigKey _key;

@@ -26,7 +26,7 @@ class ShutdownGuard : public FastOS_Runnable
     FastOS_ThreadPool _pool;
     volatile uint64_t _dieAtTime;
 
-    virtual void Run(FastOS_ThreadInterface *, void *);
+    void Run(FastOS_ThreadInterface *, void *) override;
 
 public:
     /**

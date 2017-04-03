@@ -48,7 +48,7 @@ private:
     SBEnv(const SBEnv &);            // Not used
     SBEnv &operator=(const SBEnv &); // Not used
 
-    void setup(const std::vector<std::string> &cfg);
+    void setup(const std::vector<std::string> &cfg) override;
 
     std::vector<std::string>                   _partnerList;
     std::unique_ptr<ManagedRpcServer>          _me;
@@ -61,7 +61,7 @@ private:
 
 public:
     explicit SBEnv(const ConfigShim &shim);
-    virtual ~SBEnv();
+    ~SBEnv();
 
     FNET_Transport *getTransport() { return _transport.get(); }
     FNET_Scheduler *getScheduler() { return _transport->GetScheduler(); }

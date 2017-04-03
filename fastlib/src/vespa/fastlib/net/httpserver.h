@@ -92,7 +92,7 @@ private:
 
     virtual ~Fast_HTTPConnection(void);
 
-    void Run (FastOS_ThreadInterface *thisThread, void *params);
+    void Run (FastOS_ThreadInterface *thisThread, void *params) override;
     void Output(const char *outputString);
     void OutputData(const void *data, size_t len);
     void OutputFile(FastOS_FileInterface *file);
@@ -132,8 +132,7 @@ class Fast_HTTPServerSocketFactory : public FastOS_SocketFactory
     /**
     * Create a streaming socket object
     */
-    virtual FastOS_SocketInterface *CreateSocket()
-    {
+    FastOS_SocketInterface *CreateSocket() override {
       return new Fast_Socket(_readTimeout);
     }
 };
@@ -239,7 +238,7 @@ protected:
     void SetKeepAlive(bool keepAlive = true) { _keepAlive = keepAlive; }
     bool GetKeepAlive() { return _keepAlive; }
 
-    virtual void Run (FastOS_ThreadInterface *thisThread, void *params);
+    void Run (FastOS_ThreadInterface *thisThread, void *params) override;
 
     virtual int  Start(void);
     virtual void Stop(void);

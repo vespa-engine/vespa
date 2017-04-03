@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
-#include <stack>
 #include <vespa/config/common/source.h>
 #include <vespa/config/common/iconfigholder.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -29,9 +25,9 @@ private:
 
 public:
     FileSource(const IConfigHolder::SP & holder, const vespalib::string & fileName);
-    void getConfig();
-    void close();
-    void reload(int64_t generation);
+    void getConfig() override;
+    void close() override;
+    void reload(int64_t generation) override;
 };
 
 } // namespace config

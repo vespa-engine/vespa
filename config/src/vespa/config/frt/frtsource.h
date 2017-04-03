@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/common/source.h>
+
 #include "connectionfactory.h"
 #include "frtconfigagent.h"
+#include "frtconfigrequestfactory.h"
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/common/configrequest.h>
-#include "frtconfigrequestfactory.h"
+#include <vespa/config/common/source.h>
 
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/sync.h>
@@ -23,10 +24,10 @@ public:
     FRTSource(const ConnectionFactory::SP & connectionFactory, const FRTConfigRequestFactory & requestFactory, ConfigAgent::UP agent, const ConfigKey & key);
     ~FRTSource();
 
-    void RequestDone(FRT_RPCRequest * request);
-    void close();
-    void reload(int64_t generation);
-    void getConfig();
+    void RequestDone(FRT_RPCRequest * request) override;
+    void close() override;
+    void reload(int64_t generation) override;
+    void getConfig() override;
 
     const FRTConfigRequest & getCurrentRequest() const;
 

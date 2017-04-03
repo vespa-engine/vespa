@@ -44,8 +44,8 @@ public:
     bool LittleEndian() { return (_flags & FLAG_FRT_RPC_LITTLE_ENDIAN) != 0; }
     bool NoReply() { return (_flags & FLAG_FRT_RPC_NOREPLY) != 0; }
 
-    virtual ~FRT_RPCPacket();
-    virtual void Free();
+    ~FRT_RPCPacket();
+    void Free() override;
 };
 
 
@@ -57,11 +57,11 @@ public:
                          bool ownsRef)
         : FRT_RPCPacket(req, flags, ownsRef) {}
 
-    virtual uint32_t GetPCODE();
-    virtual uint32_t GetLength();
-    virtual void Encode(FNET_DataBuffer *dst);
-    virtual bool Decode(FNET_DataBuffer *src, uint32_t len);
-    virtual vespalib::string Print(uint32_t indent = 0);
+    uint32_t GetPCODE() override;
+    uint32_t GetLength() override;
+    void Encode(FNET_DataBuffer *dst) override;
+    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
+    vespalib::string Print(uint32_t indent = 0) override;
 };
 
 
@@ -73,11 +73,11 @@ public:
                        bool ownsRef)
         : FRT_RPCPacket(req, flags, ownsRef) {}
 
-    virtual uint32_t GetPCODE();
-    virtual uint32_t GetLength();
-    virtual void Encode(FNET_DataBuffer *dst);
-    virtual bool Decode(FNET_DataBuffer *src, uint32_t len);
-    virtual vespalib::string Print(uint32_t indent = 0);
+    uint32_t GetPCODE() override;
+    uint32_t GetLength() override;
+    void Encode(FNET_DataBuffer *dst) override;
+    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
+    vespalib::string Print(uint32_t indent = 0) override;
 };
 
 
@@ -89,18 +89,18 @@ public:
                        bool ownsRef)
         : FRT_RPCPacket(req, flags, ownsRef) {}
 
-    virtual uint32_t GetPCODE();
-    virtual uint32_t GetLength();
-    virtual void Encode(FNET_DataBuffer *dst);
-    virtual bool Decode(FNET_DataBuffer *src, uint32_t len);
-    virtual vespalib::string Print(uint32_t indent = 0);
+    uint32_t GetPCODE() override;
+    uint32_t GetLength() override;
+    void Encode(FNET_DataBuffer *dst) override;
+    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
+    vespalib::string Print(uint32_t indent = 0) override;
 };
 
 
 class FRT_PacketFactory : public FNET_IPacketFactory
 {
 public:
-    FNET_Packet *CreatePacket(uint32_t pcode, FNET_Context context);
+    FNET_Packet *CreatePacket(uint32_t pcode, FNET_Context context) override;
 };
 
 VESPA_CAN_SKIP_DESTRUCTION(FRT_RPCRequestPacket)

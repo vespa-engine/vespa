@@ -32,9 +32,9 @@ public:
                          RpcServerMap& rpcsrvmap,
                          RpcServerManager& rpcsrvman,
                          ExchangeManager& exchanger);
-    virtual ~RemoteCheck();
+    ~RemoteCheck();
 private:
-    virtual void PerformTask();
+    void PerformTask() override;
 };
 
 } // namespace slobrok

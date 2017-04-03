@@ -2,26 +2,24 @@
 #pragma once
 
 #include "multiset.h"
-#include <vector>
 #include "matchelem.h"
 #include "querynode.h"
 
 typedef key_occ* key_occ_ptr;
 typedef std::vector<key_occ_ptr> key_occ_vector;
 
-
 class key_occ : public MatchElement
 {
 public:
-    virtual void set_valid();
-    virtual void add_to_keylist(keylist& kl);
-    virtual void dump(std::string& s);
-    virtual size_t length() const { return tokenlen; }
-    inline const char* term() { return _term; }
-    inline size_t word_length() const { return 1; }
-    inline bool complete() { return true; }
-    virtual inline off_t endpos() const { return _startpos + tokenlen; }
-    virtual inline off_t endtoken() const { return _starttoken + 1; }
+    void set_valid() override;
+    void add_to_keylist(keylist& kl) override;
+    void dump(std::string& s) override;
+    size_t length() const override { return tokenlen; }
+    const char* term() { return _term; }
+    size_t word_length() const override { return 1; }
+    bool complete() override { return true; }
+    off_t endpos() const override { return _startpos + tokenlen; }
+    off_t endtoken() const override { return _starttoken + 1; }
 
     int tokenlen;
     key_occ(const char* term, off_t posi, off_t tpos, int len);

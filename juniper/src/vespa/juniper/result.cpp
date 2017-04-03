@@ -6,7 +6,6 @@
 #include "result.h"
 #include "juniperparams.h"
 #include "Matcher.h"
-#include "tokenizer.h"
 #include "config.h"
 #include "appender.h"
 
@@ -21,9 +20,9 @@ class SummaryImpl : public Summary
 public:
     explicit SummaryImpl() : _text("") {}
     explicit SummaryImpl(const std::string& t) : _text(t) {}
-    virtual ~SummaryImpl() {}
-    virtual const char* Text() const { return _text.c_str(); }
-    virtual size_t Length() const { return _text.size(); }
+    ~SummaryImpl() {}
+    const char* Text() const override { return _text.c_str(); }
+    size_t Length() const override { return _text.size(); }
     std::string _text;
 };
 

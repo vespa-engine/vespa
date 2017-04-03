@@ -11,9 +11,9 @@ class PropReader : public IJuniperProperties
 {
 public:
     PropReader(const char* filename);
-    virtual const char* GetProperty(const char* name, const char* def = NULL);
+    const char* GetProperty(const char* name, const char* def = NULL) override;
     void UpdateProperty(const char* name, const char* value);
-    virtual ~PropReader() {}
+    ~PropReader() {}
 protected:
     void Process(const char* filename);
 private:

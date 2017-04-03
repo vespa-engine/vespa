@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/common/compressiontype.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
 namespace config {
@@ -54,7 +54,7 @@ public:
     RawSpec(const vespalib::string & config);
 
     // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
 
     /**
      * Returns the string representation of this config.
@@ -89,7 +89,7 @@ public:
     const vespalib::string & getFileName() const { return _fileName; }
 
     // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
 private:
     void verifyName(const vespalib::string & fileName);
     vespalib::string _fileName;
@@ -117,7 +117,7 @@ public:
     const vespalib::string & getDirName() const { return _dirName; }
 
     // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
 private:
     vespalib::string _dirName;
 };
@@ -154,7 +154,7 @@ public:
     ServerSpec(const vespalib::string & hostSpec);
 
     // Implements SourceSpec
-    virtual SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
+    virtual SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
 
     /**
      * Add another host to this source spec, allowing failover.
@@ -229,7 +229,7 @@ public:
     void addBuilder(const vespalib::string & configId, ConfigInstance * builder);
 
     // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
 private:
     BuilderMapSP _builderMap;
 };

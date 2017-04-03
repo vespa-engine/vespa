@@ -10,8 +10,8 @@ namespace config {
 class AsciiConfigWriter : public ConfigWriter {
 public:
     AsciiConfigWriter(vespalib::asciistream & os);
-    bool write(const ConfigInstance & config);
-    bool write(const ConfigInstance & config, const ConfigFormatter & formatter);
+    bool write(const ConfigInstance & config) override;
+    bool write(const ConfigInstance & config, const ConfigFormatter & formatter) override;
 private:
     vespalib::asciistream & _os;
 };

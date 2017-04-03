@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "metrics_producer.h"
-
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 namespace slobrok {
@@ -13,7 +10,7 @@ class MetricsSnapshotter : public FNET_Task
 {
     MetricsProducer &_owner;
 
-    void PerformTask() {
+    void PerformTask() override {
         _owner.snapshot();
         Schedule(60.0);
     }
@@ -25,7 +22,7 @@ public:
         Schedule(60.0);
     }
 
-    virtual ~MetricsSnapshotter() { Kill(); }
+    ~MetricsSnapshotter() { Kill(); }
 };
 
 class MetricSnapshot

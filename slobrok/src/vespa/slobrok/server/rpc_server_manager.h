@@ -99,12 +99,12 @@ public:
                          const char *spec);
 
     RpcServerManager(SBEnv &sbenv);
-    virtual ~RpcServerManager();
+    ~RpcServerManager();
 
-    virtual void PerformTask();
-    virtual void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg);
-    virtual void notifyOkRpcSrv(ManagedRpcServer *rpcsrv);
-    virtual FRT_Supervisor *getSupervisor();
+    void PerformTask() override;
+    void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;
+    void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) override;
+    FRT_Supervisor *getSupervisor() override;
 };
 
 //-----------------------------------------------------------------------------

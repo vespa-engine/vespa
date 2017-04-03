@@ -64,7 +64,7 @@ private:
             WorkItem& operator= (const WorkItem&); // not used
         public:
             void expedite();
-            virtual void RequestDone(FRT_RPCRequest *req);
+            void RequestDone(FRT_RPCRequest *req) override;
             WorkItem(WorkPackage &pkg,
                      RemoteSlobrok *rem,
                      FRT_RPCRequest *req);

@@ -27,31 +27,31 @@ private:
      *                          before timeout. -1 means wait forever.
      */
     Fast_Socket(int msReadTimeout = -1 /* no timeout */)
-      : _event(),
-	_readTimeout(msReadTimeout),
-	_lastReadTimedOut(false),
-	_eof(false)
+        : _event(),
+          _readTimeout(msReadTimeout),
+          _lastReadTimedOut(false),
+          _eof(false)
     {
     }
 
     ~Fast_Socket();
 
-    ssize_t Write(const void *sourceBuffer, size_t bufferSize);
-    ssize_t Read(void *targetBuffer, size_t bufferSize);
-    bool Close(void);
+    ssize_t Write(const void *sourceBuffer, size_t bufferSize) override;
+    ssize_t Read(void *targetBuffer, size_t bufferSize) override;
+    bool Close() override;
 
     bool LastReadTimedOut()          { return _lastReadTimedOut; }
     bool SeenEOF()                   { return _eof; }
 
-    Fast_InputStream  &GetInputStream(void)  { return *this; }
-    Fast_OutputStream &GetOutputStream(void) { return *this; }
+    Fast_InputStream  &GetInputStream()  { return *this; }
+    Fast_OutputStream &GetOutputStream() { return *this; }
 
 
     // Implementation of Fast_InputStream and Fast_OutputStream interfaces
 
-    void    Flush(void)              {                                           }
-    ssize_t Available (void)         { return 0;                                 }
-    ssize_t Skip (size_t skipNBytes) { (void) skipNBytes; return -1;             }
+    void    Flush()                  override {                                           }
+    ssize_t Available ()             override { return 0;                                 }
+    ssize_t Skip (size_t skipNBytes) override { (void) skipNBytes; return -1;             }
 
     void Interrupt();
 };

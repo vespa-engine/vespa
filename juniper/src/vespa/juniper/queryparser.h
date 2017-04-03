@@ -32,13 +32,13 @@ public:
     QueryParser(const char* query_string);
     virtual ~QueryParser();
 
-    virtual bool Traverse(IQueryVisitor* v) const;
-    virtual int Weight(const QueryItem* item) const;
-    virtual ItemCreator Creator(const QueryItem* item) const;
-    virtual const char* Index(const QueryItem* item, size_t* length) const;
-    virtual bool UsefulIndex(const QueryItem* item) const;
+    bool Traverse(IQueryVisitor* v) const override;
+    int Weight(const QueryItem* item) const override;
+    ItemCreator Creator(const QueryItem* item) const override;
+    const char* Index(const QueryItem* item, size_t* length) const override;
+    bool UsefulIndex(const QueryItem* item) const override;
 
-    inline int ParseError() { return _parse_errno; }
+    int ParseError() { return _parse_errno; }
 protected:
     QueryItem* ParseExpr();
     QueryItem* ParseKeyword();

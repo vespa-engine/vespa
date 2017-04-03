@@ -16,8 +16,8 @@ public:
     PayloadConverter(const vespalib::slime::Inspector & inspector);
     ~PayloadConverter();
     const std::vector<vespalib::string> & convert();
-    void field(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector);
-    void entry(size_t idx, const vespalib::slime::Inspector & inspector);
+    void field(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector) override;
+    void entry(size_t idx, const vespalib::slime::Inspector & inspector) override;
 private:
     void printPrefix();
     void encode(const vespalib::slime::Inspector & inspector);

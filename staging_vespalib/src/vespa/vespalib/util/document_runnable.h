@@ -32,7 +32,7 @@ private:
     mutable vespalib::Monitor _stateLock;
     State _state;
 
-    void Run(FastOS_ThreadInterface*, void*);
+    void Run(FastOS_ThreadInterface*, void*) override;
 
     Runnable(const Runnable&);
     Runnable& operator=(const Runnable&);

@@ -17,7 +17,7 @@ public:
     SimpleHealthProducer();
     void setOk();
     void setFailed(const vespalib::string &msg);
-    virtual Health getHealth() const;
+    Health getHealth() const override;
 };
 
 } // namespace vespalib
