@@ -6,6 +6,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -33,7 +34,7 @@ public class NodeRepositoryTest {
 
         assertEquals(3, tester.getNodes(NodeType.tenant).size());
         
-        tester.nodeRepository().park("host2");
+        tester.nodeRepository().park("host2", Agent.system);
         assertTrue(tester.nodeRepository().remove("host2"));
 
         assertEquals(2, tester.getNodes(NodeType.tenant).size());

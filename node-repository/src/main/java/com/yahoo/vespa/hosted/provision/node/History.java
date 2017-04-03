@@ -62,15 +62,15 @@ public class History {
     }
 
     /** Returns a copy of this history with a record of this state transition added, if applicable */
-    public History recordStateTransition(Node.State from, Node.State to, Instant at) {
+    public History recordStateTransition(Node.State from, Node.State to, Agent agent, Instant at) {
         if (from == to) return this;
         switch (to) {
-            case ready:    return this.withoutApplicationEvents().with(new Event(Event.Type.readied, at));
-            case active:   return this.with(new Event(Event.Type.activated, at));
-            case inactive: return this.with(new Event(Event.Type.deactivated, at));
-            case reserved: return this.with(new Event(Event.Type.reserved, at));
-            case failed:   return this.with(new Event(Event.Type.failed, at));
-            case dirty:    return this.with(new Event(Event.Type.deallocated, at));
+            case ready:    return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
+            case active:   return this.with(new Event(Event.Type.activated, agent, at));
+            case inactive: return this.with(new Event(Event.Type.deactivated, agent, at));
+            case reserved: return this.with(new Event(Event.Type.reserved, agent, at));
+            case failed:   return this.with(new Event(Event.Type.failed, agent, at));
+            case dirty:    return this.with(new Event(Event.Type.deallocated, agent, at));
             default:       return this;
         }
     }
@@ -95,23 +95,19 @@ public class History {
          b.setLength(b.length() -2); // remove last comma
         return b.toString();
     }
-    
+
     /** An event which may happen to a node */
     public static class Event {
 
         private final Instant at;
-        private final Event.Type type;
+        private final Agent agent;
+        private final Type type;
 
-        public Event(Event.Type type, Instant at) {
+        public Event(Event.Type type, Agent agent, Instant at) {
             this.type = type;
+            this.agent = agent;
             this.at = at;
         }
-
-        /** Returns the type of event */
-        public Event.Type type() { return type; }
-
-        /** Returns the instant this even took place */
-        public Instant at() { return at; }
 
         public enum Type { 
             // State move events
@@ -142,25 +138,17 @@ public class History {
             public boolean isApplicationLevel() { return applicationLevel; }
         }
 
+        /** Returns the type of event */
+        public Event.Type type() { return type; }
+
+        /** Returns the agent causing this event */
+        public Agent agent() { return agent; }
+
+        /** Returns the instant this even took place */
+        public Instant at() { return at; }
+
         @Override
         public String toString() { return "'" + type + "' event at " + at; }
-
-    }
-
-    /** A retired event includes additional information about the causing agent. */
-    public static class RetiredEvent extends Event {
-
-        private final RetiredEvent.Agent agent;
-
-        public RetiredEvent(Instant at, RetiredEvent.Agent agent) {
-            super(Type.retired, at);
-            this.agent = agent;
-        }
-
-        /** Returns the agent which caused retirement */
-        public RetiredEvent.Agent agent() { return agent; }
-
-        public enum Agent { system, application }
 
     }
 

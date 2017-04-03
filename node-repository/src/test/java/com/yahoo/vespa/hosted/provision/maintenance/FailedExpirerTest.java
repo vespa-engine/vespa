@@ -20,6 +20,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -112,9 +113,9 @@ public class FailedExpirerTest {
         assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
 
         // Fail the nodes
-        nodeRepository.fail("node1", "Failing to unit test");
-        nodeRepository.fail("node2", "Failing to unit test");
-        nodeRepository.fail("node3", "Failing to unit test");
+        nodeRepository.fail("node1", Agent.system, "Failing to unit test");
+        nodeRepository.fail("node2", Agent.system, "Failing to unit test");
+        nodeRepository.fail("node3", Agent.system, "Failing to unit test");
         assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
 
         // Failure times out

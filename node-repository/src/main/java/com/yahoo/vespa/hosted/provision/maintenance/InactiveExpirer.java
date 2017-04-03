@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Clock;
@@ -39,7 +40,7 @@ public class InactiveExpirer extends Expirer {
     protected void expire(List<Node> expired) {
         expired.forEach(node -> {
             if (node.status().wantToRetire()) {
-                nodeRepository.park(node.hostname());
+                nodeRepository.park(node.hostname(), Agent.system);
             } else {
                 nodeRepository.setDirty(node);
             }

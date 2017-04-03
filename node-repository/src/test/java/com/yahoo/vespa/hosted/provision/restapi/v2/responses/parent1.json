@@ -20,7 +20,8 @@
   "history": [
     {
       "event": "readied",
-      "at": 123
+      "at": 123,
+      "agent": "system"
     }
   ],
   "ipAddresses":["::1", "127.0.0.1"]

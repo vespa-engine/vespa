@@ -202,6 +202,7 @@ class NodesResponse extends HttpResponse {
             Cursor object = array.addObject();
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());
+            object.setString("agent", event.agent().name());
         }
     }
 

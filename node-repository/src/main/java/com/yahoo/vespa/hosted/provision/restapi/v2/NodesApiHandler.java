@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -101,12 +102,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
-            List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path), "Failed through the nodes/v2 API");
+            List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path), Agent.operator, "Failed through the nodes/v2 API");
             String failedHostnames = failedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
             return new MessageResponse("Moved " + failedHostnames + " to failed");
         }
         else if (path.startsWith("/nodes/v2/state/parked/")) {
-            List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path));
+            List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path), Agent.operator);
             String parkedHostnames = parkedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
             return new MessageResponse("Moved " + parkedHostnames + " to parked");
         }
@@ -115,7 +116,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.reactivate(lastElement(path));
+            nodeRepository.reactivate(lastElement(path), Agent.operator);
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
 

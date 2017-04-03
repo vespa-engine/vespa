@@ -14,6 +14,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -157,12 +158,12 @@ public class SerializationTest {
                              clock.instant());
         assertEquals(1, node.history().events().size());
         clock.advance(Duration.ofMinutes(2));
-        node = node.retireByApplication(clock.instant());
+        node = node.retire(Agent.application, clock.instant());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(2, copy.history().events().size());
         assertEquals(clock.instant(), copy.history().event(History.Event.Type.retired).get().at());
-        assertEquals(History.RetiredEvent.Agent.application,
-                     ((History.RetiredEvent) copy.history().event(History.Event.Type.retired).get()).agent());
+        assertEquals(Agent.application,
+                     (copy.history().event(History.Event.Type.retired).get()).agent());
         assertTrue(copy.allocation().get().membership().retired());
 
         Node removable = copy.with(node.allocation().get().removable());

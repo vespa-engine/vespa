@@ -11,6 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -70,9 +71,9 @@ public class NodeTypeProvisioningTest {
 
         { // Remove 3 proxies then redeploy
             List<Node> nodes = tester.nodeRepository().getNodes(NodeType.proxy, Node.State.active);
-            tester.nodeRepository().fail(nodes.get(0).hostname(), "Failing to unit test");
-            tester.nodeRepository().fail(nodes.get(1).hostname(), "Failing to unit test");
-            tester.nodeRepository().fail(nodes.get(5).hostname(), "Failing to unit test");
+            tester.nodeRepository().fail(nodes.get(0).hostname(), Agent.system, "Failing to unit test");
+            tester.nodeRepository().fail(nodes.get(1).hostname(), Agent.system, "Failing to unit test");
+            tester.nodeRepository().fail(nodes.get(5).hostname(), Agent.system, "Failing to unit test");
             
             List<HostSpec> hosts = deployProxies(application, tester);
             assertEquals(10, hosts.size());

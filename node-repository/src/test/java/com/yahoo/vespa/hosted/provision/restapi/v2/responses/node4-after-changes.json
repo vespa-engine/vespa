@@ -41,15 +41,18 @@
   "history": [
     {
       "event": "readied",
-      "at": 123
+      "at": 123,
+      "agent": "system"    
     },
     {
       "event": "reserved",
-      "at": 123
+      "at": 123,
+      "agent": "application"
     },
     {
       "event": "rebooted",
-      "at": 123
+      "at": 123,
+      "agent": "system"
     }
   ],
   "ipAddresses":["127.0.0.1", "::1"]

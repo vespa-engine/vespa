@@ -6,6 +6,7 @@ import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -120,28 +121,21 @@ public final class Node {
     public History history() { return history; }
 
     /**
-     * Returns a copy of this node which is retired by the application owning it.
+     * Returns a copy of this node which is retired.
      * If the node was already retired it is returned as-is.
      */
-    public Node retireByApplication(Instant retiredAt) {
+    public Node retire(Agent agent, Instant retiredAt) {
         if (allocation().get().membership().retired()) return this;
         return with(allocation.get().retire())
-               .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.application)));
-    }
-
-    /** Returns a copy of this node which is retired by the system */
-    public Node retireBySystem(Instant retiredAt) {
-        if (allocation().get().membership().retired()) return this;
-        return with(allocation.get().retire())
-               .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.system)));
+               .with(history.with(new History.Event(History.Event.Type.retired, agent, retiredAt)));
     }
 
     /** Returns a copy of this node which is retired */
     public Node retire(Instant retiredAt) {
-        if (flavor.isRetired() || status.wantToRetire()) {
-            return retireBySystem(retiredAt);
-        }
-        return retireByApplication(retiredAt);
+        if (flavor.isRetired() || status.wantToRetire())
+            return retire(Agent.system, retiredAt);
+        else
+            return retire(Agent.application, retiredAt);
     }
 
     /** Returns a copy of this node which is not retired */
@@ -181,7 +175,7 @@ public final class Node {
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
     public Node downAt(Instant instant) {
-        return with(history.with(new History.Event(History.Event.Type.down, instant)));
+        return with(history.with(new History.Event(History.Event.Type.down, Agent.system, instant)));
     }
 
     /** Returns a copy of this with any history record saying it has been detected down removed */
@@ -192,7 +186,7 @@ public final class Node {
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
     public Node allocate(ApplicationId owner, ClusterMembership membership, Instant at) {
         return this.with(new Allocation(owner, membership, new Generation(0, 0), false))
-                   .with(history.with(new History.Event(History.Event.Type.reserved, at)));
+                   .with(history.with(new History.Event(History.Event.Type.reserved, Agent.application, at)));
     }
 
     /**
@@ -220,7 +214,7 @@ public final class Node {
         Status newStatus = status().withReboot(status().reboot().withCurrent(generation));
         History newHistory = history();
         if (generation > status().reboot().current())
-            newHistory = history.with(new History.Event(History.Event.Type.rebooted, instant));
+            newHistory = history.with(new History.Event(History.Event.Type.rebooted, Agent.system, instant));
         return this.with(newStatus).with(newHistory);
     }
     

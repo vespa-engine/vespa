@@ -15,6 +15,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.nio.charset.StandardCharsets;
@@ -117,17 +118,19 @@ public class CuratorDatabaseClient {
      *
      * @param  toState the state to write the nodes to
      * @param  nodes the list of nodes to write
+     * @param  agent the agent causing this change
      * @return the nodes in their persisted state
      */
-    public List<Node> writeTo(Node.State toState, List<Node> nodes, Optional<String> reason) {
+    public List<Node> writeTo(Node.State toState, List<Node> nodes,
+                              Agent agent, Optional<String> reason) {
         try (NestedTransaction nestedTransaction = new NestedTransaction()) {
-            List<Node> writtenNodes = writeTo(toState, nodes, reason, nestedTransaction);
+            List<Node> writtenNodes = writeTo(toState, nodes, agent, reason, nestedTransaction);
             nestedTransaction.commit();
             return writtenNodes;
         }
     }
-    public Node writeTo(Node.State toState, Node node, Optional<String> reason) {
-        return writeTo(toState, Collections.singletonList(node), reason).get(0);
+    public Node writeTo(Node.State toState, Node node, Agent agent, Optional<String> reason) {
+        return writeTo(toState, Collections.singletonList(node), agent, reason).get(0);
     }
 
     /**
@@ -136,12 +139,14 @@ public class CuratorDatabaseClient {
      *
      * @param  toState the state to write the nodes to
      * @param  nodes the list of nodes to write
+     * @param  agent the agent causing this change
      * @param  reason an optional reason to be logged, for humans
      * @param  transaction the transaction to which write operations are added by this
      * @return the nodes in their state as it will be written if committed
      */
     public List<Node> writeTo(Node.State toState, List<Node> nodes,
-                              Optional<String> reason, NestedTransaction transaction) {
+                              Agent agent, Optional<String> reason,
+                              NestedTransaction transaction) {
         if (nodes.isEmpty()) return nodes;
 
         List<Node> writtenNodes = new ArrayList<>(nodes.size());
@@ -153,7 +158,7 @@ public class CuratorDatabaseClient {
                                     newNodeStatus(node, toState),
                                     toState,
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
-                                    node.history().recordStateTransition(node.state(), toState, clock.instant()),
+                                    node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type());
             curatorTransaction.add(CuratorOperations.delete(toPath(node).getAbsolute()))
                               .add(CuratorOperations.create(toPath(toState, newNode.hostname()).getAbsolute(), nodeSerializer.toJson(newNode)));

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Clock;
@@ -33,7 +34,7 @@ public class DirtyExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         for (Node expiredNode : expired.stream().collect(Collectors.toList()))
-            nodeRepository.fail(expiredNode.hostname(), "Node is stuck in dirty");
+            nodeRepository.fail(expiredNode.hostname(), Agent.system, "Node is stuck in dirty");
     }
 
 }

@@ -10,6 +10,7 @@ import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -358,7 +359,7 @@ class GroupPreparer {
             if (surplus > 0) { // retire until surplus is 0, prefer to retire higher indexes to minimize redistribution
                 for (Node node : byDecreasingIndex(nodes)) {
                     if ( ! node.allocation().get().membership().retired() && node.state().equals(Node.State.active)) {
-                        changedNodes.add(node.retireByApplication(clock.instant()));
+                        changedNodes.add(node.retire(Agent.application, clock.instant()));
                         surplusNodes.add(node); // offer this node to other groups
                         if (--surplus == 0) break;
                     }
