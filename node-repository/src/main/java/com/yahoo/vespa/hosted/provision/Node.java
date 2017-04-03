@@ -120,7 +120,7 @@ public final class Node {
     /** Returns a history of the last events happening to this node */
     public History history() { return history; }
 
-    /** 
+    /**
      * Returns a copy of this node which is retired.
      * If the node was already retired it is returned as-is.
      */
