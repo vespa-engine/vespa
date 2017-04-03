@@ -7,8 +7,6 @@
 #include "basic_value.h"
 #include "basic_value_factory.h"
 #include "binary_format.h"
-#include <vespa/vespalib/data/input_reader.h>
-#include <vespa/vespalib/data/output_writer.h>
 #include "convenience.h"
 #include "cursor.h"
 #include "empty_value_factory.h"
@@ -16,16 +14,13 @@
 #include "inserter.h"
 #include "inspector.h"
 #include "json_format.h"
-#include <vespa/vespalib/data/memory.h>
 #include "named_symbol_inserter.h"
 #include "named_symbol_lookup.h"
 #include "nix_value.h"
 #include "object_traverser.h"
 #include "object_value.h"
-#include <vespa/vespalib/data/output.h>
 #include "resolved_symbol.h"
 #include "root_value.h"
-#include <vespa/vespalib/data/simple_buffer.h>
 #include "symbol.h"
 #include "symbol_inserter.h"
 #include "symbol_lookup.h"
@@ -33,7 +28,10 @@
 #include "type.h"
 #include "value.h"
 #include "value_factory.h"
-#include <memory>
+#include <vespa/vespalib/data/input_reader.h>
+#include <vespa/vespalib/data/output_writer.h>
+#include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/output.h>
 
 namespace vespalib {
 
