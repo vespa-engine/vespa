@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "attribute_map.h"
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -89,8 +90,8 @@ public:
     /** Returns a const reference to the list of fields of this. */
     const std::vector<FieldInfo> &getFields() const { return _fields; }
 
-    /** Returns a reference to the attribute manager of this. */
-    AttributeManager &getAttributeManager() { return _attrMan; }
+    /** Returns a reference to the attribute map of this. */
+    AttributeMap &getAttributeMap() { return _attrMap; }
 
     /** Returns a reference to the table manager of this. */
     TableManager &getTableManager() { return _tableMan; }
@@ -108,7 +109,7 @@ private:
 private:
     Properties             _properties;
     std::vector<FieldInfo> _fields;
-    AttributeManager       _attrMan;
+    AttributeMap           _attrMap;
     TableManager           _tableMan;
     ConstantsMap           _constants;
 };

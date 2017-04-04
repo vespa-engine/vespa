@@ -24,7 +24,7 @@ IndexEnvironment::Constant notFoundError(ValueType::error_type(),
 IndexEnvironment::IndexEnvironment() :
     _properties(),
     _fields(),
-    _attrMan(),
+    _attrMap(),
     _tableMan(),
     _constants()
 {

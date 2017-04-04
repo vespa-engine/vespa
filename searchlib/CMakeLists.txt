@@ -127,6 +127,7 @@ vespa_define_module(
     src/tests/features/element_completeness
     src/tests/features/element_similarity_feature
     src/tests/features/euclidean_distance
+    src/tests/features/imported_dot_product
     src/tests/features/item_raw_score
     src/tests/features/native_dot_product
     src/tests/features/ranking_expression

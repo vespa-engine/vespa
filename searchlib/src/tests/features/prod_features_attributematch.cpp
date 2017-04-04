@@ -283,8 +283,8 @@ Test::testAttributeMatch()
         AttributePtr wint = AttributeFactory::createAttribute("wint", AVC(AVBT::INT32, AVCT::WSET));
         aint->addReservedDoc();
         wint->addReservedDoc();
-        ft.getIndexEnv().getAttributeManager().add(aint);
-        ft.getIndexEnv().getAttributeManager().add(wint);
+        ft.getIndexEnv().getAttributeMap().add(aint);
+        ft.getIndexEnv().getAttributeMap().add(wint);
         aint->addDocs(1);
         aint->commit();
         ASSERT_TRUE(aint->getValueCount(0) == 0);

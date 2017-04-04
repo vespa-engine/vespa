@@ -7,6 +7,7 @@ vespa_add_library(searchlib_fef_test OBJECT
     indexenvironment.cpp
     indexenvironmentbuilder.cpp
     matchdatabuilder.cpp
+    mock_attribute_context.cpp
     queryenvironment.cpp
     queryenvironmentbuilder.cpp
     rankresult.cpp

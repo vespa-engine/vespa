@@ -209,7 +209,7 @@ Test::setupForAgeTest(FtFeatureTest & ft, uint64_t docTime)
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "doctime");
     doctime->addReservedDoc();
     doctime->addDocs(1);
-    ft.getIndexEnv().getAttributeManager().add(doctime);
+    ft.getIndexEnv().getAttributeMap().add(doctime);
     (static_cast<IntegerAttribute *>(doctime.get()))->update(1, docTime);
     doctime->commit();
 }
@@ -395,7 +395,7 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     for (uint32_t i = 0; i < avs.size(); ++i) {
         avs[i]->addReservedDoc();
         avs[i]->addDocs(1);
-        ft.getIndexEnv().getAttributeManager().add(avs[i]);
+        ft.getIndexEnv().getAttributeMap().add(avs[i]);
     }
 
     // integer attributes
@@ -831,7 +831,7 @@ Test::testDistance()
                 FtFeatureTest ft(_factory, "distance(pos)");
                 AttributePtr pos = AttributeFactory::createAttribute("pos", AVC(AVBT::FLOAT,  AVCT::SINGLE));
                 pos->commit();
-                ft.getIndexEnv().getAttributeManager().add(pos);
+                ft.getIndexEnv().getAttributeMap().add(pos);
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
@@ -840,7 +840,7 @@ Test::testDistance()
                 FtFeatureTest ft(_factory, "distance(pos)");
                 AttributePtr pos = AttributeFactory::createAttribute("pos", AVC(AVBT::STRING,  AVCT::SINGLE));
                 pos->commit();
-                ft.getIndexEnv().getAttributeManager().add(pos);
+                ft.getIndexEnv().getAttributeMap().add(pos);
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
@@ -849,7 +849,7 @@ Test::testDistance()
                 FtFeatureTest ft(_factory, "distance(pos)");
                 AttributePtr pos = AttributeFactory::createAttribute("pos", AVC(AVBT::INT64,  AVCT::WSET));
                 pos->commit();
-                ft.getIndexEnv().getAttributeManager().add(pos);
+                ft.getIndexEnv().getAttributeMap().add(pos);
                 ft.getQueryEnv().getLocation().setValid(true);
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
@@ -866,7 +866,7 @@ Test::setupForDistanceTest(FtFeatureTest &ft, const vespalib::string & attrName,
 
     pos->addReservedDoc();
     pos->addDocs(1);
-    ft.getIndexEnv().getAttributeManager().add(pos);
+    ft.getIndexEnv().getAttributeMap().add(pos);
 
     IntegerAttribute * ia = static_cast<IntegerAttribute *>(pos.get());
     for (uint32_t i = 0; i < positions.size(); ++i) {
@@ -984,7 +984,7 @@ Test::testDistanceToPath()
                 FtFeatureTest ft(_factory, "distanceToPath(pos)");
                 AttributePtr att = AttributeFactory::createAttribute("pos", AVC(AVBT::FLOAT, AVCT::SINGLE));
                 att->commit();
-                ft.getIndexEnv().getAttributeManager().add(att);
+                ft.getIndexEnv().getAttributeMap().add(att);
                 ft.getQueryEnv().getProperties().add("distanceToPath(pos).path", "0 0 1 1");
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(res));
@@ -994,7 +994,7 @@ Test::testDistanceToPath()
                 FtFeatureTest ft(_factory, "distanceToPath(pos)");
                 AttributePtr att = AttributeFactory::createAttribute("pos", AVC(AVBT::STRING, AVCT::SINGLE));
                 att->commit();
-                ft.getIndexEnv().getAttributeManager().add(att);
+                ft.getIndexEnv().getAttributeMap().add(att);
                 ft.getQueryEnv().getProperties().add("distanceToPath(pos).path", "0 0 1 1");
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(res));
@@ -1004,7 +1004,7 @@ Test::testDistanceToPath()
                 FtFeatureTest ft(_factory, "distanceToPath(pos)");
                 AttributePtr att = AttributeFactory::createAttribute("pos", AVC(AVBT::INT64, AVCT::WSET));
                 att->commit();
-                ft.getIndexEnv().getAttributeManager().add(att);
+                ft.getIndexEnv().getAttributeMap().add(att);
                 ft.getQueryEnv().getProperties().add("distanceToPath(pos).path", "0 0 1 1");
                 ASSERT_TRUE(ft.setup());
                 ASSERT_TRUE(ft.execute(res));
@@ -1037,7 +1037,7 @@ Test::setupForDocumentTest(FtFeatureTest &ft, const vespalib::string & attrName,
 
     type->addReservedDoc();
     type->addDocs(1);
-    ft.getIndexEnv().getAttributeManager().add(type);
+    ft.getIndexEnv().getAttributeMap().add(type);
 
     (static_cast<StringAttribute *>(type.get()))->update(1, docType);
     type->commit();
@@ -1066,8 +1066,8 @@ Test::testDotProduct()
         { // string enum vector
             FtFeatureTest ft(_factory, "value(0)");
             setupForDotProductTest(ft);
-            search::AttributeGuard::UP ag(ft.getIndexEnv().getAttributeManager().getAttribute("wsstr"));
-            const search::attribute::IAttributeVector * sv = ag->operator->();
+            const search::attribute::IAttributeVector * sv(ft.getIndexEnv().getAttributeMap().getAttribute("wsstr"));
+            ASSERT_TRUE(sv != nullptr);
             EXPECT_TRUE(sv->hasEnum());
             search::attribute::EnumHandle e;
             {
@@ -1271,7 +1271,7 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
                                                cfg.name);
         baf->addReservedDoc();
         baf->addDocs(2);
-        ft.getIndexEnv().getAttributeManager().add(baf);
+        ft.getIndexEnv().getAttributeMap().add(baf);
         for (size_t i(1); i < 6; i++) {
             IntegerAttribute * ia = dynamic_cast<IntegerAttribute *>(baf.get());
             if (ia) {
@@ -1288,9 +1288,9 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
     c->addReservedDoc();
     a->addDocs(2);
     c->addDocs(2);
-    ft.getIndexEnv().getAttributeManager().add(a);
-    ft.getIndexEnv().getAttributeManager().add(c);
-    ft.getIndexEnv().getAttributeManager().add(d);
+    ft.getIndexEnv().getAttributeMap().add(a);
+    ft.getIndexEnv().getAttributeMap().add(c);
+    ft.getIndexEnv().getAttributeMap().add(d);
 
     StringAttribute * sa = static_cast<StringAttribute *>(a.get());
     sa->append(1, "a", 1);

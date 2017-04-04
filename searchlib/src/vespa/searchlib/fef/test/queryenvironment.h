@@ -62,8 +62,8 @@ public:
     /** Sets the index environment of this. */
     QueryEnvironment &setIndexEnv(IndexEnvironment *indexEnv) {
         _indexEnv = indexEnv;
-        _attrCtx = ((indexEnv == NULL) ? search::attribute::IAttributeContext::UP() : 
-                    indexEnv->getAttributeManager().createContext());
+        _attrCtx = ((indexEnv == NULL) ? search::attribute::IAttributeContext::UP() :
+                    indexEnv->getAttributeMap().createContext());
         return *this;
     }
 

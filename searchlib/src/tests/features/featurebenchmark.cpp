@@ -356,7 +356,7 @@ Benchmark::runAttributeMatch(Config & cfg)
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "foo");
-    ft.getIndexEnv().getAttributeManager().add(createAttributeVector("foo", "single", numDocs, 10, 10));
+    ft.getIndexEnv().getAttributeMap().add(createAttributeVector("foo", "single", numDocs, 10, 10));
     ft.getQueryEnv().getBuilder().addAttributeNode("foo");
     setupPropertyMap(ft.getIndexEnv().getProperties(), cfg.getUnknown());
     ASSERT_TRUE(ft.setup());
@@ -398,7 +398,7 @@ Benchmark::runAttribute(Config & cfg)
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "foo");
-    ft.getIndexEnv().getAttributeManager().add(createStringAttributeVector("foo", "wset", numDocs, values));
+    ft.getIndexEnv().getAttributeMap().add(createStringAttributeVector("foo", "wset", numDocs, values));
     ASSERT_TRUE(ft.setup());
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
 
@@ -438,15 +438,15 @@ Benchmark::runDotProduct(Config & cfg)
             values.add(vespalib::make_string("str%u", i));
         }
 
-        ft.getIndexEnv().getAttributeManager().add(createStringAttributeVector("wsstr", collectionType, numDocs, values));
+        ft.getIndexEnv().getAttributeMap().add(createStringAttributeVector("wsstr", collectionType, numDocs, values));
     } else if (dataType == "int") {
-        ft.getIndexEnv().getAttributeManager().add(createAttributeVector(AVBT::INT32, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::INT32, "wsstr", collectionType, numDocs, 0, numValues));
     } else if (dataType == "long") {
-        ft.getIndexEnv().getAttributeManager().add(createAttributeVector(AVBT::INT64, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::INT64, "wsstr", collectionType, numDocs, 0, numValues));
     } else if (dataType == "float") {
-        ft.getIndexEnv().getAttributeManager().add(createAttributeVector(AVBT::FLOAT, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::FLOAT, "wsstr", collectionType, numDocs, 0, numValues));
     } else if (dataType == "double") {
-        ft.getIndexEnv().getAttributeManager().add(createAttributeVector(AVBT::DOUBLE, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::DOUBLE, "wsstr", collectionType, numDocs, 0, numValues));
     } else {
         std::cerr << "Illegal data type '" << dataType << std::endl;
     }
