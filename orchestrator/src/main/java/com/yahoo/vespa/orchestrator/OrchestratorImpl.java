@@ -83,7 +83,7 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public void resume(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {
-       /**
+       /*
         * When making a state transition to this state, we have to consider that if the host has been in
         * ALLOWED_TO_BE_DOWN state, services on the host may recently have been stopped (and, presumably, started).
         * Service monitoring may not have had enough time to detect that services were stopped,
@@ -162,26 +162,22 @@ public class OrchestratorImpl implements Orchestrator {
             throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
         }
 
-        for (HostName hostName : hostNames) {
-            try {
-                suspend(hostName);
-            } catch (HostStateChangeDeniedException e) {
-                BatchHostStateChangeDeniedException exception =
-                        new BatchHostStateChangeDeniedException(parentHostname, hostNames, e);
-                rollbackSuspendAll(hostNames, exception);
-                throw exception;
-            } catch (HostNameNotFoundException e) {
-                // Should never get here since since we would have received HostNameNotFoundException earlier.
-                BatchHostNameNotFoundException exception =
-                        new BatchHostNameNotFoundException(parentHostname, hostNames, e);
-                rollbackSuspendAll(hostNames, exception);
-                throw exception;
-            } catch (RuntimeException e) {
-                BatchInternalErrorException exception =
-                        new BatchInternalErrorException(parentHostname, hostNames, e);
-                rollbackSuspendAll(hostNames, exception);
-                throw exception;
+        try {
+            for (HostName hostName : hostNames) {
+                try {
+                    suspend(hostName);
+                } catch (HostStateChangeDeniedException e) {
+                    throw new BatchHostStateChangeDeniedException(parentHostname, hostNames, e);
+                } catch (HostNameNotFoundException e) {
+                    // Should never get here since since we would have received HostNameNotFoundException earlier.
+                    throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
+                } catch (RuntimeException e) {
+                    throw new BatchInternalErrorException(parentHostname, hostNames, e);
+                }
             }
+        } catch (Exception e) {
+            rollbackSuspendAll(hostNames, e);
+            throw e;
         }
     }
 
@@ -225,18 +221,16 @@ public class OrchestratorImpl implements Orchestrator {
      * e.g. hosted-vespa:routing:dev:ci-corp-us-east-1:default. In the example above, it would guarantee
      * Docker host 2 would ensure ask to suspend B2 before A2. We take care of that ordering here.
      */
-    public List<HostName> sortHostNamesForSuspend(List<HostName> hostNames) throws HostNameNotFoundException {
+    List<HostName> sortHostNamesForSuspend(List<HostName> hostNames) throws HostNameNotFoundException {
         Map<HostName, ApplicationInstanceReference> applicationReferences = new HashMap<>(hostNames.size());
         for (HostName hostName : hostNames) {
             ApplicationInstance<?> appInstance = getApplicationInstance(hostName);
             applicationReferences.put(hostName, appInstance.reference());
         }
 
-        List<HostName> orderedHostNames = hostNames.stream()
+        return hostNames.stream()
                 .sorted((leftHostname, rightHostname) -> compareHostNamesForSuspend(leftHostname, rightHostname, applicationReferences))
                 .collect(Collectors.toList());
-
-        return orderedHostNames;
     }
 
     private int compareHostNamesForSuspend(HostName leftHostname, HostName rightHostname,
@@ -274,7 +268,7 @@ public class OrchestratorImpl implements Orchestrator {
                 ApplicationInstance<ServiceMonitorStatus> application = getApplicationInstance(appRef);
 
                 // Mark it allowed to be down before we manipulate the clustercontroller
-                OrchestratorUtil.getHostsUsedByApplicationInstance(application).stream()
+                OrchestratorUtil.getHostsUsedByApplicationInstance(application)
                         .forEach(h -> statusRegistry.setHostState(h, HostStatus.ALLOWED_TO_BE_DOWN));
 
                 // If the clustercontroller throws an error the nodes will be marked as allowed to be down

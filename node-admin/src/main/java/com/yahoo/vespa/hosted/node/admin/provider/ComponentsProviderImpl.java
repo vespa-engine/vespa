@@ -44,12 +44,15 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
     private final MetricReceiverWrapper metricReceiverWrapper;
 
-    private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 1;
     private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 30000;
     private static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
+
     // We only scan for new nodes within a host every 5 minutes. This is only if new nodes are added or removed
     // which happens rarely. Changes of apps running etc. is detected by the NodeAgent.
-    private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
+    private static final int NODE_ADMIN_CONTAINERS_TO_RUN_INTERVAL_MILLIS = 5 * 60000;
+
+    // Converge towards desired node admin state every 30 seconds
+    private static final int NODE_ADMIN_CONVER_STATE_INTERVAL_MILLIS = 30000;
 
     public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment,
                                   boolean isRunningLocally) {
@@ -73,8 +76,9 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                         storageMaintainer, metricReceiver, environment, Clock.systemUTC(), aclMaintainer);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer);
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS,
-                NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, Clock.systemUTC(), orchestrator, baseHostName);
+        nodeAdminStateUpdater.start(NODE_ADMIN_CONVER_STATE_INTERVAL_MILLIS,
+                NODE_ADMIN_CONTAINERS_TO_RUN_INTERVAL_MILLIS);
 
         metricReceiverWrapper = metricReceiver;
     }

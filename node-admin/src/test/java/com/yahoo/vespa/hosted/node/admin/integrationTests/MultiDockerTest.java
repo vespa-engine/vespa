@@ -19,8 +19,8 @@ public class MultiDockerTest {
     public void test() throws InterruptedException, IOException {
         try (DockerTester dockerTester = new DockerTester()) {
             addAndWaitForNode(dockerTester, "host1.test.yahoo.com", new DockerImage("image1"));
-            ContainerNodeSpec containerNodeSpec2 =
-                    addAndWaitForNode(dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
+            ContainerNodeSpec containerNodeSpec2 = addAndWaitForNode(
+                    dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
 
             dockerTester.updateContainerNodeSpec(
                     new ContainerNodeSpec.Builder(containerNodeSpec2)

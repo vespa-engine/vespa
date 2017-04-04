@@ -33,13 +33,17 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -100,7 +104,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
 
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).suspend(any(String.class));
@@ -139,7 +143,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
 
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).suspend(any(String.class));
@@ -176,7 +180,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(true);
 
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         verify(orchestrator, never()).suspend(any(String.class));
         verify(orchestrator, never()).resume(any(String.class));
@@ -204,7 +208,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
 
         try {
-            nodeAgent.tick();
+            nodeAgent.converge();
             fail("Expected to throw an exception");
         } catch (Exception ignored) { }
 
@@ -229,7 +233,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).resume(any(String.class));
@@ -256,7 +260,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(dockerOperations, never()).startContainer(eq(containerName), eq(nodeSpec));
@@ -287,7 +291,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
@@ -317,7 +321,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(orchestrator.suspend(eq(hostName))).thenReturn(true);
 
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
@@ -356,7 +360,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.tick();
+        nodeAgent.converge();
         verify(nodeRepository, times(1)).markAsDirty(eq(hostName));
     }
 
@@ -378,7 +382,6 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, times(1)).removeContainer(any());
         verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
-
     }
 
     @Test
@@ -404,7 +407,7 @@ public class NodeAgentImplTest {
 
         // 1st try
         try {
-            nodeAgent.tick();
+            nodeAgent.converge();
             fail("Expected to throw an exception");
         } catch (RuntimeException ignored) { }
 
@@ -412,12 +415,41 @@ public class NodeAgentImplTest {
         inOrder.verifyNoMoreInteractions();
 
         // 2nd try
-        nodeAgent.tick();
+        nodeAgent.converge();
 
         inOrder.verify(dockerOperations).resumeNode(any());
         inOrder.verify(orchestrator).resume(hostName);
         inOrder.verifyNoMoreInteractions();
     }
+
+    @Test
+    public void testSetFrozen() {
+        NodeAgentImpl nodeAgent = spy(makeNodeAgent(dockerImage, true));
+        doNothing().when(nodeAgent).converge();
+
+        nodeAgent.tick();
+        verify(nodeAgent, times(1)).converge();
+
+        assertFalse(nodeAgent.setFrozen(true)); // Returns true because we are not frozen until tick is called
+        nodeAgent.tick();
+        verify(nodeAgent, times(1)).converge(); // Frozen should be set, therefore converge is never called
+
+        assertTrue(nodeAgent.setFrozen(true)); // Attempt to set frozen again, but it's already set
+        clock.advance(Duration.ofSeconds(35)); // workToDoNow is no longer set, so we need to wait the regular time
+        nodeAgent.tick();
+        verify(nodeAgent, times(1)).converge();
+
+        assertFalse(nodeAgent.setFrozen(false)); // Unfreeze, but still need to call tick for it to take effect
+        nodeAgent.tick();
+        verify(nodeAgent, times(2)).converge();
+
+        assertTrue(nodeAgent.setFrozen(false));
+        clock.advance(Duration.ofSeconds(35)); // workToDoNow is no longer set, so we need to wait the regular time
+        nodeAgent.tick();
+        verify(nodeAgent, times(3)).converge();
+    }
+
+
 
     @Test
     @SuppressWarnings("unchecked")
@@ -453,7 +485,7 @@ public class NodeAgentImplTest {
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
 
-        nodeAgent.tick(); // Run the tick loop once to initialize lastNodeSpec
+        nodeAgent.converge(); // Run the converge loop once to initialize lastNodeSpec
         nodeAgent.updateContainerNodeMetrics(5); // Update metrics once to init and lastCpuMetric
 
         clock.advance(Duration.ofSeconds(1234));
@@ -483,7 +515,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
         when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(Optional.empty());
 
-        nodeAgent.tick(); // Run the tick loop once to initialize lastNodeSpec
+        nodeAgent.converge(); // Run the converge loop once to initialize lastNodeSpec
 
         nodeAgent.updateContainerNodeMetrics(5);
 

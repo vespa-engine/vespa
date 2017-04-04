@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -25,8 +26,12 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,10 +43,6 @@ import static org.mockito.Mockito.when;
  * @author bakksjo
  */
 public class NodeAdminImplTest {
-    private static final double MIN_CPU_CORES = 1.0;
-    private static final double MIN_MAIN_MEMORY_AVAILABLE_GB = 1.0;
-    private static final double MIN_DISK_AVAILABLE_GB = 1.0;
-
     // Trick to allow mocking of typed interface without casts/warnings.
     private interface NodeAgentFactory extends Function<String, NodeAgent> {}
 
@@ -67,31 +68,26 @@ public class NodeAdminImplTest {
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .minCpuCores(MIN_CPU_CORES)
-                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
-                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
                 .build();
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(existingContainer));
         verifyNoMoreInteractions(nodeAgentFactory);
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(nodeSpec), Collections.singletonList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
         inOrder.verify(nodeAgent1).start(100);
-//        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(nodeSpec), Collections.singletonList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         inOrder.verify(nodeAgent1, never()).start(1);
-     //   inOrder.verify(nodeAgent1).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent1, never()).stop();
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         verify(nodeAgent1).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(nodeSpec), Collections.singletonList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
         inOrder.verify(nodeAgent2).start(100);
         inOrder.verify(nodeAgent2, never()).stop();
@@ -99,11 +95,72 @@ public class NodeAdminImplTest {
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         inOrder.verify(nodeAgent2, never()).start(1);
-    //    inOrder.verify(nodeAgent2).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);
         verifyNoMoreInteractions(nodeAgent2);
+    }
+
+    @Test
+    public void testSetFrozen() throws Exception {
+        final DockerOperations dockerOperations = mock(DockerOperations.class);
+        final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
+
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty());
+
+        List<NodeAgent> nodeAgents = new ArrayList<>();
+        List<Container> existingContainers = new ArrayList<>();
+        List<ContainerNodeSpec> nodeSpecs = new ArrayList<>();
+        final DockerImage dockerImage = new DockerImage("image");
+        for (int i = 0; i < 3; i++) {
+            final String hostName = "host" + i + ".test.yahoo.com";
+            NodeAgent nodeAgent = mock(NodeAgent.class);
+            nodeAgents.add(nodeAgent);
+            when(nodeAgentFactory.apply(eq(hostName))).thenReturn(nodeAgent);
+
+            final ContainerName containerName = new ContainerName("host" + i);
+            existingContainers.add(
+                    new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 5));
+
+            nodeSpecs.add(
+                    new ContainerNodeSpec.Builder()
+                            .hostname(hostName)
+                            .wantedDockerImage(dockerImage)
+                            .nodeState(Node.State.active)
+                            .nodeType("tenant")
+                            .nodeFlavor("docker")
+                            .build());
+
+        }
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(nodeSpecs, existingContainers);
+
+        mockNodeAgentSetFrozenResponse(nodeAgents, false, false, false);
+        assertFalse(nodeAdmin.setFrozen(true)); // NodeAdmin freezes only when all the NodeAgents are frozen
+
+        mockNodeAgentSetFrozenResponse(nodeAgents, false, true, true);
+        assertFalse(nodeAdmin.setFrozen(true));
+        assertFalse(nodeAdmin.isFrozen());
+
+        mockNodeAgentSetFrozenResponse(nodeAgents, true, true, true);
+        assertTrue(nodeAdmin.setFrozen(true));
+        assertTrue(nodeAdmin.isFrozen());
+
+        mockNodeAgentSetFrozenResponse(nodeAgents, true, true, true);
+        assertTrue(nodeAdmin.setFrozen(true));
+        assertTrue(nodeAdmin.isFrozen());
+
+        mockNodeAgentSetFrozenResponse(nodeAgents, false, false, false);
+        assertFalse(nodeAdmin.setFrozen(false));
+        assertFalse(nodeAdmin.isFrozen()); // NodeAdmin unfreezes instantly
+
+        mockNodeAgentSetFrozenResponse(nodeAgents, false, false, true);
+        assertFalse(nodeAdmin.setFrozen(false));
+        assertFalse(nodeAdmin.isFrozen());
+
+        mockNodeAgentSetFrozenResponse(nodeAgents, true, true, true);
+        assertTrue(nodeAdmin.setFrozen(false));
+        assertFalse(nodeAdmin.isFrozen());
     }
 
 
@@ -135,5 +192,12 @@ public class NodeAdminImplTest {
 
     private static <T, U> Pair<Optional<T>, Optional<U>> newPair(T t, U u) {
         return new Pair<>(Optional.ofNullable(t), Optional.ofNullable(u));
+    }
+
+    private void mockNodeAgentSetFrozenResponse(List<NodeAgent> nodeAgents, boolean... responses) {
+        for (int i = 0; i < nodeAgents.size(); i++) {
+            NodeAgent nodeAgent = nodeAgents.get(i);
+            when(nodeAgent.setFrozen(anyBoolean())).thenReturn(responses[i]);
+        }
     }
 }

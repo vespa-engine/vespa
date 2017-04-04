@@ -9,8 +9,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
@@ -18,29 +18,33 @@ import java.time.Clock;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * For setting up test with mocks.
  *
  * @author dybis
  */
 public class ComponentsProviderWithMocks implements ComponentsProvider {
-    static final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
-    static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
-    static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
-    static final Docker dockerMock = new DockerMock(callOrderVerifier);
+    static final NodeRepository nodeRepositoryMock = mock(NodeRepository.class);
+    static final Orchestrator orchestratorMock = mock(Orchestrator.class);
+    static final DockerOperations dockerOperationsMock = mock(DockerOperations.class);
 
     private final Environment environment = new Environment.Builder().build();
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-    private final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
-                    dockerOperations, Optional.empty(), mr, environment, Clock.systemUTC(), Optional.empty());
-    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100, mr, Optional.empty());
+                    dockerOperationsMock, Optional.empty(), mr, environment, Clock.systemUTC(), Optional.empty());
+    private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, Optional.empty(), 100, mr, Optional.empty());
+    private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, Clock.systemUTC(), orchestratorMock, "localhost.test.yahoo.com");
 
+    public ComponentsProviderWithMocks() {
+        nodeAdminStateUpdater.start(10, 1000);
+    }
 
     @Override
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
-        return new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 5, orchestratorMock, "localhost");
+        return nodeAdminStateUpdater;
     }
 
     @Override

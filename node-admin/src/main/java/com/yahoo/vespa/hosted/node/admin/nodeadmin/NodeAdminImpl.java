@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.collections.Pair;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -26,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,7 +42,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final Optional<StorageMaintainer> storageMaintainer;
-    private AtomicBoolean frozen = new AtomicBoolean(false);
+    private boolean isFrozen = false;
 
     private final Map<String, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 
@@ -76,9 +74,12 @@ public class NodeAdminImpl implements NodeAdmin {
             }
         }, 0, 30, TimeUnit.SECONDS);
 
-        aclMaintainer.ifPresent(maintainer -> aclScheduler.scheduleAtFixedRate(maintainer, 30, 60, TimeUnit.SECONDS));
+        aclMaintainer.ifPresent(maintainer -> aclScheduler.scheduleAtFixedRate(() -> {
+            if (!isFrozen()) maintainer.run();
+        }, 30, 60, TimeUnit.SECONDS));
     }
 
+    @Override
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = dockerOperations.getAllManagedContainers();
 
@@ -102,53 +103,30 @@ public class NodeAdminImpl implements NodeAdmin {
         numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
     }
 
-    public boolean freezeNodeAgentsAndCheckIfAllFrozen() {
-        for (NodeAgent nodeAgent : nodeAgents.values()) {
-            // We could make this blocking, this could speed up the suspend call a bit, but not sure if it is
-            // worth it (it could block the rest call for some time and might have implications).
-            nodeAgent.freeze();
-        }
-        for (NodeAgent nodeAgent : nodeAgents.values()) {
-            if (! nodeAgent.isFrozen()) {
-                return false;
-            }
-        }
-        return true;
-    }
+    @Override
+    public boolean setFrozen(boolean wantFrozen) {
+        // Use filter with count instead of allMatch() because allMatch() will short curcuit on first non-match
+        boolean allNodeAgentsConverged = nodeAgents.values().stream()
+                .filter(nodeAgent -> !nodeAgent.setFrozen(wantFrozen))
+                .count() == 0;
 
-    public void unfreezeNodeAgents() {
-        for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.unfreeze();
-        }
-    }
+        if (wantFrozen) {
+            if (allNodeAgentsConverged) isFrozen = true;
+        } else isFrozen = false;
 
-    public boolean isFrozen() {
-        return frozen.get();
-    }
-
-    public void setFrozen(boolean frozen) {
-        this.frozen.set(frozen);
+        return allNodeAgentsConverged;
     }
 
     @Override
-    public Optional<String> stopServices(List<String> nodes) {
-        if ( ! isFrozen()) {
-            return Optional.of("Node admin is not frozen");
-        }
-        for (NodeAgent nodeAgent : nodeAgents.values()) {
-            try {
-                if (nodes.contains(nodeAgent.getHostname())) {
-                    final ContainerName containerName = nodeAgent.getContainerName();
+    public boolean isFrozen() {
+        return isFrozen;
+    }
 
-                    if ( ! isFrozen()) return Optional.of("Node agent for " + containerName + " is not frozen");
-
-                    nodeAgent.stopServices(containerName);
-                }
-            } catch (Exception e) {
-                return Optional.of(e.getMessage());
-            }
-        }
-        return Optional.empty();
+    @Override
+    public void stopNodeAgentServices(List<String> hostnames) {
+        nodeAgents.values().stream()
+                .filter(nodeAgent -> hostnames.contains(nodeAgent.getHostname()))
+                .forEach(NodeAgent::stopServices);
     }
 
     public Set<String> getListOfHosts() {
@@ -158,7 +136,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public Map<String, Object> debugInfo() {
         Map<String, Object> debug = new LinkedHashMap<>();
-        debug.put("isFrozen", frozen);
+        debug.put("isFrozen", isFrozen);
 
         List<Map<String, Object>> nodeAgentDebugs = nodeAgents.entrySet().stream()
                 .map(node -> node.getValue().debugInfo()).collect(Collectors.toList());

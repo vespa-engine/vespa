@@ -45,19 +45,18 @@ import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.Containe
  * @author bakksjo
  */
 public class NodeAgentImpl implements NodeAgent {
-
-    private AtomicBoolean isFrozen = new AtomicBoolean(false);
-    private AtomicBoolean wantFrozen = new AtomicBoolean(false);
-    private AtomicBoolean terminated = new AtomicBoolean(false);
-
+    private final AtomicBoolean terminated = new AtomicBoolean(false);
+    private boolean isFrozen = false;
+    private boolean wantFrozen = false;
     private boolean workToDoNow = true;
 
-    private final PrefixLogger logger;
+    private final Object monitor = new Object();
 
+    private final PrefixLogger logger;
     private DockerImage imageBeingDownloaded = null;
     private final String hostname;
-    private final ContainerName containerName;
 
+    private final ContainerName containerName;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
@@ -67,13 +66,12 @@ public class NodeAgentImpl implements NodeAgent {
     private final Clock clock;
     private final Optional<AclMaintainer> aclMaintainer;
 
-    private final Object monitor = new Object();
-
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final LinkedList<String> debugMessages = new LinkedList<>();
 
-    private long delaysBetweenEachTickMillis;
+    private long delaysBetweenEachTickMillis = 30_000;
     private int numberOfUnhandledException = 0;
+    private Instant lastTick;
 
     private Thread loopThread;
 
@@ -111,6 +109,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.environment = environment;
         this.clock = clock;
         this.aclMaintainer = aclMaintainer;
+        this.lastTick = clock.instant();
 
         // If the container is already running, initialize vespaVersion and lastCpuMetric
         lastCpuMetric = new CpuUsageReporter(clock.instant());
@@ -123,30 +122,20 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void freeze() {
-        if (!wantFrozen.get()) {
-            addDebugMessage("Freezing");
-        }
-        wantFrozen.set(true);
-        signalWorkToBeDone();
-    }
+    public boolean setFrozen(boolean frozen) {
+        synchronized (monitor) {
+            if (wantFrozen != frozen) {
+                wantFrozen = frozen;
+                addDebugMessage(wantFrozen ? "Freezing" : "Unfreezing");
+                signalWorkToBeDone();
+            }
 
-    @Override
-    public void unfreeze() {
-        if (wantFrozen.get()) {
-            addDebugMessage("Unfreezing");
+            return isFrozen == frozen;
         }
-        wantFrozen.set(false);
-        signalWorkToBeDone();
-    }
-
-    @Override
-    public boolean isFrozen() {
-        return isFrozen.get();
     }
 
     private void addDebugMessage(String message) {
-        synchronized (monitor) {
+        synchronized (debugMessages) {
             while (debugMessages.size() > 1000) {
                 debugMessages.pop();
             }
@@ -160,14 +149,14 @@ public class NodeAgentImpl implements NodeAgent {
     public Map<String, Object> debugInfo() {
         Map<String, Object> debug = new LinkedHashMap<>();
         debug.put("Hostname", hostname);
-        debug.put("isFrozen", isFrozen());
-        debug.put("wantFrozen", wantFrozen.get());
-        debug.put("terminated", terminated.get());
+        debug.put("isFrozen", isFrozen);
+        debug.put("wantFrozen", wantFrozen);
+        debug.put("terminated", terminated);
         debug.put("workToDoNow", workToDoNow);
-        synchronized (monitor) {
+        synchronized (debugMessages) {
             debug.put("History", new LinkedList<>(debugMessages));
-            debug.put("Node repo state", lastNodeSpec.nodeState.name());
         }
+        debug.put("Node repo state", lastNodeSpec.nodeState.name());
         return debug;
     }
 
@@ -179,8 +168,10 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
 
-        loopThread = new Thread(this::loop);
-        loopThread.setName("loop-" + hostname);
+        loopThread = new Thread(() -> {
+            while (! terminated.get()) tick();
+        });
+        loopThread.setName("tick-" + hostname);
         loopThread.start();
     }
 
@@ -231,7 +222,6 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) {
         publishStateToNodeRepoIfChanged(
-                nodeSpec.hostname,
                 // Clear current Docker image and vespa version, as nothing is running on this node
                 new NodeAttributes()
                         .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(null))
@@ -250,17 +240,17 @@ public class NodeAgentImpl implements NodeAgent {
                 .withDockerImage(nodeSpec.wantedDockerImage.orElse(new DockerImage("")))
                 .withVespaVersion(vespaVersion.orElse(""));
 
-        publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
+        publishStateToNodeRepoIfChanged(nodeAttributes);
     }
 
-    private void publishStateToNodeRepoIfChanged(String hostName, NodeAttributes currentAttributes) {
+    private void publishStateToNodeRepoIfChanged(NodeAttributes currentAttributes) {
         // TODO: We should only update if the new current values do not match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
                                 + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
                                     lastAttributesSet + "} -> {" + currentAttributes + "}");
-            nodeRepository.updateNodeAttributes(hostName, currentAttributes);
+            nodeRepository.updateNodeAttributes(hostname, currentAttributes);
             lastAttributesSet = currentAttributes;
         }
     }
@@ -270,7 +260,7 @@ public class NodeAgentImpl implements NodeAgent {
             aclMaintainer.ifPresent(AclMaintainer::run);
             dockerOperations.startContainer(containerName, nodeSpec);
             metricReceiver.unsetMetricsForContainer(hostname);
-            lastCpuMetric = new CpuUsageReporter(Instant.now());
+            lastCpuMetric = new CpuUsageReporter(clock.instant());
             vespaVersion = dockerOperations.getVespaVersion(containerName);
 
             configureContainerMetrics(nodeSpec);
@@ -304,14 +294,15 @@ public class NodeAgentImpl implements NodeAgent {
             ContainerName containerName = existingContainer.name;
             logger.info("Restarting services for " + containerName);
             // Since we are restarting the services we need to suspend the node.
-            orchestratorSuspendNode(nodeSpec);
+            orchestratorSuspendNode();
             dockerOperations.restartVespaOnNode(containerName);
         }
     }
 
     @Override
-    public void stopServices(ContainerName containerName) {
+    public void stopServices() {
         logger.info("Stopping services for " + containerName);
+        dockerOperations.trySuspendNode(containerName);
         dockerOperations.stopServicesOnNode(containerName);
     }
 
@@ -340,10 +331,8 @@ public class NodeAgentImpl implements NodeAgent {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
             if (existingContainer.get().state.isRunning()) {
-                final ContainerName containerName = existingContainer.get().name;
-                orchestratorSuspendNode(nodeSpec);
-                dockerOperations.trySuspendNode(containerName);
-                stopServices(containerName);
+                orchestratorSuspendNode();
+                stopServices();
             }
             containerState = ABSENT;
             vespaVersion = Optional.empty();
@@ -369,70 +358,70 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    @Override
-    public void signalWorkToBeDone() {
-        if (!workToDoNow) {
-            addDebugMessage("Signaling work to be done");
-        }
-
+    private void signalWorkToBeDone() {
         synchronized (monitor) {
-            workToDoNow = true;
-            monitor.notifyAll();
+            if (! workToDoNow) {
+                workToDoNow = true;
+                addDebugMessage("Signaling work to be done");
+                monitor.notifyAll();
+            }
         }
     }
 
-    private void loop() {
-        while (! terminated.get()) {
-            synchronized (monitor) {
-                long waittimeLeft = delaysBetweenEachTickMillis;
-                while (waittimeLeft > 1 && !workToDoNow) {
-                    Instant start = Instant.now();
+    void tick() {
+        boolean isFrozenCopy;
+        synchronized (monitor) {
+            while (! workToDoNow) {
+                long remainder = delaysBetweenEachTickMillis - Duration.between(lastTick, clock.instant()).toMillis();
+                if (remainder > 0) {
                     try {
-                        monitor.wait(waittimeLeft);
+                        monitor.wait(remainder);
                     } catch (InterruptedException e) {
                         logger.error("Interrupted, but ignoring this: " + hostname);
-                        continue;
                     }
-                    waittimeLeft -= Duration.between(start, Instant.now()).toMillis();
-                }
-                workToDoNow = false;
+                } else break;
             }
-            isFrozen.set(wantFrozen.get());
-            if (isFrozen.get()) {
-                addDebugMessage("loop: isFrozen");
-            } else {
-                try {
-                    tick();
-                } catch (OrchestratorException e) {
-                    logger.info(e.getMessage());
-                    addDebugMessage(e.getMessage());
-                } catch (Exception e) {
-                    numberOfUnhandledException++;
-                    logger.error("Unhandled exception, ignoring.", e);
-                    addDebugMessage(e.getMessage());
-                } catch (Throwable t) {
-                    logger.error("Unhandled throwable, taking down system.", t);
-                    System.exit(234);
-                }
+            lastTick = clock.instant();
+            workToDoNow = false;
+
+            if (isFrozen != wantFrozen) {
+                isFrozen = wantFrozen;
+            }
+            isFrozenCopy = isFrozen;
+        }
+
+        if (isFrozenCopy) {
+            addDebugMessage("tick: isFrozen");
+        } else {
+            try {
+                converge();
+            } catch (OrchestratorException e) {
+                logger.info(e.getMessage());
+                addDebugMessage(e.getMessage());
+            } catch (Exception e) {
+                numberOfUnhandledException++;
+                logger.error("Unhandled exception, ignoring.", e);
+                addDebugMessage(e.getMessage());
+            } catch (Throwable t) {
+                logger.error("Unhandled throwable, taking down system.", t);
+                System.exit(234);
             }
         }
     }
 
     // Public for testing
-    void tick() {
+    void converge() {
         final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                 .orElseThrow(() ->
                         new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
 
-        synchronized (monitor) {
-            if (!nodeSpec.equals(lastNodeSpec)) {
-                addDebugMessage("Loading new node spec: " + nodeSpec.toString());
-                lastNodeSpec = nodeSpec;
+        if (!nodeSpec.equals(lastNodeSpec)) {
+            addDebugMessage("Loading new node spec: " + nodeSpec.toString());
+            lastNodeSpec = nodeSpec;
 
-                // Every time the node spec changes, we should clear the metrics for this container as the dimensions
-                // will change and we will be reporting duplicate metrics.
-                metricReceiver.unsetMetricsForContainer(hostname);
-            }
+            // Every time the node spec changes, we should clear the metrics for this container as the dimensions
+            // will change and we will be reporting duplicate metrics.
+            metricReceiver.unsetMetricsForContainer(hostname);
         }
 
         switch (nodeSpec.nodeState) {
@@ -469,7 +458,7 @@ public class NodeAgentImpl implements NodeAgent {
                 //    to allow upgrade (suspend).
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
-                orchestrator.resume(nodeSpec.hostname);
+                orchestrator.resume(hostname);
                 break;
             case inactive:
                 storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(containerName));
@@ -477,7 +466,7 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
-                nodeRepository.markAsDirty(nodeSpec.hostname);
+                nodeRepository.markAsDirty(hostname);
                 break;
             case dirty:
                 storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(containerName));
@@ -493,10 +482,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     @SuppressWarnings("unchecked")
     public void updateContainerNodeMetrics(int numAllocatedContainersOnHost) {
-        ContainerNodeSpec nodeSpec;
-        synchronized (monitor) {
-            nodeSpec = lastNodeSpec;
-        }
+        final ContainerNodeSpec nodeSpec = lastNodeSpec;
         if (nodeSpec == null) return;
 
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
@@ -596,11 +582,6 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public ContainerName getContainerName() {
-        return containerName;
-    }
-
-    @Override
     public boolean isDownloadingImage() {
         return imageBeingDownloaded != null;
     }
@@ -682,8 +663,7 @@ public class NodeAgentImpl implements NodeAgent {
     // More generally, the node repo response should contain sufficient info on what the docker image is,
     // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
-    private void orchestratorSuspendNode(ContainerNodeSpec nodeSpec) {
-        final String hostname = nodeSpec.hostname;
+    private void orchestratorSuspendNode() {
         logger.info("Ask Orchestrator for permission to suspend node " + hostname);
         if ( ! orchestrator.suspend(hostname)) {
             logger.info("Orchestrator rejected suspend of node " + hostname);
