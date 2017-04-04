@@ -6,7 +6,10 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.ArrayTraverser;
@@ -17,10 +20,8 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
@@ -73,6 +74,7 @@ public class NodeSerializer {
     private static final String removableKey = "removable";
     // Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
     private static final String dockerImageKey = "dockerImage";
+    private static final String wantedVespaVersionKey = "wantedVespaVersion";
 
     // History event fields
     private static final String historyEventTypeKey = "type";
@@ -124,8 +126,8 @@ public class NodeSerializer {
         object.setLong(restartGenerationKey, allocation.restartGeneration().wanted());
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
-        allocation.membership().cluster().dockerImage()
-                .ifPresent( dockerImage -> object.setString(dockerImageKey, dockerImage));
+        allocation.membership().cluster().vespaVersion()
+                .ifPresent(version -> object.setString(wantedVespaVersionKey, version.toString()));
     }
 
     private void toSlime(History history, Cursor array) {
@@ -180,8 +182,7 @@ public class NodeSerializer {
     private Optional<Allocation> allocationFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(new Allocation(applicationIdFromSlime(object),
-                                          ClusterMembership.from(object.field(serviceIdKey).asString(), 
-                                                                 optionalString(object.field(dockerImageKey))),
+                                          clusterMembershipFromSlime(object),
                                           generationFromSlime(object, restartGenerationKey, currentRestartGenerationKey),
                                           object.field(removableKey).asBool()));
     }
@@ -213,6 +214,19 @@ public class NodeSerializer {
     private Generation generationFromSlime(Inspector object, String wantedField, String currentField) {
         Inspector current = object.field(currentField);
         return new Generation(object.field(wantedField).asLong(), current.asLong());
+    }
+
+    // TODO: Simplify and inline after April 2017
+    private ClusterMembership clusterMembershipFromSlime(Inspector object) {
+        Optional<Version> vespaVersion;
+        if (object.field(dockerImageKey).valid()) {
+            vespaVersion = optionalString(object.field(dockerImageKey))
+                    .map(DockerImage::new)
+                    .map(DockerImage::tagAsVersion);
+        } else {
+            vespaVersion = softwareVersionFromSlime(object.field(wantedVespaVersionKey));
+        }
+        return ClusterMembership.fromVersion(object.field(serviceIdKey).asString(), vespaVersion);
     }
 
     private Optional<Version> softwareVersionFromSlime(Inspector object) {

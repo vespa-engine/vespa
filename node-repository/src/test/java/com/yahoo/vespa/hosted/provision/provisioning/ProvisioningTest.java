@@ -657,8 +657,8 @@ public class ProvisioningTest {
         tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11
 
         ApplicationId applicationId = tester.makeApplicationId();
-        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
-        ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
+        ClusterSpec contentClusterSpec = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
+        ClusterSpec containerClusterSpec = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
 
         List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1, "large");
         List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1, "large");
@@ -679,10 +679,10 @@ public class ProvisioningTest {
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Optional.empty());
-        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Optional.empty());
-        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), Optional.empty());
-        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), Optional.empty());
+        ClusterSpec containerCluster0 = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Optional.empty());
+        ClusterSpec containerCluster1 = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Optional.empty());
+        ClusterSpec contentCluster0 = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), Optional.empty());
+        ClusterSpec contentCluster1 = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), Optional.empty());
 
         Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, flavor, tester);
         Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, flavor, tester);

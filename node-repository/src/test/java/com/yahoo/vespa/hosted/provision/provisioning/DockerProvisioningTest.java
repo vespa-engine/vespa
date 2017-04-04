@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -34,10 +35,10 @@ public class DockerProvisioningTest {
             tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost" + i);
         }
 
-        Optional<String> wantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/ci:6.39");
+        Optional<Version> wantedVespaVersion = Optional.of(Version.fromString("6.39"));
         final int nodeCount = 7;
         List<HostSpec> hosts = tester.prepare(application1,
-                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedDockerImage),
+                                              ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion),
                                               nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
@@ -46,9 +47,9 @@ public class DockerProvisioningTest {
         assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
 
         // Upgrade Vespa version on nodes
-        Optional<String> upgradedWantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/ci:6.40");
+        Optional<Version> upgradedWantedVespaVersion = Optional.of(Version.fromString("6.40"));
         List<HostSpec> upgradedHosts = tester.prepare(application1,
-                                                      ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), upgradedWantedDockerImage),
+                                                      ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), upgradedWantedVespaVersion),
                                                       nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(upgradedHosts));
         final NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
@@ -64,7 +65,7 @@ public class DockerProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost");
 
-        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty()), 1, 1, dockerFlavor);
+        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty()), 1, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
         final NodeList nodes = tester.getNodes(application1, Node.State.active);

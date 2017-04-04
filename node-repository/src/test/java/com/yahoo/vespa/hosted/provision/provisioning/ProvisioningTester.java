@@ -183,7 +183,7 @@ public class ProvisioningTester implements AutoCloseable {
         Set<Integer> indices = new HashSet<>();
         for (HostSpec host : hosts) {
             ClusterSpec nodeCluster = host.membership().get().cluster();
-            assertTrue(requestedCluster.equalsIgnoringGroupAndDockerImage(nodeCluster));
+            assertTrue(requestedCluster.equalsIgnoringGroupAndVespaVersion(nodeCluster));
             if (requestedCluster.group().isPresent())
                 assertEquals(requestedCluster.group(), nodeCluster.group());
             else

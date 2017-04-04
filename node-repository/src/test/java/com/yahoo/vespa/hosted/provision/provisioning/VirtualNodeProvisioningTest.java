@@ -31,8 +31,8 @@ import static org.junit.Assert.assertNotNull;
 public class VirtualNodeProvisioningTest {
 
     private static final String flavor = "v-4-8-100";
-    private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
-    private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
+    private static final ClusterSpec contentClusterSpec = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
+    private static final ClusterSpec containerClusterSpec = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
 
     private ProvisioningTester tester;
     private ApplicationId applicationId;

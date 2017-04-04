@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.Version;
+
 import java.util.Optional;
 
 /**
@@ -18,7 +20,7 @@ public class ClusterMembership {
 
     protected ClusterMembership() {}
 
-    private ClusterMembership(String stringValue, Optional<String> dockerImage) {
+    private ClusterMembership(String stringValue, Optional<Version> vespaVersion) {
         String restValue;
         if (stringValue.endsWith("/retired")) {
             retired = true;
@@ -32,9 +34,9 @@ public class ClusterMembership {
         String[] components = restValue.split("/");
 
         if ( components.length == 3) // Aug 2016: This should never happen any more
-            initWithoutGroup(components, dockerImage);
+            initWithoutGroup(components, vespaVersion);
         else if (components.length == 4)
-            initWithGroup(components, dockerImage);
+            initWithGroup(components, vespaVersion);
         else
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
                                        "Expected 'id/type.index[/group]'");
@@ -49,16 +51,16 @@ public class ClusterMembership {
         this.stringValue = toStringValue();
     }
 
-    private void initWithoutGroup(String[] components, Optional<String> dockerImage) {
-        this.cluster = ClusterSpec.request(ClusterSpec.Type.valueOf(components[0]), 
-                                           ClusterSpec.Id.from(components[1]),
-                                           dockerImage);
+    private void initWithoutGroup(String[] components, Optional<Version> vespaVersion) {
+        this.cluster = ClusterSpec.requestVersion(ClusterSpec.Type.valueOf(components[0]),
+                                                  ClusterSpec.Id.from(components[1]),
+                                                  vespaVersion);
         this.index = Integer.parseInt(components[2]);
     }
 
-    private void initWithGroup(String[] components, Optional<String> dockerImage) {
+    private void initWithGroup(String[] components, Optional<Version> vespaVersion) {
         this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), dockerImage);
+                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion);
         this.index = Integer.parseInt(components[3]);
     }
 
@@ -110,8 +112,14 @@ public class ClusterMembership {
     @Override
     public String toString() { return stringValue(); }
 
+    @Deprecated
+    // TODO: April 2017 - Remove this when no version older than 6.92 is in production
     public static ClusterMembership from(String stringValue, Optional<String> dockerImage) {
-        return new ClusterMembership(stringValue, dockerImage);
+        return fromVersion(stringValue, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion));
+    }
+
+    public static ClusterMembership fromVersion(String stringValue, Optional<Version> vespaVersion) {
+        return new ClusterMembership(stringValue, vespaVersion);
     }
 
     public static ClusterMembership from(ClusterSpec cluster, int index) {

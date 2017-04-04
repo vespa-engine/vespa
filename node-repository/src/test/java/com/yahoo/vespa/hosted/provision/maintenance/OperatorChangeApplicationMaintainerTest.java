@@ -5,8 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -27,7 +25,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -111,8 +108,8 @@ public class OperatorChangeApplicationMaintainerTest {
 
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
-        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        final ClusterSpec clusterApp1 = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
+        final ClusterSpec clusterApp2 = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
         MockDeployer deployer; // created on activation
