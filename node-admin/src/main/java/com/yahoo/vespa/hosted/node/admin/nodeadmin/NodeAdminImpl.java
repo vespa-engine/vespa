@@ -105,7 +105,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public boolean setFrozen(boolean wantFrozen) {
-        // Use filter with count instead of allMatch() because allMatch() will short curcuit on first non-match
+        // Use filter with count instead of allMatch() because allMatch() will short circuit on first non-match
         boolean allNodeAgentsConverged = nodeAgents.values().stream()
                 .filter(nodeAgent -> !nodeAgent.setFrozen(wantFrozen))
                 .count() == 0;
@@ -129,6 +129,7 @@ public class NodeAdminImpl implements NodeAdmin {
                 .forEach(NodeAgent::stopServices);
     }
 
+    @Override
     public Set<String> getListOfHosts() {
         return nodeAgents.keySet();
     }
