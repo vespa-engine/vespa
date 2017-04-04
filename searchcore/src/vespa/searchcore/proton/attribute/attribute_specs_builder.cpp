@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-attributes.h>
+#include "attribute_specs.h"
 
 using search::attribute::ConfigConverter;
 using vespa::config::search::AttributesConfig;
@@ -68,7 +69,7 @@ bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Confi
 }
 
 AttributeSpecsBuilder::AttributeSpecsBuilder()
-    : _specs(),
+    : _specs(std::make_shared<AttributeSpecs>()),
       _config(std::make_shared<AttributesConfigBuilder>())
 {
 }
@@ -77,7 +78,7 @@ AttributeSpecsBuilder::~AttributeSpecsBuilder()
 {
 }
 
-const AttributeSpecs &
+std::shared_ptr<const AttributeSpecs>
 AttributeSpecsBuilder::getAttributeSpecs() const
 {
     return _specs;
@@ -94,7 +95,7 @@ AttributeSpecsBuilder::setup(const AttributesConfig &newConfig)
 {
     for (const auto &attr : newConfig.attribute) {
         search::attribute::Config cfg = ConfigConverter::convert(attr);
-        _specs.emplace_back(attr.name, cfg);
+        _specs->emplace_back(attr.name, cfg);
     }
     _config = std::make_shared<AttributesConfigBuilder>(newConfig);
 }
@@ -181,9 +182,9 @@ AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
 {
     IndexConfigHash oldIndexes(oldIndexschemaConfig.indexfield);
     handleNewAttributes(oldAttributesConfig, newAttributesConfig,
-                        oldIndexes, inspector, _specs, *_config);
+                        oldIndexes, inspector, *_specs, *_config);
     handleOldAttributes(oldAttributesConfig, newAttributesConfig,
-                        oldIndexes, inspector, _specs, *_config);
+                        oldIndexes, inspector, *_specs, *_config);
 }
 
 } // namespace proton

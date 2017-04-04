@@ -12,6 +12,7 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
+#include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
 
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 
@@ -268,12 +269,15 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newMaintenanceConfig = oldMaintenanceConfig;
     }
     ConfigSnapshot extraConfigs(snapshot.subset(_extraConfigKeys));
+    AttributeSpecsBuilder attributeSpecsBuilder;
+    attributeSpecsBuilder.setup(*newAttributesConfig);
     DocumentDBConfig::SP newSnapshot(
             new DocumentDBConfig(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
                                  newIndexschemaConfig,
-                                 newAttributesConfig,
+                                 attributeSpecsBuilder.getAttributesConfig(),
+                                 attributeSpecsBuilder.getAttributeSpecs(),
                                  newSummaryConfig,
                                  newSummarymapConfig,
                                  newJuniperrcConfig,
