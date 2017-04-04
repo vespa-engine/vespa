@@ -130,7 +130,7 @@ public:
         virtual bool createMissingPath() const { return false; }
     private:
         virtual bool onComplex(const Content& fv) { (void) fv; return true; }
-        virtual void onPrimitive(const Content & fv) { (void) fv; }
+        virtual void onPrimitive(uint32_t fid, const Content & fv);
         virtual void onCollectionStart(const Content & fv) { (void) fv; }
         virtual void onCollectionEnd(const Content & fv) { (void) fv; }
         virtual void onStructStart(const Content & fv) { (void) fv; }

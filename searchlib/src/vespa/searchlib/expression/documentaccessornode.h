@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/expressionnode.h>
+#include "expressionnode.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
@@ -18,8 +18,8 @@ public:
     public:
         Configure(const document::DocumentType & documentType) : _docType(documentType) { }
     private:
-        virtual void execute(vespalib::Identifiable &obj) { static_cast<DocumentAccessorNode &>(obj).setDocType(_docType); }
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(DocumentAccessorNode::classId); }
+        void execute(vespalib::Identifiable &obj) override { static_cast<DocumentAccessorNode &>(obj).setDocType(_docType); }
+        bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(DocumentAccessorNode::classId); }
         const document::DocumentType & _docType;
     };
 

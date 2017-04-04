@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "fieldsearcher.h"
+#include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/vsm/vsm/fieldsearchspec.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.fieldsearcher");
@@ -13,8 +13,7 @@ using search::QueryTermList;
 using search::v16qi;
 using search::Query;
 
-namespace vsm
-{
+namespace vsm {
 
 class force
 {
@@ -44,7 +43,7 @@ FieldSearcherBase::FieldSearcherBase(const FieldSearcherBase & org) :
     prepare(org._qtl);
 }
 
-FieldSearcherBase::~FieldSearcherBase(void)
+FieldSearcherBase::~FieldSearcherBase()
 {
 }
 
@@ -272,7 +271,7 @@ bool FieldSearcher::onSearch(const StorageDocument & doc)
 }
 
 void
-FieldSearcher::IteratorHandler::onPrimitive(const Content & c)
+FieldSearcher::IteratorHandler::onPrimitive(uint32_t, const Content & c)
 {
     LOG(spam, "onPrimitive: field value '%s'", c.getValue().toString().c_str());
     _searcher.setCurrentWeight(c.getWeight());

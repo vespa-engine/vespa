@@ -3,7 +3,6 @@
 #include "array_value.h"
 #include "array_traverser.h"
 #include "empty_value_factory.h"
-#include "basic_value_factory.h"
 
 namespace vespalib {
 namespace slime {

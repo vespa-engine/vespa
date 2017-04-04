@@ -5,8 +5,7 @@
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/storagedocument.h>
 
-namespace vsm
-{
+namespace vsm {
 
 typedef size_t termcount_t;
 typedef size_t termsize_t;
@@ -50,7 +49,7 @@ public:
     };
 
     FieldSearcher(const FieldIdT & fId, bool defaultPrefix=false);
-    virtual ~FieldSearcher();
+    ~FieldSearcher();
     bool search(const StorageDocument & doc);
     virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf);
     const FieldIdT & field()         const { return _field; }
@@ -85,9 +84,9 @@ private:
         typedef document::FieldValue::IteratorHandler::Content Content;
         FieldSearcher & _searcher;
 
-        virtual void onPrimitive(const Content & c);
-        virtual void onCollectionStart(const Content & c);
-        virtual void onStructStart(const Content & c);
+        void onPrimitive(uint32_t fid, const Content & c) override;
+        void onCollectionStart(const Content & c) override;
+        void onStructStart(const Content & c) override;
 
     public:
         IteratorHandler(FieldSearcher & searcher) : _searcher(searcher) {}

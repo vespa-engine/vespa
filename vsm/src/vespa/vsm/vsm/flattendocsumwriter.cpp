@@ -13,7 +13,7 @@ FlattenDocsumWriter::considerSeparator()
 }
 
 void
-FlattenDocsumWriter::onPrimitive(const Content & c)
+FlattenDocsumWriter::onPrimitive(uint32_t, const Content & c)
 {
     considerSeparator();
     const document::FieldValue & fv = c.getValue();

@@ -367,7 +367,7 @@ SearchVisitorFactory::makeVisitor(StorageComponent& component,
 }
 
 void
-SearchVisitor::AttributeInserter::onPrimitive(const IteratorContent & c)
+SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const IteratorContent & c)
 {
     const document::FieldValue & value = c.getValue();
     LOG(debug, "AttributeInserter: Adding value '%s'(%d) to attribute '%s' for docid '%d'",
@@ -401,7 +401,7 @@ SearchVisitor::PositionInserter::PositionInserter(search::AttributeVector & attr
 SearchVisitor::PositionInserter::~PositionInserter() {}
 
 void
-SearchVisitor::PositionInserter::onPrimitive(const IteratorContent & c)
+SearchVisitor::PositionInserter::onPrimitive(uint32_t, const IteratorContent & c)
 {
     (void) c;
 }

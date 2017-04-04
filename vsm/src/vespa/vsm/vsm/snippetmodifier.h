@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/fieldvalue/fieldvalue.h>
+#include "fieldsearchspec.h"
 #include <vespa/vsm/common/charbuffer.h>
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/fieldmodifier.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
-#include <vespa/vsm/vsm/fieldsearchspec.h>
+#include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace vsm {
 
@@ -32,7 +32,7 @@ private:
 
     void considerSeparator();
     // Inherrit doc from document::FieldValue::IteratorHandler
-    virtual void onPrimitive(const Content & c);
+    void onPrimitive(uint32_t, const Content & c) override;
     void reset();
 
 public:
@@ -54,7 +54,7 @@ public:
     /**
      * Modifies the complete given field value.
      **/
-    virtual document::FieldValue::UP modify(const document::FieldValue & fv) {
+    document::FieldValue::UP modify(const document::FieldValue & fv) override {
         return modify(fv, _empty);
     }
 
@@ -67,8 +67,8 @@ public:
      * @param path the field path used to iterate the field value.
      * @return the new modified field value.
      **/
-    virtual document::FieldValue::UP modify(const document::FieldValue & fv,
-                                            const document::FieldPath & path);
+    document::FieldValue::UP modify(const document::FieldValue & fv,
+                                    const document::FieldPath & path) override;
 
     const CharBuffer & getValueBuf() const { return *_valueBuf; }
     const UTF8SubstringSnippetModifier::SP & getSearcher() const { return _searcher; }

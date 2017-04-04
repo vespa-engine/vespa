@@ -280,7 +280,7 @@ private:
         std::unique_ptr<Value> _firstValue;
         std::vector<ArrayValue::VariableValue> _values;
 
-        virtual void onPrimitive(const Content & fv);
+        void onPrimitive(uint32_t fid, const Content & fv) override;
         std::unique_ptr<Value> getInternalValue(const FieldValue& fval) const;
     };
 
