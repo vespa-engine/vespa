@@ -33,4 +33,13 @@ AttributeSpec::operator=(AttributeSpec &&) = default;
 
 AttributeSpec::~AttributeSpec() { }
 
+bool
+AttributeSpec::operator==(const AttributeSpec &rhs) const
+{
+    return ((_name == rhs._name) &&
+            (_cfg == rhs._cfg) &&
+            (_hideFromReading == rhs._hideFromReading) &&
+            (_hideFromWriting == rhs._hideFromWriting));
+}
+
 }

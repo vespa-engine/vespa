@@ -33,6 +33,7 @@ public:
     const search::attribute::Config &getConfig() const { return _cfg; }
     bool getHideFromReading() const { return _hideFromReading; }
     bool getHideFromWriting() const { return _hideFromWriting; }
+    bool operator==(const AttributeSpec &rhs) const;
 };
 
 } // namespace proton
