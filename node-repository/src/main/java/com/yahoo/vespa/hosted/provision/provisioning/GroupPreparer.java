@@ -221,7 +221,7 @@ class GroupPreparer {
                     boolean wantToRetireNode = false;
                     ClusterMembership membership = offered.allocation().get().membership();
                     if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
-                    if ( ! membership.cluster().equalsIgnoringGroupAndDockerImage(cluster)) continue; // wrong cluster id/type
+                    if ( ! membership.cluster().equalsIgnoringGroupAndVespaVersion(cluster)) continue; // wrong cluster id/type
                     if ((! canChangeGroup || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
                     if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
                     if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)

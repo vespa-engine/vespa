@@ -223,8 +223,8 @@ public class AclProvisioningTest {
     }
 
     private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                                                  Optional.empty());
+        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
+                                                         Optional.empty());
         List<HostSpec> prepared = tester.prepare(applicationId, cluster, capacity, 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         return tester.getNodes(applicationId, Node.State.active).asList();

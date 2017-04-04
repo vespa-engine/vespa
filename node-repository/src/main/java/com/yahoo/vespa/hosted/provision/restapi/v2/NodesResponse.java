@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
@@ -156,11 +157,12 @@ class NodesResponse extends HttpResponse {
             object.setLong("restartGeneration", node.allocation().get().restartGeneration().wanted());
             object.setLong("currentRestartGeneration", node.allocation().get().restartGeneration().current());
             node.allocation().get().membership().cluster().dockerImage().ifPresent(image -> object.setString("wantedDockerImage", image));
+            node.allocation().get().membership().cluster().vespaVersion().ifPresent(version -> object.setString("wantedVespaVersion", version.toFullString()));
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> {
-            if (! version.toFullString().isEmpty()) object.setString("vespaVersion", version.toFullString());
+            if (! version.equals(Version.emptyVersion)) object.setString("vespaVersion", version.toFullString());
         });
         node.status().hostedVersion().ifPresent(version -> object.setString("hostedVersion", version.toFullString()));
         node.status().dockerImage().ifPresent(image -> object.setString("currentDockerImage", image));

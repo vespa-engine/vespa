@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -102,8 +103,8 @@ public class NodeFailTester {
         tester.createHostNodes(3);
 
         // Create applications
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec clusterApp1 = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec clusterApp2 = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         int wantedNodesApp1 = 5;
         int wantedNodesApp2 = 7;
         tester.activate(app1, clusterApp1, wantedNodesApp1);
@@ -131,9 +132,9 @@ public class NodeFailTester {
         }
 
         // Create applications
-        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Optional.empty());
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.of("vespa:6.75.0"));
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of("vespa:6.75.0"));
+        ClusterSpec clusterNodeAdminApp = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Optional.empty());
+        ClusterSpec clusterApp1 = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.of(Version.fromString("6.75.0")));
+        ClusterSpec clusterApp2 = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of(Version.fromString("6.75.0")));
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
         Capacity capacity1 = Capacity.fromNodeCount(3, Optional.of("docker"));
         Capacity capacity2 = Capacity.fromNodeCount(5, Optional.of("docker"));
@@ -162,7 +163,7 @@ public class NodeFailTester {
 
         // Create application
         Capacity allProxies = Capacity.fromRequiredNodeType(NodeType.proxy);
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec clusterApp1 = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
         tester.activate(app1, clusterApp1, allProxies);
         assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
 
