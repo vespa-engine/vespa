@@ -13,6 +13,7 @@ using namespace search::index;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerialNum;
+using search::index::schema::DataType;
 
 namespace proton {
 
@@ -30,7 +31,7 @@ toStr(bool value)
 
 bool fastPartialUpdateAttribute(const schema::DataType &attrType) {
     // Partial update to tensor or predicate attribute must update document
-    return ((attrType != schema::BOOLEANTREE) && (attrType != schema::TENSOR) && (attrType != schema::DataType::REFERENCE));
+    return ((attrType != DataType::BOOLEANTREE) && (attrType != DataType::TENSOR) && (attrType != DataType::REFERENCE));
 }
 
 
@@ -101,7 +102,7 @@ getFieldsToPopulate(const ARIConfig &newCfg,
         bool unchangedField = inspector.hasUnchangedField(name);
         // NOTE: If it is a string and index field we shall
         // keep the original in order to preserve annotations.
-        bool isStringIndexField = attrField.getDataType() == schema::STRING &&
+        bool isStringIndexField = attrField.getDataType() == DataType::STRING &&
                 newCfg.getSchema().isIndexField(name);
         bool populateField = !inNewAttrMgr && unchangedField && !isStringIndexField &&
                              fastPartialUpdateAttribute(attrType);

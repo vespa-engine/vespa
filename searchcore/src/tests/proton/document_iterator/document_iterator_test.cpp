@@ -15,37 +15,37 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-using document::DocumentType;
-using document::Field;
-using namespace proton;
-
+using document::BucketId;
 using document::DataType;
 using document::Document;
 using document::DocumentId;
-using document::BucketId;
-using document::IntFieldValue;
+using document::DocumentType;
 using document::DoubleFieldValue;
+using document::Field;
+using document::IntFieldValue;
 using document::StringFieldValue;
-using search::DocumentIdT;
-using search::DocumentMetaData;
 using search::AttributeContext;
 using search::AttributeEnumGuard;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::DocumentIdT;
+using search::DocumentMetaData;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeContext;
 using search::attribute::test::MockAttributeManager;
-using namespace search::index;
-using storage::spi::Timestamp;
 using storage::spi::Bucket;
-using storage::spi::PartitionId;
-using storage::spi::IterateResult;
 using storage::spi::DocEntry;
-using storage::spi::Selection;
 using storage::spi::DocumentSelection;
 using storage::spi::IncludedVersions;
+using storage::spi::IterateResult;
+using storage::spi::PartitionId;
+using storage::spi::Selection;
+using storage::spi::Timestamp;
+
+using namespace proton;
+using namespace search::index;
 
 const uint64_t largeNum = 10000000;
 
@@ -194,9 +194,9 @@ struct AttrUnitDR : public UnitDR
         : UnitDR(d->getType(), document::Document::UP(d->clone()), t, b, r),
           _amgr(), _schema(), _aa(), _dd(), _ss()
     {
-        createAttribute(_aa, BasicType::INT32, schema::INT32, "aa");
-        createAttribute(_dd, BasicType::DOUBLE, schema::DOUBLE, "dd");
-        createAttribute(_ss, BasicType::STRING, schema::STRING, "ss");
+        createAttribute(_aa, BasicType::INT32, schema::DataType::INT32, "aa");
+        createAttribute(_dd, BasicType::DOUBLE, schema::DataType::DOUBLE, "dd");
+        createAttribute(_ss, BasicType::STRING, schema::DataType::STRING, "ss");
     }
 
     AttrUnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r,
@@ -204,11 +204,11 @@ struct AttrUnitDR : public UnitDR
         : UnitDR(d->getType(), document::Document::UP(d->clone()), t, b, r),
           _amgr(), _schema(), _aa(), _dd(), _ss()
     {
-        createAttribute(_aa, BasicType::INT32, schema::INT32, "aa");
+        createAttribute(_aa, BasicType::INT32, schema::DataType::INT32, "aa");
         addAttribute<IntFieldValue, int32_t>(*_aa, aa);
-        createAttribute(_dd, BasicType::DOUBLE, schema::DOUBLE, "dd");
+        createAttribute(_dd, BasicType::DOUBLE, schema::DataType::DOUBLE, "dd");
         addAttribute<DoubleFieldValue, double>(*_dd, dd);
-        createAttribute(_ss, BasicType::STRING, schema::STRING, "ss");
+        createAttribute(_ss, BasicType::STRING, schema::DataType::STRING, "ss");
         addAttribute<StringFieldValue, vespalib::string>(*_ss, ss);
     }
 

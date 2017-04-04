@@ -40,18 +40,20 @@ LOG_SETUP("attribute_test");
 
 namespace vespa { namespace config { namespace search {}}}
 
-using std::string;
-using namespace vespa::config::search;
 using namespace config;
 using namespace document;
 using namespace proton;
-using namespace search;
 using namespace search::index;
-using search::tensor::TensorAttribute;
+using namespace search;
+using namespace vespa::config::search;
+
 using search::TuneFileAttributes;
 using search::index::DummyFileHeaderContext;
-using search::predicate::PredicateIndex;
+using search::index::schema::CollectionType;
 using search::predicate::PredicateHash;
+using search::predicate::PredicateIndex;
+using search::tensor::TensorAttribute;
+using std::string;
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
@@ -139,10 +141,10 @@ struct Fixture
 TEST_F("require that attribute adapter handles put", Fixture)
 {
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::INT32, schema::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a2", schema::INT32, schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("a3", schema::FLOAT, schema::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a4", schema::STRING, schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::ARRAY));
+    s.addAttributeField(Schema::AttributeField("a3", schema::DataType::FLOAT, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a4", schema::DataType::STRING, CollectionType::SINGLE));
 
     DocBuilder idb(s);
 
@@ -233,7 +235,7 @@ TEST_F("require that attribute adapter handles put", Fixture)
 TEST_F("require that attribute adapter handles predicate put", Fixture)
 {
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::BOOLEANTREE, schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
     DocBuilder idb(s);
 
     proton::AttributeManager & am = *f._m;
@@ -281,8 +283,8 @@ TEST_F("require that attribute adapter handles remove", Fixture)
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::INT32, schema::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a2", schema::INT32, schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
 
     DocBuilder idb(s);
 
@@ -319,7 +321,7 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
                                              AVConfig(AVBasicType::STRING),
                                              createSerialNum);
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", schema::STRING, schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
     DocBuilder idb(s);
     EXPECT_EQUAL(1u, a1->getNumDocs());
     EXPECT_EQUAL(0u, a1->getStatus().getLastSyncToken());
@@ -369,7 +371,7 @@ TEST_F("require that attribute adapter handles predicate remove", Fixture)
                                              createSerialNum);
     Schema s;
     s.addAttributeField(
-            Schema::AttributeField("a1", schema::BOOLEANTREE, schema::SINGLE));
+            Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
     DocBuilder idb(s);
     PredicateSlimeBuilder builder;
@@ -395,8 +397,8 @@ TEST_F("require that attribute adapter handles update", Fixture)
     fillAttribute(a2, 1, 20, 1);
 
     Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", schema::INT32, schema::SINGLE));
-    schema.addAttributeField(Schema::AttributeField("a2", schema::INT32, schema::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
     DocBuilder idb(schema);
     const document::DocumentType &dt(idb.getDocumentType());
     DocumentUpdate upd(dt, DocumentId("doc::1"));
@@ -433,7 +435,7 @@ TEST_F("require that attribute adapter handles predicate update", Fixture)
                                              AVConfig(AVBasicType::PREDICATE),
                                              createSerialNum);
     Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", schema::BOOLEANTREE, schema::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
     DocBuilder idb(schema);
     PredicateSlimeBuilder builder;
@@ -577,7 +579,7 @@ createTensorAttribute(Fixture &f) {
 Schema
 createTensorSchema() {
     Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", schema::TENSOR, schema::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::TENSOR, CollectionType::SINGLE));
     return schema;
 }
 

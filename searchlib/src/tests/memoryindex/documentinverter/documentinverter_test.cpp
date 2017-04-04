@@ -13,10 +13,12 @@
 
 namespace search {
 
-
 using document::Document;
 using index::DocBuilder;
 using index::Schema;
+using index::schema::CollectionType;
+using index::schema::DataType;
+
 using namespace index;
 
 namespace memoryindex {
@@ -103,10 +105,10 @@ struct Fixture
     makeSchema()
     {
         Schema schema;
-        schema.addIndexField(Schema::IndexField("f0", schema::STRING));
-        schema.addIndexField(Schema::IndexField("f1", schema::STRING));
-        schema.addIndexField(Schema::IndexField("f2", schema::STRING, schema::ARRAY));
-        schema.addIndexField(Schema::IndexField("f3", schema::STRING, schema::WEIGHTEDSET));
+        schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
+        schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
+        schema.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
+        schema.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
         return schema;
     }
 

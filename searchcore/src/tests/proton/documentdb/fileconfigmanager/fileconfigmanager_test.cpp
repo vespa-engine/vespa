@@ -16,6 +16,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
+using namespace cloud::config::filedistribution;
 using namespace config;
 using namespace document;
 using namespace proton;
@@ -23,7 +24,6 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search;
-using namespace cloud::config::filedistribution;
 using proton::matching::RankingConstants;
 
 typedef DocumentDBConfigHelper DBCM;
@@ -45,12 +45,12 @@ Schema::SP
 getSchema(int step)
 {
     Schema::SP schema(new Schema);
-    schema->addIndexField(Schema::IndexField("foo1", schema::STRING));
+    schema->addIndexField(Schema::IndexField("foo1", schema::DataType::STRING));
     if (step < 2) {
-        schema->addIndexField(Schema::IndexField("foo2", schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo2", schema::DataType::STRING));
     }
     if (step < 1) {
-        schema->addIndexField(Schema::IndexField("foo3", schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo3", schema::DataType::STRING));
     }
     return schema;
 }
@@ -83,7 +83,7 @@ Schema
 makeHistorySchema()
 {
     Schema hs;
-    hs.addIndexField(Schema::IndexField("history", schema::STRING));
+    hs.addIndexField(Schema::IndexField("history", schema::DataType::STRING));
     return hs;
 }
 

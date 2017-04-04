@@ -20,6 +20,10 @@ SimpleMemoryLogic::SimpleMemoryLogic(Clock& c, uint64_t maxMemory)
     LOG(debug, "Setup simple memory logic with max memory of %" PRIu64 " bytes", maxMemory);
 }
 
+SimpleMemoryLogic::~SimpleMemoryLogic()
+{
+}
+
 void
 SimpleMemoryLogic::setMaximumMemoryUsage(uint64_t max)
 {

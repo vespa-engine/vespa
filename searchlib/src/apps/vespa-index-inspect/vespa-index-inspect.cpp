@@ -19,25 +19,26 @@
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-index-inspect");
 
-using search::index::Schema;
-using search::index::SchemaUtil;
-using search::index::DictionaryFileRandRead;
-using search::index::PostingListFileRandRead;
-using search::index::PostingListOffsetAndCounts;
-using search::index::PostingListCounts;
-using search::index::PostingListHandle;
-using search::diskindex::PageDict4RandRead;
-using search::diskindex::Zc4PosOccRandRead;
-using search::fef::TermFieldMatchData;
-using search::fef::TermFieldMatchDataArray;
-using search::fef::FieldPositionsIterator;
-using search::queryeval::SearchIterator;
-using search::index::DocIdAndFeatures;
+using search::TuneFileSeqRead;
 using search::diskindex::DocIdMapping;
-using search::diskindex::WordNumMapping;
 using search::diskindex::FieldReader;
 using search::diskindex::PageDict4FileSeqRead;
-using search::TuneFileSeqRead;
+using search::diskindex::PageDict4RandRead;
+using search::diskindex::WordNumMapping;
+using search::diskindex::Zc4PosOccRandRead;
+using search::fef::FieldPositionsIterator;
+using search::fef::TermFieldMatchData;
+using search::fef::TermFieldMatchDataArray;
+using search::index::DictionaryFileRandRead;
+using search::index::DocIdAndFeatures;
+using search::index::PostingListCounts;
+using search::index::PostingListFileRandRead;
+using search::index::PostingListHandle;
+using search::index::PostingListOffsetAndCounts;
+using search::index::Schema;
+using search::index::SchemaUtil;
+using search::index::schema::DataType;
+using search::queryeval::SearchIterator;
 using namespace search::index;
 
 namespace
@@ -411,7 +412,7 @@ ShowPostingListSubApp::readDocIdLimit(const Schema &schema)
     uint32_t numIndexFields = schema.getNumIndexFields();
     for (uint32_t fieldId = 0; fieldId < numIndexFields; ++fieldId) {
         const Schema::IndexField &field = schema.getIndexField(fieldId);
-        if (field.getDataType() == schema::STRING) {
+        if (field.getDataType() == DataType::STRING) {
             FieldReader fr;
             if (!fr.open(_indexDir + "/" + field.getName() + "/",
                          tuneFileRead))

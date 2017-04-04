@@ -18,6 +18,9 @@ const char *invalid_feature = "invalid_feature_name and format";
 using namespace search::fef::indexproperties;
 using namespace search::index;
 
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
+
 struct Writer {
     FILE *file;
     Writer(const std::string &file_name) {
@@ -185,10 +188,10 @@ struct EmptyModel : Model {};
 
 struct SimpleModel : Model {
     SimpleModel() : Model() {
-        index("title", schema::STRING, schema::SINGLE);
-        index("list", schema::STRING, schema::ARRAY);
-        index("keywords", schema::STRING, schema::WEIGHTEDSET);
-        attribute("date", schema::INT32, schema::SINGLE);
+        index("title", DataType::STRING, CollectionType::SINGLE);
+        index("list", DataType::STRING, CollectionType::ARRAY);
+        index("keywords", DataType::STRING, CollectionType::WEIGHTEDSET);
+        attribute("date", DataType::INT32, CollectionType::SINGLE);
         imported_attribute("imported_attr");
         constants["my_tensor"] = "tensor(x{},y{})";
     }
@@ -196,8 +199,8 @@ struct SimpleModel : Model {
 
 struct ShadowModel : Model {
     ShadowModel() : Model() {
-        index("both", schema::STRING, schema::SINGLE);
-        attribute("both", schema::STRING, schema::SINGLE);
+        index("both", DataType::STRING, CollectionType::SINGLE);
+        attribute("both", DataType::STRING, CollectionType::SINGLE);
     }
 };
 

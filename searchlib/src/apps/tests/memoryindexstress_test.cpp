@@ -28,7 +28,6 @@
 LOG_SETUP("memoryindexstress_test");
 
 using document::AnnotationType;
-using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
@@ -37,11 +36,12 @@ using document::FieldValue;
 using document::Span;
 using document::SpanList;
 using document::StringFieldValue;
+using search::ScheduleTaskCallback;
+using search::index::schema::DataType;
+using search::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
-using search::makeLambdaTask;
-using search::ScheduleTaskCallback;
 using namespace search::fef;
 using namespace search::index;
 using namespace search::memoryindex;
@@ -64,8 +64,8 @@ Schema
 makeSchema()
 {
     Schema schema;
-    schema.addIndexField(Schema::IndexField(title, schema::STRING));
-    schema.addIndexField(Schema::IndexField(body, schema::STRING));
+    schema.addIndexField(Schema::IndexField(title, DataType::STRING));
+    schema.addIndexField(Schema::IndexField(body, DataType::STRING));
     return schema;
 }
 
@@ -78,8 +78,8 @@ makeDocTypeRepoConfig(void)
                      doc_type_name,
                      document::config_builder::Struct(header_name),
                      document::config_builder::Struct(body_name).
-                     addField(title, DataType::T_STRING).
-                     addField(body, DataType::T_STRING));
+                     addField(title, document::DataType::T_STRING).
+                     addField(body, document::DataType::T_STRING));
     return builder.config();
 }
 

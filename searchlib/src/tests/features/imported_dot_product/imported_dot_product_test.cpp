@@ -11,6 +11,7 @@ using namespace search::attribute;
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
+using namespace search::index;
 
 template <typename T>
 std::unique_ptr<fef::Anything> create_param(const vespalib::string& param) {
@@ -45,9 +46,9 @@ struct FixtureBase : ImportedAttributeFixture {
             feature.getQueryEnv().getObjectStore().add("dotProduct.vector.object", std::move(pre_parsed));
         }
         feature.getIndexEnv().getAttributeMap().add(imported_attr);
-        fef::CollectionType collection_type(
+        schema::CollectionType collection_type(
                 (imported_attr->getCollectionType() == attribute::CollectionType::ARRAY)
-                ? fef::CollectionType::ARRAY : fef::CollectionType::WEIGHTEDSET);
+                ? schema::CollectionType::ARRAY : schema::CollectionType::WEIGHTEDSET);
         feature.getIndexEnv().getBuilder().addField(
                 FieldType::ATTRIBUTE, collection_type, imported_attr->getName());
         ASSERT_TRUE(feature.setup());
@@ -109,7 +110,7 @@ struct ArrayFixture : FixtureBase {
 
         feature.getIndexEnv().getAttributeMap().add(imported_attr);
         feature.getIndexEnv().getBuilder().addField(
-                FieldType::ATTRIBUTE, fef::CollectionType::ARRAY, imported_attr->getName());
+                FieldType::ATTRIBUTE, schema::CollectionType::ARRAY, imported_attr->getName());
 
         bp.setup(feature.getIndexEnv(), params);
         feature.getQueryEnv().getProperties().add("dotProduct.fancyvector", input_vector);

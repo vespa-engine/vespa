@@ -12,19 +12,21 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.document_field_retriever");
 
-using search::DocumentIdT;
 using document::ArrayFieldValue;
 using document::Document;
 using document::Field;
 using document::FieldValue;
 using document::TensorFieldValue;
 using document::WeightedSetFieldValue;
-using namespace search::index;
+using search::DocumentIdT;
 using search::attribute::AttributeContent;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedType;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
 using search::tensor::TensorAttribute;
 using vespalib::IllegalStateException;
+using namespace search::index;
 
 namespace proton {
 
@@ -38,7 +40,7 @@ setValue(DocumentIdT lid,
          const IAttributeVector &attr)
 {
     switch (field.getCollectionType()) {
-    case schema::SINGLE:
+    case CollectionType::SINGLE:
     {
         if ( ! attr.isUndefined(lid) ) {
             AttributeContent<T> content;
@@ -49,7 +51,7 @@ setValue(DocumentIdT lid,
         }
         break;
     }
-    case schema::ARRAY:
+    case CollectionType::ARRAY:
     {
         AttributeContent<T> content;
         content.fill(attr, lid);
@@ -69,7 +71,7 @@ setValue(DocumentIdT lid,
         doc.setValue(f, *fv);
         break;
     }
-    case schema::WEIGHTEDSET:
+    case CollectionType::WEIGHTEDSET:
     {
         AttributeContent<WeightedType<T> > content;
         content.fill(attr, lid);
@@ -107,34 +109,34 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
                                  bool isIndexField)
 {
     switch (field.getDataType()) {
-    case schema::UINT1:
-    case schema::UINT2:
-    case schema::UINT4:
-    case schema::INT8:
-    case schema::INT16:
-    case schema::INT32:
-    case schema::INT64:
+    case DataType::UINT1:
+    case DataType::UINT2:
+    case DataType::UINT4:
+    case DataType::INT8:
+    case DataType::INT16:
+    case DataType::INT32:
+    case DataType::INT64:
         setValue<IAttributeVector::largeint_t>(
                 lid, doc, field, attr);
         break;
-    case schema::FLOAT:
-    case schema::DOUBLE:
+    case DataType::FLOAT:
+    case DataType::DOUBLE:
         setValue<double>(lid, doc, field, attr);
         break;
-    case schema::STRING:
+    case DataType::STRING:
         // If it is a stringfield we also need to check if
         // it is an index field. In that case we shall
         // keep the original in order to preserve annotations.
         if (isIndexField) {
             break;
         }
-    case schema::RAW:
+    case DataType::RAW:
         setValue<const char *>(lid, doc, field, attr);
         break;
-    case schema::BOOLEANTREE:
+    case DataType::BOOLEANTREE:
         // Predicate attribute doesn't store documents, it only indexes them.
         break;
-    case schema::TENSOR:
+    case DataType::TENSOR:
         // Tensor attribute is not authorative.  Partial updates must update
         // document store.
         break;

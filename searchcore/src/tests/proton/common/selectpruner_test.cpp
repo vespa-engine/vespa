@@ -12,22 +12,22 @@
 LOG_SETUP("selectpruner_test");
 
 using namespace search::index;
-using document::DocumentTypeRepo;
+using document::DataType;
+using document::Document;
 using document::DocumentType;
+using document::DocumentTypeRepo;
+using document::config_builder::Array;
+using document::config_builder::DocumenttypesConfigBuilderHelper;
+using document::config_builder::Map;
+using document::config_builder::Struct;
+using document::config_builder::Wset;
+using document::select::CloningVisitor;
 using document::select::Node;
 using document::select::Result;
 using document::select::ResultSet;
-using document::select::CloningVisitor;
-using vespalib::string;
-
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Struct;
-using document::config_builder::Array;
-using document::config_builder::Wset;
-using document::config_builder::Map;
-using document::DataType;
-using document::Document;
 using proton::SelectPruner;
+using search::index::schema::CollectionType;
+using vespalib::string;
 
 typedef Node::UP NodeUP;
 
@@ -37,12 +37,12 @@ namespace
 void
 makeSchema(Schema &s)
 {
-    s.addIndexField(Schema::IndexField("ia", schema::STRING));
-    s.addAttributeField(Schema::AttributeField("aa", schema::INT32));
-    s.addAttributeField(Schema::AttributeField("aaa", schema::INT32,
-                                               schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("aaw", schema::INT32,
-                                               schema::WEIGHTEDSET));
+    s.addIndexField(Schema::IndexField("ia", schema::DataType::STRING));
+    s.addAttributeField(Schema::AttributeField("aa", schema::DataType::INT32));
+    s.addAttributeField(Schema::AttributeField("aaa", schema::DataType::INT32,
+                                               CollectionType::ARRAY));
+    s.addAttributeField(Schema::AttributeField("aaw", schema::DataType::INT32,
+                                               CollectionType::WEIGHTEDSET));
 }
 
 const int32_t doc_type_id = 787121340;

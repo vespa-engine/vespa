@@ -24,6 +24,7 @@ using namespace search;
 using namespace search::index;
 using search::attribute::Config;
 using search::attribute::BasicType;
+using search::index::schema::DataType;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
@@ -63,18 +64,18 @@ struct MyConfig
         for (auto attr : attrs) {
             if (attr == "tensor") {
                 _mgr->addAttribute(attr, test::AttributeUtils::getTensorConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, schema::TENSOR));
+                _schema.addAttributeField(Schema::AttributeField(attr, DataType::TENSOR));
             } else if (attr == "predicate") {
                 _mgr->addAttribute(attr, test::AttributeUtils::getPredicateConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, schema::BOOLEANTREE));
+                _schema.addAttributeField(Schema::AttributeField(attr, DataType::BOOLEANTREE));
             } else {
                 _mgr->addAttribute(attr, test::AttributeUtils::getStringConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, schema::STRING));
+                _schema.addAttributeField(Schema::AttributeField(attr, DataType::STRING));
             }
         }
     }
     void addIndexField(const vespalib::string &name) {
-        _schema.addIndexField(Schema::IndexField(name, schema::STRING));
+        _schema.addIndexField(Schema::IndexField(name, DataType::STRING));
     }
 };
 

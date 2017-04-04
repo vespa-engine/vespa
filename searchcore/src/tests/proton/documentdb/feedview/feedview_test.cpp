@@ -35,20 +35,20 @@
 LOG_SETUP("feedview_test");
 
 using document::BucketId;
-using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
 using documentapi::DocumentProtocol;
 using documentapi::RemoveDocumentReply;
 using fastos::TimeStamp;
-using namespace proton;
 using proton::matching::SessionManager;
+using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
 using search::SearchableStats;
-using namespace search::index;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
 using searchcorespi::IndexSearchable;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
@@ -56,7 +56,9 @@ using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using vespalib::eval::ValueType;
-using proton::test::MockGidToLidChangeHandler;
+
+using namespace proton;
+using namespace search::index;
 
 typedef SearchableFeedView::SerialNum SerialNum;
 typedef search::DocumentIdT DocumentIdT;
@@ -437,11 +439,11 @@ SchemaContext::SchemaContext() :
     _schema(new Schema()),
     _builder()
 {
-    _schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a1", schema::STRING, schema::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a2", schema::BOOLEANTREE, schema::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a3", schema::TENSOR, schema::SINGLE));
-    _schema->addSummaryField(Schema::SummaryField("s1", schema::STRING, schema::SINGLE));
+    _schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a1", DataType::STRING, CollectionType::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a2", DataType::BOOLEANTREE, CollectionType::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a3", DataType::TENSOR, CollectionType::SINGLE));
+    _schema->addSummaryField(Schema::SummaryField("s1", DataType::STRING, CollectionType::SINGLE));
     _builder.reset(new DocBuilder(*_schema));
 }
 SchemaContext::~SchemaContext() {}

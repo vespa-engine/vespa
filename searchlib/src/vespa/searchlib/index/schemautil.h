@@ -31,7 +31,7 @@ public:
         bool hasPositions() const { return _positions; }
 
         IndexSettings()
-            : _dataType(schema::STRING),
+            : _dataType(schema::DataType::STRING),
               _error(false),
               _prefix(false),
               _phrases(false),
@@ -151,8 +151,8 @@ public:
 
     static bool validateIndexFieldType(schema::DataType dataType) {
         switch (dataType) {
-        case schema::STRING:
-        case schema::INT32:
+        case schema::DataType::STRING:
+        case schema::DataType::INT32:
             return true;
         default:
             ;

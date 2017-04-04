@@ -13,20 +13,20 @@ using config::InvalidConfigException;
 
 DataType
 dataTypeFromName(const vespalib::stringref &name) {
-    if      (name == "UINT1")   { return UINT1; }
-    else if (name == "UINT2")   { return UINT2; }
-    else if (name == "UINT4")   { return UINT4; }
-    else if (name == "INT8")    { return INT8; }
-    else if (name == "INT16")   { return INT16; }
-    else if (name == "INT32")   { return INT32; }
-    else if (name == "INT64")   { return INT64; }
-    else if (name == "FLOAT")   { return FLOAT; }
-    else if (name == "DOUBLE")  { return DOUBLE; }
-    else if (name == "STRING")  { return STRING; }
-    else if (name == "RAW")     { return RAW; }
-    else if (name == "BOOLEANTREE") { return BOOLEANTREE; }
-    else if (name == "TENSOR") { return TENSOR; }
-    else if (name == "REFERENCE") { return REFERENCE; }
+    if      (name == "UINT1")   { return DataType::UINT1; }
+    else if (name == "UINT2")   { return DataType::UINT2; }
+    else if (name == "UINT4")   { return DataType::UINT4; }
+    else if (name == "INT8")    { return DataType::INT8; }
+    else if (name == "INT16")   { return DataType::INT16; }
+    else if (name == "INT32")   { return DataType::INT32; }
+    else if (name == "INT64")   { return DataType::INT64; }
+    else if (name == "FLOAT")   { return DataType::FLOAT; }
+    else if (name == "DOUBLE")  { return DataType::DOUBLE; }
+    else if (name == "STRING")  { return DataType::STRING; }
+    else if (name == "RAW")     { return DataType::RAW; }
+    else if (name == "BOOLEANTREE") { return DataType::BOOLEANTREE; }
+    else if (name == "TENSOR") { return DataType::TENSOR; }
+    else if (name == "REFERENCE") { return DataType::REFERENCE; }
     else {
         throw InvalidConfigException("Illegal enum value '" + name + "'");
     }
@@ -50,19 +50,26 @@ const char *datatype_str[] = { "UINT1",
 
 vespalib::string
 getTypeName(DataType type) {
-    if (type > vespalib::arraysize(datatype_str)) {
+    if (static_cast<size_t>(type) > vespalib::arraysize(datatype_str)) {
         vespalib::asciistream ost;
-        ost << "UNKNOWN(" << type << ")";
+        ost << "UNKNOWN(" << static_cast<size_t>(type) << ")";
         return ost.str();
     }
-    return datatype_str[type];
+    return datatype_str[static_cast<size_t>(type)];
+}
+
+std::ostream &
+operator<<(std::ostream &os, const DataType &type)
+{
+    os << getTypeName(type);
+    return os;
 }
 
 CollectionType
 collectionTypeFromName(const vespalib::stringref &name) {
-    if (name == "SINGLE") { return SINGLE; }
-    else if (name == "ARRAY") { return ARRAY; }
-    else if (name == "WEIGHTEDSET") { return WEIGHTEDSET; }
+    if (name == "SINGLE") { return CollectionType::SINGLE; }
+    else if (name == "ARRAY") { return CollectionType::ARRAY; }
+    else if (name == "WEIGHTEDSET") { return CollectionType::WEIGHTEDSET; }
     else {
         throw InvalidConfigException("Illegal enum value '" + name + "'");
     }
@@ -74,14 +81,20 @@ const char *collectiontype_str[] = { "SINGLE",
 
 vespalib::string
 getTypeName(CollectionType type) {
-    if (type > vespalib::arraysize(collectiontype_str)) {
+    if (static_cast<size_t>(type) > vespalib::arraysize(collectiontype_str)) {
         vespalib::asciistream ost;
-        ost << "UNKNOWN(" << type << ")";
+        ost << "UNKNOWN(" << static_cast<size_t>(type) << ")";
         return ost.str();
     }
-    return collectiontype_str[type];
+    return collectiontype_str[static_cast<size_t>(type)];
 }
 
+std::ostream &
+operator<<(std::ostream &os, const CollectionType &type)
+{
+    os << getTypeName(type);
+    return os;
+}
 
 }
 }

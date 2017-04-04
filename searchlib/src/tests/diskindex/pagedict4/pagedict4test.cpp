@@ -16,30 +16,33 @@
 #include <vespa/log/log.h>
 LOG_SETUP("pagedict4test");
 
-using search::bitcompression::PostingListCountFileEncodeContext;
-using search::bitcompression::PostingListCountFileDecodeContext;
-using search::index::PostingListCounts;
-using search::index::PostingListOffsetAndCounts;
-using search::index::PostingListParams;
-using search::bitcompression::PageDict4SSWriter;
-using search::bitcompression::PageDict4SPWriter;
+using search::bitcompression::PageDict4PLookupRes;
 using search::bitcompression::PageDict4PWriter;
 using search::bitcompression::PageDict4Reader;
-using search::bitcompression::PageDict4SSReader;
-using search::bitcompression::PageDict4SSLookupRes;
 using search::bitcompression::PageDict4SPLookupRes;
-using search::bitcompression::PageDict4PLookupRes;
-using search::index::Schema;
-using search::index::DictionaryFileSeqRead;
-using search::index::DictionaryFileSeqWrite;
-using search::index::DictionaryFileRandRead;
+using search::bitcompression::PageDict4SPWriter;
+using search::bitcompression::PageDict4SSLookupRes;
+using search::bitcompression::PageDict4SSReader;
+using search::bitcompression::PageDict4SSWriter;
+using search::bitcompression::PostingListCountFileDecodeContext;
+using search::bitcompression::PostingListCountFileEncodeContext;
 using search::diskindex::PageDict4FileSeqRead;
 using search::diskindex::PageDict4FileSeqWrite;
 using search::diskindex::PageDict4RandRead;
+using search::index::DictionaryFileRandRead;
+using search::index::DictionaryFileSeqRead;
+using search::index::DictionaryFileSeqWrite;
 using search::index::DummyFileHeaderContext;
+using search::index::PostingListCounts;
+using search::index::PostingListOffsetAndCounts;
+using search::index::PostingListParams;
+using search::index::Schema;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
+
 using namespace search::index;
 
-typedef search::bitcompression::PageDict4StartOffset StartOffset;
+using StartOffset = search::bitcompression::PageDict4StartOffset;
 
 namespace
 {
@@ -645,8 +648,8 @@ testWords(const std::string &logname,
         fn << "f0";
         schema.addIndexField(Schema::
                              IndexField(fn.str(),
-                                        schema::STRING,
-                                        schema::SINGLE));
+                                        DataType::STRING,
+                                        CollectionType::SINGLE));
         indexes.push_back(0);
     }
     {

@@ -20,14 +20,15 @@
 LOG_SETUP(".diskindex.fusion");
 
 using search::FileKit;
-using search::index::PostingListParams;
-using search::index::Schema;
-using search::index::SchemaUtil;
+using search::PostingPriorityQueue;
 using search::common::FileHeaderContext;
 using search::diskindex::DocIdMapping;
 using search::diskindex::WordNumMapping;
-using search::PostingPriorityQueue;
 using search::docsummary::DocumentSummary;
+using search::index::PostingListParams;
+using search::index::Schema;
+using search::index::SchemaUtil;
+using search::index::schema::DataType;
 using vespalib::getLastErrorString;
 
 
@@ -400,7 +401,7 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
         std::vector<uint32_t> oldIndexes;
         const Schema &oldSchema = oi.getSchema();
         if (!SchemaUtil::getIndexIds(oldSchema,
-                                     index::schema::STRING,
+                                     DataType::STRING,
                                      oldIndexes))
             return false;
         if (oldIndexes.empty()) {

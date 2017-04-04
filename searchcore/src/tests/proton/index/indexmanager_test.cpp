@@ -33,29 +33,31 @@ LOG_SETUP("indexmanager_test");
 
 using document::Document;
 using document::FieldValue;
-using search::datastore::EntryRef;
-using search::index::DocBuilder;
-using search::index::Schema;
-using search::index::DummyFileHeaderContext;
-using search::memoryindex::Dictionary;
-using search::memoryindex::CompactDocumentWordsStore;
-using search::queryeval::Source;
 using search::SequencedTaskExecutor;
 using search::SerialNum;
+using search::TuneFileAttributes;
+using search::TuneFileIndexManager;
+using search::TuneFileIndexing;
+using search::datastore::EntryRef;
+using search::index::DocBuilder;
+using search::index::DummyFileHeaderContext;
+using search::index::Schema;
+using search::index::schema::DataType;
+using search::makeLambdaTask;
+using search::memoryindex::CompactDocumentWordsStore;
+using search::memoryindex::Dictionary;
+using search::queryeval::Source;
 using std::set;
 using std::string;
+using vespalib::BlockingThreadStackExecutor;
 using vespalib::Gate;
 using vespalib::Monitor;
 using vespalib::MonitorGuard;
+using vespalib::ThreadStackExecutor;
+
 using namespace proton;
 using namespace searchcorespi;
 using namespace searchcorespi::index;
-using search::TuneFileIndexing;
-using search::TuneFileIndexManager;
-using search::TuneFileAttributes;
-using vespalib::BlockingThreadStackExecutor;
-using vespalib::ThreadStackExecutor;
-using search::makeLambdaTask;
 
 namespace {
 
@@ -78,7 +80,7 @@ const uint32_t docid = 1;
 
 Schema getSchema() {
     Schema schema;
-    schema.addIndexField(Schema::IndexField(field_name, search::index::schema::STRING));
+    schema.addIndexField(Schema::IndexField(field_name, DataType::STRING));
     return schema;
 }
 
