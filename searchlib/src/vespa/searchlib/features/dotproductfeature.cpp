@@ -31,14 +31,14 @@ template <typename DimensionVType, typename DimensionHType, typename ComponentTy
 VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::~VectorBase() { }
 
 template <typename Vector, typename Buffer>
-DotProductExecutor<Vector, Buffer>::DotProductExecutor(const IAttributeVector * attribute, const Vector & vector) :
+DotProductExecutor<Vector, Buffer>::DotProductExecutor(const IAttributeVector * attribute, const Vector & queryVector) :
     FeatureExecutor(),
     _attribute(attribute),
-    _vector(vector),
+    _queryVector(queryVector),
     _buffer()
 {
     _buffer.allocate(_attribute->getMaxValueCount());
-    _vector.syncMap();
+    _queryVector.syncMap();
 }
 
 template <typename Vector, typename Buffer>
@@ -46,11 +46,11 @@ void
 DotProductExecutor<Vector, Buffer>::execute(uint32_t docId)
 {
     feature_t val = 0;
-    if (!_vector.getDimMap().empty()) {
+    if (!_queryVector.getDimMap().empty()) {
         _buffer.fill(*_attribute, docId);
         for (size_t i = 0; i < _buffer.size(); ++i) {
-            typename Vector::HashMap::const_iterator itr = _vector.getDimMap().find(_buffer[i].getValue());
-            if (itr != _vector.getDimMap().end()) {
+            typename Vector::HashMap::const_iterator itr = _queryVector.getDimMap().find(_buffer[i].getValue());
+            if (itr != _queryVector.getDimMap().end()) {
                 val += _buffer[i].getWeight() * itr->second;
             }
         }
@@ -65,10 +65,10 @@ StringVector::~StringVector() { }
 namespace array {
 
 template <typename BaseType>
-DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & vector)
+DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & queryVector)
     : FeatureExecutor(),
       _multiplier(IAccelrated::getAccelrator()),
-      _vector(vector)
+      _queryVector(queryVector)
 {
 }
 
@@ -79,15 +79,15 @@ template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     const AT *values(nullptr);
     size_t count = getAttributeValues(docId, values);
-    size_t commonRange = std::min(count, _vector.size());
+    size_t commonRange = std::min(count, _queryVector.size());
     static_assert(std::is_same<typename AT::ValueType, BaseType>::value);
     outputs().set_number(0, _multiplier->dotProduct(
-            &_vector[0], reinterpret_cast<const typename AT::ValueType *>(values), commonRange));
+            &_queryVector[0], reinterpret_cast<const typename AT::ValueType *>(values), commonRange));
 }
 
 template <typename A>
-DotProductExecutor<A>::DotProductExecutor(const A * attribute, const V & vector) :
-    DotProductExecutorBase<typename A::BaseType>(vector),
+DotProductExecutor<A>::DotProductExecutor(const A * attribute, const V & queryVector) :
+    DotProductExecutorBase<typename A::BaseType>(queryVector),
     _attribute(attribute)
 {
 }
@@ -103,10 +103,10 @@ DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 }
 
 template <typename A>
-SparseDotProductExecutor<A>::SparseDotProductExecutor(const A * attribute, const V & values, const IV & indexes) :
-    DotProductExecutor<A>(attribute, values),
-    _indexes(indexes),
-    _scratch(std::max(static_cast<size_t>(attribute->getMaxValueCount()), indexes.size()))
+SparseDotProductExecutor<A>::SparseDotProductExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes) :
+    DotProductExecutor<A>(attribute, queryVector),
+    _queryIndexes(queryIndexes),
+    _scratch(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()))
 {
 }
 
@@ -121,15 +121,15 @@ SparseDotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & val
     size_t count = this->_attribute->getRawValues(docId, allValues);
     values = &_scratch[0];
     size_t i(0);
-    for (; (i < _indexes.size()) && (_indexes[i] < count); i++) {
-        _scratch[i] = allValues[_indexes[i]];
+    for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < count); i++) {
+        _scratch[i] = allValues[_queryIndexes[i]];
     }
     return i;
 }
 
 template <typename A>
-DotProductByCopyExecutor<A>::DotProductByCopyExecutor(const A * attribute, const V & values) :
-    DotProductExecutor<A>(attribute, values),
+DotProductByCopyExecutor<A>::DotProductByCopyExecutor(const A * attribute, const V & queryVector) :
+    DotProductExecutor<A>(attribute, queryVector),
     _copy(static_cast<size_t>(attribute->getMaxValueCount()))
 {
 }
@@ -151,9 +151,9 @@ DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId, const AT * & val
 }
 
 template <typename A>
-SparseDotProductByCopyExecutor<A>::SparseDotProductByCopyExecutor(const A * attribute, const V & values, const IV & indexes) :
-    SparseDotProductExecutor<A>(attribute, values, indexes),
-    _copy(std::max(static_cast<size_t>(attribute->getMaxValueCount()), indexes.size()))
+SparseDotProductByCopyExecutor<A>::SparseDotProductByCopyExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes) :
+    SparseDotProductExecutor<A>(attribute, queryVector, queryIndexes),
+    _copy(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()))
 {
 }
 
@@ -170,7 +170,7 @@ SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId, const AT *
         count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
     }
     size_t i(0);
-    for (const IV & iv(this->_indexes); (i < iv.size()) && (iv[i] < count); i++) {
+    for (const IV & iv(this->_queryIndexes); (i < iv.size()) && (iv[i] < count); i++) {
         _copy[i] = _copy[iv[i]];
     }
     values = reinterpret_cast<const AT *>(&_copy[0]);
@@ -180,8 +180,8 @@ SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId, const AT *
 template <typename BaseType>
 DotProductByContentFillExecutor<BaseType>::DotProductByContentFillExecutor(
         const attribute::IAttributeVector * attribute,
-        const V & vector)
-    : DotProductExecutorBase<BaseType>(vector),
+        const V & queryVector)
+    : DotProductExecutorBase<BaseType>(queryVector),
       _attribute(attribute),
       _filler()
 {
@@ -220,14 +220,14 @@ size_t DotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t do
 template <typename BaseType>
 SparseDotProductByContentFillExecutor<BaseType>::SparseDotProductByContentFillExecutor(
         const attribute::IAttributeVector * attribute,
-        const V & vector,
-        const IV & indexes)
-    : DotProductExecutorBase<BaseType>(vector),
+        const V & queryVector,
+        const IV & queryIndexes)
+    : DotProductExecutorBase<BaseType>(queryVector),
       _attribute(attribute),
-      _indexes(indexes),
+      _queryIndexes(queryIndexes),
       _filler()
 {
-    _filler.allocate(std::max(static_cast<size_t>(attribute->getMaxValueCount()), indexes.size()));
+    _filler.allocate(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()));
 }
 
 template <typename BaseType>
@@ -241,8 +241,8 @@ size_t SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint3
     const size_t count = _filler.size();
     BaseType * data = _filler.data();
     size_t i = 0;
-    for (; (i < _indexes.size()) && (_indexes[i] < count); ++i) {
-        data[i] = data[_indexes[i]];
+    for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < count); ++i) {
+        data[i] = data[_queryIndexes[i]];
     }
 
     sanity_check_reinterpret_cast_compatibility<BaseType, AT, decltype(*_filler.data())>();

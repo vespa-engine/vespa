@@ -12,6 +12,14 @@ namespace test {
 
 class AttributeMap;
 
+/**
+ * Simple IAttributeContext implementation which forwards all attribute lookups
+ * to a referenced AttributeMap.
+ *
+ * Note that the attribute mapping does not use any kind of snapshot visibility;
+ * changes to the associated AttributeMap after the context has been created will
+ * be reflected in subsequent calls to the attribute context.
+ */
 class MockAttributeContext : public attribute::IAttributeContext {
     const AttributeMap& _attributes;
 public:

@@ -11,6 +11,14 @@ namespace search {
 namespace fef {
 namespace test {
 
+/**
+ * Simple mapping from attribute name to IAttributeVector which can be used for tests
+ * that do do not want the complexity of instantiating a full AttributeManager, or
+ * for tests that need to work with IAttributeVectors rather than AttributeVectors.
+ *
+ * Allows for creating AttributeContext instances which transparently access the
+ * attribute map for their lookups.
+ */
 class AttributeMap {
     std::map<vespalib::string, std::shared_ptr<attribute::IAttributeVector>> _attributes;
 public:
