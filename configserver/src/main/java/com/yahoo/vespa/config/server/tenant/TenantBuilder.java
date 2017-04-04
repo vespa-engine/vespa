@@ -175,7 +175,7 @@ public class TenantBuilder {
 
     private void createRemoteSessionRepo() throws Exception {
         if (remoteSessionRepo == null) {
-            remoteSessionRepo = RemoteSessionRepo.create(componentRegistry.getCurator(),
+            remoteSessionRepo = new RemoteSessionRepo(componentRegistry.getCurator(),
                     remoteSessionFactory,
                     reloadHandler,
                     sessionsPath,
