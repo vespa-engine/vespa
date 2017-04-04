@@ -30,10 +30,7 @@ public class Status {
         /** There are smart log error messages */
         disk_smart,
         /** There are kernel log error messages */
-        disk_kernel,
-        /** There is an error but its type is unknown */ 
-        // TODO: Remove this when all hosts in the node repo has a failure type
-        unknown
+        disk_kernel
         
     }
 

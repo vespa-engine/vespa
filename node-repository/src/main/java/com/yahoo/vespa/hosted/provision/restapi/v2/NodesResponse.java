@@ -230,7 +230,6 @@ class NodesResponse extends HttpResponse {
             case memory_mcelog: return "memory_mcelog";
             case disk_smart: return "disk_smart";
             case disk_kernel: return "disk_kernel";
-            case unknown: return "unknown";
             default : throw new IllegalArgumentException("Serialized form of '" + type + " not defined");
         }
     }

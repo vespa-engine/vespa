@@ -325,7 +325,6 @@ public class NodeSerializer {
             case "memory_mcelog" : return Status.HardwareFailureType.memory_mcelog;
             case "disk_smart" : return Status.HardwareFailureType.disk_smart;
             case "disk_kernel" : return Status.HardwareFailureType.disk_kernel;
-            case "unknown" : return Status.HardwareFailureType.unknown;
             default : throw new IllegalArgumentException("Unknown hardware failure '" + hardwareFailureString + "'");
         }
     }
@@ -334,7 +333,6 @@ public class NodeSerializer {
             case memory_mcelog: return "memory_mcelog";
             case disk_smart: return "disk_smart";
             case disk_kernel: return "disk_kernel";
-            case unknown: return "unknown";
             default : throw new IllegalArgumentException("Serialized form of '" + type + " not defined");
         }
     }
