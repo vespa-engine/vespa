@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "check_type.h"
-#include "function.h"
 #include "node_traverser.h"
 #include "node_types.h"
-#include "node_visitor.h"
 
 namespace vespalib {
 namespace eval {
@@ -119,10 +116,10 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    virtual void visit(const Number &node) {
+    void visit(const Number &node) override {
         bind_type(ValueType::double_type(), node);
     }
-    virtual void visit(const Symbol &node) {
+    void visit(const Symbol &node) override {
         if (node.id() >= 0) { // param value
             bind_type(state.param_type(node.id()), node);
         } else { // let binding
@@ -130,15 +127,15 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
             bind_type(state.let_type(let_offset), node);
         }
     }
-    virtual void visit(const String &node) {
+    void visit(const String &node) override {
         bind_type(ValueType::double_type(), node);
     }
-    virtual void visit(const Array &node) {
+    void visit(const Array &node) override {
         bind_type(ValueType::double_type(), node);
     }
-    virtual void visit(const Neg &node) { resolve_op1(node); }
-    virtual void visit(const Not &node) { resolve_op1(node); }
-    virtual void visit(const If &node) {
+    void visit(const Neg &node) override { resolve_op1(node); }
+    void visit(const Not &node) override { resolve_op1(node); }
+    void visit(const If &node) override {
         ValueType true_type = state.peek(1);
         ValueType false_type = state.peek(0);
         if (true_type == false_type) {
@@ -149,13 +146,13 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
             bind_type(ValueType::any_type(), node);
         }
     }
-    virtual void visit(const Let &node) {
+    void visit(const Let &node) override {
         bind_type(state.peek(0), node);
     }
-    virtual void visit(const Error &node) {
+    void visit(const Error &node) override {
         bind_type(ValueType::error_type(), node);
     }
-    virtual void visit(const TensorSum &node) {
+    void visit(const TensorSum &node) override {
         const ValueType &child = state.peek(0);        
         if (node.dimension().empty()) {
             bind_type(child.reduce({}), node);
@@ -163,69 +160,69 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
             bind_type(child.reduce({node.dimension()}), node);
         }
     }
-    virtual void visit(const TensorMap &node) { resolve_op1(node); }
-    virtual void visit(const TensorJoin &node) { resolve_op2(node); }
-    virtual void visit(const TensorReduce &node) {
+    void visit(const TensorMap &node) override { resolve_op1(node); }
+    void visit(const TensorJoin &node) override { resolve_op2(node); }
+    void visit(const TensorReduce &node) override {
         const ValueType &child = state.peek(0);
         bind_type(child.reduce(node.dimensions()), node);
     }
-    virtual void visit(const TensorRename &node) {
+    void visit(const TensorRename &node) override {
         const ValueType &child = state.peek(0);
         bind_type(child.rename(node.from(), node.to()), node);
     }
-    virtual void visit(const TensorLambda &node) {
+    void visit(const TensorLambda &node) override {
         bind_type(node.type(), node);
     }
-    virtual void visit(const TensorConcat &node) {
+    void visit(const TensorConcat &node) override {
         bind_type(ValueType::concat(state.peek(1), state.peek(0), node.dimension()), node);
     }
 
-    virtual void visit(const Add &node) { resolve_op2(node); }
-    virtual void visit(const Sub &node) { resolve_op2(node); }
-    virtual void visit(const Mul &node) { resolve_op2(node); }
-    virtual void visit(const Div &node) { resolve_op2(node); }
-    virtual void visit(const Pow &node) { resolve_op2(node); }
-    virtual void visit(const Equal &node) { resolve_op2(node); }
-    virtual void visit(const NotEqual &node) { resolve_op2(node); }
-    virtual void visit(const Approx &node) { resolve_op2(node); }
-    virtual void visit(const Less &node) { resolve_op2(node); }
-    virtual void visit(const LessEqual &node) { resolve_op2(node); }
-    virtual void visit(const Greater &node) { resolve_op2(node); }
-    virtual void visit(const GreaterEqual &node) { resolve_op2(node); }
-    virtual void visit(const In &node) {
+    void visit(const Add &node) override { resolve_op2(node); }
+    void visit(const Sub &node) override { resolve_op2(node); }
+    void visit(const Mul &node) override { resolve_op2(node); }
+    void visit(const Div &node) override { resolve_op2(node); }
+    void visit(const Pow &node) override { resolve_op2(node); }
+    void visit(const Equal &node) override { resolve_op2(node); }
+    void visit(const NotEqual &node) override { resolve_op2(node); }
+    void visit(const Approx &node) override { resolve_op2(node); }
+    void visit(const Less &node) override { resolve_op2(node); }
+    void visit(const LessEqual &node) override { resolve_op2(node); }
+    void visit(const Greater &node) override { resolve_op2(node); }
+    void visit(const GreaterEqual &node) override { resolve_op2(node); }
+    void visit(const In &node) override {
         bind_type(ValueType::double_type(), node);
     }
-    virtual void visit(const And &node) { resolve_op2(node); }
-    virtual void visit(const Or &node) { resolve_op2(node); }
-    virtual void visit(const Cos &node) { resolve_op1(node); }
-    virtual void visit(const Sin &node) { resolve_op1(node); }
-    virtual void visit(const Tan &node) { resolve_op1(node); }
-    virtual void visit(const Cosh &node) { resolve_op1(node); }
-    virtual void visit(const Sinh &node) { resolve_op1(node); }
-    virtual void visit(const Tanh &node) { resolve_op1(node); }
-    virtual void visit(const Acos &node) { resolve_op1(node); }
-    virtual void visit(const Asin &node) { resolve_op1(node); }
-    virtual void visit(const Atan &node) { resolve_op1(node); }
-    virtual void visit(const Exp &node) { resolve_op1(node); }
-    virtual void visit(const Log10 &node) { resolve_op1(node); }
-    virtual void visit(const Log &node) { resolve_op1(node); }
-    virtual void visit(const Sqrt &node) { resolve_op1(node); }
-    virtual void visit(const Ceil &node) { resolve_op1(node); }
-    virtual void visit(const Fabs &node) { resolve_op1(node); }
-    virtual void visit(const Floor &node) { resolve_op1(node); }
-    virtual void visit(const Atan2 &node) { resolve_op2(node); }
-    virtual void visit(const Ldexp &node) { resolve_op2(node); }
-    virtual void visit(const Pow2 &node) { resolve_op2(node); }
-    virtual void visit(const Fmod &node) { resolve_op2(node); }
-    virtual void visit(const Min &node) { resolve_op2(node); }
-    virtual void visit(const Max &node) { resolve_op2(node); }
-    virtual void visit(const IsNan &node) { resolve_op1(node); }
-    virtual void visit(const Relu &node) { resolve_op1(node); }
-    virtual void visit(const Sigmoid &node) { resolve_op1(node); }
+    void visit(const And &node) override { resolve_op2(node); }
+    void visit(const Or &node) override { resolve_op2(node); }
+    void visit(const Cos &node) override { resolve_op1(node); }
+    void visit(const Sin &node) override { resolve_op1(node); }
+    void visit(const Tan &node) override { resolve_op1(node); }
+    void visit(const Cosh &node) override { resolve_op1(node); }
+    void visit(const Sinh &node) override { resolve_op1(node); }
+    void visit(const Tanh &node) override { resolve_op1(node); }
+    void visit(const Acos &node) override { resolve_op1(node); }
+    void visit(const Asin &node) override { resolve_op1(node); }
+    void visit(const Atan &node) override { resolve_op1(node); }
+    void visit(const Exp &node) override { resolve_op1(node); }
+    void visit(const Log10 &node) override { resolve_op1(node); }
+    void visit(const Log &node) override { resolve_op1(node); }
+    void visit(const Sqrt &node) override { resolve_op1(node); }
+    void visit(const Ceil &node) override { resolve_op1(node); }
+    void visit(const Fabs &node) override { resolve_op1(node); }
+    void visit(const Floor &node) override { resolve_op1(node); }
+    void visit(const Atan2 &node) override { resolve_op2(node); }
+    void visit(const Ldexp &node) override { resolve_op2(node); }
+    void visit(const Pow2 &node) override { resolve_op2(node); }
+    void visit(const Fmod &node) override { resolve_op2(node); }
+    void visit(const Min &node) override { resolve_op2(node); }
+    void visit(const Max &node) override { resolve_op2(node); }
+    void visit(const IsNan &node) override { resolve_op1(node); }
+    void visit(const Relu &node) override { resolve_op1(node); }
+    void visit(const Sigmoid &node) override { resolve_op1(node); }
 
     //-------------------------------------------------------------------------
 
-    virtual bool open(const Node &node) {
+    bool open(const Node &node) override {
         auto let = as<Let>(node);
         if (let) {
             add_action(let->expr(), action_unbind_let);
@@ -234,7 +231,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         return true;
     }
 
-    virtual void close(const Node &node) {
+    void close(const Node &node) override {
         if (!check_error(node)) {
             node.accept(*this);
         }

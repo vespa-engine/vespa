@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/trace/tracevisitor.h>
-#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/slime/cursor.h>
 #include <stack>
 
 namespace vespalib {
@@ -17,7 +17,7 @@ class SlimeTraceSerializer : public TraceVisitor
 {
 public:
     SlimeTraceSerializer(slime::Cursor & cursor);
-    void visit(const TraceNode & node);
+    void visit(const TraceNode & node) override;
     static const Memory TIMESTAMP;
     static const Memory PAYLOAD;
     static const Memory CHILDREN;

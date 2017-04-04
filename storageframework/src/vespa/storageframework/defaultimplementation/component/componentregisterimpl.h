@@ -68,8 +68,8 @@ public:
         return *_metricManager;
     }
 
-    virtual void registerComponent(ManagedComponent&);
-    virtual void requestShutdown(vespalib::stringref reason);
+    void registerComponent(ManagedComponent&) override;
+    void requestShutdown(vespalib::stringref reason) override;
 
     void setMetricManager(metrics::MetricManager&);
     void setMemoryManager(MemoryManagerInterface&);
@@ -77,13 +77,13 @@ public:
     void setThreadPool(ThreadPool&);
     void setUpgradeFlag(UpgradeFlags flag);
 
-    const StatusReporter* getStatusReporter(vespalib::stringref id);
-    std::vector<const StatusReporter*> getStatusReporters();
+    const StatusReporter* getStatusReporter(vespalib::stringref id) override;
+    std::vector<const StatusReporter*> getStatusReporters() override;
 
-    void registerMetric(metrics::Metric&);
+    void registerMetric(metrics::Metric&) override;
     void registerUpdateHook(vespalib::stringref name,
                             MetricUpdateHook& hook,
-                            SecondTime period);
+                            SecondTime period) override;
     vespalib::MonitorGuard getMetricManagerLock() override;
     void registerShutdownListener(ShutdownListener&);
 

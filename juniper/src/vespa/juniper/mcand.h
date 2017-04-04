@@ -4,7 +4,6 @@
 #pragma once
 
 #include "keyocc.h"
-#include <string>
 #include "querynode.h"
 
 class Matcher;
@@ -54,33 +53,33 @@ public:
     keylist _klist;
 
     MatchCandidate(QueryExpr* query, MatchElement** elms, off_t ctxt_start);
-    virtual ~MatchCandidate();
+    ~MatchCandidate();
     void ref() { ++_refcnt; }
     uint32_t deref() { --_refcnt; return _refcnt; }
-    virtual void set_valid();
-    virtual void dump(std::string& s);
+    void set_valid() override;
+    void dump(std::string& s) override;
 
-    inline int elems() const { return _nelems; }
-    inline int elem_store_sz() const { return _elems; }
-    inline int word_distance() const { return _elems ? _endtoken - _starttoken - (_elems - 1) : 0; }
-    inline off_t ctxt_startpos() const { return _ctxt_start; }
-    virtual inline off_t endtoken() const { return _endtoken; }
-    virtual inline off_t endpos() const { return _endpos; }
-    inline ssize_t size() const { return _endpos - _startpos; }
-    inline bool order() const { return _options & X_ORDERED; }
-    inline bool partial_ok() const { return !(_options & X_COMPLETE); }
-    inline QueryExpr* match() { return _match; }
-    inline int weight() const { return _elem_weight; }
-    inline size_t word_length() const { return _endtoken - _starttoken; }
+    int elems() const { return _nelems; }
+    int elem_store_sz() const { return _elems; }
+    int word_distance() const { return _elems ? _endtoken - _starttoken - (_elems - 1) : 0; }
+    off_t ctxt_startpos() const { return _ctxt_start; }
+    off_t endtoken() const override { return _endtoken; }
+    off_t endpos() const override { return _endpos; }
+    ssize_t size() const { return _endpos - _startpos; }
+    bool order() const { return _options & X_ORDERED; }
+    bool partial_ok() const { return !(_options & X_COMPLETE); }
+    QueryExpr* match() { return _match; }
+    int weight() const { return _elem_weight; }
+    size_t word_length() const override { return _endtoken - _starttoken; }
 
-    virtual bool complete();
+    bool complete() override;
     int weight(MatchElement* me, QueryExpr* mexp);
 
-    virtual size_t length() const { return _endpos - _startpos; }
+    size_t length() const override { return _endpos - _startpos; }
 
-    virtual MatchCandidate* Complex() { return this; }
+    MatchCandidate* Complex() override { return this; }
 
-    virtual void add_to_keylist(keylist& kl);
+    void add_to_keylist(keylist& kl) override;
     void make_keylist();
 
     // A simple ranking function for now: Make sure those matches with

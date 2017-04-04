@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("stringfmt_test");
+
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -13,27 +11,14 @@ class Test : public vespalib::TestApp
 {
 public:
     void testSimple();
-    int Main();
+    int Main() override;
 };
-
-/*
-static bool eq(const std::string& a, const std::string& b)
-{
-	if (a == b) {
-		return true;
-	} else {
-		LOG(warning, "a(%s) != b(%s)", a.c_str(), b.c_str());
-		return false;
-	}
-}
-*/
 
 static bool eq(const vespalib::string& a, const vespalib::string& b)
 {
 	if (a == b) {
 		return true;
 	} else {
-		LOG(warning, "a(%s) != b(%s)", a.c_str(), b.c_str());
 		return false;
 	}
 }

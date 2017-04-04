@@ -171,8 +171,7 @@ struct Timer {
 struct TestTimer : public Timer {
     uint64_t & _time;
     TestTimer(uint64_t & timeVar) : _time(timeVar) { }
-    virtual ~TestTimer() {}
-    virtual uint64_t getTimestamp() const { return _time; }
+    uint64_t getTimestamp() const override { return _time; }
 };
 
 class Logger {

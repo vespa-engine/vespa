@@ -1,17 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "inetworkowner.h"
 #include "rpcnetwork.h"
-#include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/iprotocol.h>
 #include <vespa/messagebus/tracelevel.h>
+#include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingnode.h>
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".rpcnetwork");
-
 
 namespace {
 
@@ -37,7 +36,7 @@ public:
         _gate.await();
     }
 
-    void PerformTask() {
+    void PerformTask() override {
         _gate.countDown();
     }
 };

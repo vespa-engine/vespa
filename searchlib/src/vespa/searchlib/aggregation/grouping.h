@@ -40,7 +40,7 @@ private:
 public:
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, Grouping);
     DECLARE_NBO_SERIALIZE;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     Grouping();
     Grouping(const Grouping &);
     Grouping & operator = (const Grouping &);

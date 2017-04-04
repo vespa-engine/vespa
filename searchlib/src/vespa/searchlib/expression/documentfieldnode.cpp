@@ -251,13 +251,13 @@ class String2ResultNode : public ResultNode
 {
 public:
     String2ResultNode(const vespalib::string & s) : _s(s) { }
-    virtual int64_t onGetInteger(size_t index) const { (void) index; return strtoul(_s.c_str(), NULL, 0); }
-    virtual double  onGetFloat(size_t index)   const { (void) index; return strtod(_s.c_str(), NULL); }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const { (void) index; (void) buf; return ConstBufferRef(_s.c_str(), _s.size()); }
+    int64_t onGetInteger(size_t index) const override { (void) index; return strtoul(_s.c_str(), NULL, 0); }
+    double  onGetFloat(size_t index)   const override { (void) index; return strtod(_s.c_str(), NULL); }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; (void) buf; return ConstBufferRef(_s.c_str(), _s.size()); }
 private:
-    virtual String2ResultNode * clone() const { return new String2ResultNode(_s); }
-    virtual void set(const ResultNode&);
-    virtual size_t hash() const { return 0; }
+    String2ResultNode * clone() const override { return new String2ResultNode(_s); }
+    void set(const ResultNode&) override;
+    size_t hash() const override { return 0; }
     const vespalib::string & _s;
 };
 

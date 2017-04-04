@@ -1,17 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.foreachfeature");
 #include "foreachfeature.h"
 #include "valuefeature.h"
 #include "utils.h"
 
 #include <boost/algorithm/string/replace.hpp>
-#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/vstringfmt.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.foreachfeature");
 
 using namespace search::fef;
 
@@ -108,7 +107,7 @@ ForeachBlueprint::setExecutorCreator(CO condition)
         CO _condition;
     public:
         ExecutorCreator(CO cond) : _condition(cond) {}
-        virtual search::fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const {
+        search::fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const override {
             return stash.create<ForeachExecutor<CO, OP>>(_condition,  numInputs);
         }
     };

@@ -5,8 +5,8 @@
  */
 #pragma once
 
+#include "valueupdate.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/update/valueupdate.h>
 
 namespace document {
 
@@ -28,7 +28,7 @@ public:
         : ValueUpdate(),
           _key(key.clone()) {}
 
-    virtual bool operator==(const ValueUpdate& other) const;
+    bool operator==(const ValueUpdate& other) const override;
 
     /**
      * @return The key, whose value to remove during this update. This will be
@@ -48,16 +48,13 @@ public:
     }
 
     // ValueUpdate implementation
-    virtual void checkCompatibility(const Field& field) const;
-    virtual bool applyTo(FieldValue& value) const;
-    virtual void printXml(XmlOutputStream& xos) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual void deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
-                             ByteBuffer& buffer, uint16_t version);
-    virtual RemoveValueUpdate* clone() const
-        { return new RemoveValueUpdate(*this); }
+    void checkCompatibility(const Field& field) const override;
+    bool applyTo(FieldValue& value) const override;
+    void printXml(XmlOutputStream& xos) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
+                     ByteBuffer& buffer, uint16_t version) override;
+    RemoveValueUpdate* clone() const override { return new RemoveValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(RemoveValueUpdate);
 

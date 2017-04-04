@@ -5,20 +5,16 @@
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 
-namespace search
-{
+namespace search {
 
-namespace index
-{
+namespace index {
 
 class PostingListCountFileSeqRead;
-
 class PostingListCountFileSeqWrite;
 
 }
 
-namespace diskindex
-{
+namespace diskindex {
 
 class ZcBuf
 {
@@ -28,66 +24,29 @@ public:
     uint8_t *_mallocStart;
     size_t _mallocSize;
 
-    ZcBuf(void)
+    ZcBuf()
         : _valI(NULL),
           _valE(NULL),
           _mallocStart(NULL),
           _mallocSize(0)
-    {
-    }
+    {}
 
-    ~ZcBuf(void)
-    {
-        free(_mallocStart);
-    }
+    ~ZcBuf() { free(_mallocStart); }
 
+    static size_t zcSlack() { return 4; }
+    void clearReserve(size_t reserveSize);
+    void clear() { _valI = _mallocStart; }
+    size_t capacity() const { return _valE - _mallocStart; }
+    size_t size() const { return _valI - _mallocStart; }
+    size_t pos() const { return _valI - _mallocStart; }
+    void expand();
 
-    static size_t
-    zcSlack(void)
-    {
-        return 4;
-    }
-
-    void
-    clearReserve(size_t reserveSize);
-
-    void
-    clear(void)
-    {
-        _valI = _mallocStart;
-    }
-
-    size_t
-    capacity(void) const
-    {
-        return _valE - _mallocStart;
-    }
-
-    size_t
-    size(void) const
-    {
-        return _valI - _mallocStart;
-    }
-
-    size_t
-    pos(void) const
-    {
-        return _valI - _mallocStart;
-    }
-
-    void
-    expand(void);
-
-    void
-    maybeExpand(void)
-    {
+    void maybeExpand() {
         if (__builtin_expect(_valI >= _valE, false))
             expand();
     }
 
-    void
-    encode(uint32_t num)
-    {
+    void encode(uint32_t num) {
         for (;;) {
             if (num < (1 << 7)) {
                 *_valI++ = num;
@@ -99,9 +58,7 @@ public:
         maybeExpand();
     }
 
-    uint32_t
-    decode(void)
-    {
+    uint32_t decode() {
         uint32_t res;
         uint8_t *valI = _valI;
         if (__builtin_expect(valI[0] < (1 << 7), true)) {
@@ -138,9 +95,7 @@ public:
 class Zc4PostingSeqRead : public index::PostingListFileSeqRead
 {
     Zc4PostingSeqRead(const Zc4PostingSeqRead &);
-
-    Zc4PostingSeqRead &
-    operator=(const Zc4PostingSeqRead &);
+    Zc4PostingSeqRead &operator=(const Zc4PostingSeqRead &);
 
 protected:
     typedef bitcompression::FeatureDecodeContextBE DecodeContext;
@@ -205,8 +160,7 @@ protected:
 public:
     Zc4PostingSeqRead(index::PostingListCountFileSeqRead *countFile);
 
-    virtual
-    ~Zc4PostingSeqRead(void);
+    ~Zc4PostingSeqRead();
 
     typedef index::DocIdAndFeatures DocIdAndFeatures;
     typedef index::PostingListCounts PostingListCounts;
@@ -215,71 +169,20 @@ public:
     /**
      * Read document id and features for common word.
      */
-    virtual void
-    readCommonWordDocIdAndFeatures(DocIdAndFeatures &features);
+    virtual void readCommonWordDocIdAndFeatures(DocIdAndFeatures &features);
 
-    /**
-     * Read document id and features.
-     */
-    virtual void
-    readDocIdAndFeatures(DocIdAndFeatures &features);
-
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
-
-    /**
-     * Read counts for a word.
-     */
-    virtual void
-    readCounts(const PostingListCounts &counts); // Fill in for next word
-
-    /**
-     * Open posting list file for sequential read.
-     */
-    virtual bool
-    open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead);
-
-    /**
-     * Close posting list file.
-     */
-    virtual bool
-    close(void);
-
-    /*
-     * Get current parameters.
-     */
-    virtual void
-    getParams(PostingListParams &params);
-
-    /*
-     * Get current feature parameters.
-     */
-    virtual void
-    getFeatureParams(PostingListParams &params);
-
-    void
-    readWordStartWithSkip(void);
-
-    void
-    readWordStart(void);
-
-    void
-    readHeader(void);
-
-    static const vespalib::string &
-    getIdentifier(void);
+    void readDocIdAndFeatures(DocIdAndFeatures &features) override;
+    void checkPointWrite(vespalib::nbostream &out) override;
+    void checkPointRead(vespalib::nbostream &in) override;
+    void readCounts(const PostingListCounts &counts) override; // Fill in for next word
+    bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) override;
+    bool close() override;
+    void getParams(PostingListParams &params) override;
+    void getFeatureParams(PostingListParams &params) override;
+    void readWordStartWithSkip();
+    void readWordStart();
+    void readHeader();
+    static const vespalib::string &getIdentifier();
 
     // Methods used when generating posting list for common word pairs.
 
@@ -289,8 +192,7 @@ public:
      *
      * @return current posting offset, measured in bits.
      */
-    virtual uint64_t
-    getCurrentPostingOffset(void) const;
+    uint64_t getCurrentPostingOffset() const override;
 
     /**
      * Set current posting offset, measured in bits.  First posting
@@ -301,19 +203,14 @@ public:
      * @param readAheadOffset end of posting list for either this or a
      *				 later word pair, depending on disk seek cost.
      */
-    virtual void
-    setPostingOffset(uint64_t offset,
-                     uint64_t endOffset,
-                     uint64_t readAheadOffset);
+    void setPostingOffset(uint64_t offset, uint64_t endOffset, uint64_t readAheadOffset) override;
 };
 
 
 class Zc4PostingSeqWrite : public index::PostingListFileSeqWrite
 {
     Zc4PostingSeqWrite(const Zc4PostingSeqWrite &);
-
-    Zc4PostingSeqWrite &
-    operator=(const Zc4PostingSeqWrite &);
+    Zc4PostingSeqWrite &operator=(const Zc4PostingSeqWrite &);
 
 protected:
     typedef bitcompression::FeatureEncodeContextBE EncodeContext;
@@ -345,125 +242,58 @@ protected:
     index::PostingListCountFileSeqWrite *const _countFile;
 public:
     Zc4PostingSeqWrite(index::PostingListCountFileSeqWrite *countFile);
-
-    virtual
-    ~Zc4PostingSeqWrite(void);
+    ~Zc4PostingSeqWrite();
 
     typedef index::DocIdAndFeatures DocIdAndFeatures;
     typedef index::PostingListCounts PostingListCounts;
     typedef index::PostingListParams PostingListParams;
 
-    /**
-     * Write document id and features.
-     */
-    virtual void
-    writeDocIdAndFeatures(const DocIdAndFeatures &features);
+    void writeDocIdAndFeatures(const DocIdAndFeatures &features) override;
+    void flushWord() override;
+    void checkPointWrite(vespalib::nbostream &out) override;
+    void checkPointRead(vespalib::nbostream &in) override;
 
-    /**
-     * Flush word (during write) after it is complete to buffers, i.e.
-     * prepare for next word, but not for application crash.
-     */
-    virtual void
-    flushWord(void);
+    bool open(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite,
+              const search::common::FileHeaderContext &fileHeaderContext) override;
 
-    /**
-     * Checkpoint write.  Used at semi-regular intervals during indexing
-     * to allow for continued indexing after an interrupt.  Implies
-     * flush from memory to disk, and possibly also sync to permanent
-     * storage media.
-     */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
-
-    /**
-     * Checkpoint read.  Used when resuming indexing after an interrupt.
-     */
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
-
-    /**
-     * Open posting list file for sequential write.
-     */
-    virtual bool
-    open(const vespalib::string &name,
-         const TuneFileSeqWrite &tuneFileWrite,
-         const search::common::FileHeaderContext &fileHeaderContext);
-
-    /**
-     * Close posting list file.
-     */
-    virtual bool
-    close(void);
-
-    /*
-     * Set parameters.
-     */
-    virtual void
-    setParams(const PostingListParams &params);
-
-    /*
-     * Get current parameters.
-     */
-    virtual void
-    getParams(PostingListParams &params);
-
-    /*
-     * Set feature parameters.
-     */
-    virtual void
-    setFeatureParams(const PostingListParams &params);
-
-    /*
-     * Get current feature parameters.
-     */
-    virtual void
-    getFeatureParams(PostingListParams &params);
+    bool close() override;
+    void setParams(const PostingListParams &params) override;
+    void getParams(PostingListParams &params) override;
+    void setFeatureParams(const PostingListParams &params) override;
+    void getFeatureParams(PostingListParams &params) override;
 
     /**
      * Flush chunk to file.
      */
-    void
-    flushChunk(void);
-
-    /**
-     *
-     */
-    void
-    calcSkipInfo(void);
+    void flushChunk();
+    void calcSkipInfo();
 
     /**
      * Flush word with skip info to disk
      */
-    void
-    flushWordWithSkip(bool hasMore);
+    void flushWordWithSkip(bool hasMore);
 
 
     /**
      * Flush word without skip info to disk.
      */
-    virtual void
-    flushWordNoSkip(void);
+    virtual void flushWordNoSkip();
 
     /**
      * Prepare for next word or next chunk.
      */
-    void
-    resetWord(void);
+    void resetWord();
 
     /**
      * Make header using feature encode write context.
      */
-    void
-    makeHeader(const search::common::FileHeaderContext &fileHeaderContext);
-
-    void
-    updateHeader(void);
+    void makeHeader(const search::common::FileHeaderContext &fileHeaderContext);
+    void updateHeader();
 
     /**
      * Read header, using temporary feature decode context.
      */
-    uint32_t
-    readHeader(const vespalib::string &name);
+    uint32_t readHeader(const vespalib::string &name);
 };
 
 
@@ -471,25 +301,17 @@ class ZcPostingSeqRead : public Zc4PostingSeqRead
 {
 public:
     ZcPostingSeqRead(index::PostingListCountFileSeqRead *countFile);
-
-    virtual void
-    readDocIdAndFeatures(DocIdAndFeatures &features);
-
-    static const vespalib::string &
-    getIdentifier(void);
+    void readDocIdAndFeatures(DocIdAndFeatures &features) override;
+    static const vespalib::string &getIdentifier();
 };
 
 class ZcPostingSeqWrite : public Zc4PostingSeqWrite
 {
 public:
     ZcPostingSeqWrite(index::PostingListCountFileSeqWrite *countFile);
-
-    virtual void
-    flushWordNoSkip(void);
-
+    void flushWordNoSkip() override;
 };
 
 } // namespace diskindex
 
 } // namespace search
-

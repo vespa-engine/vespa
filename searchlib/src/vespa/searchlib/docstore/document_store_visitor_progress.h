@@ -3,20 +3,15 @@
 
 #include "idocumentstore.h"
 
-namespace search
-{
+namespace search {
 
 class DocumentStoreVisitorProgress : public IDocumentStoreVisitorProgress
 {
     double _progress;
 public:
     DocumentStoreVisitorProgress();
-
-    virtual void
-    updateProgress(double progress);
-
-    virtual double
-    getProgress() const;
+    void updateProgress(double progress) override;
+    virtual double getProgress() const;
 };
 
 } // namespace proton

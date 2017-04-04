@@ -47,7 +47,7 @@ public:
           _latch(l), _barrier(b), _traceStack(traceStack),
           _fixture(fixture) {}
 
-    virtual void threadEntry();
+    void threadEntry() override;
     bool getResult() const {
         return _result;
     }

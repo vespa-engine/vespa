@@ -11,7 +11,7 @@
  */
 #pragma once
 
-#include <vespa/document/datatype/primitivedatatype.h>
+#include "primitivedatatype.h"
 
 namespace document {
 
@@ -19,11 +19,8 @@ class NumericDataType : public PrimitiveDataType {
 public:
     NumericDataType(Type type);
 
-        // Implementation of PrimitiveDataType
-    virtual NumericDataType* clone() const
-        { return new NumericDataType(*this); }
-    virtual void print(std::ostream&, bool verbose,
-                       const std::string& indent) const;
+    NumericDataType* clone() const override { return new NumericDataType(*this); }
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(NumericDataType);
 };

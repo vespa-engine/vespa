@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vector>
-#include <vespa/vespalib/util/sync.h>
 #include "cfg.h"
+#include <vespa/vespalib/util/sync.h>
 
 namespace slobrok {
 namespace api {
@@ -24,7 +22,7 @@ public:
      * should be called at least once.
      * @param specList should not be an empty list.
      **/
-    virtual void setup(const std::vector<std::string> &specList);
+    void setup(const std::vector<std::string> &specList) override;
 
     /**
      * retrieve the spec for next slobrok server to try.

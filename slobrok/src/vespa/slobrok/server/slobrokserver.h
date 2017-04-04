@@ -5,11 +5,8 @@
 #include "configshim.h"
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/runnable.h>
-#include <vespa/config/config.h>
-#include <vespa/config-slobroks.h>
 
 namespace slobrok {
-
 
 class SlobrokServer : public vespalib::Runnable
 {
@@ -22,7 +19,7 @@ public:
     SlobrokServer(uint32_t port);
     ~SlobrokServer();
 
-    virtual void run();
+    void run() override;
 
     void stop() { _env.shutdown(); }
 };

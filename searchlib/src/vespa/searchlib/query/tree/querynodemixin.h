@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/query/tree/queryvisitor.h>
+#include "queryvisitor.h"
 
 namespace search {
 namespace query {
@@ -11,8 +11,8 @@ template <typename T, typename Base>
 struct QueryNodeMixin : Base {
     typedef QueryNodeMixin<T, Base> QueryNodeMixinType;
 
-    virtual ~QueryNodeMixin() = 0;
-    virtual void accept(QueryVisitor &visitor) {
+    ~QueryNodeMixin() = 0;
+    void accept(QueryVisitor &visitor) override {
         visitor.visit(static_cast<T &>(*this));
     }
 

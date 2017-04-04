@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <assert.h>
-#include <string.h>
-#include <sstream>
 
 #include "tests.h"
-
+#include <vespa/fastos/file.h>
+#include <vespa/fastos/serversocket.h>
 
 
 #define MAZE_FILE_OFFSET   1078
@@ -877,7 +874,7 @@ public:
       PrintSeparator();
    }
 
-   int Main ()
+   int Main () override
    {
       printf("This test should be run in the 'test/workarea' directory.\n\n");
       printf("grep for the string '%s' to detect failures.\n\n", failString);

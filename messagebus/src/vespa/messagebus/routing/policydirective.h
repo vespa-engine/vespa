@@ -41,10 +41,10 @@ public:
      */
     const string &getParam() const { return _param; }
 
-    virtual Type getType() const { return TYPE_POLICY; }
-    virtual bool matches(const IHopDirective &) const { return true; }
-    virtual string toString() const;
-    virtual string toDebugString() const;
+    Type getType() const override { return TYPE_POLICY; }
+    bool matches(const IHopDirective &) const override { return true; }
+    string toString() const override;
+    string toDebugString() const override;
 };
 
 } // mbus

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "tests.h"
+#include <vespa/fastos/time.h>
 
 class ThreadRunJob;
 void UseSomeCpu(int i, ThreadRunJob *threadRunJob);
@@ -14,7 +15,7 @@ public:
          someNumber * someNumber * someNumber;
    }
 
-   void Run (FastOS_ThreadInterface *thisThread, void *arg)
+   void Run (FastOS_ThreadInterface *thisThread, void *arg) override
    {
       (void)thisThread;
       (void)arg;
@@ -40,7 +41,7 @@ public:
 class UseCpuTest : public BaseTest
 {
 public:
-   int Main ()
+   int Main () override
    {
       FastOS_ThreadPool pool(128*1024);
       pool.NewThread(new ThreadRunJob());

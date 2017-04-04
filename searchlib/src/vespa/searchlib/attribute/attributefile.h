@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/attribute/attributevector.h>
+#include "attributevector.h"
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 
@@ -33,10 +33,9 @@ public:
     class FixedRecord : public Record
     {
     public:
-        virtual size_t getValueCount() const { return _data.size(); }
+        size_t getValueCount() const override { return _data.size(); }
     private:
-        virtual void
-        setValue(const void * v, size_t len) {
+        void setValue(const void * v, size_t len) override {
             assert(len == sizeof(T));
             (void) len;
             _data.resize(1);
@@ -44,8 +43,8 @@ public:
             _data[0] = * static_cast<const T *>(v);
         }
 
-        virtual bool onWrite(AttributeFile & dest) const;
-        virtual bool onRead(AttributeFile & src, size_t numValues);
+        bool onWrite(AttributeFile & dest) const override;
+        bool onRead(AttributeFile & src, size_t numValues) override;
 
         std::vector<T>       _data;
     };
@@ -53,19 +52,17 @@ public:
     class VariableRecord : public Record
     {
     public:
-        virtual size_t
-        getValueCount() const;
+        size_t getValueCount() const override;
     private:
-        virtual void setValue(const void * v, size_t len);
-        virtual bool onWrite(AttributeFile & dest) const;
-        virtual bool onRead(AttributeFile & src, size_t numValues);
+        void setValue(const void * v, size_t len) override;
+        bool onWrite(AttributeFile & dest) const override;
+        bool onRead(AttributeFile & src, size_t numValues) override;
         std::vector<char>    _data;
     };
 protected:
     typedef attribute::Config Config;
 public:
     AttributeFile(const vespalib::string & fileName, const Config & config);
-
     ~AttributeFile(void);
 
     std::unique_ptr<Record> getRecord();
@@ -74,9 +71,7 @@ public:
     void enableDirectIO();
 protected:
     void OpenReadOnly();
-    void OpenWriteOnly(const search::common::FileHeaderContext &
-                       fileHeaderContext,
-                       uint32_t docIdLimit);
+    void OpenWriteOnly(const search::common::FileHeaderContext &fileHeaderContext, uint32_t docIdLimit);
     void Close(void);
     bool seekIdxPos(size_t idxPos);
 private:

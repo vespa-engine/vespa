@@ -36,7 +36,7 @@ public:
     ManagedRpcServer(const char *name,
                      const char *spec,
                      IRpcServerManager &manager);
-    virtual ~ManagedRpcServer();
+    ~ManagedRpcServer();
 
     void healthCheck();
 
@@ -50,8 +50,8 @@ private:
     bool validateRpcServer(uint32_t numstrings,
                            FRT_StringValue *strings);
 public:
-    virtual void RequestDone(FRT_RPCRequest *req);
-    virtual void notifyDisconnected(); // lost connection to service
+    void RequestDone(FRT_RPCRequest *req) override;
+    void notifyDisconnected() override; // lost connection to service
 };
 
 //-----------------------------------------------------------------------------

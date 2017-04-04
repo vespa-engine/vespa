@@ -11,10 +11,10 @@
 
 #pragma once
 
-#include <map>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/sync.h>
+#include <map>
 
 namespace storage {
 namespace framework {
@@ -29,9 +29,8 @@ public:
     SimpleMemoryTokenImpl & operator = (const SimpleMemoryTokenImpl &) = delete;
     SimpleMemoryTokenImpl(uint64_t allocated) : _allocated(allocated) {}
 
-    virtual uint64_t getSize() const { return _allocated; }
-    virtual bool resize(uint64_t /* min */, uint64_t max)
-        { _allocated = max; return true; }
+    uint64_t getSize() const override { return _allocated; }
+    bool resize(uint64_t /* min */, uint64_t max) override { _allocated = max; return true; }
 };
 
 class NoMemoryManager : public MemoryManagerInterface
@@ -42,29 +41,21 @@ class NoMemoryManager : public MemoryManagerInterface
 public:
     typedef std::unique_ptr<NoMemoryManager> UP;
 
-    virtual void setMaximumMemoryUsage(uint64_t) {}
+    void setMaximumMemoryUsage(uint64_t) override {}
+    const MemoryAllocationType & registerAllocationType(const MemoryAllocationType& type) override;
+    const MemoryAllocationType & getAllocationType(const std::string& name) const override;
 
-    virtual const MemoryAllocationType&
-    registerAllocationType(const MemoryAllocationType& type);
-
-    virtual const MemoryAllocationType&
-    getAllocationType(const std::string& name) const;
-
-    MemoryToken::UP allocate(
-            const MemoryAllocationType&,
-            uint64_t /* min */,
-            uint64_t max,
-            uint8_t /* priority */,
-            ReduceMemoryUsageInterface* = 0)
+    MemoryToken::UP allocate(const MemoryAllocationType&, uint64_t /* min */, uint64_t max,
+                             uint8_t /* priority */, ReduceMemoryUsageInterface* = 0) override
     {
         return SimpleMemoryTokenImpl::UP(new SimpleMemoryTokenImpl(max));
     }
-    virtual uint64_t getMemorySizeFreeForPriority(uint8_t priority) const {
+    uint64_t getMemorySizeFreeForPriority(uint8_t priority) const override {
         (void) priority;
         return std::numeric_limits<uint64_t>().max();
     }
 
-    virtual std::vector<const MemoryAllocationType*> getAllocationTypes() const;
+    std::vector<const MemoryAllocationType*> getAllocationTypes() const override;
 };
 
 } // defaultimplementation

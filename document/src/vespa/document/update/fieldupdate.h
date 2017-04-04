@@ -79,11 +79,10 @@ public:
     void applyTo(Document& doc) const;
 
     // Printable implementation
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     // XmlSerializable implementation
-    void printXml(XmlOutputStream&) const;
+    void printXml(XmlOutputStream&) const override;
 
     /**
      * Deserializes the given byte buffer into an instance of an update object.

@@ -12,14 +12,14 @@ namespace {
 struct FastOSTestThreadRunner : FastOS_Runnable {
     TestThreadEntry &entry;
     FastOSTestThreadRunner(TestThreadEntry &entry_in) : entry(entry_in) {}
-    virtual bool DeleteOnCompletion() const { return true; }
-    virtual void Run(FastOS_ThreadInterface *, void *) { entry.threadEntry(); }
+    bool DeleteOnCompletion() const override { return true; }
+    void Run(FastOS_ThreadInterface *, void *) override { entry.threadEntry(); }
 };
 
 struct FastOSTestThreadFactory : TestThreadFactory {
     FastOS_ThreadPool threadPool;
     FastOSTestThreadFactory() : threadPool(256 * 1024) {}
-    virtual void createThread(TestThreadEntry &entry) {
+    void createThread(TestThreadEntry &entry) override {
         threadPool.NewThread(new FastOSTestThreadRunner(entry), 0);
     }
 };

@@ -175,7 +175,7 @@ private:
 public:
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, Group);
     DECLARE_NBO_SERIALIZE;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     Group();
     Group(const Group & rhs);
     Group & operator =(const Group & rhs);

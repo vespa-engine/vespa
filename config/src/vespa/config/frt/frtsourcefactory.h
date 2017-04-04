@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/common/sourcefactory.h>
-#include <vespa/config/common/timingvalues.h>
 #include "connectionfactory.h"
 #include "frtconfigrequestfactory.h"
+#include <vespa/config/common/sourcefactory.h>
+#include <vespa/config/common/timingvalues.h>
 
 namespace config {
 
@@ -19,7 +19,7 @@ public:
     /**
      * Create source handling config described by key.
      */
-    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const;
+    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override;
 
 private:
     ConnectionFactory::SP _connectionFactory;

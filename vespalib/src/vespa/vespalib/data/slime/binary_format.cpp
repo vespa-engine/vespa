@@ -68,8 +68,8 @@ struct BinaryEncoder : public ArrayTraverser,
             out.write(image.data, image.size);
         }
     }
-    virtual void entry(size_t, const Inspector &inspector);
-    virtual void field(const Symbol &symbol, const Inspector &inspector);
+    void entry(size_t, const Inspector &inspector) override;
+    void field(const Symbol &symbol, const Inspector &inspector) override;
 };
 
 void

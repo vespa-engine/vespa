@@ -12,7 +12,7 @@ struct MySource : public DualMergeDirector::Source {
 
     MySource(bool a, size_t num_sources, size_t source_id);
     ~MySource();
-    virtual void merge(Source &mt) {
+    void merge(Source &mt) override {
         MySource &rhs = static_cast<MySource&>(mt);
         ASSERT_EQUAL(typeA, rhs.typeA);
         ASSERT_EQUAL(data.size(), rhs.data.size());

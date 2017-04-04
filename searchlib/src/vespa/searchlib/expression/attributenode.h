@@ -67,7 +67,7 @@ public:
         bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
     };
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     DECLARE_EXPRESSIONNODE(AttributeNode);
     AttributeNode();
     AttributeNode(const vespalib::stringref &name);

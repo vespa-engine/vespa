@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <vespa/document/datatype/collectiondatatype.h>
+#include "collectiondatatype.h"
 
 namespace document {
 
@@ -23,15 +23,11 @@ public:
     explicit ArrayDataType(const DataType &nestedType);
     ArrayDataType(const DataType &nestedType, int32_t id);
 
-        // CollectionDataType implementation
-    virtual std::unique_ptr<FieldValue> createFieldValue() const;
-    virtual void print(std::ostream&, bool verbose,
-                       const std::string& indent) const;
-    virtual bool operator==(const DataType& other) const;
-    virtual ArrayDataType* clone() const { return new ArrayDataType(*this); }
-
-    FieldPath::UP onBuildFieldPath(
-            const vespalib::stringref & remainFieldName) const;
+    std::unique_ptr<FieldValue> createFieldValue() const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    bool operator==(const DataType& other) const override;
+    ArrayDataType* clone() const override { return new ArrayDataType(*this); }
+    FieldPath::UP onBuildFieldPath(const vespalib::stringref & remainFieldName) const override;
 
     DECLARE_IDENTIFIABLE(ArrayDataType);
 };

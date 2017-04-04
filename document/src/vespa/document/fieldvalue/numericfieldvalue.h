@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include <vespa/document/fieldvalue/fieldvalue.h>
+#include "fieldvalue.h"
 #include <vespa/vespalib/stllike/hash_fun.h>
 
 namespace document {
@@ -19,7 +19,7 @@ class NumericFieldValueBase : public FieldValue
 {
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(NumericFieldValueBase);
-    virtual void printXml(XmlOutputStream& out) const;
+    void printXml(XmlOutputStream& out) const override;
 };
 
 template<typename Number>
@@ -44,7 +44,7 @@ public:
     FieldValue& operator=(int64_t) override;
     FieldValue& operator=(float) override;
     FieldValue& operator=(double) override;
-    size_t hash() const { return vespalib::hash<Number>()(_value); }
+    size_t hash() const override { return vespalib::hash<Number>()(_value); }
 
     char getAsByte() const override;
     int32_t getAsInt() const override;
@@ -54,7 +54,7 @@ public:
     vespalib::string getAsString() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    virtual bool hasChanged() const override { return _altered; }
+    bool hasChanged() const override { return _altered; }
 };
 
 } // document

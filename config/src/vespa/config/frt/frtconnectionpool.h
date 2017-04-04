@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "frtconnection.h"
+#include "connectionfactory.h"
+#include <vespa/config/subscription/sourcespec.h>
+#include <vespa/fnet/frt/frt.h>
 #include <vector>
 #include <string>
 #include <map>
-#include <vespa/fnet/frt/frt.h>
-#include "frtconnection.h"
-#include <vespa/config/subscription/sourcespec.h>
-#include "connectionfactory.h"
-
 namespace config {
 
 class FRTConnectionPool : public ConnectionFactory {
@@ -43,7 +42,7 @@ public:
     FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues);
     ~FRTConnectionPool();
 
-    void syncTransport();
+    void syncTransport() override;
 
     /**
      * Sets the hostname to the host where this program is running.
@@ -57,7 +56,7 @@ public:
      */
     void setHostname(const vespalib::string & hostname) { _hostname = hostname; }
 
-    FNET_Scheduler * getScheduler() { return _supervisor.GetScheduler(); }
+    FNET_Scheduler * getScheduler() override { return _supervisor.GetScheduler(); }
 
     /**
      * Gets the hostname.
@@ -81,7 +80,7 @@ public:
      *
      * @return The next FRTConnection instance in the list.
      */
-    Connection* getCurrent();
+    Connection* getCurrent() override;
 
     /**
      * Returns the next FRTConnection instance from the list of error-free sources in a round robin

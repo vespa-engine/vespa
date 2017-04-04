@@ -22,14 +22,12 @@ class InvalidConstant : public Node
 public:
     explicit InvalidConstant(const vespalib::stringref &value);
 
-    virtual ResultList contains(const Context&) const
-        { return ResultList(Result::Invalid); }
-    virtual ResultList trace(const Context&, std::ostream& trace) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual void visit(Visitor& v) const;
+    ResultList contains(const Context&) const override { return ResultList(Result::Invalid); }
+    ResultList trace(const Context&, std::ostream& trace) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& v) const override;
 
-    Node::UP clone() const { return wrapParens(new InvalidConstant(_name)); }
+    Node::UP clone() const override { return wrapParens(new InvalidConstant(_name)); }
 
 };
 

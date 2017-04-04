@@ -50,14 +50,14 @@ private:
         bool last;
         MixedMergeStateExchanger(bool v) :
             Rendezvous<MergeState, MergeState>(2), last(v) {}
-        virtual void mingle();
+        void mingle() override;
     };
 
     struct MergeStateExchanger : Rendezvous<MergeState, MergeState> {
         size_t remaining;
         MergeStateExchanger(size_t r) :
             Rendezvous<MergeState, MergeState>(2), remaining(r) {}
-        virtual void mingle();
+        void mingle() override;
     };
 
     size_t                   _num_threads;

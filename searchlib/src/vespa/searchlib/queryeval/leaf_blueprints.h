@@ -16,9 +16,9 @@ namespace queryeval {
 class EmptyBlueprint : public SimpleLeafBlueprint
 {
 protected:
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const;
+                     bool strict) const override;
 
 public:
     EmptyBlueprint(const FieldSpecBaseList &fields);
@@ -35,9 +35,9 @@ private:
     SimpleResult _result;
 
 protected:
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const;
+                     bool strict) const override;
 
 public:
     SimpleBlueprint(const SimpleResult &result);
@@ -56,9 +56,9 @@ private:
     FakeResult  _result;
 
 protected:
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const;
+                     bool strict) const override;
 
 public:
     FakeBlueprint(const FieldSpec &field,

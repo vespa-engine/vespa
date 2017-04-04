@@ -1,26 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author          Markus Bjartveit Kr�ger
-* @date            Creation date: 2001-10-30
-* @version         $Id$
-*
-* @file
-*
-* Generic buffered output stream
-*
-* Copyright (c)  : 2001 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+
 #pragma once
 
 #include <vespa/fastlib/io/filteroutputstream.h>
-
-
-
-
 
 class Fast_BufferedOutputStream : public Fast_FilterOutputStream
 {
@@ -47,15 +29,10 @@ class Fast_BufferedOutputStream : public Fast_FilterOutputStream
     Fast_BufferedOutputStream(Fast_OutputStream &out, size_t bufferSize = 1024);
 
     // Destructor
-    virtual ~Fast_BufferedOutputStream(void);
+    ~Fast_BufferedOutputStream();
 
     // Methods
-    virtual bool     Close(void);
-    virtual ssize_t  Write(const void *sourceBuffer, size_t length);
-    virtual void     Flush(void);
-
+    bool     Close() override;
+    ssize_t  Write(const void *sourceBuffer, size_t length) override;
+    void     Flush() override;
 };
-
-
-
-

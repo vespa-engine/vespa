@@ -42,9 +42,9 @@ public:
 private:
     ParametersMap _parameters;
 
-    void onSerialize(document::ByteBuffer& buffer) const;
-    void onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer);
-    void printXml(document::XmlOutputStream& xos) const;
+    void onSerialize(document::ByteBuffer& buffer) const override;
+    void onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer) override;
+    void printXml(document::XmlOutputStream& xos) const override;
 
 public:
     Parameters();
@@ -53,9 +53,9 @@ public:
 
     bool operator==(const Parameters &other) const;
 
-    Parameters* clone() const;
+    Parameters* clone() const override;
 
-    size_t getSerializedSize() const;
+    size_t getSerializedSize() const override;
 
     bool hasValue(const KeyT & id)                const { return (_parameters.find(id) != _parameters.end()); }
     unsigned int size()                           const { return _parameters.size(); }

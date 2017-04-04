@@ -27,7 +27,7 @@ private:
 
     void setTime() const;
 
-    virtual void Run(FastOS_ThreadInterface *thisThread, void *arguments);
+    void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
 
 public:
     Clock(double timePeriod=0.100);

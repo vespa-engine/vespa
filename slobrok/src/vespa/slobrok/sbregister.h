@@ -75,13 +75,13 @@ private:
     bool match(const char *name, const char *pattern);
 
     /** from FNET_Task, poll slobrok **/
-    void PerformTask();
+    void PerformTask() override;
     void handleReqDone();   // implementation detail of PerformTask
     void handleReconnect(); // implementation detail of PerformTask
     void handlePending();   // implementation detail of PerformTask
 
     /** from FRT_IRequestWait **/
-    void RequestDone(FRT_RPCRequest *req);
+    void RequestDone(FRT_RPCRequest *req) override;
 
     FRT_Supervisor          &_orb;
     RPCHooks                 _hooks;

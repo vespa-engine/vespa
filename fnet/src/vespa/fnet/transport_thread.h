@@ -41,7 +41,7 @@ public:
         StatsTask(FNET_Scheduler *scheduler,
                   FNET_TransportThread *transport) : FNET_Task(scheduler),
                                                      _transport(transport) {}
-        virtual void PerformTask();
+        void PerformTask() override;
     };
     friend class FNET_TransportThread::StatsTask;
 #endif // DOXYGEN
@@ -624,5 +624,5 @@ public:
      * to combine the FNET event loop with your own, you may use the
      * @ref InitEventLoop and @ref EventLoopIteration methods directly.
      **/
-    void Run(FastOS_ThreadInterface *thisThread, void *args);
+    void Run(FastOS_ThreadInterface *thisThread, void *args) override;
 };

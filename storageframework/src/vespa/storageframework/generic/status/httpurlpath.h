@@ -10,7 +10,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <map>
-#include <string>
 
 namespace storage {
 namespace framework {
@@ -43,15 +42,13 @@ public:
     template<typename T>
     T get(const vespalib::string& id, const T& defaultValue = T()) const;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 template<typename T>
 T HttpUrlPath::get(const vespalib::string& id, const T& defaultValue) const
 {
-    std::map<vespalib::string, vespalib::string>::const_iterator it
-            = _attributes.find(id);
+    std::map<vespalib::string, vespalib::string>::const_iterator it = _attributes.find(id);
     if (it == _attributes.end()) return defaultValue;
     T val;
     std::istringstream ist(it->second);

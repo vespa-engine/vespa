@@ -24,18 +24,14 @@ public:
     ThreadPoolImpl(Clock&);
     ~ThreadPoolImpl();
 
-    Thread::UP startThread(Runnable&,
-                           vespalib::stringref id,
-			   uint64_t waitTimeMs,
-			   uint64_t maxProcessTime,
-			   int ticksBeforeWait);
-    void visitThreads(ThreadVisitor&) const;
+    Thread::UP startThread(Runnable&, vespalib::stringref id, uint64_t waitTimeMs,
+						   uint64_t maxProcessTime, int ticksBeforeWait) override;
+    void visitThreads(ThreadVisitor&) const override;
 
     void registerThread(ThreadImpl&);
     void unregisterThread(ThreadImpl&);
     FastOS_ThreadPool& getThreadPool() { return _backendThreadPool; }
     Clock& getClock() { return _clock; }
-
 };
 
 } // defaultimplementation

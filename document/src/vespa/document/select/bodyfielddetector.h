@@ -24,22 +24,22 @@ public:
     bool foundBodyField;
     bool foundHeaderField;
 
-    virtual void visitDocumentType(const DocType&) {
+    void visitDocumentType(const DocType&) override {
             // Need to deserialize header to know document type
         foundHeaderField = true;
     }
 
-    void visitFieldValueNode(const FieldValueNode& expr);
+    void visitFieldValueNode(const FieldValueNode& expr) override;
 };
 
 class NeedDocumentDetector : public TraversingVisitor
 {
 private:
     bool _needDocument;
-    virtual void visitDocumentType(const DocType &) {
+    void visitDocumentType(const DocType &) override {
         _needDocument = true;
     }
-    virtual void visitFieldValueNode(const FieldValueNode &) {
+    void visitFieldValueNode(const FieldValueNode &) override {
         _needDocument = true;
     }
 public:

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <stdint.h>
 #include "ihopdirective.h"
 
 namespace mbus {
@@ -50,10 +49,10 @@ public:
      */
     const string &getSession() const { return _session; }
 
-    virtual Type getType() const { return TYPE_TCP; }
-    virtual bool matches(const IHopDirective &dir) const;
-    virtual string toString() const;
-    virtual string toDebugString() const;
+    Type getType() const override { return TYPE_TCP; }
+    bool matches(const IHopDirective &dir) const override;
+    string toString() const override;
+    string toDebugString() const override;
 };
 
 } // mbus

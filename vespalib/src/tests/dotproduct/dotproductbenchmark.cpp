@@ -30,7 +30,7 @@ class FullBenchmark : public Benchmark
 public:
     FullBenchmark(size_t numDocs, size_t numValue);
     ~FullBenchmark();
-    virtual void compute(size_t docId) const {
+    void compute(size_t docId) const override {
         _dp->dotProduct(&_query[0], &_values[docId * _query.size()], _query.size());
     }
 private:
@@ -97,7 +97,7 @@ public:
     UnorderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
     ~UnorderedSparseBenchmark();
 private:
-    virtual void compute(size_t docId) const {
+    void compute(size_t docId) const override {
         int64_t sum(0);
         size_t offset(docId*_numValues);
         const auto e(_query.end());
@@ -127,7 +127,7 @@ public:
     OrderedSparseBenchmark(size_t numDocs, size_t numValues, size_t numQueryValues);
     ~OrderedSparseBenchmark();
 private:
-    virtual void compute(size_t docId) const {
+    void compute(size_t docId) const override {
         int64_t sum(0);
         size_t offset(docId*_numValues);
 

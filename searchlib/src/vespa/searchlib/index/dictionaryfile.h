@@ -21,18 +21,13 @@ class DictionaryFileSeqRead : public PostingListCountFileSeqRead
 {
 public:
     DictionaryFileSeqRead() { }
-    virtual ~DictionaryFileSeqRead();
+    ~DictionaryFileSeqRead();
 
     /**
      * Read word and counts.  Only nonzero counts are returned. If at
      * end of dictionary then noWordNumHigh() is returned as word number.
      */
     virtual void readWord(vespalib::string &word, uint64_t &wordNum, PostingListCounts &counts) = 0;
-
-    /**
-     * Open dictionary file for sequential read.
-     */
-    virtual bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
 
     static uint64_t noWordNum() { return 0u; }
 
@@ -49,7 +44,7 @@ class DictionaryFileSeqWrite : public PostingListCountFileSeqWrite
 protected:
 public:
     DictionaryFileSeqWrite() { }
-    virtual ~DictionaryFileSeqWrite();
+    ~DictionaryFileSeqWrite();
 
     /**
      * Write word and counts.  Only nonzero counts should be supplied.
@@ -93,4 +88,3 @@ protected:
 } // namespace index
 
 } // namespace search
-

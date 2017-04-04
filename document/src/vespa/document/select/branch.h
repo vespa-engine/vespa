@@ -24,7 +24,7 @@ class Branch : public Node
 public:
     Branch(const vespalib::stringref & name) : Node(name) {}
 
-    virtual bool isLeafNode() const { return false; }
+    bool isLeafNode() const override { return false; }
 };
 
 class And : public Branch
@@ -35,20 +35,18 @@ public:
     And(std::unique_ptr<Node> left, std::unique_ptr<Node> right,
         const char* name = 0);
 
-    virtual ResultList contains(const Context& context) const
-        { return (_left->contains(context) && _right->contains(context)); }
-    virtual ResultList trace(const Context&, std::ostream& trace) const;
-    virtual void visit(Visitor &v) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    ResultList contains(const Context& context) const override {
+        return (_left->contains(context) && _right->contains(context));
+    }
+    ResultList trace(const Context&, std::ostream& trace) const override;
+    void visit(Visitor &v) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getLeft() const { return *_left; }
     const Node& getRight() const { return *_right; }
 
-    Node::UP clone() const {
-        return wrapParens(new And(_left->clone(),
-                                  _right->clone(),
-                                  _name.c_str()));
+    Node::UP clone() const  override{
+        return wrapParens(new And(_left->clone(), _right->clone(), _name.c_str()));
     }
 };
 
@@ -60,20 +58,18 @@ public:
     Or(std::unique_ptr<Node> left, std::unique_ptr<Node> right,
         const char* name = 0);
 
-    virtual ResultList contains(const Context& context) const
-        { return (_left->contains(context) || _right->contains(context)); }
-    virtual ResultList trace(const Context&, std::ostream& trace) const;
-    virtual void visit(Visitor &v) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    ResultList contains(const Context& context) const  override {
+        return (_left->contains(context) || _right->contains(context));
+    }
+    ResultList trace(const Context&, std::ostream& trace) const override;
+    void visit(Visitor &v) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getLeft() const { return *_left; }
     const Node& getRight() const { return *_right; }
 
-    Node::UP clone() const {
-        return wrapParens(new Or(_left->clone(),
-                                 _right->clone(),
-                                 _name.c_str()));
+    Node::UP clone() const override {
+        return wrapParens(new Or(_left->clone(), _right->clone(), _name.c_str()));
     }
 };
 
@@ -83,16 +79,14 @@ class Not : public Branch
 public:
     Not(std::unique_ptr<Node> child, const char* name = 0);
 
-    virtual ResultList contains(const Context& context) const
-        { return !_child->contains(context); }
-    virtual ResultList trace(const Context&, std::ostream& trace) const;
-    virtual void visit(Visitor &v) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    ResultList contains(const Context& context) const override { return !_child->contains(context); }
+    ResultList trace(const Context&, std::ostream& trace) const override;
+    void visit(Visitor &v) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const Node& getChild() const { return *_child; }
 
-    Node::UP clone() const {
+    Node::UP clone() const override {
         return wrapParens(new Not(_child->clone(), _name.c_str()));
     }
 };

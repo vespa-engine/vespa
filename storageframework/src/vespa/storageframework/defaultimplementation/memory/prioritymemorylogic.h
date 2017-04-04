@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
+#include "simplememorylogic.h"
 #include <vespa/vespalib/util/sync.h>
 
 namespace storage {
@@ -19,11 +19,8 @@ namespace defaultimplementation {
 struct PriorityMemoryLogic : public SimpleMemoryLogic
 {
     PriorityMemoryLogic(Clock&, uint64_t maxMemory);
-
-    virtual float getNonCacheThreshold(uint8_t priority) const;
-
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    float getNonCacheThreshold(uint8_t priority) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // defaultimplementation

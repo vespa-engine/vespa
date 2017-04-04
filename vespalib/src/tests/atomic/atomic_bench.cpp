@@ -1,20 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("atomic_bench");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vector>
 #include <algorithm>
 #include <sstream>
 
+#include <vespa/log/log.h>
+LOG_SETUP("atomic_bench");
 
 class Test : public vespalib::TestApp
 {
 public:
     template<typename C, typename T>
     void testInc(size_t threads, size_t loops);
-    int Main();
+    int Main() override;
 };
 
 template <typename T>
@@ -33,7 +33,7 @@ class Incrementer : public Changer<T>
 {
 public:
     Incrementer(int times, T *data) : Changer<T>(times, data) {}
-    void Run(FastOS_ThreadInterface *, void *) {
+    void Run(FastOS_ThreadInterface *, void *) override {
         using vespalib::Atomic;
         for (int i = 0; i < this->_times; ++i) {
             Atomic::postInc(this->_idata);
@@ -46,7 +46,7 @@ class IncrementerByCmpSwap : public Changer<T>
 {
 public:
     IncrementerByCmpSwap(int times, T *data) : Changer<T>(times, data) {}
-    void Run(FastOS_ThreadInterface *, void *) {
+    void Run(FastOS_ThreadInterface *, void *) override {
         using vespalib::Atomic;
         T oldVal(0);
         for (int i = 0; i < this->_times; ++i) {

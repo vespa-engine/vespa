@@ -29,56 +29,56 @@ protected:
     virtual Cursor &setLeaf(Memory name, const ValueFactory &input);
 
 public:
-    virtual bool valid() const;
-    virtual Type type() const;
-    virtual size_t children() const;
-    virtual size_t entries() const;
-    virtual size_t fields() const;
+    bool valid() const override;
+    Type type() const override;
+    size_t children() const override;
+    size_t entries() const override;
+    size_t fields() const override;
 
-    virtual bool asBool() const;
-    virtual int64_t asLong() const;
-    virtual double asDouble() const;
-    virtual Memory asString() const;
-    virtual Memory asData() const;
+    bool asBool() const override;
+    int64_t asLong() const override;
+    double asDouble() const override;
+    Memory asString() const override;
+    Memory asData() const override;
 
-    virtual void traverse(ArrayTraverser &at) const;
-    virtual void traverse(ObjectSymbolTraverser &ot) const;
-    virtual void traverse(ObjectTraverser &ot) const;
+    void traverse(ArrayTraverser &at) const override;
+    void traverse(ObjectSymbolTraverser &ot) const override;
+    void traverse(ObjectTraverser &ot) const override;
 
-    virtual vespalib::string toString() const override;
+    vespalib::string toString() const override;
 
-    virtual Cursor &operator[](size_t idx) const;
-    virtual Cursor &operator[](Symbol sym) const;
-    virtual Cursor &operator[](Memory name) const;
+    Cursor &operator[](size_t idx) const override;
+    Cursor &operator[](Symbol sym) const override;
+    Cursor &operator[](Memory name) const override;
 
-    virtual Cursor &addNix();
-    virtual Cursor &addBool(bool bit);
-    virtual Cursor &addLong(int64_t l);
-    virtual Cursor &addDouble(double d);
-    virtual Cursor &addString(Memory str);
-    virtual Cursor &addData(Memory data);
-    virtual Cursor &addArray();
-    virtual Cursor &addObject();
+    Cursor &addNix() override;
+    Cursor &addBool(bool bit) override;
+    Cursor &addLong(int64_t l) override;
+    Cursor &addDouble(double d) override;
+    Cursor &addString(Memory str) override;
+    Cursor &addData(Memory data) override;
+    Cursor &addArray() override;
+    Cursor &addObject() override;
 
-    virtual Cursor &setNix(Symbol sym);
-    virtual Cursor &setBool(Symbol sym, bool bit);
-    virtual Cursor &setLong(Symbol sym, int64_t l);
-    virtual Cursor &setDouble(Symbol sym, double d);
-    virtual Cursor &setString(Symbol sym, Memory str);
-    virtual Cursor &setData(Symbol sym, Memory data);
-    virtual Cursor &setArray(Symbol sym);
-    virtual Cursor &setObject(Symbol sym);
+    Cursor &setNix(Symbol sym) override;
+    Cursor &setBool(Symbol sym, bool bit) override;
+    Cursor &setLong(Symbol sym, int64_t l) override;
+    Cursor &setDouble(Symbol sym, double d) override;
+    Cursor &setString(Symbol sym, Memory str) override;
+    Cursor &setData(Symbol sym, Memory data) override;
+    Cursor &setArray(Symbol sym) override;
+    Cursor &setObject(Symbol sym) override;
 
-    virtual Cursor &setNix(Memory name);
-    virtual Cursor &setBool(Memory name, bool bit);
-    virtual Cursor &setLong(Memory name, int64_t l);
-    virtual Cursor &setDouble(Memory name, double d);
-    virtual Cursor &setString(Memory name, Memory str);
-    virtual Cursor &setData(Memory name, Memory str);
-    virtual Cursor &setArray(Memory name);
-    virtual Cursor &setObject(Memory name);
+    Cursor &setNix(Memory name) override;
+    Cursor &setBool(Memory name, bool bit) override;
+    Cursor &setLong(Memory name, int64_t l) override;
+    Cursor &setDouble(Memory name, double d) override;
+    Cursor &setString(Memory name, Memory str) override;
+    Cursor &setData(Memory name, Memory str) override;
+    Cursor &setArray(Memory name) override;
+    Cursor &setObject(Memory name) override;
 
-    virtual Symbol resolve(Memory symbol_name);
+    Symbol resolve(Memory symbol_name) override;
 };
 
 } // namespace vespalib::slime

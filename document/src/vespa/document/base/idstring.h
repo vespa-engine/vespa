@@ -41,8 +41,8 @@ public:
     static IdString::UP createIdString(const vespalib::stringref & id) { return createIdString(id.c_str(), id.size()); }
     static IdString::UP createIdString(const char *id, size_t sz);
 
-    virtual ~IdString() {}
-    IdString* clone() const = 0;
+    ~IdString() {}
+    IdString* clone() const override = 0;
 
     virtual Type        getType() const = 0;
     vespalib::stringref getNamespace() const { return getComponent(0); }
@@ -87,15 +87,15 @@ private:
     vespalib::string _rawId;
 };
 
-class NullIdString : public IdString
+class NullIdString final : public IdString
 {
 public:
     NullIdString() : IdString(2, 5, "null::") { }
 private:
-    IdString* clone() const { return new NullIdString(); }
-    virtual LocationType getLocation() const { return 0; }
-    virtual Type getType() const { return NULLID; }
-    virtual vespalib::stringref getNamespaceSpecific() const { return getComponent(1); }
+    IdString* clone() const override { return new NullIdString(); }
+    LocationType getLocation() const override { return 0; }
+    Type getType() const override { return NULLID; }
+    vespalib::stringref getNamespaceSpecific() const override { return getComponent(1); }
 };
 
 /**
@@ -108,7 +108,7 @@ private:
  * as the location of a doc identifier is a hash of the entire URI.
  * This scheme also contains the DocumentType.
  */
-class IdIdString : public IdString {
+class IdIdString final : public IdString {
     LocationType _location;
     uint16_t     _groupOffset;
     bool         _has_number;
@@ -116,19 +116,20 @@ class IdIdString : public IdString {
 public:
     IdIdString(const vespalib::stringref &ns);
 
-    virtual bool hasDocType() const { return true; }
-    virtual vespalib::stringref getDocType() const { return getComponent(1); }
-    virtual IdIdString* clone() const { return new IdIdString(*this); }
-    virtual LocationType getLocation() const { return _location; }
-    virtual bool hasNumber() const { return _has_number; }
-    virtual uint64_t getNumber() const { return _location; }
-    virtual bool hasGroup() const { return _groupOffset != 0; }
-
-    virtual vespalib::stringref getGroup() const { return vespalib::stringref(getRawId().c_str() + _groupOffset, offset(3) - _groupOffset - 1); }
+    bool hasDocType() const override { return true; }
+    vespalib::stringref getDocType() const override { return getComponent(1); }
+    IdIdString* clone() const override { return new IdIdString(*this); }
+    LocationType getLocation() const override { return _location; }
+    bool hasNumber() const override { return _has_number; }
+    uint64_t getNumber() const override { return _location; }
+    bool hasGroup() const override { return _groupOffset != 0; }
+    vespalib::stringref getGroup() const override {
+        return vespalib::stringref(getRawId().c_str() + _groupOffset, offset(3) - _groupOffset - 1);
+    }
 private:
-    virtual void validate() const;
-    virtual Type getType() const { return ID; }
-    virtual vespalib::stringref getNamespaceSpecific() const { return getComponent(3); }
+    virtual void validate() const override;
+    Type getType() const override { return ID; }
+    vespalib::stringref getNamespaceSpecific() const override { return getComponent(3); }
 };
 
 /**
@@ -140,15 +141,15 @@ private:
  * By using this scheme, documents will be evenly distributed within VDS,
  * as the location of a doc identifier is a hash of the entire URI.
  */
-class DocIdString : public IdString {
+class DocIdString final : public IdString {
 public:
     DocIdString(const vespalib::stringref & ns, const vespalib::stringref & id);
     DocIdString(const vespalib::stringref & rawId);
 private:
-    virtual DocIdString* clone() const { return new DocIdString(*this); }
-    virtual Type getType() const { return DOC; }
-    virtual LocationType getLocation() const;
-    virtual vespalib::stringref getNamespaceSpecific() const { return getComponent(1); }
+    DocIdString* clone() const override { return new DocIdString(*this); }
+    Type getType() const override { return DOC; }
+    LocationType getLocation() const override;
+    vespalib::stringref getNamespaceSpecific() const override { return getComponent(1); }
 };
 
 /**
@@ -161,19 +162,19 @@ private:
  * name "userdoc" is purely syntactical; Vespa does not care what the source
  * of the number is.
  */
-class UserDocIdString : public IdString {
+class UserDocIdString final : public IdString {
 public:
     UserDocIdString(const vespalib::stringref & rawId);
 
     virtual int64_t getUserId() const { return _userId; }
-    virtual bool hasNumber() const { return true; }
-    uint64_t getNumber() const { return _userId; }
-    virtual LocationType getLocation() const { return _userId; }
+    bool hasNumber() const override { return true; }
+    uint64_t getNumber() const override { return _userId; }
+    LocationType getLocation() const override { return _userId; }
 
 private:
-    virtual UserDocIdString* clone()   const { return new UserDocIdString(*this); }
-    virtual Type getType() const { return USERDOC; }
-    virtual vespalib::stringref getNamespaceSpecific() const { return getComponent(2); }
+    UserDocIdString* clone() const override { return new UserDocIdString(*this); }
+    Type getType() const override { return USERDOC; }
+    vespalib::stringref getNamespaceSpecific() const override { return getComponent(2); }
 
     int64_t _userId;
 };
@@ -183,7 +184,7 @@ private:
  * \ingroup base
  * \brief Scheme for distributing documents based on a group and a parametrized ordering.
  */
-class OrderDocIdString : public IdString {
+class OrderDocIdString final : public IdString {
 public:
     OrderDocIdString(const vespalib::stringref& rawId);
 
@@ -191,18 +192,18 @@ public:
     uint16_t getWidthBits() const { return _widthBits; }
     uint16_t getDivisionBits() const { return _divisionBits; }
     uint64_t getOrdering() const { return _ordering; }
-    std::pair<int16_t, int64_t> getGidBitsOverride() const;
-    vespalib::string getSchemeName() const;
-    virtual bool hasNumber() const { return true; }
-    uint64_t getNumber() const { return _location; }
-    virtual bool hasGroup() const { return true; }
-    virtual vespalib::stringref getGroup() const { return getComponent(1); }
+    std::pair<int16_t, int64_t> getGidBitsOverride() const override;
+    vespalib::string getSchemeName() const override;
+    bool hasNumber() const override { return true; }
+    uint64_t getNumber() const override { return _location; }
+    bool hasGroup() const override { return true; }
+    vespalib::stringref getGroup() const override { return getComponent(1); }
 
 private:
-    virtual LocationType getLocation() const { return _location; }
-    virtual OrderDocIdString* clone() const { return new OrderDocIdString(*this); }
-    virtual Type getType() const { return ORDERDOC; }
-    virtual vespalib::stringref getNamespaceSpecific() const { return getComponent(3); }
+    LocationType getLocation() const override { return _location; }
+    OrderDocIdString* clone() const override { return new OrderDocIdString(*this); }
+    Type getType() const override { return ORDERDOC; }
+    vespalib::stringref getNamespaceSpecific() const override { return getComponent(3); }
 
     LocationType _location;
     uint16_t _widthBits;
@@ -221,9 +222,9 @@ private:
 class GroupDocIdString : public IdString {
 public:
     GroupDocIdString(const vespalib::stringref & rawId);
-    virtual bool hasGroup() const { return true; }
-    virtual vespalib::stringref getGroup() const { return getComponent(1); }
-    virtual LocationType getLocation() const;
+    bool hasGroup() const override { return true; }
+    vespalib::stringref getGroup() const override { return getComponent(1); }
+    LocationType getLocation() const override;
 
     /**
      * Extract the location for the group-specific part of a document ID.
@@ -232,9 +233,9 @@ public:
     static LocationType locationFromGroupName(vespalib::stringref name);
 
 private:
-    virtual vespalib::stringref getNamespaceSpecific() const { return getComponent(2); }
-    virtual GroupDocIdString* clone() const { return new GroupDocIdString(*this); }
-    virtual Type getType() const { return GROUPDOC; }
+    vespalib::stringref getNamespaceSpecific() const override { return getComponent(2); }
+    GroupDocIdString* clone() const override { return new GroupDocIdString(*this); }
+    Type getType() const override { return GROUPDOC; }
 };
 
 } // document

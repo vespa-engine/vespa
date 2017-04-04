@@ -29,12 +29,12 @@ public:
 
     void SetLibName(const char *libname);
     bool NormalizeLibName(void);
-    bool Close();
-    bool Open(const char *libname = NULL);
-    void * GetSymbol(const char *symbol) const;
+    bool Close() override;
+    bool Open(const char *libname = NULL) override;
+    void * GetSymbol(const char *symbol) const override;
     std::string GetLastErrorString() const;
     const char * GetLibName() const { return _libname.c_str(); }
-    bool IsOpen()             const { return (_handle != NULL); }
+    bool IsOpen()             const override { return (_handle != NULL); }
 };
 
 

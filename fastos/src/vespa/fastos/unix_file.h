@@ -33,7 +33,7 @@ protected:
 
 public:
     static bool Rename (const char *currentFileName, const char *newFileName);
-    bool Rename (const char *newFileName) {
+    bool Rename (const char *newFileName) override {
         return FastOS_FileInterface::Rename(newFileName);
     }
 

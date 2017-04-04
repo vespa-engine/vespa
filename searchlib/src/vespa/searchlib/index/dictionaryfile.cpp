@@ -1,34 +1,29 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".index.dictionaryfile");
 #include "dictionaryfile.h"
+#include <vespa/fastos/file.h>
 
-namespace search
-{
-
-namespace index
-{
+namespace search {
+namespace index {
 
 
-DictionaryFileSeqRead::~DictionaryFileSeqRead(void)
+DictionaryFileSeqRead::~DictionaryFileSeqRead()
 {
 }
 
 
-DictionaryFileSeqWrite::~DictionaryFileSeqWrite(void)
+DictionaryFileSeqWrite::~DictionaryFileSeqWrite()
 {
 }
 
 
-DictionaryFileRandRead::DictionaryFileRandRead(void)
+DictionaryFileRandRead::DictionaryFileRandRead()
     : _memoryMapped(false)
 {
 }
 
 
-DictionaryFileRandRead::~DictionaryFileRandRead(void)
+DictionaryFileRandRead::~DictionaryFileRandRead()
 {
 }
 

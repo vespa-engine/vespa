@@ -20,11 +20,11 @@ class ResultNode;
 
 #define DECLARE_EXPRESSIONNODE(Class)                   \
     DECLARE_IDENTIFIABLE_NS2(search, expression, Class) \
-    virtual Class * clone() const;
+    Class * clone() const override;
 
 #define DECLARE_EXPRESSIONNODE_NS1(ns, Class)               \
     DECLARE_IDENTIFIABLE_NS3(search, expression, ns, Class) \
-    virtual Class * clone() const;
+    Class * clone() const override;
 
 #define IMPLEMENT_ABSTRACT_EXPRESSIONNODE(Class, base) \
     IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS2(search, expression, Class, base)

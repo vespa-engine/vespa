@@ -89,18 +89,9 @@ public:
      * Update the underlying TermFieldMatchData objects based on the bound MatchData object.
      **/
     void update();
+    uint32_t getNumTerms() const override { return _termIdxMap.size(); }
 
-    /**
-     * Inherit doc from IQueryEnvironment.
-     **/
-    virtual uint32_t getNumTerms() const {
-        return _termIdxMap.size();
-    }
-
-    /**
-     * Inherit doc from IQueryEnvironment.
-     **/
-    virtual const ITermData * getTerm(uint32_t idx) const {
+    const ITermData * getTerm(uint32_t idx) const override {
         if (idx >= _termIdxMap.size()) {
             return NULL;
         }
@@ -118,26 +109,10 @@ public:
         return handle < _skipHandles ? _matchData->resolveTermField(handle) : resolveSplittedTermField(handle);
     }
 
-    /**
-     * Inherit doc from IQueryEnvironment.
-     **/
-    virtual const Properties & getProperties() const { return _queryEnv.getProperties(); }
-
-    /**
-     * Inherit doc from IQueryEnvironment.
-     **/
-    virtual const Location & getLocation() const { return _queryEnv.getLocation(); }
-
-    /**
-     * Inherit doc from IQueryEnvironment.
-     **/
-    virtual const attribute::IAttributeContext & getAttributeContext() const { return _queryEnv.getAttributeContext(); }
-
-    /**
-     * Inherit doc from IQueryEnvironment.
-     **/
-    virtual const IIndexEnvironment & getIndexEnvironment() const { return _queryEnv.getIndexEnvironment(); }
-
+    const Properties & getProperties() const override { return _queryEnv.getProperties(); }
+    const Location & getLocation() const override { return _queryEnv.getLocation(); }
+    const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
+    const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
     void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
 };
 

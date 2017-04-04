@@ -97,8 +97,8 @@ private:
     TaskVector        _currentRunningTasks;
     uint64_t          _taskCounter;
 
-    virtual void run();
-    virtual bool onStop();
+    void run() override;
+    bool onStop() override;
 };
 
 } // vdslib

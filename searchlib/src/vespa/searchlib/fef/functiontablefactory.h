@@ -46,7 +46,7 @@ public:
     /**
      * Creates a table where the given name specifies the function and arguments to use.
      **/
-    virtual Table::SP createTable(const vespalib::string & name) const;
+    Table::SP createTable(const vespalib::string & name) const override;
 
     /**
      * Parses the given function name and returns true if success.

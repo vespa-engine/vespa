@@ -55,8 +55,7 @@ class IntervalSerializer : public PostingSerializer<EntryRef> {
     const PredicateIntervalStore &_store;
 public:
     IntervalSerializer(const PredicateIntervalStore &store) : _store(store) {}
-    virtual void serialize(const EntryRef &ref,
-                           vespalib::DataBuffer &buffer) const {
+    void serialize(const EntryRef &ref, vespalib::DataBuffer &buffer) const override {
         uint32_t size;
         IntervalT single_buf;
         const IntervalT *interval = _store.get(ref, size, &single_buf);
@@ -74,7 +73,7 @@ class IntervalDeserializer : public PostingDeserializer<EntryRef> {
     PredicateIntervalStore &_store;
 public:
     IntervalDeserializer(PredicateIntervalStore &store) : _store(store) {}
-    virtual EntryRef deserialize(vespalib::DataBuffer &buffer) {
+    EntryRef deserialize(vespalib::DataBuffer &buffer) override {
         std::vector<IntervalT> intervals;
         size_t size = buffer.readInt16();
         for (uint32_t i = 0; i < size; ++i) {

@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vector_inserter");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/configgen/vector_inserter.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using namespace config;
 using namespace config::internal;

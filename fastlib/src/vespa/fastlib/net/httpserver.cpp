@@ -1,30 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author          Stein Hardy Danielsen
-* @date            Creation date: 2000-1-7
-* @version         $Id$
-*
-* @file
-*
-* Generic http server and connection classes implementation
-*
-* Copyright (c)  : 1997-1999 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
 
-#include <vespa/fastos/fastos.h>
+#include "url.h"
+#include "httpchunkedinputstream.h"
+#include "httpchunkedoutputstream.h"
+#include "httpheaderparser.h"
+#include "httpserver.h"
 #include <vespa/fastlib/io/bufferedinputstream.h>
 #include <vespa/fastlib/io/bufferedoutputstream.h>
-#include <vespa/fastlib/net/url.h>
-#include <vespa/fastlib/net/httpchunkedinputstream.h>
-#include <vespa/fastlib/net/httpchunkedoutputstream.h>
-#include <vespa/fastlib/net/httpheaderparser.h>
-#include <vespa/fastlib/net/httpserver.h>
 #include <vespa/fastlib/util/base64.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fastos/file.h>
 
 /**
  * Helper class for hiding the details of HTTP entity encodings and
@@ -58,24 +43,22 @@ class Fast_HTTPPersistentInputFilter : public Fast_FilterInputStream
         _remainingBytes(0)
     { }
 
-    virtual ~Fast_HTTPPersistentInputFilter(void) {
+    ~Fast_HTTPPersistentInputFilter() {
       delete _chunkedInput;
     }
 
     // Methods
-    virtual ssize_t Available(void);
-    virtual bool    Close(void);
-    virtual ssize_t Read(void *sourceBuffer, size_t length);
-    virtual ssize_t Skip(size_t skipNBytes);
+    ssize_t Available() override;
+    bool    Close() override;
+    ssize_t Read(void *sourceBuffer, size_t length) override;
+    ssize_t Skip(size_t skipNBytes) override;
 
     void SetEntityLength(size_t entityLength);
-    void SetChunkedEncoding(void);
+    void SetChunkedEncoding();
 };
 
 
-
-
-ssize_t Fast_HTTPPersistentInputFilter::Available(void)
+ssize_t Fast_HTTPPersistentInputFilter::Available()
 {
   if (_useChunkedInput) {
     return _chunkedInput->Available();
@@ -92,7 +75,7 @@ ssize_t Fast_HTTPPersistentInputFilter::Available(void)
 
 
 
-bool Fast_HTTPPersistentInputFilter::Close(void)
+bool Fast_HTTPPersistentInputFilter::Close()
 {
   // Do nothing.
   return true;
@@ -143,7 +126,7 @@ void Fast_HTTPPersistentInputFilter::SetEntityLength(size_t entityLength)
 
 
 
-void Fast_HTTPPersistentInputFilter::SetChunkedEncoding(void)
+void Fast_HTTPPersistentInputFilter::SetChunkedEncoding()
 {
   _useChunkedInput = true;
   // TODO: If input stream interface is expanded to enable resetting
@@ -190,19 +173,19 @@ class Fast_HTTPPersistentOutputFilter : public Fast_FilterOutputStream
       _linePos(0)
     { }
 
-    virtual ~Fast_HTTPPersistentOutputFilter(void) {
+    ~Fast_HTTPPersistentOutputFilter() {
       delete _chunkedOutput;
     }
 
     // Methods
-    virtual bool     Close(void);
-    virtual ssize_t  Write(const void *sourceBuffer, size_t length);
-    virtual void     Flush(void);
+    bool     Close() override;
+    ssize_t  Write(const void *sourceBuffer, size_t length) override;
+    void     Flush() override;
 };
 
 
 
-bool Fast_HTTPPersistentOutputFilter::FlushHeader(void)
+bool Fast_HTTPPersistentOutputFilter::FlushHeader()
 {
   assert(_inHeaderRegion);
   size_t i = 0;
@@ -220,7 +203,7 @@ bool Fast_HTTPPersistentOutputFilter::FlushHeader(void)
 
 
 
-bool Fast_HTTPPersistentOutputFilter::Close(void)
+bool Fast_HTTPPersistentOutputFilter::Close()
 {
   bool retVal = true;
   if (_inHeaderRegion) {

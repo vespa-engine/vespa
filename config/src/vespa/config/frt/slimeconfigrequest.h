@@ -29,10 +29,10 @@ public:
                        int64_t protocolVersion,
                        const CompressionType & compressionType,
                        const vespalib::string & methodName);
-    virtual ~SlimeConfigRequest() {}
-    bool verifyKey(const ConfigKey & key) const;
-    bool verifyState(const ConfigState & state) const;
-    virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const = 0;
+    ~SlimeConfigRequest() {}
+    bool verifyKey(const ConfigKey & key) const override;
+    bool verifyState(const ConfigState & state) const override;
+    virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override = 0;
 private:
     void populateSlimeRequest(const ConfigKey & key,
                               const vespalib::string & configMd5,

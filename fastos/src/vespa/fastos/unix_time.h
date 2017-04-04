@@ -43,7 +43,7 @@ private:
     timeval _time;
 
 public:
-    void SetZero() { _time.tv_sec = 0;  _time.tv_usec = 0; }
+    void SetZero() override { _time.tv_sec = 0;  _time.tv_usec = 0; }
 
     FastOS_UNIX_Time ()
         : _time()
@@ -81,17 +81,17 @@ public:
         return FASTOS_UNIX_TIMER_CMP(&_time, &rhs._time, ==);
     }
 
-    double MicroSecs() const;
-    double MilliSecs() const;
-    double Secs() const;
+    double MicroSecs() const override;
+    double MilliSecs() const override;
+    double Secs() const override;
 
-    void SetMicroSecs(double microsecs);
-    void SetMilliSecs(double millisecs);
-    void SetSecs(double secs);
+    void SetMicroSecs(double microsecs) override;
+    void SetMilliSecs(double millisecs) override;
+    void SetSecs(double secs) override;
 
-    void SetNow() { gettimeofday(&_time, NULL); }
+    void SetNow() override { gettimeofday(&_time, NULL); }
 
-    long int GetSeconds() const { return _time.tv_sec; }
-    long int GetMicroSeconds() const { return _time.tv_usec; }
+    long int GetSeconds() const override { return _time.tv_sec; }
+    long int GetMicroSeconds() const override { return _time.tv_usec; }
 };
 

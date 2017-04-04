@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigresponsev3.h"
 #include "compressioninfo.h"
-#include <vespa/config/common/misc.h>
 #include <vespa/fnet/frt/frt.h>
-#include <vespa/vespalib/stllike/string.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconfigresponsev3");
 
@@ -30,8 +29,7 @@ public:
     {
     }
 
-    const Inspector & getSlimePayload() const
-    {
+    const Inspector & getSlimePayload() const override {
         return _data->get();
     }
 private:

@@ -204,18 +204,18 @@ protected:
      * io component. This method performs internal cleanup related to
      * the io component framework used in FNET.
      **/
-    void Close();
+    void Close() override;
 
     /**
      * This method is called by the transport thread when the
      * underlying file descriptor is ready for reading.
      **/
-    bool HandleReadEvent();
+    bool HandleReadEvent() override;
 
     /**
      * This method is called by the transport layer when the
      * underlying file descriptor is ready for writing.
      **/
-    bool HandleWriteEvent();
+    bool HandleWriteEvent() override;
 };
 

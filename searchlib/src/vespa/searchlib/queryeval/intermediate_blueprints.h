@@ -5,8 +5,6 @@
 #include "blueprint.h"
 #include "searchable.h"
 #include <vespa/searchlib/queryeval/multisearch.h>
-#include <vector>
-#include <map>
 
 namespace search {
 namespace queryeval {
@@ -19,17 +17,17 @@ class AndNotBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual void optimize_self() override;
-    virtual Blueprint::UP get_replacement() override;
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
-    virtual SearchIterator::UP
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    void optimize_self() override;
+    Blueprint::UP get_replacement() override;
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 private:
-    virtual bool isPositive(size_t index) const { return index == 0; }
+    bool isPositive(size_t index) const override { return index == 0; }
 };
 
 //-----------------------------------------------------------------------------
@@ -38,15 +36,15 @@ class AndBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual void optimize_self() override;
-    virtual Blueprint::UP get_replacement() override;
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
-    virtual SearchIterator::UP
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    void optimize_self() override;
+    Blueprint::UP get_replacement() override;
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -55,15 +53,15 @@ class OrBlueprint : public IntermediateBlueprint
 {
 public:
     bool supports_termwise_children() const override { return true; }
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual void optimize_self() override;
-    virtual Blueprint::UP get_replacement() override;
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
-    virtual SearchIterator::UP
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    void optimize_self() override;
+    Blueprint::UP get_replacement() override;
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -75,13 +73,13 @@ private:
     std::vector<uint32_t> _weights;
 
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
-    virtual SearchIterator::UP
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 
     WeakAndBlueprint(uint32_t n) : _n(n) {}
     void addTerm(Blueprint::UP bp, uint32_t weight) {
@@ -100,14 +98,14 @@ private:
     uint32_t _window;
 
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual bool should_optimize_children() const override { return false; }
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
-    virtual SearchIterator::UP
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    bool should_optimize_children() const override { return false; }
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 
     NearBlueprint(uint32_t window) : _window(window) {}
 };
@@ -120,14 +118,14 @@ private:
     uint32_t _window;
 
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual bool should_optimize_children() const override { return false; }
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
-    virtual SearchIterator::UP
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    bool should_optimize_children() const override { return false; }
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 
     ONearBlueprint(uint32_t window) : _window(window) {}
 };
@@ -137,15 +135,15 @@ public:
 class RankBlueprint : public IntermediateBlueprint
 {
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual void optimize_self() override;
-    virtual Blueprint::UP get_replacement() override;
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
-    virtual SearchIterator::UP
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    void optimize_self() override;
+    Blueprint::UP get_replacement() override;
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -157,19 +155,19 @@ private:
 
 public:
     SourceBlenderBlueprint(const ISourceSelector &selector);
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const;
-    virtual FieldSpecBaseList exposeFields() const;
-    virtual void sort(std::vector<Blueprint*> &children) const;
-    virtual bool inheritStrict(size_t i) const;
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override;
+    FieldSpecBaseList exposeFields() const override;
+    void sort(std::vector<Blueprint*> &children) const override;
+    bool inheritStrict(size_t i) const override;
     /**
      * Will return the index matching the given sourceId.
      * @param sourceId The sourceid to find.
      * @return The index to the child representing the sourceId. -1 if not found.
      */
     ssize_t findSource(uint32_t sourceId) const;
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, search::fef::MatchData &md) const;
+                             bool strict, fef::MatchData &md) const override;
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
@@ -177,4 +175,3 @@ public:
 
 }
 }
-

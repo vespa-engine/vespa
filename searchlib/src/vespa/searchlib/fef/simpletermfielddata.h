@@ -52,7 +52,7 @@ public:
      *
      * @return match handle
      **/
-    virtual TermFieldHandle getHandle() const {
+    TermFieldHandle getHandle() const override {
         return _handle;
     }
 

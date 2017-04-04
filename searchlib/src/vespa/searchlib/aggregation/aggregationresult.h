@@ -14,14 +14,17 @@ using search::expression::DocId;
     private:                                                        \
     public:
 
-#define DECLARE_AGGREGATIONRESULT(cclass)                                   \
-    DECLARE_IDENTIFIABLE_NS2(search, aggregation, cclass);                  \
-    DECLARE_NBO_SERIALIZE;                                                  \
-    virtual cclass *clone() const { return new cclass(*this); }             \
-    private:                                                                \
-    virtual void onMerge(const AggregationResult & b);                      \
-    virtual void onAggregate(const ResultNode &result);                     \
-    virtual void onReset();                                                 \
+#define DECLARE_AGGREGATIONRESULT_BASE(cclass)                      \
+    DECLARE_IDENTIFIABLE_NS2(search, aggregation, cclass);          \
+    DECLARE_NBO_SERIALIZE;
+
+#define DECLARE_AGGREGATIONRESULT(cclass)                           \
+    DECLARE_AGGREGATIONRESULT_BASE(cclass);                         \
+    cclass *clone() const override { return new cclass(*this); }    \
+    private:                                                        \
+    void onMerge(const AggregationResult & b) override;             \
+    void onAggregate(const ResultNode &result) override;            \
+    void onReset() override;                                        \
     public:
 
 // resultNodePrimitive : countHits | hits(INTEGER) | groups(INTEGER) | xor | sum | min | max |avg
@@ -41,12 +44,12 @@ public:
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
-        virtual void execute(vespalib::Identifiable &obj);
-        virtual bool check(const vespalib::Identifiable &obj) const;
+        void execute(vespalib::Identifiable &obj) override;
+        bool check(const vespalib::Identifiable &obj) const override;
     };
 
-    virtual void visitMembers(vespalib::ObjectVisitor & visitor) const;
-    virtual void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation);
+    void visitMembers(vespalib::ObjectVisitor & visitor) const override;
+    void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation) override;
 
     void reset() { onReset(); }
     void merge(const AggregationResult & b) { onMerge(b); }
@@ -60,18 +63,16 @@ public:
     }
 
     const ResultNode & getRank() const { return onGetRank(); }
-    const ResultNode & getResult() const { return onGetRank(); }
+    const ResultNode & getResult() const override { return onGetRank(); }
     virtual ResultNode & getResult() { return const_cast<ResultNode &>(onGetRank()); }
-    virtual AggregationResult * clone() const = 0;
+    virtual AggregationResult * clone() const override = 0;
     const ExpressionNode * getExpression() const { return _expressionTree->getRoot(); }
     ExpressionNode * getExpression() { return _expressionTree->getRoot(); }
 protected:
     AggregationResult();
 private:
-    /// from expressionnode
-    virtual void onPrepare(bool preserveAccurateTypes) { (void) preserveAccurateTypes; }
-    /// from expressionnode
-    virtual bool onExecute() const  { return true; }
+    void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
+    bool onExecute() const override { return true; }
 
     void prepare() { if (getExpression() != NULL) { prepare(&getExpression()->getResult(), false); } }
     void prepare(const ResultNode * result, bool useForInit) { if (result) { onPrepare(*result, useForInit); } }

@@ -115,7 +115,7 @@ private:
     bool obtainTask(Worker &worker);
 
     // from FastOS_Runnable (all workers live here)
-    virtual void Run(FastOS_ThreadInterface *, void *);
+    void Run(FastOS_ThreadInterface *, void *) override;
 
 protected:
     /**
@@ -182,7 +182,7 @@ public:
     Stats getStats();
 
     // inherited from Executor
-    virtual Task::UP execute(Task::UP task);
+    Task::UP execute(Task::UP task) override;
 
     /**
      * Synchronize with this executor. This function will block until
@@ -191,7 +191,7 @@ public:
      *
      * @return this object; for chaining
      **/
-    virtual ThreadStackExecutorBase &sync();
+    ThreadStackExecutorBase &sync() override;
 
     /**
      * Block the calling thread until the current task count is equal

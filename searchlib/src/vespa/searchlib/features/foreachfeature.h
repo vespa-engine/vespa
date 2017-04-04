@@ -6,7 +6,6 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <limits>
 
-
 namespace search {
 namespace features {
 
@@ -15,7 +14,7 @@ namespace features {
  * Uses a condition and operation template class to perform the computation.
  */
 template <typename CO, typename OP>
-class ForeachExecutor : public search::fef::FeatureExecutor {
+class ForeachExecutor : public fef::FeatureExecutor {
 private:
     CO        _condition;
     OP        _operation;
@@ -23,10 +22,9 @@ private:
 
 public:
     ForeachExecutor(const CO & condition, uint32_t numInputs);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
-
-
+    
 /**
  * Base class for condition template class.
  **/
@@ -129,7 +127,7 @@ struct CountOperation : public OperationBase {
 /**
  * Implements the blueprint for the foreach executor.
  */
-class ForeachBlueprint : public search::fef::Blueprint {
+class ForeachBlueprint : public fef::Blueprint {
 private:
     enum Dimension {
         TERMS,
@@ -138,7 +136,7 @@ private:
         ILLEGAL
     };
     struct ExecutorCreatorBase {
-        virtual search::fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const = 0;
+        virtual fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const = 0;
         virtual ~ExecutorCreatorBase() {}
     };
 
@@ -154,29 +152,14 @@ private:
     void setExecutorCreator(CO condition);
 
 public:
-    /**
-     * Constructs a blueprint.
-     */
     ForeachBlueprint();
-
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().string().string().feature().string().string();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().string().string().feature().string().string();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 

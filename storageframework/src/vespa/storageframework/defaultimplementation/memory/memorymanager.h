@@ -57,19 +57,19 @@ public:
                     uint8_t priority,
                     ReduceMemoryUsageInterface* = 0);
 
-    virtual ~MemoryTokenImpl();
+    ~MemoryTokenImpl();
 
-    uint64_t getSize() const { return _currentlyAllocated; }
+    uint64_t getSize() const override { return _currentlyAllocated; }
     uint64_t getAllocationCount() const { return _allocCount; }
     const MemoryAllocationType& getType() const { return _type; }
     ReduceMemoryUsageInterface* getReducer() const { return _reducer; }
 
     uint8_t getPriority() const { return _priority; }
 
-    virtual bool resize(uint64_t min, uint64_t max);
+    bool resize(uint64_t min, uint64_t max) override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose,
+               const std::string& indent) const override;
 };
 
 class AllocationLogic : public vespalib::Printable
@@ -122,7 +122,7 @@ public:
 
         // vespalib::Printable implementation
     virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const = 0;
+                       const std::string& indent) const override = 0;
 };
 
 class MemoryManager : public vespalib::Printable,
@@ -138,28 +138,20 @@ public:
     MemoryManager(AllocationLogic::UP);
     ~MemoryManager();
 
-    virtual void setMaximumMemoryUsage(uint64_t max);
+    void setMaximumMemoryUsage(uint64_t max) override;
     virtual void getState(MemoryState& state, bool resetMax = false);
 
-    virtual const MemoryAllocationType&
-    registerAllocationType(const MemoryAllocationType& type);
+    const MemoryAllocationType&registerAllocationType(const MemoryAllocationType& type) override;
+    const MemoryAllocationType&getAllocationType(const std::string& name) const override;
 
-    virtual const MemoryAllocationType&
-    getAllocationType(const std::string& name) const;
+    std::vector<const MemoryAllocationType*> getAllocationTypes() const override;
 
-    virtual std::vector<const MemoryAllocationType*> getAllocationTypes() const;
-
-    MemoryToken::UP allocate(
-            const MemoryAllocationType&,
-            uint64_t min,
-            uint64_t max,
-            uint8_t p,
-            ReduceMemoryUsageInterface* = 0);
+    MemoryToken::UP allocate(const MemoryAllocationType&, uint64_t min, uint64_t max,
+                             uint8_t p, ReduceMemoryUsageInterface* = 0) override;
     
-    virtual uint64_t getMemorySizeFreeForPriority(uint8_t priority) const;
+    uint64_t getMemorySizeFreeForPriority(uint8_t priority) const override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 };
 

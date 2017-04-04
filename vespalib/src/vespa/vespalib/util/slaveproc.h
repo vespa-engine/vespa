@@ -37,7 +37,7 @@ private:
         int                     _waitCnt;
         bool                    _readEOF;
 
-        virtual void OnReceiveData(const void *data, size_t length);
+        void OnReceiveData(const void *data, size_t length) override;
         bool hasData();
         bool waitForData(slaveproc::Timer &timer, MonitorGuard &lock);
         void updateEOF();

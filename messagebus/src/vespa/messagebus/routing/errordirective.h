@@ -31,10 +31,10 @@ public:
      */
     const string &getMessage() const { return _msg; }
 
-    virtual Type getType() const { return TYPE_ERROR; }
-    virtual bool matches(const IHopDirective &) const { return false; }
-    virtual string toString() const;
-    virtual string toDebugString() const;
+    Type getType() const override { return TYPE_ERROR; }
+    bool matches(const IHopDirective &) const override { return false; }
+    string toString() const override;
+    string toDebugString() const override;
 };
 
 } // mbus

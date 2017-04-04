@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/fastlib/text/wordfolder.h>
+#include "wordfolder.h"
 #include <cstdint>
 
 /**
@@ -167,27 +167,15 @@ public:
   }
 
  public:
-  Fast_NormalizeWordFolder(void);
-  virtual ~Fast_NormalizeWordFolder(void);
-  virtual size_t FoldedSizeAsUTF8(const char *word) const;
-  virtual char *FoldUTF8WordToUTF8Quick(char *wordbufpos, const char *word) const;
-  virtual const char *Tokenize(const char *buf,
-			       const char *bufend,
-			       char *dstbuf,
-			       char *dstbufend,
-			       const char*& origstart,
-			       size_t& tokenlen) const;
-  virtual const char *Tokenize(const char *buf,
-			       const char *bufend,
-			       ucs4_t *dstbuf,
-			       ucs4_t *dstbufend,
-			       const char*& origstart,
-			       size_t& tokenlen) const;
-  virtual const char* UCS4Tokenize(const char *buf,
-				   const char *bufend,
-				   ucs4_t *dstbuf,
-				   ucs4_t *dstbufend,
-				   const char*& origstart,
-				   size_t& tokenlen) const;
+    Fast_NormalizeWordFolder();
+    virtual ~Fast_NormalizeWordFolder();
+    virtual size_t FoldedSizeAsUTF8(const char *word) const;
+    virtual char *FoldUTF8WordToUTF8Quick(char *wordbufpos, const char *word) const;
+    virtual const char *Tokenize(const char *buf, const char *bufend, char *dstbuf,
+                                 char *dstbufend, const char*& origstart, size_t& tokenlen) const;
+    virtual const char *Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
+                                 ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const;
+    const char* UCS4Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
+                             ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const override;
 };
 

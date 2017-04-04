@@ -278,8 +278,8 @@ class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory
 {
 public:
     FieldValueFactory(DataType::UP dataType) : _dataType(dataType.release()) { }
-    FieldValue * create() { return _dataType->createFieldValue().release(); }
-    virtual FieldValueFactory * clone() const { return new FieldValueFactory(*this); }
+    FieldValue * create() override { return _dataType->createFieldValue().release(); }
+    FieldValueFactory * clone() const override { return new FieldValueFactory(*this); }
 private:
     DataType::CP _dataType;
 };

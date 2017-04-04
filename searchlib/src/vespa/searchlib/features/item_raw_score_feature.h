@@ -16,12 +16,12 @@ private:
     HandleVector _handles;
     const fef::MatchData *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     ItemRawScoreExecutor(HandleVector handles)
         : FeatureExecutor(), _handles(handles), _md(nullptr) {}
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 class SimpleItemRawScoreExecutor : public fef::FeatureExecutor
@@ -30,12 +30,12 @@ private:
     fef::TermFieldHandle _handle;
     const fef::MatchData *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     SimpleItemRawScoreExecutor(fef::TermFieldHandle handle)
         : FeatureExecutor(), _handle(handle), _md(nullptr) {}
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
@@ -48,20 +48,17 @@ private:
     vespalib::string _label;
 public:
     ItemRawScoreBlueprint() : Blueprint("itemRawScore"), _label() {}
-    virtual void visitDumpFeatures(const fef::IIndexEnvironment &,
-                                   fef::IDumpFeatureVisitor &) const {}
-    virtual fef::Blueprint::UP createInstance() const {
+    void visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const override {}
+    fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new ItemRawScoreBlueprint());
     }
-    virtual fef::ParameterDescriptions getDescriptions() const {
+    fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().string();
     }
-    virtual bool setup(const fef::IIndexEnvironment &env,
-                       const fef::ParameterList &params);
-    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
-    static HandleVector resolve(const fef::IQueryEnvironment &env,
-                                const vespalib::string &label);
+    static HandleVector resolve(const fef::IQueryEnvironment &env, const vespalib::string &label);
 };
 
 } // namespace features

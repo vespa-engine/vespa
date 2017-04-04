@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/multiargfunctionnode.h>
-#include <vespa/searchlib/expression/resultvector.h>
-#include <memory>
+#include "multiargfunctionnode.h"
+#include "resultvector.h"
 
 namespace search {
 namespace expression {
@@ -15,9 +14,9 @@ public:
     NumericFunctionNode() : _handler() { }
     NumericFunctionNode(const NumericFunctionNode & rhs);
     NumericFunctionNode & operator = (const NumericFunctionNode & rhs);
-    virtual void reset() { _handler.reset(); MultiArgFunctionNode::reset(); }
+    void reset() override { _handler.reset(); MultiArgFunctionNode::reset(); }
 protected:
-    virtual void onPrepare(bool preserveAccurateTypes);
+    void onPrepare(bool preserveAccurateTypes) override;
 
     class Handler
     {
@@ -40,8 +39,8 @@ protected:
             Handler(func),
             _result(static_cast<T &>(func.updateResult()))
         { }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg);
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override;
     private:
         T & _result;
     };
@@ -77,8 +76,8 @@ private:
             Handler(func),
             _result(static_cast<Int64ResultNode &>(func.updateResult()))
         { }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg)  { _result.set(arg.getInteger()); }
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override { _result.set(arg.getInteger()); }
     protected:
         Int64ResultNode & _result;
     };
@@ -89,8 +88,8 @@ private:
             Handler(func),
             _result(static_cast<FloatResultNode &>(func.updateResult()))
         { }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg)  { _result.set(arg.getFloat()); }
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override { _result.set(arg.getFloat()); }
     protected:
         FloatResultNode & _result;
     };
@@ -101,8 +100,8 @@ private:
             Handler(func),
             _result(static_cast<StringResultNode &>(func.updateResult()))
         { }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg)  {
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override {
             char buf[32];
             vespalib::ConstBufferRef b = arg.getString(vespalib::BufferRef(buf, sizeof(buf)));
             _result.set(vespalib::stringref(b.c_str(), b.size()));
@@ -117,8 +116,8 @@ private:
             Handler(func),
             _result(static_cast<RawResultNode &>(func.updateResult()))
         { }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg)  {
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override {
             char buf[32];
             vespalib::ConstBufferRef b = arg.getString(vespalib::BufferRef(buf, sizeof(buf)));
             _result.setBuffer(b.data(), b.size());
@@ -135,8 +134,8 @@ private:
         {
             _initial.set(*func.getInitialValue());
         }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg)  { handle(arg); }
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override { handle(arg); }
     private:
         Int64ResultNode _initial;
     };
@@ -149,8 +148,8 @@ private:
         {
             _initial.set(*func.getInitialValue());
         }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg)  { handle(arg); }
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override { handle(arg); }
     private:
         FloatResultNode _initial;
     };
@@ -163,16 +162,15 @@ private:
         {
             _initial.set(*func.getInitialValue());
         }
-        virtual void handle(const ResultNode & arg);
-        virtual void handleFirst(const ResultNode & arg)  { handle(arg); }
+        void handle(const ResultNode & arg) override;
+        void handleFirst(const ResultNode & arg) override { handle(arg); }
     private:
         StringResultNode _initial;
     };
 
-    virtual bool onCalculate(const ExpressionNodeVector & args, ResultNode & result) const;
+    bool onCalculate(const ExpressionNodeVector & args, ResultNode & result) const override;
     std::unique_ptr<Handler> _handler;
 };
 
 }
 }
-

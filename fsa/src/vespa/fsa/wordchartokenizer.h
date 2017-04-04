@@ -84,7 +84,7 @@ public:
    * @param text Input text.
    * @return True on success.
    */
-  virtual bool         init(const std::string &text);
+  bool         init(const std::string &text) override;
 
 
   /**
@@ -92,14 +92,14 @@ public:
    *
    * @return True if there are more tokens.
    */
-  virtual bool         hasMore();
+  bool         hasMore() override;
 
   /**
    * @brief Get next token.
    *
    * @return Next token, or empty string if there are no more tokens left.
    */
-  virtual std::string  getNext();
+  std::string  getNext() override;
 
 };
 

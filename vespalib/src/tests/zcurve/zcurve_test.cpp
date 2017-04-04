@@ -48,9 +48,9 @@ public:
     bm3(void);
 
     int64_t
-    bmcheck(void);
+    bmcheck();
 
-    int Main(void);
+    int Main() override;
 };
 
 

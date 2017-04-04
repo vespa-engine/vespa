@@ -10,18 +10,17 @@ class BucketResultNode : public ResultNode
 {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(BucketResultNode);
-    virtual void set(const ResultNode & rhs) { (void) rhs; }
+    void set(const ResultNode & rhs) override { (void) rhs; }
 protected:
     static vespalib::FieldBase _fromField;
     static vespalib::FieldBase _toField;
 private:
-    virtual int64_t onGetInteger(size_t index) const { (void) index; return 0; }
-    virtual double onGetFloat(size_t index)    const { (void) index; return 0; }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const { (void) index; return buf; }
-    virtual size_t getRawByteSize() const { return onGetRawByteSize(); }
+    int64_t onGetInteger(size_t index) const override { (void) index; return 0; }
+    double onGetFloat(size_t index)    const override { (void) index; return 0; }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; return buf; }
+    size_t getRawByteSize() const override { return onGetRawByteSize(); }
     virtual size_t onGetRawByteSize() const = 0;
 };
 
 }
 }
-

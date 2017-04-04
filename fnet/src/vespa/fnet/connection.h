@@ -442,14 +442,14 @@ public:
      * destructed. Will invoke the Cleanup method on the cleanup handler
      * for this connection, if present.
      **/
-    void CleanupHook();
+    void CleanupHook() override;
 
 
     /**
      * Close this connection immidiately. NOTE: this method should only
      * be called by the transport thread.
      **/
-    void Close();
+    void Close() override;
 
 
     /**
@@ -457,7 +457,7 @@ public:
      *
      * @return false if connection broken, true otherwise.
      **/
-    bool HandleReadEvent();
+    bool HandleReadEvent() override;
 
 
     /**
@@ -465,7 +465,7 @@ public:
      *
      * @return false is connection broken, true otherwise.
      **/
-    bool HandleWriteEvent();
+    bool HandleWriteEvent() override;
 
     /**
      * @return Returns the size of this connection's output buffer.

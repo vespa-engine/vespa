@@ -2,10 +2,9 @@
 
 #pragma once
 
+#include "attributeguard.h"
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <memory>
 #include <vector>
 
 namespace search {
@@ -28,11 +27,10 @@ private:
 
 public:
     AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector & attr);
-    virtual ~AttributeWeightedSetBlueprint();
+    ~AttributeWeightedSetBlueprint();
     void addToken(std::unique_ptr<ISearchContext> context, int32_t weight);
-    virtual queryeval::SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const;
-
-    virtual void fetchPostings(bool strict);
+    queryeval::SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    void fetchPostings(bool strict) override;
 };
 
 } // namespace search

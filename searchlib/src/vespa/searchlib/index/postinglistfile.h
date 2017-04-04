@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/index/postinglistcounts.h>
-#include <vespa/searchlib/index/postinglisthandle.h>
-#include <vespa/searchlib/index/postinglistparams.h>
+#include "postinglistcounts.h"
+#include "postinglisthandle.h"
+#include "postinglistparams.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 
 class FastOS_FileInterface;
@@ -251,23 +251,19 @@ protected:
 
 public:
     PostingListFileRandReadPassThrough(PostingListFileRandRead *lower, bool ownLower);
-    virtual~PostingListFileRandReadPassThrough();
+    ~PostingListFileRandReadPassThrough();
 
-    virtual search::queryeval::SearchIterator *
+    search::queryeval::SearchIterator *
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
                    const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const;
+                   bool usebitVector) const override;
 
-    virtual void
-    readPostingList(const PostingListCounts &counts,
-                    uint32_t firstSegment,
-                    uint32_t numSegments,
-                    PostingListHandle &handle);
+    void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
+                         uint32_t numSegments, PostingListHandle &handle) override;
 
-    virtual bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead);
-
-    virtual bool close();
+    bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
+    bool close() override;
 };
 
 

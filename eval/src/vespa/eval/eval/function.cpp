@@ -83,15 +83,15 @@ struct ExplicitParams : Params {
             lookup_add(param);
         }
     }
-    virtual bool implicit() const { return false; }
-    virtual size_t resolve(vespalib::stringref token) const override {
+    bool implicit() const override { return false; }
+    size_t resolve(vespalib::stringref token) const override {
         return lookup(token);
     }
 };
 
 struct ImplicitParams : Params {
-    virtual bool implicit() const { return true; }
-    virtual size_t resolve(vespalib::stringref token) const override {
+    bool implicit() const override { return true; }
+    size_t resolve(vespalib::stringref token) const override {
         return const_cast<ImplicitParams*>(this)->lookup_add(token);
     }
 };

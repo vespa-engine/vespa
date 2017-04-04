@@ -142,7 +142,7 @@ public:
       return rc;
    }
 
-   int Main ()
+   int Main () override
    {
       int rc = 1;
       printf("grep for the string '%s' to detect failures.\n\n", failString);

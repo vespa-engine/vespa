@@ -47,100 +47,40 @@ protected:
     static const int SearchColPriority = 1000;
 
 public:
-    CloningVisitor(void);
+    CloningVisitor();
+    ~CloningVisitor();
 
-    virtual
-    ~CloningVisitor(void);
+    void visitAndBranch(const And &expr) override;
+    void visitOrBranch(const Or &expr) override;
+    void visitNotBranch(const Not &expr) override;
+    void visitComparison(const Compare &expr) override;
+    void visitArithmeticValueNode(const ArithmeticValueNode &expr) override;
+    void visitFunctionValueNode(const FunctionValueNode &expr) override;
+    void visitConstant(const Constant &expr) override;
+    void visitInvalidConstant(const InvalidConstant &expr) override;
+    void visitDocumentType(const DocType &expr) override;
+    void visitIdValueNode(const IdValueNode &expr) override;
+    void visitSearchColumnValueNode(const SearchColumnValueNode &expr) override;
+    void visitFieldValueNode(const FieldValueNode &expr) override;
+    void visitFloatValueNode(const FloatValueNode &expr) override;
+    void visitVariableValueNode(const VariableValueNode &expr) override;
+    void visitIntegerValueNode(const IntegerValueNode &expr) override;
+    void visitCurrentTimeValueNode(const CurrentTimeValueNode &expr) override;
+    void visitStringValueNode(const StringValueNode &expr) override;
+    void visitNullValueNode(const NullValueNode &expr) override;
+    void visitInvalidValueNode(const InvalidValueNode &expr) override;
 
-    virtual void
-    visitAndBranch(const And &expr);
+    std::unique_ptr<Node> &getNode() { return _node; }
+    std::unique_ptr<ValueNode> &getValueNode() { return _valueNode; }
 
-    virtual void
-    visitOrBranch(const Or &expr);
+    void setNodeParentheses(int priority);
+    void setValueNodeParentheses(int priority);
+    void setArithmeticValueNode(const ArithmeticValueNode &expr, std::unique_ptr<ValueNode> lhs,
+                                int lhsPriority, bool lhsConstVal, std::unique_ptr<ValueNode> rhs,
+                                int rhsPriority, bool rhsConstVal);
 
-    virtual void
-    visitNotBranch(const Not &expr);
-
-    virtual void
-    visitComparison(const Compare &expr);
-
-    virtual void
-    visitArithmeticValueNode(const ArithmeticValueNode &expr);
-
-    virtual void
-    visitFunctionValueNode(const FunctionValueNode &expr);
-
-    virtual void
-    visitConstant(const Constant &expr);
-
-    virtual void
-    visitInvalidConstant(const InvalidConstant &expr);
-
-    virtual void
-    visitDocumentType(const DocType &expr);
-
-    virtual void
-    visitIdValueNode(const IdValueNode &expr);
-
-    virtual void
-    visitSearchColumnValueNode(const SearchColumnValueNode &expr);
-
-    virtual void
-    visitFieldValueNode(const FieldValueNode &expr);
-
-    virtual void
-    visitFloatValueNode(const FloatValueNode &expr);
-
-    virtual void
-    visitVariableValueNode(const VariableValueNode &expr);
-
-    virtual void
-    visitIntegerValueNode(const IntegerValueNode &expr);
-
-    virtual void
-    visitCurrentTimeValueNode(const CurrentTimeValueNode &expr);
-
-    virtual void
-    visitStringValueNode(const StringValueNode &expr);
-
-    virtual void
-    visitNullValueNode(const NullValueNode &expr);
-
-    virtual void
-    visitInvalidValueNode(const InvalidValueNode &expr);
-
-    std::unique_ptr<Node> &
-    getNode(void)
-    {
-        return _node;
-    }
-    
-    std::unique_ptr<ValueNode> &
-    getValueNode(void)
-    {
-        return _valueNode;
-    }
-
-    void
-    setNodeParentheses(int priority);
-
-    void
-    setValueNodeParentheses(int priority);
-
-    void
-    setArithmeticValueNode(const ArithmeticValueNode &expr,
-                           std::unique_ptr<ValueNode> lhs,
-                           int lhsPriority,
-                           bool lhsConstVal,
-                           std::unique_ptr<ValueNode> rhs,
-                           int rhsPriority,
-                           bool rhsConstVal);
-
-    void
-    swap(CloningVisitor &rhs);
-
-    void
-    revisit(void);
+    void swap(CloningVisitor &rhs);
+    void revisit(void);
 };
 
 }

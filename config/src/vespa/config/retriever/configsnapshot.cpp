@@ -232,14 +232,11 @@ namespace {
 
 class FixedPayload : public protocol::Payload {
 public:
-    const Inspector & getSlimePayload() const
-    {
+    const Inspector & getSlimePayload() const override {
         return _data.get();
     }
 
-    Slime & getData() {
-        return _data;
-    }
+    Slime & getData() { return _data; }
 private:
     Slime _data;
 };

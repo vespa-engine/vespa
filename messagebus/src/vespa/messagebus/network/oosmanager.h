@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/task.h>
-#include <set>
-#include <vespa/slobrok/imirrorapi.h>
-#include <string>
-#include <vespa/vespalib/util/sync.h>
 #include "oosclient.h"
+#include <vespa/fnet/task.h>
+#include <vespa/slobrok/imirrorapi.h>
+#include <vespa/vespalib/util/sync.h>
+#include <set>
 
 class FRT_Supervisor;
 
@@ -54,7 +53,7 @@ private:
      * Method invoked when this object is run as a task. This method will update the oos information held by
      * this object.
      */
-    void PerformTask();
+    void PerformTask() override;
 
 public:
     /**

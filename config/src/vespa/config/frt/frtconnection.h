@@ -35,20 +35,19 @@ public:
     FRTConnection(const vespalib::string & address, FRT_Supervisor & supervisor, const TimingValues & timingValues);
     ~FRTConnection();
 
-    FRT_RPCRequest * allocRPCRequest()
-    {
+    FRT_RPCRequest * allocRPCRequest() override {
         return _supervisor.AllocRPCRequest();
     }
 
-    void invoke(FRT_RPCRequest * req, double timeout, FRT_IRequestWait * waiter);
-    const vespalib::string & getAddress() const { return _address; }
+    void invoke(FRT_RPCRequest * req, double timeout, FRT_IRequestWait * waiter) override;
+    const vespalib::string & getAddress() const override { return _address; }
     int64_t getSuspendedUntil() { return _suspendedUntil; }
-    void setError(int errorCode);
+    void setError(int errorCode) override;
     void setSuccess();
     void calculateSuspension(ErrorType type);
     int64_t getTransientDelay() { return _transientDelay; }
     int64_t getMaxTransientDelay() { return getTransientDelay() * 6; }
-    void setTransientDelay(int64_t delay) { _transientDelay = delay; }
+    void setTransientDelay(int64_t delay) override { _transientDelay = delay; }
     int64_t getFatalDelay() { return _fatalDelay; }
     int64_t getMaxFatalDelay() { return getFatalDelay() * 6; }
     void setFatalDelay(int64_t delay) { _fatalDelay = delay; }

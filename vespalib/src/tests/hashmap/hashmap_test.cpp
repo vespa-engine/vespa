@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("hashmap_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/hashmap.h>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
 
 class Test : public vespalib::TestApp
 {
@@ -14,7 +9,7 @@ public:
     void testInt();
     void testString();
     void testHashValue();
-    int Main();
+    int Main() override;
 };
 
 

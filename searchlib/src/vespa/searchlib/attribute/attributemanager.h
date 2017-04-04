@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/attribute/interlock.h>
+#include "attributeguard.h"
+#include "iattributemanager.h"
+#include "interlock.h"
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -36,23 +36,16 @@ public:
      **/
     const VectorHolder * getAttributeRef(const string & name) const;
 
-    // Implements IAttributeManager
-    virtual AttributeGuard::UP getAttribute(const string & name) const;
-
-    // Implements IAttributeManager
-    virtual AttributeGuard::UP getAttributeStableEnum(const string & name) const;
+    AttributeGuard::UP getAttribute(const string & name) const override;
+    AttributeGuard::UP getAttributeStableEnum(const string & name) const override;
     /**
      * This will load attributes in the most memory economical way by loading largest first.
      */
     bool addVector(const string & name, const Config & config);
-
     bool add(const VectorHolder & vector);
 
-    // Implements IAttributeManager
-    virtual void getAttributeList(AttributeList & list) const;
-
-    // Implements IAttributeManager
-    virtual attribute::IAttributeContext::UP createContext() const;
+    void getAttributeList(AttributeList & list) const override;
+    attribute::IAttributeContext::UP createContext() const override;
 
     const Snapshot & getSnapshot()         const { return _snapShot; }
     const string & getBaseDir()       const { return _baseDir; }

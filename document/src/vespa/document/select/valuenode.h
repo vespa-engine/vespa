@@ -55,9 +55,7 @@ public:
         return defaultTrace(getValue(context), out);
     }
 
-    virtual void
-    print(std::ostream& out, bool verbose,
-          const std::string& indent) const = 0;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override = 0;
 
     virtual void visit(Visitor&) const = 0;
 
@@ -85,23 +83,17 @@ protected:
 class InvalidValueNode : public ValueNode
 {
     vespalib::string _name;
-
 public:
     InvalidValueNode(const vespalib::stringref & name);
 
-    virtual std::unique_ptr<Value>
-    getValue(const Context&) const
-    {
+    std::unique_ptr<Value> getValue(const Context&) const override {
         return std::unique_ptr<Value>(new InvalidValue());
     }
 
-    virtual void
-    print(std::ostream& out, bool verbose,
-          const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new InvalidValueNode(_name));
     }
 };
@@ -109,19 +101,18 @@ public:
 class NullValueNode : public ValueNode
 {
     vespalib::string _name;
-
 public:
     NullValueNode(const vespalib::stringref & name);
 
-    virtual std::unique_ptr<Value> getValue(const Context&) const
-        { return std::unique_ptr<Value>(new NullValue()); }
+    std::unique_ptr<Value> getValue(const Context&) const override {
+        return std::unique_ptr<Value>(new NullValue());
+    }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual void visit(Visitor& visitor) const;
+    void visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new NullValueNode(_name));
     }
 };
@@ -134,15 +125,14 @@ public:
 
     const vespalib::string& getValue() const { return _value; }
 
-    virtual std::unique_ptr<Value> getValue(const Context&) const
-        { return std::unique_ptr<Value>(new StringValue(_value)); }
+    std::unique_ptr<Value> getValue(const Context&) const override {
+        return std::unique_ptr<Value>(new StringValue(_value));
+    }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new StringValueNode(_value));
     }
 };
@@ -157,18 +147,15 @@ public:
 
     int64_t getValue() const { return _value; }
 
-    virtual std::unique_ptr<Value> getValue(const Context&) const {
+    virtual std::unique_ptr<Value> getValue(const Context&) const override {
         return std::unique_ptr<Value>(new IntegerValue(_value, _isBucketValue));
     }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
-        return wrapParens(new IntegerValueNode(_value,
-                                               _isBucketValue));
+    ValueNode::UP clone() const override {
+        return wrapParens(new IntegerValueNode(_value, _isBucketValue));
     }
 };
 
@@ -177,16 +164,14 @@ class CurrentTimeValueNode : public ValueNode
 public:
     int64_t getValue() const;
 
-    virtual std::unique_ptr<Value> getValue(const Context&) const {
+    std::unique_ptr<Value> getValue(const Context&) const override {
         return std::unique_ptr<Value>(new IntegerValue(getValue(), false));
     }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new CurrentTimeValueNode);
     }
 };
@@ -199,14 +184,11 @@ public:
 
     const vespalib::string& getVariableName() const { return _value; }
 
-    virtual std::unique_ptr<Value> getValue(const Context& context) const;
+    std::unique_ptr<Value> getValue(const Context& context) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new VariableValueNode(_value));
     }
 };
@@ -219,15 +201,14 @@ public:
 
     double getValue() const { return _value; }
 
-    virtual std::unique_ptr<Value> getValue(const Context&) const
-        { return std::unique_ptr<Value>(new FloatValue(_value)); }
+    std::unique_ptr<Value> getValue(const Context&) const override {
+        return std::unique_ptr<Value>(new FloatValue(_value));
+    }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new FloatValueNode(_value));
     }
 };
@@ -249,17 +230,12 @@ public:
 
     const vespalib::string& getFieldName() const { return _fieldExpression; }
 
-    virtual std::unique_ptr<Value> getValue(const Context& context) const;
+    std::unique_ptr<Value> getValue(const Context& context) const override;
+    std::unique_ptr<Value> traceValue(const Context &context, std::ostream& out) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual std::unique_ptr<Value> traceValue(const Context &context,
-                                            std::ostream& out) const;
-
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new FieldValueNode(_doctype, _fieldExpression));
     }
 
@@ -298,31 +274,20 @@ public:
 
     Type getType() const { return _type; }
 
-    virtual std::unique_ptr<Value>
-    getValue(const Context& context) const;
+    std::unique_ptr<Value> getValue(const Context& context) const override;
 
-    std::unique_ptr<Value>
-    getValue(const DocumentId& id) const;
+    std::unique_ptr<Value> getValue(const DocumentId& id) const;
 
-    virtual std::unique_ptr<Value>
-    traceValue(const Context& context,
-               std::ostream &out) const;
+    std::unique_ptr<Value> traceValue(const Context& context, std::ostream &out) const override;
 
-    std::unique_ptr<Value>
-    traceValue(const DocumentId& val,
-               std::ostream& out) const;
+    std::unique_ptr<Value> traceValue(const DocumentId& val, std::ostream& out) const;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual void visit(Visitor& visitor) const;
+    void visit(Visitor& visitor) const override;
 
-    ValueNode::UP clone() const {
-        return wrapParens(new IdValueNode(_bucketIdFactory,
-                                          _id,
-                                          _typestring,
-                                          _widthBits,
-                                          _divisionBits));
+    ValueNode::UP clone() const override {
+        return wrapParens(new IdValueNode(_bucketIdFactory, _id, _typestring, _widthBits, _divisionBits));
     }
 
     int getWidthBits() const { return _widthBits; }
@@ -346,31 +311,17 @@ public:
 
     int getColumns() { return _numColumns; }
 
-    virtual std::unique_ptr<Value>
-    getValue(const Context& context) const;
-    
-    std::unique_ptr<Value>
-    getValue(const DocumentId& id) const;
-
-    virtual std::unique_ptr<Value>
-    traceValue(const Context& context,
-               std::ostream &out) const;
-
-    std::unique_ptr<Value>
-    traceValue(const DocumentId& val,
-               std::ostream& out) const;
+    std::unique_ptr<Value> getValue(const Context& context) const override;
+    std::unique_ptr<Value> getValue(const DocumentId& id) const;
+    std::unique_ptr<Value> traceValue(const Context& context, std::ostream &out) const override;
+    std::unique_ptr<Value> traceValue(const DocumentId& val, std::ostream& out) const;
     
     int64_t getValue(const BucketId& bucketId) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
-        return wrapParens(new SearchColumnValueNode(_bucketIdFactory,
-                                                    _id,
-                                                    _numColumns));
+    ValueNode::UP clone() const override {
+        return wrapParens(new SearchColumnValueNode(_bucketIdFactory, _id, _numColumns));
 }
 
 private:
@@ -388,33 +339,21 @@ public:
     FunctionValueNode(const vespalib::stringref & name, std::unique_ptr<ValueNode> src);
 
     Function getFunction() const { return _function; }
+    const vespalib::string &getFunctionName(void) const { return _funcname; }
 
-    const vespalib::string &
-    getFunctionName(void) const
-    {
-        return _funcname;
-    }
-
-    virtual std::unique_ptr<Value>
-    getValue(const Context& context) const
-    {
+    std::unique_ptr<Value> getValue(const Context& context) const override {
         return getValue(_source->getValue(context));
     }
 
-    virtual std::unique_ptr<Value> traceValue(const Context &context,
-                                            std::ostream& out) const
-    {
+    std::unique_ptr<Value> traceValue(const Context &context, std::ostream& out) const override {
         return traceValue(_source->getValue(context), out);
     }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
-        return wrapParens(new FunctionValueNode(_funcname,
-                                                _source->clone()));
+    ValueNode::UP clone() const override {
+        return wrapParens(new FunctionValueNode(_funcname, _source->clone()));
     }
 
     const ValueNode& getChild() const { return *_source; }
@@ -441,26 +380,20 @@ public:
     Operator getOperator() const { return _operator; }
     const char* getOperatorName() const;
 
-    virtual std::unique_ptr<Value>
-    getValue(const Context& context) const
-    {
+    std::unique_ptr<Value>
+    getValue(const Context& context) const override {
         return getValue(_left->getValue(context), _right->getValue(context));
     }
     
-    virtual std::unique_ptr<Value>
-    traceValue(const Context &context,
-               std::ostream& out) const
-    {
-        return traceValue(_left->getValue(context),
-                          _right->getValue(context), out);
+    std::unique_ptr<Value>
+    traceValue(const Context &context, std::ostream& out) const override {
+        return traceValue(_left->getValue(context), _right->getValue(context), out);
     }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
 
-    virtual void visit(Visitor& visitor) const;
-
-    ValueNode::UP clone() const {
+    ValueNode::UP clone() const override {
         return wrapParens(new ArithmeticValueNode(_left->clone(),
                                                   getOperatorName(),
                                                   _right->clone()));

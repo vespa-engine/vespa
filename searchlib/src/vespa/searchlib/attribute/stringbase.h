@@ -42,19 +42,18 @@ public:
         return AttributeVector::update(_changes, doc, StringChangeData(v));
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
-    virtual bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust);
-    virtual bool findEnum(const char * value, EnumHandle & e) const = 0;
-    virtual uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, double * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const;
-    virtual const char *get(DocId doc) const = 0;
-    virtual uint32_t clearDoc(DocId doc);
-    virtual largeint_t getDefaultValue() const { return 0; }
+    bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    bool findEnum(const char * value, EnumHandle & e) const override = 0;
+    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, double * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override;
+    uint32_t clearDoc(DocId doc) override;
+    largeint_t getDefaultValue() const override { return 0; }
     static size_t countZero(const char * bt, size_t sz);
     static void generateOffsets(const char * bt, size_t sz, OffsetVector & offsets);
     virtual const char * getFromEnum(EnumHandle e) const = 0;
-
+    virtual const char *get(DocId doc) const = 0;
 protected:
     StringAttribute(const vespalib::string & name);
     StringAttribute(const vespalib::string & name, const Config & c);
@@ -64,12 +63,11 @@ protected:
     typedef StringEntryType EnumEntryType;
     ChangeVector _changes;
     Change _defaultValue;
-    virtual bool onLoad();
+    bool onLoad() override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
-    virtual bool
-    onAddDoc(DocId doc);
+    virtual bool onAddDoc(DocId doc);
 
     virtual MemoryUsage getChangeVectorMemoryUsage() const override;
 private:

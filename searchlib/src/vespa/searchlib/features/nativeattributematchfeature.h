@@ -2,12 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/fef/table.h>
+#include "nativerankfeature.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
-#include "nativerankfeature.h"
 #include <vespa/searchlib/fef/symmetrictable.h>
 
 namespace search {
@@ -29,7 +26,7 @@ typedef NativeRankParamsBase<NativeAttributeMatchParam> NativeAttributeMatchPara
 class NativeAttributeMatchExecutor : public fef::FeatureExecutor {
 protected:
     struct CachedTermData {
-        CachedTermData() : scale(0), weightBoostTable(NULL), tfh(search::fef::IllegalHandle) { }
+        CachedTermData() : scale(0), weightBoostTable(NULL), tfh(fef::IllegalHandle) { }
         CachedTermData(const NativeAttributeMatchParams & params, const fef::ITermFieldData & tfd, feature_t s) :
              scale(s),
              weightBoostTable(&params.vector[tfd.getFieldId()].weightBoostTable),
@@ -45,7 +42,7 @@ protected:
     static feature_t calculateScore(const CachedTermData &td, const fef::TermFieldMatchData &tfmd);
 private:
     static Precomputed preComputeSetup(const fef::IQueryEnvironment & env,
-                                        const NativeAttributeMatchParams & params);
+                                       const NativeAttributeMatchParams & params);
 
 public:
     static fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment & env,
@@ -60,12 +57,10 @@ private:
     std::vector<CachedTermData>        _queryTermData;
     const fef::MatchData              *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
-
+    void handle_bind_match_data(fef::MatchData &md) override;
 public:
     NativeAttributeMatchExecutorMulti(const Precomputed & setup) : _divisor(setup.second), _queryTermData(setup.first), _md(nullptr) { }
-    // Inherit doc from FeatureExecutor.
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 class NativeAttributeMatchExecutorSingle : public NativeAttributeMatchExecutor
@@ -74,7 +69,7 @@ private:
     CachedTermData _queryTermData;
     const fef::MatchData *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     NativeAttributeMatchExecutorSingle(const Precomputed & setup) :
@@ -83,8 +78,7 @@ public:
     {
         _queryTermData.scale /= setup.second;
     }
-    // Inherit doc from FeatureExecutor.
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
@@ -97,33 +91,18 @@ private:
 
 public:
     NativeAttributeMatchBlueprint();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const fef::IIndexEnvironment & env,
-                                   fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual fef::ParameterDescriptions getDescriptions() const {
-        return fef::ParameterDescriptions().desc().attribute(search::fef::ParameterCollection::ANY).repeat();
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().attribute(fef::ParameterCollection::ANY).repeat();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const fef::IIndexEnvironment & env,
-                       const fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
-
-    /**
-     * Obtains the parameters used by the executor.
-     **/
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    
     const NativeAttributeMatchParams & getParams() const { return _params; }
 };
 
 
 } // namespace features
 } // namespace search
-

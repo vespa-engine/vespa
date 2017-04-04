@@ -38,28 +38,28 @@ struct SlimeInserter : Inserter {
     Slime &slime;
     explicit SlimeInserter(Slime &s) : slime(s) {}
 
-    virtual Cursor &insertNix() const;
-    virtual Cursor &insertBool(bool value) const;
-    virtual Cursor &insertLong(int64_t value) const;
-    virtual Cursor &insertDouble(double value) const;
-    virtual Cursor &insertString(Memory value) const;
-    virtual Cursor &insertData(Memory value) const;
-    virtual Cursor &insertArray() const;
-    virtual Cursor &insertObject() const;
+    Cursor &insertNix() const override;
+    Cursor &insertBool(bool value) const override;
+    Cursor &insertLong(int64_t value) const override;
+    Cursor &insertDouble(double value) const override;
+    Cursor &insertString(Memory value) const override;
+    Cursor &insertData(Memory value) const override;
+    Cursor &insertArray() const override;
+    Cursor &insertObject() const override;
 };
 
 struct ArrayInserter : Inserter {
     Cursor &cursor;
     explicit ArrayInserter(Cursor &c) : cursor(c) {}
 
-    virtual Cursor &insertNix() const;
-    virtual Cursor &insertBool(bool value) const;
-    virtual Cursor &insertLong(int64_t value) const;
-    virtual Cursor &insertDouble(double value) const;
-    virtual Cursor &insertString(Memory value) const;
-    virtual Cursor &insertData(Memory value) const;
-    virtual Cursor &insertArray() const;
-    virtual Cursor &insertObject() const;
+    Cursor &insertNix() const override;
+    Cursor &insertBool(bool value) const override;
+    Cursor &insertLong(int64_t value) const override;
+    Cursor &insertDouble(double value) const override;
+    Cursor &insertString(Memory value) const override;
+    Cursor &insertData(Memory value) const override;
+    Cursor &insertArray() const override;
+    Cursor &insertObject() const override;
 };
 
 struct ObjectSymbolInserter : Inserter {
@@ -67,14 +67,14 @@ struct ObjectSymbolInserter : Inserter {
     Symbol symbol;
     ObjectSymbolInserter(Cursor &c, const Symbol &s) : cursor(c), symbol(s) {}
 
-    virtual Cursor &insertNix() const;
-    virtual Cursor &insertBool(bool value) const;
-    virtual Cursor &insertLong(int64_t value) const;
-    virtual Cursor &insertDouble(double value) const;
-    virtual Cursor &insertString(Memory value) const;
-    virtual Cursor &insertData(Memory value) const;
-    virtual Cursor &insertArray() const;
-    virtual Cursor &insertObject() const;
+    Cursor &insertNix() const override;
+    Cursor &insertBool(bool value) const override;
+    Cursor &insertLong(int64_t value) const override;
+    Cursor &insertDouble(double value) const override;
+    Cursor &insertString(Memory value) const override;
+    Cursor &insertData(Memory value) const override;
+    Cursor &insertArray() const override;
+    Cursor &insertObject() const override;
 };
 
 struct ObjectInserter : Inserter {
@@ -82,14 +82,14 @@ struct ObjectInserter : Inserter {
     Memory name;
     ObjectInserter(Cursor &c, const Memory &n) : cursor(c), name(n) {}
 
-    virtual Cursor &insertNix() const;
-    virtual Cursor &insertBool(bool value) const;
-    virtual Cursor &insertLong(int64_t value) const;
-    virtual Cursor &insertDouble(double value) const;
-    virtual Cursor &insertString(Memory value) const;
-    virtual Cursor &insertData(Memory value) const;
-    virtual Cursor &insertArray() const;
-    virtual Cursor &insertObject() const;
+    Cursor &insertNix() const override;
+    Cursor &insertBool(bool value) const override;
+    Cursor &insertLong(int64_t value) const override;
+    Cursor &insertDouble(double value) const override;
+    Cursor &insertString(Memory value) const override;
+    Cursor &insertData(Memory value) const override;
+    Cursor &insertArray() const override;
+    Cursor &insertObject() const override;
 };
 
 } // namespace slime

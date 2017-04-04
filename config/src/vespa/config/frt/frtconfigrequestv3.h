@@ -25,7 +25,7 @@ public:
                        const Trace & trace,
                        const VespaVersion & vespaVersion,
                        const CompressionType & compressionType);
-    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const;
+    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override;
 };
 
 }

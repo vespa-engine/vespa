@@ -99,7 +99,7 @@ public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StructuredFieldValue);
 
 
-    virtual StructuredFieldValue* clone() const = 0;
+    virtual StructuredFieldValue* clone() const override = 0;
     const DataType *getDataType() const override { return _type; }
 
     /** Wrapper for DataType's hasField() function. */

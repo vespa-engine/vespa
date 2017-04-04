@@ -65,23 +65,23 @@ public:
     ObjectValue &operator=(const ObjectValue &) = delete;
 
 
-    virtual Type type() const { return OBJECT::instance; }
-    virtual size_t children() const { return _fields.size(); }
-    virtual size_t fields() const { return _fields.size(); }
-    virtual void traverse(ObjectSymbolTraverser &ot) const;
-    virtual void traverse(ObjectTraverser &ot) const;
+    Type type() const override { return OBJECT::instance; }
+    size_t children() const override { return _fields.size(); }
+    size_t fields() const override { return _fields.size(); }
+    void traverse(ObjectSymbolTraverser &ot) const override;
+    void traverse(ObjectTraverser &ot) const override;
 
-    virtual Cursor &operator[](Symbol sym) const;
-    virtual Cursor &operator[](Memory name) const;
+    Cursor &operator[](Symbol sym) const override;
+    Cursor &operator[](Memory name) const override;
 
-    virtual Cursor &setArray(Symbol sym);
-    virtual Cursor &setObject(Symbol sym);
+    Cursor &setArray(Symbol sym) override;
+    Cursor &setObject(Symbol sym) override;
 
-    virtual Cursor &setArray(Memory name);
-    virtual Cursor &setObject(Memory name);
-    virtual Symbol resolve(Memory symbol_name);
+    Cursor &setArray(Memory name) override;
+    Cursor &setObject(Memory name) override;
+    Symbol resolve(Memory symbol_name) override;
 
-    virtual ~ObjectValue() { }
+    ~ObjectValue() { }
 };
 
 } // namespace vespalib::slime

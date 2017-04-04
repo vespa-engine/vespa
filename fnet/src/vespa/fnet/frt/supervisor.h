@@ -54,15 +54,15 @@ public:
 
     public:
         ConnHooks(FRT_Supervisor &parent);
-        virtual ~ConnHooks();
+        ~ConnHooks();
 
         void SetSessionInitHook(FRT_METHOD_PT  method, FRT_Invokable *handler);
         void SetSessionDownHook(FRT_METHOD_PT  method, FRT_Invokable *handler);
         void SetSessionFiniHook(FRT_METHOD_PT  method, FRT_Invokable *handler);
         void InvokeHook(FRT_Method *hook, FNET_Connection *conn);
         bool InitAdminChannel(FNET_Channel *channel);
-        HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context);
-        void Cleanup(FNET_Connection *conn);
+        HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
+        void Cleanup(FNET_Connection *conn) override;
     };
 
 private:
@@ -134,11 +134,11 @@ public:
                            double timeout);
 
     // FNET ServerAdapter Interface
-    bool InitAdminChannel(FNET_Channel *channel);
-    bool InitChannel(FNET_Channel *channel, uint32_t pcode);
+    bool InitAdminChannel(FNET_Channel *channel) override;
+    bool InitChannel(FNET_Channel *channel, uint32_t pcode) override;
 
     // Packet Handling
-    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context);
+    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 
     // Methods for controlling transport object in standalone mode
     bool Start();

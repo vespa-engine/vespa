@@ -12,12 +12,12 @@ public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(RelevanceNode);
     RelevanceNode() : ExpressionNode(), _relevance() { }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual const ResultNode & getResult() const { return _relevance; }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const ResultNode & getResult() const override { return _relevance; }
     void setRelevance(double relevance) { _relevance.set(relevance); }
 private:
-    virtual void onPrepare(bool preserveAccurateTypes) { (void) preserveAccurateTypes; }
-    virtual bool onExecute() const { return true; }
+    void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
+    bool onExecute() const override { return true; }
     FloatResultNode _relevance;
 };
 

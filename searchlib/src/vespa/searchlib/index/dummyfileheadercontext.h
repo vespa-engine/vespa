@@ -3,18 +3,10 @@
 
 #include <vespa/searchlib/common/fileheadercontext.h>
 
-namespace vespalib
-{
+namespace vespalib { class GenericHeader; }
 
-class GenericHeader;
-
-}
-
-namespace search
-{
-
-namespace index
-{
+namespace search {
+namespace index {
 
 class DummyFileHeaderContext : public common::FileHeaderContext
 {
@@ -24,24 +16,13 @@ class DummyFileHeaderContext : public common::FileHeaderContext
 
     static vespalib::string _creator;
 public:
-    DummyFileHeaderContext(void);
-
-    virtual
-    ~DummyFileHeaderContext(void);
-
-    void
-    disableFileName(void);
-
-    virtual void
-    addTags(vespalib::GenericHeader &header,
-            const vespalib::string &name) const;
-
-    static void
-    setCreator(const vespalib::string &creator);
+    DummyFileHeaderContext();
+    ~DummyFileHeaderContext();
+    void disableFileName();
+    void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
+    static void setCreator(const vespalib::string &creator);
 };
-
 
 } // namespace index
 
 } // namespace search
-

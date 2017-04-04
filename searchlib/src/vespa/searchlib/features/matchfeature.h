@@ -16,50 +16,32 @@ struct MatchParams {
 /**
  * Implements the executor for the match feature.
  */
-class MatchExecutor : public search::fef::FeatureExecutor {
+class MatchExecutor : public fef::FeatureExecutor {
 private:
     const MatchParams & _params;
 
 public:
-    /**
-     * Constructs an executor.
-     */
     MatchExecutor(const MatchParams & params);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
 /**
  * Implements the blueprint for the match executor.
  */
-class MatchBlueprint : public search::fef::Blueprint {
+class MatchBlueprint : public fef::Blueprint {
 private:
     MatchParams _params;
-
 public:
-    /**
-     * Constructs a blueprint.
-     */
     MatchBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 

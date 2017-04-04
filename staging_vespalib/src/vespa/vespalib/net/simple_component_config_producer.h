@@ -18,7 +18,7 @@ public:
     SimpleComponentConfigProducer();
     void addConfig(const Config &config);
     void removeConfig(const vespalib::string &name);
-    virtual void getComponentConfig(Consumer &consumer);
+    void getComponentConfig(Consumer &consumer) override;
 };
 
 } // namespace vespalib

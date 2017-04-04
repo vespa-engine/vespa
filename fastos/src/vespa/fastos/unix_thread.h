@@ -21,8 +21,8 @@ protected:
     pthread_t _handle;
     bool _handleValid;
 
-    bool Initialize (int stackSize, int stackGuardSize);
-    void PreEntry ();
+    bool Initialize (int stackSize, int stackGuardSize) override;
+    void PreEntry () override;
 
 public:
     static bool InitializeClass ();
@@ -34,7 +34,7 @@ public:
           _handleValid(false)
     {}
 
-    virtual ~FastOS_UNIX_Thread(void);
+    ~FastOS_UNIX_Thread();
 
     static bool Sleep (int ms)
     {
@@ -48,7 +48,7 @@ public:
         return rc;
     }
 
-    FastOS_ThreadId GetThreadId ();
+    FastOS_ThreadId GetThreadId () override;
     static bool CompareThreadIds (FastOS_ThreadId a,
                                   FastOS_ThreadId b);
     static FastOS_ThreadId GetCurrentThreadId ();

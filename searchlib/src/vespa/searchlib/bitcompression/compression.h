@@ -1231,94 +1231,55 @@ public:
      * Check if the chunk referenced by the decode context was the
      * last chunk in the file (e.g. _valE > _realValE)
      */
-    virtual bool
-    lastChunk(void) const
-    {
-        return _valE > _realValE;
-    }
+    bool lastChunk() const override { return _valE > _realValE; }
 
     /**
      * Check if we're at the end of the current chunk (e.g. _valI >= _valE)
      */
-    virtual bool
-    endOfChunk(void) const
-    {
-        return _valI >= _valE;
-    }
+    bool endOfChunk() const override { return _valI >= _valE; }
 
     /**
      * Get remaining units in buffer (e.g. _realValE - _valI)
      */
 
-    virtual int32_t
-    remainingUnits(void) const
-    {
-        return _realValE - _valI;
-    }
+    int32_t remainingUnits() const override { return _realValE - _valI; }
 
     /**
      * Get unit ptr (e.g. _valI) from decode context.
      */
-    virtual const void *
-    getUnitPtr(void) const
-    {
-        return _valI;
-    }
+    const void *getUnitPtr() const override { return _valI; }
 
-    virtual void
-    afterRead(const void *start,
-              size_t bufferUnits,
-              uint64_t bufferEndFilePos,
-              bool isMore)
-    {
+    void afterRead(const void *start, size_t bufferUnits, uint64_t bufferEndFilePos, bool isMore) override {
         _valI = static_cast<const uint64_t *>(start);
         setEnd(bufferUnits, isMore);
-        _fileReadBias = (bufferEndFilePos -
-                         reinterpret_cast<unsigned long>(_realValE + 1)) << 3;
+        _fileReadBias = (bufferEndFilePos - reinterpret_cast<unsigned long>(_realValE + 1)) << 3;
     }
 
-    virtual uint64_t
-    getBitPos(int bitOffset,
-              uint64_t bufferEndFilePos) const
-    {
+    uint64_t getBitPos(int bitOffset, uint64_t bufferEndFilePos) const override {
         int intOffset = _realValE - _valI;
         if (bitOffset == -1)
             bitOffset = -64 - _preRead;
 
-        return (bufferEndFilePos << 3) -
-            (static_cast<uint64_t>(intOffset) << 6) + bitOffset;
+        return (bufferEndFilePos << 3) - (static_cast<uint64_t>(intOffset) << 6) + bitOffset;
     }
 
-    uint64_t
-    getReadOffset(void) const
-    {
-        return _fileReadBias +
-            (reinterpret_cast<unsigned long>(_valI) << 3) - _preRead;
+    uint64_t getReadOffset() const {
+        return _fileReadBias + (reinterpret_cast<unsigned long>(_valI) << 3) - _preRead;
     }
 
-    void
-    defineReadOffset(uint64_t readOffset)
-    {
+    void defineReadOffset(uint64_t readOffset) {
         _fileReadBias  = readOffset -
                          (reinterpret_cast<unsigned long>(_valI) << 3) +
                          _preRead;
     }
 
-    virtual uint64_t
-    getBitPosV(void) const
-    {
-        return getReadOffset();
-    }
+    uint64_t getBitPosV() const override { return getReadOffset(); }
 
-    virtual void
-    adjUnitPtr(int newRemainingUnits)
-    {
+    void adjUnitPtr(int newRemainingUnits) override {
         _valI = _realValE - newRemainingUnits;
     }
 
-    virtual void
-    emptyBuffer(uint64_t newBitPosition)
-    {
+    void emptyBuffer(uint64_t newBitPosition) override {
         _fileReadBias = newBitPosition;
         _valI = NULL;
         _valE = NULL;
@@ -1326,20 +1287,14 @@ public:
         _preRead = 0;
     }
 
-    virtual uint32_t
-    getUnitByteSize(void) const
-    {
-        return sizeof(uint64_t);
-    }
+    uint32_t getUnitByteSize() const override { return sizeof(uint64_t); }
 
     /**
      * Set the end of the buffer
      * @param  unitCount   Number of bytes in buffer
      * @param  moreData    Set if there is more data available
      */
-    void
-    setEnd(unsigned int unitCount, bool moreData)
-    {
+    void setEnd(unsigned int unitCount, bool moreData) {
         _valE = _realValE = _valI + unitCount;
         if (moreData)
             _valE -= END_BUFFER_SAFETY;
@@ -1347,27 +1302,18 @@ public:
             _valE += END_BUFFER_SAFETY;
     }
 
-    const uint64_t *
-    getCompr(void) const
-    {
+    const uint64_t *getCompr(void) const {
         return (_preRead == 0) ? (_valI - 1) : (_valI - 2);
     }
 
-    int
-    getBitOffset(void) const
-    {
+    int getBitOffset(void) const {
         return (_preRead == 0) ? 0 : 64 - _preRead;
     }
 
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
+    void checkPointWrite(vespalib::nbostream &out) override;
+    void checkPointRead(vespalib::nbostream &in) override;
 
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
-
-    static int64_t
-    convertToSigned(uint64_t val)
-    {
+    static int64_t convertToSigned(uint64_t val) {
         if ((val & 1) != 0)
             return - (val >> 1) - 1;
         else
@@ -1478,9 +1424,7 @@ public:
             val |= (cacheInt << preRead);
     };
 
-    virtual void
-    skipBits(int bits)
-    {
+    void skipBits(int bits) override {
         while (bits >= 64) {
             _val = 0;
             ReadBits(64, _val, _cacheInt, _preRead, _valI);
@@ -1498,9 +1442,7 @@ public:
     /**
      * Setup for bitwise reading.
      */
-    virtual void
-    setupBits(int bitOffset)
-    {
+    void setupBits(int bitOffset) override {
         unsigned int length;
         UC64_SETUPBITS(bitOffset, _val, _valI, _preRead, _cacheInt, EC);
     }
@@ -1689,9 +1631,7 @@ public:
     virtual void
     getParams(PostingListParams &params) const;
 
-    virtual void
-    skipBits(int bits) 
-    {
+    void skipBits(int bits) override {
         readComprBufferIfNeeded();
         while (bits >= 64) {
             _val = 0;
@@ -1798,9 +1738,7 @@ public:
         _writeContext->writeComprBuffer(true);
     }
 
-    virtual void
-    padBits(uint32_t length)
-    {
+    void padBits(uint32_t length) override {
         while (length > 64) {
             writeBits(0, 64);
             length -= 64;

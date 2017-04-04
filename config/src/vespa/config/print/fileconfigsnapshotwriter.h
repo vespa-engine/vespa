@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "configsnapshotwriter.h"
+#include <vespa/vespalib/stllike/string.h>
 
 namespace config {
 
@@ -12,7 +12,7 @@ namespace config {
 class FileConfigSnapshotWriter : public ConfigSnapshotWriter {
 public:
     FileConfigSnapshotWriter(const vespalib::string & fileName);
-    bool write(const ConfigSnapshot & snapshot);
+    bool write(const ConfigSnapshot & snapshot) override;
 private:
     const vespalib::string _fileName;
 };

@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconfigresponsev2.h"
-#include <vespa/config/common/misc.h>
 #include <vespa/fnet/frt/frt.h>
-#include <vespa/vespalib/stllike/string.h>
 
 using namespace vespalib;
 using namespace vespalib::slime;
@@ -16,8 +14,7 @@ public:
     V2Payload(const SlimePtr & data)
         : _data(data)
     {}
-    const Inspector & getSlimePayload() const
-    {
+    const Inspector & getSlimePayload() const override {
         return extractPayload(*_data);
     }
 private:

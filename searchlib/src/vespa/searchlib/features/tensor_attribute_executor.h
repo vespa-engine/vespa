@@ -21,7 +21,7 @@ private:
 
 public:
     TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 } // namespace features

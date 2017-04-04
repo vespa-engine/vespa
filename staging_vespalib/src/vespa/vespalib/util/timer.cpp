@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "timer.h"
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/scheduler.h>
+#include <vespa/fnet/task.h>
+#include <vespa/fnet/transport.h>
 
 namespace vespalib {
 
@@ -22,13 +24,11 @@ public:
           _interval(interval)
     { }
 
-    ~TimerTask(void)
-    {
+    ~TimerTask() {
         Kill();
     }
 
-    void PerformTask()
-    {
+    void PerformTask() override {
         _task->run();
         Schedule(_interval);
     }

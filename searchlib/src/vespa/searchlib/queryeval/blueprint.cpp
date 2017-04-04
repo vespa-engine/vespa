@@ -7,6 +7,7 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/util/classname.h>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".queryeval.blueprint");

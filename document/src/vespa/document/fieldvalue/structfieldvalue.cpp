@@ -383,7 +383,7 @@ struct StructFieldValue::FieldIterator : public StructuredIterator {
         }
     }
 
-    virtual const Field* getNextField() {
+    const Field* getNextField() override {
         while (_cur != _ids.end()) {
             int id = *_cur++;
             try {

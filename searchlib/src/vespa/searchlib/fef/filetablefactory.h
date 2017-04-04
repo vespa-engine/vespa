@@ -26,7 +26,7 @@ public:
      * The numbers in the file should be separated with ' ' or '\n'.
      * Table::SP(NULL) is returned if the file 'path/name' is not found.
      **/
-    virtual Table::SP createTable(const vespalib::string & name) const;
+    Table::SP createTable(const vespalib::string & name) const override;
 };
 
 } // namespace fef

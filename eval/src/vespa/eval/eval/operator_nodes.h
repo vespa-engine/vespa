@@ -42,13 +42,13 @@ public:
     Order order() const { return _order; }
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
-    virtual bool is_const() const override { return _is_const; }
-    virtual size_t num_children() const override { return (_lhs && _rhs) ? 2 : 0; }
-    virtual const Node &get_child(size_t idx) const override {
+    bool is_const() const override { return _is_const; }
+    size_t num_children() const override { return (_lhs && _rhs) ? 2 : 0; }
+    const Node &get_child(size_t idx) const override {
         assert(idx < 2);
         return (idx == 0) ? lhs() : rhs();
     }
-    virtual void detach_children(NodeHandler &handler) override {
+    void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_lhs));
         handler.handle(std::move(_rhs));
     }
@@ -70,7 +70,7 @@ public:
         _is_const = (_lhs->is_const() && _rhs->is_const());
     }
 
-    virtual vespalib::string dump(DumpContext &ctx) const {
+    vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "(";
         str += _lhs->dump(ctx);
@@ -129,7 +129,7 @@ struct OperatorHelper : Operator {
     using Helper = OperatorHelper<T>;
     OperatorHelper(const vespalib::string &op_str_in, int priority_in, Operator::Order order_in)
         : Operator(op_str_in, priority_in, order_in) {}
-    virtual void accept(NodeVisitor &visitor) const override;
+    void accept(NodeVisitor &visitor) const override;
     static Operator_UP create() { return Operator_UP(new T()); }
 };
 
@@ -140,13 +140,13 @@ private:
     bool _is_forest;
 public:
     Add() : Helper("+", 101, LEFT), _is_forest(false) {}
-    virtual bool is_forest() const override { return _is_forest; }
+    bool is_forest() const override { return _is_forest; }
     bool check_forest() const {
         bool lhs_ok = (lhs().is_tree() || lhs().is_forest());
         bool rhs_ok = (rhs().is_tree() || rhs().is_forest());
         return (lhs_ok && rhs_ok);
     }
-    virtual void bind(Node_UP lhs_in, Node_UP rhs_in) override {
+    void bind(Node_UP lhs_in, Node_UP rhs_in) override {
         OperatorHelper<Add>::bind(std::move(lhs_in), std::move(rhs_in));
         _is_forest = check_forest();
     }

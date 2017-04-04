@@ -206,7 +206,7 @@ public:
               const stringref &location = "", int skipStack = 0);
 
     /** @brief Returns a string describing the current exception, including cause if any */
-    const char *what() const throw(); // should not be overridden
+    const char *what() const throw() override; // should not be overridden
 
     /** @brief Returns a pointer to underlying cause (or NULL if no cause) */
     const Exception *getCause() const { return _cause.get(); }

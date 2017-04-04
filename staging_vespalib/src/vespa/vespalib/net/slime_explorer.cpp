@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "slime_explorer.h"
-#include <vespa/vespalib/data/slime/inject.h>
 
 namespace vespalib {
 
@@ -10,7 +9,7 @@ namespace {
 struct SelfState : slime::ObjectTraverser {
     Slime result;
     SelfState() : result() { result.setObject(); }
-    virtual void field(const Memory &key, const slime::Inspector &value) {
+    void field(const Memory &key, const slime::Inspector &value) override {
         if (value.type().getId() != slime::OBJECT::ID) {
             slime::inject(value, slime::ObjectInserter(result.get(), key));
         }
@@ -19,7 +18,7 @@ struct SelfState : slime::ObjectTraverser {
 
 struct ChildrenNames : slime::ObjectTraverser {
     std::vector<vespalib::string> result;
-    virtual void field(const Memory &key, const slime::Inspector &value) {
+    void field(const Memory &key, const slime::Inspector &value) override {
         if (value.type().getId() == slime::OBJECT::ID) {
             result.push_back(key.make_string());
         }

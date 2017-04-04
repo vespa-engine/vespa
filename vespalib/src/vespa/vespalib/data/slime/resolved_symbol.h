@@ -22,10 +22,10 @@ private:
 
 public:
     ResolvedSymbol(const Symbol &symbol) : _symbol(symbol) {}
-    virtual Symbol lookup() const {
+    Symbol lookup() const override {
         return _symbol;
     }
-    virtual Symbol insert() {
+    Symbol insert() override {
         return _symbol;
     }
 };

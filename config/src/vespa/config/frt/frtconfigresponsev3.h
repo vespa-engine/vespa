@@ -2,11 +2,8 @@
 #pragma once
 
 #include "slimeconfigresponse.h"
-#include <vespa/config/common/configkey.h>
 #include <vespa/config/common/configvalue.h>
-#include <vespa/config/common/trace.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include "protocol.h"
+
 
 class FRT_RPCRequest;
 class FRT_Values;
@@ -24,8 +21,8 @@ public:
 
 private:
     static const vespalib::string RESPONSE_TYPES;
-    const vespalib::string & getResponseTypes() const;
-    const ConfigValue readConfigValue() const;
+    const vespalib::string & getResponseTypes() const override;
+    const ConfigValue readConfigValue() const override;
 };
 
 } // namespace config

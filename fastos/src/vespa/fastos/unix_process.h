@@ -147,18 +147,18 @@ public:
                          int bufferSize = 65535);
     ~FastOS_UNIX_Process ();
     bool CreateInternal (bool useShell);
-    bool Create () { return CreateInternal(false); }
-    bool CreateWithShell ()  { return CreateInternal(true); }
-    bool WriteStdin (const void *data, size_t length);
+    bool Create () override { return CreateInternal(false); }
+    bool CreateWithShell () override  { return CreateInternal(true); }
+    bool WriteStdin (const void *data, size_t length) override;
     bool Signal(int sig);
-    bool Kill ();
-    bool WrapperKill ();
-    bool Wait (int *returnCode, int timeOutSeconds = -1);
-    bool PollWait (int *returnCode, bool *stillRunning);
-    bool Detach(void);
+    bool Kill () override;
+    bool WrapperKill () override;
+    bool Wait (int *returnCode, int timeOutSeconds = -1) override;
+    bool PollWait (int *returnCode, bool *stillRunning) override;
+    bool Detach() override;
     void SetProcessId (unsigned int pid) { _pid = pid; }
-    unsigned int GetProcessId() { return _pid; }
-    bool SendIPCMessage (const void *data, size_t length);
+    unsigned int GetProcessId() override { return _pid; }
+    bool SendIPCMessage (const void *data, size_t length) override;
     void DeathNotification (int returnCode)
     {
         _returnCode = returnCode;
@@ -205,24 +205,16 @@ public:
         return _stderrListener;
     }
     bool GetKillFlag () {return _killed; }
-    virtual bool GetDirectChild(void) const
-    {
-        return _directChild;
-    }
+    bool GetDirectChild() const override { return _directChild; }
 
-    virtual bool SetDirectChild(void)
-    {
+    bool SetDirectChild() override {
         _directChild = true;
         return true;
     }
 
-    virtual bool GetKeepOpenFilesIfDirectChild(void) const
-    {
-        return _keepOpenFilesIfDirectChild;
-    }
+    bool GetKeepOpenFilesIfDirectChild() const override { return _keepOpenFilesIfDirectChild; }
 
-    virtual bool SetKeepOpenFilesIfDirectChild(void)
-    {
+    bool SetKeepOpenFilesIfDirectChild() override {
         _keepOpenFilesIfDirectChild = true;
         return true;
     }

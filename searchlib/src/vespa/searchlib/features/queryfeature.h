@@ -14,7 +14,7 @@ namespace features {
  * An executor of this outputs the value of a feature passed down with the query.
  * This can either be a number or a tensor value.
  */
-class QueryBlueprint : public search::fef::Blueprint {
+class QueryBlueprint : public fef::Blueprint {
 private:
     vespalib::string _key;  // 'foo'
     vespalib::string _key2; // '$foo'
@@ -22,29 +22,15 @@ private:
     vespalib::eval::ValueType _valueType;
 
 public:
-    /**
-     * Constructs a query blueprint.
-     */
     QueryBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().string();
+    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().string();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

@@ -143,20 +143,20 @@ class StringDirectAttribute : public StringAttribute
 private:
     StringDirectAttribute(const StringDirectAttribute &);
     StringDirectAttribute & operator=(const StringDirectAttribute &);
-    virtual void onSave(IAttributeSaveTarget & saveTarget);
-    virtual bool onLoad();
-    virtual const char * getFromEnum(EnumHandle e) const { return &_buffer[e]; }
+    void onSave(IAttributeSaveTarget & saveTarget) override;
+    bool onLoad() override;
+    const char * getFromEnum(EnumHandle e) const override { return &_buffer[e]; }
 protected:
     StringDirectAttribute(const vespalib::string & baseFileName, const Config & c);
-    virtual bool findEnum(const char * value, EnumHandle & e) const;
-    virtual void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const {
+    bool findEnum(const char * value, EnumHandle & e) const override;
+    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
         for (size_t i(0); i < sz; i++) {
             e[i] = v[i];
         }
     }
-    virtual void onCommit();
-    virtual void onUpdateStat() { }
-    virtual bool addDoc(DocId & );
+    void onCommit() override;
+    void onUpdateStat() override { }
+    bool addDoc(DocId & ) override;
 
 protected:
     std::vector<char>        _buffer;

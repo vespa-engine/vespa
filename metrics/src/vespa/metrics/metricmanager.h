@@ -92,7 +92,7 @@ public:
         }
 
         void print(std::ostream& out, bool verbose,
-                   const std::string& indent) const;
+                   const std::string& indent) const override;
 
         void addMemoryUsage(MemoryConsumption&) const;
     };

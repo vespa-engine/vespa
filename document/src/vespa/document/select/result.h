@@ -31,8 +31,7 @@ public:
     static Result False;
     static Result True;
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     bool operator==(const Result& o) const { return (&o == this); }
     bool operator!=(const Result& o) const { return (&o != this); }

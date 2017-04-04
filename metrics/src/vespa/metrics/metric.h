@@ -160,8 +160,8 @@ public:
     /** Implement to make metric able to log event. */
     virtual bool logEvent(const String& fullName) const = 0;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const {
+    void print(std::ostream& out, bool verbose,
+                       const std::string& indent) const override {
         print(out, verbose, indent, 0);
     }
     virtual void print(std::ostream&, bool verbose, const std::string& indent,

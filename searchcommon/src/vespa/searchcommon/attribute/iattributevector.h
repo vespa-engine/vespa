@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include <string>
-#include <stdint.h>
-#include <vespa/vespalib/stllike/string.h>
+#include "collectiontype.h"
+#include "basictype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
-#include <vespa/searchcommon/attribute/collectiontype.h>
-#include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search {
 

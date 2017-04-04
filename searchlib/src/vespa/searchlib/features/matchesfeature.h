@@ -12,19 +12,19 @@ namespace features {
  * Implements the executor for the matches feature for index and
  * attribute fields.
  */
-class MatchesExecutor : public search::fef::FeatureExecutor
+class MatchesExecutor : public fef::FeatureExecutor
 {
 private:
-    std::vector<search::fef::TermFieldHandle> _handles;
-    const fef::MatchData                     *_md;
+    std::vector<fef::TermFieldHandle> _handles;
+    const fef::MatchData             *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     MatchesExecutor(uint32_t fieldId,
-                    const search::fef::IQueryEnvironment &env,
+                    const fef::IQueryEnvironment &env,
                     uint32_t begin, uint32_t end);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 /**
@@ -35,38 +35,21 @@ public:
  * matches(name,n)
  *  - returns 1 if there is an index or attribute with this name which matched with the query term at the given position, 0 otherwise
  */
-class MatchesBlueprint : public search::fef::Blueprint
+class MatchesBlueprint : public fef::Blueprint
 {
 private:
-    const search::fef::FieldInfo *_field;
-    uint32_t                      _termIdx;
+    const fef::FieldInfo *_field;
+    uint32_t              _termIdx;
 
 public:
-    /**
-     * Constructs a blueprint.
-     */
     MatchesBlueprint();
-
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().
-            desc().field().
-            desc().field().number();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().field().desc().field().number();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

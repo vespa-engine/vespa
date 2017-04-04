@@ -113,7 +113,7 @@ private:
         Worker(Signal &s, Runnable::UP h) : thread(*this), signal(s), hook(std::move(h)) {
             thread.start();
         }
-        virtual void run() {
+        void run() override {
             for (size_t gen = 0; signal.wait(gen) > 0; ) {
                 hook->run();
             }
@@ -127,9 +127,9 @@ private:
 
 public:
     SimpleThreadBundle(size_t size, Strategy strategy = USE_SIGNAL_LIST);
-    virtual ~SimpleThreadBundle();
-    virtual size_t size() const;
-    virtual void run(const std::vector<Runnable*> &targets);
+    ~SimpleThreadBundle();
+    size_t size() const override;
+    void run(const std::vector<Runnable*> &targets) override;
 };
 
 } // namespace vespalib

@@ -45,7 +45,7 @@ namespace {
             return OrderingSpecification::UP();
         }
 
-        void visitAndBranch(const document::select::And& node) {
+        void visitAndBranch(const document::select::And& node) override {
             OrderingVisitor left(_order);
             node.getLeft().visit(left);
             node.getRight().visit(*this);
@@ -64,7 +64,7 @@ namespace {
             _spec = pickOrdering(*_spec, *left._spec, true);
         }
 
-        void visitOrBranch(const document::select::Or& node) {
+        void visitOrBranch(const document::select::Or& node) override {
             OrderingVisitor left(_order);
             node.getLeft().visit(left);
             node.getRight().visit(*this);
@@ -77,8 +77,7 @@ namespace {
             _spec = pickOrdering(*_spec, *left._spec, false);
         }
 
-        void visitNotBranch(const document::select::Not&) {
-        }
+        void visitNotBranch(const document::select::Not&) override {}
 
         void compare(const select::IdValueNode& node,
                      const select::ValueNode& valnode,
@@ -120,7 +119,7 @@ namespace {
             }
         }
 
-        void visitComparison(const document::select::Compare& node) {
+        void visitComparison(const document::select::Compare& node) override {
             const IdValueNode* lid(dynamic_cast<const IdValueNode*>(
                         &node.getLeft()));
             if (lid) {
@@ -134,76 +133,21 @@ namespace {
             }
         }
 
-        void visitConstant(const document::select::Constant&) {
-        }
-
-        virtual void
-        visitInvalidConstant(const document::select::InvalidConstant &)
-        {
-        }
-
-        void visitDocumentType(const document::select::DocType&) {
-        }
-
-        virtual void
-        visitArithmeticValueNode(const ArithmeticValueNode &)
-        {
-        }
-
-        virtual void
-        visitFunctionValueNode(const FunctionValueNode &)
-        {
-        }
-
-        virtual void
-        visitIdValueNode(const IdValueNode &)
-        {
-        }
-
-        virtual void
-        visitSearchColumnValueNode(const SearchColumnValueNode &)
-        {
-        }
-
-        virtual void
-        visitFieldValueNode(const FieldValueNode &)
-        {
-        }
-
-        virtual void
-        visitFloatValueNode(const FloatValueNode &)
-        {
-        }
-
-        virtual void
-        visitVariableValueNode(const VariableValueNode &)
-        {
-        }
-
-        virtual void
-        visitIntegerValueNode(const IntegerValueNode &)
-        {
-        }
-
-        virtual void
-        visitCurrentTimeValueNode(const CurrentTimeValueNode &)
-        {
-        }
-
-        virtual void
-        visitStringValueNode(const StringValueNode &)
-        {
-        }
-
-        virtual void
-        visitNullValueNode(const NullValueNode &)
-        {
-        }
-
-        virtual void
-        visitInvalidValueNode(const InvalidValueNode &)
-        {
-        }
+        void visitConstant(const document::select::Constant&) override {}
+        void visitInvalidConstant(const document::select::InvalidConstant &) override {}
+        void visitDocumentType(const document::select::DocType&) override {}
+        void visitArithmeticValueNode(const ArithmeticValueNode &) override {}
+        void visitFunctionValueNode(const FunctionValueNode &) override {}
+        void visitIdValueNode(const IdValueNode &) override {}
+        void visitSearchColumnValueNode(const SearchColumnValueNode &) override {}
+        void visitFieldValueNode(const FieldValueNode &) override {}
+        void visitFloatValueNode(const FloatValueNode &) override {}
+        void visitVariableValueNode(const VariableValueNode &) override {}
+        void visitIntegerValueNode(const IntegerValueNode &) override {}
+        void visitCurrentTimeValueNode(const CurrentTimeValueNode &) override {}
+        void visitStringValueNode(const StringValueNode &) override {}
+        void visitNullValueNode(const NullValueNode &) override {}
+        void visitInvalidValueNode(const InvalidValueNode &) override {}
     };
 }
 

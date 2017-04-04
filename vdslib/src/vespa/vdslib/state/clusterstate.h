@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "node.h"
+#include "nodestate.h"
 #include <map>
-#include <vespa/vdslib/state/node.h>
-#include <vespa/vdslib/state/nodestate.h>
 
 namespace storage {
 namespace lib {
@@ -63,8 +63,7 @@ public:
     void setDescription(const vespalib::stringref & s) { _description = s; }
     void setDistributionBitCount(uint16_t count) { _distributionBits = count; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void printStateGroupwise(std::ostream& out,
                              const Distribution&, bool verbose = false,

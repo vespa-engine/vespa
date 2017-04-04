@@ -8,9 +8,9 @@ namespace vespalib {
 namespace slime {
 
 struct Cursor : public Inspector {
-    virtual Cursor &operator[](size_t idx) const = 0;
-    virtual Cursor &operator[](Symbol sym) const = 0;
-    virtual Cursor &operator[](Memory name) const = 0;
+    virtual Cursor &operator[](size_t idx) const override = 0;
+    virtual Cursor &operator[](Symbol sym) const override = 0;
+    virtual Cursor &operator[](Memory name) const override = 0;
 
     virtual Cursor &addNix() = 0;
     virtual Cursor &addBool(bool bit) = 0;

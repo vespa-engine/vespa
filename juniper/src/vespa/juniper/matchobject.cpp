@@ -4,11 +4,8 @@
 #include "matchobject.h"
 #include "juniperdebug.h"
 #include "result.h"
-#include "querynode.h"
 #include "charutil.h"
 #include <vespa/fastlib/util/wildcard_match.h>
-#include "querymodifier.h"
-#include "queryhandle.h"
 #include <stack>
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.matchobject");
@@ -18,19 +15,18 @@ class traverser : public IQueryExprVisitor
 public:
     traverser(MatchObject& mo) : _mo(mo) {}
 
-    virtual void VisitQueryNode(QueryNode*)
-    {
+    void VisitQueryNode(QueryNode*) override {
         // We must not add this node to nonterminals before all children has been added!
         // Matcher::flush_candidates() depend on this order to avoid having to loop
         // until no more candidates...
     }
 
-    virtual void RevisitQueryNode(QueryNode* n)
+    void RevisitQueryNode(QueryNode* n) override
     {
         _mo.add_nonterm(n);
     }
 
-    virtual void VisitQueryTerm(QueryTerm* t)
+    void VisitQueryTerm(QueryTerm* t) override
     {
         if (t->rewriter && t->rewriter->ForDocument())
             _mo.add_reduction_term(t, t->rewriter);
@@ -48,7 +44,7 @@ public:
     query_expander(MatchObject& mo, uint32_t langid)
         : _caller(), _mo(mo), _langid(langid) {}
 
-    virtual void VisitQueryTerm(QueryTerm* orig)
+    void VisitQueryTerm(QueryTerm* orig) override
     {
         const char* nt = NULL;
         size_t length;
@@ -114,8 +110,7 @@ public:
 
 
     // Visit on descent:
-    void VisitQueryNode(QueryNode* n)
-    {
+    void VisitQueryNode(QueryNode* n) override {
         QueryNode* qn = new QueryNode(n);
         update(qn);
         _caller.push(qn);
@@ -123,15 +118,13 @@ public:
 
 
     // revisit on return:
-    void RevisitQueryNode(QueryNode* n)
-    {
+    void RevisitQueryNode(QueryNode* n) override {
         QueryNode* qn = _caller.top();
         if (n->_parent) _caller.pop();
         _mo.add_nonterm(qn);
     }
 
-    QueryExpr* NewQuery()
-    {
+    QueryExpr* NewQuery() {
         if (_caller.empty()) return NULL;
         return _caller.top();
     }
@@ -146,9 +139,6 @@ private:
     MatchObject& _mo;
     uint32_t _langid;
 };  // class query_expander
-
-
-
 
 MatchObject::MatchObject(QueryExpr* query, bool has_reductions) :
     _query(query),

@@ -2,15 +2,12 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/util/rand48.h>
 
 namespace search {
 namespace features {
-
 
 /**
  * Implements the executor for the random feature outputting a number in the interval [0, 1>.
@@ -22,11 +19,8 @@ private:
     uint64_t _matchSeed;
 
 public:
-    /**
-     * Constructs a new executor.
-     **/
     RandomExecutor(uint64_t seed, uint64_t matchSeed);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
@@ -38,34 +32,19 @@ private:
     uint64_t _seed;
 
 public:
-    /**
-     * Constructs a new blueprint.
-     */
     RandomBlueprint();
-
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+    void visitDumpFeatures(const search::fef::IIndexEnvironment & env, search::fef::IDumpFeatureVisitor & visitor) const override;
+    search::fef::Blueprint::UP createInstance() const override;
+    search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().
             desc().
             desc().string(); // in order to name different features
     }
 
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const search::fef::IIndexEnvironment & env, const search::fef::ParameterList & params) override;
+    search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 
 } // namespace features
 } // namespace search
-

@@ -98,7 +98,7 @@ class InsertFromArray : public ArrayTraverser {
 public:
     InsertFromArray(InsertIt it) : _it(it) {}
     ArrayTraverser &ref() { return *this; }
-    virtual void entry(size_t, const Inspector &inspector) {
+    void entry(size_t, const Inspector &inspector) override {
         *_it++ = inspector.asString().make_string();
     }
 };

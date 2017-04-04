@@ -10,39 +10,37 @@
 namespace search {
 namespace features {
 
-class NativeDotProductExecutor : public search::fef::FeatureExecutor
+class NativeDotProductExecutor : public fef::FeatureExecutor
 {
 private:
-    typedef std::pair<search::fef::TermFieldHandle,query::Weight> Pair;
-    std::vector<Pair> _pairs;
+    typedef std::pair<fef::TermFieldHandle,query::Weight> Pair;
+    std::vector<Pair>     _pairs;
     const fef::MatchData *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
-    NativeDotProductExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId);
-    virtual void execute(uint32_t docId);
+    NativeDotProductExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId);
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
 
-class NativeDotProductBlueprint : public search::fef::Blueprint
+class NativeDotProductBlueprint : public fef::Blueprint
 {
 private:
-    const search::fef::FieldInfo *_field;
+    const fef::FieldInfo *_field;
 public:
     NativeDotProductBlueprint() : Blueprint("nativeDotProduct"), _field(0) {}
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                   search::fef::IDumpFeatureVisitor &) const {}
-    virtual search::fef::Blueprint::UP createInstance() const {
+    void visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const override {}
+    fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new NativeDotProductBlueprint());
     }
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().field();
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().field();
     }
-    virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

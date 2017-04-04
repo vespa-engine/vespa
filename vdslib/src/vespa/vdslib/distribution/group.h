@@ -11,17 +11,13 @@
  */
 #pragma once
 
+#include "redundancygroupdistribution.h"
+#include <vespa/vespalib/objects/floatingpointtype.h>
+#include <vespa/vespalib/util/crc.h>
 #include <map>
 #include <vector>
-#include <vespa/vespalib/objects/floatingpointtype.h>
-#include <vespa/vdslib/distribution/redundancygroupdistribution.h>
-#include <vespa/vespalib/util/crc.h>
 
-namespace vespalib {
-
-class asciistream;
-
-}
+namespace vespalib { class asciistream; }
 
 namespace storage {
 namespace lib {
@@ -64,8 +60,7 @@ public:
 
     bool isLeafGroup() const { return _nodes.size() > 0; }
     bool operator==(const Group& other) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     vespalib::Double getCapacity() const { return _capacity; }
     const vespalib::string & getName() const { return _name; }

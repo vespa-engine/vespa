@@ -68,7 +68,7 @@ public:
      * thread in order to avoid race conditions related to socket event
      * registration, deregistration and triggering.
      **/
-    void Close();
+    void Close() override;
 
     /**
      * Called by the transport layer when a read event has occurred. If
@@ -77,7 +77,7 @@ public:
      *
      * @return false if connector is broken, true otherwise.
      **/
-    bool HandleReadEvent();
+    bool HandleReadEvent() override;
 
     /**
      * Called by the transport layer when a write event has
@@ -87,6 +87,6 @@ public:
      *
      * @return true.
      **/
-    bool HandleWriteEvent();
+    bool HandleWriteEvent() override;
 };
 

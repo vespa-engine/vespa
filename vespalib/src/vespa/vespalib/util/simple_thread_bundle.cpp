@@ -12,26 +12,26 @@ namespace {
 struct SignalHook : Runnable {
     Signal &signal;
     SignalHook(Signal &s) : signal(s) {}
-    virtual void run() { signal.send(); }
+    void run() override { signal.send(); }
 };
 
 struct BroadcastHook : Runnable {
     Signal &signal;
     BroadcastHook(Signal &s) : signal(s) {}
-    virtual void run() { signal.broadcast(); }
+    void run() override { signal.broadcast(); }
 };
 
 struct PartHook : Runnable {
     Part part;
     PartHook(const Part &p) : part(p) {}
-    virtual void run() { part.perform(); }
+    void run() override { part.perform(); }
 };
 
 struct HookPair : Runnable {
     Runnable::UP first;
     Runnable::UP second;
     HookPair(Runnable::UP f, Runnable::UP s) : first(std::move(f)), second(std::move(s)) {}
-    virtual void run() {
+    void run() override {
         first->run();
         second->run();
     }

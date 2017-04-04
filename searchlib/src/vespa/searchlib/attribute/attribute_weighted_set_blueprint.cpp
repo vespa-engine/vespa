@@ -101,20 +101,20 @@ public:
         result.foreach_truebit([&, end](uint32_t key) { if ( _map.find(_attr.getToken(key)) == end) { result.clearBit(key); }}, begin_id);
     }
 
-    virtual void doSeek(uint32_t docId) {
+    void doSeek(uint32_t docId) override {
         Map::const_iterator pos = _map.find(_attr.getToken(docId));
         if (pos != _map.end()) {
             _weight = pos->second;
             setDocId(docId);
         }
     }
-    virtual void doUnpack(uint32_t docId) {
+    void doUnpack(uint32_t docId) override {
         _tfmd.reset(docId);
         fef::TermFieldMatchDataPosition pos;
         pos.setElementWeight(_weight);
         _tfmd.appendPosition(pos);
     }
-    virtual void visitMembers(vespalib::ObjectVisitor &) const {}
+    void visitMembers(vespalib::ObjectVisitor &) const override {}
 };
 
 //-----------------------------------------------------------------------------

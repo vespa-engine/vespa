@@ -13,9 +13,9 @@ namespace expression {
 class RangeBucketPreDefFunctionNode : public UnaryFunctionNode
 {
 private:
-    virtual void onPrepareResult();
-    virtual bool onExecute() const;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void onPrepareResult() override;
+    bool onExecute() const override;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
     class Handler {
     public:
@@ -31,7 +31,7 @@ private:
         SingleValueHandler(const RangeBucketPreDefFunctionNode & rangeNode) :
             Handler(rangeNode)
         { }
-        virtual const ResultNode * handle(const ResultNode & arg);
+        const ResultNode * handle(const ResultNode & arg) override;
     };
     class MultiValueHandler : public Handler {
     public:
@@ -39,7 +39,7 @@ private:
             Handler(rangeNode),
             _result(static_cast<ResultNodeVector &>(rangeNode.updateResult()))
         { }
-        virtual const ResultNode * handle(const ResultNode & arg);
+        const ResultNode * handle(const ResultNode & arg) override;
     private:
         ResultNodeVector & _result;
     };
@@ -61,7 +61,7 @@ public:
     RangeBucketPreDefFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _predef(), _result(NULL), _nullResult(NULL) {}
     RangeBucketPreDefFunctionNode(const RangeBucketPreDefFunctionNode & rhs);
     RangeBucketPreDefFunctionNode & operator = (const RangeBucketPreDefFunctionNode & rhs);
-    virtual const ResultNode & getResult()   const { return *_result; }
+    const ResultNode & getResult()   const override { return *_result; }
     const ResultNodeVector & getBucketList() const { return *_predef; }
     ResultNodeVector       & getBucketList()       { return *_predef; }
     RangeBucketPreDefFunctionNode & setBucketList(const ResultNodeVector & predef) {
@@ -72,4 +72,3 @@ public:
 
 }
 }
-

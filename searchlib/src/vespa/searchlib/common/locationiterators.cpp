@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/geo/zcurve.h>
-
-#include <vespa/searchlib/bitcompression/compression.h>
-
 #include "locationiterators.h"
+#include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 using namespace search::common;
@@ -19,14 +15,12 @@ private:
     const Location &   _location;
     std::vector<search::AttributeVector::largeint_t> _pos;
 
-    virtual void doSeek(uint32_t docId);
-    virtual void doUnpack(uint32_t docId);
+    void doSeek(uint32_t docId) override;
+    void doUnpack(uint32_t docId) override;
 public:
-    FastS_2DZLocationIterator(unsigned int numDocs,
-                             bool strict,
-                             const Location & location);
+    FastS_2DZLocationIterator(unsigned int numDocs, bool strict, const Location & location);
 
-    virtual ~FastS_2DZLocationIterator(void);
+    ~FastS_2DZLocationIterator();
 };
 
 
@@ -45,9 +39,7 @@ FastS_2DZLocationIterator(unsigned int numDocs,
 };
 
 
-FastS_2DZLocationIterator::~FastS_2DZLocationIterator(void)
-{
-};
+FastS_2DZLocationIterator::~FastS_2DZLocationIterator() {}
 
 
 void

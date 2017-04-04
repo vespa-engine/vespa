@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/unaryfunctionnode.h>
-#include <vespa/searchlib/expression/numericresultnode.h>
-#include <vespa/searchlib/expression/integerbucketresultnode.h>
-#include <vespa/searchlib/expression/floatbucketresultnode.h>
-#include <vespa/searchlib/expression/resultvector.h>
+#include "unaryfunctionnode.h"
+#include "numericresultnode.h"
+#include "integerbucketresultnode.h"
+#include "floatbucketresultnode.h"
+#include "resultvector.h"
 #include <memory>
 
 namespace search {
@@ -26,31 +26,31 @@ public:
     struct IntegerBucketHandler : public BucketHandler {
         int64_t width;
         IntegerBucketHandler(int64_t w) : width(w) {}
-        virtual void update(ResultNode &result, const ResultNode &value) const;
-        virtual IntegerBucketHandler *clone() const { return new IntegerBucketHandler(*this); }
+        void update(ResultNode &result, const ResultNode &value) const override;
+        IntegerBucketHandler *clone() const override { return new IntegerBucketHandler(*this); }
     };
     struct IntegerVectorBucketHandler : public IntegerBucketHandler {
         IntegerVectorBucketHandler(int64_t w) : IntegerBucketHandler(w) { }
-        virtual void update(ResultNode &result, const ResultNode &value) const;
-        virtual IntegerVectorBucketHandler *clone() const { return new IntegerVectorBucketHandler(*this); }
+        void update(ResultNode &result, const ResultNode &value) const override;
+        IntegerVectorBucketHandler *clone() const override { return new IntegerVectorBucketHandler(*this); }
     };
 
     // update float result bucket based on float value
     struct FloatBucketHandler : public BucketHandler {
         double width;
         FloatBucketHandler(double w) : width(w) {}
-        virtual void update(ResultNode &result, const ResultNode &value) const;
-        virtual FloatBucketHandler *clone() const { return new FloatBucketHandler(*this); }
+        void update(ResultNode &result, const ResultNode &value) const override;
+        FloatBucketHandler *clone() const override { return new FloatBucketHandler(*this); }
     };
 
     struct FloatVectorBucketHandler : public FloatBucketHandler {
         FloatVectorBucketHandler(double w) : FloatBucketHandler(w) { }
-        virtual void update(ResultNode &result, const ResultNode &value) const;
-        virtual FloatVectorBucketHandler *clone() const { return new FloatVectorBucketHandler(*this); }
+        void update(ResultNode &result, const ResultNode &value) const override;
+        FloatVectorBucketHandler *clone() const override { return new FloatVectorBucketHandler(*this); }
     };
 private:
-    virtual void onPrepareResult();
-    virtual bool onExecute() const;
+    void onPrepareResult() override;
+    bool onExecute() const override;
 
     NumericResultNode::CP _width;
     BucketHandler::CP     _bucketHandler;

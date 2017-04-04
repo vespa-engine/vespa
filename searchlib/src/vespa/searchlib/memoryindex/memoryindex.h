@@ -137,15 +137,15 @@ public:
     void dump(index::IndexBuilder &indexBuilder);
 
     // implements Searchable
-    virtual queryeval::Blueprint::UP
+    queryeval::Blueprint::UP
     createBlueprint(const queryeval::IRequestContext & requestContext,
                     const queryeval::FieldSpec &field,
-                    const query::Node &term);
+                    const query::Node &term) override;
 
-    virtual queryeval::Blueprint::UP
+    queryeval::Blueprint::UP
     createBlueprint(const queryeval::IRequestContext & requestContext,
                     const queryeval::FieldSpecList &fields,
-                    const query::Node &term) {
+                    const query::Node &term) override {
         return queryeval::Searchable::createBlueprint(requestContext, fields, term);
     }
 

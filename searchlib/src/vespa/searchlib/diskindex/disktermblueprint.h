@@ -21,7 +21,7 @@ private:
     bool                                         _fetchPostingsDone;
     bool                                         _hasEquivParent;
     search::index::PostingListHandle::UP         _postingHandle;
-    search::BitVector::UP                    _bitVector;
+    search::BitVector::UP                        _bitVector;
 
 public:
     /**
@@ -39,11 +39,9 @@ public:
 
     // Inherit doc from Blueprint.
     // For now, this DiskTermBlueprint instance must have longer lifetime than the created iterator.
-    virtual search::queryeval::SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray & tfmda, bool strict) const;
+    search::queryeval::SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray & tfmda, bool strict) const override;
 
-    virtual void
-    fetchPostings(bool strict);
+    void fetchPostings(bool strict) override;
 };
 
 }  // namespace diskindex

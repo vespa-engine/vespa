@@ -1,9 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Unit tests for autoclosurecaller.
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("autoclosurecaller_test");
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/autoclosurecaller.h>
@@ -16,7 +11,7 @@ class Test : public vespalib::TestApp {
     void requireThatClosureIsCalledInDtor();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int

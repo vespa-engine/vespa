@@ -136,8 +136,8 @@ struct JsonEncoder : public ArrayTraverser,
         }
         abort(); // should not be reached
     }
-    virtual void entry(size_t idx, const Inspector &inspector);
-    virtual void field(const Memory &symbol_name, const Inspector &inspector);
+    void entry(size_t idx, const Inspector &inspector) override;
+    void field(const Memory &symbol_name, const Inspector &inspector) override;
 
     static void encode(const Inspector &inspector, OutputWriter &out) {
         JsonEncoder<COMPACT> encoder(out);

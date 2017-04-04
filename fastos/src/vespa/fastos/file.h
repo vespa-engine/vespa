@@ -66,7 +66,7 @@ class DirectIOException : public std::exception
 {
 public:
     DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset);
-    virtual const char* what() const noexcept { return _what.c_str(); }
+    const char* what() const noexcept override { return _what.c_str(); }
     const void * getBuffer() const { return _buffer; }
     size_t       getLength() const { return _length; }
     int64_t      getOffset() const { return _offset; }

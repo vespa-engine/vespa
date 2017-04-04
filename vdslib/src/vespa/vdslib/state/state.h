@@ -9,9 +9,9 @@
  */
 #pragma once
 
+#include "nodetype.h"
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vdslib/state/nodetype.h>
 #include <vector>
 
 namespace storage {
@@ -70,8 +70,7 @@ public:
         return _name;
     }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const State& other) const { return (&other == this); }
     bool operator!=(const State& other) const { return (&other != this); }
 

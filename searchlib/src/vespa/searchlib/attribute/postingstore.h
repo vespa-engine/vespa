@@ -50,17 +50,10 @@ protected:
     static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
 
 public:
-    PostingStoreBase2(EnumPostingTree &dict, Status &status,
-                      const Config &config);
-
-    virtual
-    ~PostingStoreBase2();
-    
-    bool
-    resizeBitVectors(uint32_t newSize, uint32_t newCapacity);
-
-    virtual bool
-    removeSparseBitVectors() = 0;
+    PostingStoreBase2(EnumPostingTree &dict, Status &status, const Config &config);
+    virtual ~PostingStoreBase2();
+    bool resizeBitVectors(uint32_t newSize, uint32_t newCapacity);
+    virtual bool removeSparseBitVectors() = 0;
 };
 
 template <typename DataT>
@@ -104,39 +97,16 @@ public:
     
 
     PostingStore(EnumPostingTree &dict, Status &status, const Config &config);
-
-    virtual
     ~PostingStore();
 
-    virtual bool
-    removeSparseBitVectors();
+    bool removeSparseBitVectors() override;
+    static bool isBitVector(uint32_t typeId) { return typeId == BUFFERTYPE_BITVECTOR; }
+    static bool isBTree(uint32_t typeId) { return typeId == BUFFERTYPE_BTREE; }
+    bool isBTree(RefType ref) const { return isBTree(getTypeId(ref)); }
 
-    static bool
-    isBitVector(uint32_t typeId)
-    {
-        return typeId == BUFFERTYPE_BITVECTOR;
-    }
+    void applyNew(EntryRef &ref, AddIter a, AddIter ae);
 
-    static bool
-    isBTree(uint32_t typeId)
-    {
-        return typeId == BUFFERTYPE_BTREE;
-    }
-
-    bool
-    isBTree(RefType ref) const
-    {
-        return isBTree(getTypeId(ref));
-    }
-
-    void
-    applyNew(EntryRef &ref,
-             AddIter a,
-             AddIter ae);
-
-    BitVectorRefPair
-    allocBitVector(void)
-    {
+    BitVectorRefPair allocBitVector() {
         return _store.template freeListAllocator<BitVectorEntry,
             btree::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
     }
@@ -144,26 +114,12 @@ public:
     /*
      * Recreate btree from bitvector. Weight information is not recreated.
      */
-    void
-    makeDegradedTree(EntryRef &ref, const BitVector &bv);
+    void makeDegradedTree(EntryRef &ref, const BitVector &bv);
+    void dropBitVector(EntryRef &ref);
+    void makeBitVector(EntryRef &ref);
 
-    void
-    dropBitVector(EntryRef &ref);
-    
-    void
-    makeBitVector(EntryRef &ref);
-
-    void
-    applyNewBitVector(EntryRef &ref,
-                      AddIter aOrg,
-                      AddIter ae);
-    
-    void
-    apply(BitVector &bv,
-          AddIter a,
-          AddIter ae,
-          RemoveIter r,
-          RemoveIter re);
+    void applyNewBitVector(EntryRef &ref, AddIter aOrg, AddIter ae);
+    void apply(BitVector &bv, AddIter a, AddIter ae, RemoveIter r, RemoveIter re);
 
     /**
      * Apply multiple changes at once.
@@ -171,18 +127,9 @@ public:
      * additions and removals should be sorted on key without duplicates.
      * Overlap between additions and removals indicates updates.
      */
-    void
-    apply(EntryRef &ref,
-          AddIter a,
-          AddIter ae,
-          RemoveIter r,
-          RemoveIter re);
-
-    void
-    clear(const EntryRef ref);
-
-    size_t
-    size(const EntryRef ref) const {
+    void apply(EntryRef &ref, AddIter a, AddIter ae, RemoveIter r, RemoveIter re);
+    void clear(const EntryRef ref);
+    size_t size(const EntryRef ref) const {
         if (!ref.valid())
             return 0;
         RefType iRef(ref);
@@ -194,8 +141,7 @@ public:
         return clusterSize;
     }
 
-    size_t
-    frozenSize(const EntryRef ref) const {
+    size_t frozenSize(const EntryRef ref) const {
         if (!ref.valid())
             return 0;
         RefType iRef(ref);
@@ -207,45 +153,30 @@ public:
         return clusterSize;
     }
 
-    Iterator
-    begin(const EntryRef ref) const;
-
-    ConstIterator
-    beginFrozen(const EntryRef ref) const;
-
-    void
-    beginFrozen(const EntryRef ref, std::vector<ConstIterator> &where) const;
+    Iterator begin(const EntryRef ref) const;
+    ConstIterator beginFrozen(const EntryRef ref) const;
+    void beginFrozen(const EntryRef ref, std::vector<ConstIterator> &where) const;
 
     template <typename FunctionType>
-    VESPA_DLL_LOCAL void
-    foreach_frozen_key(EntryRef ref, FunctionType func) const;
+    VESPA_DLL_LOCAL void foreach_frozen_key(EntryRef ref, FunctionType func) const;
 
     template <typename FunctionType>
-    VESPA_DLL_LOCAL void
-    foreach_frozen(EntryRef ref, FunctionType func) const;
+    VESPA_DLL_LOCAL void foreach_frozen(EntryRef ref, FunctionType func) const;
 
-    AggregatedType
-    getAggregated(const EntryRef ref) const;
+    AggregatedType getAggregated(const EntryRef ref) const;
 
-    const BitVectorEntry *
-    getBitVectorEntry(RefType ref) const
-    {
+    const BitVectorEntry *getBitVectorEntry(RefType ref) const {
         return _store.template getBufferEntry<BitVectorEntry>(ref.bufferId(),
                                                               ref.offset());
     }
 
-    BitVectorEntry *
-    getWBitVectorEntry(RefType ref)
-    {
+    BitVectorEntry *getWBitVectorEntry(RefType ref) {
         return _store.template getBufferEntry<BitVectorEntry>(ref.bufferId(),
                                                               ref.offset());
     }
 
-    static inline DataT
-    bitVectorWeight();
-
-    MemoryUsage
-    getMemoryUsage() const;
+    static inline DataT bitVectorWeight();
+    MemoryUsage getMemoryUsage() const;
 
 private:
     size_t internalSize(uint32_t typeId, const RefType & iRef) const;
@@ -350,9 +281,6 @@ PostingStore<DataT>::foreach_frozen(EntryRef ref, FunctionType func) const
     }
 }
 
-
-
 } // namespace attribute
 
 } // namespace search
-

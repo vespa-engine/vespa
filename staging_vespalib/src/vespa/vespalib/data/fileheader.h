@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <map>
 #include "databuffer.h"
 #include <vespa/vespalib/util/exception.h>
+#include <map>
 
 class FastOS_FileInterface;
 
@@ -110,7 +110,7 @@ public:
 
     public:
         BufferReader(DataBuffer &buf);
-        size_t getData(char *buf, size_t len);
+        size_t getData(char *buf, size_t len) override;
     };
 
     /**
@@ -123,7 +123,7 @@ public:
 
     public:
         BufferWriter(DataBuffer &buf);
-        size_t putData(const char *buf, size_t len);
+        size_t putData(const char *buf, size_t len) override;
     };
 
     class MMapReader : public IDataReader
@@ -134,7 +134,7 @@ public:
     public:
         MMapReader(const char *buf, size_t sz);
 
-        size_t getData(char *buf, size_t len);
+        size_t getData(char *buf, size_t len) override;
     };
 
 private:
@@ -259,7 +259,7 @@ public:
 
     public:
         FileReader(FastOS_FileInterface &file);
-        size_t getData(char *buf, size_t len);
+        size_t getData(char *buf, size_t len) override;
     };
 
     /**
@@ -272,7 +272,7 @@ public:
 
     public:
         FileWriter(FastOS_FileInterface &file);
-        size_t putData(const char *buf, size_t len);
+        size_t putData(const char *buf, size_t len) override;
     };
 
 private:
@@ -296,7 +296,7 @@ public:
      *
      * @return The number of bytes required to hold the content of this.
      */
-    size_t getSize() const;
+    size_t getSize() const override;
 
     /**
      * Deserializes header content from the given file into this. This requires that the file is open in read

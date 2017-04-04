@@ -88,8 +88,7 @@ public:
      * @param packet the packet to handle.
      * @param context the packet context.
      **/
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet,
-                                    FNET_Context context);
+    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 
 
     /**
@@ -189,7 +188,7 @@ public:
      *                  as a packet handler. Default is FNET_KEEP_CHANNEL.
      **/
     FNET_PacketQueue(uint32_t len = 64, HP_RetCode hpRetCode = FNET_KEEP_CHANNEL);
-    virtual ~FNET_PacketQueue();
+    ~FNET_PacketQueue();
 
 
     /**
@@ -235,8 +234,7 @@ public:
      * @param packet the packet to handle.
      * @param context the packet context.
      **/
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet,
-                                    FNET_Context context);
+    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 
 
     /**

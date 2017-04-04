@@ -26,7 +26,7 @@ public:
               _done(false),
               _waiting(false) {}
 
-    virtual ~SyncPacket() {}
+    ~SyncPacket() {}
 
     void WaitFree() {
         _cond.Lock();
@@ -37,7 +37,7 @@ public:
         _cond.Unlock();
     }
 
-    virtual void Free();
+    void Free() override;
 };
 
 

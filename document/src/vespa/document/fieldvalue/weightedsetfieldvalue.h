@@ -30,13 +30,13 @@ private:
     bool _altered;
 
     void verifyKey(const FieldValue & key);
-    virtual bool addValue(const FieldValue& fval) { return add(fval, 1); }
-    virtual bool containsValue(const FieldValue& val) const;
-    virtual bool removeValue(const FieldValue& val);
-    virtual IteratorHandler::ModificationStatus onIterateNested(
+    bool addValue(const FieldValue& fval) override { return add(fval, 1); }
+    bool containsValue(const FieldValue& val) const override;
+    bool removeValue(const FieldValue& val) override;
+    IteratorHandler::ModificationStatus onIterateNested(
             FieldPath::const_iterator start,
             FieldPath::const_iterator end,
-            IteratorHandler& handler) const;
+            IteratorHandler& handler) const override;
 public:
     typedef std::unique_ptr<WeightedSetFieldValue> UP;
 
@@ -68,22 +68,19 @@ public:
         { increment(fval, -1*val); }
     int32_t get(const FieldValue&, int32_t defaultValue = 0) const;
 
-        // CollectionFieldValue implementation
-    virtual bool isEmpty() const { return _map.isEmpty(); }
-    virtual size_t size() const { return _map.size(); }
-    virtual void clear() { _map.clear(); }
+    bool isEmpty() const override { return _map.isEmpty(); }
+    size_t size() const override { return _map.size(); }
+    void clear() override { _map.clear(); }
     void reserve(size_t sz) { _map.reserve(sz); }
     void resize(size_t sz) { _map.resize(sz); }
 
-        // FieldValue implementation
-    virtual FieldValue& assign(const FieldValue&);
-    virtual WeightedSetFieldValue* clone() const
-        { return new WeightedSetFieldValue(*this); }
-    virtual int compare(const FieldValue&) const;
-    virtual void printXml(XmlOutputStream& out) const;
+    FieldValue& assign(const FieldValue&) override;
+    WeightedSetFieldValue* clone() const override { return new WeightedSetFieldValue(*this); }
+    virtual int compare(const FieldValue&) const override;
+    virtual void printXml(XmlOutputStream& out) const override;
     virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual bool hasChanged() const;
+                       const std::string& indent) const override;
+    virtual bool hasChanged() const override;
 
         // Implements iterating through internal content.
     typedef WeightedFieldValueMap::const_iterator const_iterator;

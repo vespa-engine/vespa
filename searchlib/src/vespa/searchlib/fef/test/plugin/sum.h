@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
@@ -14,8 +12,8 @@ namespace test {
 class SumExecutor : public FeatureExecutor
 {
 public:
-    virtual bool isPure() { return true; }
-    virtual void execute(uint32_t docId);
+    bool isPure() override { return true; }
+    void execute(uint32_t docId) override;
 };
 
 
@@ -23,10 +21,10 @@ class SumBlueprint : public Blueprint
 {
 public:
     SumBlueprint();
-    virtual void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const;
-    virtual Blueprint::UP createInstance() const { return Blueprint::UP(new SumBlueprint()); }
-    virtual bool setup(const IIndexEnvironment & indexEnv, const StringVector & params);
-    virtual FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const override;
+     void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const override;
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new SumBlueprint()); }
+    bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;
+    FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace test

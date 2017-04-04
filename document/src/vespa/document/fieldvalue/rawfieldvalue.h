@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <vespa/document/fieldvalue/literalfieldvalue.h>
+#include "literalfieldvalue.h"
 #include <memory>
 
 namespace document {
@@ -32,14 +32,11 @@ public:
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
 
-    virtual RawFieldValue* clone() const
-        { return new RawFieldValue(*this); }
-    virtual void printXml(XmlOutputStream& out) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    RawFieldValue* clone() const override { return new RawFieldValue(*this); }
+    void printXml(XmlOutputStream& out) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    RawFieldValue& operator=(const string& value)
-        { setValue(value); return *this; }
+    RawFieldValue& operator=(const string& value) { setValue(value); return *this; }
 
     DECLARE_IDENTIFIABLE(RawFieldValue);
 };

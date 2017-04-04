@@ -32,10 +32,10 @@ public:
      */
     const string &getName() const { return _name; }
 
-    virtual Type getType() const { return TYPE_ROUTE; }
-    virtual bool matches(const IHopDirective &dir) const;
-    virtual string toString() const;
-    virtual string toDebugString() const;
+    Type getType() const override { return TYPE_ROUTE; }
+    bool matches(const IHopDirective &dir) const override;
+    string toString() const override;
+    string toDebugString() const override;
 };
 
 } // mbus

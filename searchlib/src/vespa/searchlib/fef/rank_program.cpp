@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.rank_program");
 #include "rank_program.h"
 #include "featureoverrider.h"
-#include <algorithm>
-#include <set>
 
 using vespalib::Stash;
 
@@ -40,8 +35,8 @@ struct OverrideVisitor : public IPropertiesVisitor
                     std::vector<Override> &overrides_out)
         : feature_map(feature_map_in), overrides(overrides_out) {}
 
-    virtual void visitProperty(const Property::Value & key,
-                               const Property & values)
+     void visitProperty(const Property::Value & key,
+                        const Property & values) override
     {
         auto pos = feature_map.find(key);
         if (pos != feature_map.end()) {

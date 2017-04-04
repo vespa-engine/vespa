@@ -1,10 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
+#include "rpcsendadapter.h"
 #include <vespa/messagebus/idiscardhandler.h>
 #include <vespa/messagebus/ireplyhandler.h>
-#include "rpcsendadapter.h"
+#include <vespa/fnet/frt/invokable.h>
+
 
 namespace mbus {
 

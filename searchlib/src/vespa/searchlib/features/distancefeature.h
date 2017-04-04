@@ -13,11 +13,11 @@ namespace features {
 /**
  * Implements the executor for the distance feature.
  */
-class DistanceExecutor : public search::fef::FeatureExecutor {
+class DistanceExecutor : public fef::FeatureExecutor {
 private:
-    const search::fef::Location         & _location;
-    const search::attribute::IAttributeVector * _pos;
-    search::attribute::IntegerContent           _intBuf;
+    const fef::Location         & _location;
+    const attribute::IAttributeVector * _pos;
+    attribute::IntegerContent           _intBuf;
 
     feature_t calculateDistance(uint32_t docId);
     feature_t calculate2DZDistance(uint32_t docId);
@@ -29,9 +29,8 @@ public:
      * @param location the location object associated with the query environment.
      * @param pos the attribute to use for positions (expects zcurve encoding).
      */
-    DistanceExecutor(const search::fef::Location & location,
-                     const search::attribute::IAttributeVector * pos);
-    virtual void execute(uint32_t docId);
+    DistanceExecutor(const fef::Location & location, const attribute::IAttributeVector * pos);
+    void execute(uint32_t docId) override;
 
     static const feature_t DEFAULT_DISTANCE;
 };
@@ -39,34 +38,19 @@ public:
 /**
  * Implements the blueprint for the distance executor.
  */
-class DistanceBlueprint : public search::fef::Blueprint {
+class DistanceBlueprint : public fef::Blueprint {
 private:
     vespalib::string _posAttr;
 
 public:
-    /**
-     * Constructs a blueprint for the distance executor.
-     */
     DistanceBlueprint();
-
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().string();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().string();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 

@@ -65,13 +65,10 @@ class InvalidValue : public Value
 public:
     InvalidValue() : Value(Invalid) {}
 
-    virtual ResultList operator<(const Value&) const;
-    virtual ResultList operator==(const Value&) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    Value::UP clone() const { return Value::UP(new InvalidValue()); }
-
+    ResultList operator<(const Value&) const override;
+    ResultList operator==(const Value&) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    Value::UP clone() const override { return Value::UP(new InvalidValue()); }
 };
 
 class NullValue : public Value
@@ -79,22 +76,13 @@ class NullValue : public Value
 public:
     NullValue() : Value(Null) {}
 
-    virtual ResultList operator<(const Value&) const;
-    virtual ResultList operator==(const Value&) const;
-
-    virtual ResultList
-    operator>(const Value &) const;
-
-    virtual ResultList
-    operator>=(const Value &) const;
-
-    virtual ResultList
-    operator<=(const Value &) const;
-
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    Value::UP clone() const { return Value::UP(new NullValue()); }
+    ResultList operator<(const Value&) const override;
+    ResultList operator==(const Value&) const override;
+    ResultList operator>(const Value &) const override;
+    ResultList operator>=(const Value &) const override;
+    ResultList operator<=(const Value &) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    Value::UP clone() const override { return Value::UP(new NullValue()); }
 };
 
 class StringValue : public Value
@@ -105,13 +93,10 @@ public:
     StringValue(const vespalib::stringref & val);
 
     const vespalib::string& getValue() const { return _value; }
-
-    virtual ResultList operator<(const Value& value) const;
-    virtual ResultList operator==(const Value& value) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    Value::UP clone() const { return Value::UP(new StringValue(_value)); }
+    ResultList operator<(const Value& value) const override;
+    ResultList operator==(const Value& value) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    Value::UP clone() const override { return Value::UP(new StringValue(_value)); }
 };
 
 class IntegerValue;
@@ -126,10 +111,10 @@ public:
 
     virtual CommonValueType getCommonValue() const = 0;
 
-    virtual ResultList operator<(const Value& value) const = 0;
+    virtual ResultList operator<(const Value& value) const override = 0;
     virtual ResultList operator>(const IntegerValue& value) const = 0;
     virtual ResultList operator>(const FloatValue& value) const = 0;
-    virtual ResultList operator==(const Value& value) const = 0;
+    virtual ResultList operator==(const Value& value) const override = 0;
     virtual ResultList operator==(const IntegerValue& value) const = 0;
     virtual ResultList operator==(const FloatValue& value) const = 0;
 };
@@ -142,19 +127,18 @@ public:
     IntegerValue(ValueType value, bool isBucketValue);
 
     ValueType getValue() const { return _value; }
-    CommonValueType getCommonValue() const { return _value; }
+    CommonValueType getCommonValue() const override { return _value; }
 
-    virtual ResultList operator<(const Value& value) const;
-    virtual ResultList operator==(const Value& value) const;
+    ResultList operator<(const Value& value) const override;
+    ResultList operator==(const Value& value) const override;
 
-    virtual ResultList operator>(const IntegerValue& value) const;
-    virtual ResultList operator>(const FloatValue& value) const;
-    virtual ResultList operator==(const IntegerValue& value) const;
-    virtual ResultList operator==(const FloatValue& value) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    ResultList operator>(const IntegerValue& value) const override;
+    ResultList operator>(const FloatValue& value) const override;
+    ResultList operator==(const IntegerValue& value) const override;
+    ResultList operator==(const FloatValue& value) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    Value::UP clone() const {
+    Value::UP clone() const override {
         return Value::UP(new IntegerValue(_value, getType() == Value::Bucket));
     }
 private:
@@ -169,19 +153,18 @@ public:
     FloatValue(ValueType val);
 
     ValueType getValue() const { return _value; }
-    CommonValueType getCommonValue() const { return _value; }
+    CommonValueType getCommonValue() const override { return _value; }
 
-    virtual ResultList operator<(const Value& value) const;
-    virtual ResultList operator==(const Value& value) const;
+    ResultList operator<(const Value& value) const override;
+    ResultList operator==(const Value& value) const override;
 
-    virtual ResultList operator>(const IntegerValue& value) const;
-    virtual ResultList operator>(const FloatValue& value) const;
-    virtual ResultList operator==(const IntegerValue& value) const;
-    virtual ResultList operator==(const FloatValue& value) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    ResultList operator>(const IntegerValue& value) const override;
+    ResultList operator>(const FloatValue& value) const override;
+    ResultList operator==(const IntegerValue& value) const override;
+    ResultList operator==(const FloatValue& value) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    Value::UP clone() const { return Value::UP(new FloatValue(_value)); }
+    Value::UP clone() const override { return Value::UP(new FloatValue(_value)); }
 private:
     ValueType _value;
 };
@@ -211,24 +194,23 @@ public:
 
     ArrayValue(const std::vector<VariableValue>& values);
 
-    virtual ResultList operator<(const Value& value) const;
-    virtual ResultList operator>(const Value& value) const;
-    virtual ResultList operator==(const Value& value) const;
-    virtual ResultList operator!=(const Value& value) const;
-    virtual ResultList operator>=(const Value& value) const;
-    virtual ResultList operator<=(const Value& value) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    ResultList operator<(const Value& value) const override;
+    ResultList operator>(const Value& value) const override;
+    ResultList operator==(const Value& value) const override;
+    ResultList operator!=(const Value& value) const override;
+    ResultList operator>=(const Value& value) const override;
+    ResultList operator<=(const Value& value) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual ResultList globCompare(const Value& value) const;
-    virtual ResultList regexCompare(const Value& value) const;
-    virtual ResultList globTrace(const Value& value, std::ostream& trace) const;
-    virtual ResultList regexTrace(const Value& value, std::ostream& trace) const;
+    ResultList globCompare(const Value& value) const override;
+    ResultList regexCompare(const Value& value) const override;
+    ResultList globTrace(const Value& value, std::ostream& trace) const override;
+    ResultList regexTrace(const Value& value, std::ostream& trace) const override;
 
     template <typename Predicate>
     ResultList doCompare(const Value& value, const Predicate& cmp) const;
 
-    Value::UP clone() const { return Value::UP(new ArrayValue(_values)); }
+    Value::UP clone() const override { return Value::UP(new ArrayValue(_values)); }
 
 private:
     struct EqualsComparator;
@@ -249,12 +231,11 @@ public:
     typedef std::map<vespalib::string, Value::SP> ValueMap;
     StructValue(const ValueMap & values);
 
-    virtual ResultList operator<(const Value& value) const;
-    virtual ResultList operator==(const Value& value) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    ResultList operator<(const Value& value) const override;
+    ResultList operator==(const Value& value) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    Value::UP clone() const { return Value::UP(new StructValue(_values)); }
+    Value::UP clone() const override { return Value::UP(new StructValue(_values)); }
 private:
     ValueMap _values;
 };

@@ -1,27 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "remote_slobrok.h"
+#include "rpc_server_map.h"
+#include "sbenv.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpcserver");
-
-#include <vector>
-#include <deque>
-#include <stdlib.h>
-
-#include "remote_slobrok.h"
-#include "ok_state.h"
-#include "named_service.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
-#include "sbenv.h"
-#include "cmd.h"
 
 namespace slobrok {
 namespace {
 
 class IgnoreReqDone: public FRT_IRequestWait
 {
-    void RequestDone(FRT_RPCRequest *req) {
+    void RequestDone(FRT_RPCRequest *req) override {
         req->SubRef();
     }
 };

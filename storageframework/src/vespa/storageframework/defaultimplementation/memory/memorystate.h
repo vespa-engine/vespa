@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
+#include "memorymanager.h"
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
 
@@ -68,8 +68,7 @@ public:
         SnapShot() : vespalib::Printable() { clear(); }
         SnapShot(const SnapShot& o) : vespalib::Printable() { (*this) = o; }
 
-        void print(std::ostream& out, bool verbose,
-                   const std::string& indent) const;
+        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
         void clear() {
             _usedMemory = 0;
@@ -103,9 +102,13 @@ private:
 
 public:
     MemoryState(Clock& clock, uint64_t maxMemory);
+    MemoryState(const MemoryState &);
+    MemoryState & operator = (const MemoryState &);
+    MemoryState(MemoryState &&) = default;
+    MemoryState & operator = (MemoryState &&) = default;
+    ~MemoryState();
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void setMaximumMemoryUsage(uint64_t max) { _maxMemory = max; }
     void setMinJumpToUpdateMax(uint32_t bytes) { _minJumpToUpdateMax = bytes; }

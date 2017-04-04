@@ -49,8 +49,8 @@ public:
     virtual void add(const ResultNode & b) { (void) b; }
 private:
     virtual size_t onSize() const = 0;
-    virtual void set(const ResultNode & rhs) { (void) rhs; }
-    virtual bool isMultiValue() const { return true; }
+    void set(const ResultNode & rhs) override { (void) rhs; }
+    bool isMultiValue() const override { return true; }
 };
 
 template <typename B>
@@ -82,26 +82,26 @@ public:
     using BaseType = B;
     const Vector & getVector() const { return _result; }
     Vector & getVector() { return _result; }
-    virtual const ResultNode * find(const ResultNode & key) const;
-    virtual void sort();
-    virtual void reverse();
-    virtual ResultNodeVector & push_back(const ResultNode & node);
-    virtual ResultNodeVector & push_back_safe(const ResultNode & node);
-    virtual ResultNodeVector & set(size_t index, const ResultNode & node);
-    virtual const ResultNode & get(size_t index) const { return _result[index]; }
-    virtual ResultNode & get(size_t index) { return _result[index]; }
-    virtual void clear() { _result.clear(); }
-    virtual void resize(size_t sz) { _result.resize(sz); }
-    virtual void negate();
+    const ResultNode * find(const ResultNode & key) const override;
+    void sort() override;
+    void reverse() override;
+    ResultNodeVector & push_back(const ResultNode & node) override;
+    ResultNodeVector & push_back_safe(const ResultNode & node) override;
+    ResultNodeVector & set(size_t index, const ResultNode & node) override;
+    const ResultNode & get(size_t index) const override { return _result[index]; }
+    ResultNode & get(size_t index) override { return _result[index]; }
+    void clear() override { _result.clear(); }
+    void resize(size_t sz) override { _result.resize(sz); }
+    void negate() override;
 private:
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const { visit(visitor, "Vector", _result); }
-    virtual size_t onSize() const { return _result.size(); }
-    virtual const vespalib::Identifiable::RuntimeClass & getBaseClass() const { return B::_RTClass; }
-    virtual int64_t onGetInteger(size_t index) const { return _result[index].getInteger(index); }
-    virtual double onGetFloat(size_t index)    const { return _result[index].getFloat(index); }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const { return  _result[index].getString(index, buf); }
-    virtual size_t hash() const;
-    virtual int onCmp(const Identifiable & b) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override { visit(visitor, "Vector", _result); }
+    size_t onSize() const override { return _result.size(); }
+    const vespalib::Identifiable::RuntimeClass & getBaseClass() const override { return B::_RTClass; }
+    int64_t onGetInteger(size_t index) const override { return _result[index].getInteger(index); }
+    double onGetFloat(size_t index)    const override { return _result[index].getFloat(index); }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override { return  _result[index].getString(index, buf); }
+    size_t hash() const override;
+    int onCmp(const Identifiable & b) const override;
     Vector _result;
 };
 
@@ -215,7 +215,7 @@ template <typename B>
 class NumericResultNodeVectorT : public ResultNodeVectorT<B, cmpT<ResultNode>, std::_Identity<ResultNode> >
 {
 public:
-    virtual ResultNode & flattenMultiply(ResultNode & r) const {
+    ResultNode & flattenMultiply(ResultNode & r) const override {
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
@@ -225,7 +225,7 @@ public:
         r.set(v);
         return r;
     }
-    virtual ResultNode & flattenAnd(ResultNode & r) const {
+    ResultNode & flattenAnd(ResultNode & r) const override {
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
@@ -235,7 +235,7 @@ public:
         r.set(v);
         return r;
     }
-    virtual ResultNode & flattenOr(ResultNode & r) const {
+    ResultNode & flattenOr(ResultNode & r) const override {
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
@@ -245,7 +245,7 @@ public:
         r.set(v);
         return r;
     }
-    virtual ResultNode & flattenXor(ResultNode & r) const {
+    ResultNode & flattenXor(ResultNode & r) const override {
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
@@ -255,7 +255,7 @@ public:
         r.set(v);
         return r;
     }
-    virtual ResultNode & flattenSum(ResultNode & r) const {
+    ResultNode & flattenSum(ResultNode & r) const override {
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
@@ -265,7 +265,7 @@ public:
         r.set(v);
         return r;
     }
-    virtual ResultNode & flattenMax(ResultNode & r) const {
+    ResultNode & flattenMax(ResultNode & r) const override {
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
@@ -275,7 +275,7 @@ public:
         r.set(v);
         return r;
     }
-    virtual ResultNode & flattenMin(ResultNode & r) const {
+    ResultNode & flattenMin(ResultNode & r) const override {
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
@@ -294,7 +294,7 @@ public:
     Int8ResultNodeVector() { }
     DECLARE_RESULTNODE(Int8ResultNodeVector);
 
-    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+    const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 class Int16ResultNodeVector : public NumericResultNodeVectorT<Int16ResultNode>
@@ -303,7 +303,7 @@ public:
     Int16ResultNodeVector() { }
     DECLARE_RESULTNODE(Int16ResultNodeVector);
 
-    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+    const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 class Int32ResultNodeVector : public NumericResultNodeVectorT<Int32ResultNode>
@@ -312,7 +312,7 @@ public:
     Int32ResultNodeVector() { }
     DECLARE_RESULTNODE(Int32ResultNodeVector);
 
-    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+    const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 class Int64ResultNodeVector : public NumericResultNodeVectorT<Int64ResultNode>
@@ -321,7 +321,7 @@ public:
     Int64ResultNodeVector() { }
     DECLARE_RESULTNODE(Int64ResultNodeVector);
 
-    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
+    const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 typedef Int64ResultNodeVector IntegerResultNodeVector;
@@ -339,7 +339,7 @@ public:
     FloatResultNodeVector() { }
     DECLARE_RESULTNODE(FloatResultNodeVector);
 
-    virtual const FloatBucketResultNode& getNullBucket() const override { return FloatBucketResultNode::getNull(); }
+    const FloatBucketResultNode& getNullBucket() const override { return FloatBucketResultNode::getNull(); }
 };
 
 class StringResultNodeVector : public ResultNodeVectorT<StringResultNode, cmpT<ResultNode>, std::_Identity<ResultNode> >
@@ -348,7 +348,7 @@ public:
     StringResultNodeVector() { }
     DECLARE_RESULTNODE(StringResultNodeVector);
 
-    virtual const StringBucketResultNode& getNullBucket() const override { return StringBucketResultNode::getNull(); }
+    const StringBucketResultNode& getNullBucket() const override { return StringBucketResultNode::getNull(); }
 };
 
 class RawResultNodeVector : public ResultNodeVectorT<RawResultNode, cmpT<ResultNode>, std::_Identity<ResultNode> >
@@ -357,7 +357,7 @@ public:
     RawResultNodeVector() { }
     DECLARE_RESULTNODE(RawResultNodeVector);
 
-    virtual const RawBucketResultNode& getNullBucket() const override { return RawBucketResultNode::getNull(); }
+    const RawBucketResultNode& getNullBucket() const override { return RawBucketResultNode::getNull(); }
 };
 
 class IntegerBucketResultNodeVector : public ResultNodeVectorT<IntegerBucketResultNode, contains<IntegerBucketResultNode, int64_t>, GetInteger >
@@ -392,20 +392,20 @@ class GeneralResultNodeVector : public ResultNodeVector
 {
 public:
     DECLARE_EXPRESSIONNODE(GeneralResultNodeVector);
-    virtual const ResultNode * find(const ResultNode & key) const;
-    virtual ResultNodeVector & push_back(const ResultNode & node) { _v.push_back(node); return *this; }
-    virtual ResultNodeVector & push_back_safe(const ResultNode & node) { _v.push_back(node); return *this; }
-    virtual const ResultNode & get(size_t index) const { return *_v[index]; };
-    virtual ResultNodeVector & set(size_t index, const ResultNode & node) { _v[index] = node; return *this; }
-    virtual ResultNode & get(size_t index) { return *_v[index]; }
-    virtual void clear() { _v.clear(); }
-    virtual void resize(size_t sz) { _v.resize(sz); }
+    const ResultNode * find(const ResultNode & key) const override;
+    ResultNodeVector & push_back(const ResultNode & node) override { _v.push_back(node); return *this; }
+    ResultNodeVector & push_back_safe(const ResultNode & node) override { _v.push_back(node); return *this; }
+    const ResultNode & get(size_t index) const override { return *_v[index]; };
+    ResultNodeVector & set(size_t index, const ResultNode & node) override { _v[index] = node; return *this; }
+    ResultNode & get(size_t index) override { return *_v[index]; }
+    void clear() override { _v.clear(); }
+    void resize(size_t sz) override { _v.resize(sz); }
 private:
-    virtual int64_t onGetInteger(size_t index) const { return _v[index]->getInteger(index); }
-    virtual double onGetFloat(size_t index)    const { return _v[index]->getFloat(index); }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const { return  _v[index]->getString(index, buf); }
-    virtual size_t hash() const;
-    virtual size_t onSize() const { return _v.size(); }
+    int64_t onGetInteger(size_t index) const override { return _v[index]->getInteger(index); }
+    double onGetFloat(size_t index)    const override { return _v[index]->getFloat(index); }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override { return  _v[index]->getString(index, buf); }
+    size_t hash() const override;
+    size_t onSize() const override { return _v.size(); }
     std::vector<ResultNode::CP> _v;
 };
 

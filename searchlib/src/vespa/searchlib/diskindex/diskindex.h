@@ -145,16 +145,15 @@ public:
     BitVector::UP
     readBitVector(const LookupResult &lookupRes) const;
 
-    // Inherit doc from Searchable
-    virtual queryeval::Blueprint::UP
+    queryeval::Blueprint::UP
     createBlueprint(const queryeval::IRequestContext & requestContext,
                     const queryeval::FieldSpec &field,
-                    const query::Node &term);
+                    const query::Node &term) override;
 
-    virtual queryeval::Blueprint::UP
+    queryeval::Blueprint::UP
     createBlueprint(const queryeval::IRequestContext & requestContext,
                     const queryeval::FieldSpecList &fields,
-                    const query::Node &term);
+                    const query::Node &term) override;
 
     /**
      * Get the size on disk of this index.
@@ -162,23 +161,9 @@ public:
      */
     uint64_t getSize() const { return _size; }
 
-    const index::Schema &
-    getSchema(void) const
-    {
-        return _schema;
-    }
-
-    const vespalib::string &
-    getIndexDir(void) const
-    {
-        return _indexDir;
-    }
-
-    const TuneFileSearch &
-    getTuneFileSearch(void) const
-    {
-        return _tuneFileSearch;
-    }
+    const index::Schema &getSchema() const { return _schema; }
+    const vespalib::string &getIndexDir() const { return _indexDir; }
+    const TuneFileSearch &getTuneFileSearch() const { return _tuneFileSearch; }
 
     /**
      * Needed for the Cache::BackingStore interface.

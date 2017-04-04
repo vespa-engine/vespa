@@ -38,7 +38,7 @@ public:
     void initRange(uint32_t beginId, uint32_t endId) override;
 protected:
     void doUnpack(uint32_t docid) override;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 private:
     /**
      * Call back when children are removed / inserted after the Iterator has been constructed.
@@ -48,7 +48,7 @@ private:
     virtual void onRemove(size_t index) { (void) index; }
     virtual void onInsert(size_t index) { (void) index; }
 
-    virtual bool isMultiSearch() const { return true; }
+    bool isMultiSearch() const override { return true; }
     size_t deactivate(size_t index);
     Children _children;
 };

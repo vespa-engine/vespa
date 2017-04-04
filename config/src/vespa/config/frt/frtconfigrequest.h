@@ -21,14 +21,14 @@ class FRTConfigRequest : public ConfigRequest {
 public:
     typedef std::unique_ptr<FRTConfigRequest> UP;
     FRTConfigRequest(Connection * connection, const ConfigKey & key);
-    virtual ~FRTConfigRequest();
+    ~FRTConfigRequest();
     virtual bool verifyKey(const ConfigKey & key) const = 0;
     virtual bool verifyState(const ConfigState & state) const = 0;
 
-    bool abort();
-    bool isAborted() const;
-    void setError(int errorCode);
-    const ConfigKey & getKey() const;
+    bool abort() override;
+    bool isAborted() const override;
+    void setError(int errorCode) override;
+    const ConfigKey & getKey() const override;
 
     FRT_RPCRequest* getRequest() { return _request; }
     virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const = 0;
@@ -47,9 +47,9 @@ public:
                      const vespalib::string & configMd5,
                      int64_t generation,
                      int64_t serverTimeout);
-    bool verifyKey(const ConfigKey & key) const;
-    bool verifyState(const ConfigState & state) const;
-    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const;
+    bool verifyKey(const ConfigKey & key) const override;
+    bool verifyState(const ConfigState & state) const override;
+    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override;
 private:
     static const vespalib::string REQUEST_TYPES;
 };

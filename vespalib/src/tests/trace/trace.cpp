@@ -24,7 +24,7 @@ private:
     void testTimestamp();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 TEST_APPHOOK(Test);
@@ -347,18 +347,18 @@ Test::testTraceDump()
 struct EncoderVisitor : public TraceVisitor
 {
     vespalib::string str;
-    void entering(const TraceNode & traceNode) {
+    void entering(const TraceNode & traceNode) override {
         (void) traceNode;
         str += "(";
     }
-    void visit(const TraceNode & traceNode) {
+    void visit(const TraceNode & traceNode) override {
         if (traceNode.hasNote()) {
             str += "[";
             str += traceNode.getNote();
             str += "]";
         }
     }
-    void leaving(const TraceNode & traceNode) {
+    void leaving(const TraceNode & traceNode) override {
         (void) traceNode;
         str += ")";
     }

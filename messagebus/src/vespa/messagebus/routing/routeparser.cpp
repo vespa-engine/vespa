@@ -5,10 +5,7 @@
 #include "routeparser.h"
 #include "tcpdirective.h"
 #include "verbatimdirective.h"
-#include <vespa/messagebus/common.h>
-#include <stdio.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 
 using vespalib::stringref;
 

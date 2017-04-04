@@ -31,10 +31,10 @@ public:
      */
     const string &getImage() const { return _image; }
 
-    virtual Type getType() const { return TYPE_VERBATIM; }
-    virtual bool matches(const IHopDirective &dir) const;
-    virtual string toString() const;
-    virtual string toDebugString() const;
+    Type getType() const override { return TYPE_VERBATIM; }
+    bool matches(const IHopDirective &dir) const override;
+    string toString() const override;
+    string toDebugString() const override;
 };
 
 } // mbus

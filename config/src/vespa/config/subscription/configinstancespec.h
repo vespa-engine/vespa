@@ -15,7 +15,7 @@ class ConfigInstanceSpec : public SourceSpec
 {
 public:
     ConfigInstanceSpec(const ConfigInstance & instance);
-    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:
     const ConfigKey _key;
     vespalib::asciistream _buffer;

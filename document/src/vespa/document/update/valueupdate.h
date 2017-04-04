@@ -18,13 +18,12 @@
  */
 #pragma once
 
-
-#include <vespa/vespalib/objects/cloneable.h>
+#include "updatevisitor.h"
 
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/util/serializable.h>
 #include <vespa/document/util/xmlserializable.h>
-#include <vespa/document/update/updatevisitor.h>
+#include <vespa/vespalib/objects/cloneable.h>
 
 namespace document {
 
@@ -87,7 +86,7 @@ public:
      */
     virtual bool applyTo(FieldValue& value) const = 0;
 
-    virtual ValueUpdate* clone() const = 0;
+    ValueUpdate* clone() const override = 0;
 
     /**
      * Deserializes the given byte buffer into an instance of an update object.

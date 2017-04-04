@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/asciistream.h>
 #include "configreader.h"
 #include "configformatter.h"
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
 
@@ -16,7 +16,7 @@ class AsciiConfigReader : public ConfigReader<ConfigType>
 public:
     AsciiConfigReader(vespalib::asciistream & is);
     std::unique_ptr<ConfigType> read();
-    std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter);
+    std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter) override;
 private:
     vespalib::asciistream & _is;
 };

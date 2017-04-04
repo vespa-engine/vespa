@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/invoker.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/messagebus/common.h>
 #include <vector>
 #include <set>
@@ -53,14 +54,14 @@ private:
     /**
      * From FNET_Task, performs overall server poll logic.
      **/
-    void PerformTask();
+    void PerformTask() override;
 
     /**
      * From FRT_IRequestWait, picks up server replies.
      *
      * @param req the request that has completed
      **/
-    void RequestDone(FRT_RPCRequest *req);
+    void RequestDone(FRT_RPCRequest *req) override;
 
 public:
     /**

@@ -312,8 +312,7 @@ class DocumentStore::WrapVisitor : public IDataStoreVisitor
     uint64_t                           _syncToken;
     
 public:
-    virtual void
-    visit(uint32_t lid, const void *buffer, size_t sz);
+    void visit(uint32_t lid, const void *buffer, size_t sz) override;
 
     WrapVisitor(Visitor &visitor,
                 const document::DocumentTypeRepo &repo,
@@ -333,9 +332,7 @@ class DocumentStore::WrapVisitorProgress : public IDataStoreVisitorProgress
 {
     IDocumentStoreVisitorProgress &_visitorProgress;
 public:
-    virtual void
-    updateProgress(double progress)
-    {
+    void updateProgress(double progress) override {
         _visitorProgress.updateProgress(progress);
     }
     

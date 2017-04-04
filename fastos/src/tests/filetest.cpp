@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <memory>
-#include <vespa/fastos/fastos.h>
+
 #include "tests.h"
+#include <vespa/fastos/file.h>
+#include <memory>
 
 namespace {
 
@@ -39,7 +40,7 @@ bool createFile(const char* fileName,
 class FileTest : public BaseTest
 {
 private:
-    virtual bool useProcessStarter() const { return true; }
+    virtual bool useProcessStarter() const override { return true; }
 public:
     const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
     const std::string roFilename = srcDir + "/hello.txt";
@@ -792,7 +793,7 @@ public:
         PrintSeparator();
     }
 
-    int Main ()
+    int Main () override
     {
         printf("This test should be run in the 'tests' directory.\n\n");
         printf("grep for the string '%s' to detect failures.\n\n", failString);

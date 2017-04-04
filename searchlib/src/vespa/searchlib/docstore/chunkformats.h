@@ -14,11 +14,11 @@ public:
     ChunkFormatV1(vespalib::nbostream & is, uint32_t expectedCrc);
     ChunkFormatV1(size_t maxSize);
 private:
-    virtual bool includeSerializedSize() const { return false; }
-    virtual uint8_t getVersion() const { return VERSION; }
-    virtual size_t getHeaderSize() const { return 0; }
-    virtual uint32_t computeCrc(const void * buf, size_t sz) const;
-    virtual void writeHeader(vespalib::DataBuffer & buf) const {
+    bool includeSerializedSize() const override { return false; }
+    uint8_t getVersion() const override { return VERSION; }
+    size_t getHeaderSize() const override { return 0; }
+    uint32_t computeCrc(const void * buf, size_t sz) const override;
+    void writeHeader(vespalib::DataBuffer & buf) const override {
         (void) buf;
     }
 };
@@ -31,14 +31,14 @@ public:
     ChunkFormatV2(vespalib::nbostream & is, uint32_t expectedCrc);
     ChunkFormatV2(size_t maxSize);
 private:
-    virtual bool includeSerializedSize() const { return true; }
-    virtual size_t getHeaderSize() const {
+    bool includeSerializedSize() const override { return true; }
+    size_t getHeaderSize() const override {
         // MAGIC
         return 4;
     }
-    virtual uint8_t getVersion() const { return VERSION; }
-    virtual uint32_t computeCrc(const void * buf, size_t sz) const;
-    virtual void writeHeader(vespalib::DataBuffer & buf) const {
+    uint8_t getVersion() const override { return VERSION; }
+    uint32_t computeCrc(const void * buf, size_t sz) const override;
+    void writeHeader(vespalib::DataBuffer & buf) const override {
         buf.writeInt32(MAGIC);
     }
     void verifyMagic(vespalib::nbostream & is) const;

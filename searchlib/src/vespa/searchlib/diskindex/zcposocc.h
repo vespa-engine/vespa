@@ -5,11 +5,9 @@
 #include "zcposting.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 class Zc4PosOccSeqRead : public Zc4PostingSeqRead
 {
@@ -20,12 +18,8 @@ private:
 
 public:
     Zc4PosOccSeqRead(index::PostingListCountFileSeqRead *countFile);
-
-    virtual void
-    setFeatureParams(const PostingListParams &params);
-
-    static const vespalib::string &
-    getSubIdentifier(void);
+    void setFeatureParams(const PostingListParams &params) override;
+    static const vespalib::string &getSubIdentifier();
 };
 
 
@@ -38,9 +32,7 @@ private:
 public:
     typedef index::Schema Schema;
 
-    Zc4PosOccSeqWrite(const Schema &schema,
-                      uint32_t indexId,
-                      index::PostingListCountFileSeqWrite *countFile);
+    Zc4PosOccSeqWrite(const Schema &schema, uint32_t indexId, index::PostingListCountFileSeqWrite *countFile);
 };
 
 
@@ -50,15 +42,10 @@ private:
     bitcompression::PosOccFieldsParams _fieldsParams;
     bitcompression::EGPosOccDecodeContextCooked<true> _cookedDecodeContext;
     bitcompression::EGPosOccDecodeContext<true> _rawDecodeContext;
-
 public:
     ZcPosOccSeqRead(index::PostingListCountFileSeqRead *countFile);
-
-    virtual void
-    setFeatureParams(const PostingListParams &params);
-
-    static const vespalib::string &
-    getSubIdentifier(void);
+    void setFeatureParams(const PostingListParams &params) override;
+    static const vespalib::string &getSubIdentifier(void);
 };
 
 
@@ -67,13 +54,9 @@ class ZcPosOccSeqWrite : public ZcPostingSeqWrite
 private:
     bitcompression::PosOccFieldsParams _fieldsParams;
     bitcompression::EGPosOccEncodeContext<true> _realEncodeFeatures;
-
 public:
     typedef index::Schema Schema;
-
-    ZcPosOccSeqWrite(const Schema &schema,
-                     uint32_t indexId,
-                     index::PostingListCountFileSeqWrite *countFile);
+    ZcPosOccSeqWrite(const Schema &schema, uint32_t indexId, index::PostingListCountFileSeqWrite *countFile);
 };
 
 

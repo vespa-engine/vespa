@@ -13,13 +13,13 @@ struct Value {
 template <typename T>
 struct Empty : Rendezvous<int, T> {
     Empty(size_t n) : Rendezvous<int, T>(n) {}
-    virtual void mingle() {}
+    void mingle() override {}
     T meet() { return this->rendezvous(0); }
 };
 
 struct Add : Rendezvous<int, std::pair<int, int> > {
     Add(size_t n) : Rendezvous<int, std::pair<int, int> >(n) {}
-    virtual void mingle() {
+    void mingle() override {
         int sum = 0;
         for (size_t i = 0; i < size(); ++i) {
             sum += in(i);

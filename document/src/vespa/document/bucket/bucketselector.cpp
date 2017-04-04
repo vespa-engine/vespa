@@ -3,13 +3,11 @@
 #include "bucketselector.h"
 #include "bucketidfactory.h"
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/base/idstring.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/select/valuenode.h>
 #include <vespa/document/select/visitor.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
-#include <algorithm>
 
 namespace document {
 
@@ -31,7 +29,7 @@ using namespace document::select;
         BucketVisitor(const BucketIdFactory& factory)
             : _factory(factory), _buckets(), _unknown(true) {}
 
-        void visitAndBranch(const document::select::And& node) {
+        void visitAndBranch(const document::select::And& node) override {
             BucketVisitor left(_factory);
             node.getLeft().visit(left);
             node.getRight().visit(*this);
@@ -53,7 +51,7 @@ using namespace document::select;
             return;
         }
 
-        void visitOrBranch(const document::select::Or& node) {
+        void visitOrBranch(const document::select::Or& node) override {
             BucketVisitor left(_factory);
             node.getLeft().visit(left);
             node.getRight().visit(*this);
@@ -70,7 +68,7 @@ using namespace document::select;
             _buckets.swap(result);
         }
 
-        void visitNotBranch(const document::select::Not&) {
+        void visitNotBranch(const document::select::Not&) override {
             // Since selected locations doesn't include everything at that
             // location, we can't reverse the selection. Any NOT branch must
             // end up specifying all
@@ -158,7 +156,7 @@ using namespace document::select;
             }
         }
 
-        void visitComparison(const document::select::Compare& node) {
+        void visitComparison(const document::select::Compare& node) override {
             if (node.getOperator() != document::select::FunctionOperator::EQ &&
                 node.getOperator() != document::select::GlobOperator::GLOB)
             {
@@ -181,76 +179,21 @@ using namespace document::select;
             }
         }
 
-        void visitConstant(const document::select::Constant&) {
-        }
-
-        virtual void
-        visitInvalidConstant(const document::select::InvalidConstant &)
-        {
-        }
-
-        void visitDocumentType(const document::select::DocType&) {
-        }
-
-        virtual void
-        visitArithmeticValueNode(const ArithmeticValueNode &)
-        {
-        }
-
-        virtual void
-        visitFunctionValueNode(const FunctionValueNode &)
-        {
-        }
-
-        virtual void
-        visitIdValueNode(const IdValueNode &)
-        {
-        }
-
-        virtual void
-        visitSearchColumnValueNode(const SearchColumnValueNode &)
-        {
-        }
-
-        virtual void
-        visitFieldValueNode(const FieldValueNode &)
-        {
-        }
-
-        virtual void
-        visitFloatValueNode(const FloatValueNode &)
-        {
-        }
-
-        virtual void
-        visitVariableValueNode(const VariableValueNode &)
-        {
-        }
-
-        virtual void
-        visitIntegerValueNode(const IntegerValueNode &)
-        {
-        }
-
-        virtual void
-        visitCurrentTimeValueNode(const CurrentTimeValueNode &)
-        {
-        }
-
-        virtual void
-        visitStringValueNode(const StringValueNode &)
-        {
-        }
-
-        virtual void
-        visitNullValueNode(const NullValueNode &)
-        {
-        }
-
-        virtual void
-        visitInvalidValueNode(const InvalidValueNode &)
-        {
-        }
+        void visitConstant(const document::select::Constant&) override {}
+        void visitInvalidConstant(const document::select::InvalidConstant &) override {}
+        void visitDocumentType(const document::select::DocType&) override {}
+        void visitArithmeticValueNode(const ArithmeticValueNode &) override {}
+        void visitFunctionValueNode(const FunctionValueNode &) override {}
+        void visitIdValueNode(const IdValueNode &) override {}
+        void visitSearchColumnValueNode(const SearchColumnValueNode &) override {}
+        void visitFieldValueNode(const FieldValueNode &) override {}
+        void visitFloatValueNode(const FloatValueNode &) override {}
+        void visitVariableValueNode(const VariableValueNode &) override {}
+        void visitIntegerValueNode(const IntegerValueNode &) override {}
+        void visitCurrentTimeValueNode(const CurrentTimeValueNode &) override {}
+        void visitStringValueNode(const StringValueNode &) override {}
+        void visitNullValueNode(const NullValueNode &) override {}
+        void visitInvalidValueNode(const InvalidValueNode &) override {}
     };
 //}
 

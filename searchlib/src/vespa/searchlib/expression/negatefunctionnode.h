@@ -13,7 +13,7 @@ public:
     NegateFunctionNode() { }
     NegateFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) { }
 private:
-    virtual bool onExecute() const;
+    bool onExecute() const override;
 };
 
 }

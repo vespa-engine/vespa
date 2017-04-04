@@ -22,9 +22,9 @@
 
 #pragma once
 
+#include <vespa/vdslib/defs.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/vdslib/defs.h>
 
 namespace document {
     class DocumentUpdate;
@@ -118,7 +118,7 @@ public:
                     + sizeof(MetaEntry);
         }
 
-        void print(std::ostream& out, bool verbose, const std::string& indent) const;
+        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
         bool operator==(const Entry& e) const { return (_start == e._start && _entry == e._entry); }
     };
 
@@ -184,7 +184,7 @@ public:
     }
 
     void checkConsistency(bool do_memset = false);
-    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     const document::DocumentTypeRepo::SP & getTypeRepo() const { return _repo; }
 
 protected:

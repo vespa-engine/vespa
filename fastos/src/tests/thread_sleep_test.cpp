@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
 
-#include <vespa/fastos/fastos.h>
 #include "tests.h"
 #include "job.h"
 #include "thread_test_base.hpp"
 
 class Thread_Sleep_Test : public ThreadTestBase
 {
-   int Main ();
+   int Main () override;
 
    void CreateSingleThread ()
    {

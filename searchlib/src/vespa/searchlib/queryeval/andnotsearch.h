@@ -93,8 +93,8 @@ private:
             }
         }
     }
-    virtual void doSeek(uint32_t docid);
-    virtual void doUnpack(uint32_t docid);
+    void doSeek(uint32_t docid) override;
+    void doUnpack(uint32_t docid) override;
 };
 
 } // namespace queryeval

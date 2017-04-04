@@ -10,8 +10,8 @@
 
 #pragma once
 
+#include "metricmanager.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace metrics {
@@ -49,9 +49,9 @@ struct MetricSource {
 
         void checkForPrefixMatch(const Metric& metric);
 
-        bool visitMetricSet(const MetricSet& set, bool);
-        void doneVisitingMetricSet(const MetricSet&) { --_pathIndex; }
-        bool visitMetric(const Metric& metric, bool);
+        bool visitMetricSet(const MetricSet& set, bool) override;
+        void doneVisitingMetricSet(const MetricSet&) override { --_pathIndex; }
+        bool visitMetric(const Metric& metric, bool) override;
     };
 
     const Metric* getMetric(const String& name);

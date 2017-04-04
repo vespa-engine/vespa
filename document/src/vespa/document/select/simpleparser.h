@@ -50,7 +50,7 @@ public:
     IdSpecParser(const BucketIdFactory& bucketIdFactory) :
         _bucketIdFactory(bucketIdFactory)
     {}
-    virtual bool parse(const vespalib::stringref & s);
+    bool parse(const vespalib::stringref & s) override;
     const IdValueNode & getId() const { return static_cast<const IdValueNode &>(getValue()); }
     bool isUserSpec() const { return getId().getType() == IdValueNode::USER; }
 private:
@@ -60,7 +60,7 @@ private:
 class OperatorParser : public Parser
 {
 public:
-    virtual bool parse(const vespalib::stringref & s);
+    bool parse(const vespalib::stringref & s) override;
     const Operator * getOperator() const { return _operator; }
 private:
     const Operator *_operator;
@@ -69,13 +69,13 @@ private:
 class StringParser : public Parser, public ValueResult
 {
 public:
-    virtual bool parse(const vespalib::stringref & s);
+    bool parse(const vespalib::stringref & s) override;
 };
 
 class IntegerParser : public Parser, public ValueResult
 {
 public:
-    virtual bool parse(const vespalib::stringref & s);
+    bool parse(const vespalib::stringref & s) override;
 };
 
 class SelectionParser : public Parser, public NodeResult
@@ -84,7 +84,7 @@ public:
     SelectionParser(const BucketIdFactory& bucketIdFactory) :
         _bucketIdFactory(bucketIdFactory)
     {}
-    virtual bool parse(const vespalib::stringref & s);
+    bool parse(const vespalib::stringref & s) override;
 private:
     const BucketIdFactory & _bucketIdFactory;
 };

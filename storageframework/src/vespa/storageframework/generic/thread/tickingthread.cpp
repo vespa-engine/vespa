@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/storageframework/generic/thread/tickingthread.h>
-#include <atomic>
-#include <vespa/log/log.h>
-#include <sstream>
-#include <vespa/storageframework/generic/thread/threadpool.h>
+#include "tickingthread.h"
+#include "threadpool.h"
 #include <vespa/vespalib/util/exceptions.h>
-
-LOG_SETUP(".framework.thread.ticker");
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace framework {
@@ -64,7 +60,7 @@ public:
     char getState() const { return _state; }
 
 private:
-    virtual void run(ThreadHandle& handle) {
+    void run(ThreadHandle& handle) override {
         ThreadWaitInfo info = ThreadWaitInfo::MORE_WORK_ENQUEUED;
         CycleType cycle = PROCESS_CYCLE;
         int ticksExecutedAfterWait = 0;
@@ -117,26 +113,21 @@ class TickingThreadPoolImpl : public TickingThreadPool {
     struct FreezeGuard : public TickingLockGuard::Impl {
         TickingThreadPoolImpl& _pool;
 
-        FreezeGuard(TickingThreadPoolImpl& pool)
-            : _pool(pool) { _pool.freeze(); }
-
-        virtual ~FreezeGuard() { _pool.thaw(); }
-
-        virtual void broadcast() {}
+        FreezeGuard(TickingThreadPoolImpl& pool) : _pool(pool) { _pool.freeze(); }
+        ~FreezeGuard() { _pool.thaw(); }
+        void broadcast() override {}
     };
     struct CriticalGuard : public TickingLockGuard::Impl {
         vespalib::MonitorGuard _guard;
 
         CriticalGuard(vespalib::Monitor& m) : _guard(m) {}
 
-        virtual void broadcast() { _guard.broadcast(); }
+        void broadcast() override { _guard.broadcast(); }
     };
 
 public:
-    TickingThreadPoolImpl(vespalib::stringref name,
-                          MilliSecTime waitTime,
-			  int ticksBeforeWait,
-                          MilliSecTime maxProcessTime)
+    TickingThreadPoolImpl(vespalib::stringref name, MilliSecTime waitTime,
+                          int ticksBeforeWait, MilliSecTime maxProcessTime)
         : _name(name),
           _waitTime(waitTime.getTime()),
           _ticksBeforeWait(ticksBeforeWait),
@@ -146,36 +137,31 @@ public:
         stop();
     }
 
-    virtual void updateParametersAllThreads(
-            MilliSecTime waitTime,
-            MilliSecTime maxProcessTime,
-            int ticksBeforeWait) {
+    void updateParametersAllThreads(MilliSecTime waitTime, MilliSecTime maxProcessTime,
+                                    int ticksBeforeWait) override {
         _waitTime.store(waitTime.getTime());
         _maxProcessTime.store(maxProcessTime.getTime());
         _ticksBeforeWait.store(ticksBeforeWait);
         // TODO: Add locking so threads not deleted while updating
-	for (uint32_t i=0; i<_threads.size(); ++i) {
-	  _threads[i]->updateParameters(waitTime.getTime(),
-                                        maxProcessTime.getTime(),
-                                        ticksBeforeWait);
+        for (uint32_t i=0; i<_threads.size(); ++i) {
+            _threads[i]->updateParameters(waitTime.getTime(), maxProcessTime.getTime(), ticksBeforeWait);
         }
     }
 
-    void addThread(TickingThread& ticker) {
+    void addThread(TickingThread& ticker) override {
         ThreadIndex index = _tickers.size();
         ticker.newThreadCreated(index);
-        _tickers.push_back(TickingThreadRunner::SP(
-                new TickingThreadRunner(_monitor, ticker, index))); 
+        _tickers.push_back(TickingThreadRunner::SP(new TickingThreadRunner(_monitor, ticker, index)));
     }
 
-    void start(ThreadPool& pool) {
+    void start(ThreadPool& pool) override {
         if (_tickers.empty()) {
             throw vespalib::IllegalStateException(
                     "Makes no sense to start threadpool without threads",
                     VESPA_STRLOC);
         }
         for (uint32_t i=0; i<_tickers.size(); ++i) {
-            std::ostringstream ost;
+            vespalib::asciistream ost;
             ost << _name.c_str() << " thread " << i;
             _threads.push_back(std::shared_ptr<Thread>(pool.startThread(
                     *_tickers[i],
@@ -186,17 +172,16 @@ public:
         }
     }
 
-    virtual TickingLockGuard freezeAllTicks() {
-        return TickingLockGuard(std::unique_ptr<TickingLockGuard::Impl>(
-                new FreezeGuard(*this)));
+    TickingLockGuard freezeAllTicks() override {
+        return TickingLockGuard(std::unique_ptr<TickingLockGuard::Impl>(new FreezeGuard(*this)));
     }
 
-    virtual TickingLockGuard freezeCriticalTicks() {
+    TickingLockGuard freezeCriticalTicks() override {
         return TickingLockGuard(std::unique_ptr<TickingLockGuard::Impl>(
                 new CriticalGuard(_monitor)));
     }
 
-    void stop() {
+    void stop() override {
         for (uint32_t i=0; i<_threads.size(); ++i) {
             _threads[i]->interrupt();
         }
@@ -209,7 +194,7 @@ public:
         }
     }
 
-    vespalib::string getStatus() {
+    vespalib::string getStatus() override {
         vespalib::string result(_tickers.size(), ' ');
         for (uint32_t i=0, n=_tickers.size(); i<n; ++i) {
             result[i] = _tickers[i]->getState();

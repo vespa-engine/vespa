@@ -23,7 +23,7 @@ private:
 
 public:
     DenseTensorAttributeExecutor(const search::tensor::DenseTensorAttribute *attribute);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 } // namespace features

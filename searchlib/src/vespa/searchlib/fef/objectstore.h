@@ -25,9 +25,9 @@ class ObjectStore : public IObjectStore
 {
 public:
     ObjectStore();
-    virtual ~ObjectStore();
-    virtual void add(const vespalib::string & key, Anything::UP value);
-    virtual const Anything * get(const vespalib::string & key) const;
+    ~ObjectStore();
+    void add(const vespalib::string & key, Anything::UP value) override;
+    const Anything * get(const vespalib::string & key) const override;
 private:
     typedef vespalib::hash_map<vespalib::string, Anything *> ObjectMap;
     ObjectMap _objectMap;

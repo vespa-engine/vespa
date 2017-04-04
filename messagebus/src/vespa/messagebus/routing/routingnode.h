@@ -440,8 +440,7 @@ public:
      */
     void setServiceAddress(IServiceAddress::UP serviceAddress) { _serviceAddress = std::move(serviceAddress); }
 
-    // Inherit doc from IReplyHandler.
-    virtual void handleReply(Reply::UP reply);
+    void handleReply(Reply::UP reply) override;
 };
 
 } // namespace mbus

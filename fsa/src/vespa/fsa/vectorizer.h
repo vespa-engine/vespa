@@ -496,7 +496,7 @@ private:
      */
     void add(const NGram &text,
              unsigned int from, int length,
-             const FSA::State &state)
+             const FSA::State &state) override
     {
       ItemMap::iterator pos;
       std::string str = text.join(" ",from,length);

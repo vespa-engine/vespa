@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "serializer.h"
 #include <vespa/vespalib/objects/asciiserializer.h>
-#include <vespa/searchlib/expression/serializer.h>
-
 
 namespace search {
 namespace expression {
@@ -14,10 +13,10 @@ class StrCatSerializer : public vespalib::AsciiSerializer, public ResultSerializ
 {
 public:
     StrCatSerializer(vespalib::asciistream & stream) : vespalib::AsciiSerializer(stream) { }
-    virtual StrCatSerializer & put(const vespalib::IFieldBase & field, const vespalib::Identifiable & value);
-    virtual ResultSerializer & putResult(const vespalib::IFieldBase & field, const ResultNodeVector & value);
-    virtual ResultSerializer & putResult(const vespalib::IFieldBase & field, const RawResultNode & value);
-    virtual void proxyPut(const ResultNode & value);
+    StrCatSerializer & put(const vespalib::IFieldBase & field, const vespalib::Identifiable & value) override;
+    ResultSerializer & putResult(const vespalib::IFieldBase & field, const ResultNodeVector & value) override;
+    ResultSerializer & putResult(const vespalib::IFieldBase & field, const RawResultNode & value) override;
+    void proxyPut(const ResultNode & value) override;
 };
 
 }

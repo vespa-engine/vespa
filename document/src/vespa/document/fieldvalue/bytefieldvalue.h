@@ -7,8 +7,8 @@
  */
 #pragma once
 
+#include "numericfieldvalue.h"
 #include <vespa/document/datatype/numericdatatype.h>
-#include <vespa/document/fieldvalue/numericfieldvalue.h>
 
 namespace document {
 
@@ -22,11 +22,8 @@ public:
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
-
-    virtual const DataType *getDataType() const { return DataType::BYTE; }
-
-    virtual ByteFieldValue* clone() const { return new ByteFieldValue(*this); }
-
+    const DataType *getDataType() const override { return DataType::BYTE; }
+    ByteFieldValue* clone() const override { return new ByteFieldValue(*this); }
     using NumericFieldValue<Number>::operator=;
 
     DECLARE_IDENTIFIABLE(ByteFieldValue);

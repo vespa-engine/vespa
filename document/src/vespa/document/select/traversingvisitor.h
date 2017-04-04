@@ -10,65 +10,28 @@ class
 TraversingVisitor : public Visitor
 {
 public:
-    virtual void
-    visitAndBranch(const And &expr);
+    void visitAndBranch(const And &expr) override;
 
-    virtual void
-    visitOrBranch(const Or &expr);
-
-    virtual void
-    visitNotBranch(const Not &expr);
-
-    virtual void
-    visitComparison(const Compare &expr);
-
-    virtual void
-    visitArithmeticValueNode(const ArithmeticValueNode &expr);
-
-    virtual void
-    visitFunctionValueNode(const FunctionValueNode &expr);
-
-    virtual void
-    visitConstant(const Constant &);
-
-    virtual void
-    visitInvalidConstant(const InvalidConstant &);
-
-    virtual void
-    visitDocumentType(const DocType &);
-
-    virtual void
-    visitIdValueNode(const IdValueNode &);
-
-    virtual void
-    visitSearchColumnValueNode(const SearchColumnValueNode &);
-
-    virtual void
-    visitFieldValueNode(const FieldValueNode &);
-
-    virtual void
-    visitFloatValueNode(const FloatValueNode &);
-
-    virtual void
-    visitVariableValueNode(const VariableValueNode &);
-
-    virtual void
-    visitIntegerValueNode(const IntegerValueNode &);
-
-    virtual void
-    visitCurrentTimeValueNode(const CurrentTimeValueNode &);
-
-    virtual void
-    visitStringValueNode(const StringValueNode &);
-
-    virtual void
-    visitNullValueNode(const NullValueNode &);
-
-    virtual void
-    visitInvalidValueNode(const InvalidValueNode &);
+    void visitOrBranch(const Or &expr) override;
+    void visitNotBranch(const Not &expr) override;
+    void visitComparison(const Compare &expr) override;
+    void visitArithmeticValueNode(const ArithmeticValueNode &expr) override;
+    void visitFunctionValueNode(const FunctionValueNode &expr) override;
+    void visitConstant(const Constant &) override;
+    void visitInvalidConstant(const InvalidConstant &) override;
+    void visitDocumentType(const DocType &) override;
+    void visitIdValueNode(const IdValueNode &) override;
+    void visitSearchColumnValueNode(const SearchColumnValueNode &) override;
+    void visitFieldValueNode(const FieldValueNode &) override;
+    void visitFloatValueNode(const FloatValueNode &) override;
+    void visitVariableValueNode(const VariableValueNode &) override;
+    void visitIntegerValueNode(const IntegerValueNode &) override;
+    void visitCurrentTimeValueNode(const CurrentTimeValueNode &) override;
+    void visitStringValueNode(const StringValueNode &) override;
+    void visitNullValueNode(const NullValueNode &) override;
+    void visitInvalidValueNode(const InvalidValueNode &) override;
 };
 
 }
 
 }
-

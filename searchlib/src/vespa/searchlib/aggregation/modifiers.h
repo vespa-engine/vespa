@@ -10,8 +10,8 @@ namespace aggregation {
 class Attribute2DocumentAccessor : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
 {
 private:
-    virtual void execute(vespalib::Identifiable &obj);
-    virtual bool check(const vespalib::Identifiable &obj) const;
+    void execute(vespalib::Identifiable &obj) override;
+    bool check(const vespalib::Identifiable &obj) const override;
 };
 
 }

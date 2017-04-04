@@ -56,7 +56,7 @@ public:
     vespalib::string toString() const;
 
     void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+               const std::string& indent) const override;
 
     bool operator==(const DocumentId& other) const { return *_id == *other._id; }
     bool operator!=(const DocumentId& other) const { return ! (*_id == *other._id); }

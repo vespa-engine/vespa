@@ -22,7 +22,7 @@ public:
     void testDec();
     template<typename T>
     void testSemantics();
-    int Main();
+    int Main() override;
 };
 
 static const int numadders = 7;
@@ -108,7 +108,7 @@ public:
         _idata(i),
         _udata(u)
     {}
-    void Run(FastOS_ThreadInterface *, void *) {
+    void Run(FastOS_ThreadInterface *, void *) override {
         using vespalib::Atomic;
         for (int i = 0; i < _times; ++i) {
             Atomic::add(_idata, _toadd);
@@ -137,7 +137,7 @@ public:
         _idata(i),
         _udata(u)
     {}
-    void Run(FastOS_ThreadInterface *, void *) {
+    void Run(FastOS_ThreadInterface *, void *) override {
         using vespalib::Atomic;
         for (int i = 0; i < _times; ++i) {
             Atomic::sub(_idata, _tosub);
@@ -167,7 +167,7 @@ class Incrementer : public Changer<T>
 {
 public:
     Incrementer(int times, T *data) : Changer<T>(times, data) {}
-    void Run(FastOS_ThreadInterface *, void *) {
+    void Run(FastOS_ThreadInterface *, void *) override {
         using vespalib::Atomic;
         for (int i = 0; i < this->_times; ++i) {
             this->_counts.push_back(Atomic::postInc(this->_idata));
@@ -181,7 +181,7 @@ class Decrementer : public Changer<T>
 {
 public:
     Decrementer(int times, T *data) : Changer<T>(times, data) {}
-    void Run(FastOS_ThreadInterface *, void *) {
+    void Run(FastOS_ThreadInterface *, void *) override {
         using vespalib::Atomic;
         for (int i = 0; i < this->_times; ++i) {
             this->_counts.push_back(Atomic::postDec(this->_idata));

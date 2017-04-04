@@ -242,7 +242,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    bool open(const Node &node) {
+    bool open(const Node &node) override {
         if (node.is_const()) {
             push_double(node.get_const_value());
             return false;
@@ -261,7 +261,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         return true;
     }
 
-    void close(const Node &node) {
+    void close(const Node &node) override {
         node.accept(*this);
         if (inside_forest && (forest_end == &node)) {
             inside_forest = false;
@@ -348,10 +348,10 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     // basic nodes
 
-    virtual void visit(const Number &item) {
+    void visit(const Number &item) override {
         push_double(item.value());
     }
-    virtual void visit(const Symbol &item) {
+    void visit(const Symbol &item) override {
         if (item.id() >= 0) {
             push(get_param(item.id()));
         } else {
@@ -360,22 +360,22 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             push(let_values[let_offset]);
         }
     }
-    virtual void visit(const String &item) {
+    void visit(const String &item) override {
         push_double(item.hash());
     }
-    virtual void visit(const Array &item) {
+    void visit(const Array &item) override {
         // NB: visit not open
         push_double(item.size());
     }
-    virtual void visit(const Neg &) {
+    void visit(const Neg &) override {
         llvm::Value *child = pop_double();
         push(builder.CreateFNeg(child, "neg_res"));
     }
-    virtual void visit(const Not &) {
+    void visit(const Not &) override {
         llvm::Value *child = pop_bool();
         push(builder.CreateNot(child, "not_res"));
     }
-    virtual void visit(const If &item) {
+    void visit(const If &item) override {
         // NB: visit not open
         llvm::BasicBlock *true_block = llvm::BasicBlock::Create(context, "true_block", function);
         llvm::BasicBlock *false_block = llvm::BasicBlock::Create(context, "false_block", function);
@@ -402,100 +402,100 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         phi->addIncoming(false_res, false_end);
         push(phi);
     }
-    virtual void visit(const Let &item) {
+    void visit(const Let &item) override {
         // NB: visit not open
         item.value().traverse(*this); // NB: recursion
         let_values.push_back(pop_double());
         item.expr().traverse(*this); // NB: recursion
         let_values.pop_back();
     }
-    virtual void visit(const Error &) {
+    void visit(const Error &) override {
         make_error(0);
     }
 
     // tensor nodes (not supported in compiled expressions)
 
-    virtual void visit(const TensorSum &node) {
+    void visit(const TensorSum &node) override {
         make_error(node.num_children());
     }
-    virtual void visit(const TensorMap &node) {
+    void visit(const TensorMap &node) override {
         make_error(node.num_children());
     }
-    virtual void visit(const TensorJoin &node) {
+    void visit(const TensorJoin &node) override {
         make_error(node.num_children());
     }
-    virtual void visit(const TensorReduce &node) {
+    void visit(const TensorReduce &node) override {
         make_error(node.num_children());
     }
-    virtual void visit(const TensorRename &node) {
+    void visit(const TensorRename &node) override {
         make_error(node.num_children());
     }
-    virtual void visit(const TensorLambda &node) {
+    void visit(const TensorLambda &node) override {
         make_error(node.num_children());
     }
-    virtual void visit(const TensorConcat &node) {
+    void visit(const TensorConcat &node) override {
         make_error(node.num_children());
     }
 
     // operator nodes
 
-    virtual void visit(const Add &) {
+    void visit(const Add &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFAdd(a, b, "add_res"));
     }
-    virtual void visit(const Sub &) {
+    void visit(const Sub &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFSub(a, b, "sub_res"));
     }
-    virtual void visit(const Mul &) {
+    void visit(const Mul &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFMul(a, b, "mul_res"));
     }
-    virtual void visit(const Div &) {
+    void visit(const Div &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFDiv(a, b, "div_res"));
     }
-    virtual void visit(const Pow &) {
+    void visit(const Pow &) override {
         make_call_2(llvm::Intrinsic::pow);
     }
-    virtual void visit(const Equal &) {
+    void visit(const Equal &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFCmpOEQ(a, b, "cmp_eq_res"));
     }
-    virtual void visit(const NotEqual &) {
+    void visit(const NotEqual &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFCmpUNE(a, b, "cmp_ne_res"));
     }
-    virtual void visit(const Approx &) {
+    void visit(const Approx &) override {
         make_call_2("vespalib_eval_approx");
     }
-    virtual void visit(const Less &) {
+    void visit(const Less &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFCmpOLT(a, b, "cmp_lt_res"));
     }
-    virtual void visit(const LessEqual &) {
+    void visit(const LessEqual &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFCmpOLE(a, b, "cmp_le_res"));
     }
-    virtual void visit(const Greater &) {
+    void visit(const Greater &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFCmpOGT(a, b, "cmp_gt_res"));
     }
-    virtual void visit(const GreaterEqual &) {
+    void visit(const GreaterEqual &) override {
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
         push(builder.CreateFCmpOGE(a, b, "cmp_ge_res"));
     }
-    virtual void visit(const In &item) {
+    void visit(const In &item) override {
         // NB: visit not open
         item.lhs().traverse(*this); // NB: recursion
         llvm::Value *lhs = pop_double();
@@ -527,12 +527,12 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             push(builder.CreateFCmpOEQ(lhs, rhs, "rhs_eq"));
         }
     }
-    virtual void visit(const And &) {
+    void visit(const And &) override {
         llvm::Value *b = pop_bool();
         llvm::Value *a = pop_bool();
         push(builder.CreateAnd(a, b, "and_res"));
     }
-    virtual void visit(const Or &) {
+    void visit(const Or &) override {
         llvm::Value *b = pop_bool();
         llvm::Value *a = pop_bool();
         push(builder.CreateOr(a, b, "or_res"));
@@ -540,79 +540,79 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     // call nodes
 
-    virtual void visit(const Cos &) {
+    void visit(const Cos &) override {
         make_call_1(llvm::Intrinsic::cos);
     }
-    virtual void visit(const Sin &) {
+    void visit(const Sin &) override {
         make_call_1(llvm::Intrinsic::sin);
     }
-    virtual void visit(const Tan &) {
+    void visit(const Tan &) override {
         make_call_1("tan");
     }
-    virtual void visit(const Cosh &) {
+    void visit(const Cosh &) override {
         make_call_1("cosh");
     }
-    virtual void visit(const Sinh &) {
+    void visit(const Sinh &) override {
         make_call_1("sinh");
     }
-    virtual void visit(const Tanh &) {
+    void visit(const Tanh &) override {
         make_call_1("tanh");
     }
-    virtual void visit(const Acos &) {
+    void visit(const Acos &) override {
         make_call_1("acos");
     }
-    virtual void visit(const Asin &) {
+    void visit(const Asin &) override {
         make_call_1("asin");
     }
-    virtual void visit(const Atan &) {
+    void visit(const Atan &) override {
         make_call_1("atan");
     }
-    virtual void visit(const Exp &) {
+    void visit(const Exp &) override {
         make_call_1(llvm::Intrinsic::exp);
     }
-    virtual void visit(const Log10 &) {
+    void visit(const Log10 &) override {
         make_call_1(llvm::Intrinsic::log10);
     }
-    virtual void visit(const Log &) {
+    void visit(const Log &) override {
         make_call_1(llvm::Intrinsic::log);
     }
-    virtual void visit(const Sqrt &) {
+    void visit(const Sqrt &) override {
         make_call_1(llvm::Intrinsic::sqrt);
     }
-    virtual void visit(const Ceil &) {
+    void visit(const Ceil &) override {
         make_call_1(llvm::Intrinsic::ceil);
     }
-    virtual void visit(const Fabs &) {
+    void visit(const Fabs &) override {
         make_call_1(llvm::Intrinsic::fabs);
     }
-    virtual void visit(const Floor &) {
+    void visit(const Floor &) override {
         make_call_1(llvm::Intrinsic::floor);
     }
-    virtual void visit(const Atan2 &) {
+    void visit(const Atan2 &) override {
         make_call_2("atan2");
     }
-    virtual void visit(const Ldexp &) {
+    void visit(const Ldexp &) override {
         make_call_2("vespalib_eval_ldexp");
     }
-    virtual void visit(const Pow2 &) {
+    void visit(const Pow2 &) override {
         make_call_2(llvm::Intrinsic::pow);
     }
-    virtual void visit(const Fmod &) {
+    void visit(const Fmod &) override {
         make_call_2("fmod");
     }
-    virtual void visit(const Min &) {
+    void visit(const Min &) override {
         make_call_2("vespalib_eval_min");
     }
-    virtual void visit(const Max &) {
+    void visit(const Max &) override {
         make_call_2("vespalib_eval_max");
     }
-    virtual void visit(const IsNan &) {
+    void visit(const IsNan &) override {
         make_call_1("vespalib_eval_isnan");
     }
-    virtual void visit(const Relu &) {
+    void visit(const Relu &) override {
         make_call_1("vespalib_eval_relu");
     }
-    virtual void visit(const Sigmoid &) {
+    void visit(const Sigmoid &) override {
         make_call_1("vespalib_eval_sigmoid");
     }
 };

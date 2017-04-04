@@ -11,28 +11,28 @@
 namespace search {
 namespace features {
 
-class ValueExecutor : public search::fef::FeatureExecutor
+class ValueExecutor : public fef::FeatureExecutor
 {
 private:
     std::vector<feature_t> _values;
 
 public:
     ValueExecutor(const std::vector<feature_t> & values);
-    virtual bool isPure() { return true; }
-    virtual void execute(uint32_t docId);
+    bool isPure() override { return true; }
+    void execute(uint32_t docId) override;
     const std::vector<feature_t> & getValues() const { return _values; }
 };
 
-class SingleZeroValueExecutor : public search::fef::FeatureExecutor
+class SingleZeroValueExecutor : public fef::FeatureExecutor
 {
 public:
     SingleZeroValueExecutor() : FeatureExecutor() {}
-    virtual bool isPure() { return true; }
-    virtual void execute(uint32_t docId);
+    bool isPure() override { return true; }
+    void execute(uint32_t docId) override;
 };
 
 
-class ValueBlueprint : public search::fef::Blueprint
+class ValueBlueprint : public fef::Blueprint
 {
 private:
     std::vector<feature_t> _values;
@@ -40,15 +40,15 @@ private:
 public:
     ValueBlueprint();
 
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & indexEnv,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-    virtual search::fef::Blueprint::UP createInstance() const { return Blueprint::UP(new ValueBlueprint()); }
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().number().number().repeat();
+    void visitDumpFeatures(const fef::IIndexEnvironment & indexEnv,
+                           fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override { return Blueprint::UP(new ValueBlueprint()); }
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().number().number().repeat();
     }
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env,
+               const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace features
