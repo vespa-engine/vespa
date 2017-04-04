@@ -45,18 +45,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
 
-    public static RemoteSessionRepo create(Curator curator,
-                                           RemoteSessionFactory remoteSessionFactory,
-                                           ReloadHandler reloadHandler,
-                                           Path sessionsPath,
-                                           TenantApplications applicationRepo,
-                                           MetricUpdater metrics,
-                                           ExecutorService executorService) throws Exception {
-        return new RemoteSessionRepo(curator, remoteSessionFactory, reloadHandler, sessionsPath, applicationRepo, metrics, executorService);
-    }
-
     /**
-     * Used when the RemoteSessionRepo is set up programmatically from a Tenant, i.e. config v2
      * @param curator              a {@link Curator} instance.
      * @param remoteSessionFactory a {@link com.yahoo.vespa.config.server.session.RemoteSessionFactory}
      * @param reloadHandler        a {@link com.yahoo.vespa.config.server.ReloadHandler}
@@ -64,7 +53,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
      * @param applicationRepo      an {@link TenantApplications} object.
      * @param executorService      an {@link ExecutorService} to run callbacks from ZooKeeper.
      */
-    private RemoteSessionRepo(Curator curator,
+    public RemoteSessionRepo(Curator curator,
                               RemoteSessionFactory remoteSessionFactory,
                               ReloadHandler reloadHandler,
                               Path sessionsPath,
@@ -253,6 +242,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
     private void synchronizeOnNew(List<Long> sessionList) {
         for (long sessionId : sessionList) {
             RemoteSession session = getSession(sessionId);
+            if (session == null) continue; // session might have been deleted after getting session list
             log.log(LogLevel.DEBUG, session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();
 
