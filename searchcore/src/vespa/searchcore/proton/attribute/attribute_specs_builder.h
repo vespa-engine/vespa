@@ -33,7 +33,7 @@ public:
     ~AttributeSpecsBuilder();
 
     /*
-     * Setup called from document db comfig manager and document db
+     * Setup called from document db config manager and document db
      * config scout.  No adjustments.
      */
     void setup(const AttributesConfig &newConfig);
