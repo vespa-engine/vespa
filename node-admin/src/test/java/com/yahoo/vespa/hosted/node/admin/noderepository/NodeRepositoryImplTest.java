@@ -126,7 +126,7 @@ public class NodeRepositoryImplTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1L)
-                        .withDockerImage(new DockerImage("image-1"))
+                        .withDockerImage(new DockerImage("image-1:6.2.3"))
                         .withVespaVersion("6.2.3"));
     }
 
