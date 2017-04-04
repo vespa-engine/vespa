@@ -261,7 +261,11 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
         nodeAgent.converge();
+        nodeAgent.converge();
+        nodeAgent.converge();
 
+        // Should only be called once, when we initialize
+        verify(dockerOperations, times(1)).getContainer(eq(containerName));
         verify(dockerOperations, never()).removeContainer(any());
         verify(dockerOperations, never()).startContainer(eq(containerName), eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
