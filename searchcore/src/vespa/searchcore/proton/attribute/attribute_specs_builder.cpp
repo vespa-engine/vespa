@@ -9,6 +9,7 @@
 
 using search::attribute::ConfigConverter;
 using vespa::config::search::AttributesConfig;
+using vespa::config::search::AttributesConfigBuilder;
 using vespa::config::search::IndexschemaConfig;
 using search::attribute::BasicType;
 
@@ -56,6 +57,14 @@ bool isStringIndex(const IndexConfigHash &indexConfig, const vespalib::string &n
     return false;
 }
 
+bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Config &cfg,
+                                                  const IndexConfigHash &indexConfig,
+                                                  const vespalib::string &name)
+{
+    return fastPartialUpdateAttribute(cfg) && !isStringIndex(indexConfig, name);
+}
+
+
 }
 
 AttributeSpecsBuilder::AttributeSpecsBuilder()
@@ -90,34 +99,34 @@ AttributeSpecsBuilder::setup(const AttributesConfig &newConfig)
     _config = std::make_shared<AttributesConfigBuilder>(newConfig);
 }
 
+namespace {
+
 void
-AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
-                             const AttributesConfig &newAttributesConfig,
-                             const IndexschemaConfig &oldIndexschemaConfig,
-                             const IDocumentTypeInspector &inspector)
+handleNewAttributes(const AttributesConfig &oldAttributesConfig,
+                    const AttributesConfig &newAttributesConfig,
+                    IndexConfigHash &oldIndexes,
+                    const IDocumentTypeInspector &inspector,
+                    AttributeSpecs &specs,
+                    AttributesConfigBuilder &config)
 {
     AttributesConfigHash oldAttrs(oldAttributesConfig.attribute);
-    AttributesConfigHash newAttrs(newAttributesConfig.attribute);
-    IndexConfigHash oldIndexes(oldIndexschemaConfig.indexfield);
     for (const auto &newAttr : newAttributesConfig.attribute) {
         search::attribute::Config newCfg = ConfigConverter::convert(newAttr);
         if (!inspector.hasUnchangedField(newAttr.name)) {
             // No reprocessing due to field type change, just use new config
-            _specs.emplace_back(newAttr.name, newCfg);
-            _config->attribute.emplace_back(newAttr);
+            specs.emplace_back(newAttr.name, newCfg);
+            config.attribute.emplace_back(newAttr);
         } else {
             auto oldAttr = oldAttrs.lookup(newAttr.name);
             if (oldAttr != nullptr) {
                 search::attribute::Config oldCfg = ConfigConverter::convert(*oldAttr);
-                if ((fastPartialUpdateAttribute(oldCfg) &&
-                     !isStringIndex(oldIndexes, newAttr.name)) ||
-                    !oldAttr->fastaccess) {
+                if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexes, newAttr.name) || !oldAttr->fastaccess) {
                     // Delay change of fast access flag
                     newCfg.setFastAccess(oldAttr->fastaccess);
-                    _specs.emplace_back(newAttr.name, newCfg);
+                    specs.emplace_back(newAttr.name, newCfg);
                     auto modNewAttr = newAttr;
                     modNewAttr.fastaccess = oldAttr->fastaccess;
-                    _config->attribute.emplace_back(modNewAttr);
+                    config.attribute.emplace_back(modNewAttr);
                     // TODO: Don't delay change of fast access flag if
                     // attribute type can change without doucment field
                     // type changing (needs a smarter attribute
@@ -126,15 +135,26 @@ AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
                     // Don't delay change of fast access flag from true to
                     // false when removing attribute aspect in a way that
                     // doesn't trigger reprocessing.
-                    _specs.emplace_back(newAttr.name, newCfg);
-                    _config->attribute.emplace_back(newAttr);
+                    specs.emplace_back(newAttr.name, newCfg);
+                    config.attribute.emplace_back(newAttr);
                 }
             } else {
                 // Delay addition of attribute aspect
-                _specs.emplace_back(newAttr.name, newCfg, false, true);
+                specs.emplace_back(newAttr.name, newCfg, false, true);
             }
         }
     }
+}
+
+void
+handleOldAttributes(const AttributesConfig &oldAttributesConfig,
+                    const AttributesConfig &newAttributesConfig,
+                    IndexConfigHash &oldIndexes,
+                    const IDocumentTypeInspector &inspector,
+                    AttributeSpecs &specs,
+                    AttributesConfigBuilder &config)
+{
+    AttributesConfigHash newAttrs(newAttributesConfig.attribute);
     for (const auto &oldAttr : oldAttributesConfig.attribute) {
         search::attribute::Config oldCfg = ConfigConverter::convert(oldAttr);
         if (inspector.hasUnchangedField(oldAttr.name)) {
@@ -142,13 +162,28 @@ AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
             if (newAttr == nullptr) {
                 // Delay removal of attribute aspect if it would trigger
                 // reprocessing.
-                if (fastPartialUpdateAttribute(oldCfg) && !isStringIndex(oldIndexes, oldAttr.name)) {
-                    _specs.emplace_back(oldAttr.name, oldCfg, true, false);
-                    _config->attribute.emplace_back(oldAttr);
+                if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexes, oldAttr.name)) {
+                    specs.emplace_back(oldAttr.name, oldCfg, true, false);
+                    config.attribute.emplace_back(oldAttr);
                 }
             }
         }
     }
+}
+
+}
+
+void
+AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
+                             const AttributesConfig &newAttributesConfig,
+                             const IndexschemaConfig &oldIndexschemaConfig,
+                             const IDocumentTypeInspector &inspector)
+{
+    IndexConfigHash oldIndexes(oldIndexschemaConfig.indexfield);
+    handleNewAttributes(oldAttributesConfig, newAttributesConfig,
+                        oldIndexes, inspector, _specs, *_config);
+    handleOldAttributes(oldAttributesConfig, newAttributesConfig,
+                        oldIndexes, inspector, _specs, *_config);
 }
 
 } // namespace proton
