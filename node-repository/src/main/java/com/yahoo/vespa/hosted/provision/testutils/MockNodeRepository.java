@@ -71,11 +71,11 @@ public class MockNodeRepository extends NodeRepository {
 
         // TODO: Use docker flavor
         Node node4 = createNode("node4", "host4.yahoo.com", ipAddresses, Optional.of("dockerhost4"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
-        node4 = node4.with(node4.status().withDockerImage("image-12"));
+        node4 = node4.with(node4.status().withDockerImage("image-12:6.41.0"));
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", ipAddresses, Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
-        nodes.add(node5.with(node5.status().withDockerImage("image-123").withVespaVersion(new Version("1.2.3"))));
+        nodes.add(node5.with(node5.status().withDockerImage("image-123:1.2.3").withVespaVersion(new Version("1.2.3"))));
 
         nodes.add(createNode("node6", "host6.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(createNode("node7", "host7.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));

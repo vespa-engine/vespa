@@ -299,6 +299,21 @@ public class SerializationTest {
         assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.2", node.allocation().get().membership().cluster().dockerImage().get());
     }
 
+    @Test
+    public void docker_image_is_derived_from_vespa_version() throws Exception {
+        String nodeData =
+                "{\n" +
+                        "   \"type\" : \"tenant\",\n" +
+                        "   \"flavor\" : \"large\",\n" +
+                        "   \"openStackId\" : \"myId\",\n" +
+                        "   \"hostname\" : \"myHostname\",\n" +
+                        "   \"ipAddresses\" : [\"127.0.0.1\"],\n" +
+                        "   \"vespaVersion\": \"6.42.1\"\n" +
+                        "}";
+        Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeData));
+        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", node.status().dockerImage().get());
+    }
+
     private byte[] createNodeJson(String hostname, String... ipAddress) {
         String ipAddressJsonPart = "";
         if (ipAddress.length > 0) {

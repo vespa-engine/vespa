@@ -109,7 +109,6 @@ public class NodeSerializer {
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
         node.status().hostedVersion().ifPresent(version -> object.setString(hostedVersionKey, version.toString()));
         node.status().stateVersion().ifPresent(version -> object.setString(stateVersionKey, version));
-        node.status().dockerImage().ifPresent(image -> object.setString(dockerImageKey, image));
         object.setLong(failCountKey, node.status().failCount());
         node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
@@ -169,7 +168,6 @@ public class NodeSerializer {
                           softwareVersionFromSlime(object.field(vespaVersionKey)),
                           softwareVersionFromSlime(object.field(hostedVersionKey)),
                           optionalString(object.field(stateVersionKey)),
-                          optionalString(object.field(dockerImageKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)),
                           object.field(wantToRetireKey).asBool());
