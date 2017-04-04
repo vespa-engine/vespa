@@ -65,6 +65,7 @@ vespa_define_module(
     src/tests/proton/attribute/attribute_initializer
     src/tests/proton/attribute/attribute_manager
     src/tests/proton/attribute/attribute_populator
+    src/tests/proton/attribute/attribute_specs_builder
     src/tests/proton/attribute/attribute_usage_filter
     src/tests/proton/attribute/attributes_state_explorer
     src/tests/proton/attribute/document_field_populator
