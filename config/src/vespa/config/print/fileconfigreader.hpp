@@ -3,6 +3,7 @@
 #include "fileconfigreader.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/misc.h>
+#include <vespa/config/common/configvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <fstream>
 #include <sstream>
