@@ -15,7 +15,8 @@ namespace proton {
 class IDocumentTypeInspector;
 
 /*
- * Class to build adjusted attribute config and vector of attribute specs.
+ * Class to build adjusted attribute config and vector of attribute specs
+ * to eliminate need for reprocessing when system is online.
  */
 class AttributeSpecsBuilder
 {
@@ -31,7 +32,15 @@ public:
     AttributeSpecsBuilder();
     ~AttributeSpecsBuilder();
 
+    /*
+     * Setup called from document db comfig manager and document db
+     * config scout.  No adjustments.
+     */
     void setup(const AttributesConfig &newConfig);
+    /*
+     * Setup to avoid reprocessing, used to create adjusted document db
+     * config before applying new config when system is online.
+     */
     void setup(const AttributesConfig &oldAttributesConfig,
                const AttributesConfig &newAttributesConfig,
                const IndexschemaConfig &oldIndexschemaConfig,
