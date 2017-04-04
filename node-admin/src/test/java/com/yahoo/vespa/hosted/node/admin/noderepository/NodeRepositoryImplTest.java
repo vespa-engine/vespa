@@ -89,7 +89,7 @@ public class NodeRepositoryImplTest {
         assertThat(containersToRun.size(), is(1));
         final ContainerNodeSpec nodeSpec = containersToRun.get(0);
         assertThat(nodeSpec.hostname, is("host4.yahoo.com"));
-        assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("image-123")));
+        assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0")));
         assertThat(nodeSpec.nodeState, is(Node.State.reserved));
         assertThat(nodeSpec.wantedRestartGeneration.get(), is(0L));
         assertThat(nodeSpec.currentRestartGeneration.get(), is(0L));
