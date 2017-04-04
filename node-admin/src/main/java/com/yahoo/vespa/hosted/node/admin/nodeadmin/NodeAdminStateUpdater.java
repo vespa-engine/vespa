@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,9 +133,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     /**
      * This method attempts to converge NodeAgent's and NodeAdmin's frozen state with their orchestrator
      * state. When trying to suspend node-admin, this method will first attempt to freeze all NodeAgents and
-     * NodeAdmin, then asking orchestrator for permission to suspend node-admin app, and finally asking orchestrator
-     * for permission to suspend all active nodes on this host, if either of the request is denied,
-     * this method will unfreeze NodeAgents and NodeAdmin.
+     * NodeAdmin, then asking orchestrator for permission to suspend all active nodes on this host, including
+     * node-admin itself, if the request is denied, this method will unfreeze NodeAgents and NodeAdmin.
      */
     private void convergeState(State wantedState) {
         boolean wantFrozen = wantedState != RESUMED;
@@ -150,18 +150,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             return;
         }
 
-        if (currentState == RESUMED) {
-            if (! orchestrator.suspend(dockerHostHostName)) {
-                nodeAdmin.setFrozen(false);
-                throw new RuntimeException("Failed to get permission to suspend node-admin, resuming.");
-            }
-
-            synchronized (monitor) {
-                currentState = SUSPENDED_NODE_ADMIN;
-            }
-            if (wantedState == currentState) return;
-        }
-
         // Fetch active nodes from node repo before suspending nodes.
         // It is only possible to suspend active nodes,
         // the orchestrator will fail if trying to suspend nodes in other states.
@@ -175,14 +163,21 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             throw new RuntimeException("Failed to get nodes from node repo:" + e.getMessage());
         }
 
-        if (nodesInActiveState.size() > 0) {
-            orchestrator.suspend(dockerHostHostName, nodesInActiveState).ifPresent(orchestratorResponse -> {
+        if (currentState == RESUMED) {
+            List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
+            nodesToSuspend.add(dockerHostHostName);
+            orchestrator.suspend(dockerHostHostName, nodesToSuspend).ifPresent(orchestratorResponse -> {
                 nodeAdmin.setFrozen(false);
                 throw new RuntimeException("Failed to get permission to suspend, resuming. Reason: " + orchestratorResponse);
             });
-            nodeAdmin.stopNodeAgentServices(nodesInActiveState);
+
+            synchronized (monitor) {
+                currentState = SUSPENDED_NODE_ADMIN;
+            }
+            if (wantedState == currentState) return;
         }
 
+        nodeAdmin.stopNodeAgentServices(nodesInActiveState);
         synchronized (monitor) {
             currentState = SUSPENDED;
         }

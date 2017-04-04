@@ -24,6 +24,7 @@ import java.io.StringWriter;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -31,7 +32,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -40,7 +40,6 @@ import static org.mockito.Mockito.when;
  * @author dybis
  */
 public class RunInContainerTest {
-
     private JDisc container;
     private int port;
 
@@ -111,19 +110,23 @@ public class RunInContainerTest {
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
+        final String parentHostname = "localhost.test.yahoo.com";
+
         assertThat(doPutCall("resume"), is(true));
 
         // No nodes are allocated to this host yet, so freezing should be fine, but orchestrator doesnt allow node-admin suspend
-        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com")).thenReturn(false);
+        when(ComponentsProviderWithMocks.orchestratorMock.suspend(parentHostname, Collections.singletonList(parentHostname)))
+                .thenReturn(Optional.of("Cannot suspend because..."));
         assertFalse(doPutCall("suspend/node-admin"));
 
-        // Ochestrator changes its mind, allows node-admin to suspend
-        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com")).thenReturn(true);
+        // Orchestrator changes its mind, allows node-admin to suspend
+        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
+        when(ComponentsProviderWithMocks.orchestratorMock.suspend(parentHostname, Collections.singletonList(parentHostname)))
+                .thenReturn(Optional.empty());
         Thread.sleep(50);
         assertTrue(doPutCall("suspend/node-admin")); // Tick loop should've run several times by now, expect to be suspended
 
-        // Lets try to suspend everything now
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
+        // Lets try to suspend everything now, should be trivial as we have no active containers to stop services at
         assertFalse(doPutCall("suspend"));
         Thread.sleep(50);
         assertTrue(doPutCall("suspend"));
@@ -143,25 +146,28 @@ public class RunInContainerTest {
                         .nodeFlavor("docker")
                         .build()));
         when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com",
-                Collections.singletonList("host1.test.yahoo.com"))).thenReturn(Optional.of("Cant suspend because..."));
+                Arrays.asList("host1.test.yahoo.com", parentHostname)))
+                .thenReturn(Optional.of("Cant suspend because..."));
 
-        // Suspending node-admin is still independent of suspending containers, so this should succeed
+        // Orchestrator doesn't allow to suspend either the container or the node-admin
         assertFalse(doPutCall("suspend/node-admin"));
+        Thread.sleep(50);
+        assertFalse(doPutCall("suspend/node-admin"));
+
+        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com",
+                Arrays.asList("host1.test.yahoo.com", parentHostname)))
+                .thenReturn(Optional.empty());
+        // Orchestrator successfully suspended everything
         Thread.sleep(50);
         assertTrue(doPutCall("suspend/node-admin"));
 
-        // Fails because orchestrator wont allow to suspend the container
-        assertFalse(doPutCall("suspend"));
-        Thread.sleep(50);
-        assertFalse(doPutCall("suspend"));
-
-        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com",
-                Collections.singletonList("host1.test.yahoo.com"))).thenReturn(Optional.empty());
+        // Allow stopping services in active nodes
         doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
                 .trySuspendNode(eq(new ContainerName("host1")));
         doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
                 .stopServicesOnNode(eq(new ContainerName("host1")));
 
+        assertFalse(doPutCall("suspend"));
         Thread.sleep(50);
         assertTrue(doPutCall("suspend"));
     }

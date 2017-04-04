@@ -17,7 +17,6 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -58,6 +57,8 @@ public class NodeAdminStateUpdaterTest {
         }
         List<String> activeHostnames = Arrays.asList(
                 "host0.test.yahoo.com", "host3.test.yahoo.com", "host6.test.yahoo.com", "host9.test.yahoo.com");
+        List<String> suspendHostnames = new ArrayList<>(activeHostnames);
+        suspendHostnames.add(parentHostname);
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
 
@@ -83,7 +84,9 @@ public class NodeAdminStateUpdaterTest {
         verify(refresher, times(1)).signalWorkToBeDone(); // No change in desired state
 
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
-        when(orchestrator.suspend(eq(parentHostname))).thenReturn(false).thenReturn(true);
+        when(orchestrator.suspend(eq(parentHostname), eq(suspendHostnames)))
+                .thenReturn(Optional.of("Cannot allow to suspend because some reason"))
+                .thenReturn(Optional.empty());
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(refresher, times(1)).signalWorkToBeDone();
@@ -92,23 +95,13 @@ public class NodeAdminStateUpdaterTest {
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(nodeAdmin, times(1)).setFrozen(eq(false));
-        verify(orchestrator, never()).suspend(any(), any());
-
-        // Lets just suspend everything...
-        when(orchestrator.suspend(eq(parentHostname), eq(activeHostnames)))
-                .thenReturn(Optional.of("Cannot allow to suspend becuase some reason"))
-                .thenReturn(Optional.empty());
-        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
-        tickAfter(0); // Change in wanted state, no need to wait
-        verify(refresher, times(2)).signalWorkToBeDone();
-        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Another roll back
 
         // At this point orchestrator says its OK to suspend, but something goes wrong when we try to stop services
         doThrow(new RuntimeException("Failed to stop services")).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
-        tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
+        tickAfter(0); // Change in wanted state, no need to wait
         verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
-        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure we dont roll back
+        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // Make sure we dont roll back
 
         // Finally we are successful in transitioning to frozen
         tickAfter(35);
