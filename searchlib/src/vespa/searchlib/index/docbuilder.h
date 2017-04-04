@@ -46,69 +46,48 @@ private:
         virtual void endElement() { throw Error("Function not supported"); }
         virtual void addStr(const vespalib::string & val) { (void) val; throw Error("Function not supported"); }
 
-        virtual void
-        addSpace(void)
-        {
+        virtual void addSpace() {
             throw Error("Function not supported");
         }
 
-        virtual void
-        addNoWordStr(const vespalib::string & val)
-        {
+        virtual void addNoWordStr(const vespalib::string & val) {
             (void) val;
             throw Error("Function not supported");
         }
 
-        virtual void
-        addTokenizedString(const vespalib::string &val,
-                            bool urlMode)
-        {
+        virtual void addTokenizedString(const vespalib::string &val, bool urlMode) {
             (void) val;
             (void) urlMode;
             throw Error("Function not supported");
         }
 
-        virtual void
-        addSpan(size_t start, size_t len)
-        {
+        virtual void addSpan(size_t start, size_t len) {
             (void) start;
             (void) len;
             throw Error("Function not supported");
         }
 
-        virtual void
-        addSpan(void)
-        {
+        virtual void addSpan() {
             throw Error("Function not supported");
         }
 
-        virtual void
-        addSpaceTokenAnnotation(void)
-        {
+        virtual void addSpaceTokenAnnotation() {
             throw Error("Function not supported");
         }
 
-        virtual void
-        addNumericTokenAnnotation(void)
-        {
+        virtual void addNumericTokenAnnotation() {
             throw Error("Function not supported");
         }
 
-        virtual void
-        addAlphabeticTokenAnnotation(void)
-        {
+        virtual void addAlphabeticTokenAnnotation() {
             throw Error("Function not supported");
         }
 
-        virtual void
-        addTermAnnotation(void)
-        {
+        virtual void addTermAnnotation() {
             throw Error("Function not supported");
         }
 
-        virtual void
-        addTermAnnotation(const vespalib::string &val)
-        {
+        virtual void addTermAnnotation(const vespalib::string &val) {
             (void) val;
             throw Error("Function not supported");
         }
@@ -124,56 +103,37 @@ private:
         const document::FieldValue::UP & getValue() const { return _value; }
         const Schema::Field & getField() const { return _sfield; }
 
-        virtual void
-        onEndElement(void)
-        {
-        }
+        virtual void onEndElement() {}
+        virtual void onEndField() {}
 
-        virtual void
-        onEndField(void)
-        {
-        }
-
-        virtual void
-        setAutoAnnotate(bool autoAnnotate)
-        {
+        virtual void setAutoAnnotate(bool autoAnnotate) {
             (void) autoAnnotate;
             throw Error("Function not supported");
         }
 
-        virtual void
-        setAutoSpace(bool autoSpace)
-        {
+        virtual void setAutoSpace(bool autoSpace) {
             (void) autoSpace;
             throw Error("Function not supported");
         }
 
-        virtual void
-        addPosition(int32_t xpos, int32_t ypos)
-        {
+        virtual void addPosition(int32_t xpos, int32_t ypos) {
             (void) xpos;
             (void) ypos;
             throw Error("Function not supported");
         }
 
-        virtual void
-        addRaw(const void *buf, size_t len)
-        {
+        virtual void addRaw(const void *buf, size_t len) {
             (void) buf;
             (void) len;
             throw Error("Function not supported");
         }
 
-        virtual void
-        startSubField(const vespalib::string &subField)
-        {
+        virtual void startSubField(const vespalib::string &subField) {
             (void) subField;
             throw Error("Function not supported");
         }
 
-        virtual void
-        endSubField(void)
-        {
+        virtual void endSubField() {
             throw Error("Function not supported");
         }
     };
@@ -186,8 +146,8 @@ private:
         int32_t _elementWeight;
     public:
         CollectionFieldHandle(const document::Field & dfield, const Schema::Field & sfield);
-        virtual void startElement(int32_t weight);
-        virtual void endElement();
+        void startElement(int32_t weight) override;
+        void endElement() override;
     };
 
     /**
@@ -208,67 +168,31 @@ private:
         vespalib::string _subField;
         const document::FixedTypeRepo & _repo;
 
-        void
-        append(const vespalib::string &val);
+        void append(const vespalib::string &val);
 
     public:
         IndexFieldHandle(const document::FixedTypeRepo & repo,
                          const document::Field &dfield,
                          const Schema::Field &sfield);
 
-        virtual void addStr(const vespalib::string & val);
-
-        virtual void
-        addSpace(void);
-
-        virtual void
-        addNoWordStr(const vespalib::string & val);
-
-        void
-        addTokenizedString(const vespalib::string &val,
-                            bool urlMode);
-
-        virtual void
-        addSpan(size_t start, size_t len);
-
-        virtual void
-        addSpan(void);
-
-        virtual void
-        addSpaceTokenAnnotation(void);
-
-        virtual void
-        addNumericTokenAnnotation(void);
-
-        virtual void
-        addAlphabeticTokenAnnotation(void);
-
-        virtual void
-        addTermAnnotation(void);
-
-        virtual void
-        addTermAnnotation(const vespalib::string &val);
-
-        virtual void
-        onEndElement(void);
-
-        virtual void
-        onEndField(void);
-
-        void
-        startAnnotate(void);
-
-        virtual void
-        setAutoAnnotate(bool autoAnnotate);
-
-        virtual void
-        setAutoSpace(bool autoSpace);
-
-        virtual void
-        startSubField(const vespalib::string &subField);
-
-        virtual void
-        endSubField(void);
+        void addStr(const vespalib::string & val) override;
+        void addSpace() override;
+        void addNoWordStr(const vespalib::string & val) override;
+        void addTokenizedString(const vespalib::string &val, bool urlMode) override;
+        void addSpan(size_t start, size_t len) override;
+        void addSpan() override;
+        void addSpaceTokenAnnotation() override;
+        void addNumericTokenAnnotation() override;
+        void addAlphabeticTokenAnnotation() override;
+        void addTermAnnotation() override;
+        void addTermAnnotation(const vespalib::string &val) override;
+        void onEndElement() override;
+        void onEndField() override;
+        void startAnnotate();
+        void setAutoAnnotate(bool autoAnnotate) override;
+        void setAutoSpace(bool autoSpace) override;
+        void startSubField(const vespalib::string &subField) override;
+        void endSubField() override;
     };
 
     /**
@@ -278,15 +202,12 @@ private:
     {
     public:
         AttributeFieldHandle(const document::Field & dfield, const Schema::Field & sfield);
-        virtual void addStr(const vespalib::string & val);
-        virtual void addInt(int64_t val);
-        virtual void addFloat(double val);
-        virtual void addPredicate(std::unique_ptr<vespalib::Slime> val);
-        virtual void addTensor(std::unique_ptr<vespalib::tensor::Tensor> val)
-            override;
-
-        virtual void
-        addPosition(int32_t xpos, int32_t ypos);
+        void addStr(const vespalib::string & val) override;
+        void addInt(int64_t val) override;
+        void addFloat(double val) override;
+        void addPredicate(std::unique_ptr<vespalib::Slime> val) override;
+        void addTensor(std::unique_ptr<vespalib::tensor::Tensor> val) override;
+        void addPosition(int32_t xpos, int32_t ypos) override;
     };
 
     /**
@@ -295,12 +216,10 @@ private:
     class SummaryFieldHandle : public CollectionFieldHandle {
     public:
         SummaryFieldHandle(const document::Field & dfield, const Schema::Field & sfield);
-        virtual void addStr(const vespalib::string & val);
-        virtual void addInt(int64_t val);
-        virtual void addFloat(double val);
-
-        virtual void
-        addRaw(const void *buf, size_t len);
+        void addStr(const vespalib::string & val) override;
+        void addInt(int64_t val) override;
+        void addFloat(double val) override;
+        void addRaw(const void *buf, size_t len) override;
     };
 
     /**
@@ -326,9 +245,7 @@ private:
         void startSummaryField(const Schema::Field & sfield) {
             _fieldHandle.reset(new SummaryFieldHandle(_type->getField(sfield.getName()), sfield));
         }
-        void
-        endField()
-        {
+        void endField() {
             _fieldHandle->onEndField();
             _doc->setValue(_type->getField(_fieldHandle->getField().getName()), *_fieldHandle->getValue());
             _fieldHandle.reset(static_cast<FieldHandle *>(NULL));
@@ -357,76 +274,36 @@ public:
     DocBuilder & startAttributeField(const vespalib::string & name);
     DocBuilder & startSummaryField(const vespalib::string & name);
     DocBuilder & endField();
-
     DocBuilder & startElement(int32_t weight = 1);
     DocBuilder & endElement();
-
     DocBuilder & addStr(const vespalib::string & val);
-    DocBuilder & addSpace(void);
+    DocBuilder & addSpace();
     DocBuilder & addNoWordStr(const vespalib::string & val);
     DocBuilder & addInt(int64_t val);
     DocBuilder & addFloat(double val);
     DocBuilder & addPredicate(std::unique_ptr<vespalib::Slime> val);
     DocBuilder & addTensor(std::unique_ptr<vespalib::tensor::Tensor> val);
-
-    DocBuilder &
-    addTokenizedString(const vespalib::string &val);
-
-    DocBuilder &
-    addUrlTokenizedString(const vespalib::string &val);
-
-    DocBuilder &
-    addSpan(size_t start, size_t len);
-
-    DocBuilder &
-    addSpan(void);
-
-    DocBuilder &
-    addSpaceTokenAnnotation(void);
-
-    DocBuilder &
-    addNumericTokenAnnotation(void);
-
-    DocBuilder &
-    addAlphabeticTokenAnnotation(void);
-
-    DocBuilder&
-    addTermAnnotation(void);
-
-    DocBuilder &
-    addTermAnnotation(const vespalib::string &val);
-
-    DocBuilder &
-    setAutoAnnotate(bool autoAnnotate);
-
-    DocBuilder &
-    setAutoSpace(bool autoSpace);
-
-    DocBuilder &
-    addPosition(int32_t xpos, int32_t ypos);
-
-    DocBuilder &
-    addRaw(const void *buf, size_t len);
-
-    DocBuilder &
-    startSubField(const vespalib::string &subField);
-
-    DocBuilder &
-    endSubField(void);
-
-    static bool
-    hasAnnotations(void)
-    {
-        return true;
-    }
+    DocBuilder &addTokenizedString(const vespalib::string &val);
+    DocBuilder &addUrlTokenizedString(const vespalib::string &val);
+    DocBuilder &addSpan(size_t start, size_t len);
+    DocBuilder &addSpan();
+    DocBuilder &addSpaceTokenAnnotation();
+    DocBuilder &addNumericTokenAnnotation();
+    DocBuilder &addAlphabeticTokenAnnotation();
+    DocBuilder &addTermAnnotation();
+    DocBuilder &addTermAnnotation(const vespalib::string &val);
+    DocBuilder &setAutoAnnotate(bool autoAnnotate);
+    DocBuilder &setAutoSpace(bool autoSpace);
+    DocBuilder &addPosition(int32_t xpos, int32_t ypos);
+    DocBuilder &addRaw(const void *buf, size_t len);
+    DocBuilder &startSubField(const vespalib::string &subField);
+    DocBuilder &endSubField();
+    static bool hasAnnotations() { return true; }
 
     const document::DocumentType &getDocumentType() const { return _docType; }
-    const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const
-    { return _repo; }
-    document::DocumenttypesConfig getDocumenttypesConfig() const
-    { return _doctypes_config; }
+    const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const { return _repo; }
+    document::DocumenttypesConfig getDocumenttypesConfig() const { return _doctypes_config; }
 };
 
 } // namespace search::index
 } // namespace search
-

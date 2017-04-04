@@ -1,18 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/blob.h>
-#include <vespa/messagebus/blobref.h>
-#include <vespa/messagebus/message.h>
-#include <vespa/messagebus/reply.h>
-#include <vespa/slobrok/imirrorapi.h>
-#include <vespa/vespalib/component/versionspecification.h>
 #include "inetwork.h"
 #include "oosmanager.h"
 #include "rpcnetworkparams.h"
 #include "rpcsendv1.h"
 #include "rpcservicepool.h"
 #include "rpctargetpool.h"
+#include <vespa/messagebus/blob.h>
+#include <vespa/messagebus/blobref.h>
+#include <vespa/messagebus/message.h>
+#include <vespa/messagebus/reply.h>
+#include <vespa/slobrok/imirrorapi.h>
+#include <vespa/vespalib/component/versionspecification.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/frt/supervisor.h>
 
 namespace slobrok {
     namespace api {
@@ -39,14 +41,14 @@ private:
         vespalib::Version         _version;
 
         SendContext(RPCNetwork &net, const Message &msg, const std::vector<RoutingNode*> &recipients);
-        void handleVersion(const vespalib::Version *version);
+        void handleVersion(const vespalib::Version *version) override;
     };
 
     struct TargetPoolTask : public FNET_Task {
         RPCTargetPool &_pool;
 
         TargetPoolTask(FNET_Scheduler &scheduler, RPCTargetPool &pool);
-        void PerformTask();
+        void PerformTask() override;
     };
 
     typedef std::map<vespalib::VersionSpecification, RPCSendAdapter*> SendAdapterMap;
@@ -210,46 +212,20 @@ public:
     void replyError(const SendContext &ctx, uint32_t errCode,
                     const string &errMsg);
 
-    // Implements INetwork.
-    void attach(INetworkOwner &owner);
+    void attach(INetworkOwner &owner) override;
+    const string getConnectionSpec() const override;
+    bool start() override;
+    bool waitUntilReady(double seconds) const override;
+    void registerSession(const string &session) override;
+    void unregisterSession(const string &session) override;
+    bool allocServiceAddress(RoutingNode &recipient) override;
+    void freeServiceAddress(RoutingNode &recipient) override;
+    void send(const Message &msg, const std::vector<RoutingNode*> &recipients) override;
+    void sync() override;
+    void shutdown() override;
+    void postShutdownHook() override;
+    const slobrok::api::IMirrorAPI &getMirror() const override;
 
-    // Implements INetwork.
-    const string getConnectionSpec() const;
-
-    // Implements INetwork.
-    bool start();
-
-    // Implements INetwork.
-    bool waitUntilReady(double seconds) const;
-
-    // Implements INetwork.
-    void registerSession(const string &session);
-
-    // Implements INetwork.
-    void unregisterSession(const string &session);
-
-    // Implements INetwork.
-    bool allocServiceAddress(RoutingNode &recipient);
-
-    // Implements INetwork.
-    void freeServiceAddress(RoutingNode &recipient);
-
-    // Implements INetwork.
-    void send(const Message &msg, const std::vector<RoutingNode*> &recipients);
-
-    // Implements INetwork.
-    void sync();
-
-    // Implements INetwork.
-    void shutdown();
-
-    // Implements INetwork.
-    void postShutdownHook();
-
-    // Implements INetwork.
-    const slobrok::api::IMirrorAPI &getMirror() const;
-
-    // Implements FRT_Invokable.
     void invoke(FRT_RPCRequest *req);
 };
 

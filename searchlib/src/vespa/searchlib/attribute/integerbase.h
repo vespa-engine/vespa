@@ -88,8 +88,8 @@ protected:
     }
     static T defaultValue() { return attribute::getUndefined<T>(); }
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
-    virtual largeint_t getDefaultValue() const { return defaultValue(); }
-    virtual bool isUndefined(DocId doc) const { return get(doc) == defaultValue(); }
+    largeint_t getDefaultValue() const override { return defaultValue(); }
+    bool isUndefined(DocId doc) const override { return get(doc) == defaultValue(); }
     Change _defaultValue;
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;

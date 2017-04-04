@@ -60,7 +60,7 @@ private:
     uint32_t _level;
 public:
     EnumConverter(Grouping & g, uint32_t level) : _grouping(g), _level(level) { }
-    virtual void execute(vespalib::Identifiable &obj) {
+    void execute(vespalib::Identifiable &obj) override {
         Group &group = static_cast<Group &>(obj);
         uint32_t tmplevel = _level;
         if (group.hasId()) {
@@ -81,7 +81,7 @@ public:
             list[i]->select(enumConverter, enumConverter);
         }
     }
-    virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(Group::classId); }
+    bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(Group::classId); }
 };
 
 class GlobalIdConverter : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
@@ -90,14 +90,14 @@ private:
     const IDocumentMetaStore &_metaStore;
 public:
     GlobalIdConverter(const IDocumentMetaStore &metaStore) : _metaStore(metaStore) {}
-    virtual void execute(vespalib::Identifiable & obj) {
+    void execute(vespalib::Identifiable & obj) override {
         FS4Hit & hit = static_cast<FS4Hit &>(obj);
         document::GlobalId gid;
         _metaStore.getGid(hit.getDocId(), gid);
         hit.setGlobalId(gid);
         LOG(debug, "GlobalIdConverter: lid(%u) -> gid(%s)", hit.getDocId(), hit.getGlobalId().toString().c_str());
     }
-    virtual bool check(const vespalib::Identifiable & obj) const {
+    bool check(const vespalib::Identifiable & obj) const override {
         return obj.inherits(FS4Hit::classId);
     }
 };

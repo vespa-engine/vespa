@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
@@ -15,7 +13,7 @@ class ChainExecutor : public FeatureExecutor
 {
 public:
     ChainExecutor();
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
@@ -23,10 +21,10 @@ class ChainBlueprint : public Blueprint
 {
 public:
     ChainBlueprint();
-    virtual void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const {}
-    virtual Blueprint::UP createInstance() const { return Blueprint::UP(new ChainBlueprint()); }
-    virtual bool setup(const IIndexEnvironment & indexEnv, const StringVector & params);
-    virtual FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const;
+    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new ChainBlueprint()); }
+    bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;
+    FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace test

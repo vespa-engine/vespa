@@ -19,7 +19,7 @@ public:
 protected:
     const ExpressionNode & getArg() const { return MultiArgFunctionNode::getArg(0); }
 private:
-    virtual void onPrepareResult();
+    void onPrepareResult() override;
 };
 
 }

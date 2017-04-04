@@ -38,7 +38,7 @@ public:
     bool operator==(const RedundancyGroupDistribution& o) const
         { return (_values == o._values); }
 
-    void print(std::ostream&, bool verbose, const std::string& indent) const;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
 
 private:
     uint16_t getFirstAsterixIndex() const;

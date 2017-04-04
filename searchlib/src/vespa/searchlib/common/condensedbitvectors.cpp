@@ -75,8 +75,8 @@ private:
 
     size_t getKeyCapacity() const override { return sizeof(T)*8; }
     size_t getCapacity() const override { return _v.capacity(); }
-    size_t getSize() const { return _v.size(); }
-    void adjustDocIdLimit(uint32_t docId);
+    size_t getSize() const override { return _v.size(); }
+    void adjustDocIdLimit(uint32_t docId) override;
     attribute::RcuVectorBase<T> _v;
 };
 

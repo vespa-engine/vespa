@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
+#include "memorymanager.h"
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
 
@@ -102,6 +102,11 @@ private:
 
 public:
     MemoryState(Clock& clock, uint64_t maxMemory);
+    MemoryState(const MemoryState &);
+    MemoryState & operator = (const MemoryState &);
+    MemoryState(MemoryState &&) = default;
+    MemoryState & operator = (MemoryState &&) = default;
+    ~MemoryState();
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 

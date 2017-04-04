@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/common/feature.h>
@@ -26,56 +24,45 @@ struct JaroWinklerDistanceConfig {
 /**
  * Implements the executor for the jaro winkler distance calculator.
  */
-class JaroWinklerDistanceExecutor : public search::fef::FeatureExecutor {
+class JaroWinklerDistanceExecutor : public fef::FeatureExecutor {
 public:
     /**
      * Constructs a new executor for the jaro winkler distance calculator.
      *
      * @param config The config for this executor.
      */
-    JaroWinklerDistanceExecutor(const search::fef::IQueryEnvironment &env,
+    JaroWinklerDistanceExecutor(const fef::IQueryEnvironment &env,
                                 const JaroWinklerDistanceConfig &config);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 
 private:
-    feature_t jaroWinklerProximity(const std::vector<search::fef::FieldPositionsIterator> &termPos, uint32_t fieldLen);
+    feature_t jaroWinklerProximity(const std::vector<fef::FieldPositionsIterator> &termPos, uint32_t fieldLen);
 
 private:
-    const JaroWinklerDistanceConfig          &_config;      // The config for this executor.
-    std::vector<search::fef::TermFieldHandle> _termFieldHandles; // The handles of all query terms.
-    const fef::MatchData                     *_md;
+    const JaroWinklerDistanceConfig  &_config;      // The config for this executor.
+    std::vector<fef::TermFieldHandle> _termFieldHandles; // The handles of all query terms.
+    const fef::MatchData             *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**
  * Implements the blueprint for the jaro winkler distance calculator.
  */
-class JaroWinklerDistanceBlueprint : public search::fef::Blueprint {
+class JaroWinklerDistanceBlueprint : public fef::Blueprint {
 public:
     /**
      * Constructs a new blueprint for the jaro winkler distance calculator.
      */
     JaroWinklerDistanceBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::SINGLE);
+    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 private:
     JaroWinklerDistanceConfig _config; // The config for this blueprint.

@@ -74,10 +74,8 @@ public:
     void reserve(size_t sz) { _map.reserve(sz); }
     void resize(size_t sz) { _map.resize(sz); }
 
-        // FieldValue implementation
-    virtual FieldValue& assign(const FieldValue&);
-    virtual WeightedSetFieldValue* clone() const
-        { return new WeightedSetFieldValue(*this); }
+    FieldValue& assign(const FieldValue&) override;
+    WeightedSetFieldValue* clone() const override { return new WeightedSetFieldValue(*this); }
     virtual int compare(const FieldValue&) const override;
     virtual void printXml(XmlOutputStream& out) const override;
     virtual void print(std::ostream& out, bool verbose,

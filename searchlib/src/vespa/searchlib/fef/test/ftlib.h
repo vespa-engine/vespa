@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "featuretest.h"
+#include "indexenvironment.h"
+#include "indexenvironmentbuilder.h"
+#include "matchdatabuilder.h"
+#include "queryenvironment.h"
+#include "queryenvironmentbuilder.h"
+#include "rankresult.h"
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/searchlib/features/fieldmatch/params.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/fef/test/featuretest.h>
-#include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/matchdatabuilder.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/searchlib/fef/test/queryenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/rankresult.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/common/feature.h>
 
 using search::feature_t;
 
@@ -90,7 +90,7 @@ private:
 
 public:
     FtDumpFeatureVisitor();
-    virtual void visitDumpFeature(const vespalib::string & name) { _features.push_back(name); }
+    void visitDumpFeature(const vespalib::string & name) override { _features.push_back(name); }
     const std::vector<vespalib::string> & features() const { return _features; }
 };
 

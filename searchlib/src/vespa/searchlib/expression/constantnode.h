@@ -14,11 +14,11 @@ public:
     DECLARE_EXPRESSIONNODE(ConstantNode);
     ConstantNode() : ExpressionNode(), _result() { }
     ConstantNode(ResultNode::UP r) : ExpressionNode(), _result(r.release()) { }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual const ResultNode & getResult() const { return *_result; }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const ResultNode & getResult() const override { return *_result; }
 private:
-    virtual void onPrepare(bool preserveAccurateTypes) { (void) preserveAccurateTypes; }
-    virtual bool onExecute() const { return true; }
+    void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
+    bool onExecute() const override { return true; }
     ResultNode::CP _result;
 };
 

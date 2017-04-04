@@ -17,20 +17,17 @@ class QueryConnector : public QueryNode, public QueryNodeList
 public:
     QueryConnector(const char * opName);
     ~QueryConnector();
-    virtual const HitList & evaluateHits(HitList & hl) const;
-    /// Will clear the results from the querytree.
-    virtual void reset();
-    /// Will get all leafnodes.
-    virtual void getLeafs(QueryTermList & tl);
-    virtual void getLeafs(ConstQueryTermList & tl) const;
-    /// Gives you all phrases of this tree.
-    virtual void getPhrases(QueryNodeRefList & tl);
-    virtual void getPhrases(ConstQueryNodeRefList & tl) const;
-    virtual size_t depth() const;
-    virtual size_t width() const;
+    const HitList & evaluateHits(HitList & hl) const override;
+    void reset() override;
+    void getLeafs(QueryTermList & tl) override;
+    void getLeafs(ConstQueryTermList & tl) const override;
+    void getPhrases(QueryNodeRefList & tl) override;
+    void getPhrases(ConstQueryNodeRefList & tl) const override;
+    size_t depth() const override;
+    size_t width() const override;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void setIndex(const vespalib::string & index) { _index = index; }
-    virtual const vespalib::string & getIndex() const { return _index; }
+    void setIndex(const vespalib::string & index) override { _index = index; }
+    const vespalib::string & getIndex() const override { return _index; }
     static QueryConnector * create(ParseItem::ItemType type);
     virtual bool isFlattenable(ParseItem::ItemType type) const { (void) type; return false; }
 private:
@@ -45,7 +42,7 @@ class TrueNode : public QueryConnector
 {
 public:
     TrueNode() : QueryConnector("AND") { }
-    virtual bool evaluate() const;
+    bool evaluate() const override;
 };
 
 /**
@@ -56,8 +53,8 @@ class AndQueryNode : public QueryConnector
 public:
     AndQueryNode() : QueryConnector("AND") { }
     AndQueryNode(const char * opName) : QueryConnector(opName) { }
-    virtual bool evaluate() const;
-    virtual bool isFlattenable(ParseItem::ItemType type) const { return type == ParseItem::ITEM_AND; }
+    bool evaluate() const override;
+    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_AND; }
 };
 
 /**
@@ -67,8 +64,8 @@ class AndNotQueryNode : public QueryConnector
 {
 public:
     AndNotQueryNode() : QueryConnector("ANDNOT") { }
-    virtual bool evaluate() const;
-    virtual bool isFlattenable(ParseItem::ItemType type) const { return type == ParseItem::ITEM_NOT; }
+    bool evaluate() const override;
+    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
 };
 
 /**
@@ -79,8 +76,8 @@ class OrQueryNode : public QueryConnector
 public:
     OrQueryNode() : QueryConnector("OR") { }
     OrQueryNode(const char * opName) : QueryConnector(opName) { }
-    virtual bool evaluate() const;
-    virtual bool isFlattenable(ParseItem::ItemType type) const {
+    bool evaluate() const override;
+    bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_OR) ||
                (type == ParseItem::ITEM_DOT_PRODUCT) ||
                (type == ParseItem::ITEM_WAND) ||
@@ -95,8 +92,8 @@ class EquivQueryNode : public OrQueryNode
 {
 public:
     EquivQueryNode() : OrQueryNode("EQUIV") { }
-    virtual bool evaluate() const;
-    virtual bool isFlattenable(ParseItem::ItemType type) const {
+    bool evaluate() const override;
+    bool isFlattenable(ParseItem::ItemType type) const override {
         return (type == ParseItem::ITEM_EQUIV) ||
                (type == ParseItem::ITEM_WEIGHTED_SET);
     }
@@ -110,13 +107,13 @@ class PhraseQueryNode : public AndQueryNode
 {
 public:
     PhraseQueryNode() : AndQueryNode("PHRASE"), _fieldInfo(32) { }
-    virtual bool evaluate() const;
-    virtual const HitList & evaluateHits(HitList & hl) const;
-    virtual void getPhrases(QueryNodeRefList & tl);
-    virtual void getPhrases(ConstQueryNodeRefList & tl) const;
+    bool evaluate() const override;
+    const HitList & evaluateHits(HitList & hl) const override;
+    void getPhrases(QueryNodeRefList & tl) override;
+    void getPhrases(ConstQueryNodeRefList & tl) const override;
     const QueryTerm::FieldInfo & getFieldInfo(size_t fid) const { return _fieldInfo[fid]; }
     size_t getFieldInfoSize() const { return _fieldInfo.size(); }
-    virtual bool isFlattenable(ParseItem::ItemType type) const { return type == ParseItem::ITEM_NOT; }
+    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
 private:
     mutable std::vector<QueryTerm::FieldInfo> _fieldInfo;
     void updateFieldInfo(size_t fid, size_t offset, size_t fieldLength) const;
@@ -133,7 +130,7 @@ class NotQueryNode : public QueryConnector
 {
 public:
     NotQueryNode() : QueryConnector("NOT") { }
-    virtual bool evaluate() const;
+    bool evaluate() const override;
 };
 
 /**
@@ -144,11 +141,11 @@ class NearQueryNode : public AndQueryNode
 public:
     NearQueryNode() : AndQueryNode("NEAR"), _distance(0) { }
     NearQueryNode(const char * opName) : AndQueryNode(opName), _distance(0) { }
-    virtual bool evaluate() const;
+    bool evaluate() const override;
     void distance(size_t dist)       { _distance = dist; }
     size_t distance()          const { return _distance; }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual bool isFlattenable(ParseItem::ItemType type) const { return type == ParseItem::ITEM_NOT; }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
 private:
     size_t _distance;
 };
@@ -161,8 +158,8 @@ class ONearQueryNode : public NearQueryNode
 {
 public:
     ONearQueryNode() : NearQueryNode("ONEAR") { }
-    virtual ~ONearQueryNode() { }
-    virtual bool evaluate() const;
+    ~ONearQueryNode() { }
+    bool evaluate() const override;
 };
 
 /**
@@ -199,4 +196,3 @@ private:
 };
 
 }
-

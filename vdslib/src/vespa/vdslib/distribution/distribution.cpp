@@ -7,7 +7,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <boost/lexical_cast.hpp>
 #include <vespa/config/config.h>
-#include <vespa/config/common/misc.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.h>
 #include <vespa/vespalib/util/exceptions.h>

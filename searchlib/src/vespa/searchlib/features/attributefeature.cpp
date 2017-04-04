@@ -3,13 +3,13 @@
 #include "attributefeature.h"
 #include "utils.h"
 #include "valuefeature.h"
+#include "constant_tensor_executor.h"
+#include "dense_tensor_attribute_executor.h"
+#include "tensor_attribute_executor.h"
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchlib/features/constant_tensor_executor.h>
-#include <vespa/searchlib/features/dense_tensor_attribute_executor.h>
-#include <vespa/searchlib/features/tensor_attribute_executor.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 
@@ -106,7 +106,6 @@ template <typename T>
 class SingleAttributeExecutor : public fef::FeatureExecutor {
 private:
     const T & _attribute;
-
 public:
     /**
      * Constructs an executor.
@@ -114,9 +113,7 @@ public:
      * @param attribute The attribute vector to use.
      */
     SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
-
-    // Inherit doc from FeatureExecutor.
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
@@ -130,9 +127,7 @@ public:
      * @param attribute The attribute vector to use.
      */
     CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
-
-    // Inherit doc from FeatureExecutor.
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 /**
  * Implements the executor for fetching values from a single or array attribute vector
@@ -154,9 +149,7 @@ public:
      * @param idx       The index used for an array attribute.
      */
     AttributeExecutor(const search::attribute::IAttributeVector * attribute, uint32_t idx);
-
-    // Inherit doc from FeatureExecutor.
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
@@ -181,9 +174,7 @@ public:
      * @param useKey   Whether we should consider the key.
      */
     WeightedSetAttributeExecutor(const search::attribute::IAttributeVector * attribute, T key, bool useKey);
-
-    // Inherit doc from FeatureExecutor.
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 template <typename T>

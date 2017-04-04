@@ -23,25 +23,31 @@ class IntegerResultNodeT : public IntegerResultNode
 {
 public:
     IntegerResultNodeT(int64_t v=0) : _value(v) { }
-    virtual size_t hash() const { return _value; }
-    virtual int onCmp(const Identifiable & b) const {
+    size_t hash() const override { return _value; }
+    int onCmp(const Identifiable & b) const override {
         T bv(static_cast<const IntegerResultNodeT &>(b)._value);
         return (_value < bv) ? -1 : (_value > bv) ? 1 : 0;
     }
-    virtual void add(const ResultNode & b)       { _value += b.getInteger(); }
-    virtual void negate()                        { _value = - _value; }
-    virtual void multiply(const ResultNode & b)  { _value *= b.getInteger(); }
-    virtual void divide(const ResultNode & b)    {
+    void add(const ResultNode & b) override { _value += b.getInteger(); }
+    void negate() override { _value = - _value; }
+    void multiply(const ResultNode & b) override { _value *= b.getInteger(); }
+    void divide(const ResultNode & b) override {
         int64_t val = b.getInteger();
         _value = (val == 0) ? 0 : (_value / val);
     }
-    virtual void modulo(const ResultNode & b)    {
+    void modulo(const ResultNode & b) override {
         int64_t val = b.getInteger();
         _value = (val == 0) ? 0 : (_value % val);
     }
-    virtual void min(const ResultNode & b)       { int64_t t(b.getInteger()); if (t < _value) { _value = t; } }
-    virtual void max(const ResultNode & b)       { int64_t t(b.getInteger()); if (t > _value) { _value = t; } }
-    virtual void set(const ResultNode & rhs) { _value = rhs.getInteger(); }
+    void min(const ResultNode & b) override {
+        int64_t t(b.getInteger());
+        if (t < _value) { _value = t; }
+    }
+    void max(const ResultNode & b) override {
+        int64_t t(b.getInteger());
+        if (t > _value) { _value = t; }
+    }
+    void set(const ResultNode & rhs) override { _value = rhs.getInteger(); }
     void andOp(const ResultNode & b) { _value &= b.getInteger(); }
     void  orOp(const ResultNode & b) { _value |= b.getInteger(); }
     void xorOp(const ResultNode & b) { _value ^= b.getInteger(); }
@@ -54,27 +60,31 @@ protected:
     void setValue(const T &value) { _value = value; }
     T getValue() const { return _value; }
 private:
-    virtual int cmpMem(const void * a, const void *b) const {
+    int cmpMem(const void * a, const void *b) const override {
         const T & ai(*static_cast<const T *>(a));
         const T & bi(*static_cast<const T *>(b));
         return ai < bi ? -1 : ai == bi ? 0 : 1;
     }
-    virtual void create(void * buf)  const  { (void) buf; }
-    virtual void destroy(void * buf) const  { (void) buf; }
-    virtual void decode(const void * buf)   { _value = *static_cast<const T *>(buf); }
-    virtual void encode(void * buf) const   { *static_cast<T *>(buf) = _value; }
-    virtual void swap(void * buf)           { std::swap(*static_cast<T *>(buf), _value); }
-    virtual size_t hash(const void * buf) const { return *static_cast<const T *>(buf); }
-    virtual uint64_t  radixAsc(const void * buf) const { return vespalib::convertForSort<T,  true>::convert(*static_cast<const T *>(buf)); }
-    virtual uint64_t radixDesc(const void * buf) const { return vespalib::convertForSort<T, false>::convert(*static_cast<const T *>(buf)); }
-    virtual size_t onGetRawByteSize() const { return sizeof(_value); }
-    virtual void setMin() { _value = std::numeric_limits<T>::min(); }
-    virtual void setMax() { _value = std::numeric_limits<T>::max(); }
-    virtual vespalib::Serializer & onSerialize(vespalib::Serializer & os) const { return os << _value; }
-    virtual vespalib::Deserializer & onDeserialize(vespalib::Deserializer & is) { return is >> _value; }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const { visit(visitor, "value", _value); }
-    virtual int64_t onGetInteger(size_t index) const { (void) index; return _value; }
-    virtual double onGetFloat(size_t index)    const { (void) index; return _value; }
+    void create(void * buf)  const override { (void) buf; }
+    void destroy(void * buf) const override { (void) buf; }
+    void decode(const void * buf)  override { _value = *static_cast<const T *>(buf); }
+    void encode(void * buf) const  override { *static_cast<T *>(buf) = _value; }
+    void swap(void * buf)          override { std::swap(*static_cast<T *>(buf), _value); }
+    size_t hash(const void * buf) const override { return *static_cast<const T *>(buf); }
+    uint64_t  radixAsc(const void * buf) const override {
+        return vespalib::convertForSort<T,  true>::convert(*static_cast<const T *>(buf));
+    }
+    uint64_t radixDesc(const void * buf) const override {
+        return vespalib::convertForSort<T, false>::convert(*static_cast<const T *>(buf));
+    }
+    size_t onGetRawByteSize() const override { return sizeof(_value); }
+    void setMin() override { _value = std::numeric_limits<T>::min(); }
+    void setMax() override { _value = std::numeric_limits<T>::max(); }
+    vespalib::Serializer & onSerialize(vespalib::Serializer & os) const override { return os << _value; }
+    vespalib::Deserializer & onDeserialize(vespalib::Deserializer & is) override { return is >> _value; }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override { visit(visitor, "value", _value); }
+    int64_t onGetInteger(size_t index) const override { (void) index; return _value; }
+    double onGetFloat(size_t index)    const override { (void) index; return _value; }
     T _value;
 };
 
@@ -86,7 +96,7 @@ public:
     DECLARE_RESULTNODE(Int8ResultNode);
     Int8ResultNode(int8_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 };
 
 class Int16ResultNode : public IntegerResultNodeT<int16_t>
@@ -97,7 +107,7 @@ public:
     DECLARE_RESULTNODE(Int16ResultNode);
     Int16ResultNode(int16_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 };
 
 class Int32ResultNode : public IntegerResultNodeT<int32_t>
@@ -108,7 +118,7 @@ public:
     DECLARE_RESULTNODE(Int32ResultNode);
     Int32ResultNode(int32_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 };
 
 class Int64ResultNode : public IntegerResultNodeT<int64_t>
@@ -119,7 +129,7 @@ public:
     DECLARE_RESULTNODE(Int64ResultNode);
     Int64ResultNode(int64_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 };
 
 }

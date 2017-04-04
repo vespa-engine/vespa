@@ -4,8 +4,6 @@
 
 #include "searchable.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <memory>
-#include <vector>
 
 namespace search {
 namespace fef { class TermFieldMatchData; }
@@ -24,7 +22,7 @@ class DotProductBlueprint : public ComplexLeafBlueprint
 
 public:
     DotProductBlueprint(const FieldSpec &field);
-    virtual ~DotProductBlueprint();
+    ~DotProductBlueprint();
 
     // used by create visitor
     FieldSpec getNextChildField(const FieldSpec &outer);
@@ -32,14 +30,12 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term, int32_t weight);
 
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const;
+                     bool strict) const override;
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-
-    virtual void
-    fetchPostings(bool strict);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void fetchPostings(bool strict) override;
 };
 
 }  // namespace search::queryeval

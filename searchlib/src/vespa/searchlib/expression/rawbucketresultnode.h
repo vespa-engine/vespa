@@ -13,7 +13,7 @@ private:
     ResultNode::CP _from;
     ResultNode::CP _to;
     static RawBucketResultNode _nullResult;
-    virtual size_t onGetRawByteSize() const { return sizeof(_from) + sizeof(_to); }
+    size_t onGetRawByteSize() const override { return sizeof(_from) + sizeof(_to); }
 public:
     struct GetValue {
         BufferRef _tmp;
@@ -24,12 +24,12 @@ public:
     DECLARE_NBO_SERIALIZE;
     RawBucketResultNode() : _from(new RawResultNode()), _to(new RawResultNode()) {}
     RawBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
-    virtual size_t hash() const;
-    virtual int onCmp(const Identifiable & b) const;
+    size_t hash() const override;
+    int onCmp(const Identifiable & b) const override;
     int contains(const RawBucketResultNode & b) const;
     int contains(const ConstBufferRef & v) const;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual const RawBucketResultNode& getNullBucket() const override { return getNull(); }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const RawBucketResultNode& getNullBucket() const override { return getNull(); }
     static const RawBucketResultNode & getNull() { return _nullResult; }
 };
 

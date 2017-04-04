@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/numericfunctionnode.h>
+#include "numericfunctionnode.h"
 
 namespace search {
 namespace expression {
@@ -12,9 +12,9 @@ public:
     DECLARE_EXPRESSIONNODE(ModuloFunctionNode);
     ModuloFunctionNode() { }
 private:
-    virtual void onArgument(const ResultNode & arg, ResultNode & result) const;
-    virtual ResultNode & flatten(const ResultNodeVector & v, ResultNode & result) const;
-    virtual ResultNode::CP getInitialValue() const;
+    void onArgument(const ResultNode & arg, ResultNode & result) const override;
+    ResultNode & flatten(const ResultNodeVector & v, ResultNode & result) const override;
+    ResultNode::CP getInitialValue() const override;
 };
 
 }

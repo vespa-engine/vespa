@@ -49,7 +49,7 @@ public:
 
     void applyTo(Document& doc) const;
 
-    virtual FieldPathUpdate* clone() const = 0;
+    FieldPathUpdate* clone() const override = 0;
 
     virtual bool operator==(const FieldPathUpdate& other) const;
     bool operator!=(const FieldPathUpdate& other) const {

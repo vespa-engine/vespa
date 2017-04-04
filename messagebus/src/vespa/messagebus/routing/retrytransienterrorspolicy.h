@@ -42,11 +42,8 @@ public:
      */
     RetryTransientErrorsPolicy &setBaseDelay(double baseDelay);
 
-    // Implements IRetryPolicy.
-    bool canRetry(uint32_t errorCode) const;
-
-    // Implements IRetryPolicy.
-    double getRetryDelay(uint32_t retry) const;
+    bool canRetry(uint32_t errorCode) const override;
+    double getRetryDelay(uint32_t retry) const override;
 };
 
 } // namespace mbus

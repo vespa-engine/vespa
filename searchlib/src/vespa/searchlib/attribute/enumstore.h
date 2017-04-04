@@ -120,8 +120,7 @@ protected:
     }
     void printEntry(vespalib::asciistream & os, const Entry & e) const;
 
-    virtual void
-    freeUnusedEnum(Index idx, IndexSet & unused);
+    void freeUnusedEnum(Index idx, IndexSet & unused) override;
 
 public:
     EnumStoreT(uint64_t initBufferSize, bool hasPostings)
@@ -132,7 +131,7 @@ public:
     bool getValue(Index idx, Type & value) const;
     Type     getValue(uint32_t idx) const { return getValue(Index(datastore::EntryRef(idx))); }
     Type     getValue(Index idx)    const { return getEntry(idx).getValue(); }
-    virtual uint32_t getFixedSize() const { return Entry::fixedSize(); }
+    uint32_t getFixedSize() const override { return Entry::fixedSize(); }
 
     static uint32_t
     getEntrySize(Type value)
@@ -172,60 +171,31 @@ public:
         uint64_t getBufferSize()     const { return _bufferSize; }
     };
 
-    virtual void
-    writeValues(BufferWriter &writer,
-                const Index *idxs, size_t count) const override;
-
-    virtual ssize_t
-    deserialize(const void *src, size_t available, size_t &initSpace);
-
-    virtual ssize_t
-    deserialize(const void *src, size_t available, Index &idx);
-
-    virtual bool
-    foldedChange(const Index &idx1, const Index &idx2);
-
-    virtual bool
-    findEnum(Type value, EnumStoreBase::EnumHandle &e) const;
-
-    void
-    addEnum(Type value, Index &newIdx);
-
-    virtual bool
-    findIndex(Type value, Index &idx) const;
-
-    virtual void
-    freeUnusedEnums(bool movePostingidx);
-
-    virtual void
-    freeUnusedEnums(const IndexVector &toRemove);
-
-    void
-    reset(Builder &builder);
-
-    virtual bool
-    performCompaction(uint64_t bytesNeeded);
-
-    void
-    printCurrentContent(vespalib::asciistream &os) const;
+    void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const override;
+    ssize_t deserialize(const void *src, size_t available, size_t &initSpace) override;
+    ssize_t deserialize(const void *src, size_t available, Index &idx) override;
+    bool foldedChange(const Index &idx1, const Index &idx2) override;
+    virtual bool findEnum(Type value, EnumStoreBase::EnumHandle &e) const;
+    void addEnum(Type value, Index &newIdx);
+    virtual bool findIndex(Type value, Index &idx) const;
+    void freeUnusedEnums(bool movePostingidx) override;
+    void freeUnusedEnums(const IndexVector &toRemove) override;
+    void reset(Builder &builder);
+    bool performCompaction(uint64_t bytesNeeded) override;
+    void printCurrentContent(vespalib::asciistream &os) const;
 
 private:
     template <typename Dictionary>
-    void
-    reset(Builder &builder, Dictionary &dict);
+    void reset(Builder &builder, Dictionary &dict);
 
     template <typename Dictionary>
-    void
-    addEnum(Type value, Index &newIdx, Dictionary &dict);
+    void addEnum(Type value, Index &newIdx, Dictionary &dict);
 
     template <typename Dictionary>
-    void
-    performCompaction(Dictionary &dict);
+    void performCompaction(Dictionary &dict);
 
     template <typename Dictionary>
-    void
-    printCurrentContent(vespalib::asciistream &os,
-                        const Dictionary &dict) const;
+    void printCurrentContent(vespalib::asciistream &os, const Dictionary &dict) const;
 };
 
 template <typename EntryType>

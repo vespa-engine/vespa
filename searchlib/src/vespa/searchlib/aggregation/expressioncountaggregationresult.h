@@ -21,15 +21,14 @@ class ExpressionCountAggregationResult : public AggregationResult {
     HyperLogLog<PRECISION> _hll;
     expression::Int64ResultNode _rank;
 
-    virtual const ResultNode & onGetRank() const { return _rank; }
-    virtual void onPrepare(const ResultNode &, bool) { }
+    const ResultNode & onGetRank() const override { return _rank; }
+    void onPrepare(const ResultNode &, bool) override { }
 public:
     DECLARE_AGGREGATIONRESULT(ExpressionCountAggregationResult);
     ExpressionCountAggregationResult() : AggregationResult(), _hll() { }
 
-    virtual void visitMembers(vespalib::ObjectVisitor &) const {}
-    const Sketch<PRECISION, uint32_t> &getSketch() const
-    { return _hll.getSketch(); }
+    void visitMembers(vespalib::ObjectVisitor &) const override {}
+    const Sketch<PRECISION, uint32_t> &getSketch() const { return _hll.getSketch(); }
 };
 
 }  // namespace aggregation

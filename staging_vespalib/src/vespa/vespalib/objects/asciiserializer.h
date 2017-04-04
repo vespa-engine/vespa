@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/objects/serializer.h>
-#include <vespa/vespalib/objects/deserializer.h>
+#include "serializer.h"
+#include "deserializer.h"
 
 namespace vespalib {
 
@@ -11,14 +11,14 @@ class asciistream;
 class AsciiSerializer : public Serializer {
 public:
     AsciiSerializer(asciistream &stream) : _stream(stream) { }
-    virtual AsciiSerializer &put(const IFieldBase &field, bool value);
-    virtual AsciiSerializer &put(const IFieldBase &field, uint8_t value);
-    virtual AsciiSerializer &put(const IFieldBase &field, uint16_t value);
-    virtual AsciiSerializer &put(const IFieldBase &field, uint32_t value);
-    virtual AsciiSerializer &put(const IFieldBase &field, uint64_t value);
-    virtual AsciiSerializer &put(const IFieldBase &field, float value);
-    virtual AsciiSerializer &put(const IFieldBase &field, double value);
-    virtual AsciiSerializer &put(const IFieldBase &field, const stringref &val);
+    AsciiSerializer &put(const IFieldBase &field, bool value) override;
+    AsciiSerializer &put(const IFieldBase &field, uint8_t value) override;
+    AsciiSerializer &put(const IFieldBase &field, uint16_t value) override;
+    AsciiSerializer &put(const IFieldBase &field, uint32_t value) override;
+    AsciiSerializer &put(const IFieldBase &field, uint64_t value) override;
+    AsciiSerializer &put(const IFieldBase &field, float value) override;
+    AsciiSerializer &put(const IFieldBase &field, double value) override;
+    AsciiSerializer &put(const IFieldBase &field, const stringref &val) override;
 
     const asciistream &getStream() const { return _stream; }
     asciistream &getStream() { return _stream; }

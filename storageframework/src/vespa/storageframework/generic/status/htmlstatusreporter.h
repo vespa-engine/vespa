@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <vespa/storageframework/generic/status/statusreporter.h>
+#include "statusreporter.h"
 
 namespace storage {
 namespace framework {
@@ -46,8 +46,8 @@ struct HtmlStatusReporter : public StatusReporter {
     virtual void reportHtmlFooter(std::ostream&, const HttpUrlPath&) const;
 
     // Implementation of StatusReporter interface
-    virtual vespalib::string getReportContentType(const HttpUrlPath&) const;
-    virtual bool reportStatus(std::ostream&, const HttpUrlPath&) const;
+    vespalib::string getReportContentType(const HttpUrlPath&) const override;
+    bool reportStatus(std::ostream&, const HttpUrlPath&) const override;
 };
 
 /**
@@ -59,7 +59,7 @@ struct PartlyHtmlStatusReporter : public HtmlStatusReporter {
     PartlyHtmlStatusReporter(const StatusReporter& main)
         : HtmlStatusReporter(main.getId(), main.getName()) {}
 
-    virtual void reportHtmlStatus(std::ostream&, const HttpUrlPath&) const {}
+    void reportHtmlStatus(std::ostream&, const HttpUrlPath&) const override {}
 };
 
 } // framework

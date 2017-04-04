@@ -1,6 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2002-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
@@ -35,26 +33,16 @@ public:
     {
     }
 
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
+    void checkPointWrite(vespalib::nbostream &out) override;
+    void checkPointRead(vespalib::nbostream &in) override;
+    void readCounts(PostingListCounts &counts);
+    void readWordNum(uint64_t &wordNum);
 
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
-
-    void
-    readCounts(PostingListCounts &counts);
-
-    void
-    readWordNum(uint64_t &wordNum);
-
-    static uint64_t
-    noWordNum(void)
-    {
+    static uint64_t noWordNum() {
         return std::numeric_limits<uint64_t>::max();
     }
 
-    void
-    copyParams(const PostingListCountFileDecodeContext &rhs);
+    void copyParams(const PostingListCountFileDecodeContext &rhs);
 };
 
 
@@ -79,31 +67,18 @@ public:
     {
     }
 
-    virtual void
-    checkPointWrite(vespalib::nbostream &out);
+    void checkPointWrite(vespalib::nbostream &out) override;
+    void checkPointRead(vespalib::nbostream &in) override;
+    void writeCounts(const PostingListCounts &counts);
+    void writeWordNum(uint64_t wordNum);
 
-    virtual void
-    checkPointRead(vespalib::nbostream &in);
-
-    void
-    writeCounts(const PostingListCounts &counts);
-
-    void
-    writeWordNum(uint64_t wordNum);
-
-    static uint64_t
-    noWordNum(void)
-    {
+    static uint64_t noWordNum(void) {
         return std::numeric_limits<uint64_t>::max();
     }
 
-    void
-    copyParams(const PostingListCountFileEncodeContext &rhs);
+    void copyParams(const PostingListCountFileEncodeContext &rhs);
 };
-
 
 } // namespace bitcompression
 
 } // namespace search
-
-

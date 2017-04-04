@@ -5,9 +5,6 @@
 #include "i_document_weight_attribute.h"
 #include "iterator_pack.h"
 #include "predicate_attribute.h"
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchlib/query/queryterm.h>
@@ -122,20 +119,16 @@ public:
     {
     }
 
-    virtual SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const
-    {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict);
     }
 
-    virtual void
-    fetchPostings(bool strict)
-    {
+    void fetchPostings(bool strict) override {
         _search_context->fetchPostings(strict);
     }
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };
 
 void
@@ -313,7 +306,7 @@ public:
         }
     }
 
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override
     {
         assert(tfmda.size() == 1);
         if (_terms.size() == 0) {
@@ -379,8 +372,7 @@ public:
         }
     }
 
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const
-    {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
         if (_terms.size() == 0) {
             return SearchIterator::UP(new search::queryeval::EmptySearch());
@@ -415,8 +407,7 @@ public:
         setEstimate(HitEstimate(_dict_entry.posting_size, (_dict_entry.posting_size == 0)));
     }
 
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const
-    {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override {
         assert(tfmda.size() == 1);
         if (_dict_entry.posting_size == 0) {
             return SearchIterator::UP(new search::queryeval::EmptySearch());
@@ -424,8 +415,7 @@ public:
         return SearchIterator::UP(new queryeval::DocumentWeightSearchIterator(*tfmda[0], _attr, _dict_entry));
     }
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const
-    {   
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         search::queryeval::LeafBlueprint::visitMembers(visitor);
         visit(visitor, "attribute", _attrName);
     }
@@ -494,11 +484,11 @@ public:
         }
     }
 
-    virtual void visit(NumberTerm & n) { visitTerm(n, true); }
-    virtual void visit(LocationTerm &n) { visitLocation(n); }
-    virtual void visit(PrefixTerm & n) { visitTerm(n); }
+    void visit(NumberTerm & n) override { visitTerm(n, true); }
+    void visit(LocationTerm &n) override { visitLocation(n); }
+    void visit(PrefixTerm & n) override { visitTerm(n); }
 
-    virtual void visit(RangeTerm &n) {
+    void visit(RangeTerm &n) override {
         const string stack = StackDumpCreator::create(n);
         const string term = search::queryeval::termAsString(n);
         search::QueryTermSimple parsed_term(term, search::QueryTermSimple::WORD);
@@ -516,19 +506,19 @@ public:
         }
     }
 
-    virtual void visit(StringTerm & n) { visitTerm(n, true); }
-    virtual void visit(SubstringTerm & n) {
+    void visit(StringTerm & n) override { visitTerm(n, true); }
+    void visit(SubstringTerm & n) override {
         search::query::SimpleRegExpTerm re(vespalib::Regexp::make_from_substring(n.getTerm()),
                                            n.getView(), n.getId(), n.getWeight());
         visitTerm(re);
     }
-    virtual void visit(SuffixTerm & n) {
+    void visit(SuffixTerm & n) override {
         search::query::SimpleRegExpTerm re(vespalib::Regexp::make_from_suffix(n.getTerm()),
                                            n.getView(), n.getId(), n.getWeight());
         visitTerm(re);
     }
-    virtual void visit(PredicateQuery &n) { visitPredicate(n); }
-    virtual void visit(RegExpTerm & n) { visitTerm(n); }
+    void visit(PredicateQuery &n) override { visitPredicate(n); }
+    void visit(RegExpTerm & n) override { visitTerm(n); }
 
     template <typename WS, typename NODE>
     void createDirectWeightedSet(WS *bp, NODE &n) {
@@ -555,7 +545,7 @@ public:
         setResult(std::move(result));
     }
 
-    virtual void visit(search::query::WeightedSetTerm &n) {
+    void visit(search::query::WeightedSetTerm &n) override {
         bool isSingleValue = !_attr.hasMultiValue();
         bool isString = (_attr.isStringType() && _attr.hasEnum());
         bool isInteger = _attr.isIntegerType();
@@ -587,7 +577,7 @@ public:
         }
     }
 
-    virtual void visit(search::query::DotProduct &n) {
+    void visit(search::query::DotProduct &n) override {
         if (_dwa != nullptr) {
             auto *bp = new DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, *_dwa, n.getChildren().size());
             createDirectWeightedSet(bp, n);
@@ -597,7 +587,7 @@ public:
         }
     }
 
-    virtual void visit(search::query::WandTerm &n) {
+    void visit(search::query::WandTerm &n) override {
         if (_dwa != nullptr) {
             auto *bp = new DirectWandBlueprint(_field, *_dwa,
                                                n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),

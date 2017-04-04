@@ -20,7 +20,7 @@ struct NotImplementedAttribute : AttributeVector {
     uint32_t get(DocId, vespalib::string *, uint32_t) const override;
     uint32_t get(DocId, const char **, uint32_t) const override;
     uint32_t get(DocId, EnumHandle *, uint32_t) const override;
-    uint32_t get(DocId, WeightedInt *, uint32_t) const;
+    uint32_t get(DocId, WeightedInt *, uint32_t) const override;
     uint32_t get(DocId, WeightedFloat *, uint32_t) const override;
     uint32_t get(DocId, WeightedString *, uint32_t) const override;
     uint32_t get(DocId, WeightedConstChar *, uint32_t) const override;

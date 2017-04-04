@@ -16,22 +16,15 @@ public:
 
     InterpolatedLookup();
     ~InterpolatedLookup();
-
-    InterpolatedLookup(const vespalib::string &attribute,
-                       ExpressionNode::UP arg);
-
-    InterpolatedLookup(const search::attribute::IAttributeVector &attr,
-                       ExpressionNode::UP lookupArg);
-
+    InterpolatedLookup(const vespalib::string &attribute, ExpressionNode::UP arg);
+    InterpolatedLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP lookupArg);
     InterpolatedLookup(const InterpolatedLookup &rhs);
-
     InterpolatedLookup & operator= (const InterpolatedLookup &rhs);
-
     void setDocId(DocId docId) { _docId = docId; }
 private:
-    virtual bool onExecute() const;
-    virtual void onPrepareResult();
-    virtual void wireAttributes(const search::attribute::IAttributeContext &attrCtx);
+    bool onExecute() const override;
+    void onPrepareResult() override;
+    void wireAttributes(const search::attribute::IAttributeContext &attrCtx) override;
     vespalib::string _attributeName;
     const search::attribute::IAttributeVector * _attribute;
     DocId _docId;

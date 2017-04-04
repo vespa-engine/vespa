@@ -35,7 +35,7 @@ public:
           _value(value.clone()),
           _weight(weight) {}
 
-    virtual bool operator==(const ValueUpdate& other) const;
+    bool operator==(const ValueUpdate& other) const override;
 
     /** @return the field value to add during this update. */
     const FieldValue& getValue() const { return *_value; }

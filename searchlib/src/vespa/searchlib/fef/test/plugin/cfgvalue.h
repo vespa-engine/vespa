@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
@@ -19,13 +17,12 @@ private:
 
 public:
     CfgValueBlueprint();
-    virtual void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const;
-    virtual Blueprint::UP createInstance() const { return Blueprint::UP(new CfgValueBlueprint()); }
-    virtual bool setup(const IIndexEnvironment & indexEnv, const StringVector & params);
-    virtual FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const override;
+    void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const override;
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new CfgValueBlueprint()); }
+    bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;
+    FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace test
 } // namespace fef
 } // namespace search
-

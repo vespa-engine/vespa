@@ -3,12 +3,10 @@
 #include "stackdumpcreator.h"
 
 #include "intermediatenodes.h"
-#include "queryvisitor.h"
 #include "termnodes.h"
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchlib/util/rawbuf.h>
 
 using vespalib::string;
 using std::vector;
@@ -90,35 +88,35 @@ class QueryNodeConverter : public QueryVisitor {
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(And &node) {
+    void visit(And &node) override {
         createIntermediate(node, ParseItem::ITEM_AND);
     }
 
-    virtual void visit(AndNot &node) {
+    void visit(AndNot &node) override {
         createIntermediate(node, ParseItem::ITEM_NOT);
     }
 
-    virtual void visit(Near &node) {
+    void visit(Near &node) override {
         createIntermediate(node, ParseItem::ITEM_NEAR, node.getDistance());
     }
 
-    virtual void visit(ONear &node) {
+    void visit(ONear &node) override {
         createIntermediate(node, ParseItem::ITEM_ONEAR, node.getDistance());
     }
 
-    virtual void visit(Or &node) {
+    void visit(Or &node) override {
         createIntermediate(node, ParseItem::ITEM_OR);
     }
 
-    virtual void visit(WeakAnd &node) {
+    void visit(WeakAnd &node) override {
         createIntermediate(node, ParseItem::ITEM_WEAK_AND, node.getMinHits(), node.getView());
     }
 
-    virtual void visit(Equiv &node) {
+    void visit(Equiv &node) override {
         createIntermediate(node, ParseItem::ITEM_EQUIV);
     }
 
-    virtual void visit(Phrase &node) {
+    void visit(Phrase &node) override {
         uint8_t typefield = (ParseItem::ITEM_PHRASE | ParseItem::IF_WEIGHT);
         uint8_t flags = 0;
         if (!node.isRanked()) {
@@ -163,17 +161,17 @@ class QueryNodeConverter : public QueryVisitor {
         appendString(node.getView());
     }
 
-    virtual void visit(WeightedSetTerm &node) {
+    void visit(WeightedSetTerm &node) override {
         createWeightedSet(node, ParseItem::ITEM_WEIGHTED_SET | ParseItem::IF_WEIGHT);
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(DotProduct &node) {
+    void visit(DotProduct &node) override {
         createWeightedSet(node, ParseItem::ITEM_DOT_PRODUCT | ParseItem::IF_WEIGHT);
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(WandTerm &node) {
+    void visit(WandTerm &node) override {
         createWeightedSet(node, ParseItem::ITEM_WAND | ParseItem::IF_WEIGHT);
         appendCompressedPositiveNumber(node.getTargetNumHits());
         appendDouble(node.getScoreThreshold());
@@ -181,7 +179,7 @@ class QueryNodeConverter : public QueryVisitor {
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(Rank &node) {
+    void visit(Rank &node) override {
         createIntermediate(node, ParseItem::ITEM_RANK);
     }
 
@@ -212,39 +210,39 @@ class QueryNodeConverter : public QueryVisitor {
         appendTerm(node);
     }
 
-    virtual void visit(NumberTerm &node) {
+    void visit(NumberTerm &node) override {
         createTerm(node, ParseItem::ITEM_NUMTERM);
     }
 
-    virtual void visit(LocationTerm &node) {
+    void visit(LocationTerm &node) override {
         createTerm(node, ParseItem::ITEM_NUMTERM);
     }
 
-    virtual void visit(PrefixTerm &node) {
+    void visit(PrefixTerm &node) override {
         createTerm(node, ParseItem::ITEM_PREFIXTERM);
     }
 
-    virtual void visit(RangeTerm &node) {
+    void visit(RangeTerm &node) override {
         createTerm(node, ParseItem::ITEM_NUMTERM);
     }
 
-    virtual void visit(StringTerm &node) {
+    void visit(StringTerm &node) override {
         createTerm(node, ParseItem::ITEM_TERM);
     }
 
-    virtual void visit(SubstringTerm &node) {
+    void visit(SubstringTerm &node) override {
         createTerm(node, ParseItem::ITEM_SUBSTRINGTERM);
     }
 
-    virtual void visit(SuffixTerm &node) {
+    void visit(SuffixTerm &node) override {
         createTerm(node, ParseItem::ITEM_SUFFIXTERM);
     }
 
-    virtual void visit(PredicateQuery &node) {
+    void visit(PredicateQuery &node) override {
         createTerm(node, ParseItem::ITEM_PREDICATE_QUERY);
     }
 
-    virtual void visit(RegExpTerm &node) {
+    void visit(RegExpTerm &node) override {
         createTerm(node, ParseItem::ITEM_REGEXP);
     }
 

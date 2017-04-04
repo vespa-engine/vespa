@@ -166,9 +166,8 @@ public:
         setEstimate(estimate);
     }
 
-    virtual SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const
-    {
+    SearchIterator::UP
+    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override {
         SearchIterator::UP search(new PostingIterator(_pitr, _featureStore, _fieldId, tfmda));
         if (_useBitVector) {
             LOG(debug, "Return BooleanMatchIteratorWrapper: fieldId(%u), docCount(%zu)",
@@ -218,16 +217,16 @@ public:
                                               _field, _fieldId, useBitVector)));
     }
 
-    virtual void visit(LocationTerm &n)  { visitTerm(n); }
-    virtual void visit(PrefixTerm &n)    { visitTerm(n); }
-    virtual void visit(RangeTerm &n)     { visitTerm(n); }
-    virtual void visit(StringTerm &n)    { visitTerm(n); }
-    virtual void visit(SubstringTerm &n) { visitTerm(n); }
-    virtual void visit(SuffixTerm &n)    { visitTerm(n); }
-    virtual void visit(RegExpTerm &n)    { visitTerm(n); }
-    virtual void visit(PredicateQuery &) { }
+    void visit(LocationTerm &n)  override { visitTerm(n); }
+    void visit(PrefixTerm &n)    override { visitTerm(n); }
+    void visit(RangeTerm &n)     override { visitTerm(n); }
+    void visit(StringTerm &n)    override { visitTerm(n); }
+    void visit(SubstringTerm &n) override { visitTerm(n); }
+    void visit(SuffixTerm &n)    override { visitTerm(n); }
+    void visit(RegExpTerm &n)    override { visitTerm(n); }
+    void visit(PredicateQuery &) override { }
 
-    virtual void visit(NumberTerm &n) {
+    void visit(NumberTerm &n) override {
         handleNumberTermAsText(n);
     }
 

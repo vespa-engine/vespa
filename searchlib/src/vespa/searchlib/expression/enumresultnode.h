@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/integerresultnode.h>
+#include "integerresultnode.h"
 
 namespace search {
 namespace expression {
@@ -12,13 +12,11 @@ private:
     typedef IntegerResultNodeT<int64_t> Base;
 public:
     DECLARE_RESULTNODE(EnumResultNode);
-
     EnumResultNode(int64_t v=0) : Base(v) { }
-    virtual void set(const ResultNode & rhs) { setValue(rhs.getEnum()); }
-
+    void set(const ResultNode & rhs) override { setValue(rhs.getEnum()); }
 private:
-    virtual int64_t onGetEnum(size_t index) const { (void) index; return getValue(); }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
+    int64_t onGetEnum(size_t index) const override { (void) index; return getValue(); }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 };
 
 }

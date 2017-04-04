@@ -12,16 +12,16 @@ private:
     double _from;
     double _to;
     static FloatBucketResultNode _nullResult;
-    virtual size_t onGetRawByteSize() const { return sizeof(_from) + sizeof(_to); }
-    virtual void create(void * buf)  const  { (void) buf; }
-    virtual void destroy(void * buf) const  { (void) buf; }
-    virtual void encode(void * buf) const {
+    size_t onGetRawByteSize() const override { return sizeof(_from) + sizeof(_to); }
+    void create(void * buf)  const override  { (void) buf; }
+    void destroy(void * buf) const override  { (void) buf; }
+    void encode(void * buf) const override {
         double * v(static_cast<double *>(buf));
         v[0] = _from;
         v[1] = _to;
     }
-    virtual size_t hash(const void * buf) const { return static_cast<const size_t *>(buf)[0]; }
-    virtual void decode(const void * buf) {
+    size_t hash(const void * buf) const override { return static_cast<const size_t *>(buf)[0]; }
+    void decode(const void * buf) override {
         const double * v(static_cast<const double *>(buf));
         _from = v[0];
         _to = v[1];
@@ -35,17 +35,17 @@ public:
     DECLARE_NBO_SERIALIZE;
     FloatBucketResultNode() : _from(0.0), _to(0.0) {}
     FloatBucketResultNode(double from, double to) : _from(from), _to(to) {}
-    virtual size_t hash() const;
-    virtual int onCmp(const Identifiable & b) const;
+    size_t hash() const override;
+    int onCmp(const Identifiable & b) const override;
     int contains(const FloatBucketResultNode & b) const;
     int contains(double v) const { return (v < _from) ? 1 : (v >= _to) ? -1 : 0; }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     FloatBucketResultNode &setRange(double from, double to) {
         _from = from;
         _to = to;
         return *this;
     }
-    virtual const FloatBucketResultNode& getNullBucket() const override { return getNull(); }
+    const FloatBucketResultNode& getNullBucket() const override { return getNull(); }
     static const FloatBucketResultNode & getNull() { return _nullResult; }
 };
 

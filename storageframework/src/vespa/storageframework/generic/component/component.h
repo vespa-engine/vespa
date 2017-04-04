@@ -67,7 +67,7 @@
  */
 #pragma once
 
-#include <vespa/storageframework/generic/component/managedcomponent.h>
+#include "managedcomponent.h"
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/clock.h>
@@ -107,17 +107,17 @@ class Component : private ManagedComponent
     // ManagedComponent implementation
     metrics::Metric* getMetric() override { return _metric; }
     std::pair<MetricUpdateHook*, SecondTime> getMetricUpdateHook() override { return _metricUpdateHook; }
-    const StatusReporter* getStatusReporter() { return _status; }
-    void setMetricRegistrator(MetricRegistrator& mr);
-    void setMemoryManager(MemoryManagerInterface& mm) { _memoryManager = &mm; }
-    void setClock(Clock& c) { _clock = &c; }
-    void setThreadPool(ThreadPool& tp) { _threadPool = &tp; }
-    void setUpgradeFlag(UpgradeFlags flag) {
+    const StatusReporter* getStatusReporter() override { return _status; }
+    void setMetricRegistrator(MetricRegistrator& mr) override;
+    void setMemoryManager(MemoryManagerInterface& mm) override { _memoryManager = &mm; }
+    void setClock(Clock& c) override { _clock = &c; }
+    void setThreadPool(ThreadPool& tp) override { _threadPool = &tp; }
+    void setUpgradeFlag(UpgradeFlags flag) override {
         assert(_upgradeFlag.is_lock_free());
         _upgradeFlag.store(flag, std::memory_order_relaxed);
     }
-    void open();
-    void close();
+    void open() override;
+    void close() override;
 
 public:
     typedef std::unique_ptr<Component> UP;
@@ -164,7 +164,7 @@ public:
     vespalib::MonitorGuard getMetricManagerLock();
 
     /** Get the name of the component. Must be a unique name. */
-    const vespalib::string& getName() const { return _name; }
+    const vespalib::string& getName() const override { return _name; }
 
     /**
      * Get the thread pool for this application. Note that this call will fail

@@ -7,8 +7,8 @@
 
 #pragma once
 
+#include "nodetype.h"
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/vdslib/state/nodetype.h>
 
 namespace storage {
 namespace lib {
@@ -24,7 +24,7 @@ public:
     const NodeType& getType() const { return *_type; }
     uint16_t getIndex() const { return _index; }
 
-    void print(vespalib::asciistream&, const PrintProperties&) const;
+    void print(vespalib::asciistream&, const PrintProperties&) const override;
 
     bool operator==(const Node& other) const
         { return (other._index == _index && *other._type == *_type); }

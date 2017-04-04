@@ -74,6 +74,11 @@ MemoryState::MemoryState(Clock& clock, uint64_t maxMemory)
 {
 }
 
+MemoryState::MemoryState(const MemoryState &) = default;
+MemoryState & MemoryState::operator = (const MemoryState &) = default;
+
+MemoryState::~MemoryState() {}
+
 void
 MemoryState::addToEntry(const MemoryAllocationType& type, uint64_t memory,
                         uint8_t priority,

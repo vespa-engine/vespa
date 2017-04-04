@@ -14,29 +14,29 @@ struct ElementCompletenessParams {
     uint32_t  fieldId;
     feature_t fieldCompletenessImportance;
     ElementCompletenessParams()
-        : fieldId(search::fef::IllegalFieldId),
+        : fieldId(fef::IllegalFieldId),
           fieldCompletenessImportance(0.5) {}
 };
 
 //-----------------------------------------------------------------------------
 
-class ElementCompletenessExecutor : public search::fef::FeatureExecutor
+class ElementCompletenessExecutor : public fef::FeatureExecutor
 {
 private:
     struct Term {
-        search::fef::TermFieldHandle termHandle;
+        fef::TermFieldHandle termHandle;
         int                          termWeight;
-        Term(search::fef::TermFieldHandle handle, int weight)
+        Term(fef::TermFieldHandle handle, int weight)
             : termHandle(handle), termWeight(weight) {}
     };
 
     struct Item {
         uint32_t termIdx;
-        search::fef::TermFieldMatchData::PositionsIterator pos;
-        search::fef::TermFieldMatchData::PositionsIterator end;
+        fef::TermFieldMatchData::PositionsIterator pos;
+        fef::TermFieldMatchData::PositionsIterator end;
         Item(uint32_t idx,
-             search::fef::TermFieldMatchData::PositionsIterator p,
-             search::fef::TermFieldMatchData::PositionsIterator e)
+             fef::TermFieldMatchData::PositionsIterator p,
+             fef::TermFieldMatchData::PositionsIterator e)
             : termIdx(idx), pos(p), end(e) {}
         bool operator<(const Item &other) const {
             return (pos->getElementId() < other.pos->getElementId());
@@ -82,18 +82,18 @@ private:
 
     static bool nextElement(Item &item);
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
-    ElementCompletenessExecutor(const search::fef::IQueryEnvironment &env,
+    ElementCompletenessExecutor(const fef::IQueryEnvironment &env,
                                 const ElementCompletenessParams &params);
-    virtual bool isPure() { return _terms.empty(); }
-    virtual void execute(uint32_t docId);
+    bool isPure() override { return _terms.empty(); }
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
 
-class ElementCompletenessBlueprint : public search::fef::Blueprint
+class ElementCompletenessBlueprint : public fef::Blueprint
 {
 private:
     std::vector<vespalib::string>  _output;
@@ -102,24 +102,16 @@ private:
 public:
     ElementCompletenessBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
 
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::ANY);
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY);
     }
 
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
 
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     // for testing
     const ElementCompletenessParams &getParams() const { return _params; }

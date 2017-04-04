@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include <string>
-#include <set>
-#include <map>
 #include "blueprint.h"
 #include "iblueprintregistry.h"
+#include <map>
 
 namespace search {
 namespace fef {
@@ -31,8 +29,7 @@ public:
      **/
     BlueprintFactory();
 
-    // inherit doc
-    virtual void addPrototype(Blueprint::SP proto);
+    void addPrototype(Blueprint::SP proto) override;
 
     /**
      * This method will visit features to be dumped by forwarding the

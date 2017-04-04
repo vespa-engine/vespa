@@ -401,7 +401,7 @@ TransportServer::getListenPort()
         vespalib::Gate   done;
         int              port;
         Cmd(TransportServer &s) : server(s), done(), port(-1) {}
-        virtual void execute() {
+        void execute() override {
             if (server._listener != 0) {
                 port = server._listener->GetPortNumber();
             }

@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
-#include <vespa/storageframework/defaultimplementation/memory/memorystate.h>
+#include "memorymanager.h"
+#include "memorystate.h"
 #include <vespa/vespalib/util/sync.h>
 
 namespace storage {
@@ -64,26 +64,22 @@ public:
         return *this;
     }
 
-    virtual void setMaximumMemoryUsage(uint64_t max);
+    void setMaximumMemoryUsage(uint64_t max) override;
 
     void setCacheThreshold(float limit) { _cacheThreshold = limit; }
     void setNonCacheThreshold(float limit) { _nonCacheThreshold = limit; }
 
     MemoryState& getState() { return _state; } // Not threadsafe. Unit testing.
+    void getState(MemoryState& state, bool resetMax) override;
 
-    virtual void getState(MemoryState& state, bool resetMax);
+    MemoryToken::UP allocate(const MemoryAllocationType&, uint8_t priority,
+                             ReduceMemoryUsageInterface* = 0) override;
+    bool resize(MemoryToken& token, uint64_t min, uint64_t max, uint32_t allocationCounts) override;
 
-    virtual MemoryToken::UP allocate(const MemoryAllocationType&,
-                                     uint8_t priority,
-                                     ReduceMemoryUsageInterface* = 0);
-    virtual bool resize(MemoryToken& token, uint64_t min, uint64_t max,
-                        uint32_t allocationCounts);
+    void freeToken(MemoryTokenImpl& token) override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual void freeToken(MemoryTokenImpl& token);
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    virtual uint64_t getMemorySizeFreeForPriority(uint8_t priority) const;
+    virtual uint64_t getMemorySizeFreeForPriority(uint8_t priority) const override;
 
 private:
     void handleReduction(MemoryTokenImpl&, uint64_t size,

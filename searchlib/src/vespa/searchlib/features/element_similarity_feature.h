@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/util/priority_queue.h>
 
@@ -12,7 +10,7 @@ namespace features {
 
 //-----------------------------------------------------------------------------
 
-class ElementSimilarityBlueprint : public search::fef::Blueprint
+class ElementSimilarityBlueprint : public fef::Blueprint
 {
 private:
     struct OutputContext;
@@ -23,18 +21,17 @@ private:
 
 public:
     ElementSimilarityBlueprint();
-    virtual ~ElementSimilarityBlueprint();
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
-    virtual search::fef::Blueprint::UP createInstance() const {
+    ~ElementSimilarityBlueprint();
+    void visitDumpFeatures(const fef::IIndexEnvironment &env,
+                           fef::IDumpFeatureVisitor &visitor) const override;
+    fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new ElementSimilarityBlueprint());
     }
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::ANY);
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY);
     }
-    virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 //-----------------------------------------------------------------------------

@@ -76,9 +76,8 @@ public:
     SaveInfo::UP extractSaveInfo(const vespalib::string & baseFileName);
     static LoadInfo::UP extractLoadInfo(const vespalib::string & baseFileName);
 
-    // Inherit doc from ISourceSelector
-    virtual void setSource(uint32_t docId, queryeval::Source source) = 0;
-    virtual std::unique_ptr<queryeval::sourceselector::Iterator> createIterator() const = 0;
+    void setSource(uint32_t docId, queryeval::Source source) override = 0;
+    std::unique_ptr<queryeval::sourceselector::Iterator> createIterator() const override = 0;
 };
 
 } // namespace search

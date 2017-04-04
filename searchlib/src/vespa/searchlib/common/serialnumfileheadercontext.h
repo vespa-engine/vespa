@@ -4,11 +4,9 @@
 #include "fileheadercontext.h"
 #include "serialnum.h"
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
+namespace common {
 
 class SerialNumFileHeaderContext : public FileHeaderContext
 {
@@ -20,9 +18,7 @@ public:
                                parentFileHeaderContext,
                                SerialNum serialNum);
 
-    virtual void
-    addTags(vespalib::GenericHeader &header,
-            const vespalib::string &name) const;
+    void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
 };
 
 } // namespace common

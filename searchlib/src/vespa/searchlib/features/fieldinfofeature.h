@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/common/feature.h>
@@ -11,7 +9,7 @@
 namespace search {
 namespace features {
 
-class IndexFieldInfoExecutor : public search::fef::FeatureExecutor
+class IndexFieldInfoExecutor : public fef::FeatureExecutor
 {
 private:
     feature_t _type;     // from index env
@@ -20,33 +18,33 @@ private:
     uint32_t  _fieldHandle;
     const fef::MatchData *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     IndexFieldInfoExecutor(feature_t type, feature_t isFilter,
                            uint32_t field, uint32_t fieldHandle);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
 
-class AttrFieldInfoExecutor : public search::fef::FeatureExecutor
+class AttrFieldInfoExecutor : public fef::FeatureExecutor
 {
 private:
     feature_t _type; // from index env
     uint32_t  _fieldHandle;
     const fef::MatchData *_md;
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     AttrFieldInfoExecutor(feature_t type, uint32_t fieldHandle);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
 
-class FieldInfoBlueprint : public search::fef::Blueprint
+class FieldInfoBlueprint : public fef::Blueprint
 {
 private:
     bool      _overview;
@@ -58,17 +56,15 @@ private:
 
 public:
     FieldInfoBlueprint();
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &indexEnv,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
-    virtual search::fef::Blueprint::UP createInstance() const { return search::fef::Blueprint::UP(new FieldInfoBlueprint()); }
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().
+    void visitDumpFeatures(const fef::IIndexEnvironment &indexEnv, fef::IDumpFeatureVisitor &visitor) const override;
+    fef::Blueprint::UP createInstance() const override { return fef::Blueprint::UP(new FieldInfoBlueprint()); }
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().
             desc(0).
             desc(1).string();
     }
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

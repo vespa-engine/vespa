@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
-#include <vector>
+#include <vespa/messagebus/common.h>
+#include <vespa/fnet/frt/invoker.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/component/version.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/messagebus/common.h>
 
 namespace mbus {
 
@@ -113,7 +113,7 @@ public:
     const vespalib::Version &getVersion() const { return *_version; }
 
     // Implements FRT_IRequestWait.
-    void RequestDone(FRT_RPCRequest *req);
+    void RequestDone(FRT_RPCRequest *req) override;
 };
 
 } // namespace mbus

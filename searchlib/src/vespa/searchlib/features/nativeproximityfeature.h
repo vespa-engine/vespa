@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/fef/table.h>
 #include "nativerankfeature.h"
 #include "queryterm.h"
 #include "termdistancecalculator.h"
@@ -18,8 +15,8 @@ namespace features {
 struct NativeProximityParam : public NativeParamBase
 {
     NativeProximityParam() : NativeParamBase(), proximityTable(NULL), revProximityTable(NULL), proximityImportance(0.5) { }
-    const search::fef::Table * proximityTable;
-    const search::fef::Table * revProximityTable;
+    const fef::Table * proximityTable;
+    const fef::Table * revProximityTable;
     feature_t proximityImportance;
 };
 
@@ -33,7 +30,7 @@ public:
 /**
  * Implements the executor for calculating the native proximity score.
  **/
-class NativeProximityExecutor : public search::fef::FeatureExecutor {
+class NativeProximityExecutor : public fef::FeatureExecutor {
 public:
     /**
      * Represents a term pair with connectedness and associated term distance calculator.
@@ -68,11 +65,10 @@ private:
     virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
-    NativeProximityExecutor(const search::fef::IQueryEnvironment & env,
-                            const NativeProximityParams & params);
-    virtual void execute(uint32_t docId);
+    NativeProximityExecutor(const fef::IQueryEnvironment & env, const NativeProximityParams & params);
+    void execute(uint32_t docId) override;
 
-    static void generateTermPairs(const search::fef::IQueryEnvironment & env, const QueryTermVector & terms,
+    static void generateTermPairs(const fef::IQueryEnvironment & env, const QueryTermVector & terms,
                                   uint32_t slidingWindow, FieldSetup & setup);
 
     bool empty() const { return _setups.empty(); }
@@ -82,7 +78,7 @@ public:
 /**
  * Implements the blueprint for the native proximity executor.
  **/
-class NativeProximityBlueprint : public search::fef::Blueprint {
+class NativeProximityBlueprint : public fef::Blueprint {
 private:
     NativeProximityParams _params;
     vespalib::string           _defaultProximityBoost;
@@ -90,29 +86,14 @@ private:
 
 public:
     NativeProximityBlueprint();
-
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().field().repeat();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().field().repeat();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
-
-    /**
-     * Obtains the parameters used by the executor.
-     **/
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    
     const NativeProximityParams & getParams() const { return _params; }
 };
 

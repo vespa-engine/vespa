@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/feature.h>
 #include <cmath>
 
 namespace search {

@@ -18,8 +18,8 @@ public:
     VdsHit() : Hit(), _docId(), _summary() {}
     VdsHit(DocId docId, HitRank rank) : Hit(rank), _docId(docId), _summary() {}
     ~VdsHit();
-    virtual VdsHit *clone() const { return new VdsHit(*this); }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    VdsHit *clone() const override { return new VdsHit(*this); }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const   DocId &   getDocId() const { return _docId; }
     const Summary & getSummary() const { return _summary; }
     VdsHit &   setDocId(DocId & docId)     { _docId = docId; return *this; }

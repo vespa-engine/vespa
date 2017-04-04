@@ -6,8 +6,8 @@
  */
 #pragma once
 
+#include "state.h"
 #include <vespa/document/util/printable.h>
-#include <vespa/vdslib/state/state.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
 
 namespace storage {
@@ -38,8 +38,7 @@ public:
     void setCapacity(double capacity);
     void setDescription(const vespalib::stringref & desc) { _description = desc; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const DiskState& other) const;
     bool operator!=(const DiskState& other) const;
 

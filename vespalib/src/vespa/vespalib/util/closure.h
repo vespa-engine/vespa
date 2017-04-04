@@ -174,8 +174,7 @@ class MemberClosure0_1 : public Closure0<R> {
     MemFun _mem_fun;
     T1 _arg1;
 
-    virtual R call()
-    { return ((*_ptr).*_mem_fun)(std::move(_arg1)); }
+    R call() override { return ((*_ptr).*_mem_fun)(std::move(_arg1)); }
 
 public:
     MemberClosure0_1(Ptr ptr, MemFun mem_fun, T1 arg1)
@@ -192,8 +191,7 @@ class MemberClosure0_2 : public Closure0<R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call()
-    { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2)); }
+    R call() override { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2)); }
 
 public:
     MemberClosure0_2(Ptr ptr, MemFun mem_fun, T1 arg1, T2 arg2)

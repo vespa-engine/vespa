@@ -43,7 +43,7 @@ public:
         }
         return 1;
     }
-    virtual bool operator() (const EnumIndex & lhs, const EnumIndex & rhs) const {
+    bool operator() (const EnumIndex & lhs, const EnumIndex & rhs) const override {
         return compare(getValue(lhs), getValue(rhs)) < 0;
     }
 };
@@ -95,8 +95,8 @@ public:
         return ParentType::compare(lhs, rhs);
     }
 
-    virtual bool
-    operator() (const EnumIndex & lhs, const EnumIndex & rhs) const
+    bool
+    operator() (const EnumIndex & lhs, const EnumIndex & rhs) const override
     {
         if (getUsePrefix())
             return compareFoldedPrefix(getValue(lhs),

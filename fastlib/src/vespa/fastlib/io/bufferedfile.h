@@ -117,7 +117,7 @@ public:
      * @param src The source buffer.
      * @param srclen The length of the source buffer.
      */
-    virtual ssize_t Write2(const void*, size_t);
+    ssize_t Write2(const void*, size_t) override;
     /**
      * Write a string to a buffered file, flushing to file
      * as necessary.
@@ -133,7 +133,7 @@ public:
      * @param dstlen The length of the destination buffer.
      * @return The number of bytes read.
      */
-    ssize_t Read(void *dst, size_t dstlen);
+    ssize_t Read(void *dst, size_t dstlen) override;
     /**
      * Write one byte to the buffered file, flushing to
      * file if necessary.
@@ -179,48 +179,46 @@ public:
      *
      * @return int64_t The size of the file.
      */
-    int64_t GetSize (void);
+    int64_t GetSize () override;
     /**
      * Truncate or extend the file to a new size. Required write
      * access.
      *
      * @return bool True if successful.
      */
-    bool SetSize (int64_t s);
+    bool SetSize (int64_t s) override;
     /**
      * Test if the file is opened.
      *
      * @return bool True if the file is currently opened.
      */
-    bool IsOpened (void) const;
+    bool IsOpened () const override;
     /**
      * Force completion of pending disk writes (flush cache).
      */
-    bool Sync(void);
+    bool Sync() override;
     /**
      * Get the time the file was last modified.
      *
      * @return time_t The last modification time.
      */
-    time_t GetModificationTime(void);
+    time_t GetModificationTime() override;
     /**
      * Turn on direct IO.
      */
-    void EnableDirectIO(void);
-
-    virtual void
-    EnableSyncWrites(void);
+    void EnableDirectIO() override;
+    void EnableSyncWrites() override;
 
     /**
      * Flush the buffer. If in write mode, write the buffer to
      * the file, then reset the buffer.
      */
-    void Flush(void);
+    void Flush();
     /**
      * Flush the buffer, and close the file instance.
      * @return The result of the Close operation.
      */
-    bool Close (void);
+    bool Close () override;
     /**
      * Get the buffered file position, in bytes.
      * This takes into account the data in the buffer, that has
@@ -228,7 +226,7 @@ public:
      *
      * @return int64_t The file position.
      */
-    int64_t GetPosition (void);
+    int64_t GetPosition () override;
     /**
      * Set the position in the file. The next read or write
      * will continue from this position.
@@ -236,20 +234,20 @@ public:
      * @param s The position.
      * @return bool True if successful.
      */
-    bool SetPosition(int64_t s);
+    bool SetPosition(int64_t s) override;
 
     /**
      * Get name of buffered file.
      *
      * @return name of buffered file, or NULL if no file.
      */
-    const char *GetFileName(void) const;
+    const char *GetFileName() const override;
 
     /**
      * Just forwarded to the real file to support FastOS_FileInterface.
      */
-    virtual bool Open(unsigned int, const char*);
-    virtual bool Delete();
+    bool Open(unsigned int, const char*) override;
+    bool Delete() override;
 
     void alignEndForDirectIO();
 };

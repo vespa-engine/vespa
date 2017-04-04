@@ -14,7 +14,7 @@ class VisitorAdapter : public search::fef::IDumpFeatureVisitor
 public:
     VisitorAdapter(search::fef::BlueprintResolver &resolver)
         : _resolver(resolver) {}
-    virtual void visitDumpFeature(const vespalib::string &name) {
+    void visitDumpFeature(const vespalib::string &name) override {
         _resolver.addSeed(name);
     }
 };

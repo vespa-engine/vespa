@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/common/feature.h>
@@ -17,29 +15,15 @@ namespace features {
 class QueryTermCountBlueprint : public search::fef::Blueprint {
 private:
 public:
-    /**
-     * Constructs a blueprint.
-     */
     QueryTermCountBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+    void visitDumpFeatures(const search::fef::IIndexEnvironment & env, search::fef::IDumpFeatureVisitor & visitor) const override;
+    search::fef::Blueprint::UP createInstance() const override;
+    search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment & env, vespalib::Stash &stash) const override;
+    bool setup(const search::fef::IIndexEnvironment & env, const search::fef::ParameterList & params) override;
+    search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment & env, vespalib::Stash &stash) const override;
 };
 
 

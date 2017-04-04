@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <stdint.h>
 #include <vespa/document/util/printable.h>
 
 namespace vdslib {
@@ -35,7 +33,7 @@ public:
     uint64_t getSecondPassBytesReturned() const { return _secondPassBytesReturned; }
     void setSecondPassBytesReturned(uint32_t bytesReturned) { _secondPassBytesReturned = bytesReturned; }
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
     uint32_t _bucketsVisited;
     uint64_t _documentsVisited;

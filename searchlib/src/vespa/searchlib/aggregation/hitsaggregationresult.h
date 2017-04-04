@@ -22,11 +22,10 @@ public:
     };
 
 private:
-    virtual void onPrepare(const ResultNode & result, bool useForInit);
-
-    virtual void onAggregate(const ResultNode &result, DocId docId, HitRank rank);
-    virtual void onAggregate(const ResultNode &result, const document::Document & doc, HitRank rank);
-    virtual const ResultNode & onGetRank() const;
+    void onPrepare(const ResultNode & result, bool useForInit) override;
+    void onAggregate(const ResultNode &result, DocId docId, HitRank rank) override;
+    void onAggregate(const ResultNode &result, const document::Document & doc, HitRank rank) override;
+    const ResultNode & onGetRank() const override;
 
     SummaryClassType          _summaryClass;
     uint32_t                  _maxHits;
@@ -39,8 +38,8 @@ public:
     class SetOrdered : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
-        virtual void execute(vespalib::Identifiable &obj) { static_cast<HitsAggregationResult &>(obj)._isOrdered = true; }
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.getClass().inherits(HitsAggregationResult::classId); }
+        void execute(vespalib::Identifiable &obj) override { static_cast<HitsAggregationResult &>(obj)._isOrdered = true; }
+        bool check(const vespalib::Identifiable &obj) const override { return obj.getClass().inherits(HitsAggregationResult::classId); }
     };
 
     DECLARE_AGGREGATIONRESULT(HitsAggregationResult);
@@ -53,7 +52,7 @@ public:
         _bestHitRank(),
         _summaryGenerator(0)
     {}
-    virtual void postMerge() { _hits.postMerge(_maxHits); }
+    void postMerge() override { _hits.postMerge(_maxHits); }
     void setSummaryGenerator(SummaryGenerator & summaryGenerator) { _summaryGenerator = &summaryGenerator; }
     const SummaryClassType & getSummaryClass() const { return _summaryClass; }
     HitsAggregationResult setSummaryClass(const SummaryClassType & summaryClass) { _summaryClass = summaryClass; return *this; }
@@ -63,12 +62,11 @@ public:
     }
     HitsAggregationResult & addHit(const FS4Hit &hit) { _hits.addHit(hit, _maxHits); return *this; }
     HitsAggregationResult & addHit(const VdsHit &hit) { _hits.addHit(hit, _maxHits); return *this; }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void selectMembers(const vespalib::ObjectPredicate &predicate,
-                               vespalib::ObjectOperation &operation);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
     HitsAggregationResult & sort() { _hits.sort(); return *this; }
-    virtual const ResultNode & getResult() const { return _hits; }
-    virtual ResultNode & getResult() { return _hits; }
+    const ResultNode & getResult() const override { return _hits; }
+    ResultNode & getResult() override { return _hits; }
 };
 
 }

@@ -12,9 +12,8 @@
  */
 #pragma once
 
-#include <memory>
+#include "runnable.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/storageframework/generic/thread/runnable.h>
 
 namespace vespalib {
     class Monitor;
@@ -35,7 +34,7 @@ public:
     virtual const vespalib::string& getId() const { return _id; }
 
     /** Check whether thread have been interrupted or not. */
-    virtual bool interrupted() const  = 0;
+    virtual bool interrupted() const override = 0;
     /** Check whether thread have been joined or not. */
     virtual bool joined() const  = 0;
 

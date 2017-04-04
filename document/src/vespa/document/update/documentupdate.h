@@ -25,13 +25,13 @@
  */
 #pragma once
 
+#include "fieldupdate.h"
+#include "fieldpathupdate.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/update/fieldupdate.h>
-#include <vespa/document/update/fieldpathupdate.h>
 
 namespace document {
 
@@ -144,8 +144,7 @@ public:
     const DocumentType& getType() const { return static_cast<const DocumentType &> (*_type); }
 	
     // Printable implementation
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
     void deserializeHEAD(const DocumentTypeRepo&, ByteBuffer&);
@@ -157,7 +156,7 @@ public:
     void serializeHEAD(vespalib::nbostream &stream) const;
 
     // XmlSerializable implementation
-    virtual void printXml(XmlOutputStream&) const;
+    void printXml(XmlOutputStream&) const override;
 
     // Cloneable implementation
     virtual DocumentUpdate* clone() const {

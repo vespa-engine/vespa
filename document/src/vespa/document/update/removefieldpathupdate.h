@@ -18,10 +18,8 @@ public:
 
     FieldPathUpdate* clone() const override { return new RemoveFieldPathUpdate(*this); }
 
-    bool operator==(const FieldPathUpdate& other) const;
-
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    bool operator==(const FieldPathUpdate& other) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_IDENTIFIABLE(RemoveFieldPathUpdate);
     ACCEPT_UPDATE_VISITOR;
@@ -41,7 +39,7 @@ private:
         }
     };
 
-    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const {
+    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const override {
         return std::make_unique<RemoveIteratorHandler>();
     }
 };

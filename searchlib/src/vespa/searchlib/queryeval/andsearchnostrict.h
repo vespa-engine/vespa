@@ -39,16 +39,16 @@ protected:
     }
     Trinary is_strict() const override { return Trinary::False; }
 
-    virtual void doUnpack(uint32_t docid) {
+    void doUnpack(uint32_t docid) override {
         _unpacker.unpack(docid, *this);
     }
-    virtual void onRemove(size_t index) {
+    void onRemove(size_t index) override {
         _unpacker.onRemove(index);
     }
-    virtual void onInsert(size_t index) {
+    void onInsert(size_t index) override {
         _unpacker.onInsert(index);
     }
-    virtual bool needUnpack(size_t index) const {
+    bool needUnpack(size_t index) const override {
         return _unpacker.needUnpack(index);
     }
 

@@ -3,10 +3,8 @@
 #pragma once
 
 #include "searchable.h"
+#include "irequestcontext.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/queryeval/irequestcontext.h>
-#include <memory>
-#include <vector>
 
 namespace search {
 namespace fef { class TermFieldMatchData; }
@@ -27,7 +25,7 @@ private:
 
 public:
     SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext);
-    virtual ~SimplePhraseBlueprint();
+    ~SimplePhraseBlueprint();
 
     // used by create visitor
     FieldSpec getNextChildField(const FieldSpec &outer);
@@ -35,14 +33,11 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term);
 
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const;
-
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-
-    virtual void
-    fetchPostings(bool strict);
+                     bool strict) const override;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void fetchPostings(bool strict) override;
 };
 
 }  // namespace search::queryeval

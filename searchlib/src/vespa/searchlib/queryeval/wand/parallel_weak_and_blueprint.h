@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include "wand_parts.h"
 #include "weak_and_heap.h"
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <memory>
@@ -59,17 +59,11 @@ public:
     // Used by create visitor
     void addTerm(Blueprint::UP term, int32_t weight);
 
-    // Override doc from blueprint::Leaf.
-    virtual SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const;
-
-    // Override doc from blueprint::Leaf.
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-
-    virtual void fetchPostings(bool strict);
+    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void fetchPostings(bool strict) override;
 };
 
-}  // namespace search::queryeval
+}  // namespace queryeval
 }  // namespace search
 

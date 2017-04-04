@@ -103,7 +103,7 @@ public:
     size_t getTermLen() const { return _cachedTermLen; }
     size_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
     UCS4StringT getUCS4Term() const;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     size_t term(const ucs4_t * & t) {
         if (_termUCS4.empty()) {
             _termUCS4 = getUCS4Term();
@@ -162,16 +162,16 @@ public:
     QueryTerm & operator = (const QueryTerm &) = default;
     QueryTerm(QueryTerm &&) = default;
     QueryTerm & operator = (QueryTerm &&) = default;
-    virtual ~QueryTerm();
-    virtual bool evaluate() const;
-    virtual const HitList & evaluateHits(HitList & hl) const;
-    virtual void reset();
-    virtual void getLeafs(QueryTermList & tl);
-    virtual void getLeafs(ConstQueryTermList & tl) const;
+    ~QueryTerm();
+    bool evaluate() const override;
+    const HitList & evaluateHits(HitList & hl) const override;
+    void reset() override;
+    void getLeafs(QueryTermList & tl) override;
+    void getLeafs(ConstQueryTermList & tl) const override;
     /// Gives you all phrases of this tree.
-    virtual void getPhrases(QueryNodeRefList & tl);
+    void getPhrases(QueryNodeRefList & tl) override;
     /// Gives you all phrases of this tree. Indicating that they are all const.
-    virtual void getPhrases(ConstQueryNodeRefList & tl) const;
+    void getPhrases(ConstQueryNodeRefList & tl) const override;
 
     void                add(unsigned pos, unsigned context, int32_t weight);
     EncodingBitMap      encoding()                 const { return _encoding; }
@@ -187,9 +187,9 @@ public:
     size_t              getFieldInfoSize()         const { return _fieldInfo.size(); }
     QueryNodeResultBase & getQueryItem() { return *_result; }
     const HitList &     getHitList() const { return _hitList; }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void setIndex(const string & index_) { _index = index_; }
-    virtual const string & getIndex() const { return _index; }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void setIndex(const string & index_) override { _index = index_; }
+    const string & getIndex() const override { return _index; }
 protected:
     using QueryNodeResultBaseContainer = vespalib::CloneablePtr<QueryNodeResultBase>;
     string                       _index;

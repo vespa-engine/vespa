@@ -18,22 +18,15 @@ public:
 
     ArrayAtLookup();
     ~ArrayAtLookup();
-
-    ArrayAtLookup(const vespalib::string &attribute,
-                  ExpressionNode::UP arg);
-
-    ArrayAtLookup(const search::attribute::IAttributeVector &attr,
-                  ExpressionNode::UP indexArg);
-
+    ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP arg);
+    ArrayAtLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP indexArg);
     ArrayAtLookup(const ArrayAtLookup &rhs);
-
     ArrayAtLookup & operator= (const ArrayAtLookup &rhs);
-
     void setDocId(DocId docId) { _docId = docId; }
 private:
-    virtual bool onExecute() const;
-    virtual void onPrepareResult();
-    virtual void wireAttributes(const search::attribute::IAttributeContext &attrCtx);
+    bool onExecute() const override;
+    void onPrepareResult() override;
+    void wireAttributes(const search::attribute::IAttributeContext &attrCtx) override;
 
     enum BasicAttributeType {
         BAT_INT, BAT_FLOAT, BAT_STRING

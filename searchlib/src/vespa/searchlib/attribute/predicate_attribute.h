@@ -14,8 +14,8 @@ struct AttributeVectorDocIdLimitProvider : public predicate::DocIdLimitProvider 
     AttributeVectorDocIdLimitProvider(const AttributeVector &attribute_vector) :
             _attribute_vector(attribute_vector) {}
 
-    virtual uint32_t getDocIdLimit() const { return _attribute_vector.getNumDocs(); };
-    virtual uint32_t getCommittedDocIdLimit() const {
+    uint32_t getDocIdLimit() const override { return _attribute_vector.getNumDocs(); };
+    uint32_t getCommittedDocIdLimit() const override {
         return _attribute_vector.getCommittedDocIdLimit();
     }
 private:

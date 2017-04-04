@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/functionnode.h>
+#include "functionnode.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -11,8 +11,8 @@ namespace expression {
 class ArrayOperationNode : public FunctionNode
 {
 public:
-    typedef search::attribute::IAttributeVector IAttributeVector;
-    typedef search::attribute::IAttributeContext IAttributeContext;
+    typedef attribute::IAttributeVector IAttributeVector;
+    typedef attribute::IAttributeContext IAttributeContext;
 
     DECLARE_NBO_SERIALIZE;
     DECLARE_ABSTRACT_EXPRESSIONNODE(ArrayOperationNode);
@@ -26,7 +26,7 @@ public:
 
     void setDocId(DocId newDocId) { _docId = newDocId; }
 
-    virtual void wireAttributes(const IAttributeContext &attrCtx);
+    void wireAttributes(const IAttributeContext &attrCtx) override;
 
 protected:
     DocId docId() const { return _docId; }
@@ -37,10 +37,9 @@ protected:
 
 private:
     vespalib::string _attributeName;
-    const search::attribute::IAttributeVector * _attribute;
+    const attribute::IAttributeVector * _attribute;
     DocId _docId;
 };
 
 }
 }
-

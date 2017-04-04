@@ -11,7 +11,7 @@ class MultiArgFunctionNode : public FunctionNode
 public:
     typedef std::vector<ExpressionNode::CP> ExpressionNodeVector;
     DECLARE_NBO_SERIALIZE;
-    virtual void visitMembers(vespalib::ObjectVisitor & visitor) const;
+    void visitMembers(vespalib::ObjectVisitor & visitor) const override;
     DECLARE_ABSTRACT_EXPRESSIONNODE(MultiArgFunctionNode);
     MultiArgFunctionNode();
     MultiArgFunctionNode(const MultiArgFunctionNode &);

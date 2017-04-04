@@ -42,7 +42,7 @@ public:
           _key(key.clone()),
           _update(update.clone()) {}
 
-    virtual bool operator==(const ValueUpdate& other) const;
+    bool operator==(const ValueUpdate& other) const override;
 
     /** @return The key of the field value to update. */
     const FieldValue& getKey() const { return *_key; }
@@ -75,16 +75,13 @@ public:
     }
 
     // ValueUpdate implementation
-    virtual void checkCompatibility(const Field& field) const;
-    virtual bool applyTo(FieldValue& value) const;
-    virtual void printXml(XmlOutputStream& xos) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual void deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
-                             ByteBuffer& buffer, uint16_t version);
-    virtual MapValueUpdate* clone() const
-        { return new MapValueUpdate(*this); }
+    void checkCompatibility(const Field& field) const override;
+    bool applyTo(FieldValue& value) const override;
+    void printXml(XmlOutputStream& xos) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
+                     ByteBuffer& buffer, uint16_t version) override;
+    MapValueUpdate* clone() const override { return new MapValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(MapValueUpdate);
 

@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
@@ -17,7 +15,7 @@ private:
     size_t _cnt;
 public:
     DoubleExecutor(size_t cnt) : _cnt(cnt) {}
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
@@ -27,10 +25,10 @@ private:
     size_t _cnt;
 public:
     DoubleBlueprint();
-    virtual void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const;
-    virtual Blueprint::UP createInstance() const { return Blueprint::UP(new DoubleBlueprint()); }
-    virtual bool setup(const IIndexEnvironment & indexEnv, const StringVector & params);
-    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
+    void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const override;
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new DoubleBlueprint()); }
+    bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;
+    FeatureExecutor &createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace test

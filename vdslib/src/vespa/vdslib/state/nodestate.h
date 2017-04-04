@@ -10,12 +10,10 @@
  */
 #pragma once
 
-#include <string>
-#include <vector>
+#include "diskstate.h"
+#include "state.h"
+#include "random.h"
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/vdslib/state/diskstate.h>
-#include <vespa/vdslib/state/state.h>
-#include <vespa/vdslib/state/random.h>
 
 namespace storage {
 namespace lib {
@@ -87,8 +85,8 @@ public:
     void setDiskCount(uint16_t count);
     void setDiskState(uint16_t index, const DiskState&);
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose,
+               const std::string& indent) const override;
     bool operator==(const NodeState& other) const;
     bool operator!=(const NodeState& other) const
         { return !(operator==(other)); }

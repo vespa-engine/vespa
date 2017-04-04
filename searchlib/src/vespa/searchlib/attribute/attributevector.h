@@ -400,16 +400,16 @@ public:
     virtual const vespalib::string & getName() const override;
 
     bool hasArrayType() const { return _config.collectionType().isArray(); }
-    virtual bool hasEnum() const;
+    bool hasEnum() const override;
     bool hasSortedEnum() const { return _hasSortedEnum; }
     virtual bool hasEnum2Value() const;
-    virtual uint32_t getMaxValueCount() const;
+    uint32_t getMaxValueCount() const override;
     uint32_t getEnumMax() const { return _enumMax; }
 
     // Implements IAttributeVector
-    virtual uint32_t getNumDocs(void) const;
-    uint32_t getCommittedDocIdLimit(void) const { return _committedDocIdLimit; }
-    uint32_t & getCommittedDocIdLimitRef(void) { return _committedDocIdLimit; }
+    uint32_t getNumDocs() const override;
+    uint32_t getCommittedDocIdLimit() const { return _committedDocIdLimit; }
+    uint32_t & getCommittedDocIdLimitRef() { return _committedDocIdLimit; }
     void setCommittedDocIdLimit(uint32_t committedDocIdLimit) {
         _committedDocIdLimit = committedDocIdLimit;
     }
@@ -460,15 +460,9 @@ public:
      * retrival are type specific.  They are accessed by their proper
      * type.
      */
-    /** Get number of values per document.  */
-    virtual uint32_t getValueCount(DocId doc) const = 0;
 
     virtual uint32_t clearDoc(DocId doc) = 0;
     virtual largeint_t getDefaultValue() const = 0;
-    virtual EnumHandle getEnum(DocId doc)  const = 0;
-    virtual const char * getString(DocId doc, char * v, size_t sz) const = 0;
-    virtual largeint_t getInt(DocId doc) const = 0;
-    virtual double getFloat(DocId doc)   const = 0;
     virtual void getEnumValue(const EnumHandle *v, uint32_t *e, uint32_t sz) const = 0;
 
     uint32_t getEnumValue(EnumHandle eh) const {
@@ -478,22 +472,25 @@ public:
     }
 
     // Implements IAttributeVector
-    virtual uint32_t get(DocId doc, EnumHandle *v, uint32_t sz) const = 0;
+    virtual uint32_t get(DocId doc, EnumHandle *v, uint32_t sz) const override = 0;
+    virtual uint32_t get(DocId doc, const char **v, uint32_t sz) const override = 0;
+    virtual uint32_t get(DocId doc, largeint_t *v, uint32_t sz) const override = 0;
+    virtual uint32_t get(DocId doc, double *v, uint32_t sz) const override = 0;
+
     virtual uint32_t get(DocId doc, vespalib::string *v, uint32_t sz) const = 0;
-    virtual uint32_t get(DocId doc, const char **v, uint32_t sz) const = 0;
-    virtual uint32_t get(DocId doc, largeint_t *v, uint32_t sz) const = 0;
-    virtual uint32_t get(DocId doc, double *v, uint32_t sz) const = 0;
+
 
     // Implements IAttributeVector
-    virtual uint32_t get(DocId doc, WeightedEnum *v, uint32_t sz) const = 0;
-    virtual uint32_t get(DocId doc, WeightedString *v, uint32_t sz) const = 0;
-    virtual uint32_t get(DocId doc, WeightedConstChar *v, uint32_t sz) const = 0;
-    virtual uint32_t get(DocId doc, WeightedInt *v, uint32_t sz) const = 0;
-    virtual uint32_t get(DocId doc, WeightedFloat *v, uint32_t sz) const = 0;
+    virtual uint32_t get(DocId doc, WeightedEnum *v, uint32_t sz) const override = 0;
+    virtual uint32_t get(DocId doc, WeightedString *v, uint32_t sz) const override = 0;
+    virtual uint32_t get(DocId doc, WeightedConstChar *v, uint32_t sz) const override = 0;
+    virtual uint32_t get(DocId doc, WeightedInt *v, uint32_t sz) const override = 0;
+    virtual uint32_t get(DocId doc, WeightedFloat *v, uint32_t sz) const override = 0;
+
     virtual int32_t getWeight(DocId doc, uint32_t idx) const;
 
     // Implements IAttributeVector
-    virtual bool findEnum(const char *value, EnumHandle &e) const override;
+    bool findEnum(const char *value, EnumHandle &e) const override;
 
 ///// Modify API
     virtual void onCommit() = 0;
@@ -505,7 +502,7 @@ public:
 ////// Search API
 
     // type-safe down-cast to attribute supporting direct document weight iterators
-    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
+    const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 
     /**
        - Search for equality

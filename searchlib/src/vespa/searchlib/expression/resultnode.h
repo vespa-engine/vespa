@@ -16,15 +16,15 @@ class BucketResultNode;
 
 #define DECLARE_RESULTNODE(Class)                   \
     DECLARE_IDENTIFIABLE_NS2(search, expression, Class) \
-    virtual Class * clone() const;
+    Class * clone() const override;
 
 #define DECLARE_RESULTNODE_NS1(ns, Class)               \
     DECLARE_IDENTIFIABLE_NS3(search, expression, ns, Class) \
-    virtual Class * clone() const;
+    virtual Class * clone() const override;
 
 #define DECLARE_RESULTNODE_SERIALIZE \
-    virtual ResultSerializer & onSerializeResult(ResultSerializer & os) const; \
-    virtual ResultDeserializer & onDeserializeResult(ResultDeserializer & is);
+    ResultSerializer & onSerializeResult(ResultSerializer & os) const override; \
+    ResultDeserializer & onDeserializeResult(ResultDeserializer & is) override;
 
 #define IMPLEMENT_ABSTRACT_RESULTNODE(Class, base) IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS2(search, expression, Class, base)
 

@@ -23,8 +23,8 @@ public:
     FS4Hit() : Hit(), _path(0), _docId(0), _globalId(), _distributionKey(-1) {}
     FS4Hit(DocId docId, HitRank rank)
         : Hit(rank), _path(0), _docId(docId), _globalId(), _distributionKey(-1) {}
-    virtual FS4Hit *clone() const { return new FS4Hit(*this); }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    FS4Hit *clone() const override { return new FS4Hit(*this); }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     uint32_t getPath() const { return _path; }
     FS4Hit &setPath(uint32_t val) { _path = val; return *this; }
     uint32_t getDocId() const { return _docId; }

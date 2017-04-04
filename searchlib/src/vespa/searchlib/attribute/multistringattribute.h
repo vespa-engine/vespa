@@ -58,13 +58,12 @@ public:
                                                       attribute::CollectionType::ARRAY));
     ~MultiValueStringAttributeT();
 
-    virtual void
-    freezeEnumDictionary(void);
+    void freezeEnumDictionary() override;
 
     //-------------------------------------------------------------------------
     // new read api
     //-------------------------------------------------------------------------
-    virtual const char * get(DocId doc) const {
+    const char * get(DocId doc) const  override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         if (indices.size() == 0) {
             return NULL;
@@ -81,10 +80,10 @@ public:
         }
         return valueCount;
     }
-    virtual uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const {
+    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, const char ** v, uint32_t sz) const {
+    uint32_t get(DocId doc, const char ** v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
 
@@ -98,10 +97,10 @@ public:
         }
         return valueCount;
     }
-    virtual uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override {
         return getWeightedHelper(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override {
         return getWeightedHelper(doc, v, sz);
     }
 

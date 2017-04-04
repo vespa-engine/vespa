@@ -66,7 +66,7 @@ private:
         void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const override {
             groupDoc(g, result, doc, rank);
         }
-        virtual MultiValueGrouper * clone() const { return new MultiValueGrouper(*this); }
+        MultiValueGrouper * clone() const override { return new MultiValueGrouper(*this); }
     };
     int64_t        _maxGroups;
     int64_t        _precision;

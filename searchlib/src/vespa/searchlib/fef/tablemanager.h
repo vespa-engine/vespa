@@ -42,7 +42,7 @@ public:
      *    The first table that is successfully created is added it to the cache and returned.
      * 3. Return NULL.
      **/
-    virtual const Table * getTable(const vespalib::string & name) const;
+    const Table * getTable(const vespalib::string & name) const override;
 };
 
 } // namespace fef

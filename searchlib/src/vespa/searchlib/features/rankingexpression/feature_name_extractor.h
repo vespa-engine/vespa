@@ -13,8 +13,8 @@ namespace rankingexpression {
  * parsing ranking expressions.
  **/
 struct FeatureNameExtractor : public vespalib::eval::SymbolExtractor {
-    virtual void extract_symbol(const char *pos_in, const char *end_in,
-                                const char *&pos_out, vespalib::string &symbol_out) const;
+    void extract_symbol(const char *pos_in, const char *end_in,
+                        const char *&pos_out, vespalib::string &symbol_out) const override;
 };
 
 } // namespace rankingexpression

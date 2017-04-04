@@ -9,48 +9,33 @@
 namespace search {
 namespace features {
 
-
 /**
  * Implements the blueprint for the attribute executor.
  *
  * An executor of this outputs number(s) if used with regular attributes
  * or a tensor value if used with tensor attributes.
  */
-class AttributeBlueprint : public search::fef::Blueprint {
+class AttributeBlueprint : public fef::Blueprint {
 private:
     vespalib::string _attrName; // the name of the attribute vector
     vespalib::string _extra;    // the index or key
     vespalib::eval::ValueType _tensorType;
 
 public:
-    /**
-     * Constructs a blueprint.
-     */
     AttributeBlueprint();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().
-            desc().attribute(search::fef::ParameterCollection::ANY).
-            desc().attribute(search::fef::ParameterCollection::ANY).string();
+    fef::Blueprint::UP createInstance() const override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::ParameterDescriptions getDescriptions() const  override{
+        return fef::ParameterDescriptions().
+            desc().attribute(fef::ParameterCollection::ANY).
+            desc().attribute(fef::ParameterCollection::ANY).string();
     }
 
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
 };
 
 
 } // namespace features
 } // namespace search
-

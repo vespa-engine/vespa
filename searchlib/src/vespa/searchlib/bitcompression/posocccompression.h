@@ -92,30 +92,15 @@ public:
     CollectionType _collectionType;
     vespalib::string _name;
 
-    PosOccFieldParams(void);
+    PosOccFieldParams();
 
-    bool
-    operator==(const PosOccFieldParams &rhs) const;
-
-    static vespalib::string
-    getParamsPrefix(uint32_t idx);
-
-    void
-    getParams(PostingListParams &params, uint32_t idx) const;
-
-    void
-    setParams(const PostingListParams &params, uint32_t idx);
-
-    void
-    setSchemaParams(const Schema &schema, uint32_t fieldId);
-
-    void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
-
-    void
-    writeHeader(vespalib::GenericHeader &header,
-                const vespalib::string &prefix) const;
+    bool operator==(const PosOccFieldParams &rhs) const;
+    static vespalib::string getParamsPrefix(uint32_t idx);
+    void getParams(PostingListParams &params, uint32_t idx) const;
+    void setParams(const PostingListParams &params, uint32_t idx);
+    void setSchemaParams(const Schema &schema, uint32_t fieldId);
+    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
+    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
 };
 
 
@@ -132,58 +117,29 @@ public:
     typedef index::PostingListParams PostingListParams;
     typedef index::Schema Schema;
 
-    PosOccFieldsParams(void);
-
+    PosOccFieldsParams();
     PosOccFieldsParams(const PosOccFieldsParams &rhs);
 
-    PosOccFieldsParams &
-    operator=(const PosOccFieldsParams &rhs);
+    PosOccFieldsParams &operator=(const PosOccFieldsParams &rhs);
+    bool operator==(const PosOccFieldsParams &rhs) const;
 
-    bool
-    operator==(const PosOccFieldsParams &rhs) const;
-
-    void
-    cacheParamsRef(void)
-    {
+    void cacheParamsRef() {
         _numFields = _params.size();
         _fieldParams = _params.empty() ? NULL : &_params[0];
     }
 
-    void
-    assertCachedParamsRef(void) const
-    {
+    void assertCachedParamsRef() const {
         assert(_numFields == _params.size());
         assert(_fieldParams == (_params.empty() ? NULL : &_params[0]));
     }
 
-    uint32_t
-    getNumFields(void) const
-    {
-        return _numFields;
-    }
-
-    const PosOccFieldParams *
-    getFieldParams(void) const
-    {
-        return _fieldParams;
-    }
-
-    void
-    getParams(PostingListParams &params) const;
-
-    void
-    setParams(const PostingListParams &params);
-
-    void
-    setSchemaParams(const Schema &schema, const uint32_t indexId);
-
-    void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
-
-    void
-    writeHeader(vespalib::GenericHeader &header,
-                const vespalib::string &prefix) const;
+    uint32_t getNumFields() const { return _numFields; }
+    const PosOccFieldParams *getFieldParams(void) const { return _fieldParams; }
+    void getParams(PostingListParams &params) const;
+    void setParams(const PostingListParams &params);
+    void setSchemaParams(const Schema &schema, const uint32_t indexId);
+    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
+    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
 };
 
 template <bool bigEndian>
@@ -238,34 +194,13 @@ public:
         return *this;
     }
 
-    virtual void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
-
-    virtual const vespalib::string &
-    getIdentifier(void) const;
-
-    virtual void
-    readFeatures(search::index::DocIdAndFeatures &features);
-
-    virtual void
-    skipFeatures(unsigned int count);
-
-    virtual void
-    unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
-                   uint32_t docId);
-
-    /*
-     * Set parameters.
-     */
-    virtual void
-    setParams(const PostingListParams &params);
-
-    /*
-     * Get current parameters.
-     */
-    virtual void
-    getParams(PostingListParams &params) const;
+    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
+    const vespalib::string &getIdentifier(void) const override;
+    void readFeatures(search::index::DocIdAndFeatures &features) override;
+    void skipFeatures(unsigned int count) override;
+    void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId) override;
+    void setParams(const PostingListParams &params) override;
+    void getParams(PostingListParams &params) const override;
 };
 
 
@@ -316,11 +251,8 @@ public:
         return *this;
     }
 
-    virtual void
-    readFeatures(search::index::DocIdAndFeatures &features);
-
-    virtual void
-    getParams(PostingListParams &params) const;
+    void readFeatures(search::index::DocIdAndFeatures &features) override;
+    void getParams(PostingListParams &params) const override;
 };
 
 
@@ -356,31 +288,12 @@ public:
         return *this;
     }
 
-    virtual void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
-
-    virtual void
-    writeHeader(vespalib::GenericHeader &header,
-                const vespalib::string &prefix) const;
-
-    virtual const vespalib::string &
-    getIdentifier(void) const;
-
-    virtual void
-    writeFeatures(const DocIdAndFeatures &features);
-
-    /*
-     * Set parameters.
-     */
-    virtual void
-    setParams(const PostingListParams &params);
-
-    /*
-     * Get current parameters.
-     */
-    virtual void
-    getParams(PostingListParams &params) const;
+    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
+    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const override;
+    const vespalib::string &getIdentifier(void) const override;
+    void writeFeatures(const DocIdAndFeatures &features) override;
+    void setParams(const PostingListParams &params) override;
+    void getParams(PostingListParams &params) const override;
 };
 
 
@@ -433,34 +346,13 @@ public:
         return *this;
     }
 
-    virtual void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
-
-    virtual const vespalib::string &
-    getIdentifier(void) const;
-
-    virtual void
-    readFeatures(search::index::DocIdAndFeatures &features);
-
-    virtual void
-    skipFeatures(unsigned int count);
-
-    virtual void
-    unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
-                   uint32_t docId);
-
-    /*
-     * Set parameters.
-     */
-    virtual void
-    setParams(const PostingListParams &params);
-
-    /*
-     * Get current parameters.
-     */
-    virtual void
-    getParams(PostingListParams &params) const;
+    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
+    const vespalib::string &getIdentifier(void) const override;
+    void readFeatures(search::index::DocIdAndFeatures &features) override;
+    void skipFeatures(unsigned int count) override;
+    void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId) override;
+    void setParams(const PostingListParams &params) override;
+    void getParams(PostingListParams &params) const override;
 };
 
 
@@ -512,11 +404,8 @@ public:
         return *this;
     }
 
-    virtual void
-    readFeatures(search::index::DocIdAndFeatures &features);
-
-    virtual void
-    getParams(PostingListParams &params) const;
+    void readFeatures(search::index::DocIdAndFeatures &features) override;
+    void getParams(PostingListParams &params) const override;
 };
 
 
@@ -550,41 +439,18 @@ public:
         return *this;
     }
 
-    virtual void
-    readHeader(const vespalib::GenericHeader &header,
-               const vespalib::string &prefix);
+    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
+    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const override;
+    const vespalib::string &getIdentifier(void) const override;
+    void writeFeatures(const DocIdAndFeatures &features) override;
+    void setParams(const PostingListParams &params) override;
+    void getParams(PostingListParams &params) const override;
 
-    virtual void
-    writeHeader(vespalib::GenericHeader &header,
-                const vespalib::string &prefix) const;
-
-    virtual const vespalib::string &
-    getIdentifier(void) const;
-
-    virtual void
-    writeFeatures(const DocIdAndFeatures &features);
-
-    /*
-     * Set parameters.
-     */
-    virtual void
-    setParams(const PostingListParams &params);
-
-    /*
-     * Get current parameters.
-     */
-    virtual void
-    getParams(PostingListParams &params) const;
-
-    static uint32_t
-    calcElementLenK(uint32_t avgElementLen)
-    {
+    static uint32_t calcElementLenK(uint32_t avgElementLen) {
         return (avgElementLen < 4) ? 1u : (asmlog2(avgElementLen));
     }
 
-    static uint32_t
-    calcWordPosK(uint32_t numPositions, uint32_t elementLen)
-    {
+    static uint32_t calcWordPosK(uint32_t numPositions, uint32_t elementLen) {
         uint32_t avgDelta = elementLen / (numPositions + 1);
         uint32_t wordPosK = (avgDelta < 4) ? 1 : (asmlog2(avgDelta));
         return wordPosK;
@@ -613,4 +479,3 @@ extern template class EGPosOccEncodeContext<false>;
 } // namespace bitcompression
 
 } // namespace search
-

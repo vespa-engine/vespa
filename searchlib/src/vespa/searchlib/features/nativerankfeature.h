@@ -56,7 +56,7 @@ public:
  **/
 class FieldWrapper {
 public:
-    std::vector<const search::fef::FieldInfo *> _fields;
+    std::vector<const fef::FieldInfo *> _fields;
 
 public:
     /**
@@ -66,55 +66,44 @@ public:
      * @param fieldNames the set of field names to consider. If empty all found in the environment are used.
      * @param filter the field type this wrapper should let through.
      **/
-    FieldWrapper(const search::fef::IIndexEnvironment & env,
-                 const search::fef::ParameterList & fields,
-                 const search::fef::FieldType filter);
+    FieldWrapper(const fef::IIndexEnvironment & env,
+                 const fef::ParameterList & fields,
+                 const fef::FieldType filter);
     size_t getNumFields() const { return _fields.size(); }
-    const search::fef::FieldInfo * getField(size_t idx) const { return _fields[idx]; }
+    const fef::FieldInfo * getField(size_t idx) const { return _fields[idx]; }
 };
 
 /**
  * Implements the executor for calculating the native rank score.
  **/
-class NativeRankExecutor : public search::fef::FeatureExecutor {
+class NativeRankExecutor : public fef::FeatureExecutor {
 private:
     const NativeRankParams & _params;
     feature_t                _divisor;
 
 public:
     NativeRankExecutor(const NativeRankParams & params);
-    virtual void execute(uint32_t docId);
+    void execute(uint32_t docId) override;
 };
 
 
 /**
  * Implements the blueprint for the native rank executor.
  **/
-class NativeRankBlueprint : public search::fef::Blueprint {
+class NativeRankBlueprint : public fef::Blueprint {
 private:
     NativeRankParams _params;
 
 public:
     NativeRankBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().field().repeat();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().field().repeat();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     /**
      * Obtains the parameters used by the executor.
@@ -124,10 +113,9 @@ public:
     /**
      * Returns whether we should use table normalization for the setup using the given environment.
      **/
-    static bool useTableNormalization(const search::fef::IIndexEnvironment & env);
+    static bool useTableNormalization(const fef::IIndexEnvironment & env);
 };
 
 
 } // namespace features
 } // namespace search
-

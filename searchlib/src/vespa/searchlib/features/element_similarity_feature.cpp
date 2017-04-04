@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.elementsimilarity");
 #include "element_similarity_feature.h"
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.elementsimilarity");
 
 namespace search {
 namespace features {
@@ -27,29 +27,29 @@ struct MaxAggregator : Aggregator {
     size_t count;
     double value;
     MaxAggregator() : count(0), value(0.0) {}
-    virtual UP create() const override { return UP(new MaxAggregator()); }
-    virtual void clear() override { count = 0; value = 0.0; }
-    virtual void add(double v) override { value = ((++count == 1) || (v > value)) ? v : value; }
-    virtual double get() const override { return value; }
+    UP create() const override { return UP(new MaxAggregator()); }
+    void clear() override { count = 0; value = 0.0; }
+    void add(double v) override { value = ((++count == 1) || (v > value)) ? v : value; }
+    double get() const override { return value; }
 };
 
 struct AvgAggregator : Aggregator {
     size_t count;
     double value;
     AvgAggregator() : count(0), value(0.0) {}
-    virtual UP create() const override { return UP(new AvgAggregator()); }
-    virtual void clear() override { count = 0; value = 0.0; }
-    virtual void add(double v) override { ++count; value += v; }
-    virtual double get() const override { return (count == 0) ? 0.0 : (value/count); }
+    UP create() const override { return UP(new AvgAggregator()); }
+    void clear() override { count = 0; value = 0.0; }
+    void add(double v) override { ++count; value += v; }
+    double get() const override { return (count == 0) ? 0.0 : (value/count); }
 };
 
 struct SumAggregator : Aggregator {
     double value;
     SumAggregator() : value(0.0) {}
-    virtual UP create() const override { return UP(new SumAggregator()); }
-    virtual void clear() override { value = 0.0; }
-    virtual void add(double v) override { value += v; }
-    virtual double get() const override { return value; }
+    UP create() const override { return UP(new SumAggregator()); }
+    void clear() override { value = 0.0; }
+    void add(double v) override { value += v; }
+    double get() const override { return value; }
 };
 
 Aggregator::UP create_aggregator(const vespalib::string &name) {
@@ -225,9 +225,9 @@ public:
           _md(nullptr)
     {}
 
-    virtual bool isPure() { return _terms.handles.empty(); }
+    bool isPure() override { return _terms.handles.empty(); }
 
-    virtual void handle_bind_match_data(fef::MatchData &md) override {
+    void handle_bind_match_data(fef::MatchData &md) override {
         _md = &md;
     }
 
@@ -242,7 +242,7 @@ public:
         }
     }
 
-    virtual void execute(uint32_t docId) {
+    void execute(uint32_t docId) override {
         for (auto &output: _outputs) {
             output.second->clear();
         }

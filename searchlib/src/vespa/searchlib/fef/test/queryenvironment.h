@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "indexenvironment.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
-#include "indexenvironment.h"
 
 namespace search {
 namespace fef {
@@ -35,23 +35,12 @@ public:
     QueryEnvironment(IndexEnvironment *indexEnv = NULL);
     ~QueryEnvironment();
 
-    // Inherit doc from IQueryEnvironment.
-    virtual const Properties &getProperties() const { return _properties; }
-
-    // Inherit doc from IQueryEnvironment.
-    virtual uint32_t getNumTerms() const { return _terms.size(); }
-
-    // Inherit doc from IQueryEnvironment.
-    virtual const ITermData *getTerm(uint32_t idx) const { return idx < _terms.size() ? &_terms[idx] : NULL; }
-
-    // Inherit doc from IQueryEnvironment.
-    virtual const Location & getLocation() const { return _location; }
-
-    // Inherit doc from IQueryEnvironment.
-    virtual const search::attribute::IAttributeContext &getAttributeContext() const { return *_attrCtx; }
-
-    // Inherit doc from IQueryEnvironment.
-    virtual const IIndexEnvironment &getIndexEnvironment() const { assert(_indexEnv != NULL); return *_indexEnv; }
+    const Properties &getProperties() const override { return _properties; }
+    uint32_t getNumTerms() const override { return _terms.size(); }
+    const ITermData *getTerm(uint32_t idx) const override { return idx < _terms.size() ? &_terms[idx] : NULL; }
+    const Location & getLocation() const override { return _location; }
+    const search::attribute::IAttributeContext &getAttributeContext() const override { return *_attrCtx; }
+    const IIndexEnvironment &getIndexEnvironment() const override { assert(_indexEnv != NULL); return *_indexEnv; }
 
     /** Returns a reference to the index environment of this. */
     IndexEnvironment *getIndexEnv() { return _indexEnv; }

@@ -52,7 +52,7 @@ public:
     BooleanMatchIteratorWrapper(SearchIterator::UP search,
                                 const fef::TermFieldMatchDataArray &matchData);
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };
 
 } // namespace queryeval

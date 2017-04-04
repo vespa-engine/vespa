@@ -13,8 +13,8 @@ namespace features {
 struct AttributeMatchParams {
     AttributeMatchParams() :
         attrInfo(NULL), attribute(NULL), weightedSet(false), maxWeight(256), fieldCompletenessImportance(0.05f) {}
-    const search::fef::FieldInfo * attrInfo;
-    const search::attribute::IAttributeVector * attribute;
+    const fef::FieldInfo * attrInfo;
+    const attribute::IAttributeVector * attribute;
     bool weightedSet;
     // config values
     int32_t maxWeight;
@@ -25,7 +25,7 @@ struct AttributeMatchParams {
  * Implements the executor for the attribute match feature.
  */
 template <typename T>
-class AttributeMatchExecutor : public search::fef::FeatureExecutor {
+class AttributeMatchExecutor : public fef::FeatureExecutor {
 private:
     /**
      * This class is used to compute metrics for match in an attribute vector.
@@ -54,8 +54,7 @@ private:
         const fef::MatchData *_md;
 
     public:
-        Computer(const search::fef::IQueryEnvironment & env,
-                 AttributeMatchParams params);
+        Computer(const fef::IQueryEnvironment & env, AttributeMatchParams params);
         void run(uint32_t docId);
         void reset();
         uint32_t getNumTerms() const { return _queryTerms.size(); }
@@ -81,45 +80,30 @@ public:
     /**
      * Constructs an executor.
      */
-    AttributeMatchExecutor(const search::fef::IQueryEnvironment & env,
-                           AttributeMatchParams params);
-
-    // Inherit doc from FeatureExecutor.
-    virtual void execute(uint32_t docId);
+    AttributeMatchExecutor(const fef::IQueryEnvironment & env, AttributeMatchParams params);
+    void execute(uint32_t docId) override;
 };
 
 
 /**
  * Implements the blueprint for the attribute match executor.
  */
-class AttributeMatchBlueprint : public search::fef::Blueprint {
+class AttributeMatchBlueprint : public fef::Blueprint {
 private:
     AttributeMatchParams _params;
 
 public:
-    /**
-     * Constructs a blueprint.
-     */
     AttributeMatchBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().attributeField(search::fef::ParameterCollection::ANY);
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().attributeField(fef::ParameterCollection::ANY);
     }
 
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
 
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 
