@@ -185,7 +185,7 @@ public:
     void assertSpecs(const std::vector<AttributeSpec> &expSpecs)
     {
         auto &actSpecs = _builder.getAttributeSpecs();
-        EXPECT_EQUAL(expSpecs, actSpecs);
+        EXPECT_EQUAL(expSpecs, actSpecs.getSpecs());
     }
     void assertConfigs(const std::vector<AttributesConfig::Attribute> &exp)
     {

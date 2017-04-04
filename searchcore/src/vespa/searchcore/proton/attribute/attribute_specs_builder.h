@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "attribute_spec.h"
+#include "attribute_specs.h"
 
 namespace document { class DocumentType; }
 namespace vespa { namespace config { namespace search { namespace internal {
@@ -19,7 +19,6 @@ class IDocumentTypeInspector;
  */
 class AttributeSpecsBuilder
 {
-    using AttributeSpecs = std::vector<AttributeSpec>;
     using AttributesConfigBuilder = vespa::config::search::internal::InternalAttributesType;
     using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
     using DocumentType = document::DocumentType;

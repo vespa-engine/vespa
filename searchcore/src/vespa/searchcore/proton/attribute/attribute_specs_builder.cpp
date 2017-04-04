@@ -68,7 +68,7 @@ AttributeSpecsBuilder::~AttributeSpecsBuilder()
 {
 }
 
-const AttributeSpecsBuilder::AttributeSpecs &
+const AttributeSpecs &
 AttributeSpecsBuilder::getAttributeSpecs() const
 {
     return _specs;
