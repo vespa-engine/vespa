@@ -86,7 +86,7 @@ public:
     ~Selector() {
         _epoll.remove(_wakeup_pipe.get_read_fd());
     }
-    void add(Context &ctx) { _epoll.add(_handler.get_fd(ctx), &ctx, true, true); }
+    void add(Context &ctx, bool write_enabled) { _epoll.add(_handler.get_fd(ctx), &ctx, true, write_enabled); }
     void enable_write(Context &ctx) { _epoll.update(_handler.get_fd(ctx), &ctx, true, true); }
     void disable_write(Context &ctx) { _epoll.update(_handler.get_fd(ctx), &ctx, true, false); }
     void remove(Context &ctx) { _epoll.remove(_handler.get_fd(ctx)); }
