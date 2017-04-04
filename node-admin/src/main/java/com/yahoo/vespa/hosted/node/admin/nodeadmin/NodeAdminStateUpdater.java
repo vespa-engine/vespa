@@ -130,7 +130,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     }
 
     /**
-     * This method is attempts to converge NodeAgent's and NodeAdmin's frozen state with their orchestrator
+     * This method attempts to converge NodeAgent's and NodeAdmin's frozen state with their orchestrator
      * state. When trying to suspend node-admin, this method will first attempt to freeze all NodeAgents and
      * NodeAdmin, then asking orchestrator for permission to suspend node-admin app, and finally asking orchestrator
      * for permission to suspend all active nodes on this host, if either of the request is denied,
@@ -139,8 +139,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private void convergeState(State wantedState) {
         boolean wantFrozen = wantedState != RESUMED;
         if (!nodeAdmin.setFrozen(wantFrozen)) {
-            throw new RuntimeException("Wanted NodeAdmin to be " + (wantFrozen ? "frozen" : "unfrozen") +
-                    " but instead is " + (!wantFrozen ? "frozen" : "unfrozen"));
+            throw new RuntimeException("NodeAdmin has not yet converged to " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
         // To get to resumed state, we only need to converge NodeAdmins frozen state

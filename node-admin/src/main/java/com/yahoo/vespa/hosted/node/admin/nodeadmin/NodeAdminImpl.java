@@ -74,7 +74,9 @@ public class NodeAdminImpl implements NodeAdmin {
             }
         }, 0, 30, TimeUnit.SECONDS);
 
-        aclMaintainer.ifPresent(maintainer -> aclScheduler.scheduleAtFixedRate(maintainer, 30, 60, TimeUnit.SECONDS));
+        aclMaintainer.ifPresent(maintainer -> aclScheduler.scheduleAtFixedRate(() -> {
+            if (!isFrozen()) maintainer.run();
+        }, 30, 60, TimeUnit.SECONDS));
     }
 
     @Override
@@ -102,11 +104,16 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public boolean setFrozen(boolean frozen) {
+    public boolean setFrozen(boolean wantFrozen) {
+        // Use filter with count instead of allMatch() because allMatch() will short curcuit on first non-match
         boolean allNodeAgentsConverged = nodeAgents.values().stream()
-                .filter(nodeAgent -> !nodeAgent.setFrozen(frozen))
+                .filter(nodeAgent -> !nodeAgent.setFrozen(wantFrozen))
                 .count() == 0;
-        if (allNodeAgentsConverged) isFrozen = frozen;
+
+        if (wantFrozen) {
+            if (allNodeAgentsConverged) isFrozen = true;
+        } else isFrozen = false;
+
         return allNodeAgentsConverged;
     }
 

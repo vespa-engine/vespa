@@ -136,7 +136,7 @@ public class NodeAdminImplTest {
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(nodeSpecs, existingContainers);
 
         mockNodeAgentSetFrozenResponse(nodeAgents, false, false, false);
-        assertFalse(nodeAdmin.setFrozen(true));
+        assertFalse(nodeAdmin.setFrozen(true)); // NodeAdmin freezes only when all the NodeAgents are frozen
 
         mockNodeAgentSetFrozenResponse(nodeAgents, false, true, true);
         assertFalse(nodeAdmin.setFrozen(true));
@@ -152,11 +152,11 @@ public class NodeAdminImplTest {
 
         mockNodeAgentSetFrozenResponse(nodeAgents, false, false, false);
         assertFalse(nodeAdmin.setFrozen(false));
-        assertTrue(nodeAdmin.isFrozen());
+        assertFalse(nodeAdmin.isFrozen()); // NodeAdmin unfreezes instantly
 
         mockNodeAgentSetFrozenResponse(nodeAgents, false, false, true);
         assertFalse(nodeAdmin.setFrozen(false));
-        assertTrue(nodeAdmin.isFrozen());
+        assertFalse(nodeAdmin.isFrozen());
 
         mockNodeAgentSetFrozenResponse(nodeAgents, true, true, true);
         assertTrue(nodeAdmin.setFrozen(false));
