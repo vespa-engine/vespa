@@ -56,49 +56,40 @@ namespace proton
 
 namespace {
 
-AttributesConfig::Attribute make_int32_sv_cfg() {
+AttributesConfig::Attribute make_sv_cfg(AttributesConfig::Attribute::Datatype dataType)
+{
     AttributesConfig::Attribute attr;
     attr.name = "a";
-    attr.datatype = AttributesConfig::Attribute::Datatype::INT32;
+    attr.datatype = dataType;
     attr.collectiontype = AttributesConfig::Attribute::Collectiontype::SINGLE;
     return attr;
 }
 
+AttributesConfig::Attribute make_int32_sv_cfg() {
+    return make_sv_cfg(AttributesConfig::Attribute::Datatype::INT32);
+}
+
 AttributesConfig::Attribute make_string_sv_cfg() {
-    AttributesConfig::Attribute attr;
-    attr.name = "a";
-    attr.datatype = AttributesConfig::Attribute::Datatype::STRING;
-    attr.collectiontype = AttributesConfig::Attribute::Collectiontype::SINGLE;
-    return attr;
+    return make_sv_cfg(AttributesConfig::Attribute::Datatype::STRING);
 }
 
 AttributesConfig::Attribute make_predicate_cfg(uint32_t arity)
 {
-    AttributesConfig::Attribute attr;
-    attr.name = "a";
-    attr.datatype = AttributesConfig::Attribute::Datatype::PREDICATE;
-    attr.collectiontype = AttributesConfig::Attribute::Collectiontype::SINGLE;
+    auto attr = make_sv_cfg(AttributesConfig::Attribute::Datatype::PREDICATE);
     attr.arity = arity;
     return attr;
 }
 
 AttributesConfig::Attribute make_tensor_cfg(const vespalib::string &spec)
 {
-    AttributesConfig::Attribute attr;
-    attr.name = "a";
-    attr.datatype = AttributesConfig::Attribute::Datatype::TENSOR;
-    attr.collectiontype = AttributesConfig::Attribute::Collectiontype::SINGLE;
+    auto attr = make_sv_cfg(AttributesConfig::Attribute::Datatype::TENSOR);
     attr.tensortype = spec;
     return attr;
 }
 
 AttributesConfig::Attribute make_reference_cfg()
 {
-    AttributesConfig::Attribute attr;
-    attr.name = "a";
-    attr.datatype = AttributesConfig::Attribute::Datatype::REFERENCE;
-    attr.collectiontype = AttributesConfig::Attribute::Collectiontype::SINGLE;
-    return attr;
+    return make_sv_cfg(AttributesConfig::Attribute::Datatype::REFERENCE);
 }
 
 AttributesConfig attrCfg(std::vector<AttributesConfig::Attribute> attributes)
@@ -125,12 +116,10 @@ Config make_fa(const Config &cfg)
 const Config int32_sv(BasicType::Type::INT32);
 const Config string_sv(BasicType::Type::STRING);
 
-Config getPredicate(uint32_t arity)
+Config getTensor(const vespalib::string &spec)
 {
-    Config ret(BasicType::Type::PREDICATE);
-    search::attribute::PredicateParams predicateParams;
-    predicateParams.setArity(arity);
-    ret.setPredicateParams(predicateParams);
+    Config ret(BasicType::Type::TENSOR);
+    ret.setTensorType(vespalib::eval::ValueType::from_spec(spec));
     return ret;
 }
 
@@ -287,20 +276,20 @@ TEST_F("require that fast access flag change is delayed, true->false edge", Fixt
     TEST_DO(f.assertConfigs({make_fa(make_int32_sv_cfg())}));
 }
 
-TEST_F("require that fast access flag change is delayed, false->true edge, predicate attr", Fixture)
+TEST_F("require that fast access flag change is delayed, false->true edge, tensor attr", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_predicate_cfg(4)}), attrCfg({make_fa(make_predicate_cfg(4))}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", getPredicate(4))}));
-    TEST_DO(f.assertConfigs({make_predicate_cfg(4)}));
+    f.setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", getTensor("tensor(x[10])"))}));
+    TEST_DO(f.assertConfigs({make_tensor_cfg("tensor(x[10])")}));
 }
 
-TEST_F("require that fast access flag change is not delayed, true->false edge, predicate attr", Fixture)
+TEST_F("require that fast access flag change is not delayed, true->false edge, tensor attr", Fixture)
 {
     f.addFields({"a"});
-    f.setup(attrCfg({make_fa(make_predicate_cfg(4))}), attrCfg({make_predicate_cfg(4)}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", getPredicate(4))}));
-    TEST_DO(f.assertConfigs({make_predicate_cfg(4)}));
+    f.setup(attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), attrCfg({make_tensor_cfg("tensor(x[10])")}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", getTensor("tensor(x[10])"))}));
+    TEST_DO(f.assertConfigs({make_tensor_cfg("tensor(x[10])")}));
 }
 
 TEST_F("require that fast access flag change is not delayed, true->false edge, string attribute, indexed field", Fixture)
