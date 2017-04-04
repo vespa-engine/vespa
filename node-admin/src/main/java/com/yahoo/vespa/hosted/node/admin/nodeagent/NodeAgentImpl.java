@@ -80,7 +80,7 @@ public class NodeAgentImpl implements NodeAgent {
         RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN,
         RUNNING
     }
-    private ContainerState containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+    private ContainerState containerState = ABSENT;
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
@@ -114,10 +114,12 @@ public class NodeAgentImpl implements NodeAgent {
         // If the container is already running, initialize vespaVersion and lastCpuMetric
         lastCpuMetric = new CpuUsageReporter(clock.instant());
         dockerOperations.getContainer(containerName)
-                .filter(container -> container.state.isRunning())
                 .ifPresent(container -> {
-                    vespaVersion = dockerOperations.getVespaVersion(container.name);
-                    lastCpuMetric = new CpuUsageReporter(container.created);
+                    if (container.state.isRunning()) {
+                        vespaVersion = dockerOperations.getVespaVersion(container.name);
+                        lastCpuMetric = new CpuUsageReporter(container.created);
+                    }
+                    containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
                 });
     }
 
