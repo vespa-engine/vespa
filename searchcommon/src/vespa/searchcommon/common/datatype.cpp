@@ -50,12 +50,13 @@ const char *datatype_str[] = { "UINT1",
 
 vespalib::string
 getTypeName(DataType type) {
-    if (static_cast<size_t>(type) > vespalib::arraysize(datatype_str)) {
+    size_t typeAsNum = static_cast<size_t>(type);
+    if (typeAsNum > vespalib::arraysize(datatype_str)) {
         vespalib::asciistream ost;
-        ost << "UNKNOWN(" << static_cast<size_t>(type) << ")";
+        ost << "UNKNOWN(" << typeAsNum << ")";
         return ost.str();
     }
-    return datatype_str[static_cast<size_t>(type)];
+    return datatype_str[typeAsNum];
 }
 
 std::ostream &
@@ -81,12 +82,13 @@ const char *collectiontype_str[] = { "SINGLE",
 
 vespalib::string
 getTypeName(CollectionType type) {
-    if (static_cast<size_t>(type) > vespalib::arraysize(collectiontype_str)) {
+    size_t typeAsNum = static_cast<size_t>(type);
+    if (typeAsNum > vespalib::arraysize(collectiontype_str)) {
         vespalib::asciistream ost;
-        ost << "UNKNOWN(" << static_cast<size_t>(type) << ")";
+        ost << "UNKNOWN(" << typeAsNum << ")";
         return ost.str();
     }
-    return collectiontype_str[static_cast<size_t>(type)];
+    return collectiontype_str[typeAsNum];
 }
 
 std::ostream &
