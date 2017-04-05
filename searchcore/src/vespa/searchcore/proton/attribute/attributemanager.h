@@ -77,8 +77,7 @@ private:
     HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
-    search::AttributeVector::SP internalAddAttribute(const vespalib::string &name,
-                                                     const Config &cfg,
+    search::AttributeVector::SP internalAddAttribute(const AttributeSpec &spec,
                                                      uint64_t serialNum,
                                                      const IAttributeFactory &factory);
 

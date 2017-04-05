@@ -63,12 +63,11 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
 }
 
 AttributeVector::SP
-AttributeManager::internalAddAttribute(const vespalib::string &name,
-                                       const Config &cfg,
+AttributeManager::internalAddAttribute(const AttributeSpec &spec,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, cfg, serialNum, factory);
+    AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory);
     AttributeVector::SP attr = initializer.init();
     if (attr.get() != NULL) {
         attr->setInterlock(_interlock);
@@ -139,7 +138,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
 
         AttributeInitializer::UP initializer =
             std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName,
-                        aspec.getConfig(), newSpec.getCurrentSerialNum(), *_factory);
+                        aspec, newSpec.getCurrentSerialNum(), *_factory);
         initializerRegistry.add(std::move(initializer));
 
         // TODO: Might want to use hardlinks to make attribute vector
@@ -244,7 +243,7 @@ AttributeManager::addAttribute(const vespalib::string &name,
                                const Config &cfg,
                                uint64_t serialNum)
 {
-    return internalAddAttribute(name, cfg, serialNum, *_factory);
+    return internalAddAttribute(AttributeSpec(name, cfg), serialNum, *_factory);
 }
 
 void

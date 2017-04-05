@@ -236,12 +236,12 @@ AttributeInitializer::createAndSetupEmptyAttribute() const
 
 AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                                            const vespalib::string &documentSubDbName,
-                                           const search::attribute::Config &cfg,
+                                           const AttributeSpec &spec,
                                            uint64_t currentSerialNum,
                                            const IAttributeFactory &factory)
     : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
-      _cfg(cfg),
+      _cfg(spec.getConfig()),
       _currentSerialNum(currentSerialNum),
       _factory(factory)
 {

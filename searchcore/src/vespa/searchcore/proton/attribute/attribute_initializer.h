@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchcommon/attribute/config.h>
+#include "attribute_spec.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
@@ -47,7 +47,7 @@ private:
 public:
     AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                          const vespalib::string &documentSubDbName,
-                         const search::attribute::Config &cfg,
+                         const AttributeSpec &spec,
                          uint64_t currentSerialNum,
                          const IAttributeFactory &factory);
     ~AttributeInitializer();
