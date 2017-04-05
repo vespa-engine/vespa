@@ -6,6 +6,7 @@
 #include "fast_access_document_retriever.h"
 #include "document_subdb_initializer.h"
 #include "reconfig_params.h"
+#include "i_document_subdb_owner.h"
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>

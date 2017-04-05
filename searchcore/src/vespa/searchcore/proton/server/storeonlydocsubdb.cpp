@@ -7,6 +7,7 @@
 #include "storeonlydocsubdb.h"
 #include "document_subdb_initializer.h"
 #include "reconfig_params.h"
+#include "i_document_subdb_owner.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
 #include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
@@ -75,7 +76,7 @@ StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName,
 { }
 StoreOnlyDocSubDB::Config::~Config() { }
 
-StoreOnlyDocSubDB::Context::Context(IDocumentSubDB::IOwner &owner,
+StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
                                     search::transactionlog::SyncProxy &tlSyncer,
                                     const IGetSerialNum &getSerialNum,
                                     const search::common::FileHeaderContext &fileHeaderContext,

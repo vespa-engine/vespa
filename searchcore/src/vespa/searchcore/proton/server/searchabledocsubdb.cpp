@@ -4,6 +4,7 @@
 #include "fast_access_document_retriever.h"
 #include "document_subdb_initializer.h"
 #include "reconfig_params.h"
+#include "i_document_subdb_owner.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>

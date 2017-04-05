@@ -19,6 +19,7 @@
 #include "searchabledocsubdb.h"
 #include "summaryadapter.h"
 #include "visibilityhandler.h"
+#include "i_document_subdb_owner.h"
 
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
@@ -72,7 +73,7 @@ namespace configvalidator { class Result; }
 class DocumentDB : public IDocumentDBConfigOwner,
                    public IReplayConfig,
                    public FeedHandler::IOwner,
-                   public IDocumentSubDB::IOwner,
+                   public IDocumentSubDBOwner,
                    public IClusterStateChangedHandler,
                    public IWipeOldRemovedFieldsHandler,
                    public search::transactionlog::SyncProxy
@@ -458,7 +459,7 @@ public:
 
     int64_t getActiveGeneration() const;
 
-    // Implements IDocSubDB::IOwner
+    // Implements IDocumentSubDBOwner
     void syncFeedView() override;
 
     std::shared_ptr<searchcorespi::IIndexManagerFactory>

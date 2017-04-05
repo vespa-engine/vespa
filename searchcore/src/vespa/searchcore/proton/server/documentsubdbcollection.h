@@ -1,21 +1,29 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "ibucketstatecalculator.h"
-#include "idocumentsubdb.h"
-#include "ifeedview.h"
-#include "searchable_doc_subdb_configurer.h"
+#include <vespa/vespalib/util/varholder.h>
 #include <vespa/searchcore/config/config-proton.h>
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
-#include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
-#include <vespa/searchcorespi/flush/iflushtarget.h>
-#include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
-#include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <mutex>
+
+namespace vespalib
+{
+class Clock;
+class ThreadExecutor;
+class ThreadStackExecutorBase;
+}
+
+namespace search {
+namespace common { class FileHeaderContext; }
+namespace transactionlog { class SyncProxy; }
+}
+
+namespace searchcorespi {
+class IFlushTarget;
+namespace index { class IThreadingService; }
+}
 
 namespace proton {
 class DocumentDBConfig;
@@ -25,6 +33,22 @@ class MetricsWireService;
 class ICommitable;
 class IDocumentDBReferenceResolver;
 class IGetSerialNum;
+class DocTypeName;
+class HwInfo;
+class IFeedView;
+struct IBucketStateCalculator;
+class IDocumentSubDBOwner;
+class IDocumentSubDB;
+class IDocumentRetriever;
+class IRreprocessingTask;
+class ReconfigParams;
+
+namespace matching {
+class QueryLimiter;
+class SessionManager;
+}
+
+namespace initializer { class InitializerTask; }
 
 class DocumentSubDBCollection {
 public:
@@ -33,8 +57,12 @@ public:
     typedef search::SerialNum      SerialNum;
 
 private:
+    using IFeedViewSP = std::shared_ptr<IFeedView>;
+    using IBucketStateCalculatorSP = std::shared_ptr<IBucketStateCalculator>;
+    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
+    using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     SubDBVector _subDBs;
-    IBucketStateCalculator::SP _calc;
+    IBucketStateCalculatorSP _calc;
     const uint32_t _readySubDbId;
     const uint32_t _remSubDbId;
     const uint32_t _notReadySubDbId;
@@ -47,7 +75,7 @@ private:
 
 public:
     DocumentSubDBCollection(
-            IDocumentSubDB::IOwner &owner,
+            IDocumentSubDBOwner &owner,
             search::transactionlog::SyncProxy &tlSyncer,
             const IGetSerialNum &getSerialNum,
             const DocTypeName &docTypeName,
@@ -65,7 +93,7 @@ public:
             const HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 
-    void setBucketStateCalculator(const IBucketStateCalculator::SP &calc) {
+    void setBucketStateCalculator(const IBucketStateCalculatorSP &calc) {
         _calc = calc;
     }
 
@@ -93,7 +121,7 @@ public:
         return *_bucketDBHandler;
     }
 
-    initializer::InitializerTask::SP
+    std::shared_ptr<initializer::InitializerTask>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
                       const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
@@ -101,7 +129,7 @@ public:
 
     void
     initViews(const DocumentDBConfig &configSnapshot,
-              const matching::SessionManager::SP &sessionManager);
+              const SessionManagerSP &sessionManager);
 
     void clearViews(void);
     void onReplayDone(void);
@@ -119,8 +147,8 @@ public:
                 const ReconfigParams &params,
                 IDocumentDBReferenceResolver &resolver);
 
-    IFeedView::SP getFeedView();
-    searchcorespi::IFlushTarget::List getFlushTargets();
+    IFeedViewSP getFeedView();
+    IFlushTargetList getFlushTargets();
     ReprocessingRunner &getReprocessingRunner() { return _reprocessingRunner; }
     double getReprocessingProgress() const;
     void close();
