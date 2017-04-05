@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
+
+namespace search {
+class AttributeVector;
+namespace attribute { class Config; }
+}
 
 namespace proton {
 
@@ -16,10 +19,11 @@ namespace proton {
 struct IAttributeFactory
 {
     typedef std::shared_ptr<IAttributeFactory> SP;
+    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     virtual ~IAttributeFactory() {}
-    virtual search::AttributeVector::SP create(const vespalib::string &name,
-                                               const search::attribute::Config &cfg) const = 0;
-    virtual void setupEmpty(const search::AttributeVector::SP &vec,
+    virtual AttributeVectorSP create(const vespalib::string &name,
+                                     const search::attribute::Config &cfg) const = 0;
+    virtual void setupEmpty(const AttributeVectorSP &vec,
                             search::SerialNum serialNum) const = 0;
 };
 

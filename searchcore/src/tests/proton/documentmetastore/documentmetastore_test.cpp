@@ -44,6 +44,7 @@ using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHolder;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

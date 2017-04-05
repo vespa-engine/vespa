@@ -12,7 +12,7 @@ InitializedAttributesResult::InitializedAttributesResult()
 {}
 
 void
-InitializedAttributesResult::add(AttributeVector::SP attribute)
+InitializedAttributesResult::add(AttributeInitializerResult attribute)
 {
     std::lock_guard<std::mutex> lockGuard(_lock);
     _attributes.push_back(attribute);

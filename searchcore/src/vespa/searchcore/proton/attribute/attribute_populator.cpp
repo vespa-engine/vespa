@@ -7,6 +7,7 @@ LOG_SETUP(".proton.attribute.attribute_populator");
 
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 
 using search::IDestructorCallback;
 

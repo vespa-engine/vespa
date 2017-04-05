@@ -120,7 +120,7 @@ public:
                 IDocumentDBReferenceResolver &resolver);
 
     IFeedView::SP getFeedView();
-    IFlushTarget::List getFlushTargets();
+    searchcorespi::IFlushTarget::List getFlushTargets();
     ReprocessingRunner &getReprocessingRunner() { return _reprocessingRunner; }
     double getReprocessingProgress() const;
     void close();

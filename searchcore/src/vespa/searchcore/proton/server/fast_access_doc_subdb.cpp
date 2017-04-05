@@ -27,6 +27,7 @@ using search::AttributeVector;
 using search::SerialNum;
 using search::index::Schema;
 using proton::initializer::InitializerTask;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

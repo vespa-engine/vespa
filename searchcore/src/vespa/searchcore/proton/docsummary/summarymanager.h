@@ -13,6 +13,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/fastlib/text/normwordfolder.h>
 
 namespace search {
 
@@ -85,7 +86,7 @@ public:
     void putDocument(uint64_t syncToken, const document::Document & doc,
                      search::DocumentIdT lid);
     void removeDocument(uint64_t syncToken, search::DocumentIdT lid);
-    IFlushTarget::List getFlushTargets();
+    searchcorespi::IFlushTarget::List getFlushTargets();
 
     /**
      * Implements ISummaryManager.

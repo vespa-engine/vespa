@@ -120,7 +120,7 @@ struct Fixture
     {
     }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
-        return _m->addAttribute(name, AVConfig(AVBasicType::INT32),
+        return _m->addAttribute({name, AVConfig(AVBasicType::INT32)},
                                 createSerialNum);
     }
     void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
@@ -152,17 +152,9 @@ TEST_F("require that attribute adapter handles put", Fixture)
 
     proton::AttributeManager & am = *f._m;
     AttributeVector::SP a1 = f.addAttribute("a1");
-    AttributeVector::SP a2 =
-        am.addAttribute("a2",
-                        AVConfig(AVBasicType::INT32,
-                                 AVCollectionType::ARRAY),
-                        createSerialNum);
-    AttributeVector::SP a3 =
-        am.addAttribute("a3", AVConfig(AVBasicType::FLOAT),
-                        createSerialNum);
-    AttributeVector::SP a4 = am.addAttribute("a4",
-                                             AVConfig(AVBasicType::STRING),
-                                             createSerialNum);
+    AttributeVector::SP a2 = am.addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+    AttributeVector::SP a3 = am.addAttribute({"a3", AVConfig(AVBasicType::FLOAT)}, createSerialNum);
+    AttributeVector::SP a4 = am.addAttribute({"a4", AVConfig(AVBasicType::STRING)}, createSerialNum);
 
     attribute::IntegerContent ibuf;
     attribute::FloatContent fbuf;
@@ -241,9 +233,7 @@ TEST_F("require that attribute adapter handles predicate put", Fixture)
     DocBuilder idb(s);
 
     proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute("a1",
-                                             AVConfig(AVBasicType::PREDICATE),
-                                             createSerialNum);
+    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
 
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
 
@@ -319,9 +309,7 @@ void verifyAttributeContent(const AttributeVector & v, uint32_t lid, vespalib::s
 TEST_F("require that visibilitydelay is honoured", Fixture)
 {
     proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute("a1",
-                                             AVConfig(AVBasicType::STRING),
-                                             createSerialNum);
+    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::STRING)}, createSerialNum);
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
     DocBuilder idb(s);
@@ -368,9 +356,7 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
 TEST_F("require that attribute adapter handles predicate remove", Fixture)
 {
     proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute("a1",
-                                             AVConfig(AVBasicType::PREDICATE),
-                                             createSerialNum);
+    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema s;
     s.addAttributeField(
             Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
@@ -433,9 +419,7 @@ TEST_F("require that attribute adapter handles update", Fixture)
 TEST_F("require that attribute adapter handles predicate update", Fixture)
 {
     proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute("a1",
-                                             AVConfig(AVBasicType::PREDICATE),
-                                             createSerialNum);
+    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema schema;
     schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
@@ -539,8 +523,8 @@ struct FilterFixture
                                                 _hwInfo)),
           _filterMgr(ACCEPTED_ATTRIBUTES, _baseMgr)
     {
-        _baseMgr->addAttribute("a1", INT32_SINGLE, createSerialNum);
-        _baseMgr->addAttribute("a2", INT32_SINGLE, createSerialNum);
+        _baseMgr->addAttribute({"a1", INT32_SINGLE}, createSerialNum);
+        _baseMgr->addAttribute({"a2", INT32_SINGLE}, createSerialNum);
    }
 };
 
@@ -574,7 +558,7 @@ AttributeVector::SP
 createTensorAttribute(Fixture &f) {
     AVConfig cfg(AVBasicType::TENSOR);
     cfg.setTensorType(ValueType::from_spec("tensor(x{},y{})"));
-    return f._m->addAttribute("a1", cfg, createSerialNum);
+    return f._m->addAttribute({"a1", cfg}, createSerialNum);
 }
 
 Schema

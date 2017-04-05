@@ -7,9 +7,11 @@
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
+#include "flushableattribute.h"
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
@@ -21,13 +23,13 @@ using search::AttributeContext;
 using search::AttributeEnumGuard;
 using search::AttributeGuard;
 using search::AttributeVector;
-using search::IndexMetaInfo;
 using search::TuneFileAttributes;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
 using search::index::Schema;
 using search::attribute::BasicType;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 
@@ -61,19 +63,56 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
 
 }
 
+AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a,
+                                               bool isExtra_,
+                                               bool hideFromReading,
+                                               bool hideFromWriting)
+    : _attr(a),
+      _isExtra(isExtra_),
+      _hideFromReading(hideFromReading),
+      _hideFromWriting(hideFromWriting)
+{
+}
+
+AttributeManager::AttributeWrap::AttributeWrap()
+    : _attr(),
+      _isExtra(false),
+      _hideFromReading(false),
+      _hideFromWriting(false)
+{
+}
+
+AttributeManager::AttributeWrap::~AttributeWrap()
+{
+}
+
+AttributeManager::AttributeWrap
+AttributeManager::AttributeWrap::extraAttribute(const AttributeVectorSP &a)
+{
+    return AttributeWrap(a, true, false, false);
+}
+
+AttributeManager::AttributeWrap
+AttributeManager::AttributeWrap::normalAttribute(const AttributeVectorSP &a, bool hideFromReading, bool hideFromWriting)
+{
+    return AttributeWrap(a, false, hideFromReading, hideFromWriting);
+}
+
+
 AttributeVector::SP
-AttributeManager::internalAddAttribute(const vespalib::string &name,
-                                       const Config &cfg,
+AttributeManager::internalAddAttribute(const AttributeSpec &spec,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, cfg, serialNum, factory);
-    AttributeVector::SP attr = initializer.init();
-    if (attr.get() != NULL) {
-        attr->setInterlock(_interlock);
-        addAttribute(attr);
+    AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory);
+    AttributeInitializerResult result = initializer.init();
+    if (result) {
+        result.getAttribute()->setInterlock(_interlock);
+        assert(result.getHideFromReading() == spec.getHideFromReading());
+        assert(result.getHideFromWriting() == spec.getHideFromWriting());
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute(), result.getHideFromReading(), result.getHideFromWriting()));
     }
-    return attr;
+    return result.getAttribute();
 }
 
 void
@@ -120,7 +159,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
         if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
             LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
                        av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
-            addAttribute(av);
+            addAttribute(AttributeWrap::normalAttribute(av, aspec.getHideFromReading(), aspec.getHideFromWriting()));
         } else {
             toBeAdded.push_back(aspec);
         }
@@ -138,7 +177,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
 
         AttributeInitializer::UP initializer =
             std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName,
-                        aspec.getConfig(), newSpec.getCurrentSerialNum(), *_factory);
+                        aspec, newSpec.getCurrentSerialNum(), *_factory);
         initializerRegistry.add(std::move(initializer));
 
         // TODO: Might want to use hardlinks to make attribute vector
@@ -239,19 +278,18 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
 AttributeManager::~AttributeManager() { }
 
 AttributeVector::SP
-AttributeManager::addAttribute(const vespalib::string &name,
-                               const Config &cfg,
-                               uint64_t serialNum)
+AttributeManager::addAttribute(const AttributeSpec &spec, uint64_t serialNum)
 {
-    return internalAddAttribute(name, cfg, serialNum, *_factory);
+    return internalAddAttribute(spec, serialNum, *_factory);
 }
 
 void
-AttributeManager::addInitializedAttributes(const std::vector<search::AttributeVector::SP> &attributes)
+AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes)
 {
-    for (const auto &attribute : attributes) {
-        attribute->setInterlock(_interlock);
-        addAttribute(attribute);
+    for (const auto &result : attributes) {
+        assert(result);
+        result.getAttribute()->setInterlock(_interlock);
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute(), result.getHideFromReading(), result.getHideFromWriting()));
     }
 }
 
@@ -259,7 +297,7 @@ void
 AttributeManager::addExtraAttribute(const AttributeVector::SP &attribute)
 {
     attribute->setInterlock(_interlock);
-    addAttribute(AttributeWrap(attribute, true));
+    addAttribute(AttributeWrap::extraAttribute(attribute));
 }
 
 void

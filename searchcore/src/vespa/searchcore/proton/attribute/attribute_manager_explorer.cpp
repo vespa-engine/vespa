@@ -8,6 +8,7 @@ LOG_SETUP(".proton.attribute.attribute_manager_explorer");
 #include "attribute_vector_explorer.h"
 #include "exclusive_attribute_read_accessor.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 
 using vespalib::slime::Inserter;
 

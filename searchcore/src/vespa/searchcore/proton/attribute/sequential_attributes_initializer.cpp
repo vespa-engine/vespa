@@ -18,10 +18,10 @@ SequentialAttributesInitializer::SequentialAttributesInitializer(uint32_t docIdL
 void
 SequentialAttributesInitializer::add(AttributeInitializer::UP initializer)
 {
-    AttributeVector::SP attribute = initializer->init();
-    if (attribute) {
-        considerPadAttribute(*attribute, initializer->getCurrentSerialNum(), _docIdLimit);
-        _initializedAttributes.push_back(attribute);
+    AttributeInitializerResult result = initializer->init();
+    if (result) {
+        considerPadAttribute(*result.getAttribute(), initializer->getCurrentSerialNum(), _docIdLimit);
+        _initializedAttributes.push_back(result);
     }
 }
 

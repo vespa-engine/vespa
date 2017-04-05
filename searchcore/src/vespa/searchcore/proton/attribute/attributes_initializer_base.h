@@ -3,7 +3,7 @@
 #pragma once
 
 #include "i_attribute_initializer_registry.h"
-#include <vespa/searchlib/attribute/attributevector.h>
+#include "attribute_initializer_result.h"
 
 namespace proton {
 
@@ -13,7 +13,7 @@ namespace proton {
 class AttributesInitializerBase : public IAttributeInitializerRegistry
 {
 public:
-    typedef std::vector<search::AttributeVector::SP> AttributesVector;
+    typedef std::vector<AttributeInitializerResult> AttributesVector;
 
 protected:
     AttributesVector _initializedAttributes;

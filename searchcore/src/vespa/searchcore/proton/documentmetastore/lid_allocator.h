@@ -5,9 +5,13 @@
 #include "lid_hold_list.h"
 #include "lidstatevector.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+
+namespace search {
+class AttributeVector;
+class SingleValueBitNumericAttribute;
+class GrowStrategy;
+}
 
 namespace proton {
 namespace documentmetastore {
@@ -22,13 +26,14 @@ private:
     typedef search::SingleValueBitNumericAttribute BitAttribute;
     typedef uint32_t DocId;
     typedef vespalib::GenerationHandler::generation_t generation_t;
+    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
 
     LidHoldList                 _holdLids;
     LidStateVector              _freeLids;
     LidStateVector              _usedLids;
     LidStateVector              _pendingHoldLids;
     bool                        _lidFreeListConstructed;
-    search::AttributeVector::SP _activeLidsAttr;
+    AttributeVectorSP           _activeLidsAttr;
     BitAttribute               &_activeLids;
     uint32_t                    _numActiveLids;
 
