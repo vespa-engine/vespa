@@ -5,6 +5,8 @@ search child {
   }
   import field a_ref.int_field as my_int_field {}
   import field b_ref.string_field as my_string_field {}
+  import field a_ref.int_array_field as my_int_array_field {}
+  import field a_ref.int_wset_field as my_int_wset_field {}
 
   fieldset myfieldset {
     fields: my_int_field, my_string_field
@@ -14,5 +16,7 @@ search child {
     summary a_ref type reference<parent_a> {}
     summary my_int_field type int {}
     summary my_string_field type string {}
+    summary my_int_array_field type array<int> {}
+    summary my_int_wset_field type weightedset<int> {}
   }
 }
