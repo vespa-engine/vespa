@@ -26,6 +26,7 @@ using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using vespalib::makeTask;
 using vespalib::makeClosure;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

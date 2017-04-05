@@ -18,15 +18,13 @@ namespace common { class FileHeaderContext; }
 
 namespace proton {
 
-using searchcorespi::FlushStats;
-using searchcorespi::IFlushTarget;
 
 class AttributeDirectory;
 
 /**
  * Implementation of IFlushTarget interface for attribute vectors.
  */
-class FlushableAttribute : public IFlushTarget
+class FlushableAttribute : public searchcorespi::IFlushTarget
 {
 private:
     /**
@@ -34,6 +32,7 @@ private:
      **/
     class Flusher;
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
+    using FlushStats = searchcorespi::FlushStats;
 
     AttributeVectorSP           _attr;
     bool                        _cleanUpAfterFlush;

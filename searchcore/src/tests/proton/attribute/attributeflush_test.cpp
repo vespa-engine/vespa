@@ -29,6 +29,8 @@ using search::index::DummyFileHeaderContext;
 typedef search::attribute::Config AVConfig;
 typedef search::attribute::BasicType AVBasicType;
 typedef search::attribute::CollectionType AVCollectionType;
+using searchcorespi::IFlushTarget;
+using searchcorespi::FlushStats;
 
 typedef std::shared_ptr<Gate> GateSP;
 
