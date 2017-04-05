@@ -8,6 +8,10 @@ namespace searchcorespi { class IIndexManagerFactory; }
 
 namespace proton {
 
+/**
+ * Interface defining the communication needed with the owner of the
+ * document sub db.
+ */
 class IDocumentSubDBOwner
 {
 public:
