@@ -222,7 +222,7 @@ public class OperationHandlerImpl implements OperationHandler {
         setRoute(syncSession, Optional.empty());
         try {
             DocumentId id = new DocumentId(restUri.generateFullId());
-            final Document document = syncSession.get(id);
+            final Document document = syncSession.get(id, restUri.getDocumentType() + ":[document]", DocumentProtocol.Priority.NORMAL_1);
             if (document == null) {
                 return Optional.empty();
             }
