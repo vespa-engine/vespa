@@ -67,8 +67,8 @@ configure_memory() {
 
     # Update jvm_heapsize only if percentage is explicitly set (default is 0).
     if ((jvm_heapSizeAsPercentageOfPhysicalMemory > 0)); then
-        if ((TOTAL_MEMORY_MB > 0)); then
-            available="$TOTAL_MEMORY_MB"
+        if ((VESPA_TOTAL_MEMORY_MB > 0)); then
+            available="$VESPA_TOTAL_MEMORY_MB"
         else
             available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
         fi
