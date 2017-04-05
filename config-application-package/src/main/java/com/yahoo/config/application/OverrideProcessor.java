@@ -118,14 +118,17 @@ class OverrideProcessor implements PreProcessor {
         Iterator<Element> elemIt = children.iterator();
         while (elemIt.hasNext()) {
             Element child = elemIt.next();
-            Optional<Environment> env = getEnvironment(child);
-            RegionName reg = getRegion(child);
-            if ((env.isPresent() && !environment.equals(env.get())) || 
-                (!reg.isDefault() && (!region.equals(reg) || !environment.equals(Environment.prod)))) {
+            if ( ! matches(getEnvironment(child), getRegion(child))) {
                 parent.removeChild(child);
                 elemIt.remove();
             }
         }
+    }
+    
+    private boolean matches(Optional<Environment> elementEnvironment, RegionName elementRegion) {
+        if (elementEnvironment.isPresent() && ! environment.equals(elementEnvironment.get())) return false;
+        if ( ! elementRegion.isDefault() &&  ( ! region.equals(elementRegion) || ! environment.equals(Environment.prod))) return false;
+        return true;
     }
 
     /**
