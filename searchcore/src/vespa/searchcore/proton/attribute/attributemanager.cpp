@@ -104,12 +104,14 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
                                        const IAttributeFactory &factory)
 {
     AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory);
-    AttributeVector::SP attr = initializer.init();
-    if (attr.get() != NULL) {
-        attr->setInterlock(_interlock);
-        addAttribute(AttributeWrap::normalAttribute(attr, spec.getHideFromReading(), spec.getHideFromWriting()));
+    AttributeInitializerResult result = initializer.init();
+    if (result) {
+        result.getAttribute()->setInterlock(_interlock);
+        assert(result.getHideFromReading() == spec.getHideFromReading());
+        assert(result.getHideFromWriting() == spec.getHideFromWriting());
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute(), result.getHideFromReading(), result.getHideFromWriting()));
     }
-    return attr;
+    return result.getAttribute();
 }
 
 void
@@ -281,11 +283,12 @@ AttributeManager::addAttribute(const AttributeSpec &spec, uint64_t serialNum)
 }
 
 void
-AttributeManager::addInitializedAttributes(const std::vector<search::AttributeVector::SP> &attributes)
+AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes)
 {
-    for (const auto &attribute : attributes) {
-        attribute->setInterlock(_interlock);
-        addAttribute(AttributeWrap::normalAttribute(attribute, false, false));
+    for (const auto &result : attributes) {
+        assert(result);
+        result.getAttribute()->setInterlock(_interlock);
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute(), result.getHideFromReading(), result.getHideFromWriting()));
     }
 }
 

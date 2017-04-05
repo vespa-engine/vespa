@@ -3,7 +3,6 @@
 #pragma once
 
 #include "attributes_initializer_base.h"
-#include <vespa/searchlib/attribute/attributevector.h>
 
 namespace proton {
 

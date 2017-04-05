@@ -3,13 +3,13 @@
 #pragma once
 
 #include "attribute_spec.h"
+#include "attribute_initializer_result.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 
 namespace search {
 namespace attribute { class AttributeHeader; }
-class AttributeVector;
 }
 
 namespace proton {
@@ -52,7 +52,7 @@ public:
                          const IAttributeFactory &factory);
     ~AttributeInitializer();
 
-    AttributeVectorSP init() const;
+    AttributeInitializerResult init() const;
     uint64_t getCurrentSerialNum() const { return _currentSerialNum; }
 };
 

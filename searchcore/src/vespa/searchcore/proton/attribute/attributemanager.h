@@ -129,7 +129,7 @@ public:
 
     AttributeVectorSP addAttribute(const AttributeSpec &spec, uint64_t serialNum);
 
-    void addInitializedAttributes(const std::vector<AttributeVectorSP> &attributes);
+    void addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes);
 
     void addExtraAttribute(const AttributeVectorSP &attribute);
 

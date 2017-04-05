@@ -33,12 +33,12 @@ public:
     {}
 
     virtual void run() override {
-        AttributeVector::SP attribute = _initializer->init();
-        if (attribute) {
-            AttributesInitializerBase::considerPadAttribute(*attribute,
+        AttributeInitializerResult result = _initializer->init();
+        if (result) {
+            AttributesInitializerBase::considerPadAttribute(*result.getAttribute(),
                                                             _initializer->getCurrentSerialNum(),
                                                             _documentMetaStore->getCommittedDocIdLimit());
-            _result.add(attribute);
+            _result.add(result);
         }
     }
 };

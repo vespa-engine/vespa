@@ -249,13 +249,13 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
 
 AttributeInitializer::~AttributeInitializer() {}
 
-search::AttributeVector::SP
+AttributeInitializerResult
 AttributeInitializer::init() const
 {
     if (!_attrDir->empty()) {
-        return tryLoadAttribute();
+        return AttributeInitializerResult(tryLoadAttribute(), _spec.getHideFromReading(), _spec.getHideFromWriting());
     } else {
-        return createAndSetupEmptyAttribute();
+        return AttributeInitializerResult(createAndSetupEmptyAttribute(), _spec.getHideFromReading(), _spec.getHideFromWriting());
     }
 }
 

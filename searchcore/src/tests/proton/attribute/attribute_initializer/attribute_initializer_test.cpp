@@ -99,7 +99,7 @@ TEST("require that integer attribute can be initialized")
 {
     saveAttr("a", int32_sv, 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", int32_sv}, 5)->init();
+    auto av = f.createInitializer({"a", int32_sv}, 5)->init().getAttribute();
     EXPECT_EQUAL(2, av->getCreateSerialNum());
     EXPECT_EQUAL(2, av->getNumDocs());
 }
@@ -108,7 +108,7 @@ TEST("require that mismatching base type is not loaded")
 {
     saveAttr("a", int32_sv, 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", int16_sv}, 5)->init();
+    auto av = f.createInitializer({"a", int16_sv}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
@@ -117,7 +117,7 @@ TEST("require that mismatching collection type is not loaded")
 {
     saveAttr("a", int32_sv, 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", int32_array}, 5)->init();
+    auto av = f.createInitializer({"a", int32_array}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
@@ -127,10 +127,10 @@ TEST("require that mismatching weighted set collection type params is not loaded
     saveAttr("a", string_wset, 10, 2);
     saveAttr("b", string_wset2, 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", string_wset2}, 5)->init();
+    auto av = f.createInitializer({"a", string_wset2}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
-    auto av2 = f.createInitializer({"b", string_wset}, 5)->init();
+    auto av2 = f.createInitializer({"b", string_wset}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av2->getCreateSerialNum());
     EXPECT_EQUAL(1, av2->getNumDocs());
 }
@@ -139,7 +139,7 @@ TEST("require that predicate attributes can be initialized")
 {
     saveAttr("a", predicate, 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", predicate}, 5)->init();
+    auto av = f.createInitializer({"a", predicate}, 5)->init().getAttribute();
     EXPECT_EQUAL(2, av->getCreateSerialNum());
     EXPECT_EQUAL(2, av->getNumDocs());
 }
@@ -148,7 +148,7 @@ TEST("require that predicate attributes will not be initialized with future-crea
 {
     saveAttr("a", predicate, 10, 8);
     Fixture f;
-    auto av = f.createInitializer({"a", predicate}, 5)->init();
+    auto av = f.createInitializer({"a", predicate}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
@@ -157,7 +157,7 @@ TEST("require that predicate attributes will not be initialized with mismatching
 {
     saveAttr("a", predicate, 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", getPredicateWithArity(4)}, 5)->init();
+    auto av = f.createInitializer({"a", getPredicateWithArity(4)}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
@@ -166,7 +166,7 @@ TEST("require that tensor attribute can be initialized")
 {
     saveAttr("a", getTensor("tensor(x[10])"), 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", getTensor("tensor(x[10])")}, 5)->init();
+    auto av = f.createInitializer({"a", getTensor("tensor(x[10])")}, 5)->init().getAttribute();
     EXPECT_EQUAL(2, av->getCreateSerialNum());
     EXPECT_EQUAL(2, av->getNumDocs());
 }
@@ -175,7 +175,7 @@ TEST("require that tensor attributes will not be initialized with future-created
 {
     saveAttr("a", getTensor("tensor(x[10])"), 10, 8);
     Fixture f;
-    auto av = f.createInitializer({"a", getTensor("tensor(x[10])")}, 5)->init();
+    auto av = f.createInitializer({"a", getTensor("tensor(x[10])")}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
@@ -184,7 +184,7 @@ TEST("require that tensor attributes will not be initialized with mismatching ty
 {
     saveAttr("a", getTensor("tensor(x[10])"), 10, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", getTensor("tensor(x[11])")}, 5)->init();
+    auto av = f.createInitializer({"a", getTensor("tensor(x[11])")}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
@@ -193,7 +193,7 @@ TEST("require that too old attribute is not loaded")
 {
     saveAttr("a", int32_sv, 3, 2);
     Fixture f;
-    auto av = f.createInitializer({"a", int32_sv}, 5)->init();
+    auto av = f.createInitializer({"a", int32_sv}, 5)->init().getAttribute();
     EXPECT_EQUAL(5, av->getCreateSerialNum());
     EXPECT_EQUAL(1, av->getNumDocs());
 }
