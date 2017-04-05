@@ -196,7 +196,6 @@ public class ProxyServerTest {
         RawConfig fooConfig = Helper.fooConfig;
         source.put(fooConfig.getKey(), fooConfig);
 
-        //UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
         clientUpdater.waitForConfigGeneration(fooConfig.getKey(), generation);
         assertThat(clientUpdater.getLastConfig(), is(fooConfig));
 

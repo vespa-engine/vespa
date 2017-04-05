@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Mock client that always returns with config immediately
+ *
  * @author hmusum
  */
 public class MockConfigSourceClient implements ConfigSourceClient{
