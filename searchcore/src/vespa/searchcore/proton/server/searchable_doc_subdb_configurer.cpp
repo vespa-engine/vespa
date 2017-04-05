@@ -139,7 +139,7 @@ SearchableDocSubDBConfigurer::reconfigureIndexSearchable()
 {
     SearchableFeedView::SP feedView(_feedView.get());
     const IIndexWriter::SP &indexWriter = feedView->getIndexWriter();
-    const IIndexManager::SP &indexManager = indexWriter->getIndexManager();
+    const searchcorespi::IIndexManager::SP &indexManager = indexWriter->getIndexManager();
     reconfigureMatchView(indexManager->getSearchable());
     const SearchView::SP searchView(_searchView.get());
     reconfigureFeedView(searchView);

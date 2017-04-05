@@ -75,7 +75,7 @@ private:
     typedef FastAccessDocSubDB Parent;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
 
-    IIndexManager::SP                           _indexMgr;
+    searchcorespi::IIndexManager::SP            _indexMgr;
     IIndexWriter::SP                            _indexWriter;
     vespalib::VarHolder<SearchView::SP>         _rSearchView;
     vespalib::VarHolder<SearchableFeedView::SP> _rFeedView;
@@ -145,7 +145,7 @@ public:
         return _rSearchView.get()->getAttributeManager();
     }
 
-    const IIndexManager::SP &getIndexManager() const override {
+    const searchcorespi::IIndexManager::SP &getIndexManager() const override {
         return _indexMgr;
     }
 

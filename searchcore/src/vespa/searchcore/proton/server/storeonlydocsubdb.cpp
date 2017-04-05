@@ -54,7 +54,7 @@ namespace proton {
 
 namespace {
 
-IIndexManager::SP nullIndexManager;
+searchcorespi::IIndexManager::SP nullIndexManager;
 IIndexWriter::SP nullIndexWriter;
 
 }
@@ -447,7 +447,7 @@ StoreOnlyDocSubDB::getAttributeManager() const
     return proton::IAttributeManager::SP();
 }
 
-const IIndexManager::SP &
+const searchcorespi::IIndexManager::SP &
 StoreOnlyDocSubDB::getIndexManager() const
 {
     return nullIndexManager;

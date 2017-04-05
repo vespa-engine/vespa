@@ -9,8 +9,6 @@
 
 namespace proton {
 
-using searchcorespi::IIndexManager;
-
 /**
  * Interface for an index writer that handles writes in form of put and remove
  * to an underlying memory index.
@@ -19,7 +17,8 @@ class IIndexWriter {
 public:
     typedef std::unique_ptr<IIndexWriter> UP;
     typedef std::shared_ptr<IIndexWriter> SP;
-    using OnWriteDoneType = searchcorespi::IIndexManager::OnWriteDoneType;
+    using IIndexManager = searchcorespi::IIndexManager;
+    using OnWriteDoneType = IIndexManager::OnWriteDoneType;
 
     virtual ~IIndexWriter() {}
 
