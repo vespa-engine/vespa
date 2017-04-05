@@ -9,11 +9,8 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search {
+namespace fakedata {
 
 class FakeMemTreeOccMgr : public FakeWord::RandomizedWriter
 {
@@ -38,12 +35,9 @@ public:
         PostingIdx(NodeAllocator &allocator)
             : _tree(),
               _iterator(_tree.getRoot(), allocator)
-        {
-        }
+        {}
 
-        void
-        clear(void)
-        {
+        void clear() {
             _tree.clear(_iterator.getAllocator());
             _iterator = _tree.begin(_iterator.getAllocator());
         }
@@ -64,8 +58,7 @@ public:
               _features(),
               _removal(true),
               _seq(0)
-        {
-        }
+        {}
 
         PendingOp(uint32_t wordIdx, uint32_t docId, EntryRef features)
             : _wordIdx(wordIdx),
@@ -73,42 +66,15 @@ public:
               _features(features),
               _removal(false),
               _seq(0)
-        {
-        }
+        {}
 
-        void
-        setSeq(uint32_t seq)
-        {
-            _seq = seq;
-        }
+        void setSeq(uint32_t seq) { _seq = seq; }
+        uint32_t getWordIdx(void) const { return _wordIdx; }
+        uint32_t getDocId(void) const { return _docId; }
+        EntryRef getFeatureRef(void) const { return _features; }
+        bool getRemove() const { return _removal; }
 
-        uint32_t
-        getWordIdx(void) const
-        {
-            return _wordIdx;
-        }
-
-        uint32_t
-        getDocId(void) const
-        {
-            return _docId;
-        }
-
-        EntryRef
-        getFeatureRef(void) const
-        {
-            return _features;
-        }
-
-        bool
-        getRemove(void) const
-        {
-            return _removal;
-        }
-
-        bool
-        operator<(const PendingOp &rhs) const
-        {
+        bool operator<(const PendingOp &rhs) const {
             if (_wordIdx != rhs._wordIdx)
                 return _wordIdx < rhs._wordIdx;
             if (_docId != rhs._docId)
@@ -125,42 +91,19 @@ public:
     FeatureStore _featureStore;
 
     FakeMemTreeOccMgr(const Schema &schema);
+    ~FakeMemTreeOccMgr();
 
-    virtual
-    ~FakeMemTreeOccMgr(void);
-
-    void
-    freeze(void);
-
-    void
-    transferHoldLists(void);
-
-    void
-    incGeneration(void);
-
-    void
-    trimHoldLists(void);
-
-    void
-    sync(void);
-
-    virtual void
-    add(uint32_t wordIdx, index::DocIdAndFeatures &features) override;
-
-    virtual void
-    remove(uint32_t wordIdx, uint32_t docId) override;
-
-    void
-    sortUnflushed(void);
-
-    void
-    flush(void);
-
-    void
-    compactTrees(void);
-
-    void
-    finalize(void);
+    void freeze();
+    void transferHoldLists();
+    void incGeneration();
+    void trimHoldLists();
+    void sync();
+    void add(uint32_t wordIdx, index::DocIdAndFeatures &features) override;
+    void remove(uint32_t wordIdx, uint32_t docId) override;
+    void sortUnflushed();
+    void flush();
+    void compactTrees();
+    void finalize();
 };
 
 
@@ -174,7 +117,9 @@ public:
     FakeMemTreeOccMgr _mgr;
 
     FakeMemTreeOccFactory(const Schema &schema);
+    ~FakeMemTreeOccFactory();
 
+<<<<<<< HEAD
     virtual
     ~FakeMemTreeOccFactory(void);
 
@@ -183,21 +128,20 @@ public:
 
     virtual void
     setup(const std::vector<const FakeWord *> &fws) override;
+=======
+    FakePosting::SP make(const FakeWord &fw) override;
+    void setup(const std::vector<const FakeWord *> &fws) override;
+>>>>>>> Use override
 };
 
 class FakeMemTreeOcc2Factory : public FakeMemTreeOccFactory
 {
 public:
     FakeMemTreeOcc2Factory(const Schema &schema);
+    ~FakeMemTreeOcc2Factory();
 
-    virtual
-    ~FakeMemTreeOcc2Factory(void);
-
-    virtual FakePosting::SP
-    make(const FakeWord &fw) override;
-
-    virtual void
-    setup(const std::vector<const FakeWord *> &fws) override;
+    FakePosting::SP make(const FakeWord &fw) override;
+    void setup(const std::vector<const FakeWord *> &fws) override;
 };
 
 
@@ -235,51 +179,18 @@ public:
                    const FakeMemTreeOccMgr &mgr,
                    const char *suffix);
 
-    ~FakeMemTreeOcc(void);
+    ~FakeMemTreeOcc();
 
-    static void
-    forceLink(void);
-
-    /*
-     * Size of posting list, in bits.
-     */
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    /*
-     * Single posting list performance, without feature unpack.
-     */
-    virtual int
-    lowLevelSinglePostingScan(void) const override;
-
-    /*
-     * Single posting list performance, with feature unpack.
-     */
-    virtual int
-    lowLevelSinglePostingScanUnpack(void) const override;
-
-    /*
-     * Two posting lists performance (same format) without feature unpack.
-     */
-    virtual int
-    lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
-
-    /*
-     * Two posting lists performance (same format) with feature unpack.
-     */
-    virtual int
-    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
-
-
-    /*
-     * Iterator factory, for current query evaluation framework.
-     */
-    virtual search::queryeval::SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    static void forceLink();
+    size_t bitSize() const override;
+    bool hasWordPositions() const override;
+    int lowLevelSinglePostingScan() const override;
+    int lowLevelSinglePostingScanUnpack() const override;
+    int lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
+    int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
+    queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 } // namespace fakedata
 
 } // namespace search
-

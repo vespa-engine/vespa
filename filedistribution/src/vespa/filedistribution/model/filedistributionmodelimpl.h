@@ -2,7 +2,7 @@
 #pragma once
 
 #include "filedistributionmodel.h"
-#include <vespa/filedistribution/model/config-filereferences.h>
+#include "config-filereferences.h"
 #include "zkfacade.h"
 #include "zkfiledbmodel.h"
 #include <vespa/config/config.h>

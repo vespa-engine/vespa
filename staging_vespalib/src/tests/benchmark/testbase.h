@@ -45,7 +45,7 @@ public:
 private:
     typedef std::vector<int> Vector;
     size_t callByReference(const Vector & values) const __attribute__((noinline));
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ParamByValueVectorInt : public Benchmark
@@ -55,7 +55,7 @@ public:
 private:
     typedef std::vector<int> Vector;
     size_t callByValue(Vector values) const __attribute__((noinline));
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ParamByReferenceVectorString : public Benchmark
@@ -65,7 +65,7 @@ public:
 private:
     typedef std::vector<std::string> Vector;
     size_t callByReference(const Vector & values) const __attribute__((noinline));
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ParamByValueVectorString : public Benchmark
@@ -75,7 +75,7 @@ public:
 private:
     typedef std::vector<std::string> Vector;
     size_t callByValue(Vector values) const __attribute__((noinline));
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ReturnByReferenceVectorString : public Benchmark
@@ -85,7 +85,7 @@ public:
 private:
     typedef std::vector<std::string> Vector;
     const Vector & returnByReference(Vector & values) const __attribute__((noinline));
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ReturnByValueVectorString : public Benchmark
@@ -95,7 +95,7 @@ public:
 private:
     typedef std::vector<std::string> Vector;
     Vector returnByValue() const __attribute__((noinline));
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ReturnByValueMultiVectorString : public Benchmark
@@ -105,7 +105,7 @@ public:
 private:
     typedef std::vector<std::string> Vector;
     Vector returnByValue() const __attribute__((noinline));
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class CreateVespalibString : public Benchmark
@@ -113,7 +113,7 @@ class CreateVespalibString : public Benchmark
 public:
     DECLARE_BENCHMARK(CreateVespalibString);
 private:
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ClockSystem : public Benchmark
@@ -121,7 +121,7 @@ class ClockSystem : public Benchmark
 public:
     DECLARE_BENCHMARK(ClockSystem);
 private:
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ClockREALTIME : public Benchmark
@@ -129,7 +129,7 @@ class ClockREALTIME : public Benchmark
 public:
     DECLARE_BENCHMARK(ClockREALTIME);
 private:
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ClockMONOTONIC : public Benchmark
@@ -137,7 +137,7 @@ class ClockMONOTONIC : public Benchmark
 public:
     DECLARE_BENCHMARK(ClockMONOTONIC);
 private:
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ClockMONOTONIC_RAW : public Benchmark
@@ -146,7 +146,7 @@ public:
     DECLARE_BENCHMARK(ClockMONOTONIC_RAW);
     ClockMONOTONIC_RAW();
 private:
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ClockPROCESS_CPUTIME_ID : public Benchmark
@@ -154,7 +154,7 @@ class ClockPROCESS_CPUTIME_ID : public Benchmark
 public:
     DECLARE_BENCHMARK(ClockPROCESS_CPUTIME_ID);
 private:
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 class ClockTHREAD_CPUTIME_ID : public Benchmark
@@ -162,8 +162,7 @@ class ClockTHREAD_CPUTIME_ID : public Benchmark
 public:
     DECLARE_BENCHMARK(ClockTHREAD_CPUTIME_ID);
 private:
-    virtual size_t onRun() override;
+    size_t onRun() override;
 };
 
 }
-

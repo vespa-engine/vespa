@@ -9,7 +9,8 @@ class Test : public TestApp
 public:
     int Main() override;
 private:
-    virtual bool useProcessStarter() const override { return true; }
+    bool useProcessStarter() const override { return true; }
+
 };
 
 int Test::Main()

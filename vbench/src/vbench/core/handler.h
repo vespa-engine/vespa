@@ -17,4 +17,3 @@ struct Handler
 };
 
 } // namespace vbench
-

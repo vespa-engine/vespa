@@ -20,7 +20,8 @@ public:
             guard.wait();
         }
     }
-    virtual void PerformTask() override {
+
+    void PerformTask() override {
         vespalib::MonitorGuard guard(_mon);
         _done = true;
         guard.signal();

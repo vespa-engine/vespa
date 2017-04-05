@@ -87,10 +87,7 @@ public:
      */
     const string getConnectionSpec() const;
 
-    // Implements IMessageHandler.
     void handleMessage(Message::UP message) override;
-
-    // Implements IReplyHandler.
     void handleReply(Reply::UP reply) override;
 };
 

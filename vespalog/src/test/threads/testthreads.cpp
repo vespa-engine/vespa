@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+#include <vespa/fastos/app.h>
+#include <vespa/fastos/time.h>
 #include <vespa/log/log.h>
 #include <iostream>
-#include <string>
 
 using std::string;
 
@@ -15,7 +15,7 @@ class FileThread : public FastOS_Runnable
     string _file;
 public:
     FileThread(string file) : _done(false), _file(file) {}
-    virtual void Run(FastOS_ThreadInterface *thread, void *arg) override;
+    void Run(FastOS_ThreadInterface *thread, void *arg) override;
     void stop() {_done = true; }
 };
 
@@ -25,12 +25,9 @@ class LoggerThread : public FastOS_Runnable
 public:
     bool _useLogBuffer;
     LoggerThread() : _done(false), _useLogBuffer(false) {}
-    virtual void Run(FastOS_ThreadInterface *thread, void *arg) override;
+    void Run(FastOS_ThreadInterface *thread, void *arg) override;
     void stop() {_done = true; }
 };
-
-
-
 
 void
 FileThread::Run(FastOS_ThreadInterface *, void *)

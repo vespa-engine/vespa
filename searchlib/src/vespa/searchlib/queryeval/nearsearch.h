@@ -77,10 +77,8 @@ public:
                    uint32_t window,
                    bool strict);
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-
-    // Inherit doc from SearchIterator.
-    virtual void doSeek(uint32_t docId) override;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void doSeek(uint32_t docId) override;
 };
 
 /**
@@ -97,9 +95,7 @@ private:
     };
 
     std::vector<Matcher> _matchers;
-
-    // Inherit doc from NearSearchBase.
-    virtual bool match(uint32_t docId) override;
+    bool match(uint32_t docId) override;
 
 public:
     /**
@@ -131,9 +127,7 @@ private:
     };
 
     std::vector<Matcher> _matchers;
-
-    // Inherit doc from NearSearchBase.
-    virtual bool match(uint32_t docId) override;
+    bool match(uint32_t docId) override;
 
 public:
     /**

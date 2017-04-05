@@ -32,7 +32,7 @@ public:
     int usage();
     void initRPC(const char *spec);
     void finiRPC();
-    virtual int Main() override;
+    int Main() override;
 };
 
 

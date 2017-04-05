@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #pragma once
 
-#include <vbench/core/handler.h>
-#include <vbench/core/string.h>
-#include "request.h"
 #include "analyzer.h"
 
 namespace vbench {
@@ -39,11 +35,10 @@ public:
         string toString() const;
     };
     LatencyAnalyzer(Handler<Request> &next);
-    virtual void handle(Request::UP request) override;
-    virtual void report() override;
+    void handle(Request::UP request) override;
+    void report() override;
     void addLatency(double latency);
     Stats getStats() const;
 };
 
 } // namespace vbench
-

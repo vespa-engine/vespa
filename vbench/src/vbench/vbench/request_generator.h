@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #pragma once
 
-#include <vespa/vespalib/util/runnable.h>
-#include <vbench/core/input_file_reader.h>
-#include <vbench/core/taintable.h>
-#include <vbench/core/handler.h>
-
-#include "request.h"
 #include "generator.h"
+#include "request.h"
+#include <vbench/core/input_file_reader.h>
+#include <vbench/core/handler.h>
 
 namespace vbench {
 
@@ -25,12 +21,10 @@ private:
     bool              _aborted;
 
 public:
-    RequestGenerator(const string &inputFile,
-                     Handler<Request> &next);
+    RequestGenerator(const string &inputFile, Handler<Request> &next);
     void abort() override;
-    virtual void run() override;
-    virtual const Taint &tainted() const override { return _input.tainted(); }
+    void run() override;
+    const Taint &tainted() const override { return _input.tainted(); }
 };
 
 } // namespace vbench
-

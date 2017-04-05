@@ -23,8 +23,8 @@ private:
     SimpleSearch &operator=(const SimpleSearch &);
 
 protected:
-    virtual void doSeek(uint32_t docid) override;
-    virtual void doUnpack(uint32_t docid) override;
+    void doSeek(uint32_t docid) override;
+    void doUnpack(uint32_t docid) override;
 
 public:
     SimpleSearch(const SimpleResult &result);
@@ -32,8 +32,8 @@ public:
         _tag = t;
         return *this;
     }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    virtual ~SimpleSearch();
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    ~SimpleSearch();
 };
 
 } // namespace queryeval

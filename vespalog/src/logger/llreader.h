@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdexcept>
 
-#include <vespa/log/log.h>
-#include <vespa/log/log-target.h>
 #include <vespa/log/llparser.h>
+#include <stdexcept>
 
 namespace ns_log {
 
@@ -17,7 +15,6 @@ public:
     ~MsgException() throw() {} // nothing to do
     const char *what() const throw() override { return _string; }
 };
-
 
 class InputBuf
 {

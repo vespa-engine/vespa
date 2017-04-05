@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#ifndef Old_MIRROR_H
-#define Old_MIRROR_H
+#pragma once
 
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/gencnt.h>
@@ -86,10 +85,7 @@ public:
      **/
     ~MirrorOld();
 
-    // Inherit doc from IMirrorOld.
     SpecList lookup(const std::string & pattern) const override;
-
-    // Inherit doc from IMirrorOld.
     uint32_t updates() const override { return _updates.getAsInt(); }
 
     /**
@@ -110,10 +106,7 @@ private:
     MirrorOld(const MirrorOld &);
     MirrorOld &operator=(const MirrorOld &);
 
-    /** from FNET_Task, polls slobrok **/
     void PerformTask() override;
-
-    /** from FRT_IRequestWait **/
     void RequestDone(FRT_RPCRequest *req) override;
 
     FRT_Supervisor          &_orb;
@@ -131,5 +124,3 @@ private:
 
 } // namespace api
 } // namespace slobrok
-
-#endif

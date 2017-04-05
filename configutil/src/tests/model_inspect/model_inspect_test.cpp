@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <lib/modelinspect.h>
-#include <iostream>
+#include <sstream>
 
 class Model {
 public:
@@ -89,11 +88,11 @@ public:
     void listServices() override { _listServices = true; };
     void listClusters() override { _listClusters = true; };
     void listConfigIds() override { _listConfigIds = true; };
-    int listHost(const vespalib::string)  override { _listHost = true; return 0; };
+    int listHost(const vespalib::string) override  { _listHost = true; return 0; };
     int listAllPorts() override { _listAllPorts = true; return 0; };
-    int listCluster(const vespalib::string)  override { _listCluster = true; return 0; };
-    int listService(const vespalib::string)  override { _listService = true; return 0; };
-    int listService(const vespalib::string, const vespalib::string)  override { _listService2 = true; return 0; };
+    int listCluster(const vespalib::string) override  { _listCluster = true; return 0; };
+    int listService(const vespalib::string) override  { _listService = true; return 0; };
+    int listService(const vespalib::string, const vespalib::string) override  { _listService2 = true; return 0; };
     int listConfigId(const vespalib::string) override { _listConfigId = true; return 0; };
     int getIndexOf(const vespalib::string, const vespalib::string) override { _getIndexOf = true; return 0; };
 

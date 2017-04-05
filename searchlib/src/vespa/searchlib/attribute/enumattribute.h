@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/enumstore.h>
 #include "attributevector.h"
 #include "loadedenumvalue.h"
+#include <vespa/searchlib/attribute/enumstore.h>
 #include <set>
 
 namespace search {
@@ -61,18 +61,10 @@ protected:
     virtual EnumType getFromEnum(EnumHandle e)        const { return _enumStore.getValue(e); }
 
     virtual void fillPostings(LoadedVector & loaded) { (void) loaded; }
-    virtual void fillEnum(LoadedVector & loaded) override;
-
-    virtual void
-    fillEnum0(const void *src,
-              size_t srcLen,
-              EnumIndexVector &eidxs) override;
-
-    virtual void
-    fixupEnumRefCounts(const EnumVector &enumHist) override;
-
-    virtual uint64_t
-    getUniqueValueCount(void) const override;
+    void fillEnum(LoadedVector & loaded);
+    void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs) override;
+    void fixupEnumRefCounts(const EnumVector &enumHist) override;
+    uint64_t getUniqueValueCount(void) const override;
 
     static EnumType getDefaultEnumTypeValue() { return B::defaultValue(); }
 
@@ -90,9 +82,8 @@ public:
     EnumAttribute(const vespalib::string & baseFileName,
                   const AttributeVector::Config & cfg);
 
-    virtual ~EnumAttribute();
+    ~EnumAttribute();
     virtual bool findEnum(EnumType v, EnumHandle & e) const { return _enumStore.findEnum(v, e); }
 };
 
 } // namespace search
-

@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("pingserver");
+
 #include <vespa/fnet/fnet.h>
 #include <examples/ping/packets.h>
-
+#include <vespa/fastos/app.h>
 
 class PingServer : public FNET_IServerAdapter,
                    public FNET_IPacketHandler,
@@ -12,15 +10,13 @@ class PingServer : public FNET_IServerAdapter,
 {
 public:
     bool InitAdminChannel(FNET_Channel *) override { return false; }
-    bool InitChannel(FNET_Channel *channel, uint32_t) override
-    {
+    bool InitChannel(FNET_Channel *channel, uint32_t) override {
         channel->SetContext(FNET_Context(channel));
         channel->SetHandler(this);
         return true;
     }
-
-    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override
-    {
+    
+    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override {
         if (packet->GetPCODE() == PCODE_PING_REQUEST) {
             fprintf(stderr, "Got ping request, sending ping reply\n");
             context._value.CHANNEL->Send(new PingReply());
@@ -28,8 +24,8 @@ public:
         packet->Free();
         return FNET_FREE_CHANNEL;
     }
-
-    int  Main() override;
+    
+    int Main() override;
 };
 
 

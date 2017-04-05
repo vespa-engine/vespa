@@ -39,17 +39,10 @@ public:
      * will log an error and generate an auto-reply to avoid having the sender
      * wait indefinetly for a reply.
      */
-    virtual ~Reply();
+    ~Reply();
 
-    // Inherit doc from Routable.
-    virtual void swapState(Routable &rhs) override;
-
-    /**
-     * Inherited from Routable. Classifies this object as 'a reply'.
-     *
-     * @return true
-     */
-    virtual bool isReply() const override;
+    void swapState(Routable &rhs) override;
+    bool isReply() const override;
 
     /**
      * Add an Error to this Reply

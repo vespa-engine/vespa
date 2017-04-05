@@ -40,6 +40,8 @@ Socket::Socket(const string &host, int port)
     }
 }
 
+Socket::~Socket() { }
+
 Memory
 Socket::obtain()
 {

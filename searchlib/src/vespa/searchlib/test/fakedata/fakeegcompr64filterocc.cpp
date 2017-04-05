@@ -788,11 +788,8 @@ class FakeEGCompr64SkipFilterOcc : public FakeEGCompr64FilterOcc
 {
 public:
     FakeEGCompr64SkipFilterOcc(const FakeWord &fw);
-
-    ~FakeEGCompr64SkipFilterOcc(void);
-
-    virtual search::queryeval::SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    ~FakeEGCompr64SkipFilterOcc();
+    search::queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 
