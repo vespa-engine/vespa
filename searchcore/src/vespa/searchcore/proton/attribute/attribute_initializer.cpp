@@ -3,6 +3,7 @@
 #include "attribute_initializer.h"
 #include "attributedisklayout.h"
 #include "attribute_directory.h"
+#include "i_attribute_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -182,7 +183,7 @@ AttributeInitializer::tryLoadAttribute() const
 }
 
 bool
-AttributeInitializer::loadAttribute(const AttributeVector::SP &attr,
+AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
                                     search::SerialNum serialNum) const
 {
     assert(attr->hasLoadData());
@@ -203,7 +204,7 @@ AttributeInitializer::loadAttribute(const AttributeVector::SP &attr,
 }
 
 void
-AttributeInitializer::setupEmptyAttribute(AttributeVector::SP &attr,
+AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr,
                                           search::SerialNum serialNum,
                                           const AttributeHeader &header) const
 {
