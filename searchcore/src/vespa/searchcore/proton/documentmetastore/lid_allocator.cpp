@@ -2,6 +2,8 @@
 
 #include "lid_allocator.h"
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore.lid_allocator");
 
