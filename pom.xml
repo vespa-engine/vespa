@@ -1140,7 +1140,6 @@
         <module>jdisc_core_test</module>
         <module>jdisc_http_service</module>
         <module>jdisc_jetty</module>
-        <module>jdisc_jmx_metrics</module>
         <module>jdisc_messagebus_service</module>
         <module>jrt</module>
         <module>libmlr</module>
