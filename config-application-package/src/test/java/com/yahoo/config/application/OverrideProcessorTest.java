@@ -268,7 +268,8 @@ public class OverrideProcessorTest {
                         "      <document mode=\"index\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
-                        "      <node distribution-key=\"0\" hostalias=\"node1\"/>" +
+                // node1 is specified for us-west but does not match because region overrides implies environment=prod
+                        "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
                         "    </nodes>" +
                         "  </content>" +
                         "  <jdisc id=\"stateless\" version=\"1.0\">" +

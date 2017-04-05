@@ -24,6 +24,7 @@ import java.util.concurrent.Executor;
  * @since 5.1.14
  */
 public class SessionHandler extends HttpHandler {
+
     protected final ApplicationRepository applicationRepository;
 
     public SessionHandler(Executor executor, AccessLog accessLog, ApplicationRepository applicationRepository) {
