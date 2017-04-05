@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/searchcore/proton/attribute/attribute_specs.h>
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-attributes.h>
-#include <vespa/searchcore/proton/attribute/attribute_specs.h>
+#include <vespa/config-summarymap.h>
 
 using namespace document;
 using namespace proton;
@@ -61,6 +62,13 @@ public:
         _builder.attributes(make_shared<AttributesConfig>(builder));
         return *this;
     }
+    MyConfigBuilder &addSummarymap() {
+        SummarymapConfigBuilder builder;
+        builder.override.resize(1);
+        builder.override.back().field = "my_summary_field";
+        _builder.summarymap(make_shared<SummarymapConfig>(builder));
+        return *this;
+    }
     ConfigSP build() {
         return _builder.build();
     }
@@ -82,7 +90,12 @@ struct Fixture {
           nullCfg()
     {
         basicCfg = MyConfigBuilder(4, schema, repo).addAttribute().build();
-        fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().addRankProfile().addRankingConstant().addImportedField().build();
+        fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().
+                                                   addRankProfile().
+                                                   addRankingConstant().
+                                                   addImportedField().
+                                                   addSummarymap().
+                                                   build();
         replayCfg = DocumentDBConfig::makeReplayConfig(fullCfg);
     }
 };
