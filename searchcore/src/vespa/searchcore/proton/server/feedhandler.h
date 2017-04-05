@@ -11,7 +11,6 @@
 #include "transactionlogmanager.h"
 #include <persistence/spi/types.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 
 namespace searchcorespi { namespace index { class IThreadingService; } }
@@ -27,6 +26,7 @@ class FeedToken;
 class IDocumentDBOwner;
 class IFeedHandlerOwner;
 class IFeedView;
+class IResourceWriteFilter;
 class IReplayConfig;
 class JoinBucketsOperation;
 class PerDocTypeFeedMetrics;
