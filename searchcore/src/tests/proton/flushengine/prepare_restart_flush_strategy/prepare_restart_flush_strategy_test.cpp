@@ -10,6 +10,7 @@
 
 using namespace proton;
 using search::SerialNum;
+using searchcorespi::IFlushTarget;
 
 using SimpleFlushHandler = test::DummyFlushHandler;
 using FlushCandidatesList = std::vector<FlushTargetCandidates>;

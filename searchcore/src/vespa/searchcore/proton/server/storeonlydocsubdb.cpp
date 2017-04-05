@@ -48,6 +48,7 @@ using vespalib::makeClosure;
 using proton::documentmetastore::LidReuseDelayer;
 using fastos::TimeStamp;
 using proton::initializer::InitializerTask;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

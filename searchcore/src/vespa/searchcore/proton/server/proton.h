@@ -13,8 +13,10 @@
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
 #include <vespa/persistence/proxy/providerstub.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
@@ -58,7 +60,6 @@ private:
     typedef search::engine::MonitorRequest                MonitorRequest;
     typedef search::engine::MonitorReply                  MonitorReply;
     typedef search::engine::MonitorClient                 MonitorClient;
-    typedef search::docsummary::JuniperProperties         JuniperProperties;
     typedef storage::spi::ProviderStub                    ProviderStub;
     typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
     typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;

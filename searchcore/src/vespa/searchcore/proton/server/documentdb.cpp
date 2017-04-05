@@ -16,11 +16,15 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
+#include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
+#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
+#include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
@@ -36,7 +40,6 @@ using vespa::config::search::AttributesConfig;
 using vespa::config::search::core::ProtonConfig;
 using search::index::SchemaBuilder;
 using vespalib::JSONStringer;
-using vespalib::FileHeader;
 using vespalib::Executor;
 using vespalib::IllegalStateException;
 using vespalib::StateExplorer;
@@ -45,7 +48,6 @@ using vespalib::makeTask;
 using vespalib::makeClosure;
 using namespace proton::matching;
 using namespace search;
-using namespace search::docsummary;
 using namespace search::engine;
 using namespace search::fef;
 using namespace search::index;
@@ -57,6 +59,7 @@ using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using proton::initializer::TaskRunner;
 using search::makeLambdaTask;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

@@ -10,6 +10,7 @@ LOG_SETUP(".proton.server.memoryflush");
 
 using search::SerialNum;
 using proton::flushengine::TlsStats;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

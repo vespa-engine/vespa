@@ -14,6 +14,7 @@
 LOG_SETUP("proton");
 
 typedef vespalib::SignalHandler SIG;
+using vespa::config::search::core::ProtonConfig;
 
 struct Params
 {

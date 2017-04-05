@@ -13,6 +13,7 @@ using proton::matching::SessionManager;
 using search::index::Schema;
 using search::SerialNum;
 using vespa::config::search::core::ProtonConfig;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

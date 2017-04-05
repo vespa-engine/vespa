@@ -12,6 +12,7 @@
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 #include "proton_config_snapshot.h"
+#include "fileconfigmanager.h"
 
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -30,7 +31,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/random.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference.h>

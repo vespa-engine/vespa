@@ -9,6 +9,7 @@ namespace proton {
 class SimpleFlush : public IFlushStrategy
 {
 private:
+    using IFlushTarget = searchcorespi::IFlushTarget;
     class CompareTarget {
     public:
         bool operator () (const FlushContext::SP &lhs, const FlushContext::SP &rhs) const {

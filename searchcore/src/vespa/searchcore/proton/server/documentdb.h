@@ -16,20 +16,12 @@
 #include "iwipeoldremovedfieldshandler.h"
 #include "maintenancecontroller.h"
 #include "i_document_db_config_owner.h"
-#include "searchable_doc_subdb_configurer.h"
-#include "searchabledocsubdb.h"
-#include "summaryadapter.h"
+#include "executorthreadingservice.h"
 #include "visibilityhandler.h"
 #include "i_document_subdb_owner.h"
 
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
-#include <vespa/searchcore/proton/docsummary/summarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
-#include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
@@ -43,8 +35,6 @@
 #include <vespa/metrics/updatehook.h>
 #include <mutex>
 #include <condition_variable>
-
-using vespa::config::search::core::ProtonConfig;
 
 namespace search
 {
@@ -60,8 +50,9 @@ namespace transactionlog { class TransLogClient; }
 }  // namespace search
 
 namespace proton {
-class MetricsWireService;
 class IDocumentDBOwner;
+class MetricsWireService;
+class StatusReport;
 
 namespace configvalidator { class Result; }
 
@@ -94,6 +85,9 @@ private:
 
 
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
+    using StatusReportUP = std::unique_ptr<StatusReport>;
+    using ProtonConfig = vespa::config::search::core::ProtonConfig;
 
     DocTypeName                   _docTypeName;
     vespalib::string              _baseDir;
@@ -415,7 +409,7 @@ public:
     std::unique_ptr<search::engine::DocsumReply>
     getDocsums(const search::engine::DocsumRequest & request);
 
-    IFlushTarget::List getFlushTargets();
+    IFlushTargetList getFlushTargets();
     void flushDone(SerialNum flushedSerial);
 
     virtual SerialNum
@@ -427,7 +421,7 @@ public:
         return _feedHandler.getSerialNum();
     }
 
-    StatusReport::UP reportStatus() const;
+    StatusReportUP reportStatus() const;
 
     /**
      * Reference counting

@@ -9,9 +9,12 @@
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreflushtarget.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
+#include <vespa/searchcore/proton/common/statusreport.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_db_explorer.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
-#include <vespa/searchcore/proton/server/bootstrapconfig.h>
+#include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -38,6 +41,7 @@ using search::index::DummyFileHeaderContext;
 using searchcorespi::index::IndexFlushTarget;
 using vespa::config::search::core::ProtonConfig;
 using vespalib::Slime;
+using searchcorespi::IFlushTarget;
 
 namespace {
 

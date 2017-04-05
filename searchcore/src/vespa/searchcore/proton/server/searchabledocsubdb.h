@@ -73,6 +73,7 @@ public:
 
 private:
     typedef FastAccessDocSubDB Parent;
+    using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
 
     IIndexManager::SP                           _indexMgr;
     IIndexWriter::SP                            _indexWriter;
@@ -103,7 +104,7 @@ private:
     void reconfigureIndexSearchable();
     void syncViews();
 protected:
-    IFlushTarget::List getFlushTargetsInternal();
+    IFlushTargetList getFlushTargetsInternal();
 
     using Parent::updateLidReuseDelayer;
 

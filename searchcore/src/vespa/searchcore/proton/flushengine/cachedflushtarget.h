@@ -5,16 +5,15 @@
 
 namespace proton {
 
-using searchcorespi::FlushStats;
-using searchcorespi::IFlushTarget;
-
 /**
  * Implements a flush target that caches the flushable memory and flush cost of
  * a decorated target. This is used by the flush engine to avoid recalculating
  * these during selection of flush target.
  */
-class CachedFlushTarget : public IFlushTarget {
+class CachedFlushTarget : public searchcorespi::IFlushTarget {
 private:
+    using FlushStats = searchcorespi::FlushStats;
+    using IFlushTarget = searchcorespi::IFlushTarget;
     IFlushTarget::SP  _target;
     SerialNum         _flushedSerialNum;
     Time              _lastFlushTime;

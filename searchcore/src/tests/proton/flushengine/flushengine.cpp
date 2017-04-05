@@ -26,6 +26,7 @@ LOG_SETUP("flushengine_test");
 
 using namespace proton;
 using namespace vespalib::slime;
+using searchcorespi::IFlushTarget;
 using searchcorespi::FlushTask;
 using vespalib::Slime;
 
