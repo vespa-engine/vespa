@@ -13,6 +13,6 @@ public class ImportedFieldsTestCase extends AbstractExportingTestCase {
 
     @Test
     public void configs_for_imported_fields_are_derived() throws IOException, ParseException {
-        assertCorrectDeriving("importedfields", "ad");
+        assertCorrectDeriving("importedfields", "child");
     }
 }

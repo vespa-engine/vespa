@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 
@@ -45,10 +46,21 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
 
     private static ImportedFieldsConfig.Attribute.Builder createAttributeBuilder(ImportedField field) {
         ImportedFieldsConfig.Attribute.Builder result = new ImportedFieldsConfig.Attribute.Builder();
+        Attribute targetAttribute = field.targetField().getAttributes().get(field.targetField().getName());
         result.name(field.fieldName());
         result.referencefield(field.reference().referenceField().getName());
         result.targetfield(field.targetField().getName());
+        result.datatype(getDataType(targetAttribute));
+        result.collectiontype(getCollectionType(targetAttribute));
         return result;
+    }
+
+    private static ImportedFieldsConfig.Attribute.Datatype.Enum getDataType(Attribute targetAttribute) {
+        return ImportedFieldsConfig.Attribute.Datatype.Enum.valueOf(targetAttribute.getType().getExportAttributeTypeName());
+    }
+
+    private static ImportedFieldsConfig.Attribute.Collectiontype.Enum getCollectionType(Attribute targetAttribute) {
+        return ImportedFieldsConfig.Attribute.Collectiontype.Enum.valueOf(targetAttribute.getCollectionType().getName());
     }
 
 }

@@ -1,7 +1,0 @@
-search person {
-  document person {
-    field name type string {
-      indexing: attribute
-    }
-  }
-}

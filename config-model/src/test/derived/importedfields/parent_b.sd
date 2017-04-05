@@ -1,0 +1,7 @@
+search parent_b {
+  document parent_b {
+    field string_field type string {
+      indexing: attribute
+    }
+  }
+}

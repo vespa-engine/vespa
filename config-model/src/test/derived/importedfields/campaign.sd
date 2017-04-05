@@ -1,7 +1,0 @@
-search campaign {
-  document campaign {
-    field budget type int {
-      indexing: attribute
-    }
-  }
-}
