@@ -168,7 +168,7 @@ AttributeInitializer::tryLoadAttribute() const
 {
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
     vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
-    AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
+    AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
     if (serialNum != 0) {
         AttributeHeader header = extractHeader(attrFileName);
         if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig()) || (serialNum < _currentSerialNum)) {
@@ -229,7 +229,7 @@ AttributeVector::SP
 AttributeInitializer::createAndSetupEmptyAttribute() const
 {
     vespalib::string attrFileName = _attrDir->getAttributeFileName(0);
-    AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
+    AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
     _factory.setupEmpty(attr, _currentSerialNum);
     return attr;
 }
@@ -241,7 +241,7 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
                                            const IAttributeFactory &factory)
     : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
-      _cfg(spec.getConfig()),
+      _spec(spec),
       _currentSerialNum(currentSerialNum),
       _factory(factory)
 {

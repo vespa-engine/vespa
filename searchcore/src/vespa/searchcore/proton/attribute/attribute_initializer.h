@@ -29,7 +29,7 @@ private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     std::shared_ptr<AttributeDirectory> _attrDir;
     const vespalib::string          _documentSubDbName;
-    const search::attribute::Config _cfg;
+    const AttributeSpec             _spec;
     const uint64_t                  _currentSerialNum;
     const IAttributeFactory        &_factory;
 
