@@ -7,6 +7,7 @@
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
+#include "flushableattribute.h"
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>

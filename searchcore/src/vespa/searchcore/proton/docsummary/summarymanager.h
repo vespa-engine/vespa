@@ -85,7 +85,7 @@ public:
     void putDocument(uint64_t syncToken, const document::Document & doc,
                      search::DocumentIdT lid);
     void removeDocument(uint64_t syncToken, search::DocumentIdT lid);
-    IFlushTarget::List getFlushTargets();
+    searchcorespi::IFlushTarget::List getFlushTargets();
 
     /**
      * Implements ISummaryManager.

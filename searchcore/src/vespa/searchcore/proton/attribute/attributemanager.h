@@ -8,8 +8,6 @@
 #include "i_attribute_initializer_registry.h"
 #include <set>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchcore/proton/attribute/flushableattribute.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 
@@ -25,10 +23,16 @@ class FileHeaderContext;
 
 }
 
+namespace searchcorespi
+{
+class IFlushTarget;
+}
+
 namespace proton
 {
 
 class AttributeDiskLayout;
+class FlushableAttribute;
 
 /**
  * Specialized attribute manager for proton.
@@ -39,6 +43,8 @@ private:
     typedef search::attribute::Config Config;
     typedef search::SerialNum SerialNum;
     typedef AttributeCollectionSpec Spec;
+    using FlushableAttributeSP = std::shared_ptr<FlushableAttribute>;
+    using IFlushTargetSP = std::shared_ptr<searchcorespi::IFlushTarget>;
 
     class AttributeWrap
     {
@@ -56,7 +62,7 @@ private:
     };
 
     typedef vespalib::hash_map<vespalib::string, AttributeWrap> AttributeMap;
-    typedef vespalib::hash_map<vespalib::string, FlushableAttribute::SP> FlushableMap;
+    typedef vespalib::hash_map<vespalib::string, FlushableAttributeSP> FlushableMap;
 
     AttributeMap _attributes;
     FlushableMap _flushables;
@@ -80,7 +86,7 @@ private:
 
     search::AttributeVector::SP findAttribute(const vespalib::string &name) const;
 
-    FlushableAttribute::SP findFlushable(const vespalib::string &name) const;
+    FlushableAttributeSP findFlushable(const vespalib::string &name) const;
 
     void transferExistingAttributes(const AttributeManager &currMgr,
                                     const Spec &newSpec,
@@ -127,7 +133,7 @@ public:
 
     void flushAll(SerialNum currentSerial);
 
-    FlushableAttribute::SP getFlushable(const vespalib::string &name);
+    FlushableAttributeSP getFlushable(const vespalib::string &name);
 
     size_t getNumDocs() const;
 
@@ -153,7 +159,7 @@ public:
 
     virtual proton::IAttributeManager::SP create(const Spec &spec) const override;
 
-    virtual std::vector<IFlushTarget::SP> getFlushTargets() const override;
+    virtual std::vector<IFlushTargetSP> getFlushTargets() const override;
 
     virtual search::SerialNum getFlushedSerialNum(const vespalib::string &name) const override;
 

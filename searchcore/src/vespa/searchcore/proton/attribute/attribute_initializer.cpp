@@ -6,9 +6,11 @@
 #include "i_attribute_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>

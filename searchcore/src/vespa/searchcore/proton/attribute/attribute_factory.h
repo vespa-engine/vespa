@@ -17,10 +17,10 @@ public:
     AttributeFactory();
 
     // Implements IAttributeFactory
-    virtual search::AttributeVector::SP create(const vespalib::string &name,
-                                               const search::attribute::Config &cfg) const;
+    virtual AttributeVectorSP create(const vespalib::string &name,
+                                     const search::attribute::Config &cfg) const;
 
-    virtual void setupEmpty(const search::AttributeVector::SP &vec,
+    virtual void setupEmpty(const AttributeVectorSP &vec,
                             search::SerialNum serialNum) const;
 };
 
