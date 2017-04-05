@@ -3,15 +3,14 @@
 #pragma once
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
-#include <vespa/searchlib/attribute/attributememorysavetarget.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/common/indexmetainfo.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 
 
 namespace search {
 
 class ISequencedTaskExecutor;
+class AttributeVector;
 
 namespace common { class FileHeaderContext; }
 
@@ -34,8 +33,9 @@ private:
      * Task performing the actual flushing to disk.
      **/
     class Flusher;
+    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
 
-    search::AttributeVector::SP _attr;
+    AttributeVectorSP           _attr;
     bool                        _cleanUpAfterFlush;
     FlushStats                  _lastStats;
     const search::TuneFileAttributes _tuneFileAttributes;
@@ -55,7 +55,7 @@ public:
      *
      * fileHeaderContext must be kept alive by caller.
      **/
-    FlushableAttribute(const search::AttributeVector::SP attr,
+    FlushableAttribute(const AttributeVectorSP attr,
                        const std::shared_ptr<AttributeDirectory> &attrDir,
                        const search::TuneFileAttributes &tuneFileAttributes,
                        const search::common::FileHeaderContext &

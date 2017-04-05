@@ -21,7 +21,6 @@ using search::AttributeContext;
 using search::AttributeEnumGuard;
 using search::AttributeGuard;
 using search::AttributeVector;
-using search::IndexMetaInfo;
 using search::TuneFileAttributes;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;

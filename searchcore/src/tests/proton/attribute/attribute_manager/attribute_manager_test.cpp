@@ -28,6 +28,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>

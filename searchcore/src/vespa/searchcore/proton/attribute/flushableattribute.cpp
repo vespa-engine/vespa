@@ -11,6 +11,8 @@
 #include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/searchlib/attribute/attributememorysavetarget.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <future>
 #include "attribute_directory.h"
 #include <vespa/vespalib/util/stringfmt.h>
@@ -158,7 +160,7 @@ FlushableAttribute::Flusher::run()
     }
 }
 
-FlushableAttribute::FlushableAttribute(const AttributeVector::SP attr,
+FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        const std::shared_ptr<AttributeDirectory> &attrDir,
                                        const TuneFileAttributes &
                                        tuneFileAttributes,
