@@ -22,7 +22,9 @@ import static org.junit.Assert.*;
 public class ProxyServerTest {
 
     private final MemoryCache memoryCache = new MemoryCache();
-    private final MapBackedConfigSource source = new MapBackedConfigSource(new MockClientUpdater(memoryCache));
+    private MockClientUpdater clientUpdater = new MockClientUpdater(memoryCache);
+    private final MockConfigSource source = new MockConfigSource(clientUpdater);
+    private MockConfigSourceClient client = new MockConfigSourceClient(clientUpdater, source);
     private final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
     private ProxyServer proxy;
 
@@ -42,7 +44,7 @@ public class ProxyServerTest {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
         source.put(errorConfigKey, createConfigWithNextConfigGeneration(fooConfig, ErrorCode.UNKNOWN_DEFINITION));
-        proxy = ProxyServer.createTestServer(source, source, memoryCache, statistics);
+        proxy = ProxyServer.createTestServer(source, client, memoryCache, statistics);
     }
 
     @After
