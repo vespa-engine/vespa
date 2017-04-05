@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.proxy;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
+import com.yahoo.vespa.config.protocol.Payload;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -190,6 +191,26 @@ public class ProxyServerTest {
     }
 
     @Test
+    public void testReconfigurationAsClient() {
+        long generation = 1;
+        RawConfig fooConfig = Helper.fooConfig;
+        source.put(fooConfig.getKey(), fooConfig);
+
+        //UpstreamConfigSubscriber subscriber = createUpstreamConfigSubscriber(fooConfig);
+        clientUpdater.waitForConfigGeneration(fooConfig.getKey(), generation);
+        assertThat(clientUpdater.getLastConfig(), is(fooConfig));
+
+        // Update payload in config
+        generation++;
+        final ConfigPayload payload = Helper.createConfigPayload("bar", "value2");
+        RawConfig fooConfig2 = createConfigWithNextConfigGeneration(fooConfig, 0, Payload.from(payload));
+        source.put(fooConfig2.getKey(), fooConfig2);
+
+        clientUpdater.waitForConfigGeneration(fooConfig2.getKey(), generation);
+        assertFalse(clientUpdater.getLastConfig().equals(fooConfig));
+    }
+
+    @Test
     public void testReadingSystemProperties() {
         ProxyServer.Properties properties = ProxyServer.getSystemProperties();
         assertThat(properties.eventInterval, is(ConfigProxyStatistics.defaultEventInterval));
@@ -198,9 +219,13 @@ public class ProxyServerTest {
     }
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode) {
+        return createConfigWithNextConfigGeneration(config, errorCode, config.getPayload());
+    }
+
+    static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload) {
         return new RawConfig(config.getKey(), config.getDefMd5(),
-            config.getPayload(), config.getConfigMd5(),
-            config.getGeneration() + 1, errorCode, config.getDefContent(), Optional.empty());
+                             payload, config.getConfigMd5(),
+                             config.getGeneration() + 1, errorCode, config.getDefContent(), Optional.empty());
     }
 
 }
