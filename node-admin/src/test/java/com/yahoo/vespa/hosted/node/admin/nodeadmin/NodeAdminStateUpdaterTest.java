@@ -70,6 +70,7 @@ public class NodeAdminStateUpdaterTest {
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         verify(refresher, never()).signalWorkToBeDone(); // No attempt in changing state
+        verify(orchestrator, never()).resume(parentHostname); // Already resumed
 
         // Lets try to suspend node admin only, immediately we get false back, and need to wait until next
         // tick before any change can happen
@@ -117,13 +118,14 @@ public class NodeAdminStateUpdaterTest {
 
 
         // Lets try going back to resumed
-        when(nodeAdmin.setFrozen(eq(false))).thenReturn(false); // NodeAgents not converged to yet
+        when(nodeAdmin.setFrozen(eq(false))).thenReturn(false).thenReturn(true); // NodeAgents not converged to yet
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
 
-        when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
-        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED)); // Still false before tick
+        when(orchestrator.resume(parentHostname)).thenReturn(false).thenReturn(true);
+        tickAfter(35);
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
     }
