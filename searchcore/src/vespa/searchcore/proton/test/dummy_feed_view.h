@@ -18,29 +18,29 @@ struct DummyFeedView : public IFeedView
     DummyFeedView(const document::DocumentTypeRepo::SP &docTypeRepo)
         : _docTypeRepo(docTypeRepo)
     {}
-    virtual const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const {
+    virtual const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override {
         return _docTypeRepo;
     }
-    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const {
+    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return std::nullptr_t();
     }
-    virtual void preparePut(PutOperation &) {}
+    virtual void preparePut(PutOperation &) override {}
     virtual void handlePut(FeedToken *,
-                           const PutOperation &) {}
-    virtual void prepareUpdate(UpdateOperation &) {}
+                           const PutOperation &) override {}
+    virtual void prepareUpdate(UpdateOperation &) override {}
     virtual void handleUpdate(FeedToken *,
-                              const UpdateOperation &) {}
-    virtual void prepareRemove(RemoveOperation &) {}
+                              const UpdateOperation &) override {}
+    virtual void prepareRemove(RemoveOperation &) override {}
     virtual void handleRemove(FeedToken *,
-                              const RemoveOperation &) {}
-    virtual void prepareDeleteBucket(DeleteBucketOperation &) {}
-    virtual void handleDeleteBucket(const DeleteBucketOperation &) {}
-    virtual void prepareMove(MoveOperation &) {}
-    virtual void handleMove(const MoveOperation &) {}
-    virtual void heartBeat(search::SerialNum) {}
-    virtual void sync() {}
-    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) {}
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &) {}
+                              const RemoveOperation &) override {}
+    virtual void prepareDeleteBucket(DeleteBucketOperation &) override {}
+    virtual void handleDeleteBucket(const DeleteBucketOperation &) override {}
+    virtual void prepareMove(MoveOperation &) override {}
+    virtual void handleMove(const MoveOperation &) override {}
+    virtual void heartBeat(search::SerialNum) override {}
+    virtual void sync() override {}
+    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
     void forceCommit(search::SerialNum) override { }
 };
 
