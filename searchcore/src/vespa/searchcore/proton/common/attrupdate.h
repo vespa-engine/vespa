@@ -9,16 +9,16 @@
 
 namespace search {
 
-using document::Field;
-using document::FieldValue;
-using document::FieldUpdate;
-using document::ValueUpdate;
 namespace tensor { class TensorAttribute; }
 namespace attribute { class ReferenceAttribute; }
 
 VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
 
 class AttrUpdate {
+    using Field = document::Field;
+    using FieldValue = document::FieldValue;
+    using FieldUpdate = document::FieldUpdate;
+    using ValueUpdate = document::ValueUpdate;
 
 public:
     static void handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & upd);
