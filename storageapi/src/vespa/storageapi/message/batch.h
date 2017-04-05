@@ -156,14 +156,13 @@ public:
        @return Returns a list of the updates to be performed.
     */
     const UpdateList& getUpdates() const { return _updates; };
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
        Returns a bucket id suitable for routing this message.
     */
     document::BucketId getBucketId() const override { return _bucketId; }
-    virtual bool hasSingleBucketId() const override { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     DECLARE_STORAGECOMMAND(BatchDocumentUpdateCommand, onBatchDocumentUpdate)
 
@@ -183,18 +182,12 @@ class BatchDocumentUpdateReply : public StorageReply {
     std::vector<bool> _documentsNotFound;
 public:
     explicit BatchDocumentUpdateReply(const BatchDocumentUpdateCommand&);
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
     const std::vector<bool>& getDocumentsNotFound() const { return _documentsNotFound; }
     std::vector<bool>& getDocumentsNotFound() { return _documentsNotFound; }
 
     DECLARE_STORAGEREPLY(BatchDocumentUpdateReply, onBatchDocumentUpdateReply)
 };
 
-
-
 }
 }
-
-

@@ -58,10 +58,7 @@ public:
         typedef std::unique_ptr<IRoutableFactory> UP;
         typedef std::shared_ptr<IRoutableFactory> SP;
 
-        // Implements IRoutableFactory.
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
-
-        // Implements IRoutableFactory.
         mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
     };
 
@@ -101,10 +98,7 @@ public:
         typedef std::unique_ptr<IRoutableFactory> UP;
         typedef std::shared_ptr<IRoutableFactory> SP;
 
-        // Implements IRoutableFactory.
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
-
-        // Implements IRoutableFactory.
         mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
     };
 
@@ -145,8 +139,7 @@ public:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
-        CreateVisitorMessageFactory(const document::DocumentTypeRepo &r)
-            : _repo(r) {}
+        CreateVisitorMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
     };
 
     class GetDocumentMessageFactory : public DocumentMessageFactory {

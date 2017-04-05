@@ -12,9 +12,9 @@
 
 #pragma once
 
+#include "appkiller.h"
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storage/frameworkimpl/thread/appkiller.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
 #include <map>
@@ -88,13 +88,9 @@ private:
     StorageComponent* _component;
     framework::Thread::UP _thread;
 
-    virtual void run(framework::ThreadHandle&) override;
-
-        // Status implementation
-    virtual void reportHtmlStatus(std::ostream& out,
-                                  const framework::HttpUrlPath&) const override;
+    void run(framework::ThreadHandle&) override;
+    void reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath&) const override;
     vespalib::string getBucketLockInfo() const;
 };
 
 }
-

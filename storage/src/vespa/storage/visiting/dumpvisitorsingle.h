@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include <vespa/storage/visiting/visitor.h>
+#include "visitor.h"
 
 namespace storage {
 
@@ -19,8 +19,7 @@ public:
                       const vdslib::Parameters& params);
 
 private:
-    void handleDocuments(const document::BucketId&,
-                         std::vector<spi::DocEntry::UP>&, HitCounter&) override;
+    void handleDocuments(const document::BucketId&, std::vector<spi::DocEntry::UP>&, HitCounter&) override;
 };
 
 struct DumpVisitorSingleFactory : public VisitorFactory {
@@ -31,14 +30,10 @@ struct DumpVisitorSingleFactory : public VisitorFactory {
     };
 
     Visitor*
-    makeVisitor(StorageComponent& c,
-                VisitorEnvironment&, const vdslib::Parameters& params) override
-    {
+
+    makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override {
         return new DumpVisitorSingle(c, params);
     }
 };
 
 }
-
-
-

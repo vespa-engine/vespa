@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "visitor.h"
 #include <vespa/vdslib/container/documentsummary.h>
-#include <vespa/storageapi/message/visitor.h>
 
 namespace storage {
 namespace api {
@@ -18,13 +18,10 @@ class DocumentSummaryCommand : public StorageCommand,
 {
 public:
     explicit DocumentSummaryCommand();
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
     uint32_t getMemoryFootprint() const override {
         return getSerializedSize();
     }
-
     DECLARE_STORAGECOMMAND(DocumentSummaryCommand, onDocumentSummary)
 };
 
@@ -37,12 +34,9 @@ public:
 class DocumentSummaryReply : public StorageReply {
 public:
     explicit DocumentSummaryReply(const DocumentSummaryCommand& command);
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
     DECLARE_STORAGEREPLY(DocumentSummaryReply, onDocumentSummaryReply)
 };
 
 } // api
 } // storage
-

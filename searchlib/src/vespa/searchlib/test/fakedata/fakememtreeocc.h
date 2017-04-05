@@ -119,19 +119,8 @@ public:
     FakeMemTreeOccFactory(const Schema &schema);
     ~FakeMemTreeOccFactory();
 
-<<<<<<< HEAD
-    virtual
-    ~FakeMemTreeOccFactory(void);
-
-    virtual FakePosting::SP
-    make(const FakeWord &fw) override;
-
-    virtual void
-    setup(const std::vector<const FakeWord *> &fws) override;
-=======
     FakePosting::SP make(const FakeWord &fw) override;
     void setup(const std::vector<const FakeWord *> &fws) override;
->>>>>>> Use override
 };
 
 class FakeMemTreeOcc2Factory : public FakeMemTreeOccFactory
@@ -143,7 +132,6 @@ public:
     FakePosting::SP make(const FakeWord &fw) override;
     void setup(const std::vector<const FakeWord *> &fws) override;
 };
-
 
 /*
  * Updateable memory tree format.

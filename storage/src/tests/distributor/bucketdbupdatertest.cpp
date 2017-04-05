@@ -13,7 +13,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
 
 using namespace storage::api;
 using namespace storage::lib;

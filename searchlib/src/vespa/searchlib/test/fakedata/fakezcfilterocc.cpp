@@ -1373,24 +1373,10 @@ class FakeEGCompr64PosOcc : public FakeZcFilterOcc
 public:
     FakeEGCompr64PosOcc(const FakeWord &fw);
     ~FakeEGCompr64PosOcc();
-
-<<<<<<< HEAD
-    ~FakeEGCompr64PosOcc(void);
-
-    void setup(const FakeWord &fw);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const override;
-=======
     void setup(const FakeWord &fw);
     size_t bitSize() const override;
     bool hasWordPositions() const override;
     SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
->>>>>>> Use override
 };
 
 
@@ -1514,23 +1500,10 @@ class FakeEG2Compr64PosOcc : public FakeZcFilterOcc
 public:
     FakeEG2Compr64PosOcc(const FakeWord &fw);
     ~FakeEG2Compr64PosOcc();
-
     void setup(const FakeWord &fw);
-
-<<<<<<< HEAD
-    void setup(const FakeWord &fw);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
-=======
     size_t bitSize() const override;
     bool hasWordPositions() const override;
     SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
->>>>>>> Use override
 };
 
 
@@ -1653,23 +1626,11 @@ class FakeZcSkipPosOcc : public FakeZcFilterOcc
     search::index::PostingListCounts _counts;
 public:
     FakeZcSkipPosOcc(const FakeWord &fw);
-
-<<<<<<< HEAD
-    ~FakeZcSkipPosOcc(void);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const override;
-=======
     ~FakeZcSkipPosOcc();
 
     size_t bitSize() const override;
     bool hasWordPositions() const override;
     SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
->>>>>>> Use override
 };
 
 
@@ -1726,21 +1687,9 @@ class FakeZc2SkipPosOcc : public FakeZcFilterOcc
 public:
     FakeZc2SkipPosOcc(const FakeWord &fw);
     ~FakeZc2SkipPosOcc();
-
-<<<<<<< HEAD
-    ~FakeZc2SkipPosOcc(void);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const override;
-=======
     size_t bitSize() const override;
     bool hasWordPositions() const override;
     SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
->>>>>>> Use override
 };
 
 

@@ -72,23 +72,19 @@ public:
 
     void tick();
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
-    /** Implementation of HtmlStatusReporter */
-    virtual void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
+    lib::NodeState::CSP getReportedNodeState() const override;
+    lib::NodeState::CSP getCurrentNodeState() const override;
+    lib::ClusterState::CSP getSystemState() const override;
 
-    virtual lib::NodeState::CSP getReportedNodeState() const override;
-    virtual lib::NodeState::CSP getCurrentNodeState() const override;
-    virtual lib::ClusterState::CSP getSystemState() const override;
+    void addStateListener(StateListener&) override;
+    void removeStateListener(StateListener&) override;
 
-    virtual void addStateListener(StateListener&) override;
-    virtual void removeStateListener(StateListener&) override;
-
-    virtual Lock::SP grabStateChangeLock() override;
-    virtual void setReportedNodeState(const lib::NodeState& state) override;
-
+    Lock::SP grabStateChangeLock() override;
+    void setReportedNodeState(const lib::NodeState& state) override;
     void setClusterState(const lib::ClusterState& c);
-
     HostInfo& getHostInfo() { return *_hostInfo; }
 
 private:
@@ -136,10 +132,7 @@ private:
      */
     std::string getNodeInfo() const;
 
-    virtual void run(framework::ThreadHandle&) override;
-
+    void run(framework::ThreadHandle&) override;
 };
 
 } // storage
-
-

@@ -22,11 +22,7 @@ public:
      * @param msg The message of the error to assign.
      */
     ErrorPolicy(const string &msg);
-
-    // Implements IRoutingPolicy.
     void select(mbus::RoutingContext &context) override;
-
-    // Implements IRoutingPolicy.
     void merge(mbus::RoutingContext &context) override;
 };
 

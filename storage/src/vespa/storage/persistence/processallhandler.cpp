@@ -2,7 +2,6 @@
 
 #include "processallhandler.h"
 #include "bucketprocessor.h"
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>

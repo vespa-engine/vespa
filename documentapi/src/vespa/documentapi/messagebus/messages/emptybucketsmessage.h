@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "visitor.h"
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/documentapi/messagebus/messages/visitor.h>
 
 namespace documentapi {
 
@@ -21,18 +21,14 @@ protected:
 
 public:
     EmptyBucketsMessage(); // must be serialized into
-
     EmptyBucketsMessage(const std::vector<document::BucketId> &bucketIds);
 
     std::vector<document::BucketId> &getBucketIds() { return _bucketIds; }
     const std::vector<document::BucketId> &getBucketIds() const { return _bucketIds; }
 
     void setBucketIds(const std::vector<document::BucketId> &bucketIds);
-
     void resize(uint32_t size);
-
     uint32_t getType() const override;
-
     string toString() const override { return "emptybucketsmessage"; }
 };
 

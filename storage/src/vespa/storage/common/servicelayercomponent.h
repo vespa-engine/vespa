@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include <vespa/storage/common/storagecomponent.h>
+#include "storagecomponent.h"
 
 namespace storage {
 
@@ -54,12 +54,10 @@ class ServiceLayerComponent : public StorageComponent,
     StorBucketDatabase* _bucketDatabase;
     MinimumUsedBitsTracker* _minUsedBitsTracker;
 
-        // ServiceLayerManagedComponent implementation
-    virtual void setDiskCount(uint16_t count) override { _diskCount = count; }
-    virtual void setBucketDatabase(StorBucketDatabase& db) override {
-        _bucketDatabase = &db;
-    }
-    virtual void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) override {
+    // ServiceLayerManagedComponent implementation
+    void setDiskCount(uint16_t count) override { _diskCount = count; }
+    void setBucketDatabase(StorBucketDatabase& db) override { _bucketDatabase = &db; }
+    void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) override {
         _minUsedBitsTracker = &tracker;
     }
 public:
@@ -91,4 +89,3 @@ public:
 };
 
 } // storage
-

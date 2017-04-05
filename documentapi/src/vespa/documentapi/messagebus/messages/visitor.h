@@ -1,20 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @file persistence.h
- *
- * Persistence related commands, like put, get & remove
- */
+
 #pragma once
 
+#include "writedocumentreply.h"
+#include "documentmessage.h"
+#include "documentreply.h"
 #include <vespa/vdslib/container/parameters.h>
 #include <vespa/vdslib/container/documentlist.h>
 #include <vespa/vdslib/container/visitorstatistics.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/document/select/orderingspecification.h>
-#include <vespa/documentapi/messagebus/messages/writedocumentreply.h>
 
 namespace documentapi {
 
@@ -139,14 +135,12 @@ public:
     typedef std::unique_ptr<DestroyVisitorMessage> UP;
 
     DestroyVisitorMessage(); // must be deserialized into
-
     DestroyVisitorMessage(const string &instanceId);
 
     const string& getInstanceId() const { return _instanceId; }
     void setInstanceId(const string& id) { _instanceId = id; }
 
     uint32_t getType() const override;
-
     string toString() const override { return "destroyvisitormessage"; }
 };
 
@@ -214,7 +208,6 @@ public:
     void setErrorMessage(const string& errorMessage) { _errorMessage = errorMessage; };
 
     uint32_t getType() const override;
-
     string toString() const override { return "visitorinfomessage"; }
 };
 
@@ -241,7 +234,6 @@ public:
 
     uint32_t getApproxSize() const override;
     uint32_t getType() const override;
-
     string toString() const override { return "mapvisitormessage"; }
 };
 
@@ -256,12 +248,9 @@ public:
     class Entry {
     public:
         Entry();
-        Entry(int64_t timestamp,
-              document::Document::SP doc,
-              bool removeEntry);
+        Entry(int64_t timestamp, document::Document::SP doc, bool removeEntry);
         Entry(const Entry& other);
-        Entry(const document::DocumentTypeRepo &repo,
-              document::ByteBuffer& buf);
+        Entry(const document::DocumentTypeRepo &repo, document::ByteBuffer& buf);
 
         int64_t getTimestamp() { return _timestamp; }
         const document::Document::SP& getDocument() { return _document; }
@@ -293,7 +282,6 @@ public:
     const std::vector<Entry>& getDocuments() const { return _documents; };
 
     uint32_t getType() const override;
-
     string toString() const override { return "documentlistmessage"; }
 };
 

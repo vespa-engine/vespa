@@ -8,8 +8,7 @@
 
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/storageapi/messageapi/storagereply.h>
+#include "storagereply.h"
 
 namespace storage {
 namespace api {
@@ -39,10 +38,8 @@ public:
         if (_originalBucket.getRawId() == 0) _originalBucket = _bucket;
         _bucket = bucket;
     }
-
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api
 } // storage
-

@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("replygate_test");
 
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/imessagehandler.h>
@@ -44,7 +41,7 @@ struct MySender : public IMessageHandler
 {
     // giving a sync reply here is against the API contract, but it is
     // ok for testing.
-    virtual void handleMessage(Message::UP msg) override {
+    void handleMessage(Message::UP msg) override {
         Reply::UP reply(new MyReply());
         msg->swapState(*reply);
         IReplyHandler &handler = reply->getCallStack().pop(*reply);

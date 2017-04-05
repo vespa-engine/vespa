@@ -75,7 +75,7 @@ public:
     double max_diff;
 
     virtual void returnMessage(const Message& m) = 0;
-    virtual void run() override;
+    void run() override;
     virtual void print(double timenow);
 
     Client(Messaging& msgng, double windowSize, int to);
@@ -91,17 +91,15 @@ class FixedClient : public Client {
 public:
     FixedClient(Messaging& msgng, int winsize, int to)
         : Client(msgng, winsize, to) {};
-
-    virtual void returnMessage(const Message& m) override;
+    void returnMessage(const Message& m) override;
 };
 
 class LoadBalancingClient : public Client {
 public:
     LoadBalancingClient(Messaging& msgng, int winsize, int to);
-
-    virtual void returnMessage(const Message& m) override;
-    virtual void run() override;
-    virtual void print(double timenow) override;
+    void returnMessage(const Message& m) override;
+    void run() override;
+    void print(double timenow) override;
 
     std::vector<double> weights;
 };
@@ -109,10 +107,9 @@ public:
 class BusyCounterBalancingClient : public Client {
 public:
     BusyCounterBalancingClient(Messaging& msgng, int winsize, int to);
-
-    virtual void returnMessage(const Message& m) override;
-    virtual void run() override;
-    virtual void print(double timenow) override;
+    void returnMessage(const Message& m) override;
+    void run() override;
+    void print(double timenow) override;
 
     std::vector<int> busyCount;
 };
@@ -126,8 +123,7 @@ public:
 
     DynamicClient(Messaging& msgng, int maxWinSize, double to)
         : Client(msgng, 1, static_cast<int>(to)), maxwinsize(maxWinSize), threshold(maxWinSize / 2), lastFailTimestamp(0) {};
-
-    virtual void returnMessage(const Message& m) override;
+    void returnMessage(const Message& m) override;
 };
 
 class LatencyControlClient : public Client {
@@ -137,10 +133,8 @@ public:
     LatencyControlClient(Messaging& msgng, double to)
         : Client(msgng, 1, static_cast<int>(to)),
           count(0){};
-
-    virtual void returnMessage(const Message& m) override;
-
-    virtual void print(double timenow) override;
+    void returnMessage(const Message& m) override;
+    void print(double timenow) override;
 };
 
 
@@ -154,5 +148,4 @@ public:
     ThrottlingApp() {};
 
     int Main() override;
-
 };

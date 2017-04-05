@@ -108,14 +108,11 @@ public:
 
     void setVisitorOrdering(document::OrderingSpecification::Order ordering) { _ordering = ordering; }
     document::OrderingSpecification::Order getVisitorOrdering() const { return _ordering; }
-     void setMaxBucketsPerVisitor(uint32_t max)
-        { _maxBucketsPerVisitor = max; }
-    uint32_t getMaxBucketsPerVisitor() const
-        { return _maxBucketsPerVisitor; }
+    void setMaxBucketsPerVisitor(uint32_t max) { _maxBucketsPerVisitor = max; }
+    uint32_t getMaxBucketsPerVisitor() const { return _maxBucketsPerVisitor; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    virtual StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
+    StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(CreateVisitorCommand, onCreateVisitor)
 };
