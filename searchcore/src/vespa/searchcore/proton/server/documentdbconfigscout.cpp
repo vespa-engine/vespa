@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "documentdbconfigscout.h"
 #include <vespa/searchcore/proton/attribute/attributesconfigscout.h>
+#include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
 
 using vespa::config::search::AttributesConfig;
 
@@ -19,7 +20,10 @@ DocumentDBConfigScout::scout(const DocumentDBConfig::SP &config,
         ac(acScout.adjust(config->getAttributesConfig()));
     if (*ac == config->getAttributesConfig())
         return config; // no change
-    return config->newFromAttributesConfig(ac);
+    AttributeSpecsBuilder attributeSpecsBuilder;
+    attributeSpecsBuilder.setup(*ac);
+    return config->newFromAttributesConfig(attributeSpecsBuilder.getAttributesConfig(),
+                                           attributeSpecsBuilder.getAttributeSpecs());
 }
 
 

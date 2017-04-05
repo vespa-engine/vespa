@@ -174,7 +174,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
     if (params.shouldAttributeManagerChange()) {
         proton::IAttributeManager::SP oldMgr = getAttributeManager();
         AttributeCollectionSpec::UP attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
+            createAttributeSpec(newConfigSnapshot.getAttributeSpecs(), serialNum);
         IReprocessingInitializer::UP initializer =
                 _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params, resolver);
         if (initializer.get() != nullptr && initializer->hasReprocessors()) {

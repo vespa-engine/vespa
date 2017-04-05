@@ -6,6 +6,7 @@ LOG_SETUP("attribute_specs_builder_test");
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
+#include <vespa/searchcore/proton/attribute/attribute_specs.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/config-indexschema.h>
@@ -173,8 +174,8 @@ public:
     }
     void assertSpecs(const std::vector<AttributeSpec> &expSpecs)
     {
-        auto &actSpecs = _builder.getAttributeSpecs();
-        EXPECT_EQUAL(expSpecs, actSpecs.getSpecs());
+        const auto &actSpecs = _builder.getAttributeSpecs();
+        EXPECT_EQUAL(expSpecs, actSpecs->getSpecs());
     }
     void assertConfigs(const std::vector<AttributesConfig::Attribute> &exp)
     {

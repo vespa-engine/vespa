@@ -9,6 +9,7 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>
+#include <vespa/searchcore/proton/attribute/attribute_specs.h>
 
 using namespace config;
 using namespace vespa::config::search::summary;
@@ -45,6 +46,7 @@ DocumentDBConfig::DocumentDBConfig(
                const RankingConstants::SP &rankingConstants,
                const IndexschemaConfigSP &indexschema,
                const AttributesConfigSP &attributes,
+               const std::shared_ptr<const AttributeSpecs> &attributeSpecs,
                const SummaryConfigSP &summary,
                const SummarymapConfigSP &summarymap,
                const JuniperrcConfigSP &juniperrc,
@@ -64,6 +66,7 @@ DocumentDBConfig::DocumentDBConfig(
       _rankingConstants(rankingConstants),
       _indexschema(indexschema),
       _attributes(attributes),
+      _attributeSpecs(attributeSpecs),
       _summary(summary),
       _summarymap(summarymap),
       _juniperrc(juniperrc),
@@ -87,6 +90,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _rankingConstants(cfg._rankingConstants),
       _indexschema(cfg._indexschema),
       _attributes(cfg._attributes),
+      _attributeSpecs(cfg._attributeSpecs),
       _summary(cfg._summary),
       _summarymap(cfg._summarymap),
       _juniperrc(cfg._juniperrc),
@@ -113,6 +117,8 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
                                      rhs._indexschema.get()) &&
            equals<AttributesConfig>(_attributes.get(),
                                     rhs._attributes.get()) &&
+           equals<AttributeSpecs>(_attributeSpecs.get(),
+                                  rhs._attributeSpecs.get()) &&
            equals<SummaryConfig>(_summary.get(),
                                  rhs._summary.get()) &&
            equals<SummarymapConfig>(_summarymap.get(),
@@ -144,7 +150,8 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.indexschemaChanged =
         !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
     retval.attributesChanged =
-        !equals<AttributesConfig>(_attributes.get(), rhs._attributes.get());
+        !equals<AttributesConfig>(_attributes.get(), rhs._attributes.get()) ||
+        !equals<AttributeSpecs>(_attributeSpecs.get(), rhs._attributeSpecs.get());
     retval.summaryChanged =
         !equals<SummaryConfig>(_summary.get(), rhs._summary.get());
     retval.summarymapChanged =
@@ -176,6 +183,7 @@ DocumentDBConfig::valid() const
            (_rankingConstants.get() != NULL) &&
            (_indexschema.get() != NULL) &&
            (_attributes.get() != NULL) &&
+           _attributeSpecs &&
            (_summary.get() != NULL) &&
            (_summarymap.get() != NULL) &&
            (_juniperrc.get() != NULL) &&
@@ -216,6 +224,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 std::make_shared<RankingConstants>(),
                 o._indexschema,
                 o._attributes,
+                o._attributeSpecs,
                 o._summary,
                 o._summarymap,
                 o._juniperrc,
@@ -248,7 +257,8 @@ DocumentDBConfig::preferOriginalConfig(const SP & self)
 
 
 DocumentDBConfig::SP
-DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) const
+DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes,
+                                          const std::shared_ptr<const AttributeSpecs> &attributeSpecs) const
 {
     return std::make_shared<DocumentDBConfig>(
             _generation,
@@ -256,6 +266,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _rankingConstants,
             _indexschema,
             attributes,
+            attributeSpecs,
             _summary,
             _summarymap,
             _juniperrc,

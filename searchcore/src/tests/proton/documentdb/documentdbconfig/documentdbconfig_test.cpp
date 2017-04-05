@@ -6,6 +6,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-attributes.h>
+#include <vespa/searchcore/proton/attribute/attribute_specs.h>
 
 using namespace document;
 using namespace proton;
@@ -98,6 +99,13 @@ TEST_F("require that makeReplayConfig() drops unneeded configs", Fixture)
     EXPECT_TRUE(DDBC::preferOriginalConfig(f.fullCfg).get() == f.fullCfg.get());
     EXPECT_TRUE(DDBC::preferOriginalConfig(f.replayCfg).get() == f.fullCfg.get());
     EXPECT_TRUE(DDBC::preferOriginalConfig(f.nullCfg).get() == nullptr);
+}
+
+TEST_F("require that attribute spec is setup", Fixture)
+{
+    const auto &attributeSpecs = f.fullCfg->getAttributeSpecs().getSpecs();
+    EXPECT_EQUAL(1, attributeSpecs.size());
+    EXPECT_EQUAL("my_attribute", attributeSpecs[0].getName());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

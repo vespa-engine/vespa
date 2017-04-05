@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "attribute_specs.h"
+#include <memory>
 
 namespace document { class DocumentType; }
 namespace vespa { namespace config { namespace search { namespace internal {
@@ -13,6 +13,7 @@ class InternalIndexschemaType;
 namespace proton {
 
 class IDocumentTypeInspector;
+class AttributeSpecs;
 
 /*
  * Class to build adjusted attribute config and vector of attribute specs
@@ -25,7 +26,7 @@ class AttributeSpecsBuilder
     using DocumentType = document::DocumentType;
     using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
 
-    AttributeSpecs _specs;
+    std::shared_ptr<AttributeSpecs> _specs;
     std::shared_ptr<AttributesConfigBuilder> _config;
 
 public:
@@ -46,7 +47,7 @@ public:
                const IndexschemaConfig &oldIndexschemaConfig,
                const IDocumentTypeInspector &inspector);
 
-    const AttributeSpecs &getAttributeSpecs() const;
+    std::shared_ptr<const AttributeSpecs> getAttributeSpecs() const;
     std::shared_ptr<AttributesConfig> getAttributesConfig() const;
 };
 
