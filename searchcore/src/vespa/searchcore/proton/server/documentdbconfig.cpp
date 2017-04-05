@@ -226,7 +226,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._attributes,
                 o._attributeSpecs,
                 o._summary,
-                o._summarymap,
+                std::make_shared<SummarymapConfig>(),
                 o._juniperrc,
                 o._documenttypes,
                 o._repo,
