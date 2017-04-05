@@ -1,0 +1,7 @@
+search parent_a {
+  document parent_a {
+    field int_field type int {
+      indexing: attribute
+    }
+  }
+}

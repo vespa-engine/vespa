@@ -1,0 +1,18 @@
+search child {
+  document child {
+    field a_ref type reference<parent_a> { indexing: attribute }
+    field b_ref type reference<parent_b> { indexing: attribute }
+  }
+  import field a_ref.int_field as my_int_field {}
+  import field b_ref.string_field as my_string_field {}
+
+  fieldset myfieldset {
+    fields: my_int_field, my_string_field
+  }
+
+  document-summary mysummary {
+    summary a_ref type reference<parent_a> {}
+    summary my_int_field type int {}
+    summary my_string_field type string {}
+  }
+}
