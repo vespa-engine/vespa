@@ -487,17 +487,13 @@ FNET_Connection::Init()
         if (GetConfig()->_tcpNoDelay)
             _socket->SetNoDelay(true);
         EnableReadEvent(true);
-
         if (IsClient()) {
-            if (_socket->Connect()) {
-                SetState(FNET_CONNECTED);
-            } else {
+            EnableWriteEvent(true);
+            if (!_socket->Connect()) {
                 int error = FastOS_Socket::GetLastError();
-
-                if (error == FastOS_Socket::ERR_INPROGRESS ||
-                    error == FastOS_Socket::ERR_WOULDBLOCK) {
-                    EnableWriteEvent(true);
-                } else {
+                if (error != FastOS_Socket::ERR_INPROGRESS &&
+                    error != FastOS_Socket::ERR_WOULDBLOCK)
+                {
                     rc = false;
                     LOG(debug, "Connection(%s): connect error: %d", GetSpec(), error);
                 }
