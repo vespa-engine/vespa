@@ -132,6 +132,7 @@ public class RunInContainerTest {
         assertTrue(doPutCall("suspend"));
 
         // Back to resume
+        when(ComponentsProviderWithMocks.orchestratorMock.resume(parentHostname)).thenReturn(true);
         assertFalse(doPutCall("resume"));
         Thread.sleep(50);
         assertTrue(doPutCall("resume"));

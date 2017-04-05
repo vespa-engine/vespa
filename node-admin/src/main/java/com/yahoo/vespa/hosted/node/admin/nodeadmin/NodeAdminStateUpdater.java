@@ -144,6 +144,10 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
         // To get to resumed state, we only need to converge NodeAdmins frozen state
         if (wantedState == RESUMED) {
+            if (!orchestrator.resume(dockerHostHostName)) {
+                throw new RuntimeException("Failed to resume node-admin");
+            }
+
             synchronized (monitor) {
                 currentState = RESUMED;
             }
