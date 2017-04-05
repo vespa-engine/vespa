@@ -54,8 +54,8 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final PrefixLogger logger;
     private DockerImage imageBeingDownloaded = null;
-    private final String hostname;
 
+    private final String hostname;
     private final ContainerName containerName;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
@@ -69,9 +69,9 @@ public class NodeAgentImpl implements NodeAgent {
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final LinkedList<String> debugMessages = new LinkedList<>();
 
-    private long delaysBetweenEachTickMillis = 30_000;
+    private long delaysBetweenEachConvergeMillis = 30_000;
     private int numberOfUnhandledException = 0;
-    private Instant lastTick;
+    private Instant lastConverge;
 
     private Thread loopThread;
 
@@ -109,7 +109,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.environment = environment;
         this.clock = clock;
         this.aclMaintainer = aclMaintainer;
-        this.lastTick = clock.instant();
+        this.lastConverge = clock.instant();
 
         // If the container is already running, initialize vespaVersion and lastCpuMetric
         lastCpuMetric = new CpuUsageReporter(clock.instant());
@@ -165,7 +165,7 @@ public class NodeAgentImpl implements NodeAgent {
     @Override
     public void start(int intervalMillis) {
         addDebugMessage("Starting with interval " + intervalMillis + "ms");
-        delaysBetweenEachTickMillis = intervalMillis;
+        delaysBetweenEachConvergeMillis = intervalMillis;
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
         }
@@ -374,7 +374,7 @@ public class NodeAgentImpl implements NodeAgent {
         boolean isFrozenCopy;
         synchronized (monitor) {
             while (! workToDoNow) {
-                long remainder = delaysBetweenEachTickMillis - Duration.between(lastTick, clock.instant()).toMillis();
+                long remainder = delaysBetweenEachConvergeMillis - Duration.between(lastConverge, clock.instant()).toMillis();
                 if (remainder > 0) {
                     try {
                         monitor.wait(remainder);
@@ -383,7 +383,7 @@ public class NodeAgentImpl implements NodeAgent {
                     }
                 } else break;
             }
-            lastTick = clock.instant();
+            lastConverge = clock.instant();
             workToDoNow = false;
 
             if (isFrozen != wantFrozen) {
