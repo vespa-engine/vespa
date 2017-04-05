@@ -12,8 +12,8 @@ LOG_SETUP(".prod_features_fieldmatch");
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
-
 using search::AttributeVector;
+using CollectionType = FieldInfo::CollectionType;
 
 void
 Test::testFieldMatch()

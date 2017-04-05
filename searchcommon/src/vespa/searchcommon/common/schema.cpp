@@ -72,7 +72,7 @@ const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 Schema::Field::Field(const vespalib::stringref &n, DataType dt)
     : _name(n),
       _dataType(dt),
-      _collectionType(schema::SINGLE),
+      _collectionType(schema::CollectionType::SINGLE),
       _timestamp(0)
 {
 }

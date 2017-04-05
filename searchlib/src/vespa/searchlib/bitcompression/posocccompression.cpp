@@ -131,17 +131,17 @@ PosOccFieldParams::setSchemaParams(const Schema &schema, uint32_t fieldId)
     assert(fieldId < schema.getNumIndexFields());
     const Schema::IndexField &field = schema.getIndexField(fieldId);
     switch (field.getCollectionType()) {
-    case schema::SINGLE:
+    case schema::CollectionType::SINGLE:
         _collectionType = SINGLE;
         _hasElements = false;
         _hasElementWeights = false;
         break;
-    case schema::ARRAY:
+    case schema::CollectionType::ARRAY:
         _collectionType = ARRAY;
         _hasElements = true;
         _hasElementWeights = false;
         break;
-    case schema::WEIGHTEDSET:
+    case schema::CollectionType::WEIGHTEDSET:
         _collectionType = WEIGHTEDSET;
         _hasElements = true;
         _hasElementWeights = true;
@@ -165,17 +165,17 @@ PosOccFieldParams::readHeader(const vespalib::GenericHeader &header,
     _name = header.getTag(nameKey).asString();
     Schema::CollectionType ct = schema::collectionTypeFromName(header.getTag(collKey).asString());
     switch (ct) {
-    case schema::SINGLE:
+    case schema::CollectionType::SINGLE:
         _collectionType = SINGLE;
         _hasElements = false;
         _hasElementWeights = false;
         break;
-    case schema::ARRAY:
+    case schema::CollectionType::ARRAY:
         _collectionType = ARRAY;
         _hasElements = true;
         _hasElementWeights = false;
         break;
-    case schema::WEIGHTEDSET:
+    case schema::CollectionType::WEIGHTEDSET:
         _collectionType = WEIGHTEDSET;
         _hasElements = true;
         _hasElementWeights = true;
@@ -196,16 +196,16 @@ PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
     vespalib::string collKey(prefix + "collectionType");
     vespalib::string avgElemLenKey(prefix + "avgElemLen");
     header.putTag(GenericHeader::Tag(nameKey, _name));
-    Schema::CollectionType ct(schema::SINGLE);
+    Schema::CollectionType ct(schema::CollectionType::SINGLE);
     switch (_collectionType) {
     case SINGLE:
-        ct = schema::SINGLE;
+        ct = schema::CollectionType::SINGLE;
         break;
     case ARRAY:
-        ct = schema::ARRAY;
+        ct = schema::CollectionType::ARRAY;
         break;
     case WEIGHTEDSET:
-        ct = schema::WEIGHTEDSET;
+        ct = schema::CollectionType::WEIGHTEDSET;
         break;
     default:
         LOG(error,

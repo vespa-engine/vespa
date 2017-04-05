@@ -14,7 +14,7 @@ IndexEnvironmentBuilder::IndexEnvironmentBuilder(IndexEnvironment &env) :
 
 IndexEnvironmentBuilder &
 IndexEnvironmentBuilder::addField(const FieldType &type,
-                                  const CollectionType &coll,
+                                  const FieldInfo::CollectionType &coll,
                                   const vespalib::string &name)
 {
     uint32_t idx = _env.getFields().size();

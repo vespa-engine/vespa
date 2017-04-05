@@ -14,6 +14,7 @@ using search::feature_t;
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
+using CollectionType = FieldInfo::CollectionType;
 
 const std::string featureName("nativeDotProduct(foo)");
 

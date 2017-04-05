@@ -38,7 +38,6 @@
 using document::ArrayFieldValue;
 using document::FieldValue;
 using document::BucketId;
-using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
@@ -68,6 +67,7 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::index::Schema;
+using search::index::schema::DataType;
 using storage::spi::Bucket;
 using storage::spi::GetResult;
 using storage::spi::PartitionId;
@@ -150,25 +150,25 @@ document::DocumenttypesConfig getRepoConfig() {
     builder.document(doc_type_id, doc_type_name,
                      Struct(doc_type_name + ".header"),
                      Struct(doc_type_name + ".body")
-                     .addField(static_field, DataType::T_INT)
-                     .addField(dyn_field_i, DataType::T_INT)
-                     .addField(dyn_field_d, DataType::T_DOUBLE)
-                     .addField(dyn_field_s, DataType::T_STRING)
-                     .addField(dyn_field_n, DataType::T_FLOAT)
-                     .addField(dyn_field_nai, DataType::T_INT)
-                     .addField(dyn_field_nas, DataType::T_STRING)
-                     .addField(dyn_field_p, DataType::T_PREDICATE)
-                     .addField(dyn_arr_field_i, Array(DataType::T_INT))
-                     .addField(dyn_arr_field_d, Array(DataType::T_DOUBLE))
-                     .addField(dyn_arr_field_s, Array(DataType::T_STRING))
-                     .addField(dyn_arr_field_n, Array(DataType::T_FLOAT))
-                     .addField(dyn_wset_field_i, Wset(DataType::T_INT))
-                     .addField(dyn_wset_field_d, Wset(DataType::T_DOUBLE))
-                     .addField(dyn_wset_field_s, Wset(DataType::T_STRING))
-                     .addField(dyn_wset_field_n, Wset(DataType::T_FLOAT))
+                     .addField(static_field, document::DataType::T_INT)
+                     .addField(dyn_field_i, document::DataType::T_INT)
+                     .addField(dyn_field_d, document::DataType::T_DOUBLE)
+                     .addField(dyn_field_s, document::DataType::T_STRING)
+                     .addField(dyn_field_n, document::DataType::T_FLOAT)
+                     .addField(dyn_field_nai, document::DataType::T_INT)
+                     .addField(dyn_field_nas, document::DataType::T_STRING)
+                     .addField(dyn_field_p, document::DataType::T_PREDICATE)
+                     .addField(dyn_arr_field_i, Array(document::DataType::T_INT))
+                     .addField(dyn_arr_field_d, Array(document::DataType::T_DOUBLE))
+                     .addField(dyn_arr_field_s, Array(document::DataType::T_STRING))
+                     .addField(dyn_arr_field_n, Array(document::DataType::T_FLOAT))
+                     .addField(dyn_wset_field_i, Wset(document::DataType::T_INT))
+                     .addField(dyn_wset_field_d, Wset(document::DataType::T_DOUBLE))
+                     .addField(dyn_wset_field_s, Wset(document::DataType::T_STRING))
+                     .addField(dyn_wset_field_n, Wset(document::DataType::T_FLOAT))
                      .addField(position_field,
                                PositionDataType::getInstance().getId())
-                     .addField(zcurve_field, DataType::T_LONG));
+                     .addField(zcurve_field, document::DataType::T_LONG));
      return builder.config();
 }
 
@@ -176,17 +176,17 @@ BasicType
 convertDataType(Schema::DataType t)
 {
     switch (t) {
-    case schema::INT32:
+    case DataType::INT32:
         return BasicType::INT32;
-    case schema::INT64:
+    case DataType::INT64:
         return BasicType::INT64;
-    case schema::FLOAT:
+    case DataType::FLOAT:
         return BasicType::FLOAT;
-    case schema::DOUBLE:
+    case DataType::DOUBLE:
         return BasicType::DOUBLE;
-    case schema::STRING:
+    case DataType::STRING:
         return BasicType::STRING;
-    case schema::BOOLEANTREE:
+    case DataType::BOOLEANTREE:
         return BasicType::PREDICATE;
     default:
         throw std::runtime_error(make_string("Data type %u not handled", (uint32_t)t));
@@ -197,11 +197,11 @@ CollectionType
 convertCollectionType(Schema::CollectionType ct)
 {
     switch (ct) {
-    case schema::SINGLE:
+    case schema::CollectionType::SINGLE:
         return CollectionType::SINGLE;
-    case schema::ARRAY:
+    case schema::CollectionType::ARRAY:
         return CollectionType::ARRAY;
-    case schema::WEIGHTEDSET:
+    case schema::CollectionType::WEIGHTEDSET:
         return CollectionType::WSET;
     default:
         throw std::runtime_error(make_string("Collection type %u not handled", (uint32_t)ct));
@@ -247,7 +247,7 @@ struct Fixture {
     void addAttribute(const char *name, U val,
                       Schema::DataType t, Schema::CollectionType ct) {
         T *attr = addAttribute<T>(name, t, ct);
-        if (ct == schema::SINGLE) {
+        if (ct == schema::CollectionType::SINGLE) {
             attr->update(lid, val);
         } else {
             attr->append(lid, val + 1, dyn_weight);
@@ -277,43 +277,43 @@ struct Fixture {
         Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid()));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());
-        schema::CollectionType ct = schema::SINGLE;
+        schema::CollectionType ct = schema::CollectionType::SINGLE;
         addAttribute<IntegerAttribute>(
-                dyn_field_i, dyn_value_i, schema::INT32, ct);
+                dyn_field_i, dyn_value_i, DataType::INT32, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_field_d, dyn_value_d, schema::DOUBLE, ct);
+                dyn_field_d, dyn_value_d, DataType::DOUBLE, ct);
         addAttribute<StringAttribute>(
-                dyn_field_s, dyn_value_s, schema::STRING, ct);
+                dyn_field_s, dyn_value_s, DataType::STRING, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_field_n, schema::FLOAT, ct);
+                dyn_field_n, DataType::FLOAT, ct);
         addAttribute<IntegerAttribute>(
-                dyn_field_nai, schema::INT32, ct);
+                dyn_field_nai, DataType::INT32, ct);
         addAttribute<StringAttribute>(
-                dyn_field_nas, schema::STRING, ct);
+                dyn_field_nas, DataType::STRING, ct);
         addAttribute<IntegerAttribute>(
-                zcurve_field, dynamic_zcurve_value, schema::INT64, ct);
+                zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
         PredicateAttribute *attr = addAttribute<PredicateAttribute>(
-                dyn_field_p, schema::BOOLEANTREE, ct);
+                dyn_field_p, DataType::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
         attr->commit();
-        ct = schema::ARRAY;
+        ct = schema::CollectionType::ARRAY;
         addAttribute<IntegerAttribute>(
-                dyn_arr_field_i, dyn_value_i, schema::INT32, ct);
+                dyn_arr_field_i, dyn_value_i, DataType::INT32, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_d, dyn_value_d, schema::DOUBLE, ct);
+                dyn_arr_field_d, dyn_value_d, DataType::DOUBLE, ct);
         addAttribute<StringAttribute>(
-                dyn_arr_field_s, dyn_value_s, schema::STRING, ct);
+                dyn_arr_field_s, dyn_value_s, DataType::STRING, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_n, schema::FLOAT, ct);
-        ct = schema::WEIGHTEDSET;
+                dyn_arr_field_n, DataType::FLOAT, ct);
+        ct = schema::CollectionType::WEIGHTEDSET;
         addAttribute<IntegerAttribute>(
-                dyn_wset_field_i, dyn_value_i, schema::INT32, ct);
+                dyn_wset_field_i, dyn_value_i, DataType::INT32, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_d, dyn_value_d, schema::DOUBLE, ct);
+                dyn_wset_field_d, dyn_value_d, DataType::DOUBLE, ct);
         addAttribute<StringAttribute>(
-                dyn_wset_field_s, dyn_value_s, schema::STRING, ct);
+                dyn_wset_field_s, dyn_value_s, DataType::STRING, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_n, schema::FLOAT, ct);
+                dyn_wset_field_n, DataType::FLOAT, ct);
     }
 };
 
@@ -407,7 +407,7 @@ TEST_F("require that attributes are patched into stored document", Fixture) {
 }
 
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
-    f.schema.addIndexField(Schema::IndexField(dyn_field_s, schema::STRING));
+    f.schema.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING));
     DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
     Document::UP doc = f.retriever.getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());

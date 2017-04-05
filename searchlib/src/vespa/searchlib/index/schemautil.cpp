@@ -11,12 +11,14 @@ namespace search {
 
 namespace index {
 
+using schema::DataType;
+
 SchemaUtil::IndexSettings
 SchemaUtil::getIndexSettings(const Schema &schema,
                              const uint32_t index)
 {
     IndexSettings ret;
-    Schema::DataType indexDataType(schema::STRING);
+    Schema::DataType indexDataType(DataType::STRING);
     bool error = false;
     bool somePrefixes = false;
     bool someNotPrefixes = false;
@@ -39,14 +41,9 @@ SchemaUtil::getIndexSettings(const Schema &schema,
     else
         someNotPositions = true;
     indexDataType = iField.getDataType();
-    switch (indexDataType) {
-    case schema::STRING:
-        break;
-    default:
+    if (indexDataType != DataType::STRING) {
         error = true;
-        LOG(error,
-            "Field %s has bad data type",
-            iField.getName().c_str());
+        LOG(error, "Field %s has bad data type", iField.getName().c_str());
     }
 
     return IndexSettings(indexDataType, error,
@@ -113,7 +110,7 @@ SchemaUtil::validateIndexField(const Schema::IndexField &field)
             field.getName().c_str());
         ok = false;
     }
-    if (field.getDataType() != schema::STRING) {
+    if (field.getDataType() != DataType::STRING) {
         if (field.hasPrefix()) {
             LOG(error,
                 "Field %s is non-string but has prefix",

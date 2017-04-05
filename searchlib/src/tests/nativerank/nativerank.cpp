@@ -18,6 +18,7 @@ LOG_SETUP("nativerank_test");
 
 using namespace search::fef;
 using namespace search::fef::test;
+using CollectionType = FieldInfo::CollectionType;
 
 const double EPS = 10e-4;
 

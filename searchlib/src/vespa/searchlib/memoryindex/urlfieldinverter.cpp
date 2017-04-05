@@ -56,6 +56,7 @@ using document::StructFieldValue;
 using document::UrlDataType;
 using document::WeightedSetFieldValue;
 using search::index::Schema;
+using search::index::schema::CollectionType;
 using search::util::URL;
 using vespalib::make_string;
 
@@ -304,7 +305,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
 {
     const vespalib::Identifiable::RuntimeClass & cInfo(val.getClass());
     switch (_collectionType) {
-    case index::schema::SINGLE:
+    case CollectionType::SINGLE:
         if (isUriType(*val.getDataType())) {
             startElement(1);
             processUrlField(val);
@@ -313,7 +314,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
             throw std::runtime_error(make_string("Expected URI struct, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
-    case index::schema::WEIGHTEDSET:
+    case CollectionType::WEIGHTEDSET:
         if (cInfo.id() == WeightedSetFieldValue::classId) {
             const WeightedSetFieldValue &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (isUriType(wset.getNestedType())) {
@@ -325,7 +326,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
             throw std::runtime_error(make_string("Expected weighted set, got '%s'", cInfo.name()));
         }
         break;
-    case index::schema::ARRAY:
+    case CollectionType::ARRAY:
         if (cInfo.id() == ArrayFieldValue::classId) {
             const ArrayFieldValue &arr = static_cast<const ArrayFieldValue&>(val);
             if (isUriType(arr.getNestedType())) {

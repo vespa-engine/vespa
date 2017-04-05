@@ -11,7 +11,7 @@ namespace schema {
 /**
  * Basic data type for a field.
  **/
-enum DataType { UINT1 = 0,
+enum class DataType { UINT1 = 0,
     UINT2 = 1,
     UINT4 = 2,
     INT8 = 3,
@@ -31,15 +31,19 @@ enum DataType { UINT1 = 0,
 /**
  * Collection type for a field.
  **/
-enum CollectionType { SINGLE = 0,
+enum class CollectionType { SINGLE = 0,
     ARRAY = 1,
     WEIGHTEDSET = 2
 };
 
 DataType dataTypeFromName(const vespalib::stringref &name);
 vespalib::string getTypeName(DataType type);
+std::ostream &operator<<(std::ostream &os, const DataType &type);
+
 CollectionType collectionTypeFromName(const vespalib::stringref &n);
 vespalib::string getTypeName(CollectionType type);
+std::ostream &operator<<(std::ostream &os, const CollectionType &type);
+
 
 }
 }

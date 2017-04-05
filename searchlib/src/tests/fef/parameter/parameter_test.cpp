@@ -9,6 +9,7 @@ LOG_SETUP("parameter_test");
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 
 using namespace search::fef::test;
+using CollectionType = search::fef::FieldInfo::CollectionType;
 
 namespace search {
 namespace fef {

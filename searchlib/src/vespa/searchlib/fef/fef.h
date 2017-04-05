@@ -16,7 +16,6 @@
 #include "blueprint.h"
 #include "blueprintfactory.h"
 #include "blueprintresolver.h"
-#include "collection_type.h"
 #include "featureexecutor.h"
 #include "featurenamebuilder.h"
 #include "featurenameparser.h"

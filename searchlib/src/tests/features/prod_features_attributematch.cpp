@@ -13,13 +13,12 @@ using namespace search::fef::test;
 
 using search::AttributeVector;
 using search::AttributeFactory;
+using AttributePtr = AttributeVector::SP;
 
-typedef AttributeVector::SP             AttributePtr;
-
-typedef search::attribute::Config         AVC;
-typedef search::attribute::BasicType      AVBT;
-typedef search::attribute::CollectionType AVCT;
-
+using AVC = search::attribute::Config;
+using AVBT = search::attribute::BasicType;
+using AVCT = search::attribute::CollectionType;
+using CollectionType = FieldInfo::CollectionType;
 
 void
 Test::testAttributeMatch()

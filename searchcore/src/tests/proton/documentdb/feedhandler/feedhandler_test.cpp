@@ -36,8 +36,10 @@ using documentapi::DocumentReply;
 using documentapi::RemoveDocumentReply;
 using documentapi::UpdateDocumentReply;
 using mbus::Reply;
-using namespace search::index;
 using search::SerialNum;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
+using search::makeLambdaTask;
 using search::transactionlog::TransLogServer;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
@@ -49,8 +51,9 @@ using vespalib::ThreadStackExecutor;
 using vespalib::ThreadStackExecutorBase;
 using vespalib::makeClosure;
 using vespalib::makeTask;
-using search::makeLambdaTask;
+
 using namespace proton;
+using namespace search::index;
 
 typedef std::unique_ptr<vespalib::CountDownLatch> CountDownLatchUP;
 
@@ -261,7 +264,7 @@ struct SchemaContext {
         schema(new Schema()),
         builder()
     {
-        schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
+        schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
         builder.reset(new DocBuilder(*schema));
     }
     DocTypeName getDocType() const {

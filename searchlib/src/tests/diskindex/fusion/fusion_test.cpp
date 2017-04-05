@@ -20,16 +20,18 @@
 
 namespace search {
 
-
 using document::Document;
 using fef::FieldPositionsIterator;
 using fef::TermFieldMatchData;
 using fef::TermFieldMatchDataArray;
-using namespace index;
-using search::common::FileHeaderContext;
 using memoryindex::Dictionary;
 using memoryindex::DocumentInverter;
 using queryeval::SearchIterator;
+using search::common::FileHeaderContext;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
+
+using namespace index;
 
 namespace diskindex {
 
@@ -247,19 +249,20 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
         schema.addIndexField(Schema::IndexField(iField.getName(),
                                      iField.getDataType(),
                                      iField.getCollectionType()));
-        if (iField.getCollectionType() == schema::WEIGHTEDSET)
+        if (iField.getCollectionType() == CollectionType::WEIGHTEDSET) {
             schema2.addIndexField(Schema::IndexField(iField.getName(),
-                                          iField.getDataType(),
-                                          schema::ARRAY));
-        else
+                                                     iField.getDataType(),
+                                                     CollectionType::ARRAY));
+        } else {
             schema2.addIndexField(Schema::IndexField(iField.getName(),
-                                          iField.getDataType(),
-                                          iField.getCollectionType()));
+                                                     iField.getDataType(),
+                                                     iField.getCollectionType()));
+        }
         schema3.addIndexField(Schema::IndexField(iField.getName(),
                                       iField.getDataType(),
-                                      schema::SINGLE));
+                                      CollectionType::SINGLE));
     }
-    schema3.addIndexField(Schema::IndexField("f4", schema::STRING));
+    schema3.addIndexField(Schema::IndexField("f4", DataType::STRING));
     schema.addFieldSet(Schema::FieldSet("nc0").
                               addField("f0").addField("f1"));
     schema2.addFieldSet(Schema::FieldSet("nc0").
@@ -447,10 +450,10 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
 Test::Test()
     : _schema()
 {
-    _schema.addIndexField(Schema::IndexField("f0", schema::STRING));
-    _schema.addIndexField(Schema::IndexField("f1", schema::STRING));
-    _schema.addIndexField(Schema::IndexField("f2", schema::STRING, schema::ARRAY));
-    _schema.addIndexField(Schema::IndexField("f3", schema::STRING, schema::WEIGHTEDSET));
+    _schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
+    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
+    _schema.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
+    _schema.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
 }
 
 int

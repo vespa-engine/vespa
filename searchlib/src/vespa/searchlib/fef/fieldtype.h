@@ -6,44 +6,12 @@ namespace search {
 namespace fef {
 
 /**
- * Typesafe enum used to indicate the type of a field.
+ * Scoped and typesafe enum used to indicate the type of a field.
  **/
-class FieldType
-{
-private:
-    uint32_t _value;
-
-    FieldType(uint32_t value);
-public:
-    /**
-     * Indicating that the field is indexed
-     **/
-    static const FieldType INDEX;
-
-    /**
-     * Indicating that the field is kept in an attribute vector
-     **/
-    static const FieldType ATTRIBUTE;
-
-    /**
-     * Indicating that the field is kept in an attribute vector
-     **/
-    static const FieldType HIDDEN_ATTRIBUTE;
-
-    /**
-     * Less than operator; needed to be handled as a value by the standard library.
-     **/
-    bool operator<(const FieldType &rhs) const { return (_value < rhs._value); }
-
-    /**
-     * Check if two field types are equal.
-     **/
-    bool operator==(const FieldType &rhs) const { return (_value == rhs._value); }
-
-    /**
-     * Check if two field types are not equal.
-     **/
-    bool operator!=(const FieldType &rhs) const { return (_value != rhs._value); }
+enum class FieldType {
+    INDEX = 1,
+    ATTRIBUTE = 2,
+    HIDDEN_ATTRIBUTE = 3
 };
 
 } // namespace fef

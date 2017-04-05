@@ -27,7 +27,12 @@ LOG_SETUP("fusionrunner_test");
 
 using document::Document;
 using document::FieldValue;
+using proton::ExecutorThreadingService;
 using search::FixedSourceSelector;
+using search::TuneFileAttributes;
+using search::TuneFileIndexManager;
+using search::TuneFileIndexing;
+using search::TuneFileSearch;
 using search::diskindex::DiskIndex;
 using search::diskindex::IndexBuilder;
 using search::fef::MatchData;
@@ -35,26 +40,23 @@ using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 using search::index::DocBuilder;
-using search::index::Schema;
 using search::index::DummyFileHeaderContext;
+using search::index::Schema;
+using search::index::schema::DataType;
 using search::memoryindex::MemoryIndex;
 using search::query::SimpleStringTerm;
 using search::queryeval::Blueprint;
+using search::queryeval::FakeRequestContext;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using search::queryeval::ISourceSelector;
 using search::queryeval::SearchIterator;
-using search::queryeval::FakeRequestContext;
-using std::set;
-using std::string;
-using namespace proton;
-using search::TuneFileAttributes;
-using search::TuneFileIndexing;
-using search::TuneFileIndexManager;
-using search::TuneFileSearch;
 using searchcorespi::index::FusionRunner;
 using searchcorespi::index::FusionSpec;
-using proton::ExecutorThreadingService;
+using std::set;
+using std::string;
+
+using namespace proton;
 
 namespace {
 
@@ -125,7 +127,7 @@ const uint32_t disk_id[] = { 1, 2, 21, 42 };
 Schema getSchema() {
     Schema schema;
     schema.addIndexField(
-            Schema::IndexField(field_name, search::index::schema::STRING));
+            Schema::IndexField(field_name, DataType::STRING));
     return schema;
 }
 

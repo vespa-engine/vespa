@@ -59,6 +59,8 @@ public:
 
     SimpleMemoryLogic(Clock&, uint64_t maxMemory);
 
+    ~SimpleMemoryLogic();
+
     SimpleMemoryLogic& setMinJumpToUpdateMax(uint32_t bytes) {
         _state.setMinJumpToUpdateMax(bytes);
         return *this;

@@ -13,6 +13,7 @@
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
+using CollectionType = FieldInfo::CollectionType;
 
 std::vector<vespalib::string> featureNamesFoo() {
     std::vector<vespalib::string> f;

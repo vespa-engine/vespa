@@ -16,6 +16,7 @@ LOG_SETUP(".features.fieldmatchfeature");
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace search::fef;
+using CollectionType = FieldInfo::CollectionType;
 
 namespace search {
 namespace features {
@@ -113,7 +114,7 @@ FieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const search::fef::FieldInfo * field = env.getField(i);
         if (field->type() == search::fef::FieldType::INDEX &&
-            field->collection() == search::fef::CollectionType::SINGLE)
+            field->collection() == CollectionType::SINGLE)
         {
             FeatureNameBuilder fnb;
             fnb.baseName(getBaseName()).parameter(field->name());

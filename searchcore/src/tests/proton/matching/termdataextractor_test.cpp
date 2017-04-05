@@ -21,7 +21,6 @@ LOG_SETUP("termdataextractor_test");
 #include <vector>
 
 namespace fef_test = search::fef::test;
-using search::fef::CollectionType;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::ITermData;
@@ -35,6 +34,7 @@ using search::query::Weight;
 using std::string;
 using std::vector;
 using namespace proton::matching;
+using CollectionType = FieldInfo::CollectionType;
 
 namespace search { class AttributeManager; }
 

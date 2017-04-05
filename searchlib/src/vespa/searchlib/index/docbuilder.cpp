@@ -15,6 +15,8 @@
 
 using namespace document;
 using namespace search::index;
+
+using search::index::schema::CollectionType;
 using vespalib::Utf8Reader;
 using vespalib::Utf8Writer;
 using vespalib::geo::ZCurve;
@@ -24,8 +26,8 @@ namespace {
 void
 insertStr(const Schema::Field & sfield, document::FieldValue * fvalue, const vespalib::string & val)
 {
-    if (sfield.getDataType() == schema::STRING ||
-        sfield.getDataType() == schema::RAW)
+    if (sfield.getDataType() == schema::DataType::STRING ||
+        sfield.getDataType() == schema::DataType::RAW)
     {
         (dynamic_cast<LiteralFieldValueB *>(fvalue))->setValue(val);
     } else {
@@ -36,13 +38,13 @@ insertStr(const Schema::Field & sfield, document::FieldValue * fvalue, const ves
 void
 insertInt(const Schema::Field & sfield, document::FieldValue * fvalue, int64_t val)
 {
-    if (sfield.getDataType() == schema::INT8) {
+    if (sfield.getDataType() == schema::DataType::INT8) {
         (dynamic_cast<ByteFieldValue *>(fvalue))->setValue((uint8_t)val);
-    } else if (sfield.getDataType() == schema::INT16) {
+    } else if (sfield.getDataType() == schema::DataType::INT16) {
         (dynamic_cast<ShortFieldValue *>(fvalue))->setValue((int16_t)val);
-    } else if (sfield.getDataType() == schema::INT32) {
+    } else if (sfield.getDataType() == schema::DataType::INT32) {
         (dynamic_cast<IntFieldValue *>(fvalue))->setValue((int32_t)val);
-    } else if (sfield.getDataType() == schema::INT64) {
+    } else if (sfield.getDataType() == schema::DataType::INT64) {
         (dynamic_cast<LongFieldValue *>(fvalue))->setValue(val);
     } else {
         throw DocBuilder::Error(vespalib::make_string("Field '%s' not compatible", sfield.getName().c_str()));
@@ -52,9 +54,9 @@ insertInt(const Schema::Field & sfield, document::FieldValue * fvalue, int64_t v
 void
 insertFloat(const Schema::Field & sfield, document::FieldValue * fvalue, double val)
 {
-    if (sfield.getDataType() == schema::FLOAT) {
+    if (sfield.getDataType() == schema::DataType::FLOAT) {
         (dynamic_cast<FloatFieldValue *>(fvalue))->setValue((float)val);
-    } else if (sfield.getDataType() == schema::DOUBLE) {
+    } else if (sfield.getDataType() == schema::DataType::DOUBLE) {
         (dynamic_cast<DoubleFieldValue *>(fvalue))->setValue(val);
     } else {
         throw DocBuilder::Error(vespalib::make_string("Field '%s' not compatible", sfield.getName().c_str()));
@@ -64,7 +66,7 @@ insertFloat(const Schema::Field & sfield, document::FieldValue * fvalue, double 
 void insertPredicate(const Schema::Field &sfield,
                      document::FieldValue *fvalue,
                      std::unique_ptr<vespalib::Slime> val) {
-    if (sfield.getDataType() == schema::BOOLEANTREE) {
+    if (sfield.getDataType() == schema::DataType::BOOLEANTREE) {
         *(dynamic_cast<PredicateFieldValue *>(fvalue)) =
             PredicateFieldValue(std::move(val));
     } else {
@@ -77,7 +79,7 @@ void insertPredicate(const Schema::Field &sfield,
 void insertTensor(const Schema::Field &schemaField,
                   document::FieldValue *fvalue,
                   std::unique_ptr<vespalib::tensor::Tensor> val) {
-    if (schemaField.getDataType() == schema::TENSOR) {
+    if (schemaField.getDataType() == schema::DataType::TENSOR) {
         *(dynamic_cast<TensorFieldValue *>(fvalue)) = std::move(val);
     } else {
         throw DocBuilder::Error(vespalib::make_string(
@@ -91,7 +93,7 @@ insertPosition(const Schema::Field & sfield,
                document::FieldValue * fvalue, int32_t xpos, int32_t ypos)
 {
     assert(*fvalue->getDataType() == *DataType::LONG);
-    assert(sfield.getDataType() == schema::INT64);
+    assert(sfield.getDataType() == schema::DataType::INT64);
     (void) sfield;
     int64_t zpos = ZCurve::encode(xpos, ypos);
     document::LongFieldValue *zvalue =
@@ -105,7 +107,7 @@ insertRaw(const Schema::Field & sfield,
           document::FieldValue *fvalue, const void *buf, size_t len)
 {
     assert(*fvalue->getDataType() == *DataType::RAW);
-    assert(sfield.getDataType() == schema::RAW);
+    assert(sfield.getDataType() == schema::DataType::RAW);
     (void) sfield;
     document::RawFieldValue *rfvalue =
         dynamic_cast<RawFieldValue *>(fvalue);
@@ -197,11 +199,11 @@ DocBuilder::CollectionFieldHandle::startElement(int32_t weight)
 void
 DocBuilder::CollectionFieldHandle::endElement()
 {
-    if (_sfield.getCollectionType() == schema::ARRAY) {
+    if (_sfield.getCollectionType() == CollectionType::ARRAY) {
         onEndElement();
         ArrayFieldValue * value = dynamic_cast<ArrayFieldValue *>(_value.get());
         value->add(*_element);
-    } else if (_sfield.getCollectionType() == schema::WEIGHTEDSET) {
+    } else if (_sfield.getCollectionType() == CollectionType::WEIGHTEDSET) {
         onEndElement();
         WeightedSetFieldValue * value = dynamic_cast<WeightedSetFieldValue *>(_value.get());
         value->add(*_element, _elementWeight);
@@ -229,7 +231,7 @@ DocBuilder::IndexFieldHandle::IndexFieldHandle(const FixedTypeRepo & repo, const
 {
     _str.reserve(1023);
 
-    if (_sfield.getCollectionType() == schema::SINGLE) {
+    if (_sfield.getCollectionType() == CollectionType::SINGLE) {
         if (*_value->getDataType() == document::UrlDataType::getInstance())
             _uriField = true;
     } else {
@@ -412,7 +414,7 @@ DocBuilder::IndexFieldHandle::onEndElement(void)
     if (_uriField)
         return;
     StringFieldValue * value;
-    if (_sfield.getCollectionType() != schema::SINGLE) {
+    if (_sfield.getCollectionType() != CollectionType::SINGLE) {
         value = dynamic_cast<StringFieldValue *>(_element.get());
     } else {
         value = dynamic_cast<StringFieldValue *>(_value.get());
@@ -439,7 +441,7 @@ DocBuilder::IndexFieldHandle::onEndElement(void)
 void
 DocBuilder::IndexFieldHandle::onEndField(void)
 {
-    if (_sfield.getCollectionType() == schema::SINGLE)
+    if (_sfield.getCollectionType() == CollectionType::SINGLE)
         onEndElement();
 }
 
@@ -483,7 +485,7 @@ DocBuilder::IndexFieldHandle::endSubField(void)
     assert(!_subField.empty());
     assert(_uriField);
     StructuredFieldValue *sValue;
-    if (_sfield.getCollectionType() != schema::SINGLE) {
+    if (_sfield.getCollectionType() != CollectionType::SINGLE) {
         sValue = dynamic_cast<StructFieldValue *>(_element.get());
     } else {
         sValue = dynamic_cast<StructFieldValue *>(_value.get());

@@ -12,19 +12,21 @@ using namespace vespa::config::search;
 namespace search {
 namespace index {
 
+using schema::DataType;
+using schema::CollectionType;
 
 Schema::DataType
 SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Datatype &type)
 {
     switch (type) {
     case IndexschemaConfig::Indexfield::STRING:
-        return schema::STRING;
+        return DataType::STRING;
     case IndexschemaConfig::Indexfield::INT64:
-        return schema::INT64;
+        return DataType::INT64;
     case IndexschemaConfig::Indexfield::BOOLEANTREE:
-        return schema::BOOLEANTREE;
+        return DataType::BOOLEANTREE;
     }
-    return schema::STRING;
+    return DataType::STRING;
 }
 
 
@@ -33,13 +35,13 @@ SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Collectiontype & typ
 {
     switch (type) {
     case IndexschemaConfig::Indexfield::SINGLE:
-        return schema::SINGLE;
+        return CollectionType::SINGLE;
     case IndexschemaConfig::Indexfield::ARRAY:
-        return schema::ARRAY;
+        return CollectionType::ARRAY;
     case IndexschemaConfig::Indexfield::WEIGHTEDSET:
-        return schema::WEIGHTEDSET;
+        return CollectionType::WEIGHTEDSET;
     }
-    return schema::SINGLE;
+    return CollectionType::SINGLE;
 }
 
 
@@ -48,36 +50,36 @@ SchemaBuilder::convert(const AttributesConfig::Attribute::Datatype &type)
 {
     switch (type) {
     case AttributesConfig::Attribute::STRING:
-        return schema::STRING;
+        return DataType::STRING;
     case AttributesConfig::Attribute::UINT1:
-        return schema::UINT1;
+        return DataType::UINT1;
     case AttributesConfig::Attribute::UINT2:
-        return schema::UINT2;
+        return DataType::UINT2;
     case AttributesConfig::Attribute::UINT4:
-        return schema::UINT4;
+        return DataType::UINT4;
     case AttributesConfig::Attribute::INT8:
-        return schema::INT8;
+        return DataType::INT8;
     case AttributesConfig::Attribute::INT16:
-        return schema::INT16;
+        return DataType::INT16;
     case AttributesConfig::Attribute::INT32:
-        return schema::INT32;
+        return DataType::INT32;
     case AttributesConfig::Attribute::INT64:
-        return schema::INT64;
+        return DataType::INT64;
     case AttributesConfig::Attribute::FLOAT:
-        return schema::FLOAT;
+        return DataType::FLOAT;
     case AttributesConfig::Attribute::DOUBLE:
-        return schema::DOUBLE;
+        return DataType::DOUBLE;
     case AttributesConfig::Attribute::PREDICATE:
-        return schema::BOOLEANTREE;
+        return DataType::BOOLEANTREE;
     case AttributesConfig::Attribute::TENSOR:
-        return schema::TENSOR;
+        return DataType::TENSOR;
     case AttributesConfig::Attribute::REFERENCE:
-        return schema::REFERENCE;
+        return DataType::REFERENCE;
     default:
         break;
     }
     // TODO: exception?
-    return schema::STRING;
+    return DataType::STRING;
 }
 
 
@@ -86,13 +88,13 @@ SchemaBuilder::convert(const AttributesConfig::Attribute::Collectiontype &type)
 {
     switch (type) {
     case AttributesConfig::Attribute::SINGLE:
-        return schema::SINGLE;
+        return CollectionType::SINGLE;
     case AttributesConfig::Attribute::ARRAY:
-        return schema::ARRAY;
+        return CollectionType::ARRAY;
     case AttributesConfig::Attribute::WEIGHTEDSET:
-        return schema::WEIGHTEDSET;
+        return CollectionType::WEIGHTEDSET;
     }
-    return schema::SINGLE;
+    return CollectionType::SINGLE;
 }
 
 
@@ -100,30 +102,30 @@ Schema::DataType
 SchemaBuilder::convertSummaryType(const vespalib::string & type)
 {
     if (type == "byte") {
-        return schema::INT8;
+        return DataType::INT8;
     } else if (type == "short") {
-        return schema::INT16;
+        return DataType::INT16;
     } else if (type == "integer") {
-        return schema::INT32;
+        return DataType::INT32;
     } else if (type == "int64") {
-        return schema::INT64;
+        return DataType::INT64;
     } else if (type == "float") {
-        return schema::FLOAT;
+        return DataType::FLOAT;
     } else if (type == "double") {
-        return schema::DOUBLE;
+        return DataType::DOUBLE;
     } else if (type == "string" ||
                type == "longstring" ||
                type == "xmlstring" ||
                type == "featuredata" ||
                type == "jsonstring")
     {
-        return schema::STRING;
+        return DataType::STRING;
     } else if (type == "data" ||
                type == "longdata")
     {
-        return schema::RAW;
+        return DataType::RAW;
     }
-    return schema::RAW;
+    return DataType::RAW;
 }
 
 

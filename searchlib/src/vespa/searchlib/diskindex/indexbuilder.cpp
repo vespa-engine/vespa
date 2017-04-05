@@ -19,12 +19,13 @@ namespace diskindex {
 
 namespace {
 
+using common::FileHeaderContext;
 using index::DocIdAndFeatures;
 using index::PostingListCounts;
 using index::Schema;
 using index::SchemaUtil;
 using index::WordDocElementFeatures;
-using common::FileHeaderContext;
+using index::schema::DataType;
 using vespalib::getLastErrorString;
 
 static uint32_t
@@ -543,7 +544,7 @@ IndexBuilder::IndexBuilder(const Schema &schema)
         const Schema::IndexField &iField = schema.getIndexField(i);
         FieldHandle fh(schema, i, this);
         // Only know how to handle string index for now.
-        if (iField.getDataType() == index::schema::STRING)
+        if (iField.getDataType() == DataType::STRING)
             fh.setValid();
         _fields.push_back(fh);
     }

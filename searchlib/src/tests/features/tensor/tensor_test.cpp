@@ -37,11 +37,12 @@ using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 using vespalib::tensor::TensorFactory;
 
-typedef search::attribute::Config AVC;
-typedef search::attribute::BasicType AVBT;
-typedef search::attribute::CollectionType AVCT;
-typedef search::AttributeVector::SP AttributePtr;
-typedef FtTestApp FTA;
+using AVC = search::attribute::Config;
+using AVBT = search::attribute::BasicType;
+using AVCT = search::attribute::CollectionType;
+using AttributePtr = search::AttributeVector::SP;
+using FTA = FtTestApp;
+using CollectionType = FieldInfo::CollectionType;
 
 namespace
 {
