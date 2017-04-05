@@ -290,6 +290,9 @@ public final class Version implements Comparable<Version> {
 
     public int hashCode() { return stringValue.hashCode(); }
 
+    /** Returns whether this equals the empty version */
+    public boolean isEmpty() { return this.equals(emptyVersion); }
+    
     /**
      * Compares this <code>Version</code> to another.
      *
