@@ -20,11 +20,14 @@ public class Zone {
     private final RegionName region;
     private final SystemName systemName;
     private final FlavorDefaults flavorDefaults;
+    private final Optional<NodeFlavors> nodeFlavors;
 
     @Inject
-    public Zone(ConfigserverConfig configserverConfig) {
-        this(SystemName.from(configserverConfig.system()), Environment.from(configserverConfig.environment()),
-                RegionName.from(configserverConfig.region()), new FlavorDefaults(configserverConfig));
+    public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors) {
+        this(SystemName.from(configserverConfig.system()),
+             Environment.from(configserverConfig.environment()),
+             RegionName.from(configserverConfig.region()),
+             new FlavorDefaults(configserverConfig), nodeFlavors);
     }
 
     /** Create from environment and region */
@@ -39,14 +42,19 @@ public class Zone {
 
     /** Create from environment and region. Useful for testing. */
     public Zone(SystemName system, Environment environment, RegionName region, String defaultFlavor) {
-        this(system, environment, region, new FlavorDefaults(defaultFlavor));
+        this(system, environment, region, new FlavorDefaults(defaultFlavor), null);
     }
 
-    private Zone(SystemName systemName, Environment environment, RegionName region, FlavorDefaults flavorDefaults) {
+    private Zone(SystemName systemName,
+                 Environment environment,
+                 RegionName region,
+                 FlavorDefaults flavorDefaults,
+                 NodeFlavors nodeFlavors) {
         this.environment = environment;
         this.region = region;
         this.flavorDefaults = flavorDefaults;
         this.systemName = systemName;
+        this.nodeFlavors = Optional.ofNullable(nodeFlavors);
     }
 
     /** Returns the current environment */
@@ -60,6 +68,9 @@ public class Zone {
 
     /** Returns the default hardware flavor to assign in this zone */
     public String defaultFlavor(ClusterSpec.Type clusterType) { return flavorDefaults.flavor(clusterType); }
+
+    /** Returns all available node flavors for the zone, or empty if not set for this Zone. */
+    public Optional<NodeFlavors> nodeFlavors() { return nodeFlavors; }
 
     /** Do not use */
     public static Zone defaultZone() {
