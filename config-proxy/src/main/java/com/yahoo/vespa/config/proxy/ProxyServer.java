@@ -85,14 +85,14 @@ public class ProxyServer implements Runnable {
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source) {
-        return createTestServer(source, null, new MemoryCache());
+        return createTestServer(source, null, new MemoryCache(), new ConfigProxyStatistics());
     }
 
     static ProxyServer createTestServer(ConfigSource source,
                                         ConfigSourceClient configSourceClient,
-                                        MemoryCache memoryCache)
+                                        MemoryCache memoryCache,
+                                        ConfigProxyStatistics statistics)
     {
-        final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
         final boolean delayedResponseHandling = false;
         return new ProxyServer(null, new DelayedResponses(statistics),
                                source, statistics, defaultTimingValues(), delayedResponseHandling,
