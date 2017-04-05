@@ -3,10 +3,7 @@
 #pragma once
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include "documentmetastore.h"
 #include <vespa/searchcore/proton/common/hw_info.h>
 
 namespace search
@@ -27,22 +24,22 @@ namespace proton
 class ITlsSyncer;
 class AttributeDiskLayout;
 class AttributeDirectory;
-
-using searchcorespi::FlushStats;
-using searchcorespi::IFlushTarget;
+class DocumentMetaStore;
 
 /**
  * Implementation of IFlushTarget interface for document meta store.
  **/
-class DocumentMetaStoreFlushTarget : public IFlushTarget
+class DocumentMetaStoreFlushTarget : public searchcorespi::IFlushTarget
 {
 private:
     /**
      * Task performing the actual flushing to disk.
      **/
     class Flusher;
+    using DocumentMetaStoreSP = std::shared_ptr<DocumentMetaStore>;
+    using FlushStats = searchcorespi::FlushStats;
 
-    DocumentMetaStore::SP       _dms;
+    DocumentMetaStoreSP         _dms;
     ITlsSyncer                 &_tlsSyncer;
     vespalib::string            _baseDir;
     bool                        _cleanUpAfterFlush;
@@ -60,7 +57,7 @@ public:
      * Creates a new instance using the given attribute vector and the
      * given base dir where all attribute vectors are located.
      **/
-    DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
+    DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms,
                                  ITlsSyncer &tlsSyncer,
                                  const vespalib::string &baseDir,
                                  const search::TuneFileAttributes &
