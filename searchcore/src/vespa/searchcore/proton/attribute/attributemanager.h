@@ -45,20 +45,25 @@ private:
     typedef AttributeCollectionSpec Spec;
     using FlushableAttributeSP = std::shared_ptr<FlushableAttribute>;
     using IFlushTargetSP = std::shared_ptr<searchcorespi::IFlushTarget>;
+    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
 
     class AttributeWrap
     {
     private:
-        search::AttributeVector::SP _attr;
+        AttributeVectorSP _attr;
         bool _isExtra;
+        bool _hideFromReading;
+        bool _hideFromWriting;
+        AttributeWrap(const AttributeVectorSP & a, bool isExtra_, bool hideFromReading, bool hideFromWriting);
     public:
-        AttributeWrap() : _attr(), _isExtra(false) { }
-        AttributeWrap(const search::AttributeVector::SP & a, bool isExtra_ = false) : 
-            _attr(a),
-            _isExtra(isExtra_)
-        { }
+        AttributeWrap();
+        ~AttributeWrap();
+        static AttributeWrap extraAttribute(const AttributeVectorSP &a);
+        static AttributeWrap normalAttribute(const AttributeVectorSP &a, bool hideFromReading, bool hideFromWriting);
         bool isExtra() const { return _isExtra; }
-        const search::AttributeVector::SP getAttribute() const { return _attr; }
+        const AttributeVectorSP getAttribute() const { return _attr; }
+        bool getHideFromReading() const { return _hideFromReading; }
+        bool getHideFromWriting() const { return _hideFromWriting; }
     };
 
     typedef vespalib::hash_map<vespalib::string, AttributeWrap> AttributeMap;
@@ -77,13 +82,13 @@ private:
     HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
-    search::AttributeVector::SP internalAddAttribute(const AttributeSpec &spec,
+    AttributeVectorSP internalAddAttribute(const AttributeSpec &spec,
                                                      uint64_t serialNum,
                                                      const IAttributeFactory &factory);
 
     void addAttribute(const AttributeWrap &attribute);
 
-    search::AttributeVector::SP findAttribute(const vespalib::string &name) const;
+    AttributeVectorSP findAttribute(const vespalib::string &name) const;
 
     FlushableAttributeSP findFlushable(const vespalib::string &name) const;
 
@@ -122,12 +127,11 @@ public:
                      IAttributeInitializerRegistry &initializerRegistry);
     ~AttributeManager();
 
-    search::AttributeVector::SP addAttribute(const AttributeSpec &spec,
-                                             uint64_t serialNum);
+    AttributeVectorSP addAttribute(const AttributeSpec &spec, uint64_t serialNum);
 
-    void addInitializedAttributes(const std::vector<search::AttributeVector::SP> &attributes);
+    void addInitializedAttributes(const std::vector<AttributeVectorSP> &attributes);
 
-    void addExtraAttribute(const search::AttributeVector::SP &attribute);
+    void addExtraAttribute(const AttributeVectorSP &attribute);
 
     void flushAll(SerialNum currentSerial);
 

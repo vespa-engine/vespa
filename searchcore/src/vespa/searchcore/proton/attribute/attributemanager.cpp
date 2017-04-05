@@ -62,6 +62,42 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
 
 }
 
+AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a,
+                                               bool isExtra_,
+                                               bool hideFromReading,
+                                               bool hideFromWriting)
+    : _attr(a),
+      _isExtra(isExtra_),
+      _hideFromReading(hideFromReading),
+      _hideFromWriting(hideFromWriting)
+{
+}
+
+AttributeManager::AttributeWrap::AttributeWrap()
+    : _attr(),
+      _isExtra(false),
+      _hideFromReading(false),
+      _hideFromWriting(false)
+{
+}
+
+AttributeManager::AttributeWrap::~AttributeWrap()
+{
+}
+
+AttributeManager::AttributeWrap
+AttributeManager::AttributeWrap::extraAttribute(const AttributeVectorSP &a)
+{
+    return AttributeWrap(a, true, false, false);
+}
+
+AttributeManager::AttributeWrap
+AttributeManager::AttributeWrap::normalAttribute(const AttributeVectorSP &a, bool hideFromReading, bool hideFromWriting)
+{
+    return AttributeWrap(a, false, hideFromReading, hideFromWriting);
+}
+
+
 AttributeVector::SP
 AttributeManager::internalAddAttribute(const AttributeSpec &spec,
                                        uint64_t serialNum,
@@ -71,7 +107,7 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
     AttributeVector::SP attr = initializer.init();
     if (attr.get() != NULL) {
         attr->setInterlock(_interlock);
-        addAttribute(attr);
+        addAttribute(AttributeWrap::normalAttribute(attr, spec.getHideFromReading(), spec.getHideFromWriting()));
     }
     return attr;
 }
@@ -120,7 +156,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
         if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
             LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
                        av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
-            addAttribute(av);
+            addAttribute(AttributeWrap::normalAttribute(av, aspec.getHideFromReading(), aspec.getHideFromWriting()));
         } else {
             toBeAdded.push_back(aspec);
         }
@@ -249,7 +285,7 @@ AttributeManager::addInitializedAttributes(const std::vector<search::AttributeVe
 {
     for (const auto &attribute : attributes) {
         attribute->setInterlock(_interlock);
-        addAttribute(attribute);
+        addAttribute(AttributeWrap::normalAttribute(attribute, false, false));
     }
 }
 
@@ -257,7 +293,7 @@ void
 AttributeManager::addExtraAttribute(const AttributeVector::SP &attribute)
 {
     attribute->setInterlock(_interlock);
-    addAttribute(AttributeWrap(attribute, true));
+    addAttribute(AttributeWrap::extraAttribute(attribute));
 }
 
 void
