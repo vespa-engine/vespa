@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/attributevector.h>
-
-namespace search { class ISequencedTaskExecutor; }
+namespace search {
+class AttributeVector;
+class ISequencedTaskExecutor;
+}
 namespace vespalib { class Gate; }
 
 namespace proton {
@@ -33,13 +34,14 @@ public:
     };
 
 private:
-    search::AttributeVector::SP _attribute;
+    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
+    AttributeVectorSP _attribute;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
 
 public:
     using UP = std::unique_ptr<ExclusiveAttributeReadAccessor>;
 
-    ExclusiveAttributeReadAccessor(const search::AttributeVector::SP &attribute,
+    ExclusiveAttributeReadAccessor(const AttributeVectorSP &attribute,
                                    search::ISequencedTaskExecutor &attributeFieldWriter);
     Guard::UP takeGuard();
 };

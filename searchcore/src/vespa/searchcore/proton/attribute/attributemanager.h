@@ -14,6 +14,8 @@
 namespace search
 {
 
+namespace attribute { class Interlock; }
+
 namespace common
 {
 

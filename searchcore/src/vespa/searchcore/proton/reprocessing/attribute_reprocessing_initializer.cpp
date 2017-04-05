@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.reprocessing.attribute_reprocessing_initializer");

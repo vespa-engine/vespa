@@ -13,6 +13,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/fastlib/text/normwordfolder.h>
 
 namespace search {
 
