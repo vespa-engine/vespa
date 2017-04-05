@@ -122,8 +122,7 @@ public:
                      IAttributeInitializerRegistry &initializerRegistry);
     ~AttributeManager();
 
-    search::AttributeVector::SP addAttribute(const vespalib::string &name,
-                                             const Config &cfg,
+    search::AttributeVector::SP addAttribute(const AttributeSpec &spec,
                                              uint64_t serialNum);
 
     void addInitializedAttributes(const std::vector<search::AttributeVector::SP> &attributes);

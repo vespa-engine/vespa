@@ -239,11 +239,9 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
 AttributeManager::~AttributeManager() { }
 
 AttributeVector::SP
-AttributeManager::addAttribute(const vespalib::string &name,
-                               const Config &cfg,
-                               uint64_t serialNum)
+AttributeManager::addAttribute(const AttributeSpec &spec, uint64_t serialNum)
 {
-    return internalAddAttribute(AttributeSpec(name, cfg), serialNum, *_factory);
+    return internalAddAttribute(spec, serialNum, *_factory);
 }
 
 void

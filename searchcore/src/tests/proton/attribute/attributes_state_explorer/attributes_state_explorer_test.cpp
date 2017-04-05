@@ -45,7 +45,7 @@ struct Fixture
         addExtraAttribute("extra");
     }
     void addAttribute(const vespalib::string &name) {
-        _mgr->addAttribute(name, AttributeUtils::getInt32Config(), 1);
+        _mgr->addAttribute({name, AttributeUtils::getInt32Config()}, 1);
     }
     void addExtraAttribute(const vespalib::string &name) {
         _mgr->addExtraAttribute(AttributeVector::SP(new Int32Attribute(name)));

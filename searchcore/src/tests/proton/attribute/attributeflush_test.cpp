@@ -266,12 +266,12 @@ struct AttributeManagerFixture
     AttributeManagerFixture(BaseFixture &bf);
     ~AttributeManagerFixture();
     AttributeVector::SP addAttribute(const vespalib::string &name) {
-        return _m.addAttribute(name, getInt32Config(), createSerialNum);
+        return _m.addAttribute({name, getInt32Config()}, createSerialNum);
     }
     AttributeVector::SP addPostingAttribute(const vespalib::string &name) {
         AVConfig cfg(getInt32Config());
         cfg.setFastSearch(true);
-        return _m.addAttribute(name, cfg, createSerialNum);
+        return _m.addAttribute({name, cfg}, createSerialNum);
     }
 };
 

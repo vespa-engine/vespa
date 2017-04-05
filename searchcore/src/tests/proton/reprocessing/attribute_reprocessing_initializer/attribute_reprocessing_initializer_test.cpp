@@ -63,13 +63,13 @@ struct MyConfig
     void addAttrs(const StringVector &attrs) {
         for (auto attr : attrs) {
             if (attr == "tensor") {
-                _mgr->addAttribute(attr, test::AttributeUtils::getTensorConfig(), 1);
+                _mgr->addAttribute({attr, test::AttributeUtils::getTensorConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::TENSOR));
             } else if (attr == "predicate") {
-                _mgr->addAttribute(attr, test::AttributeUtils::getPredicateConfig(), 1);
+                _mgr->addAttribute({attr, test::AttributeUtils::getPredicateConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::BOOLEANTREE));
             } else {
-                _mgr->addAttribute(attr, test::AttributeUtils::getStringConfig(), 1);
+                _mgr->addAttribute({attr, test::AttributeUtils::getStringConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::STRING));
             }
         }
