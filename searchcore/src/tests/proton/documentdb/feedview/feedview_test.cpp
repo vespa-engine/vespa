@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>

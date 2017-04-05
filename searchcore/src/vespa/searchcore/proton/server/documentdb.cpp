@@ -97,7 +97,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        const HwInfo &hwInfo)
     : IDocumentDBConfigOwner(),
       IReplayConfig(),
-      FeedHandler::IOwner(),
+      IFeedHandlerOwner(),
       IDocumentSubDBOwner(),
       IClusterStateChangedHandler(),
       IWipeOldRemovedFieldsHandler(),

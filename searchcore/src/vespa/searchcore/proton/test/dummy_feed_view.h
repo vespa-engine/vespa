@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/server/ifeedview.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 namespace proton {
 
@@ -34,8 +35,6 @@ struct DummyFeedView : public IFeedView
                               const RemoveOperation &) {}
     virtual void prepareDeleteBucket(DeleteBucketOperation &) {}
     virtual void handleDeleteBucket(const DeleteBucketOperation &) {}
-    virtual void handleSplit(FeedToken *, const SplitBucketOperation &) {}
-    virtual void handleJoin(FeedToken *, const JoinBucketsOperation &) {}
     virtual void prepareMove(MoveOperation &) {}
     virtual void handleMove(const MoveOperation &) {}
     virtual void heartBeat(search::SerialNum) {}

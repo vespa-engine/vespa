@@ -11,6 +11,7 @@ LOG_SETUP("feedstates_test");
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/server/feedstates.h>
+#include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchlib/common/serialnum.h>

@@ -9,6 +9,7 @@
 #include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
 #include "feedhandler.h"
+#include "i_feed_handler_owner.h"
 #include "i_lid_space_compaction_handler.h"
 #include "ifeedview.h"
 #include "ireplayconfig.h"
@@ -72,7 +73,7 @@ namespace configvalidator { class Result; }
  */
 class DocumentDB : public IDocumentDBConfigOwner,
                    public IReplayConfig,
-                   public FeedHandler::IOwner,
+                   public IFeedHandlerOwner,
                    public IDocumentSubDBOwner,
                    public IClusterStateChangedHandler,
                    public IWipeOldRemovedFieldsHandler,
@@ -209,14 +210,14 @@ private:
     void performDropFeedView2(IFeedView::SP feedView);
 
     /**
-     * Implements FeedHandler::IOwner
+     * Implements IFeedHandlerOwner
      */
     virtual void onTransactionLogReplayDone() __attribute__((noinline));
     virtual void onPerformPrune(SerialNum flushedSerial);
     virtual bool isFeedBlockedByRejectedConfig();
 
     /**
-     * Implements FeedHandler::IOwner
+     * Implements IFeedHandlerOwner
      **/
     virtual void performWipeHistory();
     virtual bool getAllowPrune(void) const;
@@ -469,7 +470,7 @@ public:
     uint32_t getDistributionKey() const override;
 
     /**
-     * Implements FeedHandler::IOwner
+     * Implements IFeedHandlerOwner
      **/
     void injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config);
     void performStartMaintenance(void);

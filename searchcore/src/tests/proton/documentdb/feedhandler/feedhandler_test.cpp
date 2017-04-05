@@ -6,12 +6,19 @@
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
+#include <vespa/searchcore/proton/feedoperation/putoperation.h>
+#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
+#include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
 #include <vespa/searchcore/proton/server/configstore.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/feedhandler.h>
+#include <vespa/searchcore/proton/server/i_feed_handler_owner.h>
+#include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -87,7 +94,7 @@ struct Rendezvous {
 };
 
 
-struct MyOwner : public FeedHandler::IOwner
+struct MyOwner : public IFeedHandlerOwner
 {
     bool rejected_config;
     bool _allowPrune;

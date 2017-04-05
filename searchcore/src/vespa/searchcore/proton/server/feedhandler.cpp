@@ -5,6 +5,8 @@
 #include "replaypacketdispatcher.h"
 #include "tlcproxy.h"
 #include "ddbstate.h"
+#include "i_feed_handler_owner.h"
+#include "ifeedview.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/documentreply.h>
 #include <vespa/documentapi/messagebus/messages/feedreply.h>
@@ -15,6 +17,7 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
+#include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -37,7 +40,6 @@ using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using vespalib::Executor;
 using vespalib::IllegalStateException;
-using vespalib::ThreadStackExecutorBase;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 using vespalib::make_string;
@@ -510,7 +512,7 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
                          const DocTypeName &docTypeName,
                          PerDocTypeFeedMetrics &metrics,
                          DDBState &state,
-                         IOwner &owner,
+                         IFeedHandlerOwner &owner,
                          const IResourceWriteFilter &writeFilter,
                          IReplayConfig &replayConfig,
                          search::transactionlog::Writer *tlsDirectWriter,

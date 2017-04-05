@@ -4,6 +4,7 @@
 #include "storeonlyfeedview.h"
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/vespalib/stllike/string.h>

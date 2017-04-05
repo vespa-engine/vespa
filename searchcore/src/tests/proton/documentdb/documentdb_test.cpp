@@ -5,6 +5,7 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreflushtarget.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>

@@ -5,6 +5,9 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
+#include <vespa/searchcore/proton/feedoperation/putoperation.h>
+#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/server/i_operation_storer.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
