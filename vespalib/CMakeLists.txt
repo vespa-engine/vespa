@@ -49,6 +49,7 @@ vespa_define_module(
     src/tests/memory
     src/tests/net/selector
     src/tests/net/socket
+    src/tests/net/socket_spec
     src/tests/objects/nbostream
     src/tests/optimized
     src/tests/printable
