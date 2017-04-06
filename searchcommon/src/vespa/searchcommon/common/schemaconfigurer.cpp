@@ -15,8 +15,10 @@ namespace index {
 using schema::DataType;
 using schema::CollectionType;
 
+namespace {
+
 Schema::DataType
-SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Datatype &type)
+convertIndexDataType(const IndexschemaConfig::Indexfield::Datatype &type)
 {
     switch (type) {
     case IndexschemaConfig::Indexfield::STRING:
@@ -31,7 +33,7 @@ SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Datatype &type)
 
 
 Schema::CollectionType
-SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Collectiontype & type)
+convertIndexCollectionType(const IndexschemaConfig::Indexfield::Collectiontype &type)
 {
     switch (type) {
     case IndexschemaConfig::Indexfield::SINGLE:
@@ -44,36 +46,36 @@ SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Collectiontype & typ
     return CollectionType::SINGLE;
 }
 
-
+template <typename ConfigType>
 Schema::DataType
-SchemaBuilder::convert(const AttributesConfig::Attribute::Datatype &type)
+convertDataType(const ConfigType &type)
 {
     switch (type) {
-    case AttributesConfig::Attribute::STRING:
+    case ConfigType::STRING:
         return DataType::STRING;
-    case AttributesConfig::Attribute::UINT1:
+    case ConfigType::UINT1:
         return DataType::UINT1;
-    case AttributesConfig::Attribute::UINT2:
+    case ConfigType::UINT2:
         return DataType::UINT2;
-    case AttributesConfig::Attribute::UINT4:
+    case ConfigType::UINT4:
         return DataType::UINT4;
-    case AttributesConfig::Attribute::INT8:
+    case ConfigType::INT8:
         return DataType::INT8;
-    case AttributesConfig::Attribute::INT16:
+    case ConfigType::INT16:
         return DataType::INT16;
-    case AttributesConfig::Attribute::INT32:
+    case ConfigType::INT32:
         return DataType::INT32;
-    case AttributesConfig::Attribute::INT64:
+    case ConfigType::INT64:
         return DataType::INT64;
-    case AttributesConfig::Attribute::FLOAT:
+    case ConfigType::FLOAT:
         return DataType::FLOAT;
-    case AttributesConfig::Attribute::DOUBLE:
+    case ConfigType::DOUBLE:
         return DataType::DOUBLE;
-    case AttributesConfig::Attribute::PREDICATE:
+    case ConfigType::PREDICATE:
         return DataType::BOOLEANTREE;
-    case AttributesConfig::Attribute::TENSOR:
+    case ConfigType::TENSOR:
         return DataType::TENSOR;
-    case AttributesConfig::Attribute::REFERENCE:
+    case ConfigType::REFERENCE:
         return DataType::REFERENCE;
     default:
         break;
@@ -82,16 +84,16 @@ SchemaBuilder::convert(const AttributesConfig::Attribute::Datatype &type)
     return DataType::STRING;
 }
 
-
+template <typename ConfigType>
 Schema::CollectionType
-SchemaBuilder::convert(const AttributesConfig::Attribute::Collectiontype &type)
+convertCollectionType(const ConfigType &type)
 {
     switch (type) {
-    case AttributesConfig::Attribute::SINGLE:
+    case ConfigType::SINGLE:
         return CollectionType::SINGLE;
-    case AttributesConfig::Attribute::ARRAY:
+    case ConfigType::ARRAY:
         return CollectionType::ARRAY;
-    case AttributesConfig::Attribute::WEIGHTEDSET:
+    case ConfigType::WEIGHTEDSET:
         return CollectionType::WEIGHTEDSET;
     }
     return CollectionType::SINGLE;
@@ -99,7 +101,7 @@ SchemaBuilder::convert(const AttributesConfig::Attribute::Collectiontype &type)
 
 
 Schema::DataType
-SchemaBuilder::convertSummaryType(const vespalib::string & type)
+convertSummaryType(const vespalib::string &type)
 {
     if (type == "byte") {
         return DataType::INT8;
@@ -128,6 +130,7 @@ SchemaBuilder::convertSummaryType(const vespalib::string & type)
     return DataType::RAW;
 }
 
+}
 
 void
 SchemaBuilder::build(const IndexschemaConfig &cfg, Schema &schema)
@@ -141,8 +144,8 @@ SchemaBuilder::build(const IndexschemaConfig &cfg, Schema &schema)
             LOG(warning, "Your field '%s' is a rise index. Those are no longer supported as of Vespa-5.89.\n"
                          " Redeploy and follow instructions to mitigate.", f.name.c_str());
         } else {
-            schema.addIndexField(Schema::IndexField(f.name, convert(f.datatype),
-                                                convert(f.collectiontype)).
+            schema.addIndexField(Schema::IndexField(f.name, convertIndexDataType(f.datatype),
+                                                    convertIndexCollectionType(f.collectiontype)).
                                  setPrefix(f.prefix).
                                  setPhrases(f.phrases).
                                  setPositions(f.positions).
@@ -166,8 +169,8 @@ SchemaBuilder::build(const AttributesConfig &cfg, Schema &schema)
     for (size_t i = 0; i < cfg.attribute.size(); ++i) {
         const AttributesConfig::Attribute & a = cfg.attribute[i];
         schema.addAttributeField(Schema::Field(a.name,
-                                         convert(a.datatype),
-                                         convert(a.collectiontype)));
+                                               convertDataType(a.datatype),
+                                               convertCollectionType(a.collectiontype)));
     }
 }
 
@@ -206,9 +209,9 @@ void
 SchemaBuilder::build(const ImportedFieldsConfig &cfg, Schema &schema)
 {
     for (const auto &attr : cfg.attribute) {
-        // TODO: Use correct datatype and collection type when available in config.
         schema.addImportedAttributeField(Schema::ImportedAttributeField(attr.name,
-                                                                        schema::DataType::STRING));
+                                                                        convertDataType(attr.datatype),
+                                                                        convertCollectionType(attr.collectiontype)));
     }
 }
 
