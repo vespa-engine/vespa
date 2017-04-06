@@ -8,13 +8,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.Version;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.TestWithCurator;
@@ -27,8 +31,10 @@ import com.yahoo.io.IOUtils;
 public class ZKApplicationPackageTest extends TestWithCurator {
 
     private static final String APP = "src/test/apps/zkapp";
+    private static final String TEST_FLAVOR_NAME = "test-flavor";
+    private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
     private static final ProvisionInfo provisionInfo = ProvisionInfo.withHosts(
-            Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList())));
+            Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty())));
 
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
@@ -36,7 +42,7 @@ public class ZKApplicationPackageTest extends TestWithCurator {
     @Test
     public void testBasicZKFeed() throws IOException {
         feed(configCurator, new File(APP));
-        ZKApplicationPackage zkApp = new ZKApplicationPackage(configCurator, Path.fromString("/0"));
+        ZKApplicationPackage zkApp = new ZKApplicationPackage(configCurator, Path.fromString("/0"), Optional.of(new MockNodeFlavors()));
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getServices())).matches());
         assertTrue(Pattern.compile(".*<alias>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getHosts())).matches());
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
@@ -61,6 +67,7 @@ public class ZKApplicationPackageTest extends TestWithCurator {
         assertTrue(zkApp.getProvisionInfoMap().containsKey(goodVersion));
         ProvisionInfo readInfo = zkApp.getProvisionInfoMap().get(goodVersion);
         assertThat(Utf8.toString(readInfo.toJson()), is(Utf8.toString(provisionInfo.toJson())));
+        assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertTrue(zkApp.getDeployment().isPresent());
         assertThat(DeploymentSpec.fromXml(zkApp.getDeployment().get()).globalServiceId().get(), is("mydisc"));
     }
@@ -74,4 +81,14 @@ public class ZKApplicationPackageTest extends TestWithCurator {
         zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode + "/3.0.0", provisionInfo.toJson());
     }
 
+    private static class MockNodeFlavors extends NodeFlavors{
+
+        MockNodeFlavors() { super(flavorsConfig()); }
+
+        private static FlavorsConfig flavorsConfig() {
+            return new FlavorsConfig(new FlavorsConfig.Builder()
+                            .flavor(new FlavorsConfig.Flavor.Builder().name(TEST_FLAVOR_NAME))
+            );
+        }
+    }
 }
