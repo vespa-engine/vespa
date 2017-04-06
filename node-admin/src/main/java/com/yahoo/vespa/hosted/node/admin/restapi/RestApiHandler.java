@@ -76,7 +76,7 @@ public class RestApiHandler extends LoggingRequestHandler{
                 }
             };
         }
-        return new SimpleResponse(400, "unknown path" + path);
+        return new SimpleResponse(400, "unknown path " + path);
     }
 
     private HttpResponse handlePut(HttpRequest request) {
@@ -96,7 +96,7 @@ public class RestApiHandler extends LoggingRequestHandler{
                     new SimpleResponse(200, "ok") :
                     new SimpleResponse(409, "fail");
         }
-        return new SimpleResponse(400, "unknown path" + path);
+        return new SimpleResponse(400, "unknown path " + path);
     }
 
     private static class SimpleResponse extends HttpResponse {
