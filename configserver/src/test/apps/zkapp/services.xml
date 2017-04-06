@@ -10,51 +10,23 @@
     </slobroks>
   </admin>
 
-  <clients version="2.0">
-    <gateways protocols="http">
-      <gateway hostalias="node1" />
-    </gateways>
-  </clients>
+  <jdisc version="1.0">
+    <documentapi/>
+    <search/>
+    <nodes>
+      <node hostalias="node1"/>
+    </nodes>
+  </jdisc>
 
-  <search version="2.0">
-    <qrservers>
-      <qrserver hostalias="node1" />
-    </qrservers>
-    <cluster name="music" indexingmode="realtime">
-      <searchdefinitions>
-        <searchdefinition name="music" />
-      </searchdefinitions>
-      <clustercontrollers>
-        <clustercontroller hostalias="node1" />
-      </clustercontrollers>
-      <topleveldispatchers>
-        <topleveldispatcher hostalias="node1" />
-      </topleveldispatchers>
-        <row index="0">
-          <searchnodes>
-            <searchnode hostalias="node1" index="0" />
-          </searchnodes>
-        </row>
-    </cluster>
-  </search>
+  <content version="1.0">
+    <redundancy>1"</redundancy>
+    <documents>
+      <document name="music" mode="index"/>
+    </documents>
 
-  <storage version="3.0">
-    <cluster redundancy="1">
-<!--
-Do not reshuffle nodes or change index values - this will cause
-massive document redistribution. 
-
-If you want to discontinue use of a node, set it in the 'retired' state,
-this will rebalance the documents out of the node. Once node is empty,
-you can stop it and delete the reference to it in vespa-services and
-vespa-hosts files.
--->
-      <group index="0" name="mycluster">
+    <group index="0" name="mycluster">
         <node hostalias="node1" index="0"/>
       </group>
-
-      <fleetcontroller hostalias="node1" />
-    </cluster>
-  </storage>
+  </content>
 
 </services>
