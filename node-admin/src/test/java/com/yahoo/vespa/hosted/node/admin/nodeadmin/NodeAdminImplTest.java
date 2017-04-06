@@ -4,14 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.collections.Pair;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -31,6 +26,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -54,47 +50,41 @@ public class NodeAdminImplTest {
         final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty());
 
+        final String hostName1 = "host1.test.yahoo.com";
+        final String hostName2 = "host2.test.yahoo.com";
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
-        when(nodeAgentFactory.apply(any(String.class))).thenReturn(nodeAgent1).thenReturn(nodeAgent2);
+        when(nodeAgentFactory.apply(eq(hostName1))).thenReturn(nodeAgent1);
+        when(nodeAgentFactory.apply(eq(hostName2))).thenReturn(nodeAgent2);
 
-        final String hostName = "host1.test.yahoo.com";
-        final DockerImage dockerImage = new DockerImage("image");
-        final ContainerName containerName = new ContainerName("host1");
-        final Container existingContainer = new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 5);
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
-                .hostname(hostName)
-                .wantedDockerImage(dockerImage)
-                .nodeState(Node.State.active)
-                .nodeType("tenant")
-                .nodeFlavor("docker")
-                .build();
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(hostName1));
         verifyNoMoreInteractions(nodeAgentFactory);
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(nodeSpec), Collections.singletonList(existingContainer));
-        inOrder.verify(nodeAgentFactory).apply(hostName);
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(hostName1));
+        inOrder.verify(nodeAgentFactory).apply(hostName1);
         inOrder.verify(nodeAgent1).start(100);
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(nodeSpec), Collections.singletonList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(hostName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
-        inOrder.verify(nodeAgent1, never()).start(1);
+        inOrder.verify(nodeAgent1, never()).start(anyInt());
         inOrder.verify(nodeAgent1, never()).stop();
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(existingContainer));
+
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(hostName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         verify(nodeAgent1).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(nodeSpec), Collections.singletonList(existingContainer));
-        inOrder.verify(nodeAgentFactory).apply(hostName);
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName2), Collections.singletonList(hostName1));
+        inOrder.verify(nodeAgentFactory).apply(hostName2);
         inOrder.verify(nodeAgent2).start(100);
         inOrder.verify(nodeAgent2, never()).stop();
+        verify(nodeAgent1).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
-        inOrder.verify(nodeAgent2, never()).start(1);
+        inOrder.verify(nodeAgent2, never()).start(anyInt());
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);
@@ -110,30 +100,17 @@ public class NodeAdminImplTest {
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty());
 
         List<NodeAgent> nodeAgents = new ArrayList<>();
-        List<Container> existingContainers = new ArrayList<>();
-        List<ContainerNodeSpec> nodeSpecs = new ArrayList<>();
-        final DockerImage dockerImage = new DockerImage("image");
+        List<String> existingContainerHostnames = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             final String hostName = "host" + i + ".test.yahoo.com";
             NodeAgent nodeAgent = mock(NodeAgent.class);
             nodeAgents.add(nodeAgent);
             when(nodeAgentFactory.apply(eq(hostName))).thenReturn(nodeAgent);
 
-            final ContainerName containerName = new ContainerName("host" + i);
-            existingContainers.add(
-                    new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 5));
-
-            nodeSpecs.add(
-                    new ContainerNodeSpec.Builder()
-                            .hostname(hostName)
-                            .wantedDockerImage(dockerImage)
-                            .nodeState(Node.State.active)
-                            .nodeType("tenant")
-                            .nodeFlavor("docker")
-                            .build());
-
+            existingContainerHostnames.add(hostName);
         }
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(nodeSpecs, existingContainers);
+
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(existingContainerHostnames, existingContainerHostnames);
 
         mockNodeAgentSetFrozenResponse(nodeAgents, false, false, false);
         assertFalse(nodeAdmin.setFrozen(true)); // NodeAdmin freezes only when all the NodeAgents are frozen
