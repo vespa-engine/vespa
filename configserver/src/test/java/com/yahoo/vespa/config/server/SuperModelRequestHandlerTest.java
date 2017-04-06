@@ -3,7 +3,9 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Version;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -43,7 +45,8 @@ public class SuperModelRequestHandlerTest {
         counter = new SuperModelGenerationCounter(new MockCurator());
         controller = new SuperModelRequestHandler(counter,
                                                   new TestConfigDefinitionRepo(),
-                                                  new ConfigserverConfig(new ConfigserverConfig.Builder()));
+                                                  new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                                  emptyNodeFlavors());
     }
 
     @Test
@@ -94,7 +97,8 @@ public class SuperModelRequestHandlerTest {
         long masterGen = 10;
         controller = new SuperModelRequestHandler(counter,
                                                   new TestConfigDefinitionRepo(),
-                                                  new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen)));
+                                                  new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen)),
+                                                  emptyNodeFlavors());
 
         long gen = counter.increment();
         controller.reloadConfig(tenantA, createApp(tenantA, "foo", 3L, 1));
@@ -125,6 +129,10 @@ public class SuperModelRequestHandlerTest {
             super(vespaModel, cache, appGeneration, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app);
             this.version = version;
         }
+    }
+
+    public static NodeFlavors emptyNodeFlavors() {
+        return new NodeFlavors(new FlavorsConfig(new FlavorsConfig.Builder()));
     }
 
 }

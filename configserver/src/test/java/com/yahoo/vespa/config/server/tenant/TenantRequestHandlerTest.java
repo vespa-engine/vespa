@@ -85,7 +85,10 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     }
 
     private void feedApp(File appDir, long sessionId, ApplicationId appId) throws IOException {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator, new PathProvider(Path.createRoot()).getSessionDir(sessionId), new TestConfigDefinitionRepo(), "");
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
+                                                                new PathProvider(Path.createRoot()).getSessionDir(sessionId),
+                                                                new TestConfigDefinitionRepo(),
+                                                                "", Optional.empty());
         zkc.writeApplicationId(appId);
         File app = tempFolder.newFolder();
         IOUtils.copyDirectory(appDir, app);
@@ -98,7 +101,10 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     }
 
     private ApplicationSet reloadConfig(long id, String application) {
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator, new PathProvider(Path.createRoot()).getSessionDir(id), new TestConfigDefinitionRepo(), "");
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
+                                                                new PathProvider(Path.createRoot()).getSessionDir(id),
+                                                                new TestConfigDefinitionRepo(),
+                                                                "", Optional.empty());
         zkc.writeApplicationId(new ApplicationId.Builder().tenant(tenant).applicationName(application).build());
         RemoteSession session = new RemoteSession(tenant, id, componentRegistry, zkc);
         return session.ensureApplicationLoaded();
@@ -176,7 +182,10 @@ public class TenantRequestHandlerTest extends TestWithCurator {
     @Test
     public void testResolveForAppId() {
         long id = 1l;
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator, new PathProvider(Path.createRoot()).getSessionDir(id), new TestConfigDefinitionRepo(), "");
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, configCurator,
+                                                                new PathProvider(Path.createRoot()).getSessionDir(id),
+                                                                new TestConfigDefinitionRepo(),
+                                                                "", Optional.empty());
         ApplicationId appId = new ApplicationId.Builder()
                               .tenant(tenant)
                               .applicationName("myapp").instanceName("myinst").build();
