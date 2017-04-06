@@ -62,15 +62,21 @@ public class NodeAdminStateUpdaterTest {
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
 
-        // Initially we start with everything running and we want to continue running, therefore we are converged
-        // and ticks should complete without ever calling NodeAdmin
-        tickAfter(0);
+        // Initially everything is frozen to force convergence
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
+        when(orchestrator.resume(parentHostname)).thenReturn(true);
+        tickAfter(0); // The first tick should unfreeze
+        verify(orchestrator, times(1)).resume(parentHostname); // Resume host
+        verify(orchestrator, times(1)).resume(parentHostname);
+
+        // Everything is running and we want to continue running, therefore we have converged
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         verify(refresher, never()).signalWorkToBeDone(); // No attempt in changing state
-        verify(orchestrator, never()).resume(parentHostname); // Already resumed
+        verify(orchestrator, times(1)).resume(parentHostname); // Already resumed
 
         // Lets try to suspend node admin only, immediately we get false back, and need to wait until next
         // tick before any change can happen
@@ -91,18 +97,18 @@ public class NodeAdminStateUpdaterTest {
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(refresher, times(1)).signalWorkToBeDone();
-        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // Roll back
+        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Roll back
 
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
-        verify(nodeAdmin, times(1)).setFrozen(eq(false));
+        verify(nodeAdmin, times(2)).setFrozen(eq(false));
 
         // At this point orchestrator says its OK to suspend, but something goes wrong when we try to stop services
         doThrow(new RuntimeException("Failed to stop services")).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
         tickAfter(0); // Change in wanted state, no need to wait
         verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
-        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // Make sure we dont roll back
+        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure we dont roll back
 
         // Finally we are successful in transitioning to frozen
         tickAfter(35);

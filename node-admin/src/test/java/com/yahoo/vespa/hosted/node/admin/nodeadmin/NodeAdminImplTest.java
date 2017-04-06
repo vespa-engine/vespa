@@ -112,6 +112,11 @@ public class NodeAdminImplTest {
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(existingContainerHostnames, existingContainerHostnames);
 
+        assertTrue(nodeAdmin.isFrozen()); // Initially everything is frozen to force convergence
+        mockNodeAgentSetFrozenResponse(nodeAgents, true, true, true);
+        assertTrue(nodeAdmin.setFrozen(false)); // Unfreeze everything
+
+
         mockNodeAgentSetFrozenResponse(nodeAgents, false, false, false);
         assertFalse(nodeAdmin.setFrozen(true)); // NodeAdmin freezes only when all the NodeAgents are frozen
 

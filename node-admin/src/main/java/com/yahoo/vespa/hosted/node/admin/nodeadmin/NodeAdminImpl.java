@@ -41,7 +41,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final Optional<StorageMaintainer> storageMaintainer;
-    private boolean isFrozen = false;
+    private boolean isFrozen = true;
 
     private final Map<String, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 

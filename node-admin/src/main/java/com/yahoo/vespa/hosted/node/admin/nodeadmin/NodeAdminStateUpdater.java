@@ -34,7 +34,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
     private final AtomicBoolean terminated = new AtomicBoolean(false);
-    private State currentState = RESUMED;
+    private State currentState = SUSPENDED_NODE_ADMIN;
     private State wantedState = RESUMED;
     private boolean workToDoNow = true;
 
