@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintainer;
 
+import com.yahoo.log.LogSetup;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Type;
@@ -26,13 +27,14 @@ public class Maintainer {
     private static final HttpClient httpClient = HttpClientBuilder.create().build();
 
     public static void main(String[] args) {
+        LogSetup.initVespaLogging("node-maintainer");
         if (args.length != 1) {
             throw new RuntimeException("Expected only 1 argument - a JSON list of maintainer jobs to execute");
         }
 
         Inspector object = SlimeUtils.jsonToSlime(args[0].getBytes()).get();
         if (object.type() != Type.ARRAY) {
-            throw new IllegalArgumentException("Expected a list maintainer jobs to execute");
+            throw new IllegalArgumentException("Expected a list of maintainer jobs to execute");
         }
 
         // Variable must be effectively final to be used in lambda expression
