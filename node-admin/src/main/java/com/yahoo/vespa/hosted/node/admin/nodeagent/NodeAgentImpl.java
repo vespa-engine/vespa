@@ -46,7 +46,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.Containe
  */
 public class NodeAgentImpl implements NodeAgent {
     private final AtomicBoolean terminated = new AtomicBoolean(false);
-    private boolean isFrozen = false;
+    private boolean isFrozen = true;
     private boolean wantFrozen = false;
     private boolean workToDoNow = true;
 

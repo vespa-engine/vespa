@@ -112,7 +112,10 @@ public class RunInContainerTest {
         waitForJdiscContainerToServe();
         final String parentHostname = "localhost.test.yahoo.com";
 
-        assertThat(doPutCall("resume"), is(true));
+        assertFalse(doPutCall("resume")); // Initial is false to force convergence
+        when(ComponentsProviderWithMocks.orchestratorMock.resume(parentHostname)).thenReturn(true);
+        Thread.sleep(50);
+        assertTrue(doPutCall("resume"));
 
         // No nodes are allocated to this host yet, so freezing should be fine, but orchestrator doesnt allow node-admin suspend
         when(ComponentsProviderWithMocks.orchestratorMock.suspend(parentHostname, Collections.singletonList(parentHostname)))
@@ -132,7 +135,6 @@ public class RunInContainerTest {
         assertTrue(doPutCall("suspend"));
 
         // Back to resume
-        when(ComponentsProviderWithMocks.orchestratorMock.resume(parentHostname)).thenReturn(true);
         assertFalse(doPutCall("resume"));
         Thread.sleep(50);
         assertTrue(doPutCall("resume"));
