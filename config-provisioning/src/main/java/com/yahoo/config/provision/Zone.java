@@ -27,7 +27,8 @@ public class Zone {
         this(SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),
              RegionName.from(configserverConfig.region()),
-             new FlavorDefaults(configserverConfig), nodeFlavors);
+             new FlavorDefaults(configserverConfig),
+             nodeFlavors);
     }
 
     /** Create from environment and region */
