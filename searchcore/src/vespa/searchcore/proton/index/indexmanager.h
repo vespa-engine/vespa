@@ -8,16 +8,13 @@
 
 namespace proton {
 
-using searchcorespi::IFlushTarget;
-using searchcorespi::IIndexManager;
-
 /**
  * The IndexManager provides a holistic view of a set of disk and
  * memory indexes. It allows updating the active index, enables search
  * across all indexes, and manages the set of indexes through flushing
  * of memory indexes and fusion of disk indexes.
  */
-class IndexManager : public IIndexManager
+class IndexManager : public searchcorespi::IIndexManager
 {
 public:
     class MaintainerOperations : public searchcorespi::index::IIndexMaintainerOperations {
@@ -110,7 +107,7 @@ public:
         return _maintainer.getSearchableStats();
     }
 
-    virtual IFlushTarget::List getFlushTargets() {
+    virtual searchcorespi::IFlushTarget::List getFlushTargets() {
         return _maintainer.getFlushTargets();
     }
 

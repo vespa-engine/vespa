@@ -273,7 +273,7 @@ PersistenceEngine::initialize()
 }
 
 
-PartitionStateListResult
+PersistenceEngine::PartitionStateListResult
 PersistenceEngine::getPartitionStates() const
 {
     PartitionStateList list(1);
@@ -388,7 +388,7 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
     return latch.getResult();
 }
 
-RemoveResult
+PersistenceEngine::RemoveResult
 PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
@@ -412,7 +412,7 @@ PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, C
 }
 
 
-UpdateResult
+PersistenceEngine::UpdateResult
 PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP& upd, Context&)
 {
     if (!_writeFilter.acceptWriteOperation()) {
@@ -446,7 +446,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
 }
 
 
-GetResult
+PersistenceEngine::GetResult
 PersistenceEngine::get(const Bucket& b,
                        const document::FieldSet& fields,
                        const DocumentId& did,
@@ -478,7 +478,7 @@ PersistenceEngine::get(const Bucket& b,
 }
 
 
-CreateIteratorResult
+PersistenceEngine::CreateIteratorResult
 PersistenceEngine::createIterator(const Bucket &bucket,
                                   const document::FieldSet& fields,
                                   const Selection &selection,
@@ -508,7 +508,7 @@ PersistenceEngine::createIterator(const Bucket &bucket,
 }
 
 
-IterateResult
+PersistenceEngine::IterateResult
 PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
@@ -688,7 +688,7 @@ PersistenceEngine::saveClusterState(const ClusterState &calc)
     }
 }
 
-ClusterState::SP
+PersistenceEngine::ClusterState::SP
 PersistenceEngine::savedClusterState(void) const
 {
     LockGuard guard(_lock);

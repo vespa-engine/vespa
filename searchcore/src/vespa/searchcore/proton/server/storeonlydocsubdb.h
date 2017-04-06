@@ -27,6 +27,7 @@ class MetricsWireService;
 class LegacyDocumentDBMetrics;
 class FeedHandler;
 class DocumentMetaStoreInitializerResult;
+class IDocumentSubDBOwner;
 namespace initializer { class InitializerTask; }
 
 namespace bucketdb { class IBucketDBHandlerInitializer; }
@@ -38,11 +39,11 @@ namespace documentmetastore { class LidReuseDelayerConfig; }
 class DocSubDB : public IDocumentSubDB
 {
 protected:
-    IOwner			  &_owner;
+    IDocumentSubDBOwner	              &_owner;
     search::transactionlog::SyncProxy &_tlSyncer;
 
 public:
-    DocSubDB(IOwner &owner, search::transactionlog::SyncProxy &tlSyncer)
+    DocSubDB(IDocumentSubDBOwner &owner, search::transactionlog::SyncProxy &tlSyncer)
         : IDocumentSubDB(),
           _owner(owner),
           _tlSyncer(tlSyncer)
@@ -107,7 +108,7 @@ public:
     };
 
     struct Context {
-        IDocumentSubDB::IOwner &_owner;
+        IDocumentSubDBOwner &_owner;
         search::transactionlog::SyncProxy &_tlSyncer;
         const IGetSerialNum &_getSerialNum;
         const search::common::FileHeaderContext &_fileHeaderContext;
@@ -119,7 +120,7 @@ public:
         std::mutex &_configMutex;
         const HwInfo &_hwInfo;
 
-        Context(IDocumentSubDB::IOwner &owner,
+        Context(IDocumentSubDBOwner &owner,
                 search::transactionlog::SyncProxy &tlSyncer,
                 const IGetSerialNum &getSerialNum,
                 const search::common::FileHeaderContext &fileHeaderContext,
@@ -166,7 +167,7 @@ private:
     TlsSyncer                        _tlsSyncer;
     DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
 
-    IFlushTarget::List getFlushTargets() override;
+    IFlushTargetList getFlushTargets() override;
 protected:
     const uint32_t                  _subDbId;
     const SubDbType                 _subDbType;
@@ -188,7 +189,7 @@ protected:
 
     void setupDocumentMetaStore(std::shared_ptr<DocumentMetaStoreInitializerResult> dmsResult);
     void initFeedView(const DocumentDBConfig &configSnapshot);
-    virtual IFlushTarget::List getFlushTargetsInternal();
+    virtual IFlushTargetList getFlushTargetsInternal();
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
     vespalib::string getSubDbName() const;

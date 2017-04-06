@@ -5,27 +5,27 @@
 
 namespace proton {
 
-using storage::spi::Bucket;
-using storage::spi::BucketIdListResult;
-using storage::spi::BucketInfoResult;
-using storage::spi::ClusterState;
-using storage::spi::Context;
-using storage::spi::CreateIteratorResult;
-using storage::spi::GetResult;
-using storage::spi::IncludedVersions;
-using storage::spi::IterateResult;
-using storage::spi::IteratorId;
-using storage::spi::PartitionId;
-using storage::spi::PartitionStateListResult;
-using storage::spi::RemoveResult;
-using storage::spi::Result;
-using storage::spi::Selection;
-using storage::spi::Timestamp;
-using storage::spi::UpdateResult;
-
 class PersistenceProviderProxy : public storage::spi::PersistenceProvider
 {
 private:
+    using Bucket = storage::spi::Bucket;
+    using BucketIdListResult = storage::spi::BucketIdListResult;
+    using BucketInfoResult = storage::spi::BucketInfoResult;
+    using ClusterState = storage::spi::ClusterState;
+    using Context = storage::spi::Context;
+    using CreateIteratorResult = storage::spi::CreateIteratorResult;
+    using GetResult = storage::spi::GetResult;
+    using IncludedVersions = storage::spi::IncludedVersions;
+    using IterateResult = storage::spi::IterateResult;
+    using IteratorId = storage::spi::IteratorId;
+    using PartitionId = storage::spi::PartitionId;
+    using PartitionStateListResult = storage::spi::PartitionStateListResult;
+    using RemoveResult = storage::spi::RemoveResult;
+    using Result = storage::spi::Result;
+    using Selection = storage::spi::Selection;
+    using Timestamp = storage::spi::Timestamp;
+    using UpdateResult = storage::spi::UpdateResult;
+
     storage::spi::PersistenceProvider &_pp;
 
 public:

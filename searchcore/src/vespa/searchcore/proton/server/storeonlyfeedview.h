@@ -64,6 +64,7 @@ public:
     using OnOperationDoneType = const std::shared_ptr<OperationDoneContext> &;
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
+    using FeedTokenUP = std::unique_ptr<FeedToken>;
 
     struct Context
     {
@@ -162,11 +163,11 @@ private:
                     const document::DocumentId &docId);
 
     void
-    internalPut(FeedToken::UP token,
+    internalPut(FeedTokenUP token,
                 const PutOperation &putOp);
 
     void
-    internalUpdate(FeedToken::UP token,
+    internalUpdate(FeedTokenUP token,
                    const UpdateOperation &updOp);
 
     void
@@ -182,7 +183,7 @@ private:
                 search::DocumentIdT & lid) const;
 
     void
-    internalRemove(FeedToken::UP token,
+    internalRemove(FeedTokenUP token,
                    const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
@@ -191,13 +192,13 @@ private:
                            bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedToken::UP token,
+    void internalRemove(FeedTokenUP token,
                         SerialNum serialNum,
                         search::DocumentIdT lid,
                         FeedOperation::Type opType);
 
     // Ack token early if visibility delay is nonzero
-    void considerEarlyAck(FeedToken::UP &token, FeedOperation::Type opType);
+    void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 

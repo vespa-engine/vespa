@@ -31,6 +31,7 @@ public:
     };
     typedef std::set<FlushMeta> FlushMetaSet;
 private:
+    using IFlushTarget = searchcorespi::IFlushTarget;
     struct FlushInfo : public FlushMeta
     {
         FlushInfo();

@@ -10,7 +10,7 @@ namespace test {
 /**
  * Mock of the IIndexManager interface used for unit testing.
  */
-struct MockIndexManager : public IIndexManager
+struct MockIndexManager : public searchcorespi::IIndexManager
 {
     virtual void putDocument(uint32_t, const Document &, SerialNum) override {}
     virtual void removeDocument(uint32_t, SerialNum) override {}

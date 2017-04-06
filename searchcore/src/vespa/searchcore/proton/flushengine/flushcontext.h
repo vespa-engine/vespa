@@ -6,14 +6,13 @@
 
 namespace proton {
 
-using searchcorespi::IFlushTarget;
-
 /**
  * This class is used by FlushEngine to hold the necessary context for flushing
  * a single IFlushTarget.
  */
 class FlushContext {
 private:
+    using IFlushTarget = searchcorespi::IFlushTarget;
     vespalib::string               _name;
     IFlushHandler::SP              _handler;
     IFlushTarget::SP               _target;

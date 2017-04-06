@@ -2,10 +2,8 @@
 #pragma once
 
 #include <vespa/searchcore/config/config-proton.h>
-#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
-#include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/searchable_stats.h>
 
@@ -15,11 +13,13 @@ namespace search {
         class Schema;
     }
 }
+
 namespace document { class DocumentId; }
 
 namespace searchcorespi {
-    class IIndexManagerFactory;
-    class IIndexManager;
+class IFlushTarget;
+class IIndexManagerFactory;
+class IIndexManager;
 }
 namespace proton {
     namespace matching { class SessionManager; }
@@ -54,23 +54,12 @@ class ReconfigParams;
 class IDocumentSubDB
 {
 public:
-    class IOwner
-    {
-    public:
-        virtual ~IOwner() {}
-        virtual void syncFeedView() = 0;
-        virtual std::shared_ptr<searchcorespi::IIndexManagerFactory>
-        getIndexManagerFactory(const vespalib::stringref &name) const = 0;
-        virtual vespalib::string getName() const = 0;
-        virtual uint32_t getDistributionKey() const = 0;
-    };
-
     using UP = std::unique_ptr<IDocumentSubDB>;
     using SerialNum = search::SerialNum;
     using Schema = search::index::Schema;
     using SchemaSP = std::shared_ptr<Schema>;
     using ProtonConfig = vespa::config::search::core::ProtonConfig;
-    using IFlushTarget = searchcorespi::IFlushTarget;
+    using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
 public:
     IDocumentSubDB() { }
     virtual ~IDocumentSubDB() { }
@@ -101,7 +90,7 @@ public:
     virtual const std::shared_ptr<ISummaryAdapter> &getSummaryAdapter() const = 0;
     virtual const std::shared_ptr<IIndexWriter> &getIndexWriter() const = 0;
     virtual IDocumentMetaStoreContext &getDocumentMetaStoreContext() = 0;
-    virtual IFlushTarget::List getFlushTargets() = 0;
+    virtual IFlushTargetList getFlushTargets() = 0;
     virtual size_t getNumDocs() const = 0;
     virtual size_t getNumActiveDocs() const = 0;
     /**

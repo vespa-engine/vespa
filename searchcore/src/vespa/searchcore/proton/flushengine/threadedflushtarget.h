@@ -7,9 +7,6 @@ namespace vespalib { class Executor; }
 
 namespace proton {
 
-using searchcorespi::FlushStats;
-using searchcorespi::IFlushTarget;
-
 class IGetSerialNum;
 
 /**
@@ -20,6 +17,7 @@ class IGetSerialNum;
 class ThreadedFlushTarget : public FlushTargetProxy
 {
 private:
+    using IFlushTarget = searchcorespi::IFlushTarget;
     vespalib::Executor &_executor;
     const IGetSerialNum &_getSerialNum;
 

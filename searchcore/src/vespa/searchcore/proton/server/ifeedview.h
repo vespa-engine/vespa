@@ -2,23 +2,23 @@
 
 #pragma once
 
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcore/proton/documentmetastore/i_simple_document_meta_store.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
-#include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
-#include <vespa/searchcore/proton/feedoperation/joinbucketsoperation.h>
-#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
-#include <vespa/searchcore/proton/feedoperation/putoperation.h>
-#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
-#include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
-#include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/searchlib/transactionlog/common.h>
+#include <vespa/searchlib/common/serialnum.h>
+#include <memory>
+
+namespace document { class DocumentTypeRepo; }
 
 namespace proton
 {
 
+class CompactLidSpaceOperation;
+class DeleteBucketOperation;
+class FeedToken;
+class ISimpleDocumentMetaStore;
 class MoveOperation;
+class PruneRemovedDocumentsOperation;
+class PutOperation;
+class RemoveOperation;
+class UpdateOperation;
 
 /**
  * Interface for a feed view as seen from a feed handler.
@@ -26,7 +26,6 @@ class MoveOperation;
 class IFeedView
 {
 protected:
-    typedef search::transactionlog::Packet Packet;
     IFeedView() = default;
 public:
     typedef std::shared_ptr<IFeedView> SP;
@@ -35,7 +34,7 @@ public:
     IFeedView & operator = (const IFeedView &) = delete;
     virtual ~IFeedView() { }
 
-    virtual const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const = 0;
+    virtual const std::shared_ptr<document::DocumentTypeRepo> &getDocumentTypeRepo() const = 0;
 
     /**
      * Access to const version of document meta store.

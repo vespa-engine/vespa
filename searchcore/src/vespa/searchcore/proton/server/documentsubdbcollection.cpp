@@ -13,11 +13,12 @@ using proton::matching::SessionManager;
 using search::index::Schema;
 using search::SerialNum;
 using vespa::config::search::core::ProtonConfig;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 
 DocumentSubDBCollection::DocumentSubDBCollection(
-        IDocumentSubDB::IOwner &owner,
+        IDocumentSubDBOwner &owner,
         search::transactionlog::SyncProxy &tlSyncer,
         const IGetSerialNum &getSerialNum,
         const DocTypeName &docTypeName,

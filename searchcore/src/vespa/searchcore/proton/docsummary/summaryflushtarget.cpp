@@ -8,6 +8,8 @@ LOG_SETUP(".proton.docsummary.summaryflushtarget");
 
 using search::IDocumentStore;
 using search::SerialNum;
+using searchcorespi::FlushStats;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

@@ -5,14 +5,19 @@ LOG_SETUP("persistenceconformance_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/config-imported-fields.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
+#include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>

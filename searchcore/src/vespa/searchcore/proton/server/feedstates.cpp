@@ -2,6 +2,8 @@
 #include "feedstates.h"
 #include "feedconfigstore.h"
 #include "replaypacketdispatcher.h"
+#include "ifeedview.h"
+#include "ireplayconfig.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>

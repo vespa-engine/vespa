@@ -6,8 +6,6 @@
 
 namespace proton {
 
-using searchcorespi::IFlushTarget;
-
 /**
  * This class represents a collection of IFlushTarget objects. It is implemented
  * by DocumentDB.
@@ -17,6 +15,7 @@ private:
     vespalib::string _name;
 
 public:
+    using IFlushTarget = searchcorespi::IFlushTarget;
     typedef IFlushTarget::SerialNum SerialNum;
     /**
      * Convenience typedefs.

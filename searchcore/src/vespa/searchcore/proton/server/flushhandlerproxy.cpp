@@ -6,6 +6,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.flushhandlerproxy");
 
+using searchcorespi::IFlushTarget;
+
 namespace proton {
 
 FlushHandlerProxy::FlushHandlerProxy(const DocumentDB::SP &documentDB)
