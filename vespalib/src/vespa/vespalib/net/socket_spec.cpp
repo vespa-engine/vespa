@@ -11,6 +11,23 @@ const vespalib::string ipc_prefix("ipc/file:");
 
 } // namespace vespalib::<unnamed>
 
+SocketAddress
+SocketSpec::address(bool server) const
+{
+    if (!valid()) {
+        return SocketAddress();
+    }
+    if (!_path.empty()) {
+        return SocketAddress::from_path(_path);
+    }
+    const char *node = _host.empty() ? nullptr : _host.c_str();
+    if (server) {
+        return SocketAddress::select_local(_port, node);
+    } else {
+        return SocketAddress::select_remote(_port, node);
+    }
+}
+
 SocketSpec::SocketSpec(const vespalib::string &spec)
     : SocketSpec()
 {
@@ -38,32 +55,6 @@ SocketSpec::SocketSpec(const vespalib::string &spec)
             }
         }
     }
-}
-
-SocketAddress
-SocketSpec::client_address() const
-{
-    if (!valid()) {
-        return SocketAddress();
-    }
-    if (!_path.empty()) {
-        return SocketAddress::from_path(_path);
-    }
-    const char *node = _host.empty() ? "localhost" : _host.c_str();
-    return SocketAddress::select_remote(_port, node);
-}
-
-SocketAddress
-SocketSpec::server_address() const
-{
-    if (!valid()) {
-        return SocketAddress();
-    }
-    if (!_path.empty()) {
-        return SocketAddress::from_path(_path);
-    }
-    const char *node = _host.empty() ? nullptr : _host.c_str();
-    return SocketAddress::select_local(_port, node);
 }
 
 } // namespace vespalib

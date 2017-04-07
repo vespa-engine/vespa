@@ -20,8 +20,9 @@ private:
     SocketSpec() : _path(), _host(), _port(-1) {}
     SocketSpec(const vespalib::string &path, const vespalib::string &host, int port)
         : _path(path), _host(host), _port(port) {}
+    SocketAddress address(bool server) const;
 public:
-    SocketSpec(const vespalib::string &spec);
+    explicit SocketSpec(const vespalib::string &spec);
     static SocketSpec from_path(const vespalib::string &path) {
         return SocketSpec(path, "", -1);
     }
@@ -35,8 +36,8 @@ public:
     const vespalib::string &path() const { return _path; }
     const vespalib::string &host() const { return _host; }
     int port() const { return _port; }
-    SocketAddress client_address() const;
-    SocketAddress server_address() const;
+    SocketAddress client_address() const { return address(false); }
+    SocketAddress server_address() const { return address(true); }
 };
 
 } // namespace vespalib

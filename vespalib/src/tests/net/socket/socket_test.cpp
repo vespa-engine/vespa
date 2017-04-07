@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/net/socket_address.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/socket.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -44,12 +44,9 @@ Socket::UP connect_sockets(bool is_server, ServerSocket &server_socket) {
     if (is_server) {
         return server_socket.accept();
     } else {
-        SocketAddress server_address = server_socket.address();
-        if (server_address.is_ipc()) {
-            return Socket::connect(server_address.path());
-        } else {
-            return Socket::connect("localhost", server_address.port());
-        }
+        vespalib::string spec = server_socket.address().spec();
+        fprintf(stderr, "connecting to: %s\n", spec.c_str());
+        return Socket::connect(SocketSpec(spec));
     }
 }
 
@@ -80,7 +77,7 @@ TEST("ipc address") {
 }
 
 struct ServerWrapper {
-    ServerSocket::UP server = ServerSocket::listen(0);
+    ServerSocket::UP server = ServerSocket::listen(SocketSpec::from_port(0));
 };
 
 TEST_MT_F("require that basic socket io works", 2, ServerWrapper) {
@@ -110,7 +107,7 @@ struct IpcServerWrapper {
         : server_path(server_path_in), server()
     {
         unlink(server_path.c_str());
-        server = ServerSocket::listen(server_path);
+        server = ServerSocket::listen(SocketSpec::from_path(server_path));
     }
     ~IpcServerWrapper() {
         server.reset();

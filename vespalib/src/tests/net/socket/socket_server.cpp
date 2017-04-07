@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/net/socket_address.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/socket.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -39,7 +39,7 @@ void write_msg(Socket &socket, const vespalib::string &msg) {
 }
 
 int main(int, char **) {
-    ServerSocket::UP server = ServerSocket::listen(0);
+    ServerSocket::UP server = ServerSocket::listen(SocketSpec::from_port(0));
     if (!server->valid()) {
         fprintf(stderr, "listen failed, exiting\n");
         return 1;
