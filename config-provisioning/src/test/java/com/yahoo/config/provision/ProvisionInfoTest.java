@@ -49,7 +49,7 @@ public class ProvisionInfoTest {
     }
 
     private void assertProvisionInfo(ProvisionInfo info) throws IOException {
-        ProvisionInfo serializedInfo = ProvisionInfo.fromJson(info.toJson());
+        ProvisionInfo serializedInfo = ProvisionInfo.fromJson(info.toJson(), Optional.empty());
         assertEquals(info.getHosts().size(), serializedInfo.getHosts().size());
         assertTrue(serializedInfo.getHosts().contains(h1));
         assertTrue(serializedInfo.getHosts().contains(h2));

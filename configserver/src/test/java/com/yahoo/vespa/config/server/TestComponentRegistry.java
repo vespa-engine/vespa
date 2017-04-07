@@ -26,6 +26,8 @@ import com.yahoo.vespa.model.VespaModelFactory;
 import java.util.Collections;
 import java.util.Optional;
 
+import static com.yahoo.vespa.config.server.SuperModelRequestHandlerTest.emptyNodeFlavors;
+
 /**
  * @author lulf
  * @since 5.1
@@ -141,7 +143,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                     HostProvisionerProvider.empty();
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
                                                                   hostProvisionerProvider, permApp,
-                                                                  configserverConfig, defRepo, curator, new Zone(configserverConfig));
+                                                                  configserverConfig, defRepo, curator,
+                                                                  new Zone(configserverConfig, emptyNodeFlavors()));
             return new TestComponentRegistry(curator, configCurator.orElse(ConfigCurator.create(curator)),
                                              metrics, modelFactoryRegistry,
                                              permApp,

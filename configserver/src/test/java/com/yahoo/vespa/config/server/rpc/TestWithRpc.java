@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.yahoo.vespa.config.server.SuperModelRequestHandlerTest.emptyNodeFlavors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -84,7 +85,8 @@ public class TestWithRpc {
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder().rpcport(port).numthreads(1).maxgetconfigclients(1).hostedVespa(hostedVespa)),
                                   new SuperModelRequestHandler(generationCounter,
                                                                new TestConfigDefinitionRepo(),
-                                                               new ConfigserverConfig(new ConfigserverConfig.Builder())),
+                                                               new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                                               emptyNodeFlavors()),
                                   Metrics.createTestMetrics(), new HostRegistries(),
                                   hostLivenessTracker);
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);

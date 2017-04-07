@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -49,6 +51,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     private final ConfigDefinitionRepo defRepo;
     private final TenantName tenant;
     private final String serverId;
+    private final Optional<NodeFlavors> nodeFlavors;
 
     public SessionFactoryImpl(GlobalComponentRegistry globalComponentRegistry,
                               SessionCounter sessionCounter,
@@ -67,6 +70,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         this.superModelGenerationCounter = globalComponentRegistry.getSuperModelGenerationCounter();
         this.defRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.serverId = globalComponentRegistry.getConfigserverConfig().serverId();
+        this.nodeFlavors = globalComponentRegistry.getZone().nodeFlavors();
     }
 
     @Override
@@ -131,7 +135,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());
         try {
             ensureZKPathDoesNotExist(sessionIdPath);
-            SessionZooKeeperClient sessionZooKeeperClient = new SessionZooKeeperClient(curator, configCurator, sessionIdPath, defRepo, serverId);
+            SessionZooKeeperClient sessionZooKeeperClient = new SessionZooKeeperClient(curator,
+                                                                                       configCurator,
+                                                                                       sessionIdPath,
+                                                                                       defRepo,
+                                                                                       serverId,
+                                                                                       nodeFlavors);
             File userApplicationDir = tenantFileSystemDirs.getUserApplicationDir(sessionId);
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
             ApplicationPackage applicationPackage = createApplication(applicationFile, userApplicationDir, applicationName, sessionId, currentlyActiveSession);
@@ -155,7 +164,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         File sessionDir = getSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
-        SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator, configCurator, sessionIdPath, defRepo, serverId);
+        SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
+                                                                            configCurator,
+                                                                            sessionIdPath,
+                                                                            defRepo,
+                                                                            serverId,
+                                                                            nodeFlavors);
         SessionContext context = new SessionContext(applicationPackage, sessionZKClient, sessionDir, applicationRepo, hostRegistry, superModelGenerationCounter);
         return new LocalSession(tenant, sessionId, sessionPreparer, context);
     }

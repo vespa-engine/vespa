@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
@@ -48,13 +49,13 @@ public class SuperModelRequestHandler implements RequestHandler {
      * Creates a supermodel controller
      */
     @Inject
-    public SuperModelRequestHandler(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo, 
-                                    ConfigserverConfig configserverConfig) {
+    public SuperModelRequestHandler(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo,
+                                    ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors) {
         this.generationCounter = generationCounter;
         this.configDefinitionRepo = configDefinitionRepo;
         this.masterGeneration = configserverConfig.masterGeneration();
         this.responseFactory = ConfigResponseFactoryFactory.createFactory(configserverConfig);
-        this.zone = new Zone(configserverConfig);
+        this.zone = new Zone(configserverConfig, nodeFlavors);
         this.handler = createNewHandler(Collections.emptyMap());
     }
 

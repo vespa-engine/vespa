@@ -10,6 +10,7 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.*;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.Version;
 import com.yahoo.io.IOUtils;
@@ -42,33 +43,34 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public static final String allocatedHostsNode = "allocatedHosts";
     private final ApplicationMetaData metaData;
 
-    public ZKApplicationPackage(ConfigCurator zk, Path appPath) {
+    public ZKApplicationPackage(ConfigCurator zk, Path appPath, Optional<NodeFlavors> nodeFlavors) {
         verifyAppPath(zk, appPath);
         liveApp = new ZKLiveApp(zk, appPath);
         metaData = readMetaDataFromLiveApp(liveApp);
         importFileRegistries(fileRegistryNode);
-        importProvisionInfos(allocatedHostsNode);
+        importProvisionInfos(allocatedHostsNode, nodeFlavors);
     }
 
-    private void importProvisionInfos(String allocatedHostsNode) {
+    private void importProvisionInfos(String allocatedHostsNode, Optional<NodeFlavors> nodeFlavors) {
         List<String> provisionInfoNodes = liveApp.getChildren(allocatedHostsNode);
         if (provisionInfoNodes.isEmpty()) {
-            Optional<ProvisionInfo> provisionInfo = importProvisionInfo(allocatedHostsNode);
+            Optional<ProvisionInfo> provisionInfo = importProvisionInfo(allocatedHostsNode, nodeFlavors);
             provisionInfo.ifPresent(info -> provisionInfoMap.put(legacyVersion, info));
         } else {
             provisionInfoNodes.stream()
                     .forEach(versionStr -> {
                         Version version = Version.fromString(versionStr);
-                        Optional<ProvisionInfo> provisionInfo = importProvisionInfo(Joiner.on("/").join(allocatedHostsNode, versionStr));
+                        Optional<ProvisionInfo> provisionInfo = importProvisionInfo(Joiner.on("/").join(allocatedHostsNode, versionStr),
+                                                                                    nodeFlavors);
                         provisionInfo.ifPresent(info -> provisionInfoMap.put(version, info));
                     });
         }
     }
 
-    private Optional<ProvisionInfo> importProvisionInfo(String provisionInfoNode) {
+    private Optional<ProvisionInfo> importProvisionInfo(String provisionInfoNode, Optional<NodeFlavors> nodeFlavors) {
         try {
             if (liveApp.exists(provisionInfoNode)) {
-                return Optional.of(ProvisionInfo.fromJson(liveApp.getBytes(provisionInfoNode)));
+                return Optional.of(ProvisionInfo.fromJson(liveApp.getBytes(provisionInfoNode), nodeFlavors));
             } else {
                 return Optional.empty();
             }
