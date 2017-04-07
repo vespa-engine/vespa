@@ -3,7 +3,7 @@
 #include "attribute_specs_builder.h"
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/searchcore/proton/common/config_hash.hpp>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-attributes.h>
 #include "attribute_specs.h"
@@ -17,25 +17,6 @@ using search::attribute::BasicType;
 namespace proton {
 
 namespace {
-
-template <class Elem>
-class ConfigHash {
-    vespalib::hash_map<vespalib::string, const Elem *> _hash;
-public:
-    ConfigHash(const std::vector<Elem> &config)
-        : _hash()
-    {
-        for (const auto &elem : config) {
-            auto insres = _hash.insert(std::make_pair(elem.name, &elem));
-            assert(insres.second);
-        }
-    }
-    ~ConfigHash() { }
-    const Elem *lookup(const vespalib::string &name) const {
-        auto itr = _hash.find(name);
-        return ((itr == _hash.end()) ? nullptr : itr->second);
-    }
-};
 
 using AttributesConfigHash = ConfigHash<AttributesConfig::Attribute>;
 using IndexConfigHash = ConfigHash<IndexschemaConfig::Indexfield>;
