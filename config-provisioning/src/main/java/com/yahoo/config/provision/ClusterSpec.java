@@ -47,7 +47,7 @@ public final class ClusterSpec {
 
     /** Create a specification <b>requesting</b> a cluster with these attributes */
     @Deprecated
-    // TODO: April 2017 - Remove this we no longer have old config-models using it
+    // TODO: April 2017 - Remove this when no version older than 6.94 is used anywhere
     public static ClusterSpec request(Type type, Id id, Optional<String> dockerImage) {
         return requestVersion(type, id, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion));
     }

@@ -72,10 +72,10 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
 
     @Override
     protected Application buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                            ApplicationId applicationId) {
-        Version version = modelFactory.getVersion();
+                                            ApplicationId applicationId, com.yahoo.component.Version wantedNodeVespaVersion) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
-                                              version, appGeneration, applicationId));
+                                              modelFactory.getVersion(), appGeneration, applicationId));
+        ServerCache cache = zkClient.loadServerCache();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 Optional.<Model>empty(),
@@ -86,10 +86,10 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 createHostProvisioner(getForVersionOrLatest(applicationPackage.getProvisionInfoMap(), modelFactory.getVersion())),
                 createModelContextProperties(applicationId),
                 Optional.empty(),
-                Optional.empty());
-        ServerCache cache = zkClient.loadServerCache();
+                new com.yahoo.component.Version(modelFactory.getVersion().toString()),
+                wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
-        return new Application(modelFactory.createModel(modelContext), cache, appGeneration, version,
+        return new Application(modelFactory.createModel(modelContext), cache, appGeneration, modelFactory.getVersion(),
                                applicationMetricUpdater, applicationId);
     }
 

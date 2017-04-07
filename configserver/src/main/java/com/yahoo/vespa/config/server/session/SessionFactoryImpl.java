@@ -115,13 +115,13 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
                                                   TimeoutBudget timeoutBudget) {
         File existingApp = getSessionAppDir(existingSession.getSessionId());
         ApplicationMetaData metaData = FilesApplicationPackage.readMetaData(existingApp);
-        final ApplicationId existingSessionId = existingSession.getApplicationId();
+        ApplicationId existingApplicationId = existingSession.getApplicationId();
 
-
-        final long liveApp = getLiveApp(existingSessionId);
-        logger.log(LogLevel.DEBUG, "Create from existing application id " + existingSessionId + ", live app for it is " + liveApp);
+        long liveApp = getLiveApp(existingApplicationId);
+        logger.log(LogLevel.DEBUG, "Create from existing application id " + existingApplicationId + ", live app for it is " + liveApp);
         LocalSession session = create(existingApp, metaData.getApplicationName(), liveApp, timeoutBudget);
-        session.setApplicationId(existingSessionId);
+        session.setApplicationId(existingApplicationId);
+        session.setVespaVersion(existingSession.getVespaVersion());
         return session;
     }
 

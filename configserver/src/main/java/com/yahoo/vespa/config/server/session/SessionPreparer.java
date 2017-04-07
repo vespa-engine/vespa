@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
@@ -91,7 +92,7 @@ public class SessionPreparer {
         try {
             prep.buildModels();
             prep.makeResult();
-            if (!params.isDryRun()) {
+            if ( ! params.isDryRun()) {
                 prep.writeStateZK();
                 prep.writeRotZK();
                 prep.distribute();
@@ -112,6 +113,10 @@ public class SessionPreparer {
         final Optional<ApplicationSet> currentActiveApplicationSet;
         final Path tenantPath;
         final ApplicationId applicationId;
+
+        /** The version of Vespa the application to be prepared specifies for its nodes */
+        final com.yahoo.component.Version vespaVersion;
+
         final Rotations rotations;
         final Set<Rotation> rotationsSet;
         final ModelContext.Properties properties;
@@ -131,6 +136,7 @@ public class SessionPreparer {
             this.tenantPath = tenantPath;
 
             this.applicationId = params.getApplicationId();
+            this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.rotations = new Rotations(curator, tenantPath);
             this.rotationsSet = getRotations(params.rotations());
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
@@ -168,7 +174,7 @@ public class SessionPreparer {
         }
 
         void buildModels() {
-            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, applicationPackage);
+            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, vespaVersion, applicationPackage);
             checkTimeout("build models");
         }
 
@@ -179,8 +185,13 @@ public class SessionPreparer {
 
         void writeStateZK() {
             log.log(LogLevel.DEBUG, "Writing application package state to zookeeper");
-            writeStateToZooKeeper(context.getSessionZooKeeperClient(), applicationPackage, params, logger,
-                                  prepareResult.getFileRegistries(), prepareResult.getProvisionInfos());
+            writeStateToZooKeeper(context.getSessionZooKeeperClient(), 
+                                  applicationPackage,
+                                  applicationId,
+                                  vespaVersion,
+                                  logger,
+                                  prepareResult.getFileRegistries(), 
+                                  prepareResult.getProvisionInfos());
             checkTimeout("write state to zookeeper");
         }
 
@@ -217,14 +228,16 @@ public class SessionPreparer {
 
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
-                                       PrepareParams prepareParams,
+                                       ApplicationId applicationId,
+                                       com.yahoo.component.Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
                                        Map<Version, ProvisionInfo> provisionInfoMap) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, provisionInfoMap);
-            zooKeeperClient.writeApplicationId(prepareParams.getApplicationId());
+            zooKeeperClient.writeApplicationId(applicationId);
+            zooKeeperClient.writeVespaVersion(vespaVersion);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

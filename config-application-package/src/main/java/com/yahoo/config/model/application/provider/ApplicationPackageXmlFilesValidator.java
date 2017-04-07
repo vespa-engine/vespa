@@ -2,8 +2,8 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.collections.Tuple2;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.provision.Version;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
 
@@ -21,22 +21,24 @@ import java.util.Optional;
 public class ApplicationPackageXmlFilesValidator {
 
     private final AppSubDirs appDirs;
-    private final Optional<Version> vespaVersion;
+    
+    /** The Vespa version this package tshould be validated against */
+    private final Version vespaVersion;
 
     private static final FilenameFilter xmlFilter = (dir, name) -> name.endsWith(".xml");
 
 
-    public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, Optional<Version> vespaVersion) {
+    public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, Version vespaVersion) {
         this.appDirs = appDirs;
         this.vespaVersion = vespaVersion;
     }
 
-    public static ApplicationPackageXmlFilesValidator createDefaultXMLValidator(File appDir, Optional<Version> vespaVersion) {
+    public static ApplicationPackageXmlFilesValidator createDefaultXMLValidator(File appDir, Version vespaVersion) {
         return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), vespaVersion);
     }
 
-    public static ApplicationPackageXmlFilesValidator createTestXmlValidator(File appDir) {
-        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), Optional.empty());
+    public static ApplicationPackageXmlFilesValidator createTestXmlValidator(File appDir, Version vespaVersion) {
+        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), vespaVersion);
     }
 
     @SuppressWarnings("deprecation")
@@ -56,11 +58,11 @@ public class ApplicationPackageXmlFilesValidator {
     }
 
     // For testing
-    public static void checkIncludedDirs(ApplicationPackage app) throws IOException {
+    public static void checkIncludedDirs(ApplicationPackage app, Version vespaVersion) throws IOException {
         for (String includedDir : app.getUserIncludeDirs()) {
             List<NamedReader> includedFiles = app.getFiles(Path.fromString(includedDir), ".xml", true);
             for (NamedReader file : includedFiles) {
-                createSchemaValidator("container-include.rnc", Optional.empty()).validate(file);
+                createSchemaValidator("container-include.rnc", vespaVersion).validate(file);
             }
         }
     }
@@ -115,7 +117,7 @@ public class ApplicationPackageXmlFilesValidator {
         }
     }
 
-    private static SchemaValidator createSchemaValidator(String schemaFile, Optional<Version> vespaVersion) {
+    private static SchemaValidator createSchemaValidator(String schemaFile, Version vespaVersion) {
         return new SchemaValidator(schemaFile, new BaseDeployLogger(), vespaVersion);
     }
 

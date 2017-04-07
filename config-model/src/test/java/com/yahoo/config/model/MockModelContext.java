@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.*;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -23,6 +24,7 @@ import java.util.Set;
 * @author hmusum
 */
 public class MockModelContext implements ModelContext {
+
     private final ApplicationPackage applicationPackage;
 
     public MockModelContext() {
@@ -67,6 +69,12 @@ public class MockModelContext implements ModelContext {
     public FileRegistry getFileRegistry() {
         return new MockFileRegistry();
     }
+    
+    @Override
+    public Version modelVespaVersion() { return new Version(6); }
+
+    @Override
+    public Version wantedNodeVespaVersion() { return new Version(6); }
 
     @Override
     public Properties properties() {

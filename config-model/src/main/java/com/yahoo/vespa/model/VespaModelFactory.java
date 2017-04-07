@@ -81,14 +81,24 @@ public class VespaModelFactory implements ModelFactory {
     }
 
     @Override
-    public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
+    public ModelCreateResult createAndValidateModel(ModelContext modelContext, 
+                                                    boolean ignoreValidationErrors) {
+        validateXml(modelContext, ignoreValidationErrors);
+        DeployState deployState = createDeployState(modelContext);
+        VespaModel model = buildModel(deployState);
+        List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
+        return new ModelCreateResult(model, changeActions);
+    }
+    
+    private void validateXml(ModelContext modelContext, boolean ignoreValidationErrors) {
         if (modelContext.appDir().isPresent()) {
             ApplicationPackageXmlFilesValidator validator =
                     ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(modelContext.appDir().get(),
-                                                                                  modelContext.vespaVersion());
+                                                                                  modelContext.modelVespaVersion());
             try {
                 validator.checkApplication();
-                ApplicationPackageXmlFilesValidator.checkIncludedDirs(modelContext.applicationPackage());
+                ApplicationPackageXmlFilesValidator.checkIncludedDirs(modelContext.applicationPackage(), 
+                                                                      modelContext.modelVespaVersion());
             } catch (IllegalArgumentException e) {
                 rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
             } catch (Exception e) {
@@ -98,10 +108,6 @@ public class VespaModelFactory implements ModelFactory {
         } else {
             validateXML(modelContext.applicationPackage(), ignoreValidationErrors);
         }
-        DeployState deployState = createDeployState(modelContext);
-        VespaModel model = buildModel(deployState);
-        List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
-        return new ModelCreateResult(model, changeActions);
     }
 
     private VespaModel buildModel(DeployState deployState) {

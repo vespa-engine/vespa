@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test.utils;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -53,15 +54,16 @@ public class VespaModelCreatorWithMockPkg {
         try {
             this.deployState = deployState;
             VespaModel model = new VespaModel(configModelRegistry, deployState);
+            Version vespaVersion = new Version(6);
             if (validate) {
                 try {
                     if (appPkg.getHosts() != null) {
-                        SchemaValidator.createTestValidatorHosts().validate(appPkg.getHosts());
+                        SchemaValidator.createTestValidatorHosts(vespaVersion).validate(appPkg.getHosts());
                     }
                     if (appPkg.getDeployment().isPresent()) {
-                        SchemaValidator.createTestValidatorDeployment().validate(appPkg.getDeployment().get());
+                        SchemaValidator.createTestValidatorDeployment(vespaVersion).validate(appPkg.getDeployment().get());
                     }
-                    SchemaValidator.createTestValidatorServices().validate(appPkg.getServices());
+                    SchemaValidator.createTestValidatorServices(vespaVersion).validate(appPkg.getServices());
                 } catch (Exception e) {
                     System.err.println(e.getClass());
                     throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);

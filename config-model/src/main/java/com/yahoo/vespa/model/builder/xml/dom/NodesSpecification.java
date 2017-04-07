@@ -33,6 +33,7 @@ public class NodesSpecification {
 
     private final Optional<String> flavor;
 
+    /** The identifier of the custom docker image layer to use (not supported yet) */
     private final Optional<String> dockerImage;
 
     private NodesSpecification(boolean dedicated, int count, int groups, boolean required, 

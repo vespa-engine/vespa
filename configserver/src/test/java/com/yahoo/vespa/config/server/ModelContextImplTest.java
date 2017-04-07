@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -48,7 +49,8 @@ public class ModelContextImplTest {
                         Zone.defaultZone(),
                         rotations),
                 Optional.empty(),
-                Optional.empty());
+                new Version(6), 
+                new Version(6));
         assertTrue(context.applicationPackage() instanceof MockApplicationPackage);
         assertFalse(context.hostProvisioner().isPresent());
         assertFalse(context.permanentApplicationPackage().isPresent());

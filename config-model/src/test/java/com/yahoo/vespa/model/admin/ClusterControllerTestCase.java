@@ -5,6 +5,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.application.provider.SimpleApplicationValidator;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
@@ -434,7 +435,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                                                   .withServices(servicesXml)
                                                   .withSearchDefinitions(sds)
                                                   .build());
-        SimpleApplicationValidator.checkServices(new StringReader(servicesXml));
+        SimpleApplicationValidator.checkServices(new StringReader(servicesXml), new Version(6));
         return model;
     }
 }

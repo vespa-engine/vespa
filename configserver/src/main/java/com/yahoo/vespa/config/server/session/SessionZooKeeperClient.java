@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ProvisionInfo;
@@ -34,6 +36,7 @@ public class SessionZooKeeperClient {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SessionZooKeeperClient.class.getName());
     static final String APPLICATION_ID_PATH = "applicationId";
+    static final String VERSION_PATH = "version";
     static final String CREATE_TIME_PATH = "createTime";
     private final Curator curator;
     private final ConfigCurator configCurator;
@@ -137,38 +140,36 @@ public class SessionZooKeeperClient {
         return cacheLoader.loadCache();
     }
 
-    public void writeApplicationId(ApplicationId id) {
-        String path = getApplicationIdPath();
-        try {
-            configCurator.putData(path, id.serializedForm());
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Unable to write application id '" + id + "' to '" + path + "'", e);
-        }
-    }
-
-    private String getApplicationIdPath() {
+    private String applicationIdPath() {
         return rootPath.append(APPLICATION_ID_PATH).getAbsolute();
     }
 
-    public ApplicationId readApplicationId(TenantName tenant) {
-        String path = getApplicationIdPath();
-        try {
-            // Fallback for cases where id never existed.
-            if ( ! configCurator.exists(path)) {
-                // TODO: DEBUG LOG
-                log.log(LogLevel.INFO, "Unable to locate application id at '" + path + "', returning default");
-                return ApplicationId.defaultId();
-            }
-            return ApplicationId.fromSerializedForm(configCurator.getData(path));
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Unable to read application id from '" + path + "'", e);
-        }
+    public void writeApplicationId(ApplicationId id) {
+        configCurator.putData(applicationIdPath(), id.serializedForm());
+    }
+
+    public ApplicationId readApplicationId() {
+        if ( ! configCurator.exists(applicationIdPath())) return ApplicationId.defaultId();
+        return ApplicationId.fromSerializedForm(configCurator.getData(applicationIdPath()));
+    }
+
+    private String versionPath() {
+        return rootPath.append(VERSION_PATH).getAbsolute();
+    }
+
+    public void writeVespaVersion(Version version) {
+        configCurator.putData(versionPath(), version.toString());
+    }
+
+    public Version readVespaVersion() {
+        if ( ! configCurator.exists(versionPath())) return Vtag.currentVersion;
+        return new Version(configCurator.getData(versionPath()));
     }
 
     // in seconds
     public long readCreateTime() {
         String path = getCreateTimePath();
-        if (!configCurator.exists(path)) return 0l;
+        if ( ! configCurator.exists(path)) return 0L;
         return Long.parseLong(configCurator.getData(path));
     }
 

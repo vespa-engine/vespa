@@ -40,7 +40,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         this.modelFactoryRegistry = modelFactoryRegistry;
     }
 
-    public List<MODELRESULT> buildModels(ApplicationId applicationId, ApplicationPackage applicationPackage) {
+    public List<MODELRESULT> buildModels(ApplicationId applicationId, 
+                                         com.yahoo.component.Version wantedNodeVespaVersion, ApplicationPackage applicationPackage) {
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
         // If the application specifies a major, load models only for that
@@ -60,7 +61,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
                 allApplicationModels.addAll(buildModelVersion(filterByMajorVersion(majorVersions.get(i), versions),
-                                                              applicationId, applicationPackage));
+                                                              applicationId, wantedNodeVespaVersion, applicationPackage));
 
                     // skip old config models after we have found a major version which works
                     if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels())
@@ -82,10 +83,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     private List<MODELRESULT> buildModelVersion(Set<Version> versions, ApplicationId applicationId,
+                                                com.yahoo.component.Version wantedNodeVespaVersion, 
                                                 ApplicationPackage applicationPackage) {
         Version latest = findLatest(versions);
         // load latest application version
-        MODELRESULT latestApplicationVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), applicationPackage, applicationId);
+        MODELRESULT latestApplicationVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), applicationPackage, applicationId, wantedNodeVespaVersion);
         if (latestApplicationVersion.getModel().skipOldConfigModels()) {
             return Collections.singletonList(latestApplicationVersion);
         }
@@ -94,7 +96,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             allApplicationVersions.add(latestApplicationVersion);
             for (Version version : versions) {
                 if (version.equals(latest)) continue; // already loaded
-                allApplicationVersions.add(buildModelVersion(modelFactoryRegistry.getFactory(version), applicationPackage, applicationId));
+                allApplicationVersions.add(buildModelVersion(modelFactoryRegistry.getFactory(version), applicationPackage, applicationId, wantedNodeVespaVersion));
             }
             return allApplicationVersions;
         }
@@ -114,7 +116,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                                     ApplicationId applicationId);
+                                                     ApplicationId applicationId, 
+                                                     com.yahoo.component.Version wantedNodeVespaVersion);
 
     protected ModelContext.Properties createModelContextProperties(ApplicationId applicationId,
                                                                    ConfigserverConfig configserverConfig,

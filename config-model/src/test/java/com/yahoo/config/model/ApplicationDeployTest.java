@@ -2,6 +2,7 @@
 package com.yahoo.config.model;
 
 import com.google.common.io.Files;
+import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
@@ -239,9 +240,9 @@ public class ApplicationDeployTest {
     public FilesApplicationPackage createAppPkg(String appPkg, boolean validateXml) throws IOException {
         final FilesApplicationPackage filesApplicationPackage = FilesApplicationPackage.fromFile(new File(appPkg));
         if (validateXml) {
-            ApplicationPackageXmlFilesValidator validator = ApplicationPackageXmlFilesValidator.createTestXmlValidator(new File(appPkg));
+            ApplicationPackageXmlFilesValidator validator = ApplicationPackageXmlFilesValidator.createTestXmlValidator(new File(appPkg), new Version(6));
             validator.checkApplication();
-            ApplicationPackageXmlFilesValidator.checkIncludedDirs(filesApplicationPackage);
+            ApplicationPackageXmlFilesValidator.checkIncludedDirs(filesApplicationPackage, new Version(6));
         }
         return filesApplicationPackage;
     }

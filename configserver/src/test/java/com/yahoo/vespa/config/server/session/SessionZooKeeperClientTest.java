@@ -76,7 +76,7 @@ public class SessionZooKeeperClientTest extends TestWithCurator {
 
     @Test
     public void require_that_default_name_is_returned_if_node_does_not_exist() {
-        assertThat(createSessionZKClient("3").readApplicationId(TenantName.defaultName()).application().value(), is("default"));
+        assertThat(createSessionZKClient("3").readApplicationId().application().value(), is("default"));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class SessionZooKeeperClientTest extends TestWithCurator {
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         String path = "/" + sessionId + "/" + SessionZooKeeperClient.APPLICATION_ID_PATH;
         configCurator.putData(path, idString);
-        ApplicationId zkId = zkc.readApplicationId(TenantName.defaultName());
+        ApplicationId zkId = zkc.readApplicationId();
         assertThat(zkId.serializedForm(), is(expectedIdString));
     }
 

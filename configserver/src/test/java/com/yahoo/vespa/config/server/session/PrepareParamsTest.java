@@ -34,9 +34,9 @@ public class PrepareParamsTest {
         assertThat(prepareParams.getApplicationId(), is(ApplicationId.defaultId()));
         assertFalse(prepareParams.isDryRun());
         assertFalse(prepareParams.ignoreValidationErrors());
-        assertThat(prepareParams.getVespaVersion(), is(Optional.<String>empty()));
+        assertThat(prepareParams.vespaVersion(), is(Optional.<String>empty()));
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
-        assertThat(prepareParams.getRotations().size(), is(0));
+        assertThat(prepareParams.rotations().size(), is(0));
     }
 
 
@@ -46,8 +46,7 @@ public class PrepareParamsTest {
             PrepareParams.DRY_RUN_PARAM_NAME + "=true&" +
             PrepareParams.IGNORE_VALIDATION_PARAM_NAME + "=false&" +
             PrepareParams.APPLICATION_NAME_PARAM_NAME + "=baz&" +
-            PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion + "&" +
-            PrepareParams.DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME+ "=" + vespaVersion;
+            PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion;
 
     @Test
     public void testCorrectParsingWithRotation() {
@@ -59,12 +58,11 @@ public class PrepareParamsTest {
         assertTrue(prepareParams.isDryRun());
         assertFalse(prepareParams.ignoreValidationErrors());
         final Version expectedVersion = Version.fromString(vespaVersion);
-        assertThat(prepareParams.getVespaVersion().get(), is(expectedVersion));
+        assertThat(prepareParams.vespaVersion().get(), is(expectedVersion));
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
-        final Set<Rotation> rotations = prepareParams.getRotations();
+        final Set<Rotation> rotations = prepareParams.rotations();
         assertThat(rotations.size(), is(1));
         assertThat(rotations, contains(equalTo(new Rotation(rotation))));
-        assertThat(prepareParams.getDockerVespaImageVersion().get(), is(expectedVersion));
     }
 
     @Test
@@ -74,7 +72,7 @@ public class PrepareParamsTest {
         PrepareParams prepareParams = createParams(request + "&" +
                         PrepareParams.ROTATIONS_PARAM_NAME + "=" + twoRotations,
                 TenantName.from("foo"));
-        final Set<Rotation> rotations = prepareParams.getRotations();
+        final Set<Rotation> rotations = prepareParams.rotations();
         assertThat(rotations, containsInAnyOrder(new Rotation(rotation), new Rotation(rotationTwo)));
     }
 
