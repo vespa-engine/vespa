@@ -8,6 +8,7 @@ LOG_SETUP("attribute_reprocessing_initializer_test");
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
+#include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_handler.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
@@ -105,6 +106,23 @@ struct MyDocTypeInspector : public IDocumentTypeInspector
     }
 };
 
+struct MyIndexschemaInspector : public IIndexschemaInspector
+{
+    const search::index::Schema &_schema;
+    MyIndexschemaInspector(const search::index::Schema &schema)
+        : _schema(schema)
+    {
+    }
+    virtual bool isStringIndex(const vespalib::string &name) const override {
+        uint32_t fieldId = _schema.getIndexFieldId(name);
+        if (fieldId == Schema::UNKNOWN_FIELD_ID) {
+            return false;
+        }
+        const auto &field = _schema.getIndexField(fieldId);
+        return (field.getDataType() == DataType::STRING);
+    }
+};
+
 struct Fixture
 {
     test::DirectoryHandler _dirHandler;
@@ -134,10 +152,12 @@ struct Fixture
     }
     ~Fixture() { }
     void init() {
+        MyIndexschemaInspector oldIndexschemaInspector(_oldCfg._schema);
         _initializer.reset(new AttributeReprocessingInitializer
                            (ARIConfig(_newCfg._mgr, _newCfg._schema),
                             ARIConfig(_oldCfg._mgr, _oldCfg._schema),
-                            _inspector, "test", INIT_SERIAL_NUM));
+                            _inspector, oldIndexschemaInspector,
+                            "test", INIT_SERIAL_NUM));
         _initializer->initialize(_handler);
     }
     Fixture &addOldConfig(const StringVector &fields,

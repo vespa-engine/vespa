@@ -8,6 +8,7 @@ LOG_SETUP(".proton.server.fast_access_doc_subdb_configurer");
 #include "i_attribute_writer_factory.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
+#include <vespa/searchcore/proton/common/indexschema_inspector.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 
 using document::DocumentTypeRepo;
@@ -60,10 +61,11 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     assert(newDocType != nullptr);
     assert(oldDocType != nullptr);
     DocumentTypeInspector inspector(*oldDocType, *newDocType);
+    IndexschemaInspector oldIndexschemaInspector(oldConfig.getIndexschemaConfig());
     return std::make_unique<AttributeReprocessingInitializer>
         (ARIConfig(writer->getAttributeManager(), *newConfig.getSchemaSP()),
          ARIConfig(oldView->getAttributeWriter()->getAttributeManager(), *oldConfig.getSchemaSP()),
-         inspector, _subDbName, attrSpec.getCurrentSerialNum());
+         inspector, oldIndexschemaInspector, _subDbName, attrSpec.getCurrentSerialNum());
 }
 
 } // namespace proton

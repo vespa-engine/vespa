@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
+#include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 #include <vespa/log/log.h>
@@ -93,6 +94,7 @@ std::vector<IReprocessingRewriter::SP>
 getFieldsToPopulate(const ARIConfig &newCfg,
                     const ARIConfig &oldCfg,
                     const IDocumentTypeInspector &inspector,
+                    const IIndexschemaInspector &oldIndexschemaInspector,
                     const vespalib::string &subDbName)
 {
     std::vector<IReprocessingRewriter::SP> fieldsToPopulate;
@@ -106,14 +108,13 @@ getFieldsToPopulate(const ARIConfig &newCfg,
         bool unchangedField = inspector.hasUnchangedField(name);
         // NOTE: If it is a string and index field we shall
         // keep the original in order to preserve annotations.
-        bool isStringIndexField = attrField.getDataType() == DataType::STRING &&
-                newCfg.getSchema().isIndexField(name);
-        bool populateField = !inNewAttrMgr && unchangedField && !isStringIndexField &&
+        bool wasStringIndexField = oldIndexschemaInspector.isStringIndex(name);
+        bool populateField = !inNewAttrMgr && unchangedField && !wasStringIndexField &&
                              fastPartialUpdateAttribute(attrType.type());
         LOG(debug, "getFieldsToPopulate(): name='%s', inNewAttrMgr=%s, unchangedField=%s, "
-                "isStringIndexField=%s, dataType=%s, populate=%s",
+                "wasStringIndexField=%s, dataType=%s, populate=%s",
                 name.c_str(), toStr(inNewAttrMgr), toStr(unchangedField),
-            toStr(isStringIndexField),
+            toStr(wasStringIndexField),
             attrType.asString(),
             toStr(populateField));
         if (populateField) {
@@ -131,10 +132,11 @@ AttributeReprocessingInitializer::
 AttributeReprocessingInitializer(const Config &newCfg,
                                  const Config &oldCfg,
                                  const IDocumentTypeInspector &inspector,
+                                 const IIndexschemaInspector &oldIndexschemaInspector,
                                  const vespalib::string &subDbName,
                                  search::SerialNum serialNum)
     : _attrsToPopulate(getAttributesToPopulate(newCfg, oldCfg, inspector, subDbName, serialNum)),
-      _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, inspector, subDbName))
+      _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, inspector, oldIndexschemaInspector, subDbName))
 {
 }
 
