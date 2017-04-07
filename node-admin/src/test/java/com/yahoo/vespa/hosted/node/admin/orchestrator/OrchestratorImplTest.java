@@ -13,11 +13,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class OrchestratorImplTest {
     private static final String hostName = "host123.yahoo.com";
@@ -54,7 +53,7 @@ public class OrchestratorImplTest {
         orchestrator.suspend(hostName);
     }
 
-    @Test
+    @Test(expected=OrchestratorNotFoundException.class)
     public void testSuspendCallWithNotFound() {
         when(requestExecutor.put(
                 any(String.class),
@@ -101,7 +100,7 @@ public class OrchestratorImplTest {
         orchestrator.resume(hostName);
     }
 
-    @Test
+    @Test(expected=OrchestratorNotFoundException.class)
     public void testResumeCallWithNotFound() {
         when(requestExecutor.delete(
                 any(String.class),
