@@ -8,6 +8,7 @@ LOG_SETUP("attribute_specs_builder_test");
 #include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
 #include <vespa/searchcore/proton/attribute/attribute_specs.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
+#include <vespa/searchcore/proton/common/indexschema_inspector.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-attributes.h>
@@ -170,7 +171,8 @@ public:
         _builder.setup(newConfig);
     }
     void setup(const AttributesConfig &oldConfig, const AttributesConfig &newConfig) {
-        _builder.setup(oldConfig, newConfig, _oldIndexSchema, _inspector);
+        IndexschemaInspector indexschemaInspector(_oldIndexSchema);
+        _builder.setup(oldConfig, newConfig, indexschemaInspector, _inspector);
     }
     void assertSpecs(const std::vector<AttributeSpec> &expSpecs)
     {
