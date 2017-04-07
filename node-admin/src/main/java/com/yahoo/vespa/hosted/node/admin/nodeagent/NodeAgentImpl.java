@@ -336,10 +336,10 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestratorSuspendNode();
                 stopServices();
             }
-            containerState = ABSENT;
             vespaVersion = Optional.empty();
             dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
+            containerState = ABSENT;
             return Optional.empty();
         }
         return existingContainer;
