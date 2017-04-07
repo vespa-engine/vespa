@@ -20,7 +20,8 @@ SocketSpec::address(bool server) const
     if (!_path.empty()) {
         return SocketAddress::from_path(_path);
     }
-    const char *node = _host.empty() ? nullptr : _host.c_str();
+    const char *fallback = server ? nullptr : "localhost";
+    const char *node = _host.empty() ? fallback : _host.c_str();
     if (server) {
         return SocketAddress::select_local(_port, node);
     } else {

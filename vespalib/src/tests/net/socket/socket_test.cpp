@@ -10,6 +10,23 @@
 
 using namespace vespalib;
 
+vespalib::string get_meta(const SocketAddress &addr) {
+    vespalib::string meta;
+    if (addr.is_ipv4()) {
+        meta = "ipv4";
+    } else if (addr.is_ipv6()) {
+        meta = "ipv6";
+    } else if (addr.is_ipc()) {
+        meta = "ipc";
+    } else {
+        meta = "???";
+    }
+    if (addr.is_wildcard()) {
+        meta += " wildcard";
+    }
+    return meta;
+}
+
 vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
     char tmp[64];
     vespalib::string result;
@@ -44,8 +61,11 @@ Socket::UP connect_sockets(bool is_server, ServerSocket &server_socket) {
     if (is_server) {
         return server_socket.accept();
     } else {
-        vespalib::string spec = server_socket.address().spec();
-        fprintf(stderr, "connecting to: %s\n", spec.c_str());
+        auto server = server_socket.address();
+        auto spec = server.spec();
+        auto client = SocketSpec(spec).client_address();
+        fprintf(stderr, "connecting to '%s' (server: %s) (client: %s)\n",
+                spec.c_str(), get_meta(server).c_str(), get_meta(client).c_str());
         return Socket::connect(SocketSpec(spec));
     }
 }
@@ -56,7 +76,9 @@ TEST("my local address") {
     auto list = SocketAddress::resolve(4080);
     fprintf(stderr, "resolve(4080):\n");
     for (const auto &addr: list) {
-        fprintf(stderr, "  %s\n", addr.spec().c_str());
+        EXPECT_TRUE(addr.is_wildcard());
+        EXPECT_EQUAL(addr.port(), 4080);
+        fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
     }
 }
 
@@ -64,16 +86,32 @@ TEST("yahoo.com address") {
     auto list = SocketAddress::resolve(80, "yahoo.com");
     fprintf(stderr, "resolve(80, 'yahoo.com'):\n");
     for (const auto &addr: list) {
-        fprintf(stderr, "  %s\n", addr.spec().c_str());
+        EXPECT_TRUE(!addr.is_wildcard());
+        EXPECT_EQUAL(addr.port(), 80);
+        fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
     }
 }
 
 TEST("ipc address") {
     auto addr = SocketAddress::from_path("my_socket");
     EXPECT_TRUE(addr.is_ipc());
+    EXPECT_TRUE(!addr.is_wildcard());
+    EXPECT_EQUAL(addr.port(), -1);
     EXPECT_EQUAL(vespalib::string("my_socket"), addr.path());
     fprintf(stderr, "from_path(my_socket)\n");
-    fprintf(stderr, "  %s\n", addr.spec().c_str());    
+    fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
+}
+
+TEST("local client/server addresses") {
+    auto spec = SocketSpec("tcp/123");
+    auto client = spec.client_address();
+    auto server = spec.server_address();
+    EXPECT_TRUE(!client.is_wildcard());
+    EXPECT_EQUAL(client.port(), 123);
+    EXPECT_TRUE(server.is_wildcard());
+    EXPECT_EQUAL(server.port(), 123);
+    fprintf(stderr, "client(tcp/123): %s (%s)\n", client.spec().c_str(), get_meta(client).c_str());
+    fprintf(stderr, "server(tcp/123): %s (%s)\n", server.spec().c_str(), get_meta(server).c_str());
 }
 
 struct ServerWrapper {

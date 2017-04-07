@@ -32,6 +32,7 @@ public:
     bool is_ipv4() const { return (valid() && (_addr.ss_family == AF_INET)); }
     bool is_ipv6() const { return (valid() && (_addr.ss_family == AF_INET6)); }
     bool is_ipc() const { return (valid() && (_addr.ss_family == AF_UNIX)); }
+    bool is_wildcard() const;
     int port() const;
     vespalib::string ip_address() const;
     vespalib::string path() const;
