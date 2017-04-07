@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/mapper/memfile_v1_serializer.h>
 #include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
@@ -229,23 +228,16 @@ struct DummyMemFileIOInterface : MemFileIOInterface {
     void clear(DocumentPart) override {}
     bool verifyConsistent() const override { return true; }
     void move(const FileSpecification&) override {}
-    DataLocation copyCache(const MemFileIOInterface&,
-                           DocumentPart,
-                           DataLocation) override
-    {
+    DataLocation copyCache(const MemFileIOInterface&, DocumentPart, DataLocation) override {
         return DataLocation();
     }
 
-    void close() override {}
+    void close() override {};
     bool isCached(DataLocation, DocumentPart) const override { return false; }
     bool isPersisted(DataLocation, DocumentPart) const override { return false; }
-    uint32_t getSerializedSize(DocumentPart,
-                               DataLocation) const override { return 0; }
+    uint32_t getSerializedSize(DocumentPart, DataLocation) const override { return 0; }
 
-    void ensureCached(Environment&,
-                      DocumentPart,
-                      const std::vector<DataLocation>&) override
-    {}
+    void ensureCached(Environment&, DocumentPart, const std::vector<DataLocation>&) override {}
 
     size_t getCachedSize(DocumentPart) const override { return 0; }
 };

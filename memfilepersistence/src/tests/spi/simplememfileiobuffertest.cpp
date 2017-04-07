@@ -51,19 +51,15 @@ class SimpleMemFileIOBufferTest : public SingleDiskMemFileTestUtils
 public:
     class DummyFileReader : public VersionSerializer {
     public:
-        virtual FileVersion getFileVersion() override { return FileVersion(); }
-        virtual void loadFile(MemFile&, Environment&, Buffer&, uint64_t ) override {}
-        virtual FlushResult flushUpdatesToFile(MemFile&, Environment&) override {
+        FileVersion getFileVersion() override { return FileVersion(); }
+        void loadFile(MemFile&, Environment&, Buffer&, uint64_t ) override {}
+        FlushResult flushUpdatesToFile(MemFile&, Environment&) override {
             return FlushResult::TooSmall;
         }
-        virtual void rewriteFile(MemFile&, Environment&) override {}
-        virtual bool verify(MemFile&, Environment&,
-                            std::ostream&, bool, uint16_t) override { return false; };
-        virtual void cacheLocations(MemFileIOInterface&,
-                                    Environment&,
-                                    const Options&,
-                                    DocumentPart,
-                                    const std::vector<DataLocation>&) override {}
+        void rewriteFile(MemFile&, Environment&) override {}
+        bool verify(MemFile&, Environment&, std::ostream&, bool, uint16_t) override { return false; };
+        void cacheLocations(MemFileIOInterface&, Environment&, const Options&,
+                            DocumentPart, const std::vector<DataLocation>&) override {}
     };
 
     DummyFileReader dfr;
