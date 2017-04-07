@@ -19,14 +19,13 @@
   </jdisc>
 
   <content version="1.0">
-    <redundancy>1"</redundancy>
+    <redundancy>1</redundancy>
     <documents>
       <document name="music" mode="index"/>
     </documents>
-
-    <group index="0" name="mycluster">
-        <node hostalias="node1" index="0"/>
-      </group>
+    <nodes>
+      <node hostalias="node1" distribution-key="0"/>
+    </nodes>
   </content>
 
 </services>
