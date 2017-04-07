@@ -667,10 +667,6 @@ public class NodeAgentImpl implements NodeAgent {
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode() {
         logger.info("Ask Orchestrator for permission to suspend node " + hostname);
-        if ( ! orchestrator.suspend(hostname)) {
-            logger.info("Orchestrator rejected suspend of node " + hostname);
-            // TODO: change suspend() to throw an exception if suspend is denied
-            throw new OrchestratorException("Failed to get permission to suspend " + hostname);
-        }
+        orchestrator.suspend(hostname);
     }
 }

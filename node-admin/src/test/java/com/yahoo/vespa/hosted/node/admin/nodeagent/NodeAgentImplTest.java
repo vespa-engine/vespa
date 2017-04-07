@@ -323,7 +323,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(orchestrator.suspend(eq(hostName))).thenReturn(true);
+        doNothing().when(orchestrator).suspend(eq(hostName));
 
         nodeAgent.converge();
 

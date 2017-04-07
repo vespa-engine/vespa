@@ -5,6 +5,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -13,11 +14,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -65,7 +66,7 @@ public class NodeAdminStateUpdaterTest {
         // Initially everything is frozen to force convergence
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
-        when(orchestrator.resume(parentHostname)).thenReturn(true);
+        doNothing().when(orchestrator).resume(parentHostname);
         tickAfter(0); // The first tick should unfreeze
         verify(orchestrator, times(1)).resume(parentHostname); // Resume host
         verify(orchestrator, times(1)).resume(parentHostname);
@@ -91,9 +92,8 @@ public class NodeAdminStateUpdaterTest {
         verify(refresher, times(1)).signalWorkToBeDone(); // No change in desired state
 
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
-        when(orchestrator.suspend(eq(parentHostname), eq(suspendHostnames)))
-                .thenReturn(Optional.of("Cannot allow to suspend because some reason"))
-                .thenReturn(Optional.empty());
+        doThrow(new RuntimeException("Cannot allow to suspend because some reason")).doNothing()
+                .when(orchestrator).suspend(eq(parentHostname), eq(suspendHostnames));
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(refresher, times(1)).signalWorkToBeDone();
@@ -129,7 +129,8 @@ public class NodeAdminStateUpdaterTest {
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
 
-        when(orchestrator.resume(parentHostname)).thenReturn(false).thenReturn(true);
+        doThrow(new OrchestratorException("Cannot allow to suspend " + parentHostname)).doNothing()
+                .when(orchestrator).resume(parentHostname);
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);

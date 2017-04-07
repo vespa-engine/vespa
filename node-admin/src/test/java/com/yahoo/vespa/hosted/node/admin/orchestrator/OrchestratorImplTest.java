@@ -39,11 +39,10 @@ public class OrchestratorImplTest {
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
 
-        boolean response = orchestrator.suspend(hostName);
-        assertTrue("Expected Orchestrator to approve", response);
+        orchestrator.suspend(hostName);
     }
 
-    @Test
+    @Test(expected=OrchestratorException.class)
     public void testSuspendCallWithFailureReason() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
@@ -52,8 +51,7 @@ public class OrchestratorImplTest {
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
 
-        boolean response = orchestrator.suspend(hostName);
-        assertFalse("Expected Orchestrator to deny when presented with HostChangeDenialReason", response);
+        orchestrator.suspend(hostName);
     }
 
     @Test
@@ -65,11 +63,10 @@ public class OrchestratorImplTest {
                 any()
         )).thenThrow(requestExecutor.new NotFoundException("Not Found"));
 
-        boolean response = orchestrator.suspend(hostName);
-        assertTrue("Expected Orchestrator to respond with true even when NotFoundException is thrown", response);
+        orchestrator.suspend(hostName);
     }
 
-    @Test
+    @Test(expected=RuntimeException.class)
     public void testSuspendCallWithSomeOtherException() {
         when(requestExecutor.put(
                 any(String.class),
@@ -78,8 +75,7 @@ public class OrchestratorImplTest {
                 any()
         )).thenThrow(new RuntimeException("Some parameter was wrong"));
 
-        boolean response = orchestrator.suspend(hostName);
-        assertFalse("Expected Orchestrator to respond with false when some other exception is thrown", response);
+        orchestrator.suspend(hostName);
     }
 
 
@@ -91,11 +87,10 @@ public class OrchestratorImplTest {
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
 
-        boolean response = orchestrator.resume(hostName);
-        assertTrue("Expected Orchestrator to approve", response);
+        orchestrator.resume(hostName);
     }
 
-    @Test
+    @Test(expected=OrchestratorException.class)
     public void testResumeCallWithFailureReason() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
@@ -103,8 +98,7 @@ public class OrchestratorImplTest {
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
 
-        boolean response = orchestrator.resume(hostName);
-        assertFalse("Expected Orchestrator to deny when presented with HostChangeDenialReason", response);
+        orchestrator.resume(hostName);
     }
 
     @Test
@@ -115,11 +109,10 @@ public class OrchestratorImplTest {
                 any()
         )).thenThrow(requestExecutor.new NotFoundException("Not Found"));
 
-        boolean response = orchestrator.resume(hostName);
-        assertTrue("Expected Orchestrator to respond with true even when NotFoundException is thrown", response);
+        orchestrator.resume(hostName);
     }
 
-    @Test
+    @Test(expected=RuntimeException.class)
     public void testResumeCallWithSomeOtherException() {
         when(requestExecutor.put(
                 any(String.class),
@@ -128,8 +121,7 @@ public class OrchestratorImplTest {
                 any()
         )).thenThrow(new RuntimeException("Some parameter was wrong"));
 
-        boolean response = orchestrator.suspend(hostName);
-        assertFalse("Expected Orchestrator to respond with false when some other exception is thrown", response);
+        orchestrator.suspend(hostName);
     }
 
 
@@ -145,11 +137,10 @@ public class OrchestratorImplTest {
                 BatchOperationResult.class
         )).thenReturn(BatchOperationResult.successResult());
 
-        Optional<String> response = orchestrator.suspend(parentHostName, hostNames);
-        assertFalse("Expected failureReason to be empty", response.isPresent());
+        orchestrator.suspend(parentHostName, hostNames);
     }
 
-    @Test
+    @Test(expected=OrchestratorException.class)
     public void testBatchSuspendCallWithFailureReason() {
         String parentHostName = "host1.test.yahoo.com";
         List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
@@ -162,11 +153,10 @@ public class OrchestratorImplTest {
                 BatchOperationResult.class
         )).thenReturn(new BatchOperationResult(failureReason));
 
-        Optional<String> response = orchestrator.suspend(parentHostName, hostNames);
-        assertEquals("Expected failureReason to be empty", response, Optional.of(failureReason));
+        orchestrator.suspend(parentHostName, hostNames);
     }
 
-    @Test
+    @Test(expected=RuntimeException.class)
     public void testBatchSuspendCallWithSomeException() {
         String parentHostName = "host1.test.yahoo.com";
         List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
@@ -179,7 +169,6 @@ public class OrchestratorImplTest {
                 BatchOperationResult.class
         )).thenThrow(new RuntimeException(exceptionMessage));
 
-        Optional<String> response = orchestrator.suspend(parentHostName, hostNames);
-        assertEquals("Expected failureReason to be empty", response, Optional.of(exceptionMessage));
+        orchestrator.suspend(parentHostName, hostNames);
     }
 }

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Abstraction for communicating with Orchestrator.
@@ -11,17 +10,20 @@ import java.util.Optional;
  */
 public interface Orchestrator {
     /**
-     * Invokes orchestrator suspend of a host. Returns whether suspend was granted.
+     * Invokes orchestrator suspend of a host.
+     * @throws OrchestratorException if suspend was denied.
      */
-    boolean suspend(String hostName);
+    void suspend(String hostName);
 
     /**
-     * Invokes orchestrator resume of a host. Returns whether resume was granted.
+     * Invokes orchestrator resume of a host.
+     * @throws OrchestratorException if resume was denied.
      */
-    boolean resume(String hostName);
+    void resume(String hostName);
 
     /**
-     * Invokes orchestrator suspend hosts. Returns failure reasons when failing.
+     * Invokes orchestrator suspend hosts.
+     * @throws OrchestratorException if batch suspend was denied.
      */
-    Optional<String> suspend(String parentHostName, List<String> hostNames);
+    void suspend(String parentHostName, List<String> hostNames);
 }

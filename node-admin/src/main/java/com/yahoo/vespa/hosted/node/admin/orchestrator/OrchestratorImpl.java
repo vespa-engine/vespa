@@ -21,7 +21,6 @@ import java.util.Optional;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class);
     static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
@@ -37,55 +36,61 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
-    public boolean suspend(final String hostName) {
-        PrefixLogger logger = getLogger(hostName);
+    public void suspend(final String hostName) {
+        UpdateHostResponse response;
         try {
-            String path = getSuspendPath(hostName);
-            UpdateHostResponse response = requestExecutor.put(path,
-                                                              WEB_SERVICE_PORT,
-                                                              Optional.empty(), /* body */
-                                                              UpdateHostResponse.class);
-            return response.reason() == null;
+            response = requestExecutor.put(getSuspendPath(hostName),
+                    WEB_SERVICE_PORT,
+                    Optional.empty(), /* body */
+                    UpdateHostResponse.class);
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             // Orchestrator doesn't care about this node, so don't let that stop us.
-            logger.info("Got not found on suspending, allowed to suspend");
-            return true;
+            getLogger(hostName).info("Got not found on suspending, allowed to suspend");
+            return;
         } catch (Exception e) {
-            logger.info("Got error on suspend", e);
-            return false;
+            throw new RuntimeException("Got error on suspend", e);
         }
+
+        Optional.ofNullable(response.reason()).ifPresent(reason -> {
+            throw new OrchestratorException(reason.message());
+        });
     }
 
     @Override
-    public Optional<String> suspend(String parentHostName, List<String> hostNames) {
+    public void suspend(String parentHostName, List<String> hostNames) {
+        final BatchOperationResult batchOperationResult;
         try {
-            final BatchOperationResult batchOperationResult = requestExecutor.put(
+             batchOperationResult = requestExecutor.put(
                     ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
                     WEB_SERVICE_PORT,
                     Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                     BatchOperationResult.class);
-            return batchOperationResult.getFailureReason();
         } catch (Exception e) {
-            NODE_ADMIN_LOGGER.info("Got error on batch suspend for " + parentHostName + ", with nodes " + hostNames, e);
-            return Optional.of(e.getMessage());
+            throw new RuntimeException("Got error on batch suspend for " + parentHostName + ", with nodes " + hostNames, e);
         }
+
+        batchOperationResult.getFailureReason().ifPresent(reason -> {
+            throw new OrchestratorException(reason);
+        });
     }
 
     @Override
-    public boolean resume(final String hostName) {
-        PrefixLogger logger = getLogger(hostName);
+    public void resume(final String hostName) {
+        UpdateHostResponse response;
         try {
             String path = getSuspendPath(hostName);
-            UpdateHostResponse response = requestExecutor.delete(path, WEB_SERVICE_PORT, UpdateHostResponse.class);
-            return response.reason() == null;
+            response = requestExecutor.delete(path, WEB_SERVICE_PORT, UpdateHostResponse.class);
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             // Orchestrator doesn't care about this node, so don't let that stop us.
-            logger.info("Got not found on resuming, allowed to resume");
-            return true;
+            getLogger(hostName).info("Got not found on resuming, allowed to resume");
+            return;
         } catch (Exception e) {
-            logger.info("Got error on resume", e);
-            return false;
+            throw new RuntimeException("Got error on resume", e);
         }
+
+        Optional.ofNullable(response.reason()).ifPresent(reason -> {
+            throw new OrchestratorException(reason.message());
+        });
     }
 
     private PrefixLogger getLogger(String hostName) {
