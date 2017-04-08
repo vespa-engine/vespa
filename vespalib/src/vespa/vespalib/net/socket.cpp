@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "socket.h"
+#include "socket_spec.h"
 
 namespace vespalib {
 
@@ -47,16 +48,9 @@ Socket::write(const char *buf, size_t len)
 }
 
 Socket::UP
-Socket::connect(const vespalib::string &host, int port)
+Socket::connect(const SocketSpec &spec)
 {
-    SocketHandle handle = SocketAddress::select_remote(port, host.c_str()).connect();
-    return std::make_unique<Socket>(std::move(handle));
-}
-
-Socket::UP
-Socket::connect(const vespalib::string &path)
-{
-    SocketHandle handle = SocketAddress::from_path(path).connect();
+    SocketHandle handle = spec.client_address().connect();
     return std::make_unique<Socket>(std::move(handle));
 }
 

@@ -11,6 +11,26 @@
 
 namespace vespalib {
 
+namespace {
+
+const in6_addr ipv6_wildcard = IN6ADDR_ANY_INIT;
+
+} // namespace vespalib::<unnamed>
+
+bool
+SocketAddress::is_wildcard() const
+{
+    if (is_ipv4()) {
+        const sockaddr_in *addr = reinterpret_cast<const sockaddr_in *>(&_addr);
+        return (addr->sin_addr.s_addr == htonl(INADDR_ANY));
+    }
+    if (is_ipv6()) {
+        const sockaddr_in6 *addr = reinterpret_cast<const sockaddr_in6 *>(&_addr);
+        return (memcmp(&addr->sin6_addr, &ipv6_wildcard, sizeof(in6_addr)) == 0);
+    }
+    return false;
+}
+
 vespalib::string
 SocketAddress::ip_address() const
 {
@@ -69,6 +89,9 @@ SocketAddress::port() const
 vespalib::string
 SocketAddress::spec() const
 {
+    if (is_wildcard()) {
+        return make_string("tcp/%d", port());
+    }
     if (is_ipv4()) {
         return make_string("tcp/%s:%d", ip_address().c_str(), port());
     }

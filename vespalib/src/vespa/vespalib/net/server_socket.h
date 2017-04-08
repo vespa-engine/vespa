@@ -9,6 +9,8 @@
 
 namespace vespalib {
 
+class SocketSpec;
+
 class ServerSocket
 {
 private:
@@ -23,8 +25,7 @@ public:
     SocketAddress address() const;
     void shutdown();
     Socket::UP accept();
-    static ServerSocket::UP listen(int port);
-    static ServerSocket::UP listen(const vespalib::string &path);
+    static ServerSocket::UP listen(const SocketSpec &spec);
 };
 
 } // namespace vespalib

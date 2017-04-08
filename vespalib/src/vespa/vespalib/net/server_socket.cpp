@@ -2,6 +2,7 @@
 
 
 #include "server_socket.h"
+#include "socket_spec.h"
 
 namespace vespalib {
 
@@ -27,16 +28,9 @@ ServerSocket::accept()
 }
 
 ServerSocket::UP
-ServerSocket::listen(int port)
+ServerSocket::listen(const SocketSpec &spec)
 {
-    SocketHandle handle = SocketAddress::select_local(port).listen();
-    return std::make_unique<ServerSocket>(std::move(handle));
-}
-
-ServerSocket::UP
-ServerSocket::listen(const vespalib::string &path)
-{
-    SocketHandle handle = SocketAddress::from_path(path).listen();
+    SocketHandle handle = spec.server_address().listen();
     return std::make_unique<ServerSocket>(std::move(handle));
 }
 
