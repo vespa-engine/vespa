@@ -145,7 +145,7 @@ public:
   LatinTokenizerTest();
   virtual ~LatinTokenizerTest();
 
-  virtual void Run();
+  virtual void Run() override;
 };
 
 
@@ -459,7 +459,7 @@ void LatinTokenizerTest::Run()
 class LatinTokenizerTestApp : public FastOS_Application
 {
 public:
-  virtual int Main();
+  virtual int Main() override;
 };
 
 

@@ -8,7 +8,7 @@
 
 class Base64Test : public FastOS_Application {
 public:
-  virtual int Main();
+  virtual int Main() override;
 };
 
 int

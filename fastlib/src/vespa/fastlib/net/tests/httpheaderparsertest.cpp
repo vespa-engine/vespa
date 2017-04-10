@@ -11,7 +11,7 @@ class HeaderReaderApp : public FastOS_Application
 {
   public:
 
-    int Main(void)
+    int Main(void) override
     {
       if (_argc != 2)
       {
