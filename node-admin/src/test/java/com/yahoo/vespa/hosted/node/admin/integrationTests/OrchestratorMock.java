@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Mock with some simple logic
@@ -14,56 +13,22 @@ import java.util.Optional;
 public class OrchestratorMock implements Orchestrator {
     private final CallOrderVerifier callOrderVerifier;
 
-    private boolean forceSingleSuspendResponse = true;
-    private boolean forceSingleResumeResponse = true;
-    private Optional<String> forceGroupSuspendResponse = Optional.empty();
-
-    private static final Object monitor = new Object();
-
-    public OrchestratorMock(CallOrderVerifier callOrderVerifier) {
+    OrchestratorMock(CallOrderVerifier callOrderVerifier) {
         this.callOrderVerifier = callOrderVerifier;
     }
 
     @Override
-    public boolean suspend(String hostName) {
-        synchronized (monitor) {
-            callOrderVerifier.add("Suspend for " + hostName);
-            return forceSingleSuspendResponse;
-        }
+    public void suspend(String hostName) {
+        callOrderVerifier.add("Suspend for " + hostName);
     }
 
     @Override
-    public boolean resume(String hostName) {
-        synchronized (monitor) {
-            callOrderVerifier.add("Resume for " + hostName);
-            return forceSingleResumeResponse;
-        }
+    public void resume(String hostName) {
+        callOrderVerifier.add("Resume for " + hostName);
     }
 
     @Override
-    public Optional<String> suspend(String parentHostName, List<String> hostNames) {
-        synchronized (monitor) {
-            callOrderVerifier.add("Suspend with parent: " + parentHostName + " and hostnames: " + hostNames +
-                                  " - Forced response: " + forceGroupSuspendResponse);
-            return forceGroupSuspendResponse;
-        }
-    }
-
-    public void setForceSingleSuspendResponse(boolean forceSingleSuspendResponse) {
-        synchronized (monitor) {
-            this.forceSingleSuspendResponse = forceSingleSuspendResponse;
-        }
-    }
-
-    public void setForceSingleResumeResponse(boolean forceSingleResumeResponse) {
-        synchronized (monitor) {
-            this.forceSingleResumeResponse = forceSingleResumeResponse;
-        }
-    }
-
-    public void setForceGroupSuspendResponse(Optional<String> forceGroupSuspendResponse) {
-        synchronized (monitor) {
-            this.forceGroupSuspendResponse = forceGroupSuspendResponse;
-        }
+    public void suspend(String parentHostName, List<String> hostNames) {
+        callOrderVerifier.add("Suspend with parent: " + parentHostName + " and hostnames: " + hostNames);
     }
 }

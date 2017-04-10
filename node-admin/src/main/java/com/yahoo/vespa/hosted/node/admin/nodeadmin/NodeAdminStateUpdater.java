@@ -144,9 +144,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
         // To get to resumed state, we only need to converge NodeAdmins frozen state
         if (wantedState == RESUMED) {
-            if (!orchestrator.resume(dockerHostHostName)) {
-                throw new RuntimeException("Failed to resume node-admin");
-            }
+            orchestrator.resume(dockerHostHostName);
 
             synchronized (monitor) {
                 currentState = RESUMED;
@@ -170,10 +168,12 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         if (currentState == RESUMED) {
             List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
             nodesToSuspend.add(dockerHostHostName);
-            orchestrator.suspend(dockerHostHostName, nodesToSuspend).ifPresent(orchestratorResponse -> {
+            try {
+                orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+            } catch (Exception e) {
                 nodeAdmin.setFrozen(false);
-                throw new RuntimeException("Failed to get permission to suspend, resuming. Reason: " + orchestratorResponse);
-            });
+                throw e;
+            }
 
             synchronized (monitor) {
                 currentState = SUSPENDED_NODE_ADMIN;
