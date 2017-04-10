@@ -8,7 +8,7 @@ class MessagesTest : public vespalib::TestApp
 {
 public:
     MessagesTest() { }
-    int Main();
+    int Main() override;
 };
 
 int MessagesTest::Main()
