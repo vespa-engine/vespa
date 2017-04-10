@@ -12,10 +12,10 @@ private:
 
 public:
     RawPacket() : _data() {}
-    virtual uint32_t GetPCODE();
-    virtual uint32_t GetLength();
-    virtual void Encode(FNET_DataBuffer *);
-    virtual bool Decode(FNET_DataBuffer *src, uint32_t len);
+    virtual uint32_t GetPCODE() override;
+    virtual uint32_t GetLength() override;
+    virtual void Encode(FNET_DataBuffer *) override;
+    virtual bool Decode(FNET_DataBuffer *src, uint32_t len) override;
 };
 
 uint32_t
@@ -69,8 +69,7 @@ public:
         _server = server;
     }
 
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet,
-                                    FNET_Context context);
+    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 };
 
 
@@ -140,17 +139,14 @@ private:
 
 public:
     Proxy() : _transport() {}
-    virtual bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen,
-                               uint32_t *pcode, uint32_t *chid, bool *);
-    virtual FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen,
-                                uint32_t pcode, FNET_Context);
-    virtual void Encode(FNET_Packet *packet, uint32_t chid,
-                        FNET_DataBuffer *dst);
+    virtual bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen, uint32_t *pcode, uint32_t *chid, bool *) override;
+    virtual FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen, uint32_t pcode, FNET_Context) override;
+    virtual void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst) override;
     // ---------------------------------------------
-    virtual bool InitAdminChannel(FNET_Channel *channel);
-    virtual bool InitChannel(FNET_Channel *, uint32_t);
+    virtual bool InitAdminChannel(FNET_Channel *channel) override;
+    virtual bool InitChannel(FNET_Channel *, uint32_t) override;
     // ---------------------------------------------
-    virtual int Main();
+    virtual int Main() override;
 };
 
 

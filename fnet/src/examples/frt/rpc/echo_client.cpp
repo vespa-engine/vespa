@@ -7,7 +7,7 @@ LOG_SETUP("echo_client");
 class EchoClient : public FastOS_Application
 {
 public:
-    virtual int Main();
+    virtual int Main() override;
 };
 
 int

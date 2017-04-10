@@ -48,7 +48,7 @@ struct LockedReqWait : public FRT_IRequestWait
         return ret;
     }
 
-    virtual void RequestDone(FRT_RPCRequest *)
+    virtual void RequestDone(FRT_RPCRequest *) override
     {
         _wasLocked = isLocked();
         _cond.Lock();
@@ -90,7 +90,7 @@ public:
         Schedule(delay);
     }
 
-    void PerformTask()
+    void PerformTask() override
     {
         _req->Return();
         _delayedReturnCntLock.Lock();

@@ -14,11 +14,11 @@ struct Handler : public FNET_IFDSelectorHandler
     {
         reset();
     }
-    void readEvent(FNET_FDSelector *src)
+    void readEvent(FNET_FDSelector *src) override
     {
         readEventCnt[src->getContext()._value.INT]++;
     }
-    void writeEvent(FNET_FDSelector *src)
+    void writeEvent(FNET_FDSelector *src) override
     {
         writeEventCnt[src->getContext()._value.INT]++;
     }

@@ -8,7 +8,7 @@ struct Receptor : public FRT_IRequestWait
     FRT_RPCRequest *req;
 
     Receptor() : req(0) {}
-    void RequestDone(FRT_RPCRequest *r) {
+    void RequestDone(FRT_RPCRequest *r) override {
         req = r;
     }
 };

@@ -9,7 +9,7 @@ LOG_SETUP("pingclient");
 class PingClient : public FastOS_Application
 {
 public:
-    int  Main();
+    int  Main() override;
 };
 
 

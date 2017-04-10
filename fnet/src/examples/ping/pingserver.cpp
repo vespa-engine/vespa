@@ -11,15 +11,15 @@ class PingServer : public FNET_IServerAdapter,
                    public FastOS_Application
 {
 public:
-    bool InitAdminChannel(FNET_Channel *) { return false; }
-    bool InitChannel(FNET_Channel *channel, uint32_t)
+    bool InitAdminChannel(FNET_Channel *) override { return false; }
+    bool InitChannel(FNET_Channel *channel, uint32_t) override
     {
         channel->SetContext(FNET_Context(channel));
         channel->SetHandler(this);
         return true;
     }
 
-    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context)
+    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override
     {
         if (packet->GetPCODE() == PCODE_PING_REQUEST) {
             fprintf(stderr, "Got ping request, sending ping reply\n");
@@ -29,7 +29,7 @@ public:
         return FNET_FREE_CHANNEL;
     }
 
-    int  Main();
+    int  Main() override;
 };
 
 

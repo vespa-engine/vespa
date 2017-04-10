@@ -64,7 +64,7 @@ public:
         printf("\n");
     }
 
-    virtual int Main();
+    virtual int Main() override;
 };
 
 

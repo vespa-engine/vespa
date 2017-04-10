@@ -10,10 +10,10 @@ struct MyBlob : FRT_ISharedBlob
 {
     int refcnt;
     MyBlob() : refcnt(1) {}
-    virtual uint32_t getLen() { return (strlen("blob_test") + 1); }
-    virtual const char *getData() { return "blob_test"; }
-    virtual void addRef() { ++refcnt; }
-    virtual void subRef() { --refcnt; }
+    virtual uint32_t getLen() override { return (strlen("blob_test") + 1); }
+    virtual const char *getData() override { return "blob_test"; }
+    virtual void addRef() override { ++refcnt; }
+    virtual void subRef() override { --refcnt; }
 };
 
 struct Data
