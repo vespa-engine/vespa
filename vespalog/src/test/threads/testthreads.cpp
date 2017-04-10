@@ -15,7 +15,7 @@ class FileThread : public FastOS_Runnable
     string _file;
 public:
     FileThread(string file) : _done(false), _file(file) {}
-    virtual void Run(FastOS_ThreadInterface *thread, void *arg);
+    virtual void Run(FastOS_ThreadInterface *thread, void *arg) override;
     void stop() {_done = true; }
 };
 
@@ -25,7 +25,7 @@ class LoggerThread : public FastOS_Runnable
 public:
     bool _useLogBuffer;
     LoggerThread() : _done(false), _useLogBuffer(false) {}
-    virtual void Run(FastOS_ThreadInterface *thread, void *arg);
+    virtual void Run(FastOS_ThreadInterface *thread, void *arg) override;
     void stop() {_done = true; }
 };
 
@@ -74,7 +74,7 @@ LoggerThread::Run(FastOS_ThreadInterface *, void *)
 class ThreadTester : public FastOS_Application
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int
