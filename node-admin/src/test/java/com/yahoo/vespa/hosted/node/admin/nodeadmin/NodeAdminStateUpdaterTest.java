@@ -97,18 +97,18 @@ public class NodeAdminStateUpdaterTest {
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(refresher, times(1)).signalWorkToBeDone();
-        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Roll back
+        verify(nodeAdmin, times(1)).setFrozen(eq(false));
 
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
-        verify(nodeAdmin, times(2)).setFrozen(eq(false));
+        verify(nodeAdmin, times(1)).setFrozen(eq(false));
 
         // At this point orchestrator says its OK to suspend, but something goes wrong when we try to stop services
         doThrow(new RuntimeException("Failed to stop services")).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
         tickAfter(0); // Change in wanted state, no need to wait
         verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
-        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure we dont roll back
+        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // Make sure we dont roll back
 
         // Finally we are successful in transitioning to frozen
         tickAfter(35);
