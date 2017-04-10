@@ -15,12 +15,14 @@ class ServerSocket
 {
 private:
     SocketHandle _handle;
+    vespalib::string _path;
 
 public:
     typedef std::unique_ptr<ServerSocket> UP;
     ServerSocket(const ServerSocket &rhs) = delete;
     ServerSocket &operator=(const ServerSocket &rhs) = delete;
-    explicit ServerSocket(SocketHandle handle) : _handle(std::move(handle)) {}
+    explicit ServerSocket(SocketHandle handle);
+    ~ServerSocket();
     bool valid() const { return _handle.valid(); }
     SocketAddress address() const;
     void shutdown();

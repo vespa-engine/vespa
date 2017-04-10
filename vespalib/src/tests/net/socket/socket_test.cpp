@@ -10,6 +10,34 @@
 
 using namespace vespalib;
 
+bool is_socket(const vespalib::string &path) {
+    struct stat info;
+    if (path.empty() || (lstat(path.c_str(), &info) != 0)) {
+        return false;
+    }
+    return S_ISSOCK(info.st_mode);
+}
+
+bool is_file(const vespalib::string &path) {
+    struct stat info;
+    if (path.empty() || (lstat(path.c_str(), &info) != 0)) {
+        return false;
+    }
+    return S_ISREG(info.st_mode);
+}
+
+void remove_file(const vespalib::string &path) {
+    unlink(path.c_str());
+}
+
+void replace_file(const vespalib::string &path, const vespalib::string &data) {
+    remove_file(path);
+    int fd = creat(path.c_str(), 0600);
+    ASSERT_NOT_EQUAL(fd, -1);
+    ASSERT_EQUAL(write(fd, data.data(), data.size()), data.size());
+    close(fd);
+}
+
 vespalib::string get_meta(const SocketAddress &addr) {
     vespalib::string meta;
     if (addr.is_ipv4()) {
@@ -115,16 +143,23 @@ TEST("local client/server addresses") {
 }
 
 struct ServerWrapper {
-    ServerSocket::UP server = ServerSocket::listen(SocketSpec::from_port(0));
+    ServerSocket::UP server;
+    ServerWrapper(const vespalib::string &spec) : server(ServerSocket::listen(SocketSpec(spec))) {}
 };
 
-TEST_MT_F("require that basic socket io works", 2, ServerWrapper) {
+TEST_MT_F("require that basic socket io works", 2, ServerWrapper("tcp/0")) {
     bool is_server = (thread_id == 0);
     Socket::UP socket = connect_sockets(is_server, *f1.server);
     TEST_DO(verify_socket_io(is_server, *socket));
 }
 
-TEST_MT_F("require that server accept can be interrupted", 2, ServerWrapper) {
+TEST_MT_F("require that basic unix domain socket io works", 2, ServerWrapper("ipc/file:my_socket")) {
+    bool is_server = (thread_id == 0);
+    Socket::UP socket = connect_sockets(is_server, *f1.server);
+    TEST_DO(verify_socket_io(is_server, *socket));
+}
+
+TEST_MT_F("require that server accept can be interrupted", 2, ServerWrapper("tcp/0")) {
     bool is_server = (thread_id == 0);
     if (is_server) {
         fprintf(stderr, "--> calling accept\n");
@@ -138,25 +173,57 @@ TEST_MT_F("require that server accept can be interrupted", 2, ServerWrapper) {
     }
 }
 
-struct IpcServerWrapper {
-    vespalib::string server_path;
-    ServerSocket::UP server;
-    IpcServerWrapper(const vespalib::string &server_path_in)
-        : server_path(server_path_in), server()
-    {
-        unlink(server_path.c_str());
-        server = ServerSocket::listen(SocketSpec::from_path(server_path));
-    }
-    ~IpcServerWrapper() {
-        server.reset();
-        unlink(server_path.c_str());
-    }
-};
+TEST("require that socket file is removed by server socket when destructed") {
+    remove_file("my_socket");
+    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
+    EXPECT_TRUE(server->valid());
+    EXPECT_TRUE(is_socket("my_socket"));
+    server.reset();
+    EXPECT_TRUE(!is_socket("my_socket"));
+}
 
-TEST_MT_F("require that basic unix domain socket io works", 2, IpcServerWrapper("my_socket")) {
-    bool is_server = (thread_id == 0);
-    Socket::UP socket = connect_sockets(is_server, *f1.server);
-    TEST_DO(verify_socket_io(is_server, *socket));
+TEST("require that socket file is only removed on destruction if it is a socket") {
+    remove_file("my_socket");
+    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
+    EXPECT_TRUE(server->valid());
+    EXPECT_TRUE(is_socket("my_socket"));
+    replace_file("my_socket", "hello\n");
+    server.reset();
+    EXPECT_TRUE(is_file("my_socket"));
+    remove_file("my_socket");
+}
+
+TEST("require that a server socket will fail to listen to a path that is already a regular file") {
+    replace_file("my_socket", "hello\n");
+    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
+    EXPECT_TRUE(!server->valid());
+    server.reset();
+    EXPECT_TRUE(is_file("my_socket"));
+    remove_file("my_socket");
+}
+
+TEST("require that a server socket will fail to listen to a path that is already taken by another server") {
+    remove_file("my_socket");
+    ServerSocket::UP server1 = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
+    ServerSocket::UP server2 = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
+    EXPECT_TRUE(server1->valid());
+    EXPECT_TRUE(!server2->valid());
+    EXPECT_TRUE(is_socket("my_socket"));
+    server1.reset();
+    EXPECT_TRUE(!is_socket("my_socket"));
+}
+
+TEST("require that a server socket will remove an old socket file if it cannot be connected to") {
+    remove_file("my_socket");
+    {
+        SocketHandle server_handle = SocketAddress::from_path("my_socket").listen();
+        EXPECT_TRUE(is_socket("my_socket"));
+    }
+    EXPECT_TRUE(is_socket("my_socket"));
+    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
+    EXPECT_TRUE(server->valid());
+    server.reset();
+    EXPECT_TRUE(!is_socket("my_socket"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
