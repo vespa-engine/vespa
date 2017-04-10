@@ -65,8 +65,8 @@ public:
     DocumentSelectParserTest()
         : _bucketIdFactory() {}
 
-    void setUp();
-    void tearDown() {}
+    void setUp() override;
+    void tearDown() override {}
     void createDocs();
 
     void testParseTerminals();
@@ -914,29 +914,29 @@ namespace {
     public:
         virtual ~TestVisitor() {}
 
-        void visitConstant(const select::Constant& node)
+        void visitConstant(const select::Constant& node) override
         {
             data << "CONSTANT(" << node << ")";
         }
 
         virtual void
-        visitInvalidConstant(const select::InvalidConstant& node)
+        visitInvalidConstant(const select::InvalidConstant& node) override
         {
             data << "INVALIDCONSTANT(" << node << ")";
         }
 
-        void visitDocumentType(const select::DocType& node)
+        void visitDocumentType(const select::DocType& node) override
         {
             data << "DOCTYPE(" << node << ")";
         }
 
-        void visitComparison(const select::Compare& node)
+        void visitComparison(const select::Compare& node) override
         {
             data << "COMPARE(" << node.getLeft() << " "
                  << node.getOperator() << " " << node.getRight() << ")";
         }
 
-        void visitAndBranch(const select::And& node)
+        void visitAndBranch(const select::And& node) override
         {
             data << "AND(";
             node.getLeft().visit(*this);
@@ -945,7 +945,7 @@ namespace {
             data << ")";
         }
 
-        void visitOrBranch(const select::Or& node)
+        void visitOrBranch(const select::Or& node) override
         {
             data << "OR(";
             node.getLeft().visit(*this);
@@ -954,7 +954,7 @@ namespace {
             data << ")";
         }
 
-        void visitNotBranch(const select::Not& node)
+        void visitNotBranch(const select::Not& node) override
         {
             data << "NOT(";
             node.getChild().visit(*this);
@@ -962,62 +962,62 @@ namespace {
         }
 
         virtual void
-        visitArithmeticValueNode(const select::ArithmeticValueNode &)
+        visitArithmeticValueNode(const select::ArithmeticValueNode &) override
         {
         }
 
         virtual void
-        visitFunctionValueNode(const select::FunctionValueNode &)
+        visitFunctionValueNode(const select::FunctionValueNode &) override
         {
         }
 
         virtual void
-        visitIdValueNode(const select::IdValueNode &)
+        visitIdValueNode(const select::IdValueNode &) override
         {
         }
 
         virtual void
-        visitSearchColumnValueNode(const select::SearchColumnValueNode &)
+        visitSearchColumnValueNode(const select::SearchColumnValueNode &) override
         {
         }
 
         virtual void
-        visitFieldValueNode(const select::FieldValueNode &)
+        visitFieldValueNode(const select::FieldValueNode &) override
         {
         }
 
         virtual void
-        visitFloatValueNode(const select::FloatValueNode &)
+        visitFloatValueNode(const select::FloatValueNode &) override
         {
         }
 
         virtual void
-        visitVariableValueNode(const select::VariableValueNode &)
+        visitVariableValueNode(const select::VariableValueNode &) override
         {
         }
 
         virtual void
-        visitIntegerValueNode(const select::IntegerValueNode &)
+        visitIntegerValueNode(const select::IntegerValueNode &) override
         {
         }
 
         virtual void
-        visitCurrentTimeValueNode(const select::CurrentTimeValueNode &)
+        visitCurrentTimeValueNode(const select::CurrentTimeValueNode &) override
         {
         }
 
         virtual void
-        visitStringValueNode(const select::StringValueNode &)
+        visitStringValueNode(const select::StringValueNode &) override
         {
         }
 
         virtual void
-        visitNullValueNode(const select::NullValueNode &)
+        visitNullValueNode(const select::NullValueNode &) override
         {
         }
 
         virtual void
-        visitInvalidValueNode(const select::InvalidValueNode &)
+        visitInvalidValueNode(const select::InvalidValueNode &) override
         {
         }
 
