@@ -76,14 +76,14 @@ public:
      *
      * @param msg the Message to handle
      **/
-    virtual void handleMessage(Message::UP msg);
+    virtual void handleMessage(Message::UP msg) override;
 
     /**
      * Handle a Reply by enqueuing it.
      *
      * @param reply the Reply to handle
      **/
-    virtual void handleReply(Reply::UP reply);
+    virtual void handleReply(Reply::UP reply) override;
 };
 
 } // namespace mbus

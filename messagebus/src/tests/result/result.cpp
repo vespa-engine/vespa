@@ -28,7 +28,7 @@ struct Test : public vespalib::TestApp
 {
     Result sendOk(Message::UP msg);
     Result sendFail(Message::UP msg);
-    int Main();
+    int Main() override;
 };
 
 Result

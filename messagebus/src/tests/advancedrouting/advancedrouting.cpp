@@ -42,7 +42,7 @@ private:
     bool testTrace(const std::vector<string> &expected, const Trace &trace);
 
 public:
-    int Main();
+    int Main() override;
     void testAdvanced(TestData &data);
 };
 

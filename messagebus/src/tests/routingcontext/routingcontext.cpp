@@ -50,7 +50,7 @@ public:
     CustomPolicyFactory(bool forward,
                         const std::vector<string> &all,
                         const std::vector<string> &matched);
-    IRoutingPolicy::UP create(const string &param);
+    IRoutingPolicy::UP create(const string &param) override;
 };
 
 class CustomPolicy : public IRoutingPolicy {
@@ -59,8 +59,8 @@ private:
 
 public:
     CustomPolicy(CustomPolicyFactory &factory);
-    void select(RoutingContext &ctx);
-    void merge(RoutingContext &ctx);
+    void select(RoutingContext &ctx) override;
+    void merge(RoutingContext &ctx) override;
 };
 
 CustomPolicy::CustomPolicy(CustomPolicyFactory &factory) :
@@ -211,7 +211,7 @@ private:
     Message::UP createMessage(const string &msg);
 
 public:
-    int Main();
+    int Main() override;
     void testSingleDirective(TestData &data);
     void testMoreDirectives(TestData &data);
     void testRecipientsRemain(TestData &data);

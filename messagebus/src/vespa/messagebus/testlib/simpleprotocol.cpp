@@ -16,27 +16,27 @@ const uint32_t SimpleProtocol::REPLY(2);
 
 class AllPolicy : public IRoutingPolicy {
 public:
-    void select(RoutingContext &ctx) {
+    void select(RoutingContext &ctx) override {
         std::vector<Route> recipients;
         ctx.getMatchedRecipients(recipients);
         ctx.addChildren(recipients);
     }
 
-    void merge(RoutingContext &ctx) {
+    void merge(RoutingContext &ctx) override {
         SimpleProtocol::simpleMerge(ctx);
     }
 };
 
 class AllPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
-    IRoutingPolicy::UP create(const string &) {
+    IRoutingPolicy::UP create(const string &) override {
         return IRoutingPolicy::UP(new AllPolicy());
     }
 };
 
 class HashPolicy : public IRoutingPolicy {
 public:
-    void select(RoutingContext &ctx) {
+    void select(RoutingContext &ctx) override {
         std::vector<Route> recipients;
         ctx.getMatchedRecipients(recipients);
         if (!recipients.empty()) {
@@ -45,14 +45,14 @@ public:
         }
     }
 
-    void merge(RoutingContext &ctx) {
+    void merge(RoutingContext &ctx) override {
         SimpleProtocol::simpleMerge(ctx);
     }
 };
 
 class HashPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
-    IRoutingPolicy::UP create(const string &) {
+    IRoutingPolicy::UP create(const string &) override {
         return IRoutingPolicy::UP(new HashPolicy());
     }
 };

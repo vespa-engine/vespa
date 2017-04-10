@@ -42,14 +42,14 @@ public:
     virtual ~Reply();
 
     // Inherit doc from Routable.
-    virtual void swapState(Routable &rhs);
+    virtual void swapState(Routable &rhs) override;
 
     /**
      * Inherited from Routable. Classifies this object as 'a reply'.
      *
      * @return true
      */
-    virtual bool isReply() const;
+    virtual bool isReply() const override;
 
     /**
      * Add an Error to this Reply

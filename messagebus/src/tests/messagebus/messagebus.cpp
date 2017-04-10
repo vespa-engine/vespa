@@ -117,7 +117,7 @@ private:
     std::vector<Search*>  searchVec;
 
 public:
-    int Main();
+    int Main() override;
     void testSendToAny();
     void testSendToCol();
     void testSendToAnyThenCol();

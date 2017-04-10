@@ -14,7 +14,7 @@ private:
     void testMaxSize();
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("servicepool_test");
 
         testMaxSize(); TEST_FLUSH();

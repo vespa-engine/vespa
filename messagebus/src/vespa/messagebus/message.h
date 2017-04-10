@@ -38,7 +38,7 @@ public:
     virtual ~Message();
 
     // Overrides Routable.
-    virtual void swapState(Routable &rhs);
+    virtual void swapState(Routable &rhs) override;
 
     /**
      * Returns the timestamp for when this message was last seen by message
@@ -139,7 +139,7 @@ public:
      *
      * @return false
      */
-    virtual bool isReply() const { return false; }
+    virtual bool isReply() const override { return false; }
 
     /**
      * Returns whether or not this message contains a sequence identifier that

@@ -72,7 +72,7 @@ public:
      *
      * @param msg The message to send.
      */
-    void handleMessage(Message::UP msg);
+    void handleMessage(Message::UP msg) override;
 
     /**
      * Lookup the sequencing id of an incoming reply to pop the front of the corresponding queue, and then
@@ -80,7 +80,7 @@ public:
      *
      * @param reply The reply received.
      */
-    void handleReply(Reply::UP reply);
+    void handleReply(Reply::UP reply) override;
 };
 
 } // namespace mbus

@@ -28,8 +28,8 @@ private:
     IntermediateSession::UP _session;
 public:
     Proxy(MessageBus &bus);
-    void handleMessage(Message::UP msg);
-    void handleReply(Reply::UP reply);
+    void handleMessage(Message::UP msg) override;
+    void handleReply(Reply::UP reply) override;
 };
 
 Proxy::Proxy(MessageBus &bus)
@@ -57,7 +57,7 @@ private:
     DestinationSession::UP _session;
 public:
     Server(MessageBus &bus);
-    void handleMessage(Message::UP msg);
+    void handleMessage(Message::UP msg) override;
 };
 
 Server::Server(MessageBus &bus)

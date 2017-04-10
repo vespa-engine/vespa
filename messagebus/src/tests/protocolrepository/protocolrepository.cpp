@@ -23,13 +23,13 @@ public:
     }
 
     const string &
-    getName() const
+    getName() const override
     {
         return _name;
     }
 
     IRoutingPolicy::UP
-    createPolicy(const string &name, const string &param) const
+    createPolicy(const string &name, const string &param) const override
     {
         (void)name;
         (void)param;
@@ -37,7 +37,7 @@ public:
     }
 
     Blob
-    encode(const vespalib::Version &version, const Routable &routable) const
+    encode(const vespalib::Version &version, const Routable &routable) const override
     {
         (void)version;
         (void)routable;
@@ -45,7 +45,7 @@ public:
     }
 
     Routable::UP
-    decode(const vespalib::Version &version, BlobRef data) const
+    decode(const vespalib::Version &version, BlobRef data) const override
     {
         (void)version;
         (void)data;

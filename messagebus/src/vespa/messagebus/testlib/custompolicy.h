@@ -17,8 +17,8 @@ public:
                  const std::vector<uint32_t> consumableErrors,
                  const std::vector<Route> &routes);
 
-    virtual void select(RoutingContext &context);
-    virtual void merge(RoutingContext &context);
+    virtual void select(RoutingContext &context) override;
+    virtual void merge(RoutingContext &context) override;
 };
 
 class CustomPolicyFactory : public SimpleProtocol::IPolicyFactory {
@@ -32,7 +32,7 @@ public:
     CustomPolicyFactory(bool selectOnRetry, uint32_t consumableError);
     CustomPolicyFactory(bool selectOnRetry, const std::vector<uint32_t> consumableErrors);
 
-    IRoutingPolicy::UP create(const string &param);
+    IRoutingPolicy::UP create(const string &param) override;
     static void parseRoutes(const string &str, std::vector<Route> &routes);
 };
 

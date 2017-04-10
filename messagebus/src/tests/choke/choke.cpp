@@ -39,7 +39,7 @@ private:
     Message::UP createMessage(const string &msg);
 
 public:
-    int Main();
+    int Main() override;
     void testMaxCount(TestData &data);
     void testMaxSize(TestData &data);
 };

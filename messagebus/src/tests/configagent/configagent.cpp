@@ -18,8 +18,8 @@ private:
     bool checkTables(uint32_t numTables);
 
 public:
-    int Main();
-    bool setupRouting(const RoutingSpec &spec);
+    int Main() override;
+    bool setupRouting(const RoutingSpec &spec) override;
 };
 
 TEST_APPHOOK(Test);

@@ -19,7 +19,7 @@ private:
     vespalib::Version _version;
 
 protected:
-    const vespalib::Version &getVersion() const { return _version; }
+    const vespalib::Version &getVersion() const override { return _version; }
 
 public:
     VersionedRPCNetwork(const RPCNetworkParams &params);

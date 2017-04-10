@@ -26,7 +26,7 @@ public:
     ConfigAgent(IConfigHandler & handler);
 
     // Implements IFetcherCallback
-    void configure(std::unique_ptr<messagebus::MessagebusConfig> config);
+    void configure(std::unique_ptr<messagebus::MessagebusConfig> config) override;
 };
 
 } // namespace mbus
