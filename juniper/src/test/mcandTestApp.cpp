@@ -29,7 +29,7 @@
  */
 class MatchCandidateTestApp : public vespalib::TestApp {
 public:
-    virtual int Main() {
+    virtual int Main() override {
         juniper::TestEnv te(this, TEST_PATH("../rpclient/testclient.rc").c_str());
         MatchCandidateTest test;
         test.SetStream(&std::cout);

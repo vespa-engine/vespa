@@ -6,7 +6,7 @@
 class AuxTestApp : public vespalib::TestApp
 {
 public:
-    virtual int Main();
+    virtual int Main() override;
 };
 
 

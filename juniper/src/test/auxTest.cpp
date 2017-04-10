@@ -560,8 +560,7 @@ void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len,
 class DefProps : public IJuniperProperties
 {
 public:
-    virtual const char* GetProperty(const char*, const char* def)
-    {
+    virtual const char* GetProperty(const char*, const char* def) override {
         return def;
     }
 };
@@ -627,13 +626,12 @@ public:
     TokenChecker(Token* output) : _out(output), i(0)
     {  }
 
-    virtual void handle_token(Token& token)
-    {
+    virtual void handle_token(Token& token) override {
         _out[i] = token;
         i++;
     }
 
-    virtual void handle_end(Token&) {}
+    virtual void handle_end(Token&) override {}
 };
 
 
@@ -672,13 +670,13 @@ private:
     std::vector<std::string> _tokens;
 public:
     TokenProcessor(const std::string & text) : _text(text), _tokens() {}
-    virtual void handle_token(Token & t) {
+    virtual void handle_token(Token & t) override {
         _tokens.push_back(std::string(_text.c_str() + t.bytepos, t.bytelen));
         //LOG(info, "handle_token(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
             //_tokens.back().c_str(),
             //(int)t.bytepos, (int)t.wordpos, t.bytelen, t.curlen);
     }
-    virtual void handle_end(Token & t) {
+    virtual void handle_end(Token & t) override {
         _tokens.push_back(std::string(_text.c_str() + t.bytepos, t.bytelen));
         //LOG(info, "handle_end(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
             //_tokens.back().c_str(),

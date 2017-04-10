@@ -29,7 +29,7 @@
  */
 class MatchObjectTestApp : public vespalib::TestApp {
 public:
-    virtual int Main() {
+    virtual int Main() override {
         juniper::TestEnv te(this, TEST_PATH("../rpclient/testclient.rc").c_str());
         MatchObjectTest test;
         test.SetStream(&std::cout);
