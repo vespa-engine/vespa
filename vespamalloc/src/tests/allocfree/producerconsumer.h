@@ -22,7 +22,7 @@ public:
     virtual ~Consumer();
     void enqueue(const MemList &mem) { _queue.enqueue(mem); }
     void close() { _queue.close(); }
-    void Run(FastOS_ThreadInterface *t, void *);
+    void Run(FastOS_ThreadInterface *t, void *) override;
     uint64_t operations() const { return _operations; }
 };
 
@@ -35,7 +35,7 @@ private:
 public:
     Producer(uint32_t cnt, Consumer &target);
     virtual ~Producer();
-    void Run(FastOS_ThreadInterface *t, void *);
+    void Run(FastOS_ThreadInterface *t, void *) override;
     uint64_t operations() const { return _operations; }
 };
 
@@ -50,7 +50,7 @@ private:
 public:
     ProducerConsumer(uint32_t cnt, bool inverse);
     virtual ~ProducerConsumer();
-    void Run(FastOS_ThreadInterface *t, void *);
+    void Run(FastOS_ThreadInterface *t, void *) override;
     uint64_t operationsConsumed() const { return _operationsConsumed; }
     uint64_t operationsProduced() const { return _operationsProduced; }
 };

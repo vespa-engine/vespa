@@ -19,9 +19,9 @@ class Test : public TestApp
 {
 public:
     ~Test();
-    int Main();
+    int Main() override;
 private:
-    virtual bool useIPCHelper() const { return true; }
+    virtual bool useIPCHelper() const override { return true; }
 };
 
 Test::~Test()

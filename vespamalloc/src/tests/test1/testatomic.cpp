@@ -7,7 +7,7 @@
 class Test : public vespalib::TestApp
 {
 public:
-    int Main();
+    int Main() override;
 private:
     template<typename T>
     void testSwap(T initial);
@@ -19,7 +19,7 @@ template <typename T>
 class Stress : public FastOS_Runnable
 {
 private:
-    void Run(FastOS_ThreadInterface * ti, void * arg);
+    void Run(FastOS_ThreadInterface * ti, void * arg) override;
     void stressSwap(T & value);
 public:
     Stress(T * value) : _value(value), _successCount(0), _failedCount(0) { }

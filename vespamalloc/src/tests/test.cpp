@@ -26,7 +26,7 @@ void testdd()
 class Thread : public FastOS_Runnable
 {
 private:
-    void Run(FastOS_ThreadInterface * ti, void * arg);
+    void Run(FastOS_ThreadInterface * ti, void * arg) override;
 };
 
 int main(int, char *[])
