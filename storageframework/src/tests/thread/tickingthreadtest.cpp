@@ -13,8 +13,8 @@ namespace defaultimplementation {
 
 struct TickingThreadTest : public CppUnit::TestFixture
 {
-    void setUp() {}
-    void tearDown() {}
+    void setUp() override {}
+    void tearDown() override {}
 
     void testTicksBeforeWaitBasic();
     void testTicksBeforeWaitLiveUpdate();
@@ -62,7 +62,7 @@ struct MyApp : public TickingThread {
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
-    virtual ThreadWaitInfo doCriticalTick(ThreadIndex index) {
+    virtual ThreadWaitInfo doCriticalTick(ThreadIndex index) override {
         assert(index < _context.size());
         Context& c(_context[index]);
         if (_doCritOverlapTest) {
@@ -74,7 +74,7 @@ struct MyApp : public TickingThread {
         ++c._critTickCount;
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
-    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex index) {
+    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex index) override {
         assert(index < _context.size());
         Context& c(_context[index]);
         ++c._nonCritTickCount;
@@ -314,7 +314,7 @@ struct BroadcastApp : public TickingThread {
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
-    virtual ThreadWaitInfo doCriticalTick(ThreadIndex) {
+    virtual ThreadWaitInfo doCriticalTick(ThreadIndex) override {
         if (!_queue.empty()) {
             for (uint32_t i=0; i<_queue.size(); ++i) {
                 printTaskInfo(_queue[i], "activating");
@@ -325,7 +325,7 @@ struct BroadcastApp : public TickingThread {
         }
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
-    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) {
+    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
         if (!_active.empty()) {
             for (uint32_t i=0; i<_active.size(); ++i) {
                 printTaskInfo(_queue[i], "processing");

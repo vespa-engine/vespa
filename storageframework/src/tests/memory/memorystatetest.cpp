@@ -12,8 +12,8 @@ namespace defaultimplementation {
 
 struct MemoryStateTest : public CppUnit::TestFixture
 {
-    void setUp() {}
-    void tearDown() {}
+    void setUp() override {}
+    void tearDown() override {}
 
     void testBasics();
 
@@ -30,16 +30,16 @@ private:
     std::map<std::string, framework::MemoryAllocationType> _types;
 
 public:
-    virtual void setMaximumMemoryUsage(uint64_t max) { (void) max; }
+    virtual void setMaximumMemoryUsage(uint64_t max) override { (void) max; }
 
     virtual const framework::MemoryAllocationType&
-    registerAllocationType(const framework::MemoryAllocationType& type) {
+    registerAllocationType(const framework::MemoryAllocationType& type) override {
         _types[type.getName()] = type;
         return _types[type.getName()];
     }
 
     virtual const framework::MemoryAllocationType&
-    getAllocationType(const std::string& name) const {
+    getAllocationType(const std::string& name) const override {
         std::map<std::string, framework::MemoryAllocationType>::const_iterator iter =
             _types.find(name);
 
@@ -50,7 +50,7 @@ public:
         return iter->second;
     }
 
-    virtual std::vector<const MemoryAllocationType*> getAllocationTypes() const
+    virtual std::vector<const MemoryAllocationType*> getAllocationTypes() const override
     {
         std::vector<const MemoryAllocationType*> types;
         for(std::map<std::string, framework::MemoryAllocationType>
@@ -65,12 +65,12 @@ public:
                                         uint64_t,
                                         uint64_t,
                                         uint8_t,
-                                        framework::ReduceMemoryUsageInterface*)
+                                        framework::ReduceMemoryUsageInterface*) override
     {
         return framework::MemoryToken::UP();
     }
 
-    uint64_t getMemorySizeFreeForPriority(uint8_t priority) const {
+    uint64_t getMemorySizeFreeForPriority(uint8_t priority) const override {
         (void) priority;
         return 0;
     }

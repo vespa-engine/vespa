@@ -155,8 +155,7 @@ MemoryManagerTest::testBasics()
         struct ReduceI : public framework::ReduceMemoryUsageInterface {
             framework::MemoryToken::UP _token;
 
-            virtual uint64_t reduceMemoryConsumption(const MemoryToken& token,
-                                                     uint64_t reduceBy)
+            virtual uint64_t reduceMemoryConsumption(const MemoryToken& token, uint64_t reduceBy) override
             {
                 assert(&token == _token.get());
                 (void) &token;
@@ -283,12 +282,12 @@ struct MemoryManagerLoadGiver : public document::Runnable,
     {
     }
 
-    uint64_t reduceMemoryConsumption(const MemoryToken&, uint64_t reduceBy) {
+    uint64_t reduceMemoryConsumption(const MemoryToken&, uint64_t reduceBy) override {
         ++_reduced;
         return reduceBy;
     }
 
-    void run() {
+    void run() override {
         ReduceMemoryUsageInterface* reducer = 0;
         if (_type.isCache()) reducer = this;
         vespalib::RandomGen randomizer;
