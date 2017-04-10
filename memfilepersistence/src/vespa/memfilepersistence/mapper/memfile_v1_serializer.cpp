@@ -742,19 +742,19 @@ namespace {
             _buffer.resize(firstAligned - _headerBlockIndex);
         }
 
-        virtual uint32_t getCachedAmount() const
+        virtual uint32_t getCachedAmount() const override
             { return _buffer.size() + _headerBlockIndex; }
 
-        virtual char* getCache(uint32_t pos) {
+        virtual char* getCache(uint32_t pos) override {
                 // We should never get requests to write prior to header block
                 // index.
             assert(pos >= _headerBlockIndex);
             return (&_buffer[0] + (pos - _headerBlockIndex));
         }
 
-        virtual bool duplicateCacheWrite() const { return true; }
+        virtual bool duplicateCacheWrite() const override { return true; }
 
-        virtual void setData(const char* data, size_t len, uint64_t pos) {
+        virtual void setData(const char* data, size_t len, uint64_t pos) override {
             if (pos < _headerBlockIndex) {
                 if (len <= _headerBlockIndex - pos) return;
                 uint32_t diff = (_headerBlockIndex - pos);

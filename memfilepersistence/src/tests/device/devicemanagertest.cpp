@@ -72,14 +72,14 @@ namespace {
         Listener() : ost() { ost << "\n"; }
         virtual ~Listener() {}
 
-        virtual void handleDirectoryEvent(Directory& dir, const IOEvent& e) {
+        virtual void handleDirectoryEvent(Directory& dir, const IOEvent& e) override {
             ost << "Dir " << dir.getPath() << ": " << e.toString(true) << "\n";
         }
-        virtual void handlePartitionEvent(Partition& part, const IOEvent& e) {
+        virtual void handlePartitionEvent(Partition& part, const IOEvent& e) override {
             ost << "Partition " << part.getMountPoint() << ": "
                 << e.toString(true) << "\n";
         }
-        virtual void handleDiskEvent(Disk& disk, const IOEvent& e) {
+        virtual void handleDiskEvent(Disk& disk, const IOEvent& e) override {
             ost << "Disk " << disk.getId() << ": " << e.toString(true) << "\n";
         }
 

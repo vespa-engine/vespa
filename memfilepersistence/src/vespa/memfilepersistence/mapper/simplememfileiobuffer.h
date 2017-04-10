@@ -213,37 +213,37 @@ public:
 
     virtual Document::UP getDocumentHeader(
             const document::DocumentTypeRepo& repo,
-            DataLocation loc) const;
+            DataLocation loc) const override;
 
-    virtual document::DocumentId getDocumentId(DataLocation loc) const;
+    virtual document::DocumentId getDocumentId(DataLocation loc) const override;
 
     virtual void readBody(
             const document::DocumentTypeRepo& repo,
             DataLocation loc,
-            Document& doc) const;
+            Document& doc) const override;
 
     virtual DataLocation addDocumentIdOnlyHeader(
             const DocumentId& id,
-            const document::DocumentTypeRepo& repo);
+            const document::DocumentTypeRepo& repo) override;
 
-    virtual DataLocation addHeader(const Document& doc);
+    virtual DataLocation addHeader(const Document& doc) override;
 
-    virtual DataLocation addBody(const Document& doc);
+    virtual DataLocation addBody(const Document& doc) override;
 
-    virtual void clear(DocumentPart type);
+    virtual void clear(DocumentPart type) override;
 
-    virtual bool verifyConsistent() const;
+    virtual bool verifyConsistent() const override;
 
     /**
      * Moves the underlying file to another location.
      */
-    virtual void move(const FileSpecification& target);
+    virtual void move(const FileSpecification& target) override;
 
-    virtual void close();
+    virtual void close() override;
 
     virtual DataLocation copyCache(const MemFileIOInterface& source,
                                    DocumentPart part,
-                                   DataLocation loc);
+                                   DataLocation loc) override;
 
     /**
      * Add a location -> buffer mapping
@@ -256,19 +256,19 @@ public:
     /**
      * @return Returns true if the given location is cached.
      */
-    virtual bool isCached(DataLocation loc, DocumentPart type) const;
+    virtual bool isCached(DataLocation loc, DocumentPart type) const override;
 
     /**
      * @return Returns true if the given location has been persisted to disk.
      */
-    virtual bool isPersisted(DataLocation loc, DocumentPart type) const;
+    virtual bool isPersisted(DataLocation loc, DocumentPart type) const override;
 
     virtual uint32_t getSerializedSize(DocumentPart part,
-                                       DataLocation loc) const;
+                                       DataLocation loc) const override;
 
     virtual void ensureCached(Environment& env,
                               DocumentPart part,
-                              const std::vector<DataLocation>& locations);
+                              const std::vector<DataLocation>& locations) override;
 
     /**
      * Moves the given location into the persisted data area.
@@ -293,7 +293,7 @@ public:
 
     const char* getBuffer(DataLocation loc, DocumentPart part) const;
 
-    size_t getCachedSize(DocumentPart part) const;
+    size_t getCachedSize(DocumentPart part) const override;
 
     BufferAllocation allocateBuffer(DocumentPart part,
                                     uint32_t sz,

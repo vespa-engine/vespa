@@ -294,7 +294,7 @@ public:
     void printEntriesState(std::ostream& out, bool verbose,
                            const std::string& indent) const;
     void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+               const std::string& indent) const override;
 
     /** Stat wants control of printing of slots. */
     void printUserFriendly(const MemSlot& slot,

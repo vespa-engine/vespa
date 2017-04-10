@@ -36,7 +36,7 @@ private:
         bool operator==(const ContentLocation& other) const;
 
         void print(std::ostream& out, bool verbose,
-                   const std::string& indent) const;
+                   const std::string& indent) const override;
     };
 
     void addSlot(DocumentPart, const MemSlot&);
@@ -58,7 +58,7 @@ public:
         return *_slotsInOrder[part][uniqueIndex];
     }
 
-    void print(std::ostream&, bool verbose, const std::string& indent) const;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
 
 };
 

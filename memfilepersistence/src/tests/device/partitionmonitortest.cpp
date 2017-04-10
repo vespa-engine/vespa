@@ -56,7 +56,7 @@ struct FakeStatter : public PartitionMonitor::Statter {
         _info.f_bfree -= (size / _info.f_bsize);
     }
 
-    virtual void statFileSystem(const std::string&, struct statvfs& info) {
+    virtual void statFileSystem(const std::string&, struct statvfs& info) override {
         info = _info;
     }
 };

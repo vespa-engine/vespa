@@ -39,7 +39,7 @@ struct ProviderConformanceTest : public spi::ConformanceTest {
 
         spi::PersistenceProvider::UP
         getPersistenceImplementation(const document::DocumentTypeRepo::SP& repo,
-                                     const document::DocumenttypesConfig&)
+                                     const document::DocumenttypesConfig&) override
         {
             system("rm -rf vdsroot");
             system("mkdir -p vdsroot/disks/d0");

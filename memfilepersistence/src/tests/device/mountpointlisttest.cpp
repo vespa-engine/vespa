@@ -31,7 +31,7 @@ public:
     void testInitDisks();
 
     void init();
-    void tearDown();
+    void tearDown() override;
 
     framework::defaultimplementation::FakeClock _clock;
 
