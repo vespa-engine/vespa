@@ -66,13 +66,13 @@ public:
     const string &getError() const;
 
     // Implements Subscriber.
-    void configure(std::unique_ptr<messagebus::protocol::DocumentrouteselectorpolicyConfig> cfg);
+    void configure(std::unique_ptr<messagebus::protocol::DocumentrouteselectorpolicyConfig> cfg) override;
 
     // Implements IRoutingPolicy.
-    void select(mbus::RoutingContext &context);
+    void select(mbus::RoutingContext &context) override;
 
     // Implements IRoutingPolicy.
-    void merge(mbus::RoutingContext &context);
+    void merge(mbus::RoutingContext &context) override;
 };
 
 }

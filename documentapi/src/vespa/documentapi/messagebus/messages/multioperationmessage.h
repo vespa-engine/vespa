@@ -25,7 +25,7 @@ private:
     bool                 _keepTimeStamps;
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     typedef std::unique_ptr<MultiOperationMessage> UP;
@@ -47,15 +47,15 @@ public:
 
     void serialize(document::ByteBuffer& buf) const;
 
-    uint32_t getApproxSize() const;
+    uint32_t getApproxSize() const override;
 
-    uint32_t getType() const;
+    uint32_t getType() const override;
     const document::BucketId& getBucketId() const { return _bucketId; }
 
     bool keepTimeStamps() const { return _keepTimeStamps;}
     void keepTimeStamps(bool b) { _keepTimeStamps = b;}
 
-    string toString() const { return "multioperationmessage"; }
+    string toString() const override { return "multioperationmessage"; }
 
 private:
     void verifyBucketId() const;

@@ -24,10 +24,10 @@ public:
     ErrorPolicy(const string &msg);
 
     // Implements IRoutingPolicy.
-    void select(mbus::RoutingContext &context);
+    void select(mbus::RoutingContext &context) override;
 
     // Implements IRoutingPolicy.
-    void merge(mbus::RoutingContext &context);
+    void merge(mbus::RoutingContext &context) override;
 };
 
 }

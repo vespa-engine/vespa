@@ -40,23 +40,23 @@ public:
         getTrace().setLevel(9);
     }
 
-    DocumentReply::UP doCreateReply() const {
+    DocumentReply::UP doCreateReply() const override {
         return DocumentReply::UP(new MyReply());
     }
 
-    uint32_t getType() const {
+    uint32_t getType() const override {
         return TYPE;
     }
 };
 
 class MyMessageFactory : public RoutableFactories51::DocumentMessageFactory {
 protected:
-    DocumentMessage::UP doDecode(document::ByteBuffer &buf) const {
+    DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override {
         (void)buf;
         return DocumentMessage::UP(new MyMessage());
     }
 
-    bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const {
+    bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override {
         (void)msg;
         (void)buf;
         return true;
@@ -65,12 +65,12 @@ protected:
 
 class MyReplyFactory : public RoutableFactories51::DocumentReplyFactory {
 protected:
-    DocumentReply::UP doDecode(document::ByteBuffer &buf) const {
+    DocumentReply::UP doDecode(document::ByteBuffer &buf) const override {
         (void)buf;
         return DocumentReply::UP(new MyReply());
     }
 
-    bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const {
+    bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override {
         (void)reply;
         (void)buf;
         return true;
@@ -109,7 +109,7 @@ protected:
     void testFactory(TestData &data);
 
 public:
-    int Main();
+    int Main() override;
 };
 
 TEST_APPHOOK(Test);

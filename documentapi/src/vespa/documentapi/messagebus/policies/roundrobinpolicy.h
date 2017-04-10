@@ -70,10 +70,10 @@ public:
     virtual ~RoundRobinPolicy();
 
     // Inherit doc from IRoutingPolicy.
-    virtual void select(mbus::RoutingContext &context);
+    virtual void select(mbus::RoutingContext &context) override;
 
     // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context);
+    virtual void merge(mbus::RoutingContext &context) override;
 };
 
 }

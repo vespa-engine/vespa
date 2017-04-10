@@ -23,8 +23,8 @@ private:
     string _param;
 public:
     MyPolicy(const string &param);
-    void select(mbus::RoutingContext &ctx);
-    void merge(mbus::RoutingContext &ctx);
+    void select(mbus::RoutingContext &ctx) override;
+    void merge(mbus::RoutingContext &ctx) override;
 };
 
 MyPolicy::MyPolicy(const string &param) :
@@ -48,7 +48,7 @@ MyPolicy::merge(mbus::RoutingContext &ctx)
 
 class MyFactory : public IRoutingPolicyFactory {
 public:
-    mbus::IRoutingPolicy::UP createPolicy(const string &param) const;
+    mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
 };
 
 mbus::IRoutingPolicy::UP

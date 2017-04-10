@@ -18,14 +18,14 @@ public:
 
     const string& getDocumentSelection() const { return _documentSelection; }
 
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
     const document::BucketId& getBucketId() const { return _bucketId; };
 
-    string toString() const { return "removelocationmessage"; }
+    string toString() const override { return "removelocationmessage"; }
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 private:
     string _documentSelection;

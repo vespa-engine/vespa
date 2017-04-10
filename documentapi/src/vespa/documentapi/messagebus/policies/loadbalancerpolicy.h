@@ -11,7 +11,7 @@ class LoadBalancerPolicy : public ExternSlobrokPolicy
 public:
     LoadBalancerPolicy(const string& param);
 
-    virtual void doSelect(mbus::RoutingContext &context);
+    virtual void doSelect(mbus::RoutingContext &context) override;
 
     /**
        Finds the TCP address of the target docproc.
@@ -22,7 +22,7 @@ public:
         return _loadBalancer->getRecipient(lookup(context, _pattern));
     }
 
-    virtual void merge(mbus::RoutingContext &context);
+    virtual void merge(mbus::RoutingContext &context) override;
 
 private:
     string _pattern;

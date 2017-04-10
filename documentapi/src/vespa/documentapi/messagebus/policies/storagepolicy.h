@@ -42,10 +42,10 @@ public:
     virtual ~StoragePolicy();
 
     // Inherit doc from IRoutingPolicy.
-    virtual void doSelect(mbus::RoutingContext &context);
+    virtual void doSelect(mbus::RoutingContext &context) override;
 
     // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context);
+    virtual void merge(mbus::RoutingContext &context) override;
 
     void updateStateFromReply(WrongDistributionReply& reply);
 
@@ -57,7 +57,7 @@ public:
 
     virtual void configure(std::unique_ptr<storage::lib::Distribution::DistributionConfig> config);
 
-    string init();
+    string init() override;
 
 private:
     virtual string createConfigId(const string & clusterName) const;

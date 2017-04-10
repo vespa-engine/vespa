@@ -42,7 +42,7 @@ public:
      */
     const std::vector<BucketInfo> &getBuckets() const { return _buckets; }
 
-    string toString() const { return "getbucketlistreply"; }
+    string toString() const override { return "getbucketlistreply"; }
 };
 
 std::ostream & operator<<(std::ostream &out, const GetBucketListReply::BucketInfo &info);
