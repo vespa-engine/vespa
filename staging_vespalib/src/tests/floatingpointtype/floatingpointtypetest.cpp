@@ -9,7 +9,7 @@ class Test : public vespalib::TestApp
 {
 public:
     void testFloatingPoint();
-    int Main();
+    int Main() override;
 };
 
 void

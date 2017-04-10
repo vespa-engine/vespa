@@ -40,7 +40,7 @@ private:
                       bool mapped);
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("fileheader_test");
 
         testTag();           TEST_FLUSH();

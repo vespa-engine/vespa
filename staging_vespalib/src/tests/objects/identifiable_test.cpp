@@ -19,7 +19,7 @@ class IdentifiableTest : public TestApp {
     template <typename T>
     void testSerializer(const T & a);
 public:
-    int Main();
+    int Main() override;
 };
 
 #define CID_Abstract  0x700000
@@ -40,7 +40,7 @@ class A : public Abstract
 public:
     DECLARE_IDENTIFIABLE(A);
     A() { }
-    virtual void someAbstractVirtualMethod() { };
+    virtual void someAbstractVirtualMethod() override { }
 };
 
 class B : public A

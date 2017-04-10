@@ -11,7 +11,7 @@ using namespace vespalib;
 class Test : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

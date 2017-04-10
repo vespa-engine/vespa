@@ -14,7 +14,7 @@ using namespace vespalib;
 class Test : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
 private:
     template <typename T, typename V>
     void testAllocInArray();
