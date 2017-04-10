@@ -27,7 +27,7 @@ struct Handler : public IMessageHandler
     ~Handler() {
         session.reset();
     }
-    virtual void handleMessage(Message::UP msg) {
+    virtual void handleMessage(Message::UP msg) override {
         session->acknowledge(std::move(msg));
     }
 };

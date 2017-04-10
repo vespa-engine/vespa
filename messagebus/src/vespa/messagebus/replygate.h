@@ -43,7 +43,7 @@ public:
      * the matching Reply has been obtained. In order to obtain the matching
      * Reply, this method will push this object on the CallStack of the Message.
      */
-    void handleMessage(Message::UP msg);
+    void handleMessage(Message::UP msg) override;
 
     /**
      * Forward or discard Reply. If the gate is still open, it will forward the
@@ -51,10 +51,10 @@ public:
      * the Reply will be discarded. This method also decreases the reference
      * counter of this object.
      */
-    void handleReply(Reply::UP reply);
+    void handleReply(Reply::UP reply) override;
 
     // Implements IDiscardHandler.
-    void handleDiscard(Context ctx);
+    void handleDiscard(Context ctx) override;
 
     /**
      * Close this gate. After this has been invoked, the gate will start to

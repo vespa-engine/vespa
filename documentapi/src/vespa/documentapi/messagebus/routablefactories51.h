@@ -59,10 +59,10 @@ public:
         typedef std::shared_ptr<IRoutableFactory> SP;
 
         // Implements IRoutableFactory.
-        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const;
+        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
 
         // Implements IRoutableFactory.
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const;
+        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
     };
 
     /**
@@ -102,16 +102,16 @@ public:
         typedef std::shared_ptr<IRoutableFactory> SP;
 
         // Implements IRoutableFactory.
-        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const;
+        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
 
         // Implements IRoutableFactory.
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const;
+        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
     };
 
     class DocumentIgnoredReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
 
     /**
@@ -128,8 +128,8 @@ public:
      */
     class FeedReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
         virtual uint32_t getType() const = 0;
     };
 
@@ -142,8 +142,8 @@ public:
     class CreateVisitorMessageFactory : public DocumentMessageFactory {
         const document::DocumentTypeRepo &_repo;
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         CreateVisitorMessageFactory(const document::DocumentTypeRepo &r)
             : _repo(r) {}
@@ -151,8 +151,8 @@ public:
 
     class GetDocumentMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
 
     ///////////////////////////////////////////////////////////////////////////

@@ -73,17 +73,17 @@ public:
     static void simpleMerge(RoutingContext &ctx);
 
     // Implements IProtocol.
-    const string & getName() const;
+    const string & getName() const override;
 
     // Implements IProtocol.
     IRoutingPolicy::UP createPolicy(const string &name,
-                                    const string &param) const;
+                                    const string &param) const override;
 
     // Implements IProtocol.
-    Blob encode(const vespalib::Version &version, const Routable &routable) const;
+    Blob encode(const vespalib::Version &version, const Routable &routable) const override;
 
     // Implements IProtocol.
-    Routable::UP decode(const vespalib::Version &version, BlobRef data) const;
+    Routable::UP decode(const vespalib::Version &version, BlobRef data) const override;
 };
 
 } // namespace mbus

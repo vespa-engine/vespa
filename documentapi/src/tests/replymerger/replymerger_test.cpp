@@ -19,7 +19,7 @@ class Test : public vespalib::TestApp
     static void assertReplyErrorsMatch(const mbus::Reply& r,
                                        const std::vector<mbus::Error>& errors);
 public:
-    int Main();
+    int Main() override;
 
     void mergingGenericRepliesWithNoErrorsPicksFirstReply();
     void mergingSingleReplyWithOneErrorReturnsEmptyReplyWithError();

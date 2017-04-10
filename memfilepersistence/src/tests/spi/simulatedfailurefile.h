@@ -18,7 +18,7 @@ public:
             : _readOpsBeforeFailure(-1),
               _writeOpsBeforeFailure(0)
         { }
-        vespalib::LazyFile::UP createFile(const std::string& fileName) const;
+        vespalib::LazyFile::UP createFile(const std::string& fileName) const override;
 
         void setReadOpsBeforeFailure(int ops) {
             _readOpsBeforeFailure = ops;
@@ -38,8 +38,8 @@ public:
             int readOpsBeforeFailure,
             int writeOpsBeforeFailure);
 
-    off_t write(const void *buf, size_t bufsize, off_t offset);
-    size_t read(void *buf, size_t bufsize, off_t offset) const;
+    off_t write(const void *buf, size_t bufsize, off_t offset) override;
+    size_t read(void *buf, size_t bufsize, off_t offset) const override;
 };
 
 } // ns memfile

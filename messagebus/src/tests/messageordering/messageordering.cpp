@@ -46,7 +46,7 @@ public:
           _destinationSession(0),
           _messageCounter(0)
     {}
-    virtual void handleMessage(Message::UP msg)
+    virtual void handleMessage(Message::UP msg) override
     {
         SimpleMessage& simpleMsg(dynamic_cast<SimpleMessage&>(*msg));
         LOG(spam, "Attempting to acquire lock for %s",
@@ -90,7 +90,7 @@ class VerifyReplyReceptor : public IReplyHandler
 public:
     ~VerifyReplyReceptor();
     VerifyReplyReceptor();
-    void handleReply(Reply::UP reply);
+    void handleReply(Reply::UP reply) override;
     void waitUntilDone(int waitForCount) const;
     const std::string& getFailure() const { return _failure; }
 };

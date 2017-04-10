@@ -26,14 +26,14 @@ public:
      *
      * @return ""
      */
-    virtual const string & getProtocol() const;
+    virtual const string & getProtocol() const override;
 
     /**
      * This method returns the message type id reserved for empty replies: 0
      *
      * @return 0
      */
-    virtual uint32_t getType() const;
+    virtual uint32_t getType() const override;
 
     /**
      * Encodes this reply into an empty blob.
@@ -42,7 +42,7 @@ public:
      */
     virtual Blob encode() const;
 
-    uint8_t priority() const { return 8; }
+    uint8_t priority() const override { return 8; }
 };
 
 } // namespace mbus

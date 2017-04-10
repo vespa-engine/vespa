@@ -66,7 +66,7 @@ namespace {
             return (s[s.size() - 1] == '$');
         }
 
-        virtual bool include(const std::string& name) const {
+        virtual bool include(const std::string& name) const override {
             if ((name.find("stress") != std::string::npos ||
                  name.find("Stress") != std::string::npos)
                 && !_includeStressTests)
@@ -90,11 +90,11 @@ namespace {
 
     struct LogHook : public CppUnit::TextTestProgressListener::TestStartHook {
         std::string lastTest;
-        virtual void startedTest(const std::string& testName) {
+        virtual void startedTest(const std::string& testName) override {
             LOG(info, "Starting test: %s", testName.c_str());
             lastTest = testName;
         }
-        virtual void stoppedTest() {
+        virtual void stoppedTest() override {
             LOG(info, "Stopped test: %s", lastTest.c_str());
         }
     };

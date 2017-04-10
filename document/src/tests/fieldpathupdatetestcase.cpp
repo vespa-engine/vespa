@@ -25,8 +25,8 @@ struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
     DocumentTypeRepo::SP _repo;
     DocumentType _foobar_type;
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testWhereClause();
     void testNoIterateMapValues();
@@ -264,7 +264,7 @@ struct TestFieldPathUpdate : FieldPathUpdate
         TestIteratorHandler(std::string& str)
             : _str(str) {}
 
-        ModificationStatus doModify(FieldValue& value)
+        ModificationStatus doModify(FieldValue& value) override
         {
             std::ostringstream ss;
             value.print(ss, false, "");
@@ -275,7 +275,7 @@ struct TestFieldPathUpdate : FieldPathUpdate
             return NOT_MODIFIED;
         }
 
-        bool onComplex(const Content&) { return false; }
+        bool onComplex(const Content&) override { return false; }
 
         std::string& _str;
     };
@@ -288,15 +288,15 @@ struct TestFieldPathUpdate : FieldPathUpdate
 
     TestFieldPathUpdate(const TestFieldPathUpdate& other);
 
-    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const
+    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const override
     {
         return std::unique_ptr<FieldValue::IteratorHandler>(
                 new TestIteratorHandler(_str));
     }
 
-    TestFieldPathUpdate* clone() const { return new TestFieldPathUpdate(*this); }
+    TestFieldPathUpdate* clone() const override { return new TestFieldPathUpdate(*this); }
 
-    void print(std::ostream& out, bool, const std::string&) const
+    void print(std::ostream& out, bool, const std::string&) const override
     {
         out << "TestFieldPathUpdate()";
     }

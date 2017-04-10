@@ -13,7 +13,7 @@ public:
       _done(false) {}
 
   bool done() const { return _done; }
-  void PerformTask() { _done = true; }
+  void PerformTask() override { _done = true; }
 };
 
 

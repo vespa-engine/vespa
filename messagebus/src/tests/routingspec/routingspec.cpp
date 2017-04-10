@@ -22,7 +22,7 @@ public:
         // empty
     }
 
-    bool setupRouting(const RoutingSpec &spec) {
+    bool setupRouting(const RoutingSpec &spec) override {
         _routing = spec;
         return true;
     }
@@ -40,7 +40,7 @@ private:
 public:
     void testConstructors();
     void testConfigGeneration();
-    int Main();
+    int Main() override;
 };
 
 TEST_APPHOOK(Test);

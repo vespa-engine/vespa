@@ -30,12 +30,12 @@ public:
     Socket(std::unique_ptr<FastOS_SocketInterface> socket);
     Socket(const string host, int port);
     virtual ~Socket();
-    virtual bool eof() const { return _eof; }
-    virtual Memory obtain();
-    virtual Input &evict(size_t bytes);
-    virtual WritableMemory reserve(size_t bytes);
-    virtual Output &commit(size_t bytes);
-    virtual const Taint &tainted() const { return _taint; }
+    virtual bool eof() const override { return _eof; }
+    virtual Memory obtain() override;
+    virtual Input &evict(size_t bytes) override;
+    virtual WritableMemory reserve(size_t bytes) override;
+    virtual Output &commit(size_t bytes) override;
+    virtual const Taint &tainted() const override { return _taint; }
 };
 
 } // namespace vbench

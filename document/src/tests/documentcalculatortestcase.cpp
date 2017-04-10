@@ -19,8 +19,8 @@ class DocumentCalculatorTest : public CppUnit::TestFixture {
 public:
     const DocumentTypeRepo &getRepo() { return _testRepo.getTypeRepo(); }
 
-    void setUp() {}
-    void tearDown() {}
+    void setUp() override {}
+    void tearDown() override {}
 
     void testConstant();
     void testSimple();

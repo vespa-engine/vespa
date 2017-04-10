@@ -22,7 +22,7 @@ private:
 
 public:
     QpsTagger(double qps, Handler<Request> &next);
-    virtual void handle(Request::UP request);
+    virtual void handle(Request::UP request) override;
 };
 
 } // namespace vbench

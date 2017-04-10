@@ -8,7 +8,7 @@ LOG_SETUP("rpc_client");
 class RPCClient : public FastOS_Application
 {
 public:
-    virtual int Main();
+    virtual int Main() override;
 };
 
 int

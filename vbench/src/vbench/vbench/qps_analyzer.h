@@ -24,8 +24,8 @@ private:
 
 public:
     QpsAnalyzer(Handler<Request> &next);
-    virtual void handle(Request::UP request);
-    virtual void report();
+    virtual void handle(Request::UP request) override;
+    virtual void report() override;
     void addEndTime(double end);
 };
 

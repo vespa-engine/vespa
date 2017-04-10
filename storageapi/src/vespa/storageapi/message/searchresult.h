@@ -17,10 +17,9 @@ class SearchResultCommand : public StorageCommand, public vdslib::SearchResult {
 public:
     SearchResultCommand();
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return getSerializedSize();
     }
 
@@ -37,8 +36,7 @@ class SearchResultReply : public StorageReply {
 public:
     explicit SearchResultReply(const SearchResultCommand& command);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(SearchResultReply, onSearchResultReply)
 };

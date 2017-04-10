@@ -22,19 +22,19 @@ public:
     StorageReply(const api::StorageReply::SP& reply);
     virtual ~StorageReply();
 
-    virtual const mbus::string& getProtocol() const
+    virtual const mbus::string& getProtocol() const override
         { return StorageProtocol::NAME; }
 
-    uint32_t getType() const { return _mbusType; }
+    uint32_t getType() const override { return _mbusType; }
 
     const api::StorageReply::SP& getReply() { deserialize(); return _reply; }
     api::StorageReply::CSP getReply() const { deserialize(); return _reply; }
-    virtual api::StorageMessage::SP getInternalMessage()
+    virtual api::StorageMessage::SP getInternalMessage() override
         { deserialize(); return _reply; }
-    virtual api::StorageMessage::CSP getInternalMessage() const
+    virtual api::StorageMessage::CSP getInternalMessage() const override
         { deserialize(); return _reply; }
 
-    virtual uint8_t priority() const {
+    virtual uint8_t priority() const override {
         if (_reply.get()) {
             return _reply->getPriority();
         }

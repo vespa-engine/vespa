@@ -17,8 +17,8 @@ namespace document {
 struct StructFieldValueTest : public CppUnit::TestFixture {
     DocumentTypeRepo doc_repo;
     StructFieldValueTest();
-    void setUp() {}
-    void tearDown() {}
+    void setUp() override {}
+    void tearDown() override {}
 
     void testStruct();
     void testEmptyStruct();

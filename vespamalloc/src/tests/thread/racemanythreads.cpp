@@ -19,7 +19,7 @@ class Test : public TestApp
 {
 public:
     ~Test();
-    int Main();
+    int Main() override;
 };
 
 Test::~Test()

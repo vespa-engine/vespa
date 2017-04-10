@@ -17,7 +17,7 @@ private:
 public:
     TestMessage(uint32_t id) : SimpleMessage(""), _id(id) { ++_cnt; }
     virtual ~TestMessage() { --_cnt; }
-    virtual uint32_t getType() const { return _id; }
+    virtual uint32_t getType() const override { return _id; }
     static uint32_t getCnt() { return _cnt; }
 };
 uint32_t TestMessage::_cnt = 0;
@@ -29,7 +29,7 @@ private:
 public:
     TestReply(uint32_t id) : SimpleReply(""), _id(id) { ++_cnt; }
     virtual ~TestReply() { --_cnt; }
-    virtual uint32_t getType() const { return _id; }
+    virtual uint32_t getType() const override { return _id; }
     static uint32_t getCnt() { return _cnt; }
 };
 uint32_t TestReply::_cnt = 0;

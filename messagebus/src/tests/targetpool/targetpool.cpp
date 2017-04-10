@@ -18,7 +18,7 @@ public:
         // empty
     }
 
-    uint64_t getMilliTime() const {
+    uint64_t getMilliTime() const override {
         return millis;
     }
 };

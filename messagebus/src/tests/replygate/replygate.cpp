@@ -44,7 +44,7 @@ struct MySender : public IMessageHandler
 {
     // giving a sync reply here is against the API contract, but it is
     // ok for testing.
-    virtual void handleMessage(Message::UP msg) {
+    virtual void handleMessage(Message::UP msg) override {
         Reply::UP reply(new MyReply());
         msg->swapState(*reply);
         IReplyHandler &handler = reply->getCallStack().pop(*reply);

@@ -46,7 +46,7 @@ public:
      */
     const std::vector<DocumentState> &getBucketState() const { return _state; }
 
-    string toString() const { return "getbucketstatereply"; }
+    string toString() const override { return "getbucketstatereply"; }
 };
 
 } // documentapi

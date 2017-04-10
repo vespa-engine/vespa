@@ -17,7 +17,7 @@ typedef vespalib::SignalHandler SIG;
 struct NotifyDone : public vespalib::Runnable {
     vespalib::Gate &done;
     NotifyDone(vespalib::Gate &d) : done(d) {}
-    virtual void run() {
+    virtual void run() override {
         done.countDown();
     }
 };

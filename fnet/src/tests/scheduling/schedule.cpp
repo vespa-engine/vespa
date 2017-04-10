@@ -38,7 +38,7 @@ public:
     return true;
   }
 
-  void PerformTask()
+  void PerformTask() override
   {
     _time = ::_time;
     _done = true;
@@ -57,7 +57,7 @@ public:
 
   uint32_t GetCnt() { return _cnt; }
 
-  void PerformTask()
+  void PerformTask() override
   {
     _cnt++;
     ScheduleNow(); // re-schedule as fast as possible

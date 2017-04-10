@@ -11,8 +11,8 @@ using vespalib::nbostream;
 namespace document {
 
 struct WeightedSetFieldValueTest : public CppUnit::TestFixture {
-    void setUp() {}
-    void tearDown() {}
+    void setUp() override {}
+    void tearDown() override {}
 
     void testWeightedSet();
     void testAddIgnoreZeroWeight();

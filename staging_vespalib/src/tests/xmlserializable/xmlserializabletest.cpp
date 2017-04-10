@@ -15,7 +15,7 @@ public:
     void testNesting();
     void testIndent();
 
-    int Main();
+    int Main() override;
 };
 
 int
@@ -93,7 +93,7 @@ namespace {
 
         LookAndFeel() {}
 
-        void printXml(XmlOutputStream& out) const {
+        void printXml(XmlOutputStream& out) const override {
             using namespace vespalib::xml;
             out << XmlAttribute("color", "blue")
                 << XmlTag("other")

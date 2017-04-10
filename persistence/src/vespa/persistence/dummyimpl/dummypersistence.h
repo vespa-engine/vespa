@@ -132,8 +132,8 @@ public:
     DummyPersistence(const document::DocumentTypeRepo::SP& repo,
                      uint16_t partitionCount = 1);
 
-    PartitionStateListResult getPartitionStates() const;
-    BucketIdListResult listBuckets(PartitionId) const;
+    PartitionStateListResult getPartitionStates() const override;
+    BucketIdListResult listBuckets(PartitionId) const override;
 
     void setModifiedBuckets(const BucketIdListResult::List& result);
 
@@ -141,52 +141,52 @@ public:
      * Returns the list set by setModifiedBuckets(), then clears
      * the list.
      */
-    BucketIdListResult getModifiedBuckets() const;
+    BucketIdListResult getModifiedBuckets() const override;
 
-    Result setClusterState(const ClusterState& newState);
+    Result setClusterState(const ClusterState& newState) override;
 
     Result setActiveState(const Bucket& bucket,
-                           BucketInfo::ActiveState newState);
+                           BucketInfo::ActiveState newState) override;
 
-    BucketInfoResult getBucketInfo(const Bucket&) const;
+    BucketInfoResult getBucketInfo(const Bucket&) const override;
 
-    Result put(const Bucket&, Timestamp, const DocumentSP&, Context&);
+    Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;
+
     GetResult get(const Bucket&,
                   const document::FieldSet& fieldSet,
                   const DocumentId&,
-                  Context&) const;
+                  Context&) const override;
 
     RemoveResult remove(const Bucket& b,
                         Timestamp t,
                         const DocumentId& did,
-                        Context&);
+                        Context&) override;
 
     CreateIteratorResult createIterator(const Bucket&,
                                         const document::FieldSet& fs,
                                         const Selection&,
                                         IncludedVersions,
-                                        Context&);
+                                        Context&) override;
 
-    IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const;
-    Result destroyIterator(IteratorId, Context&);
+    IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
+    Result destroyIterator(IteratorId, Context&) override;
 
-    Result createBucket(const Bucket&, Context&);
-    Result deleteBucket(const Bucket&, Context&);
+    Result createBucket(const Bucket&, Context&) override;
+    Result deleteBucket(const Bucket&, Context&) override;
 
     Result split(const Bucket& source,
                  const Bucket& target1,
                  const Bucket& target2,
-                 Context&);
+                 Context&) override;
 
     Result join(const Bucket& source1,
                 const Bucket& source2,
                 const Bucket& target,
-                Context&);
+                Context&) override;
 
     Result revert(const Bucket&, Timestamp, Context&);
 
-    Result maintain(const Bucket& bucket,
-                    MaintenanceLevel level);
+    Result maintain(const Bucket& bucket, MaintenanceLevel level) override;
 
     /**
      * The following methods are used only for unit testing.

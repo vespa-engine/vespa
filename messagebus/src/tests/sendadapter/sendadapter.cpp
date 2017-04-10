@@ -26,11 +26,11 @@ private:
 
 public:
     typedef std::shared_ptr<TestProtocol> SP;
-    mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const {
+    mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override {
         _lastVersion = version;
         return mbus::SimpleProtocol::encode(version, routable);
     }
-    mbus::Routable::UP decode(const vespalib::Version &version, mbus::BlobRef blob) const {
+    mbus::Routable::UP decode(const vespalib::Version &version, mbus::BlobRef blob) const override {
         _lastVersion = version;
         return mbus::SimpleProtocol::decode(version, blob);
     }
@@ -70,7 +70,7 @@ private:
     void testSendAdapters(TestData &data);
 
 public:
-    int Main();
+    int Main() override;
 };
 
 TEST_APPHOOK(Test);

@@ -11,7 +11,7 @@ private:
 public:
     MsgException(const char *s) : _string(s) {}
     virtual ~MsgException() throw() {}
-    const char *what() const throw() { return _string.c_str(); }
+    const char *what() const throw() override { return _string.c_str(); }
 };
 
 class ConnectionException : public MsgException

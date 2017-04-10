@@ -13,7 +13,7 @@ typedef Executor::Task Task;
 class Test : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
     void testScheduling();
     void testReset();
 };
@@ -23,7 +23,7 @@ private:
     vespalib::CountDownLatch &_latch;
 public:
     TestTask(vespalib::CountDownLatch & latch) : _latch(latch) { }
-    void run() { _latch.countDown(); }
+    void run() override { _latch.countDown(); }
 };
 
 int

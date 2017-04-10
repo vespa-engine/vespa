@@ -43,7 +43,7 @@ public:
 
         document::Document::SP document;
 
-        const document::DocumentId& getDocumentId() const {
+        const document::DocumentId& getDocumentId() const override {
             return document->getId();
         }
     };
@@ -55,7 +55,7 @@ public:
         document::Document::SP document;
         uint64_t timestampToUpdate;
 
-        const document::DocumentId& getDocumentId() const {
+        const document::DocumentId& getDocumentId() const override {
             return document->getId();
         }
     };
@@ -66,7 +66,7 @@ public:
 
         document::DocumentId documentId;
 
-        const document::DocumentId& getDocumentId() const {
+        const document::DocumentId& getDocumentId() const override {
             return documentId;
         }
     };
@@ -110,10 +110,9 @@ public:
     /**
        Returns an approximate size of this message.
     */
-    uint32_t getMemoryFootprint() const { return _approxSize + 20; }
+    uint32_t getMemoryFootprint() const override { return _approxSize + 20; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(BatchPutRemoveCommand, onBatchPutRemove)
 
@@ -135,8 +134,7 @@ private:
 public:
     explicit BatchPutRemoveReply(const BatchPutRemoveCommand&);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const std::vector<document::DocumentId>& getDocumentsNotFound() const { return _documentsNotFound; }
     std::vector<document::DocumentId>& getDocumentsNotFound() { return _documentsNotFound; }
@@ -159,14 +157,13 @@ public:
     */
     const UpdateList& getUpdates() const { return _updates; };
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
        Returns a bucket id suitable for routing this message.
     */
-    document::BucketId getBucketId() const { return _bucketId; }
-    virtual bool hasSingleBucketId() const { return true; }
+    document::BucketId getBucketId() const override { return _bucketId; }
+    virtual bool hasSingleBucketId() const override { return true; }
 
     DECLARE_STORAGECOMMAND(BatchDocumentUpdateCommand, onBatchDocumentUpdate)
 
@@ -187,8 +184,7 @@ class BatchDocumentUpdateReply : public StorageReply {
 public:
     explicit BatchDocumentUpdateReply(const BatchDocumentUpdateCommand&);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     const std::vector<bool>& getDocumentsNotFound() const { return _documentsNotFound; }
     std::vector<bool>& getDocumentsNotFound() { return _documentsNotFound; }

@@ -6,10 +6,10 @@
 class MyPacket : public FNET_Packet
 {
 public:
-  uint32_t GetPCODE()  { return 0; }
-  uint32_t GetLength() { return 0; }
-  void Encode(FNET_DataBuffer *) {}
-  bool Decode(FNET_DataBuffer *, uint32_t)
+  uint32_t GetPCODE()  override { return 0; }
+  uint32_t GetLength() override { return 0; }
+  void Encode(FNET_DataBuffer *) override {}
+  bool Decode(FNET_DataBuffer *, uint32_t) override
   { return true; }
 };
 

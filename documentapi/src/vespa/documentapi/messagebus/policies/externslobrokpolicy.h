@@ -42,7 +42,7 @@ public:
     /**
      * Initializes the policy
      */
-    virtual string init();
+    virtual string init() override;
 };
 
 }

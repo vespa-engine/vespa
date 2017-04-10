@@ -71,13 +71,13 @@ public:
     uint64_t getPendingSize() const;
 
     // Implements IThrottlePolicy.
-    bool canSend(const Message &msg, uint32_t pendingCount);
+    bool canSend(const Message &msg, uint32_t pendingCount) override;
 
     // Implements IThrottlePolicy.
-    void processMessage(Message &msg);
+    void processMessage(Message &msg) override;
 
     // Implements IThrottlePolicy.
-    void processReply(Reply &reply);
+    void processReply(Reply &reply) override;
 };
 
 } // namespace mbus

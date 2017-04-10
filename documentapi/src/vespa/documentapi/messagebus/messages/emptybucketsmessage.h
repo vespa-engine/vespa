@@ -17,7 +17,7 @@ private:
     std::vector<document::BucketId> _bucketIds;
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     EmptyBucketsMessage(); // must be serialized into
@@ -31,9 +31,9 @@ public:
 
     void resize(uint32_t size);
 
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
-    string toString() const { return "emptybucketsmessage"; }
+    string toString() const override { return "emptybucketsmessage"; }
 };
 
 }

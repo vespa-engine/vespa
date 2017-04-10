@@ -76,10 +76,10 @@ public:
     slobrok::api::IMirrorAPI &getMirror() { return *_mirror; }
 
     // Overrides IRoutingPolicy.
-    void select(mbus::RoutingContext &ctx);
+    void select(mbus::RoutingContext &ctx) override;
 
     // Overrides IRoutingPolicy.
-    void merge(mbus::RoutingContext &ctx);
+    void merge(mbus::RoutingContext &ctx) override;
 };
 
 }

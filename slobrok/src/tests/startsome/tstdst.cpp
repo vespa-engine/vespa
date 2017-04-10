@@ -43,7 +43,7 @@ public:
     int MainLoop();
 
     void shutdown() { getTransport()->ShutDown(false); }
-    void RequestDone(FRT_RPCRequest* req) {
+    void RequestDone(FRT_RPCRequest* req) override {
         if (req->IsError()) {
             LOG(error, "registration failed: %s", req->GetErrorMessage());
         } else {
@@ -182,7 +182,7 @@ TstEnv::MainLoop()
 class App : public FastOS_Application
 {
 public:
-    int Main() {
+    int Main() override {
         int sbport = 2773;
         int myport = 2774;
         const char *rpcsrvname = "testrpcsrv/17";

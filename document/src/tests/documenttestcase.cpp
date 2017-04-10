@@ -269,7 +269,7 @@ DocumentTest::testVariables()
 
 class ModifyIteratorHandler : public FieldValue::IteratorHandler {
 public:
-    ModificationStatus doModify(FieldValue& fv) {
+    ModificationStatus doModify(FieldValue& fv) override {
         StringFieldValue* sfv = dynamic_cast<StringFieldValue*>(&fv);
         if (sfv != NULL) {
             *sfv = std::string("newvalue");
@@ -279,7 +279,7 @@ public:
         return NOT_MODIFIED;
     };
 
-    bool onComplex(const Content&) {
+    bool onComplex(const Content&) override {
         return false;
     }
 };

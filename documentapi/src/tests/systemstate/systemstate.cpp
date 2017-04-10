@@ -11,7 +11,7 @@ using namespace documentapi;
 
 class Test : public vespalib::TestApp {
 public:
-    int Main();
+    int Main() override;
     void testParser();
     void testPathing();
     void testState();

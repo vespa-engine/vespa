@@ -59,7 +59,7 @@ public:
                       const std::vector<uint32_t> consumableErrors,
                       const std::vector<Route> routes,
                       uint32_t idxRemove);
-    void merge(RoutingContext &ctx);
+    void merge(RoutingContext &ctx) override;
 };
 
 RemoveReplyPolicy::RemoveReplyPolicy(bool selectOnRetry,
@@ -87,7 +87,7 @@ public:
     RemoveReplyPolicyFactory(bool selectOnRetry,
                              const std::vector<uint32_t> &consumableErrors,
                              uint32_t idxRemove);
-    IRoutingPolicy::UP create(const string &param);
+    IRoutingPolicy::UP create(const string &param) override;
 };
 
 RemoveReplyPolicyFactory::RemoveReplyPolicyFactory(bool selectOnRetry,
@@ -115,7 +115,7 @@ public:
     ReuseReplyPolicy(bool selectOnRetry,
                      const std::vector<uint32_t> &errorMask,
                      const std::vector<Route> &routes);
-    void merge(RoutingContext &ctx);
+    void merge(RoutingContext &ctx) override;
 };
 
 ReuseReplyPolicy::ReuseReplyPolicy(bool selectOnRetry,
@@ -164,7 +164,7 @@ private:
 public:
     ReuseReplyPolicyFactory(bool selectOnRetry,
                             const std::vector<uint32_t> &errorMask);
-    IRoutingPolicy::UP create(const string &param);
+    IRoutingPolicy::UP create(const string &param) override;
 };
 
 ReuseReplyPolicyFactory::ReuseReplyPolicyFactory(bool selectOnRetry,
@@ -193,8 +193,8 @@ public:
     SetReplyPolicy(bool selectOnRetry,
                    const std::vector<uint32_t> &errors,
                    const string &param);
-    void select(RoutingContext &ctx);
-    void merge(RoutingContext &ctx);
+    void select(RoutingContext &ctx) override;
+    void merge(RoutingContext &ctx) override;
 };
 
 SetReplyPolicy::SetReplyPolicy(bool selectOnRetry,
@@ -236,7 +236,7 @@ private:
 public:
     SetReplyPolicyFactory(bool selectOnRetry,
                           const std::vector<uint32_t> &errors);
-    IRoutingPolicy::UP create(const string &param);
+    IRoutingPolicy::UP create(const string &param) override;
 };
 
 SetReplyPolicyFactory::SetReplyPolicyFactory(bool selectOnRetry,
@@ -254,26 +254,26 @@ SetReplyPolicyFactory::create(const string &param)
 }
 
 class TestException : public std::exception {
-    virtual const char* what() const throw() {
+    virtual const char* what() const throw() override {
         return "{test exception}";
     }
 };
 
 class SelectExceptionPolicy : public IRoutingPolicy {
 public:
-    void select(RoutingContext &ctx) {
+    void select(RoutingContext &ctx) override {
         (void)ctx;
         throw TestException();
     }
 
-    void merge(RoutingContext &ctx) {
+    void merge(RoutingContext &ctx) override {
         (void)ctx;
     }
 };
 
 class SelectExceptionPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
-    IRoutingPolicy::UP create(const string &param) {
+    IRoutingPolicy::UP create(const string &param) override {
         (void)param;
         return IRoutingPolicy::UP(new SelectExceptionPolicy());
     }
@@ -290,11 +290,11 @@ public:
         // empty
     }
 
-    void select(RoutingContext &ctx) {
+    void select(RoutingContext &ctx) override {
         ctx.addChild(Route::parse(_select));
     }
 
-    void merge(RoutingContext &ctx) {
+    void merge(RoutingContext &ctx) override {
         (void)ctx;
         throw TestException();
     }
@@ -302,7 +302,7 @@ public:
 
 class MergeExceptionPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
-    IRoutingPolicy::UP create(const string &param) {
+    IRoutingPolicy::UP create(const string &param) override {
         return IRoutingPolicy::UP(new MergeExceptionPolicy(param));
     }
 };
@@ -336,7 +336,7 @@ public:
     }
 
     IRoutingPolicy::UP 
-    create(const string &param);
+    create(const string &param) override;
 
     static MyPolicyFactory::SP
     newInstance(const string &selectRoute,
@@ -419,7 +419,7 @@ public:
     }
 
     virtual void 
-    select(RoutingContext &ctx) 
+    select(RoutingContext &ctx) override
     {
         if (!_parent._selectRoute.empty()) {
             ctx.addChild(Route::parse(_parent._selectRoute));
@@ -435,7 +435,7 @@ public:
     }
     
     virtual void
-    merge(RoutingContext &ctx)
+    merge(RoutingContext &ctx) override
     {
         if (_parent._mergeError != ErrorCode::NONE) {
             Reply::UP reply(new EmptyReply());
@@ -494,7 +494,7 @@ private:
     static const double RECEPTOR_TIMEOUT;
 
 public:
-    int Main();
+    int Main() override;
     void testNoRoutingTable(TestData &data);
     void testUnknownRoute(TestData &data);
     void testNoRoute(TestData &data);

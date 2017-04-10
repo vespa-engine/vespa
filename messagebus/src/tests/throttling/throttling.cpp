@@ -35,7 +35,7 @@ public:
         // empty
     }
 
-    uint64_t getMilliTime() const {
+    uint64_t getMilliTime() const override {
         return _millis;
     }
 };
@@ -90,7 +90,7 @@ protected:
     void testMaxWindowSize();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int

@@ -17,7 +17,7 @@ struct MemFileV1VerifierTest : public SingleDiskMemFileTestUtils
 {
     void testVerify();
 
-    void tearDown();
+    void tearDown() override;
 
     std::unique_ptr<MemFile> createMemFile(FileSpecification& file,
                                          bool callLoadFile)

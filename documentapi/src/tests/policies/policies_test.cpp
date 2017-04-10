@@ -63,7 +63,7 @@ private:
     mbus::Message::UP newPutDocumentMessage(const string &documentId);
 
 public:
-    int  Main();
+    int  Main() override;
     void testAND();
     void testDocumentRouteSelector();
     void testDocumentRouteSelectorIgnore();

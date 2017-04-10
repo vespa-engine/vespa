@@ -40,7 +40,7 @@ class UnicodeUtilTest : public Test
   }
 
 public:
-  virtual void Run() {
+  virtual void Run() override {
     // do the tests
     _test(GetUTF8Char_WrongInput());
     _test(IsTerminalPunctuationChar());
@@ -50,5 +50,5 @@ public:
 class UnicodeUtilTestApp : public FastOS_Application
 {
 public:
-  virtual int Main();
+  virtual int Main() override;
 };

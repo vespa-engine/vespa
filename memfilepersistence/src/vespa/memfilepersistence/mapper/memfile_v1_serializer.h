@@ -22,10 +22,10 @@ public:
 
     MemFileV1Serializer(ThreadMetricProvider&);
 
-    virtual FileVersion getFileVersion() { return TRADITIONAL_SLOTFILE; }
+    virtual FileVersion getFileVersion() override { return TRADITIONAL_SLOTFILE; }
 
     virtual void loadFile(MemFile& file, Environment&,
-                          Buffer& buffer, uint64_t bytesRead);
+                          Buffer& buffer, uint64_t bytesRead) override;
 
     void cacheLocationsForPart(SimpleMemFileIOBuffer& cache,
                                DocumentPart part,
@@ -38,15 +38,15 @@ public:
                                 Environment& env,
                                 const Options& options,
                                 DocumentPart part,
-                                const std::vector<DataLocation>& locations);
+                                const std::vector<DataLocation>& locations) override;
 
-    virtual FlushResult flushUpdatesToFile(MemFile&, Environment&);
+    virtual FlushResult flushUpdatesToFile(MemFile&, Environment&) override;
 
-    virtual void rewriteFile(MemFile&, Environment&);
+    virtual void rewriteFile(MemFile&, Environment&) override;
 
     virtual bool verify(MemFile&, Environment&,
                         std::ostream& errorReport, bool repairErrors,
-                        uint16_t fileVerifyFlags);
+                        uint16_t fileVerifyFlags) override;
 
     uint64_t read(vespalib::LazyFile& file,
                   char* buf,

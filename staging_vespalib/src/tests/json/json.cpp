@@ -19,7 +19,7 @@ private:
     void testJsonStreamStateReporting();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 void

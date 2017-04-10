@@ -16,9 +16,9 @@ public:
                           const document::BucketId&);
 
     void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+               const std::string& indent) const override;
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return _documentSelection.length();
     }
 

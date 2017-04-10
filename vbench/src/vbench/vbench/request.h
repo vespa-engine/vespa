@@ -68,9 +68,9 @@ public:
 
     double latency() const { return (_endTime - _startTime); }
 
-    virtual void handleHeader(const string &name, const string &value);
-    virtual void handleContent(const Memory &data);
-    virtual void handleFailure(const string &reason);
+    virtual void handleHeader(const string &name, const string &value) override;
+    virtual void handleContent(const Memory &data) override;
+    virtual void handleFailure(const string &reason) override;
 
     const BenchmarkHeaders &headers() const { return _headers; }
 

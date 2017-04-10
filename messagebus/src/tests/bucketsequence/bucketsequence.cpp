@@ -17,7 +17,7 @@ TEST_SETUP(Test);
 class MyMessage : public SimpleMessage {
 public:
     MyMessage() : SimpleMessage("foo") { }
-    bool hasBucketSequence() { return true; }
+    bool hasBucketSequence() override { return true; }
 };
 
 int

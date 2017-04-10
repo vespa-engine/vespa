@@ -18,7 +18,7 @@ using namespace mbus;
 
 class Test : public vespalib::TestApp {
 public:
-    int Main();
+    int Main() override;
     void testZeroTimeout();
     void testMessageExpires();
 };

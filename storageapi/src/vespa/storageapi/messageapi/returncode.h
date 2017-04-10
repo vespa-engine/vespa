@@ -70,8 +70,8 @@ private:
     vespalib::string _message;
 
     void onDeserialize(const document::DocumentTypeRepo &repo,
-                       document::ByteBuffer& buffer);
-    void onSerialize(document::ByteBuffer& buffer) const;
+                       document::ByteBuffer& buffer) override;
+    void onSerialize(document::ByteBuffer& buffer) const override;
 
 public:
     ReturnCode();
@@ -79,17 +79,16 @@ public:
     ReturnCode(const document::DocumentTypeRepo &repo,
                document::ByteBuffer& buffer);
 
-    ReturnCode* clone() const { return new ReturnCode(*this); }
+    ReturnCode* clone() const override { return new ReturnCode(*this); }
 
-    size_t getSerializedSize() const;
+    size_t getSerializedSize() const override;
 
     const vespalib::string& getMessage() const { return _message; }
     void setMessage(const vespalib::stringref & message) { _message = message; }
 
     Result getResult() const { return _result; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
      * Translate from status code to human-readable string

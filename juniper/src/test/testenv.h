@@ -57,7 +57,7 @@ public:
     PropertyMap();
     virtual ~PropertyMap();
     PropertyMap &set(const char *name, const char *value);
-    virtual const char* GetProperty(const char* name, const char* def = NULL);
+    virtual const char* GetProperty(const char* name, const char* def = NULL) override;
 };
 
 

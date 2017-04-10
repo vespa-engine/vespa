@@ -42,7 +42,7 @@ protected:
     virtual const vespalib::Version getVersion() const = 0;
     virtual bool shouldTestCoverage() const = 0;
     TestBase &putTest(uint32_t type, TEST_METHOD_PT test);
-    int Main();
+    int Main() override;
 
 public:
     const document::DocumentTypeRepo &getTypeRepo() { return *_repo; }

@@ -10,7 +10,7 @@ class ContentPolicy : public StoragePolicy
 public:
     ContentPolicy(const string& param);
 private:
-    virtual string createConfigId(const string & clusterName) const;
+    virtual string createConfigId(const string & clusterName) const override;
 };
 
 }

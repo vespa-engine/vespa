@@ -130,7 +130,7 @@ private:
     }
 
 public:
-    void tearDown() {
+    void tearDown() override {
         _cache.reset(0);
         _metrics.reset(0);
         _component.reset(0);

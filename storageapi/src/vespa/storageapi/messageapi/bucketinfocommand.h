@@ -25,8 +25,7 @@ protected:
 public:
     DECLARE_POINTER_TYPEDEFS(BucketInfoCommand);
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api

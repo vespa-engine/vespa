@@ -11,7 +11,7 @@ class Test : public TestApp
 {
 public:
     void testGrowing();
-    int Main();
+    int Main() override;
 };
 
 void

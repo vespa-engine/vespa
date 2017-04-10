@@ -107,7 +107,7 @@ private:
 
 public:
     App() : _server() {}
-    virtual int Main();
+    virtual int Main() override;
 };
 
 int

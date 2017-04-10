@@ -115,7 +115,7 @@ class WordFoldersTest : public Test
 
 
 public:
-  virtual void Run() {
+  virtual void Run() override {
     // do the tests
     _test(NormalizeWordFolderConstruction());
     _test(TokenizeAnnotatedBuffer());
@@ -127,5 +127,5 @@ public:
 class WordFoldersTestApp : public FastOS_Application
 {
 public:
-  virtual int Main();
+  virtual int Main() override;
 };

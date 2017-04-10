@@ -33,12 +33,12 @@ private:
     HttpConnectionPool &_pool;
     Timer              &_timer;
 
-    virtual void run();
+    virtual void run() override;
 public:
     typedef std::unique_ptr<Worker> UP;
     Worker(Provider<Request> &provider, Handler<Request> &next,
            HttpConnectionPool &pool, Timer &timer);
-    virtual void join() { _thread.join(); }
+    virtual void join() override { _thread.join(); }
 };
 
 } // namespace vbench

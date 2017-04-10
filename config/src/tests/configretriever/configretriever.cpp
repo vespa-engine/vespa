@@ -106,9 +106,9 @@ struct SimpleSetup
 
 struct MySource : public Source
 {
-    void getConfig() { }
-    void close() { }
-    void reload(int64_t gen) { (void) gen; }
+    void getConfig() override { }
+    void close() override { }
+    void reload(int64_t gen) override { (void) gen; }
 };
 
 struct SubscriptionFixture
@@ -130,7 +130,7 @@ namespace {
 
 class FixedPayload : public protocol::Payload {
 public:
-    const Inspector & getSlimePayload() const
+    const Inspector & getSlimePayload() const override
     {
         return _data.get();
     }

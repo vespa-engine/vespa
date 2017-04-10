@@ -529,7 +529,7 @@ public:
 
 
 
-  virtual void Run() {
+  virtual void Run() override {
     RunTest(&BagTester::IterPtrInitTest);
     RunTest(&BagTester::IterRefInitTest);
     RunTest(&BagTester::IterPtrStartTest);
@@ -557,7 +557,7 @@ class BagTest : public FastOS_Application
 {
 public:
 
-  virtual int Main();
+  virtual int Main() override;
 };
 
 

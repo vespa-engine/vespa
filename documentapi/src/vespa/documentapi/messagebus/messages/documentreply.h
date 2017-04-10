@@ -42,7 +42,7 @@ public:
      */
     Priority::Value getPriority() const { return _priority; }
 
-    uint8_t priority() const { return (uint8_t)_priority; };
+    uint8_t priority() const override { return (uint8_t)_priority; }
 
     /**
      * Sets the priority tag for this message.
@@ -52,10 +52,10 @@ public:
     void setPriority(Priority::Value p) { _priority = p; }
 
     // Implements mbus::Reply.
-    const mbus::string& getProtocol() const;
+    const mbus::string& getProtocol() const override;
 
     // Implements mbus::Reply.
-    uint32_t getType() const { return _type; }
+    uint32_t getType() const override { return _type; }
 };
 
 }

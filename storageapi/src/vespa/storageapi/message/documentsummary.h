@@ -19,10 +19,9 @@ class DocumentSummaryCommand : public StorageCommand,
 public:
     explicit DocumentSummaryCommand();
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return getSerializedSize();
     }
 
@@ -39,8 +38,7 @@ class DocumentSummaryReply : public StorageReply {
 public:
     explicit DocumentSummaryReply(const DocumentSummaryCommand& command);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(DocumentSummaryReply, onDocumentSummaryReply)
 };

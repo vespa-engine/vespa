@@ -20,7 +20,7 @@ public:
       _queue(queue)
   {}
 
-    virtual void PerformTask();
+    virtual void PerformTask() override;
 };
 
 
@@ -34,7 +34,7 @@ Timeout::PerformTask()
 class MyApp : public FastOS_Application
 {
 public:
-  int Main();
+  int Main() override;
 };
 
 

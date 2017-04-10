@@ -41,7 +41,7 @@ public:
     uint32_t getTotalBufferSize() const;
 
     void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+               const std::string& indent) const override;
 
 private:
     const MemFileIOInterface& _io;

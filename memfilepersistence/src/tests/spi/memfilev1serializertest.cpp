@@ -15,7 +15,7 @@ namespace memfile {
 
 struct MemFileV1SerializerTest : public SingleDiskMemFileTestUtils
 {
-    void tearDown();
+    void tearDown() override;
     void setUpPartialWriteEnvironment();
     void resetConfig(uint32_t minimumFileSize, uint32_t minimumFileHeaderBlockSize);
     void doTestPartialWriteRemove(bool readAll);
@@ -204,50 +204,50 @@ MemFileV1SerializerTest::resetConfig(uint32_t minimumFileSize,
 
 struct DummyMemFileIOInterface : MemFileIOInterface {
     Document::UP getDocumentHeader(const document::DocumentTypeRepo&,
-                                   DataLocation) const
+                                   DataLocation) const override
     {
         return Document::UP();
     }
 
-    document::DocumentId getDocumentId(DataLocation) const {
+    document::DocumentId getDocumentId(DataLocation) const override {
         return document::DocumentId("");
     }
 
     void readBody(const document::DocumentTypeRepo&,
                   DataLocation,
-                  Document&) const
+                  Document&) const override
     {
     }
     DataLocation addDocumentIdOnlyHeader(
             const DocumentId&,
-            const document::DocumentTypeRepo&)
+            const document::DocumentTypeRepo&) override
     {
         return DataLocation();
     }
-    DataLocation addHeader(const Document&) { return DataLocation(); }
-    DataLocation addBody(const Document&) { return DataLocation(); }
-    void clear(DocumentPart) {}
-    bool verifyConsistent() const { return true; }
-    void move(const FileSpecification&) {}
+    DataLocation addHeader(const Document&) override { return DataLocation(); }
+    DataLocation addBody(const Document&) override { return DataLocation(); }
+    void clear(DocumentPart) override {}
+    bool verifyConsistent() const override { return true; }
+    void move(const FileSpecification&) override {}
     DataLocation copyCache(const MemFileIOInterface&,
                            DocumentPart,
-                           DataLocation)
+                           DataLocation) override
     {
         return DataLocation();
     }
 
-    void close() {};
-    bool isCached(DataLocation, DocumentPart) const { return false; }
-    bool isPersisted(DataLocation, DocumentPart) const { return false; }
+    void close() override {}
+    bool isCached(DataLocation, DocumentPart) const override { return false; }
+    bool isPersisted(DataLocation, DocumentPart) const override { return false; }
     uint32_t getSerializedSize(DocumentPart,
-                               DataLocation) const { return 0; }
+                               DataLocation) const override { return 0; }
 
     void ensureCached(Environment&,
                       DocumentPart,
-                      const std::vector<DataLocation>&)
+                      const std::vector<DataLocation>&) override
     {}
 
-    size_t getCachedSize(DocumentPart) const { return 0; }
+    size_t getCachedSize(DocumentPart) const override { return 0; }
 };
 
 #define VESPA_MEMFILEV1_SETUP_SOURCE \

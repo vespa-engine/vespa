@@ -21,7 +21,7 @@ public:
     void testVectorArgument();
     void testAllHiddenOption();
     void testOptionsAfterArguments();
-    int Main();
+    int Main() override;
 };
 
 int

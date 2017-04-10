@@ -46,7 +46,7 @@ private:
     uint32_t _maxBucketsPerVisitor;
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     typedef std::unique_ptr<CreateVisitorMessage> UP;
@@ -114,12 +114,12 @@ public:
     uint32_t getMaxBucketsPerVisitor() const { return _maxBucketsPerVisitor; }
     void setMaxBucketsPerVisitor(uint32_t max) { _maxBucketsPerVisitor = max; }
 
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
     void setVisitorDispatcherVersion(uint32_t version) { _version = version; };
     uint32_t getVisitorDispatcherVersion() const { return _version; };
 
-    string toString() const { return "createvisitormessage"; }
+    string toString() const override { return "createvisitormessage"; }
 };
 
 /**
@@ -133,7 +133,7 @@ private:
     string _instanceId;
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     typedef std::unique_ptr<DestroyVisitorMessage> UP;
@@ -145,9 +145,9 @@ public:
     const string& getInstanceId() const { return _instanceId; }
     void setInstanceId(const string& id) { _instanceId = id; }
 
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
-    string toString() const { return "destroyvisitormessage"; }
+    string toString() const override { return "destroyvisitormessage"; }
 };
 
 /**
@@ -183,7 +183,7 @@ public:
     const vdslib::VisitorStatistics& getVisitorStatistics() const { return _visitorStatistics; }
     void setVisitorStatistics(const vdslib::VisitorStatistics& stats) { _visitorStatistics = stats; }
 
-    string toString() const { return "createvisitorreply"; }
+    string toString() const override { return "createvisitorreply"; }
 };
 
 /**
@@ -200,7 +200,7 @@ private:
     string                     _errorMessage;
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     typedef std::unique_ptr<VisitorInfoMessage> UP;
@@ -213,9 +213,9 @@ public:
     const string& getErrorMessage() const { return _errorMessage; }
     void setErrorMessage(const string& errorMessage) { _errorMessage = errorMessage; };
 
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
-    string toString() const { return "visitorinfomessage"; }
+    string toString() const override { return "visitorinfomessage"; }
 };
 
 /**
@@ -229,7 +229,7 @@ private:
     vdslib::Parameters _data;
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     typedef std::unique_ptr<MapVisitorMessage> UP;
@@ -239,10 +239,10 @@ public:
     vdslib::Parameters& getData() { return _data; };
     const vdslib::Parameters& getData() const { return _data; };
 
-    uint32_t getApproxSize() const;
-    uint32_t getType() const;
+    uint32_t getApproxSize() const override;
+    uint32_t getType() const override;
 
-    string toString() const { return "mapvisitormessage"; }
+    string toString() const override { return "mapvisitormessage"; }
 };
 
 /**
@@ -280,7 +280,7 @@ private:
     std::vector<Entry> _documents;
 
 protected:
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     DocumentListMessage();
@@ -292,9 +292,9 @@ public:
     std::vector<Entry>& getDocuments() { return _documents; };
     const std::vector<Entry>& getDocuments() const { return _documents; };
 
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
-    string toString() const { return "documentlistmessage"; }
+    string toString() const override { return "documentlistmessage"; }
 };
 
 }

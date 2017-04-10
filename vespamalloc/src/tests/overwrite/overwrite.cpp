@@ -6,7 +6,7 @@ using namespace vespalib;
 class Test : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
     ~Test();
 private:
     void testFillValue(char *a);

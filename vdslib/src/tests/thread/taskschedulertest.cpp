@@ -29,7 +29,7 @@ struct TestWatch : public TaskScheduler::Watch {
     TestWatch(uint64_t startTime = 0) : _time(startTime) {}
     ~TestWatch() {}
 
-    TaskScheduler::Time getTime() const {
+    TaskScheduler::Time getTime() const override {
         vespalib::LockGuard guard(_lock);
         return _time;
     }
@@ -71,7 +71,7 @@ struct TestTask : public TaskScheduler::Task
         _register = &myregister;
     }
 
-    int64_t run(TaskScheduler::Time currentTime) {
+    int64_t run(TaskScheduler::Time currentTime) override {
             // Emulate that we use time to run
         _watch.increment(_executionTime);
         if (_register != 0) {

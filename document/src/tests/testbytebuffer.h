@@ -25,7 +25,7 @@ public:
   /**
      Initialization.
   */
-  void setUp();
+  void setUp() override;
 
 protected:
     /**

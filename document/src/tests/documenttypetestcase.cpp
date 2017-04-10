@@ -16,8 +16,8 @@ using document::config_builder::Map;
 namespace document {
 
 struct DocumentTypeTest : public CppUnit::TestFixture {
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testSetGet();
     void testHeaderContent();

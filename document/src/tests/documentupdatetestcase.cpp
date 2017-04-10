@@ -33,8 +33,8 @@ using vespalib::tensor::TensorDimensions;
 namespace document {
 
 struct DocumentUpdateTest : public CppUnit::TestFixture {
-  void setUp() {}
-  void tearDown() {}
+  void setUp() override {}
+  void tearDown() override {}
 
   void testSimpleUsage();
   void testUpdateApplySingleValue();

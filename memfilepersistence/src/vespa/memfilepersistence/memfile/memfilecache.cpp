@@ -121,20 +121,20 @@ struct MemFileCache::CacheEntryGuard : public MemFilePtr::EntryGuard {
         return _entry->_file;
     }
 
-    virtual void deleteFile() {
+    virtual void deleteFile() override {
         LOG(debug, "Cache entry guard deleting %s", _file->toString().c_str());
         _env._memFileMapper.deleteFile(*_file, _env);
         erase();
     }
 
-    virtual void erase() {
+    virtual void erase() override {
         LOG(debug, "Cache entry guard erasing %s from cache",
             _file->toString().c_str());
         _cache.erase(document::BucketId(_entry->_file.getFile().getBucketId()));
         _entry = 0;
     }
 
-    virtual void move(EntryGuard& target) {
+    virtual void move(EntryGuard& target) override {
         LOG(debug, "Cache entry guard moving %s", _file->toString().c_str());
         _cache.move(*this, static_cast<CacheEntryGuard&>(target));
     }

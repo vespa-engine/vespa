@@ -101,7 +101,7 @@ struct Options : public vespalib::Printable
 
     /** Printable implementation */
     void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+               const std::string& indent) const override;
 
     bool operator==(const Options& options) const {
         if (_minimumFileMetaSlots == options._minimumFileMetaSlots

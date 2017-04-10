@@ -25,14 +25,14 @@ public:
     void Run(MethodContainer::iterator &itr);
     void Run(const char* method);
     void Run(int argc, char* argv[]);
-    virtual void Run();
+    virtual void Run() override;
 protected:
     /**
      * Since we are running within Emacs, the default behavior of
      * print_progress which includes backspace does not work.
      * We'll use a single '.' instead.
      */
-    virtual void print_progress() { *m_osptr << '.' << std::flush; }
+    virtual void print_progress() override { *m_osptr << '.' << std::flush; }
 private:
     // tests:
     void TestPropertyMap();

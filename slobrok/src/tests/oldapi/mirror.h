@@ -87,10 +87,10 @@ public:
     ~MirrorOld();
 
     // Inherit doc from IMirrorOld.
-    SpecList lookup(const std::string & pattern) const;
+    SpecList lookup(const std::string & pattern) const override;
 
     // Inherit doc from IMirrorOld.
-    uint32_t updates() const { return _updates.getAsInt(); }
+    uint32_t updates() const override { return _updates.getAsInt(); }
 
     /**
      * @brief Ask if the MirrorOld has got any useful information from
@@ -111,10 +111,10 @@ private:
     MirrorOld &operator=(const MirrorOld &);
 
     /** from FNET_Task, polls slobrok **/
-    void PerformTask();
+    void PerformTask() override;
 
     /** from FRT_IRequestWait **/
-    void RequestDone(FRT_RPCRequest *req);
+    void RequestDone(FRT_RPCRequest *req) override;
 
     FRT_Supervisor          &_orb;
     mutable FastOS_Mutex     _lock;

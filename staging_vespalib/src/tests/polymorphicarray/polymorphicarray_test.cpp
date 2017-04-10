@@ -111,8 +111,8 @@ TEST("require that primitive arrays conforms") {
 class Factory : public ComplexArrayT<A>::Factory
 {
 public:
-    A * create() { return new Complex(); }
-    virtual Factory * clone() const { return new Factory(*this); }
+    A * create() override { return new Complex(); }
+    virtual Factory * clone() const override { return new Factory(*this); }
 };
 
 TEST("require that complex arrays conforms") {

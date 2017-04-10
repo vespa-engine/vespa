@@ -13,7 +13,7 @@ class Test : public vespalib::TestApp {
 private:
     void testBasic();
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("databuffer_test");
 
         testBasic();           TEST_FLUSH();

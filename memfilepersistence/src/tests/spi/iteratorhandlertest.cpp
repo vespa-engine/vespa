@@ -58,8 +58,8 @@ public:
     void testCachePrefetchRequirements();
     void testBucketEvictedFromCacheOnIterateException();
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     struct Chunk
     {
