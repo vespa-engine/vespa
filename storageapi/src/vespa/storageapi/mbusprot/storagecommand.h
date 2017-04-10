@@ -15,16 +15,16 @@ public:
 
     StorageCommand(const storage::api::StorageCommand::SP&);
 
-    const mbus::string & getProtocol() const { return StorageProtocol::NAME; }
+    const mbus::string & getProtocol() const override { return StorageProtocol::NAME; }
 
-    uint32_t getType() const { return _cmd->getType().getId(); }
+    uint32_t getType() const override { return _cmd->getType().getId(); }
 
     const api::StorageCommand::SP& getCommand() { return _cmd; }
     api::StorageCommand::CSP getCommand() const { return _cmd; }
-    virtual api::StorageMessage::SP getInternalMessage() { return _cmd; }
-    virtual api::StorageMessage::CSP getInternalMessage() const { return _cmd; }
+    virtual api::StorageMessage::SP getInternalMessage() override { return _cmd; }
+    virtual api::StorageMessage::CSP getInternalMessage() const override { return _cmd; }
 
-    virtual uint8_t priority() const {
+    virtual uint8_t priority() const override {
         return ((getInternalMessage()->getPriority()) / 255) * 16;
     }
 

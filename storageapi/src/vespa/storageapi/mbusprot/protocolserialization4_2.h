@@ -11,29 +11,29 @@ public:
     ProtocolSerialization4_2(const document::DocumentTypeRepo::SP&);
 
 protected:
-    virtual void onEncode(GBBuf&, const api::GetCommand&) const;
-    virtual void onEncode(GBBuf&, const api::RemoveCommand&) const;
-    virtual void onEncode(GBBuf&, const api::RevertCommand&) const;
-    virtual void onEncode(GBBuf&, const api::CreateBucketCommand&) const;
-    virtual void onEncode(GBBuf&, const api::MergeBucketCommand&) const;
-    virtual void onEncode(GBBuf&, const api::GetBucketDiffCommand&) const;
-    virtual void onEncode(GBBuf&, const api::ApplyBucketDiffCommand&) const;
-    virtual void onEncode(GBBuf&, const api::RequestBucketInfoReply&) const;
-    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeCommand&) const;
-    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeReply&) const;
-    virtual void onEncode(GBBuf&, const api::SplitBucketCommand&) const;
-    virtual void onEncode(GBBuf&, const api::MultiOperationCommand&) const;
-    virtual void onEncode(GBBuf&, const api::CreateVisitorCommand&) const;
-    virtual void onEncode(GBBuf&, const api::DestroyVisitorCommand&) const;
-    virtual void onEncode(GBBuf&, const api::DestroyVisitorReply&) const;
-    virtual void onEncode(GBBuf&, const api::RemoveLocationCommand&) const;
-    virtual void onEncode(GBBuf&, const api::RemoveLocationReply&) const;
+    virtual void onEncode(GBBuf&, const api::GetCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::RemoveCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::RevertCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::CreateBucketCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::MergeBucketCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::GetBucketDiffCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::ApplyBucketDiffCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::RequestBucketInfoReply&) const override;
+    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeReply&) const override;
+    virtual void onEncode(GBBuf&, const api::SplitBucketCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::MultiOperationCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::CreateVisitorCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::DestroyVisitorCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::DestroyVisitorReply&) const override;
+    virtual void onEncode(GBBuf&, const api::RemoveLocationCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::RemoveLocationReply&) const override;
 
     // Not supported on 4.2, but implemented here for simplicity.
-    virtual void onEncode(GBBuf&, const api::BatchPutRemoveCommand&) const;
-    virtual void onEncode(GBBuf&, const api::BatchPutRemoveReply&) const;
-    virtual void onEncode(GBBuf&, const api::SetBucketStateCommand&) const;
-    virtual void onEncode(GBBuf&, const api::SetBucketStateReply&) const;
+    virtual void onEncode(GBBuf&, const api::BatchPutRemoveCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::BatchPutRemoveReply&) const override;
+    virtual void onEncode(GBBuf&, const api::SetBucketStateCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::SetBucketStateReply&) const override;
 
     virtual void onEncodeBucketInfoCommand(GBBuf&, const api::BucketInfoCommand&) const;
     virtual void onEncodeBucketInfoReply(GBBuf&, const api::BucketInfoReply&) const = 0;
@@ -42,29 +42,29 @@ protected:
 
     virtual void onEncodeDiffEntry(GBBuf&, const api::GetBucketDiffCommand::Entry&) const;
     virtual void onEncode(GBBuf&, const api::ReturnCode&) const;
-    virtual SCmd::UP onDecodeGetCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeRemoveCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeRevertCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeCreateBucketCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeMergeBucketCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeGetBucketDiffCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeApplyBucketDiffCommand(BBuf&) const;
-    virtual SRep::UP onDecodeRequestBucketInfoReply(const SCmd&, BBuf&) const;
-    virtual SCmd::UP onDecodeNotifyBucketChangeCommand(BBuf&) const;
-    virtual SRep::UP onDecodeNotifyBucketChangeReply(const SCmd&, BBuf&) const;
-    virtual SCmd::UP onDecodeSplitBucketCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeSetBucketStateCommand(BBuf&) const;
-    virtual SRep::UP onDecodeSetBucketStateReply(const SCmd&, BBuf&) const;
-    virtual SCmd::UP onDecodeMultiOperationCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const;
-    virtual SCmd::UP onDecodeDestroyVisitorCommand(BBuf&) const;
-    virtual SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const;
-    virtual SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const;
-    virtual SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const;
+    virtual SCmd::UP onDecodeGetCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeRemoveCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeRevertCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeCreateBucketCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeMergeBucketCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeGetBucketDiffCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeApplyBucketDiffCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeRequestBucketInfoReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeNotifyBucketChangeCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeNotifyBucketChangeReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeSplitBucketCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeSetBucketStateCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeSetBucketStateReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeMultiOperationCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeDestroyVisitorCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const override;
 
     // Not supported on 4.2, but implemented here for simplicity.
-    virtual SCmd::UP onDecodeBatchPutRemoveCommand(BBuf&) const;
-    virtual SRep::UP onDecodeBatchPutRemoveReply(const SCmd&, BBuf&) const;
+    virtual SCmd::UP onDecodeBatchPutRemoveCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeBatchPutRemoveReply(const SCmd&, BBuf&) const override;
 
     virtual void onDecodeBucketInfoCommand(BBuf&, api::BucketInfoCommand&) const;
     virtual void onDecodeBucketInfoReply(BBuf&, api::BucketInfoReply&) const = 0;

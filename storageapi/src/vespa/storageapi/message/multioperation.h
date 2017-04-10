@@ -50,15 +50,14 @@ public:
         _operations = operations;
     }
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return _buffer.size() + 20;
     }
 
     bool keepTimeStamps() const { return _keepTimeStamps; }
     void keepTimeStamps(bool keepTime) { _keepTimeStamps = keepTime; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(MultiOperationCommand, onMultiOperation)
 };
@@ -77,8 +76,7 @@ private:
 public:
     explicit MultiOperationReply(const MultiOperationCommand&);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void setHighestModificationTimestamp(uint64_t highestModificationTimestamp) {
         _highestModificationTimestamp = highestModificationTimestamp;

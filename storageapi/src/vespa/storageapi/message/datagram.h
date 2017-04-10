@@ -38,11 +38,10 @@ public:
         _docBlock = block;
     }
 
-    document::BucketId getBucketId() const { return _bucketId; }
-    virtual bool hasSingleBucketId() const { return true; }
+    document::BucketId getBucketId() const override { return _bucketId; }
+    virtual bool hasSingleBucketId() const override { return true; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     bool keepTimeStamps() const { return _keepTimeStamps; }
     void keepTimeStamps(bool keepTime) { _keepTimeStamps = keepTime; }
@@ -60,8 +59,7 @@ class DocBlockReply : public StorageReply {
 public:
     explicit DocBlockReply(const DocBlockCommand&);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(DocBlockReply, onDocBlockReply)
 };
@@ -85,8 +83,7 @@ public:
     vdslib::Parameters& getData() { return _statistics; };
     const vdslib::Parameters& getData() const { return _statistics; };
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(MapVisitorCommand, onMapVisitor)
 };
@@ -101,8 +98,7 @@ class MapVisitorReply : public StorageReply {
 public:
     explicit MapVisitorReply(const MapVisitorCommand&);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(MapVisitorReply, onMapVisitorReply)
 };
@@ -144,8 +140,7 @@ public:
     std::vector<Entry>& getDocuments() { return _documents; }
     const std::vector<Entry>& getDocuments() const { return _documents; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(DocumentListCommand, onDocumentList)
 
@@ -163,8 +158,7 @@ class DocumentListReply : public StorageReply {
 public:
     explicit DocumentListReply(const DocumentListCommand&);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(DocumentListReply, onDocumentListReply)
 };
@@ -189,8 +183,7 @@ public:
     const std::vector<document::BucketId>& getBuckets() const
         { return _buckets; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(EmptyBucketsCommand, onEmptyBuckets)
 
@@ -207,8 +200,7 @@ class EmptyBucketsReply : public StorageReply {
 public:
     explicit EmptyBucketsReply(const EmptyBucketsCommand&);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(EmptyBucketsReply, onEmptyBucketsReply)
 };

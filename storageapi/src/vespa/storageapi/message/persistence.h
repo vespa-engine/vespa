@@ -64,17 +64,15 @@ public:
     const document::DocumentId& getDocumentId() const override { return _doc->getId(); }
     Timestamp getTimestamp() const { return _timestamp; }
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return (_doc.get() ? 4096 : 0) + 20;
     }
 
     vespalib::string getSummary() const override;
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual StorageCommand::UP createCopyToForward(
-            const document::BucketId& bucket, uint64_t timestamp) const;
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(PutCommand, onPut);
 };
@@ -105,8 +103,7 @@ public:
     bool isHeadersOnlyPut() const { return (_updateTimestamp != 0); }
     bool wasFound() const { return _wasFound; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(PutReply, onPutReply)
 };
@@ -136,17 +133,15 @@ public:
     Timestamp getTimestamp() const { return _timestamp; }
     Timestamp getOldTimestamp() const { return _oldTimestamp; }
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return (_update.get() ? 1024 : 0) + 30;
     }
 
     vespalib::string getSummary() const override;
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual StorageCommand::UP createCopyToForward(
-            const document::BucketId& bucket, uint64_t timestamp) const;
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(UpdateCommand, onUpdate);
 };
@@ -175,8 +170,7 @@ public:
 
     bool wasFound() const { return (_oldTimestamp != 0); }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
      * If this update was inconsistent (multiple different timestamps returned),
@@ -218,11 +212,9 @@ public:
     void setFieldSet(const vespalib::stringref & fieldSet) { _fieldSet = fieldSet; }
 
     vespalib::string getSummary() const override;
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual StorageCommand::UP createCopyToForward(
-            const document::BucketId& bucket, uint64_t timestamp) const;
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(GetCommand, onGet)
 };
@@ -255,12 +247,11 @@ public:
 
     bool wasFound() const { return (_doc.get() != 0); }
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return (_doc.get() ? 4096 : 0) + 30;
     }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(GetReply, onGetReply)
 };
@@ -286,11 +277,9 @@ public:
     Timestamp getTimestamp() const { return _timestamp; }
 
     vespalib::string getSummary() const override;
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual StorageCommand::UP createCopyToForward(
-            const document::BucketId& bucket, uint64_t timestamp) const;
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(RemoveCommand, onRemove)
 };
@@ -318,8 +307,7 @@ public:
 
     bool wasFound() const { return (_oldTimestamp != 0); }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(RemoveReply, onRemoveReply)
 };
@@ -340,8 +328,7 @@ public:
 
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(RevertCommand, onRevert)
 };
@@ -361,8 +348,7 @@ public:
 
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(RevertReply, onRevertReply)
 };

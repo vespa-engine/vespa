@@ -79,11 +79,11 @@ public:
     }
 
     void print(std::ostream& out, bool verbose,
-               const std::string& indent) const
+               const std::string& indent) const override
     {
         vespalib::AsciiPrintable::print(out, verbose, indent);
     }
-    virtual void print(vespalib::asciistream&, const PrintProperties&) const;
+    virtual void print(vespalib::asciistream&, const PrintProperties&) const override;
 
     void printXml(vespalib::XmlOutputStream&) const;
 };

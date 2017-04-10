@@ -22,17 +22,17 @@ public:
                     const documentapi::LoadTypeSet& loadTypes);
 
     // Implements IProtocol.
-    const mbus::string& getName() const { return NAME; }
+    const mbus::string& getName() const override { return NAME; }
 
     // Implements IProtocol.
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string& name,
-                                          const mbus::string& param) const;
+                                          const mbus::string& param) const override;
 
     // Implements IProtocol.
-    mbus::Blob encode(const vespalib::Version&, const mbus::Routable&) const;
+    mbus::Blob encode(const vespalib::Version&, const mbus::Routable&) const override;
 
     // Implements IProtocol.
-    mbus::Routable::UP decode(const vespalib::Version&, mbus::BlobRef) const;
+    mbus::Routable::UP decode(const vespalib::Version&, mbus::BlobRef) const override;
 
 private:
     ProtocolSerialization5_0 _serializer5_0;
