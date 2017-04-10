@@ -108,7 +108,7 @@ OuterMetricSet::~OuterMetricSet() { }
             //std::cerr << "Loadgiver thread joined\n";
         }
 
-        virtual void run() {
+        virtual void run() override {
             uint64_t i = 0;
             while (running()) {
                 ++i;
