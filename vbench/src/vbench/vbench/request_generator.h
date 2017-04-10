@@ -27,9 +27,9 @@ private:
 public:
     RequestGenerator(const string &inputFile,
                      Handler<Request> &next);
-    void abort();
-    virtual void run();
-    virtual const Taint &tainted() const { return _input.tainted(); }
+    void abort() override;
+    virtual void run() override;
+    virtual const Taint &tainted() const override { return _input.tainted(); }
 };
 
 } // namespace vbench

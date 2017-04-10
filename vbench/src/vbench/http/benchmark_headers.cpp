@@ -77,7 +77,7 @@ BenchmarkHeaders::toString() const
     struct HeaderToString : benchmark_headers::HeaderTraverser {
         string &str;
         HeaderToString(string &s) : str(s) {}
-        virtual void header(const string &name, double value) {
+        virtual void header(const string &name, double value) override {
             str += strfmt("  %s: %g\n", name.c_str(), value);
         }
     } headerToString(str);

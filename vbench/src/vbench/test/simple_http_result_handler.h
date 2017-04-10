@@ -19,9 +19,9 @@ private:
 
 public:
     SimpleHttpResultHandler();
-    virtual void handleHeader(const string &name, const string &value);
-    virtual void handleContent(const Memory &data);
-    virtual void handleFailure(const string &reason);
+    virtual void handleHeader(const string &name, const string &value) override;
+    virtual void handleContent(const Memory &data) override;
+    virtual void handleFailure(const string &reason) override;
     const std::vector<std::pair<string, string> > &headers() const {
         return _headers;
     }
