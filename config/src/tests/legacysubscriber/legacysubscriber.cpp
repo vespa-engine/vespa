@@ -14,7 +14,7 @@ class MyCallback : public IFetcherCallback<ConfigType>
 {
 public:
     MyCallback() : _config(), _configured(false) { }
-    void configure(std::unique_ptr<ConfigType> config)
+    void configure(std::unique_ptr<ConfigType> config) override
     {
         _configured = true;
         _config = std::move(config);

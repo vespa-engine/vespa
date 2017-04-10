@@ -57,9 +57,9 @@ namespace {
 
     class MySource : public Source
     {
-        void getConfig() { }
-        void close() { }
-        void reload(int64_t gen) { (void) gen; }
+        void getConfig() override { }
+        void close() override { }
+        void reload(int64_t gen) override { (void) gen; }
     };
 
     class MyManager : public IConfigManager
@@ -77,7 +77,7 @@ namespace {
 
         MyManager() : idCounter(0), numCancel(0) { }
 
-        ConfigSubscription::SP subscribe(const ConfigKey & key, uint64_t timeoutInMillis) {
+        ConfigSubscription::SP subscribe(const ConfigKey & key, uint64_t timeoutInMillis) override {
             (void) timeoutInMillis;
             IConfigHolder::SP holder(new ConfigHolder());
             _holders.push_back(holder);
@@ -85,7 +85,7 @@ namespace {
             ConfigSubscription::SP s(new ConfigSubscription(0, key, holder, Source::UP(new MySource())));
             return s;
         }
-        void unsubscribe(const ConfigSubscription::SP & subscription) {
+        void unsubscribe(const ConfigSubscription::SP & subscription) override {
             (void) subscription;
             numCancel++;
         }
@@ -105,7 +105,7 @@ namespace {
             _holders[index]->handle(ConfigUpdate::UP(new ConfigUpdate(value, false, generation)));
         }
 
-        void reload(int64_t generation)
+        void reload(int64_t generation) override
         {
             (void) generation;
         }
@@ -126,7 +126,7 @@ namespace {
               _m(rhs._m)
         { }
 
-        IConfigManager & getManagerInstance() {
+        IConfigManager & getManagerInstance() override {
             return _m;
         }
 
@@ -135,7 +135,7 @@ namespace {
             return getManagerInstance();
         }
 
-        void reload() { }
+        void reload() override { }
     };
 
     struct StandardFixture {

@@ -15,7 +15,7 @@ struct FixedClock : public Clock
 {
     FixedClock() : currentTime(0) { }
     int64_t currentTime;
-    int64_t currentTimeMillis() const { return currentTime; }
+    int64_t currentTimeMillis() const override { return currentTime; }
 };
 
 TEST("that trace can be serialized and deserialized") {
