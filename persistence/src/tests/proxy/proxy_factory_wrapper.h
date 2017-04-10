@@ -48,7 +48,7 @@ struct ProxyFactoryWrapper : ConformanceTest::PersistenceFactory
     }
 
     virtual bool
-    supportsActiveState() const
+    supportsActiveState() const override
     {
         return factory->supportsActiveState();
     }

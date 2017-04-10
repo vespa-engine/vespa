@@ -22,7 +22,7 @@ struct DummyProviderFactory : ProviderStub::PersistenceProviderFactory
 
     DummyProviderFactory(std::unique_ptr<Provider> p) : provider(std::move(p)) {}
 
-    std::unique_ptr<Provider> create() const {
+    std::unique_ptr<Provider> create() const override {
         ASSERT_TRUE(provider.get() != 0);
         std::unique_ptr<Provider> ret = std::move(provider);
         ASSERT_TRUE(provider.get() == 0);
