@@ -415,7 +415,7 @@ namespace {
                             std::ostream& out)
             : _usedMetrics(used), _out(out) {}
 
-        bool visitMetric(const metrics::Metric& metric, bool) {
+        bool visitMetric(const metrics::Metric& metric, bool) override {
             std::map<metrics::Metric::String,
                      metrics::Metric::SP>::const_iterator it(
                         _usedMetrics.find(metric.getPath()));

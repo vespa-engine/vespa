@@ -31,7 +31,7 @@ public:
     const std::string& getSortToken() const { return _sortToken; }
     void setSortToken(const std::string& token) { _sortToken = token; }
 
-    std::unique_ptr<api::StorageReply> makeReply();
+    std::unique_ptr<api::StorageReply> makeReply() override;
 
     const framework::HttpUrlPath& getPath() const { return _path; }
 
