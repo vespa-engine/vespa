@@ -29,7 +29,7 @@ public:
     void testWrongParameters();
     void testWrongReturnValues();
     void testMethodFailed();
-    int Main();
+    int Main() override;
 };
 
 
