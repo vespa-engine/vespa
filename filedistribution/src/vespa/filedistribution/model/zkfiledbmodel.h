@@ -25,30 +25,30 @@ public:
     }
 
     //overrides
-    bool hasFile(const std::string& fileReference);
-    void addFile(const std::string& fileReference, const Buffer& buffer);
+    bool hasFile(const std::string& fileReference) override;
+    void addFile(const std::string& fileReference, const Buffer& buffer) override;
     Buffer getFile(const std::string& fileReference) override;
-    void cleanFiles(const std::vector<std::string>& filesToPreserve);
+    void cleanFiles(const std::vector<std::string>& filesToPreserve) override;
 
     void setDeployedFilesToDownload(const std::string& hostName,
             const std::string & appId,
-            const std::vector<std::string> & files);
+            const std::vector<std::string> & files) override;
     void cleanDeployedFilesToDownload(
             const std::vector<std::string> & hostsToPreserve,
-            const std::string& appId);
+            const std::string& appId) override;
     void removeDeploymentsThatHaveDifferentApplicationId(
             const std::vector<std::string> & hostsToPreserve,
-            const std::string& appId);
+            const std::string& appId) override;
     void removeNonApplicationFiles(
             const Path & hostPath,
             const std::string& appId);
-    std::vector<std::string> getHosts();
-    HostStatus getHostStatus(const std::string& hostName);
+    std::vector<std::string> getHosts() override;
+    HostStatus getHostStatus(const std::string& hostName) override;
 
     ZKFileDBModel(const std::shared_ptr<ZKFacade>& zk);
 
     Progress getProgress(const std::string& fileReference,
-                         const std::vector<std::string>& hostsSortedAscending);
+                         const std::vector<std::string>& hostsSortedAscending) override;
 };
 
 } //namespace filedistribution

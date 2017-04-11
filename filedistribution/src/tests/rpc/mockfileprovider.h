@@ -14,7 +14,7 @@ public:
 
     boost::barrier _queueForeverBarrier;
 
-    boost::optional<Path> getPath(const std::string& fileReference) {
+    boost::optional<Path> getPath(const std::string& fileReference) override {
         if (fileReference == "dd") {
             return Path("direct/result/path");
         } else {
@@ -22,7 +22,7 @@ public:
         }
     }
 
-    void downloadFile(const std::string& fileReference) {
+    void downloadFile(const std::string& fileReference) override {
         if (fileReference == _queueForeverFileReference) {
             _queueForeverBarrier.wait();
             return;
@@ -33,11 +33,11 @@ public:
     }
 
     //Overrides
-    DownloadCompletedSignal& downloadCompleted() {
+    DownloadCompletedSignal& downloadCompleted() override {
         return _downloadCompleted;
     }
 
-    DownloadFailedSignal& downloadFailed() {
+    DownloadFailedSignal& downloadFailed() override {
         return _downloadFailed;
     }
 

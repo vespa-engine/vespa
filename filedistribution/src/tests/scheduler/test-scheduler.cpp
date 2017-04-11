@@ -50,7 +50,7 @@ BOOST_FIXTURE_TEST_SUITE(SchedulerTest, Fixture)
 
 
 struct RepeatedTask : Scheduler::Task {
-    void doHandle() {
+    void doHandle() override {
         std::cout <<"RepeatedTask::doHandle " <<std::endl;
         schedule(boost::posix_time::seconds(1));
     }
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(require_tasks_does_not_keep_scheduler_alive) {
 struct EnsureInvokedTask : Scheduler::Task {
     boost::barrier& _barrier;
 
-    void doHandle() {
+    void doHandle() override {
         _barrier.wait();
     }
 
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(require_task_invoked) {
 }
 
 struct ThrowExceptionTask : Scheduler::Task {
-    void doHandle() {
+    void doHandle() override {
         throw TestException();
     }
 
