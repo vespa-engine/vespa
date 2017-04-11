@@ -12,7 +12,7 @@ private:
 
 protected:
     // Implements DocumentMessage.
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     /**
@@ -48,15 +48,15 @@ public:
     void setDocumentId(const document::DocumentId& documentId);
 
     // Overrides DocumentMessage.
-    bool hasSequenceId() const;
+    bool hasSequenceId() const override;
 
     // Overrides DocumentMessage.
-    uint64_t getSequenceId() const;
+    uint64_t getSequenceId() const override;
 
     // Implements DocumentMessage.
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
-    string toString() const { return "removedocumentmessage"; }
+    string toString() const override { return "removedocumentmessage"; }
 };
 
 }
