@@ -49,8 +49,7 @@ struct SchedulingOptions : public document::Printable {
         for (uint32_t i=0; i<7; ++i) { _dailyStates[i] = RUN_FULL; }
     }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 
@@ -113,10 +112,9 @@ public:
                            ServiceLayerComponentRegister&);
     ~BucketIntegrityChecker();
 
-    virtual void onClose();
+    virtual void onClose() override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     SchedulingOptions& getSchedulingOptions() { return _scheduleOptions; }
 
@@ -133,26 +131,26 @@ public:
     framework::Clock& getClock() { return _component.getClock(); }
 
 private:
-    virtual void configure(std::unique_ptr<vespa::config::content::core::StorIntegritycheckerConfig>);
+    virtual void configure(std::unique_ptr<vespa::config::content::core::StorIntegritycheckerConfig>) override;
 
-    void onDoneInit();
+    void onDoneInit() override;
 
-    bool onInternalReply(const std::shared_ptr<api::InternalReply>&);
-    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&);
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
+    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
     bool onNotifyBucketChangeReply(
-            const std::shared_ptr<api::NotifyBucketChangeReply>&)
+            const std::shared_ptr<api::NotifyBucketChangeReply>&) override
         { return true; }
 
     SchedulingOptions::RunState getCurrentRunState(
             framework::SecondTime time) const;
 
-    virtual void run(framework::ThreadHandle&);
+    virtual void run(framework::ThreadHandle&) override;
 
     uint32_t getTotalPendingCount() const;
 
         // Status::Reporter implementation
     virtual void reportHtmlStatus(std::ostream&,
-                                  const framework::HttpUrlPath&) const;
+                                  const framework::HttpUrlPath&) const override;
 
 };
 

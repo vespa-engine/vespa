@@ -35,10 +35,10 @@ class DummyMbusMessage : public Base
 private:
     static const mbus::string NAME;
 public:
-    const mbus::string& getProtocol() const { return NAME; }
-    uint32_t getType() const { return 0x1badb007; }
+    const mbus::string& getProtocol() const override { return NAME; }
+    uint32_t getType() const override { return 0x1badb007; }
 
-    uint8_t priority() const { return 255; }
+    uint8_t priority() const override { return 255; }
 };
 
 template <typename Base>

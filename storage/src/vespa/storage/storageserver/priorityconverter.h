@@ -25,7 +25,7 @@ public:
     /** Converts the given priority into a document api priority number. */
     documentapi::Priority::Value toDocumentPriority(uint8_t) const;
 
-    void configure(std::unique_ptr<Config> config);
+    void configure(std::unique_ptr<Config> config) override;
 
 private:
     static_assert(documentapi::Priority::PRI_ENUM_SIZE == 16,
