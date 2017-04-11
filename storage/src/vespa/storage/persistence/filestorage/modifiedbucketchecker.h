@@ -31,19 +31,19 @@ public:
                           const config::ConfigUri& configUri);
     ~ModifiedBucketChecker();
 
-    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig>);
+    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig>) override;
 
-    void run(framework::ThreadHandle& thread);
+    void run(framework::ThreadHandle& thread) override;
     bool tick();
-    void onOpen();
-    void onClose();
+    void onOpen() override;
+    void onClose() override;
 
     void setUnitTestingSingleThreadedMode() {
         _singleThreadMode = true;
     }
 
 private:
-    bool onInternalReply(const std::shared_ptr<api::InternalReply>&);
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
     bool currentChunkFinished() const {
         return _pendingRequests == 0;
     }

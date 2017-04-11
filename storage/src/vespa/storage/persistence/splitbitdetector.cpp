@@ -56,7 +56,7 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
     BucketVisitor(const document::BucketIdFactory& factory);
     ~BucketVisitor();
 
-    void process(spi::DocEntry& slot) {
+    void process(spi::DocEntry& slot) override {
         assert(slot.getDocumentId());
         ++_docCount;
         _docSize += slot.getDocumentSize();

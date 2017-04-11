@@ -33,7 +33,7 @@ public:
           _bucket(bucket),
           _context(context) {}
 
-    void process(spi::DocEntry& entry) {
+    void process(spi::DocEntry& entry) override {
         spi::RemoveResult removeResult = _provider.remove(
                 _bucket,
                 entry.getTimestamp(),
@@ -55,7 +55,7 @@ public:
     StatEntryProcessor(std::ostream& o)
         : ost(o) {};
 
-    void process(spi::DocEntry& e) {
+    void process(spi::DocEntry& e) override {
         ost << "  Timestamp: " << e.getTimestamp() << ", ";
         if (e.getDocument() != 0) {
             ost << "Doc(" << e.getDocument()->getId() << ")"
