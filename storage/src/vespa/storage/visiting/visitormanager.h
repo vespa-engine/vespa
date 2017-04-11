@@ -92,10 +92,9 @@ public:
                    const VisitorFactory::Map& external = VisitorFactory::Map());
     virtual ~VisitorManager();
 
-    virtual void onClose();
+    virtual void onClose() override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     uint32_t getActiveVisitorCount() const;
 
@@ -126,8 +125,8 @@ public:
     void enforceQueueUsage() { _enforceQueueUse = true; }
 
 private:
-    void configure(std::unique_ptr<vespa::config::content::core::StorVisitorConfig>);
-    virtual void run(framework::ThreadHandle&);
+    void configure(std::unique_ptr<vespa::config::content::core::StorVisitorConfig>) override;
+    virtual void run(framework::ThreadHandle&) override;
 
     /**
      * Schedules a visitor for running. onCreateVisitor will typically call
@@ -139,10 +138,10 @@ private:
     bool scheduleVisitor(const std::shared_ptr<api::CreateVisitorCommand>&,
                          bool skipQueue, vespalib::MonitorGuard& visitorLock);
 
-    bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&);
+    bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
 
-    bool onDown(const std::shared_ptr<api::StorageMessage>& r);
-    bool onInternalReply(const std::shared_ptr<api::InternalReply>& r);
+    bool onDown(const std::shared_ptr<api::StorageMessage>& r) override;
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>& r) override;
     bool processReply(const std::shared_ptr<api::StorageReply>&);
 
     /**
@@ -159,14 +158,12 @@ private:
     bool attemptScheduleQueuedVisitor(vespalib::MonitorGuard& visitorLock);
 
         // VisitorMessageHandler implementation
-    void send(const std::shared_ptr<api::StorageCommand>& cmd,
-              Visitor& visitor);
-    void send(const std::shared_ptr<api::StorageReply>& reply);
-    void closed(api::VisitorId id);
+    void send(const std::shared_ptr<api::StorageCommand>& cmd, Visitor& visitor) override;
+    void send(const std::shared_ptr<api::StorageReply>& reply) override;
+    void closed(api::VisitorId id) override;
 
         // Status::Reporter implementation
-    virtual void reportHtmlStatus(std::ostream&,
-                                  const framework::HttpUrlPath&) const;
+    virtual void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     /**
      * The maximum amount of concurrent visitors for a priority is given

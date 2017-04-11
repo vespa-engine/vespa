@@ -18,12 +18,12 @@ public:
     CountVisitor(StorageComponent&,
                  const vdslib::Parameters& params);
 
-    virtual void completedVisiting(HitCounter&);
+    virtual void completedVisiting(HitCounter&) override;
 
 private:
     void handleDocuments(const document::BucketId& bucketId,
                          std::vector<spi::DocEntry::UP>& entries,
-                         HitCounter& hitCounter);
+                         HitCounter& hitCounter) override;
 
     bool _doScheme;
     std::map<std::string, int> _schemeCount;
@@ -43,13 +43,13 @@ private:
 struct CountVisitorFactory : public VisitorFactory {
 
     VisitorEnvironment::UP
-    makeVisitorEnvironment(StorageComponent&) {
+    makeVisitorEnvironment(StorageComponent&) override {
         return VisitorEnvironment::UP(new VisitorEnvironment);
     };
 
     Visitor*
     makeVisitor(StorageComponent& c, VisitorEnvironment&,
-                const vdslib::Parameters& params)
+                const vdslib::Parameters& params) override
     {
         return new CountVisitor(c, params);
     }
