@@ -25,8 +25,8 @@ struct BouncerTest : public CppUnit::TestFixture {
 
     BouncerTest();
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testFutureTimestamp();
     void testAllowNotifyBucketChangeEvenWhenDistributorDown();

@@ -11,7 +11,7 @@ struct PriorityConverterTest : public CppUnit::TestFixture
 {
     std::unique_ptr<PriorityConverter> _converter;
 
-    void setUp() {
+    void setUp() override {
         vdstestlib::DirConfig config(getStandardConfig(true));
         _converter.reset(new PriorityConverter(config.getConfigId()));
     };

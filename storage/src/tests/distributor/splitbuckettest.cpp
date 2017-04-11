@@ -42,14 +42,14 @@ protected:
 public:
     SplitOperationTest();
 
-    void setUp() {
+    void setUp() override {
         createLinks();
         getConfig().setSplitCount(splitCount);
         getConfig().setSplitSize(splitByteSize);
 
     }
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 };

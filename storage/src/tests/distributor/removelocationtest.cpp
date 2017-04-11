@@ -24,11 +24,11 @@ protected:
 public:
     std::unique_ptr<RemoveLocationOperation> op;
 
-    void setUp() {
+    void setUp() override {
         createLinks();
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 

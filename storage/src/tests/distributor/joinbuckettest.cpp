@@ -25,11 +25,11 @@ protected:
     void sendSparseJoinsToNodesWithoutBothSourceBuckets();
 
 public:
-    void setUp() {
+    void setUp() override {
         createLinks();
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 };

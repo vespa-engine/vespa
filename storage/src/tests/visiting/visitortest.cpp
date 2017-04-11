@@ -127,7 +127,7 @@ public:
 
     std::shared_ptr<api::CreateVisitorCommand> makeCreateVisitor(
             const VisitorOptions& options = VisitorOptions());
-    void tearDown();
+    void tearDown() override;
     bool waitUntilNoActiveVisitors();
     TestVisitorMessageSession& getSession(uint32_t n);
     uint64_t verifyCreateVisitorReply(

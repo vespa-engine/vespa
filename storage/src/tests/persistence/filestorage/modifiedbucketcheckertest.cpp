@@ -19,8 +19,8 @@ public:
         MESSAGE_WAIT_TIME = 60*2
     };
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testModifiedBucketThreadSendsRecheckBucketCommands();
     void testDoNotCheckModifiedBucketsIfAlreadyPending();

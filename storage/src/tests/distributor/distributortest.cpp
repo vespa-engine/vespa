@@ -75,11 +75,11 @@ protected:
     void configured_safe_time_point_rejection_works_end_to_end();
 
 public:
-    void setUp() {
+    void setUp() override {
         createLinks();
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 
@@ -375,7 +375,7 @@ public:
     StatusRequestThread(StatusReporterDelegate& reporter)
         : _reporter(reporter)
     {}
-    void run(framework::ThreadHandle&) {
+    void run(framework::ThreadHandle&) override {
         framework::HttpUrlPath path("/distributor?page=buckets");
         std::ostringstream stream;
         _reporter.reportStatus(stream, path);

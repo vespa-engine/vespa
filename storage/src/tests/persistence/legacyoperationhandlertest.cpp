@@ -27,7 +27,7 @@ class LegacyOperationHandlerTest : public SingleDiskPersistenceTestUtils
     CPPUNIT_TEST_SUITE_END();
 
 public:
-    void setUp() {
+    void setUp() override {
         SingleDiskPersistenceTestUtils::setUp();
         createBucket(document::BucketId(16, 4));
         spi::Context context(spi::LoadType(0, "default"), spi::Priority(0),

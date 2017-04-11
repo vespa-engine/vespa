@@ -38,7 +38,7 @@ public:
     document::BucketId bucketId;
     std::unique_ptr<RemoveOperation> op;
 
-    void setUp() {
+    void setUp() override {
         createLinks();
 
         docId = document::DocumentId(document::DocIdString("test", "uri"));
@@ -46,7 +46,7 @@ public:
         _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:4"));
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 

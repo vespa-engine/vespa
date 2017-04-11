@@ -275,7 +275,7 @@ public:
           _downLink(downLink)
     {}
 
-    void run() {
+    void run() override {
         // Best-effort synchronized starting
         _queueBarrier.await();
         _downLink.sendDown(_abortCmd);

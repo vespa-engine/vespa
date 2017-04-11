@@ -58,7 +58,7 @@ struct MockedLatencyStatisticsProvider : LatencyStatisticsProvider
 {
     NodeStatsSnapshot returnedSnapshot;
 
-    NodeStatsSnapshot doGetLatencyStatistics() const {
+    NodeStatsSnapshot doGetLatencyStatistics() const override {
         return returnedSnapshot;
     }
 };

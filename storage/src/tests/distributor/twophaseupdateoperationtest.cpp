@@ -104,7 +104,7 @@ protected:
 
     std::string getUpdatedValueFromLastPut(MessageSenderStub&);
 public:
-    void setUp() {
+    void setUp() override {
         _repo = _testRepo.getTypeRepoSp();
         _doc_type = _repo->getDocumentType("testdoctype1");
         createLinks();
@@ -112,7 +112,7 @@ public:
         getClock().setAbsoluteTimeInSeconds(200);
     }
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 
