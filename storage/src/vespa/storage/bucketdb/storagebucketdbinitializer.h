@@ -138,23 +138,22 @@ public:
                                ServiceLayerComponentRegister&);
     ~StorageBucketDBInitializer();
 
-    virtual void print(std::ostream& out,
-                       bool verbose, const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual void onOpen();
-    virtual void onClose();
+    virtual void onOpen() override;
+    virtual void onClose() override;
 
-    virtual void run(framework::ThreadHandle&);
+    virtual void run(framework::ThreadHandle&) override;
 
-    bool onDown(const std::shared_ptr<api::StorageMessage>&);
-    bool onInternalReply(const std::shared_ptr<api::InternalReply>&);
+    bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
 
     void handleReadBucketListReply(ReadBucketListReply&);
     void handleReadBucketInfoReply(ReadBucketInfoReply&);
     void handleInternalBucketJoinReply(InternalBucketJoinReply&);
 
     /** Status implementation. */
-    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const;
+    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     // The below functions should only be called by the class itself, but they
     // are left public for easability of access for unit tests and anonymous

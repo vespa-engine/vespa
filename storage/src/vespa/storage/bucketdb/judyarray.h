@@ -83,8 +83,7 @@ public:
     data_type& operator[](key_type key);
     size_type getMemoryUsage() const;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     class ConstIterator : public vespalib::Printable
     {
@@ -102,8 +101,7 @@ public:
         key_type key() const { return _key; }
         data_type value() const { return *_data; }
 
-        virtual void print(std::ostream& out,
-                           bool verbose, const std::string& indent) const;
+        virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     protected:
             // For creating end() iterator

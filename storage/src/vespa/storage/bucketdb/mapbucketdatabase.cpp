@@ -465,7 +465,7 @@ namespace {
     struct Writer : public BucketDatabase::EntryProcessor {
         std::ostream& _ost;
         Writer(std::ostream& ost) : _ost(ost) {}
-        virtual bool process(const BucketDatabase::Entry& e) {
+        virtual bool process(const BucketDatabase::Entry& e) override {
             _ost << e.toString() << "\n";
             return true;
         }
