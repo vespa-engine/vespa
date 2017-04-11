@@ -33,15 +33,15 @@ public:
           _priority(priority)
     {}
 
-    IdealStateOperation::UP createOperation() {
+    IdealStateOperation::UP createOperation() override {
         return std::move(_operation);
     }
 
-    MaintenancePriority getPriority() const {
+    MaintenancePriority getPriority() const override {
         return _priority;
     }
 
-    MaintenanceOperation::Type getType() const {
+    MaintenanceOperation::Type getType() const override {
         assert(_operation.get());
         return _operation->getType();
     }

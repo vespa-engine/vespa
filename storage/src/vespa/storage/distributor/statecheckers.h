@@ -10,21 +10,21 @@ namespace distributor {
 class SynchronizeAndMoveStateChecker : public StateChecker
 {
 public:
-    std::string getStatusText() const { return "Synchronization and moving"; }
+    std::string getStatusText() const override { return "Synchronization and moving"; }
 
-    Result check(Context& c);
+    Result check(Context& c) override;
 
-    const char* getName() const { return "SynchronizeAndMove"; }
+    const char* getName() const override { return "SynchronizeAndMove"; }
 };
 
 class DeleteExtraCopiesStateChecker : public StateChecker
 {
 public:
-    std::string getStatusText() const { return "Delete extra copies"; }
+    std::string getStatusText() const override { return "Delete extra copies"; }
 
-    Result check(Context& c);
+    Result check(Context& c) override;
 
-    const char* getName() const { return "DeleteExtraCopies"; }
+    const char* getName() const override { return "DeleteExtraCopies"; }
 
 private:
     bool bucketHasNoData(const StateChecker::Context& c);
@@ -48,11 +48,11 @@ private:
 class JoinBucketsStateChecker : public StateChecker
 {
 public:
-    std::string getStatusText() const { return "Join buckets"; }
+    std::string getStatusText() const override { return "Join buckets"; }
 
-    Result check(Context& c);
+    Result check(Context& c) override;
 
-    const char* getName() const { return "JoinBuckets"; }
+    const char* getName() const override { return "JoinBuckets"; }
 private:
     uint64_t getTotalUsedFileSize(const Context& c) const;
     uint64_t getTotalMetaCount(const Context& c) const;
@@ -68,11 +68,11 @@ private:
 class SplitBucketStateChecker : public StateChecker
 {
 public:
-    std::string getStatusText() const { return "Split buckets"; }
+    std::string getStatusText() const override { return "Split buckets"; }
 
-    Result check(Context& c);
+    Result check(Context& c) override;
 
-    const char* getName() const { return "SplitBucket"; }
+    const char* getName() const override { return "SplitBucket"; }
 
 private:
 
@@ -86,12 +86,12 @@ private:
 class SplitInconsistentStateChecker : public StateChecker
 {
 public:
-    std::string getStatusText() const
+    std::string getStatusText() const override
         { return "Fix inconsistently split buckets"; }
 
-    Result check(Context& c);
+    Result check(Context& c) override;
 
-    const char* getName() const { return "SplitInconsistentBuckets"; }
+    const char* getName() const override { return "SplitInconsistentBuckets"; }
 
 private:
     typedef std::pair<document::BucketId, uint16_t> BucketAndNode;
@@ -114,23 +114,23 @@ class BucketStateStateChecker : public StateChecker
             const ActiveList& activeList,
             const StateChecker::Context& c) const;
 public:
-    std::string getStatusText() const { return "Set bucket copy state"; }
+    std::string getStatusText() const override { return "Set bucket copy state"; }
 
-    Result check(Context& c);
+    Result check(Context& c) override;
 
-    const char* getName() const { return "SetBucketState"; }
+    const char* getName() const override { return "SetBucketState"; }
 };
 
 class GarbageCollectionStateChecker : public StateChecker
 {
 public:
-    std::string getStatusText() const { return "Garbage collection"; }
+    std::string getStatusText() const override { return "Garbage collection"; }
 
     bool needsGarbageCollection(const Context& c) const;
 
-    Result check(Context& c);
+    Result check(Context& c) override;
 
-    const char* getName() const { return "GarbageCollection"; }
+    const char* getName() const override { return "GarbageCollection"; }
 };
 
 }

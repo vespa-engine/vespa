@@ -22,8 +22,8 @@ public:
     void registerStatusPage();
 
     vespalib::string getReportContentType(
-            const framework::HttpUrlPath&) const;
-    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const;
+            const framework::HttpUrlPath&) const override;
+    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 };
 
 } // distributor

@@ -29,15 +29,15 @@ public:
                  const std::shared_ptr<api::GetCommand> & msg,
                  PersistenceOperationMetricSet& metric);
 
-    void onClose(DistributorMessageSender& sender);
+    void onClose(DistributorMessageSender& sender) override;
 
-    void onStart(DistributorMessageSender& sender);
+    void onStart(DistributorMessageSender& sender) override;
 
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg);
+    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
 
-    const char* getName() const { return "get"; }
+    const char* getName() const override { return "get"; }
 
-    std::string getStatus() const { return ""; }
+    std::string getStatus() const override { return ""; }
 
     bool hasConsistentCopies() const;
 

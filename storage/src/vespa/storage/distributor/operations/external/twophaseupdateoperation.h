@@ -52,16 +52,16 @@ public:
                             DistributorMetricSet& metrics);
     ~TwoPhaseUpdateOperation();
 
-    void onStart(DistributorMessageSender& sender);
+    void onStart(DistributorMessageSender& sender) override;
 
-    const char* getName() const { return "twophaseupdate"; }
+    const char* getName() const override { return "twophaseupdate"; }
 
-    std::string getStatus() const { return ""; }
+    std::string getStatus() const override { return ""; }
 
     void onReceive(DistributorMessageSender&,
-                   const std::shared_ptr<api::StorageReply>&);
+                   const std::shared_ptr<api::StorageReply>&) override;
 
-    void onClose(DistributorMessageSender& sender);
+    void onClose(DistributorMessageSender& sender) override;
 
     bool canSendHeaderOnly() const;
 
