@@ -34,7 +34,7 @@ public:
     virtual ~Application();
 
     // Implements FastOS_Application.
-    int Main();
+    int Main() override;
 };
 
 }
