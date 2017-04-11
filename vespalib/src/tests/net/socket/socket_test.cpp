@@ -52,6 +52,9 @@ vespalib::string get_meta(const SocketAddress &addr) {
     if (addr.is_wildcard()) {
         meta += " wildcard";
     }
+    if (addr.is_abstract()) {
+        meta += " abstract";
+    }
     return meta;
 }
 
@@ -105,6 +108,9 @@ TEST("my local address") {
     fprintf(stderr, "resolve(4080):\n");
     for (const auto &addr: list) {
         EXPECT_TRUE(addr.is_wildcard());
+        EXPECT_TRUE(addr.is_ipv4() || addr.is_ipv6());
+        EXPECT_TRUE(!addr.is_ipc());
+        EXPECT_TRUE(!addr.is_abstract());
         EXPECT_EQUAL(addr.port(), 4080);
         fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
     }
@@ -115,17 +121,38 @@ TEST("yahoo.com address") {
     fprintf(stderr, "resolve(80, 'yahoo.com'):\n");
     for (const auto &addr: list) {
         EXPECT_TRUE(!addr.is_wildcard());
+        EXPECT_TRUE(addr.is_ipv4() || addr.is_ipv6());
+        EXPECT_TRUE(!addr.is_ipc());
+        EXPECT_TRUE(!addr.is_abstract());
         EXPECT_EQUAL(addr.port(), 80);
         fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
     }
 }
 
-TEST("ipc address") {
+TEST("ipc address (path)") {
     auto addr = SocketAddress::from_path("my_socket");
+    EXPECT_TRUE(!addr.is_ipv4());
+    EXPECT_TRUE(!addr.is_ipv6());
     EXPECT_TRUE(addr.is_ipc());
+    EXPECT_TRUE(!addr.is_abstract());
     EXPECT_TRUE(!addr.is_wildcard());
     EXPECT_EQUAL(addr.port(), -1);
     EXPECT_EQUAL(vespalib::string("my_socket"), addr.path());
+    EXPECT_TRUE(addr.name().empty());
+    fprintf(stderr, "from_path(my_socket)\n");
+    fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
+}
+
+TEST("ipc address (name)") {
+    auto addr = SocketAddress::from_name("my_socket");
+    EXPECT_TRUE(!addr.is_ipv4());
+    EXPECT_TRUE(!addr.is_ipv6());
+    EXPECT_TRUE(addr.is_ipc());
+    EXPECT_TRUE(addr.is_abstract());
+    EXPECT_TRUE(!addr.is_wildcard());
+    EXPECT_EQUAL(addr.port(), -1);
+    EXPECT_TRUE(addr.path().empty());
+    EXPECT_EQUAL(vespalib::string("my_socket"), addr.name());
     fprintf(stderr, "from_path(my_socket)\n");
     fprintf(stderr, "  %s (%s)\n", addr.spec().c_str(), get_meta(addr).c_str());
 }
@@ -147,19 +174,29 @@ struct ServerWrapper {
     ServerWrapper(const vespalib::string &spec) : server(ServerSocket::listen(SocketSpec(spec))) {}
 };
 
-TEST_MT_F("require that basic socket io works", 2, ServerWrapper("tcp/0")) {
+TEST_MT_FF("require that basic socket io works", 2, ServerWrapper("tcp/0"), TimeBomb(60)) {
     bool is_server = (thread_id == 0);
     Socket::UP socket = connect_sockets(is_server, *f1.server);
     TEST_DO(verify_socket_io(is_server, *socket));
 }
 
-TEST_MT_F("require that basic unix domain socket io works", 2, ServerWrapper("ipc/file:my_socket")) {
+TEST_MT_FF("require that basic unix domain socket io works (path)", 2,
+           ServerWrapper("ipc/file:my_socket"), TimeBomb(60))
+{
     bool is_server = (thread_id == 0);
     Socket::UP socket = connect_sockets(is_server, *f1.server);
     TEST_DO(verify_socket_io(is_server, *socket));
 }
 
-TEST_MT_F("require that server accept can be interrupted", 2, ServerWrapper("tcp/0")) {
+TEST_MT_FF("require that basic unix domain socket io works (name)", 2,
+           ServerWrapper(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
+{
+    bool is_server = (thread_id == 0);
+    Socket::UP socket = connect_sockets(is_server, *f1.server);
+    TEST_DO(verify_socket_io(is_server, *socket));
+}
+
+TEST_MT_FF("require that server accept can be interrupted", 2, ServerWrapper("tcp/0"), TimeBomb(60)) {
     bool is_server = (thread_id == 0);
     if (is_server) {
         fprintf(stderr, "--> calling accept\n");
@@ -224,6 +261,42 @@ TEST("require that a server socket will remove an old socket file if it cannot b
     EXPECT_TRUE(server->valid());
     server.reset();
     EXPECT_TRUE(!is_socket("my_socket"));
+}
+
+TEST("require that two server sockets cannot have the same abstract unix domain socket name") {
+    vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
+    ServerSocket::UP server1 = ServerSocket::listen(SocketSpec(spec));
+    ServerSocket::UP server2 = ServerSocket::listen(SocketSpec(spec));
+    EXPECT_TRUE(server1->valid());
+    EXPECT_TRUE(!server2->valid());
+}
+
+TEST("require that abstract socket names are freed when the server socket is destructed") {
+    vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
+    ServerSocket::UP server1 = ServerSocket::listen(SocketSpec(spec));
+    EXPECT_TRUE(server1->valid());
+    server1.reset();
+    ServerSocket::UP server2 = ServerSocket::listen(SocketSpec(spec));
+    EXPECT_TRUE(server2->valid());
+}
+
+TEST("require that abstract sockets do not have socket files") {
+    vespalib::string name = make_string("my_socket-%d", int(getpid()));
+    vespalib::string spec = make_string("ipc/name:%s", name.c_str());
+    ServerSocket::UP server = ServerSocket::listen(SocketSpec(spec));
+    EXPECT_TRUE(server->valid());
+    EXPECT_TRUE(!is_socket(name));
+    EXPECT_TRUE(!is_file(name));    
+}
+
+TEST_MT_FFF("require that abstract and file-based unix domain sockets are not in conflict", 4,
+            ServerWrapper(make_string("ipc/file:my_socket-%d", int(getpid()))),
+            ServerWrapper(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
+{
+    bool is_server = ((thread_id % 2) == 0);
+    ServerSocket &server_socket = ((thread_id / 2) == 0) ? *f1.server : *f2.server;
+    Socket::UP socket = connect_sockets(is_server, server_socket);
+    TEST_DO(verify_socket_io(is_server, *socket));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

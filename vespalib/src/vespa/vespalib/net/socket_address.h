@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
@@ -8,10 +7,14 @@
 #include <vector>
 #include <sys/socket.h>
 
+struct sockaddr_in;
+struct sockaddr_in6;
+struct sockaddr_un;
+
 namespace vespalib {
 
 /**
- * Wrapper class for low-level TCP/IP socket addresses.
+ * Wrapper class for low-level TCP/IP and IPC socket addresses.
  **/
 class SocketAddress
 {
@@ -20,7 +23,10 @@ private:
     sockaddr_storage _addr;
 
     const sockaddr *addr() const { return reinterpret_cast<const sockaddr *>(&_addr); }
-    explicit SocketAddress(const sockaddr *addr_in, socklen_t addrlen_in);
+    const sockaddr_in *addr_in() const { return reinterpret_cast<const sockaddr_in *>(&_addr); }
+    const sockaddr_in6 *addr_in6() const { return reinterpret_cast<const sockaddr_in6 *>(&_addr); }
+    const sockaddr_un *addr_un() const { return reinterpret_cast<const sockaddr_un *>(&_addr); }
+    SocketAddress(const sockaddr *addr_in, socklen_t addrlen_in);
 public:
     SocketAddress() { memset(this, 0, sizeof(SocketAddress)); }
     SocketAddress(const SocketAddress &rhs) { memcpy(this, &rhs, sizeof(SocketAddress)); }
@@ -33,9 +39,11 @@ public:
     bool is_ipv6() const { return (valid() && (_addr.ss_family == AF_INET6)); }
     bool is_ipc() const { return (valid() && (_addr.ss_family == AF_UNIX)); }
     bool is_wildcard() const;
+    bool is_abstract() const;
     int port() const;
     vespalib::string ip_address() const;
     vespalib::string path() const;
+    vespalib::string name() const;
     vespalib::string spec() const;
     SocketHandle connect() const;
     SocketHandle listen(int backlog = 500) const;
@@ -59,6 +67,7 @@ public:
         return SocketAddress();
     }
     static SocketAddress from_path(const vespalib::string &path);
+    static SocketAddress from_name(const vespalib::string &name);
 };
 
 } // namespace vespalib

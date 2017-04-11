@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "socket_address.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sys/types.h>
@@ -21,28 +20,36 @@ bool
 SocketAddress::is_wildcard() const
 {
     if (is_ipv4()) {
-        const sockaddr_in *addr = reinterpret_cast<const sockaddr_in *>(&_addr);
-        return (addr->sin_addr.s_addr == htonl(INADDR_ANY));
+        return (addr_in()->sin_addr.s_addr == htonl(INADDR_ANY));
     }
     if (is_ipv6()) {
-        const sockaddr_in6 *addr = reinterpret_cast<const sockaddr_in6 *>(&_addr);
-        return (memcmp(&addr->sin6_addr, &ipv6_wildcard, sizeof(in6_addr)) == 0);
+        return (memcmp(&addr_in6()->sin6_addr, &ipv6_wildcard, sizeof(in6_addr)) == 0);
     }
     return false;
+}
+
+bool
+SocketAddress::is_abstract() const
+{
+    bool result = false;
+    if (is_ipc()) {
+        const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
+        const char *pos = &addr_un()->sun_path[0];
+        result = ((path_limit > pos) && (pos[0] == '\0'));
+    }
+    return result;
 }
 
 vespalib::string
 SocketAddress::ip_address() const
 {
-    vespalib::string result = "invalid";
+    vespalib::string result;
     if (is_ipv4()) {
         char buf[INET_ADDRSTRLEN];
-        const sockaddr_in *addr = reinterpret_cast<const sockaddr_in *>(&_addr);
-        result = inet_ntop(AF_INET, &addr->sin_addr, buf, sizeof(buf));
+        result = inet_ntop(AF_INET, &addr_in()->sin_addr, buf, sizeof(buf));
     } else if (is_ipv6()) {
         char buf[INET6_ADDRSTRLEN];
-        const sockaddr_in6 *addr = reinterpret_cast<const sockaddr_in6 *>(&_addr);
-        result = inet_ntop(AF_INET6, &addr->sin6_addr, buf, sizeof(buf));
+        result = inet_ntop(AF_INET6, &addr_in6()->sin6_addr, buf, sizeof(buf));
     }
     return result;
 }
@@ -50,11 +57,26 @@ SocketAddress::ip_address() const
 vespalib::string
 SocketAddress::path() const
 {
-    vespalib::string result = "";
-    if (is_ipc()) {
-        const sockaddr_un *addr = reinterpret_cast<const sockaddr_un *>(&_addr);
-        const char *path_limit = (reinterpret_cast<const char *>(addr) + _size);
-        const char *pos = &addr->sun_path[0];
+    vespalib::string result;
+    if (is_ipc() && !is_abstract()) {
+        const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
+        const char *pos = &addr_un()->sun_path[0];
+        const char *end = pos;
+        while ((end < path_limit) && (*end != 0)) {
+            ++end;
+        }
+        result.assign(pos, end - pos);
+    }
+    return result;
+}
+
+vespalib::string
+SocketAddress::name() const
+{
+    vespalib::string result;
+    if (is_ipc() && is_abstract()) {
+        const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
+        const char *pos = &addr_un()->sun_path[1];
         const char *end = pos;
         while ((end < path_limit) && (*end != 0)) {
             ++end;
@@ -76,12 +98,10 @@ int
 SocketAddress::port() const
 {
     if (is_ipv4()) {
-        const sockaddr_in *addr = reinterpret_cast<const sockaddr_in *>(&_addr);
-        return ntohs(addr->sin_port);
+        return ntohs(addr_in()->sin_port);
     }
     if (is_ipv6()) {
-        const sockaddr_in6 *addr = reinterpret_cast<const sockaddr_in6 *>(&_addr);
-        return ntohs(addr->sin6_port);        
+        return ntohs(addr_in6()->sin6_port);        
     }
     return -1;
 }
@@ -99,7 +119,11 @@ SocketAddress::spec() const
         return make_string("tcp/[%s]:%d", ip_address().c_str(), port());
     }
     if (is_ipc()) {
-        return make_string("ipc/file:%s", path().c_str());
+        if (is_abstract()) {
+            return make_string("ipc/name:%s", name().c_str());
+        } else {
+            return make_string("ipc/file:%s", path().c_str());
+        }
     }
     return "invalid";
 }
@@ -205,10 +229,22 @@ SocketAddress::from_path(const vespalib::string &path)
 {
     SocketAddress result;
     sockaddr_un &addr_un = reinterpret_cast<sockaddr_un &>(result._addr);
-    assert(sizeof(sockaddr_un) <= sizeof(result._addr));
-    if (path.size() < sizeof(addr_un.sun_path)) {
+    if (!path.empty() && (path.size() < sizeof(addr_un.sun_path))) {
         addr_un.sun_family = AF_UNIX;
-        strcpy(&addr_un.sun_path[0], path.c_str());        
+        memcpy(&addr_un.sun_path[0], path.data(), path.size());        
+        result._size = sizeof(sockaddr_un);
+    }
+    return result;
+}
+
+SocketAddress
+SocketAddress::from_name(const vespalib::string &name)
+{
+    SocketAddress result;
+    sockaddr_un &addr_un = reinterpret_cast<sockaddr_un &>(result._addr);
+    if (!name.empty() && (name.size() < sizeof(addr_un.sun_path))) {
+        addr_un.sun_family = AF_UNIX;
+        memcpy(&addr_un.sun_path[1], name.data(), name.size());
         result._size = sizeof(sockaddr_un);
     }
     return result;
