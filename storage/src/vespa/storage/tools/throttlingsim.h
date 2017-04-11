@@ -33,7 +33,7 @@ public:
     Receiver(int meanwait, int max) : meanwaitms(meanwait), processed(0), maxqueuesize(max) {};
 
     bool enqueue(const Message& msg);
-    void run();
+    void run() override;
     void print();
 };
 
@@ -55,7 +55,7 @@ public:
 
     void sendMessage(const Message& m);
     void print();
-    void run();
+    void run() override;
 };
 
 Messaging::Messaging(int meanwait) : lastOk(0), meanwaitms(meanwait) {}
@@ -75,7 +75,7 @@ public:
     double max_diff;
 
     virtual void returnMessage(const Message& m) = 0;
-    virtual void run();
+    virtual void run() override;
     virtual void print(double timenow);
 
     Client(Messaging& msgng, double windowSize, int to);
@@ -92,16 +92,16 @@ public:
     FixedClient(Messaging& msgng, int winsize, int to)
         : Client(msgng, winsize, to) {};
 
-    virtual void returnMessage(const Message& m);
+    virtual void returnMessage(const Message& m) override;
 };
 
 class LoadBalancingClient : public Client {
 public:
     LoadBalancingClient(Messaging& msgng, int winsize, int to);
 
-    virtual void returnMessage(const Message& m);
-    virtual void run();
-    virtual void print(double timenow);
+    virtual void returnMessage(const Message& m) override;
+    virtual void run() override;
+    virtual void print(double timenow) override;
 
     std::vector<double> weights;
 };
@@ -110,9 +110,9 @@ class BusyCounterBalancingClient : public Client {
 public:
     BusyCounterBalancingClient(Messaging& msgng, int winsize, int to);
 
-    virtual void returnMessage(const Message& m);
-    virtual void run();
-    virtual void print(double timenow);
+    virtual void returnMessage(const Message& m) override;
+    virtual void run() override;
+    virtual void print(double timenow) override;
 
     std::vector<int> busyCount;
 };
@@ -127,7 +127,7 @@ public:
     DynamicClient(Messaging& msgng, int maxWinSize, double to)
         : Client(msgng, 1, static_cast<int>(to)), maxwinsize(maxWinSize), threshold(maxWinSize / 2), lastFailTimestamp(0) {};
 
-    virtual void returnMessage(const Message& m);
+    virtual void returnMessage(const Message& m) override;
 };
 
 class LatencyControlClient : public Client {
@@ -138,9 +138,9 @@ public:
         : Client(msgng, 1, static_cast<int>(to)),
           count(0){};
 
-    virtual void returnMessage(const Message& m);
+    virtual void returnMessage(const Message& m) override;
 
-    virtual void print(double timenow);
+    virtual void print(double timenow) override;
 };
 
 
@@ -153,6 +153,6 @@ private:
 public:
     ThrottlingApp() {};
 
-    int Main();
+    int Main() override;
 
 };
