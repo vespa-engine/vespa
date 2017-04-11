@@ -11,7 +11,7 @@ class App : public FastOS_Application
 {
 public:
     void dump(const std::string &desc, uint32_t value);
-    int Main();
+    int Main() override;
 };
 
 void
