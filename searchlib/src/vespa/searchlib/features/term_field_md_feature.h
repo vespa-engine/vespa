@@ -20,7 +20,7 @@ class TermFieldMdExecutor : public fef::FeatureExecutor {
     std::vector<Element> _terms;
     const fef::MatchData *_md;
 
-    virtual void execute(uint32_t docId);
+    virtual void execute(uint32_t docId) override;
     virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
@@ -39,19 +39,19 @@ public:
 
     // Inherit doc from Blueprint.
     virtual void visitDumpFeatures(const fef::IIndexEnvironment & env,
-                                   fef::IDumpFeatureVisitor & visitor) const;
+                                   fef::IDumpFeatureVisitor & visitor) const override;
 
     // Inherit doc from Blueprint.
-    virtual fef::Blueprint::UP createInstance() const;
+    virtual fef::Blueprint::UP createInstance() const override;
 
     // Inherit doc from Blueprint.
-    virtual fef::ParameterDescriptions getDescriptions() const {
+    virtual fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().field();
     }
 
     // Inherit doc from Blueprint.
     virtual bool setup(const fef::IIndexEnvironment & env,
-                       const fef::ParameterList & params);
+                       const fef::ParameterList & params) override;
 
     // Inherit doc from Blueprint.
     virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment & env, vespalib::Stash &stash) const override;

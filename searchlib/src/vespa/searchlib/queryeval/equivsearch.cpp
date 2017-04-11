@@ -17,7 +17,7 @@ private:
     bool                      _valid;
 
 protected:
-    virtual void doUnpack(uint32_t docid);
+    virtual void doUnpack(uint32_t docid) override;
 
 public:
     /**

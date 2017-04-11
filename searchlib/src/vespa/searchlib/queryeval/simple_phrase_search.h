@@ -49,9 +49,9 @@ public:
                        std::vector<uint32_t> eval_order,
                        fef::TermFieldMatchData &tmd, bool strict);
 
-    virtual void doSeek(uint32_t doc_id);
-    virtual void doUnpack(uint32_t doc_id);
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    virtual void doSeek(uint32_t doc_id) override;
+    virtual void doUnpack(uint32_t doc_id) override;
+    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     SimplePhraseSearch & setDoom(const vespalib::Doom * doom) { _doom = doom; return *this; }
 };
 

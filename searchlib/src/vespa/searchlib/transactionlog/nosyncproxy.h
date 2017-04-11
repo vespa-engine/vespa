@@ -18,7 +18,7 @@ public:
     ~NoSyncProxy(void);
 
     virtual void
-    sync(SerialNum syncTo);
+    sync(SerialNum syncTo) override;
 };
 
 }

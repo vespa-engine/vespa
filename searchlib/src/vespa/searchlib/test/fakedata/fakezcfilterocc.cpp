@@ -772,7 +772,7 @@ public:
     ~FakeZcSkipFilterOcc(void);
 
     virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const;
+    createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 static FPFactoryInit
@@ -1387,17 +1387,14 @@ public:
 
     ~FakeEGCompr64PosOcc(void);
 
-    void
-    setup(const FakeWord &fw);
+    void setup(const FakeWord &fw);
 
-    size_t
-    bitSize(void) const;
+    size_t bitSize(void) const override;
 
-    virtual bool
-    hasWordPositions(void) const;
+    virtual bool hasWordPositions(void) const override;
 
     virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const;
+    createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1523,17 +1520,14 @@ public:
 
     ~FakeEG2Compr64PosOcc(void);
 
-    void
-    setup(const FakeWord &fw);
+    void setup(const FakeWord &fw);
 
-    size_t
-    bitSize(void) const;
+    size_t bitSize(void) const override;
 
-    virtual bool
-    hasWordPositions(void) const;
+    virtual bool hasWordPositions(void) const override;
 
     virtual SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const;
+    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1659,14 +1653,12 @@ public:
 
     ~FakeZcSkipPosOcc(void);
 
-    size_t
-    bitSize(void) const;
+    size_t bitSize(void) const override;
 
-    virtual bool
-    hasWordPositions(void) const;
+    virtual bool hasWordPositions(void) const override;
 
     virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const;
+    createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1725,14 +1717,12 @@ public:
 
     ~FakeZc2SkipPosOcc(void);
 
-    size_t
-    bitSize(void) const;
+    size_t bitSize(void) const override;
 
-    virtual bool
-    hasWordPositions(void) const;
+    virtual bool hasWordPositions(void) const override;
 
     virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const;
+    createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 

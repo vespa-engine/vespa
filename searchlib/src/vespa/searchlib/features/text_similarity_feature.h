@@ -41,8 +41,8 @@ private:
 
 public:
     TextSimilarityExecutor(const search::fef::IQueryEnvironment &env, uint32_t field_id);
-    virtual bool isPure() { return _handles.empty(); }
-    virtual void execute(uint32_t docId);
+    virtual bool isPure() override { return _handles.empty(); }
+    virtual void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -61,13 +61,13 @@ private:
 public:
     TextSimilarityBlueprint();
     virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
-    virtual search::fef::Blueprint::UP createInstance() const;
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+                                   search::fef::IDumpFeatureVisitor &visitor) const override;
+    virtual search::fef::Blueprint::UP createInstance() const override;
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::SINGLE);
     }
     virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
+                       const search::fef::ParameterList &params) override;
     virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 

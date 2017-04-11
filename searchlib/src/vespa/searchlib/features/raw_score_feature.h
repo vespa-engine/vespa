@@ -17,7 +17,7 @@ private:
     virtual void handle_bind_match_data(fef::MatchData &md) override;
 public:
     RawScoreExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId);
-    virtual void execute(uint32_t docId);
+    virtual void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -29,15 +29,15 @@ private:
 public:
     RawScoreBlueprint() : Blueprint("rawScore"), _field(0) {}
     virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                   search::fef::IDumpFeatureVisitor &) const {}
-    virtual search::fef::Blueprint::UP createInstance() const {
+                                   search::fef::IDumpFeatureVisitor &) const override {}
+    virtual search::fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new RawScoreBlueprint());
     }
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc().field();
     }
     virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
+                       const search::fef::ParameterList &params) override;
     virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 

@@ -31,7 +31,7 @@ struct WeightExtractor : public TemplateTermVisitor<WeightExtractor,
     }
 
     // Treat Equiv nodes as terms.
-    virtual void visit(search::query::Equiv &n) { visitTerm(n); }
+    virtual void visit(search::query::Equiv &n) override { visitTerm(n); }
 };
 
 } // namespace search::queryeval::<unnamed>

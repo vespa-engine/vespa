@@ -145,10 +145,10 @@ public:
     sync(void);
 
     virtual void
-    add(uint32_t wordIdx, index::DocIdAndFeatures &features);
+    add(uint32_t wordIdx, index::DocIdAndFeatures &features) override;
 
     virtual void
-    remove(uint32_t wordIdx, uint32_t docId);
+    remove(uint32_t wordIdx, uint32_t docId) override;
 
     void
     sortUnflushed(void);
@@ -179,10 +179,10 @@ public:
     ~FakeMemTreeOccFactory(void);
 
     virtual FakePosting::SP
-    make(const FakeWord &fw);
+    make(const FakeWord &fw) override;
 
     virtual void
-    setup(const std::vector<const FakeWord *> &fws);
+    setup(const std::vector<const FakeWord *> &fws) override;
 };
 
 class FakeMemTreeOcc2Factory : public FakeMemTreeOccFactory
@@ -194,10 +194,10 @@ public:
     ~FakeMemTreeOcc2Factory(void);
 
     virtual FakePosting::SP
-    make(const FakeWord &fw);
+    make(const FakeWord &fw) override;
 
     virtual void
-    setup(const std::vector<const FakeWord *> &fws);
+    setup(const std::vector<const FakeWord *> &fws) override;
 };
 
 
@@ -243,42 +243,40 @@ public:
     /*
      * Size of posting list, in bits.
      */
-    size_t
-    bitSize(void) const;
+    size_t bitSize(void) const override;
 
-    virtual bool
-    hasWordPositions(void) const;
+    virtual bool hasWordPositions(void) const override;
 
     /*
      * Single posting list performance, without feature unpack.
      */
     virtual int
-    lowLevelSinglePostingScan(void) const;
+    lowLevelSinglePostingScan(void) const override;
 
     /*
      * Single posting list performance, with feature unpack.
      */
     virtual int
-    lowLevelSinglePostingScanUnpack(void) const;
+    lowLevelSinglePostingScanUnpack(void) const override;
 
     /*
      * Two posting lists performance (same format) without feature unpack.
      */
     virtual int
-    lowLevelAndPairPostingScan(const FakePosting &rhs) const;
+    lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
 
     /*
      * Two posting lists performance (same format) with feature unpack.
      */
     virtual int
-    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const;
+    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
 
 
     /*
      * Iterator factory, for current query evaluation framework.
      */
     virtual search::queryeval::SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const;
+    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 } // namespace fakedata
