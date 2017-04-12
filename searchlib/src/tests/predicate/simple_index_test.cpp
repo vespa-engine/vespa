@@ -24,21 +24,22 @@ struct MyData {
 };
 
 struct MyDataSerializer : PostingSerializer<MyData> {
-    void serialize(const MyData &data, vespalib::DataBuffer& buffer) const {
+    void serialize(const MyData &data, vespalib::DataBuffer& buffer) const override {
         buffer.writeInt32(data.data);
     }
 };
 
 struct MyDataDeserializer : PostingDeserializer<MyData> {
-    MyData deserialize(vespalib::DataBuffer& buffer) { return {buffer.readInt32()};
+    MyData deserialize(vespalib::DataBuffer& buffer) override {
+        return {buffer.readInt32()};
     }
 };
 
 struct SimpleDocIdLimitProvider : public DocIdLimitProvider {
     uint32_t _doc_id_limit = 1;
     uint32_t _committed_doc_id_limit = 1;
-    virtual uint32_t getDocIdLimit() const { return _doc_id_limit; }
-    virtual uint32_t getCommittedDocIdLimit() const { return _committed_doc_id_limit; }
+    virtual uint32_t getDocIdLimit() const override { return _doc_id_limit; }
+    virtual uint32_t getCommittedDocIdLimit() const override { return _committed_doc_id_limit; }
 };
 
 constexpr uint64_t key = 0x123456;
@@ -153,7 +154,7 @@ TEST_F("require that SimpleIndex can insert and remove many values.", Fixture) {
 
 struct MyObserver : SimpleIndexDeserializeObserver<> {
     std::map<uint32_t, uint64_t> features;
-    void notifyInsert(uint64_t my_key, uint32_t my_doc_id, uint32_t) {
+    void notifyInsert(uint64_t my_key, uint32_t my_doc_id, uint32_t) override {
         features[my_doc_id] = my_key;
     }
     bool hasSeenDoc(uint32_t doc) {

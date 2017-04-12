@@ -392,7 +392,7 @@ private:
     void
     requireThatSmallNodesWorks();
 public:
-    int Main();
+    int Main() override;
 };
 
 

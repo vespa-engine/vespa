@@ -68,7 +68,7 @@ struct TestHeap : public WeakAndHeap
     ScoresHistory history;
 
     TestHeap(uint32_t scoresToTrack_) : WeakAndHeap(scoresToTrack_), history() {}
-    virtual void adjust(score_t *begin, score_t *end) {
+    virtual void adjust(score_t *begin, score_t *end) override {
         Scores scores;
         for (score_t *itr = begin; itr != end; ++itr) {
             scores.add(*itr);

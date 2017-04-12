@@ -132,7 +132,7 @@ private:
 
 public:
     Benchmark() : _factory(), _timer(), _sample() {}
-    int Main();
+    int Main() override;
 
 };
 

@@ -33,7 +33,7 @@ const uint32_t base_id = 42;
 class Test : public vespalib::TestApp
 {
 public:
-    int Main();
+    int Main() override;
 private:
     void testSourceSelector(const DocSource *docSource, size_t sz, uint8_t defaultSource, ISourceSelector & selector);
     void testFixed(const DocSource *docSource, size_t sz);

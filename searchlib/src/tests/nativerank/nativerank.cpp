@@ -56,7 +56,7 @@ private:
     void testNativeRank();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 void

@@ -56,7 +56,7 @@ struct MyTerm : public SearchIterator {
         }
     }
     void doUnpack(uint32_t) override {}
-    void visitMembers(vespalib::ObjectVisitor &visitor) const {
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         visit(visitor, "hits", hits);
         visit(visitor, "strict", is_strict);
     }

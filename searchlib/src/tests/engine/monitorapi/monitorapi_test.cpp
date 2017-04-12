@@ -34,7 +34,7 @@ class Test : public vespalib::TestApp
 public:
     void convertToRequest();
     void convertFromReply();
-    int Main();
+    int Main() override;
 };
 
 void

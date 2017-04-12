@@ -61,7 +61,7 @@ protected:
     virtual EnumType getFromEnum(EnumHandle e)        const { return _enumStore.getValue(e); }
 
     virtual void fillPostings(LoadedVector & loaded) { (void) loaded; }
-    virtual void fillEnum(LoadedVector & loaded);
+    virtual void fillEnum(LoadedVector & loaded) override;
 
     virtual void
     fillEnum0(const void *src,

@@ -36,7 +36,7 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) {
+    virtual void visitDumpFeature(const vespalib::string &) override {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}

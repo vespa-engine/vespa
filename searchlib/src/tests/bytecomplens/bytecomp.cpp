@@ -13,7 +13,7 @@ private:
     void testRandomLengths();
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("bytecomplens_test");
         testRandomLengths();    TEST_FLUSH();
         TEST_DONE();

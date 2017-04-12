@@ -170,7 +170,7 @@ private:
     void testDupValuesInIntArray();
     void testDupValuesInStringArray();
 public:
-    int Main();
+    int Main() override;
 };
 
 template <>

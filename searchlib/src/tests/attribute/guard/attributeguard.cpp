@@ -11,7 +11,7 @@ namespace search {
 class AttributeGuardTest : public vespalib::TestApp
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

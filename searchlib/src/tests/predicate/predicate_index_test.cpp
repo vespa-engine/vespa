@@ -19,8 +19,8 @@ using std::vector;
 namespace {
 
 struct DummyDocIdLimitProvider : public DocIdLimitProvider {
-    virtual uint32_t getDocIdLimit() const { return 10000; }
-    virtual uint32_t getCommittedDocIdLimit() const { return 10000; }
+    virtual uint32_t getDocIdLimit() const override { return 10000; }
+    virtual uint32_t getCommittedDocIdLimit() const override { return 10000; }
 };
 
 vespalib::GenerationHandler generation_handler;
@@ -256,7 +256,7 @@ struct DocIdLimitFinder : SimpleIndexDeserializeObserver<> {
     {
         doc_id_limit = 0u;
     }
-    void notifyInsert(uint64_t, uint32_t doc_id, uint32_t) {
+    void notifyInsert(uint64_t, uint32_t doc_id, uint32_t) override {
         _doc_id_limit = std::max(_doc_id_limit, doc_id);
     }
 };

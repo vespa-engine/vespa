@@ -40,7 +40,7 @@ class Test : public vespalib::TestApp {
 private:
     void testBuilder();
 public:
-    int Main();
+    int Main() override;
 };
 
 void

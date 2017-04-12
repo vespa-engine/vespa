@@ -251,7 +251,7 @@ private:
 
 public:
     AttributeTest() { }
-    int Main();
+    int Main() override;
 };
 
 void AttributeTest::testBaseName()

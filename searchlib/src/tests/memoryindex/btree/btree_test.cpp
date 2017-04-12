@@ -178,7 +178,7 @@ private:
     void
     requireThatIteratorDistanceWorks();
 public:
-    int Main();
+    int Main() override;
 };
 
 template <typename LeafNodeType>

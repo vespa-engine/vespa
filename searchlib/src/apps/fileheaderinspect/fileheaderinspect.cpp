@@ -28,7 +28,7 @@ private:
 public:
     Application();
     ~Application();
-    int Main();
+    int Main() override;
 };
 
 Application::Application() :

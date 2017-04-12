@@ -26,17 +26,17 @@ class MyAttribute : public search::NotImplementedAttribute
     using MultiValueType = typename MvMapping::MultiValueType;
     using ConstArrayRef = vespalib::ConstArrayRef<MultiValueType>;
     MvMapping &_mvMapping;
-    virtual void onCommit() { }
-    virtual void onUpdateStat() { }
-    virtual void onShrinkLidSpace() {
+    virtual void onCommit() override { }
+    virtual void onUpdateStat() override { }
+    virtual void onShrinkLidSpace() override {
         uint32_t committedDocIdLimit = getCommittedDocIdLimit();
         _mvMapping.shrink(committedDocIdLimit);
         setNumDocs(committedDocIdLimit);
     }
-    virtual void removeOldGenerations(generation_t firstUsed) {
+    virtual void removeOldGenerations(generation_t firstUsed) override {
         _mvMapping.trimHoldLists(firstUsed);
     }
-    virtual void onGenerationChange(generation_t generation) {
+    virtual void onGenerationChange(generation_t generation) override {
         _mvMapping.transferHoldLists(generation - 1);
     }
 
@@ -46,13 +46,13 @@ public:
           _mvMapping(mvMapping)
     {
     }
-    virtual bool addDoc(DocId &doc) {
+    virtual bool addDoc(DocId &doc) override {
         _mvMapping.addDoc(doc);
         incNumDocs();
         updateUncommittedDocIdLimit(doc);
         return false;
     }
-    virtual uint32_t clearDoc(uint32_t docId) {
+    virtual uint32_t clearDoc(uint32_t docId) override {
         assert(docId < _mvMapping.size());
         _mvMapping.set(docId, ConstArrayRef());
         return 1u;

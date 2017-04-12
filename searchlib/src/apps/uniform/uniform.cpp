@@ -36,7 +36,7 @@ class UniformApp : public FastOS_Application
     reportBits(void);
 
     int
-    Main(void);
+    Main(void) override;
 };
 
 

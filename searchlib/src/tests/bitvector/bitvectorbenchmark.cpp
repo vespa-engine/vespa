@@ -25,7 +25,7 @@ private:
 public:
     BitVectorBenchmark();
     ~BitVectorBenchmark();
-    int Main();
+    int Main() override;
 };
 
 BitVectorBenchmark::BitVectorBenchmark() :

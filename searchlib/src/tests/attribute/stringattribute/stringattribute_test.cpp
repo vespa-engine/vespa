@@ -46,7 +46,7 @@ private:
     void testSingleValue(Attribute & svsa, Config &cfg);
 
 public:
-    int Main();
+    int Main() override;
 };
 
 template <typename Attribute>

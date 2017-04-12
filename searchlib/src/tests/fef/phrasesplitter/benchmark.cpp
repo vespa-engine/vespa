@@ -25,7 +25,7 @@ private:
 
 public:
     Benchmark() : _timer(), _sample(0) {}
-    int Main();
+    int Main() override;
 };
 
 void

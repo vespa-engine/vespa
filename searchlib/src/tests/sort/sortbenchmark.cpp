@@ -13,7 +13,7 @@ class Test : public vespalib::TestApp
 public:
     typedef std::vector<uint32_t> V;
     std::vector< std::vector<uint32_t> > _data;
-    int Main();
+    int Main() override;
     void generateVectors(size_t numVectors, size_t values);
     V merge();
     void twoWayMerge();

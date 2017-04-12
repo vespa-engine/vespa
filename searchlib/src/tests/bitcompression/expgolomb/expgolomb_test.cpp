@@ -65,7 +65,7 @@ public:
     {
     }
 
-    virtual uint64_t decode()
+    virtual uint64_t decode() override
     {
         unsigned int length;
         uint64_t val64;
@@ -74,14 +74,14 @@ public:
         return val64;
     }
 
-    virtual void skip()
+    virtual void skip() override
     {
         unsigned int length;
         UC64_SKIPEXPGOLOMB(_dc._val, _dc._valI, _dc._preRead, 
                              _dc._cacheInt, _kValue, EC);
     }
 
-    virtual uint64_t decodeSmall()
+    virtual uint64_t decodeSmall() override
     {
         unsigned int length;
         uint64_t val64;
@@ -90,7 +90,7 @@ public:
         return val64;
     }
 
-    virtual uint64_t decodeSmallApply()
+    virtual uint64_t decodeSmallApply() override
     {
         unsigned int length;
         uint64_t val64;
@@ -99,7 +99,7 @@ public:
         return val64;
     }
 
-    virtual void skipSmall()
+    virtual void skipSmall() override
     {
         unsigned int length;
         UC64_SKIPEXPGOLOMB_SMALL(_dc._val, _dc._valI, _dc._preRead, 
@@ -135,7 +135,7 @@ public:
     {
     }
 
-    virtual uint64_t decode()
+    virtual uint64_t decode() override
     {
         unsigned int length;
         uint64_t val64;
@@ -144,14 +144,14 @@ public:
         return val64;
     }
 
-    virtual void skip()
+    virtual void skip() override
     {
         unsigned int length;
         UC64_SKIPEXPGOLOMB(_dc._val, _dc._valI, _dc._preRead, 
                              _dc._cacheInt, kValue, EC);
     }
 
-    virtual uint64_t decodeSmall()
+    virtual uint64_t decodeSmall() override
     {
         unsigned int length;
         uint64_t val64;
@@ -160,7 +160,7 @@ public:
         return val64;
     }
 
-    virtual uint64_t decodeSmallApply()
+    virtual uint64_t decodeSmallApply() override
     {
         unsigned int length;
         uint64_t val64;
@@ -169,7 +169,7 @@ public:
         return val64;
     }
 
-    virtual void skipSmall()
+    virtual void skipSmall() override
     {
         unsigned int length;
         UC64_SKIPEXPGOLOMB_SMALL(_dc._val, _dc._valI, _dc._preRead, 

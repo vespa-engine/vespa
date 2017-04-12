@@ -16,7 +16,7 @@ public:
     void testEmptyBlueprint();
     void testSimpleBlueprint();
     void testFakeBlueprint();
-    int Main();
+    int Main() override;
 };
 
 void

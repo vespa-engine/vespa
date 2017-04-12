@@ -32,7 +32,7 @@ private:
     vespalib::RandomGen _randomgenerator;
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("big_logdatastore_test");
 
         if (_argc > 0) {

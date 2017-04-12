@@ -16,7 +16,7 @@ class ExpGolombApp : public FastOS_Application
     testExpGolomb64le(int kValue);
 
     int
-    Main(void);
+    Main(void) override;
 };
 
 

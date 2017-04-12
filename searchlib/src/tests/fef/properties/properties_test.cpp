@@ -13,7 +13,7 @@ struct CopyVisitor : public IPropertiesVisitor
     Properties &dst;
     CopyVisitor(Properties &p) : dst(p) {}
     virtual void visitProperty(const Property::Value &key,
-                               const Property &values)
+                               const Property &values) override
     {
         for (uint32_t i = 0; i < values.size(); ++i) {
             dst.add(key, values.getAt(i));

@@ -115,7 +115,7 @@ private:
 public:
     FieldWriterTest(void);
     ~FieldWriterTest(void);
-    int Main(void);
+    int Main(void) override;
 };
 
 

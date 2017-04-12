@@ -24,7 +24,7 @@ class MyTlSyncer : public transactionlog::SyncProxy {
 public:
     MyTlSyncer(void) : _syncedTo(0) { }
 
-    void sync(SerialNum syncTo) {
+    void sync(SerialNum syncTo) override {
         _syncedTo = syncTo;
     }
 };
@@ -480,7 +480,7 @@ private:
             _actual.insert(lid);
             _vcs.verifyDoc(*doc, lid);
         }
-        bool allowVisitCaching() const { return _allowVisitCaching; }
+        bool allowVisitCaching() const override { return _allowVisitCaching; }
     private:
         VisitCacheStore              &_vcs;
         vespalib::hash_set<uint32_t>  _expected;

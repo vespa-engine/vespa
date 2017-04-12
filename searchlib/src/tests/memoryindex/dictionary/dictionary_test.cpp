@@ -69,7 +69,7 @@ public:
     {}
 
     virtual void
-    startWord(const vespalib::stringref &word)
+    startWord(const vespalib::stringref &word) override
     {
         assert(_insideField);
         assert(!_insideWord);
@@ -81,7 +81,7 @@ public:
     }
 
     virtual void
-    endWord(void)
+    endWord(void) override
     {
         assert(_insideWord);
         assert(!_insideDoc);
@@ -91,7 +91,7 @@ public:
     }
 
     virtual void
-    startField(uint32_t fieldId)
+    startField(uint32_t fieldId) override
     {
         assert(!_insideField);
         if (!_firstField) _ss << ",";
@@ -101,7 +101,7 @@ public:
     }
 
     virtual void
-    endField()
+    endField() override
     {
         assert(_insideField);
         assert(!_insideWord);
@@ -111,7 +111,7 @@ public:
     }
 
     virtual void
-    startDocument(uint32_t docId)
+    startDocument(uint32_t docId) override
     {
         assert(_insideWord);
         assert(!_insideDoc);
@@ -122,7 +122,7 @@ public:
     }
 
     virtual void
-    endDocument(void)
+    endDocument(void) override
     {
         assert(_insideDoc);
         assert(!_insideElem);
@@ -134,7 +134,7 @@ public:
     virtual void
     startElement(uint32_t elementId,
                  int32_t weight,
-                 uint32_t elementLen)
+                 uint32_t elementLen) override
     {
         assert(_insideDoc);
         assert(!_insideElem);
@@ -147,7 +147,7 @@ public:
     }
 
     virtual void
-    endElement(void)
+    endElement(void) override
     {
         assert(_insideElem);
         _ss << "]";
@@ -156,7 +156,7 @@ public:
     }
 
     virtual void
-    addOcc(const WordDocElementWordPosFeatures &features)
+    addOcc(const WordDocElementWordPosFeatures &features) override
     {
         assert(_insideElem);
         if (!_firstPos) _ss << ",";

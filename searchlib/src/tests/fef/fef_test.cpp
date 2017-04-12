@@ -16,7 +16,7 @@ public:
     void testLayout();
     void testObjectStore();
     void testTermFieldMatchDataAppend();
-    int Main();
+    int Main() override;
 };
 
 void

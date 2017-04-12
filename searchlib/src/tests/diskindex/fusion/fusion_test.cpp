@@ -45,7 +45,7 @@ private:
     void requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap);
 public:
     Test();
-    int Main();
+    int Main() override;
 };
 
 namespace {

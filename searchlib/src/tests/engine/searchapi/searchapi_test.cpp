@@ -35,7 +35,7 @@ public:
     void propertyNames();
     void convertToRequest();
     void convertFromReply();
-    int Main();
+    int Main() override;
 };
 
 void
