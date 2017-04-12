@@ -88,8 +88,8 @@ struct StorageServerTest : public CppUnit::TestFixture {
     StorageServerTest();
     ~StorageServerTest();
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testNormalUsage();
     void testPortOverlap_Stress();
@@ -166,8 +166,8 @@ namespace {
         Distributor(vdstestlib::DirConfig& config);
         ~Distributor();
 
-        virtual StorageNode& getNode() { return _process.getNode(); }
-        virtual StorageNodeContext& getContext()
+        virtual StorageNode& getNode() override { return _process.getNode(); }
+        virtual StorageNodeContext& getContext() override
             { return _process.getContext(); }
     };
 
@@ -178,8 +178,8 @@ namespace {
         Storage(vdstestlib::DirConfig& config);
         ~Storage();
 
-        virtual StorageNode& getNode() { return _process.getNode(); }
-        virtual StorageNodeContext& getContext()
+        virtual StorageNode& getNode() override { return _process.getNode(); }
+        virtual StorageNodeContext& getContext() override
             { return _process.getContext(); }
         spi::PartitionStateList getPartitions()
             { return _process.getProvider().getPartitionStates().getList(); }
@@ -342,7 +342,7 @@ namespace {
             _startedShutdown = true;
         }
 
-        virtual void handleReply(mbus::Reply::UP reply) {
+        virtual void handleReply(mbus::Reply::UP reply) override {
             using documentapi::DocumentProtocol;
             --_currentPending;
             if (!reply->hasErrors()) {
@@ -435,12 +435,12 @@ namespace {
             stop();
             join();
         }
-        virtual bool onStop() {
+        virtual bool onStop() override {
             vespalib::MonitorGuard monitor(_threadMonitor);
             monitor.signal();
             return true;
         }
-        void run() {
+        void run() override {
             uint32_t seed = 0;
             uint32_t maxDocSize = 65536;
             init();
@@ -647,12 +647,12 @@ namespace {
                 join();
             }
         }
-        virtual bool onStop() {
+        virtual bool onStop() override {
             vespalib::MonitorGuard monitor(_threadMonitor);
             monitor.signal();
             return true;
         }
-        void run() {
+        void run() override {
             uint32_t seed = 0;
             uint32_t maxDocSize = 65536;
             init();
@@ -828,7 +828,7 @@ namespace {
             return ost.str();
         }
 
-        virtual void handleReply(mbus::Reply::UP reply) {
+        virtual void handleReply(mbus::Reply::UP reply) override {
             if (_startedShutdown) return;
             --_currentPending;
             std::ostringstream err;
