@@ -61,7 +61,7 @@ struct MyGidToLidMapperFactory : public search::IGidToLidMapperFactory
         _map.insert({toGid(doc2), 17});
     }
 
-    virtual std::unique_ptr<search::IGidToLidMapper> getMapper() const {
+    virtual std::unique_ptr<search::IGidToLidMapper> getMapper() const override {
         return std::make_unique<MyGidToLidMapper>(_map);
     }
 };

@@ -16,7 +16,7 @@ class FastS_StaticMonitorQuery : public FS4Packet_MONITORQUERYX
     FastOS_Mutex _lock;
     int _refcnt;
 public:
-    virtual void Free();
+    virtual void Free() override;
 
     bool getBusy(void) const
     {
@@ -56,7 +56,7 @@ public:
         WarnTask(FNET_Scheduler *scheduler,
                  FastS_FNET_Engine *engine)
             : FNET_Task(scheduler), _engine(engine) {}
-        virtual void PerformTask();
+        virtual void PerformTask() override;
     };
     friend class FastS_FNET_Engine::WarnTask;
 
@@ -72,7 +72,7 @@ public:
         ConnectTask(FNET_Scheduler *scheduler,
                     FastS_FNET_Engine *engine)
             : FNET_Task(scheduler), _engine(engine) {}
-        virtual void PerformTask();
+        virtual void PerformTask() override;
     };
     friend class FastS_FNET_Engine::ConnectTask;
 
@@ -104,19 +104,19 @@ public:
 
     // handle FNET admin packets
     //--------------------------
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context);
+    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context) override;
 
     // common engine API
     //------------------
-    virtual void LockEngine()   { _lock.Lock();   }
-    virtual void UnlockEngine() { _lock.Unlock(); }
-    virtual void Ping();
-    virtual void HandleClearedBad();
-    virtual void HandleUp();
+    virtual void LockEngine()   override { _lock.Lock();   }
+    virtual void UnlockEngine() override { _lock.Unlock(); }
+    virtual void Ping() override;
+    virtual void HandleClearedBad() override;
+    virtual void HandleUp() override;
 
     // typesafe "down"-cast
     //---------------------
-    virtual FastS_FNET_Engine *GetFNETEngine()    { return this; }
+    virtual FastS_FNET_Engine *GetFNETEngine()    override { return this; }
 
     const char *getHostName() const { return _hostName.c_str(); }
     int getPortNumber() const { return _portNumber; }

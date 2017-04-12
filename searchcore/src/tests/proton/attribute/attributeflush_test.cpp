@@ -56,7 +56,7 @@ public:
     }
 
     virtual void
-    run(void)
+    run(void) override
     {
         _task->run();
         _gate->countDown();
@@ -227,7 +227,7 @@ private:
     void requireThatFlushedAttributeCanBeLoaded();
 public:
     int
-    Main(void);
+    Main(void) override;
 };
 
 

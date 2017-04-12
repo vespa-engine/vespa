@@ -16,10 +16,10 @@ public:
                     const document::DocumentId &docId);
     virtual ~RemoveOperation() {}
     const document::DocumentId &getDocumentId() const { return _docId; }
-    virtual void serialize(vespalib::nbostream &os) const;
+    virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo);
-    virtual vespalib::string toString() const;
+                             const document::DocumentTypeRepo &repo) override;
+    virtual vespalib::string toString() const override;
 
     bool hasDocType() const { return _docId.hasDocType(); }
     vespalib::string getDocType() const { return _docId.getDocType(); }

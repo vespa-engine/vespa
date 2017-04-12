@@ -29,7 +29,7 @@ private:
 
 public:
     SearchVisitorTest();
-    int Main();
+    int Main() override;
 };
 
 SearchVisitorTest::SearchVisitorTest() :

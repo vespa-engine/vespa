@@ -27,21 +27,21 @@ public:
     MemoryConfigStore(ConfigMaps::SP maps);
     ~MemoryConfigStore();
 
-    virtual SerialNum getBestSerialNum() const;
-    virtual SerialNum getOldestSerialNum() const;
-    virtual bool hasValidSerial(SerialNum serial) const;
-    virtual SerialNum getPrevValidSerial(SerialNum serial) const;
+    virtual SerialNum getBestSerialNum() const override;
+    virtual SerialNum getOldestSerialNum() const override;
+    virtual bool hasValidSerial(SerialNum serial) const override;
+    virtual SerialNum getPrevValidSerial(SerialNum serial) const override;
     virtual void saveConfig(const DocumentDBConfig &config,
                             const Schema &history,
-                            SerialNum serial);
+                            SerialNum serial) override;
     virtual void loadConfig(const DocumentDBConfig &, SerialNum serial,
                             DocumentDBConfig::SP &loaded_config,
-                            Schema::SP &history_schema);
-    virtual void removeInvalid();
-    void prune(SerialNum serial);
-    virtual void saveWipeHistoryConfig(SerialNum serial, fastos::TimeStamp wipeTimeLimit);
-    virtual void serializeConfig(SerialNum, vespalib::nbostream &);
-    virtual void deserializeConfig(SerialNum, vespalib::nbostream &);
+                            Schema::SP &history_schema) override;
+    virtual void removeInvalid() override;
+    void prune(SerialNum serial) override;
+    virtual void saveWipeHistoryConfig(SerialNum serial, fastos::TimeStamp wipeTimeLimit) override;
+    virtual void serializeConfig(SerialNum, vespalib::nbostream &) override;
+    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override;
     virtual void setProtonConfig(const ProtonConfigSP &) override;
 };
 

@@ -393,7 +393,7 @@ private:
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }
         void setDocsumCache(const vsm::IDocSumCache & cache) { _docsumFilter->setDocSumStore(cache); }
         void setDocsumWriter(IDocsumWriter & docsumWriter) { _docsumWriter = & docsumWriter; }
-        virtual vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass);
+        virtual vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass) override;
     private:
         vsm::GetDocsumsStateCallback            _callback;
         GetDocsumsState                         _docsumState;
@@ -411,8 +411,8 @@ private:
         { }
         size_t getNumHitsAggregators() const  { return _numHitsAggregators; }
     private:
-        virtual void execute(vespalib::Identifiable &obj);
-        virtual bool check(const vespalib::Identifiable &obj) const;
+        virtual void execute(vespalib::Identifiable &obj) override;
+        virtual bool check(const vespalib::Identifiable &obj) const override;
         SummaryGenerator & _summaryGenerator;
         size_t             _numHitsAggregators;
     };
@@ -457,10 +457,10 @@ private:
 
 class SearchVisitorFactory : public VisitorFactory {
     config::ConfigUri _configUri;
-    VisitorEnvironment::UP makeVisitorEnvironment(StorageComponent&);
+    VisitorEnvironment::UP makeVisitorEnvironment(StorageComponent&) override;
 
     Visitor* makeVisitor(StorageComponent&, VisitorEnvironment&env,
-                         const vdslib::Parameters& params);
+                         const vdslib::Parameters& params) override;
 public:
     SearchVisitorFactory(const config::ConfigUri & configUri);
 };

@@ -29,7 +29,7 @@ protected:
     uint32_t                         _langFieldEnumValue;
     juniper::Juniper                *_juniper;
 private:
-    virtual bool IsGenerated() const { return false; }
+    virtual bool IsGenerated() const override { return false; }
     JuniperDFW(const JuniperDFW &);
     JuniperDFW & operator=(const JuniperDFW &);
 };
@@ -42,7 +42,7 @@ public:
             const char *fieldName,
             const char *langFieldName,
             const ResultConfig & config,
-            const char *inputField);
+            const char *inputField) override;
 protected:
     JuniperTeaserDFW(juniper::Juniper * juniper) : JuniperDFW(juniper) { }
 };
@@ -61,7 +61,7 @@ public:
                              GeneralResult *gres,
                              GetDocsumsState *state,
                              ResType type,
-                             vespalib::slime::Inserter &target);
+                             vespalib::slime::Inserter &target) override;
 };
 
 }  // namespace docsummary

@@ -37,10 +37,10 @@ struct MyReprocessingHandler : public IReprocessingHandler
     IReprocessingReader::SP _reader;
     std::vector<IReprocessingRewriter::SP> _rewriters;
     MyReprocessingHandler() : _reader(), _rewriters() {}
-    virtual void addReader(const IReprocessingReader::SP &reader) {
+    virtual void addReader(const IReprocessingReader::SP &reader) override {
         _reader = reader;
     }
-    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) {
+    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) override {
         _rewriters.push_back(rewriter);
     }
 };
@@ -99,7 +99,7 @@ struct MyDocTypeInspector : public IDocumentTypeInspector
           _newCfg(newCfg)
     {
     }
-    virtual bool hasUnchangedField(const vespalib::string &name) const {
+    virtual bool hasUnchangedField(const vespalib::string &name) const override {
         return _oldCfg._fields.count(name) > 0 &&
             _newCfg._fields.count(name) > 0;
     }

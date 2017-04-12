@@ -8,7 +8,7 @@
 
 class StackDumpIteratorTest : public FastOS_Application
 {
-    int Main();
+    int Main() override;
     void Usage(char *progname);
     bool ShowResult(int testNo, search::SimpleQueryStackDumpIterator &actual, search::SimpleQueryStack &correct, unsigned int expected);
     bool RunTest(int i, bool verify);

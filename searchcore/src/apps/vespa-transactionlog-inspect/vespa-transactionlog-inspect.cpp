@@ -31,7 +31,7 @@ typedef std::unique_ptr<IReplayPacketHandler> IReplayPacketHandlerUP;
 struct DummyFileHeaderContext : public FileHeaderContext
 {
     typedef std::unique_ptr<DummyFileHeaderContext> UP;
-    virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const {}
+    virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
 };
 
 
@@ -115,12 +115,12 @@ struct DummyStreamHandler : public NewConfigOperation::IStreamHandler {
     }
 
     virtual void
-    serializeConfig(SerialNum, vespalib::nbostream &)
+    serializeConfig(SerialNum, vespalib::nbostream &) override
     {
     }
 
     virtual void
-    deserializeConfig(SerialNum, vespalib::nbostream &is)
+    deserializeConfig(SerialNum, vespalib::nbostream &is) override
     {
         _cfs.clear();
         uint32_t numConfigs;
@@ -173,11 +173,11 @@ public:
           _counter(0)
     {
     }
-    virtual void replay(const PutOperation &op) { print(op); }
-    virtual void replay(const RemoveOperation &op) { print(op); }
-    virtual void replay(const UpdateOperation &op) { print(op); }
-    virtual void replay(const NoopOperation &op) { print(op); }
-    virtual void replay(const NewConfigOperation &op)
+    virtual void replay(const PutOperation &op) override { print(op); }
+    virtual void replay(const RemoveOperation &op) override { print(op); }
+    virtual void replay(const UpdateOperation &op) override { print(op); }
+    virtual void replay(const NoopOperation &op) override { print(op); }
+    virtual void replay(const NewConfigOperation &op) override
     {
         print(op);
         typedef std::map<std::string, ConfigFile>::const_iterator I;
@@ -187,20 +187,20 @@ public:
         }
     }
 
-    virtual void replay(const WipeHistoryOperation &op) { print(op); }
-    virtual void replay(const DeleteBucketOperation &op) { print(op); }
-    virtual void replay(const SplitBucketOperation &op) { print(op); }
-    virtual void replay(const JoinBucketsOperation &op) { print(op); }
-    virtual void replay(const PruneRemovedDocumentsOperation &op) { print(op); }
-    virtual void replay(const SpoolerReplayStartOperation &op) { print(op); }
-    virtual void replay(const SpoolerReplayCompleteOperation &op) { print(op); }
-    virtual void replay(const MoveOperation &op) { print(op); }
-    virtual void replay(const CreateBucketOperation &op) { print(op); }
-    virtual void replay(const CompactLidSpaceOperation &op) { print(op); }
-    virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() {
+    virtual void replay(const WipeHistoryOperation &op) override { print(op); }
+    virtual void replay(const DeleteBucketOperation &op) override { print(op); }
+    virtual void replay(const SplitBucketOperation &op) override { print(op); }
+    virtual void replay(const JoinBucketsOperation &op) override { print(op); }
+    virtual void replay(const PruneRemovedDocumentsOperation &op) override { print(op); }
+    virtual void replay(const SpoolerReplayStartOperation &op) override { print(op); }
+    virtual void replay(const SpoolerReplayCompleteOperation &op) override { print(op); }
+    virtual void replay(const MoveOperation &op) override { print(op); }
+    virtual void replay(const CreateBucketOperation &op) override { print(op); }
+    virtual void replay(const CompactLidSpaceOperation &op) override { print(op); }
+    virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _streamHandler;
     }
-    virtual document::DocumentTypeRepo &getDeserializeRepo() {
+    virtual document::DocumentTypeRepo &getDeserializeRepo() override {
         return _repo;
     }
 };
@@ -245,7 +245,7 @@ public:
           _verbose(verbose)
     {
     }
-    virtual void replay(const PutOperation &op) {
+    virtual void replay(const PutOperation &op) override {
         print(op);
         if (op.getDocument().get() != NULL) {
             if (_printXml) {
@@ -255,10 +255,10 @@ public:
             }
         }
     }
-    virtual void replay(const RemoveOperation &op) {
+    virtual void replay(const RemoveOperation &op) override {
         print(op);
     }
-    virtual void replay(const UpdateOperation &op) {
+    virtual void replay(const UpdateOperation &op) override {
         print(op);
         if (op.getUpdate().get() != NULL) {
             if (_printXml) {
@@ -268,17 +268,17 @@ public:
             }
         }
     }
-    virtual void replay(const NoopOperation &) { }
-    virtual void replay(const NewConfigOperation &) { }
-    virtual void replay(const WipeHistoryOperation &) { }
-    virtual void replay(const DeleteBucketOperation &) { }
-    virtual void replay(const SplitBucketOperation &) { }
-    virtual void replay(const JoinBucketsOperation &) { }
-    virtual void replay(const PruneRemovedDocumentsOperation &) { }
-    virtual void replay(const SpoolerReplayStartOperation &) { }
-    virtual void replay(const SpoolerReplayCompleteOperation &) { }
-    virtual void replay(const MoveOperation &) { }
-    virtual void replay(const CreateBucketOperation &) { }
+    virtual void replay(const NoopOperation &) override { }
+    virtual void replay(const NewConfigOperation &) override { }
+    virtual void replay(const WipeHistoryOperation &) override { }
+    virtual void replay(const DeleteBucketOperation &) override { }
+    virtual void replay(const SplitBucketOperation &) override { }
+    virtual void replay(const JoinBucketsOperation &) override { }
+    virtual void replay(const PruneRemovedDocumentsOperation &) override { }
+    virtual void replay(const SpoolerReplayStartOperation &) override { }
+    virtual void replay(const SpoolerReplayCompleteOperation &) override { }
+    virtual void replay(const MoveOperation &) override { }
+    virtual void replay(const CreateBucketOperation &) override { }
 };
 
 
@@ -299,7 +299,7 @@ public:
           _eof(false)
     {
     }
-    virtual RPC::Result receive(const Packet &packet) {
+    virtual RPC::Result receive(const Packet &packet) override {
         vespalib::nbostream_longlivedbuf handle(packet.getHandle().c_str(), packet.getHandle().size());
         try {
             while (handle.size() > 0) {
@@ -314,8 +314,8 @@ public:
         }
         return RPC::OK;
     }
-    virtual void inSync() { }
-    virtual void eof() { _eof = true; }
+    virtual void inSync() override { }
+    virtual void eof() override { _eof = true; }
     bool isEof() const { return _eof; }
 };
 
@@ -383,7 +383,7 @@ public:
           _client(vespalib::make_string("tcp/localhost:%d", _bopts.listenPort))
     {
     }
-    virtual int run() = 0;
+    virtual int run() override = 0;
 };
 
 
@@ -398,7 +398,7 @@ struct ListDomainsOptions : public BaseOptions
         _opts.setSyntaxMessage("Utility to list all domains in a tls");
     }
     static std::string command() { return "listdomains"; }
-    virtual Utility::UP createUtility() const;
+    virtual Utility::UP createUtility() const override;
 };
 
 /**
@@ -411,7 +411,7 @@ public:
         : BaseUtility(opts)
     {
     }
-    virtual int run() {
+    virtual int run() override {
         std::cout << ListDomainsOptions::command() << ": " << _bopts.toString() << std::endl;
 
         std::vector<vespalib::string> domains;
@@ -449,13 +449,13 @@ struct DumpOperationsOptions : public BaseOptions
     DumpOperationsOptions(int argc, const char* const* argv);
     ~DumpOperationsOptions();
     static std::string command() { return "dumpoperations"; }
-    virtual std::string toString() const {
+    virtual std::string toString() const override {
         return vespalib::make_string("%s, domain=%s, first=%" PRIu64 ", last=%" PRIu64 ", configdir=%s",
                                      BaseOptions::toString().c_str(), domainName.c_str(),
                                      firstSerialNum, lastSerialNum,
                                      configDir.c_str());
     }
-    virtual Utility::UP createUtility() const;
+    virtual Utility::UP createUtility() const override;
 };
 
 DumpOperationsOptions::DumpOperationsOptions(int argc, const char* const* argv)
@@ -505,7 +505,7 @@ public:
         _oopts(oopts)
     {
     }
-    virtual int run() {
+    virtual int run() override {
         std::cout << DumpOperationsOptions::command() << ": " << _oopts.toString() << std::endl;
         return doRun();
     }
@@ -528,18 +528,18 @@ struct DumpDocumentsOptions : public DumpOperationsOptions
     DumpDocumentsOptions(int argc, const char* const* argv);
     ~DumpDocumentsOptions();
     static std::string command() { return "dumpdocuments"; }
-    virtual void parse() {
+    virtual void parse() override {
         DumpOperationsOptions::parse();
         if (format != "xml" && format != "text") {
             throw vespalib::InvalidCommandLineArgumentsException("Expected 'format' to be 'xml' or 'text'");
         }
     }
-    virtual std::string toString() const {
+    virtual std::string toString() const override {
         return vespalib::make_string("%s, format=%s, verbose=%s",
                                      DumpOperationsOptions::toString().c_str(),
                                      format.c_str(), (verbose ? "true" : "false"));
     }
-    virtual Utility::UP createUtility() const;
+    virtual Utility::UP createUtility() const override;
 };
 
 DumpDocumentsOptions::DumpDocumentsOptions(int argc, const char* const* argv)
@@ -559,7 +559,7 @@ class DumpDocumentsUtility : public DumpOperationsUtility
 {
 protected:
     const DumpDocumentsOptions &_dopts;
-    virtual IReplayPacketHandlerUP createHandler(DocumentTypeRepo &repo) {
+    virtual IReplayPacketHandlerUP createHandler(DocumentTypeRepo &repo) override {
         return IReplayPacketHandlerUP(new DocumentPrinter(repo, _dopts.format == "xml", _dopts.verbose));
     }
 
@@ -569,7 +569,7 @@ public:
           _dopts(dopts)
     {
     }
-    virtual int run() {
+    virtual int run() override {
         std::cout << DumpDocumentsOptions::command() << ": " << _oopts.toString() << std::endl;
         return doRun();
     }
@@ -615,7 +615,7 @@ private:
 public:
     App();
     ~App();
-    int Main();
+    int Main() override;
 };
 
 App::App() {}

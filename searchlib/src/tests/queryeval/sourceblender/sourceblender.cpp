@@ -25,11 +25,11 @@ private:
     SimpleResult   _unpacked;
 
 protected:
-    virtual void doSeek(uint32_t docid) {
+    virtual void doSeek(uint32_t docid) override {
         _search->seek(docid);
         setDocId(_search->getDocId());
     }
-    virtual void doUnpack(uint32_t docid) {
+    virtual void doUnpack(uint32_t docid) override {
         _unpacked.addHit(docid);
         _search->unpack(docid);
     }

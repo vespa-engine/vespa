@@ -65,7 +65,7 @@ struct IndexFixture {
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
     std::vector<vespalib::string> actual;
     FeatureDumpFixture() : IDumpFeatureVisitor(), actual() {}
-    virtual void visitDumpFeature(const vespalib::string &name) {
+    virtual void visitDumpFeature(const vespalib::string &name) override {
         actual.push_back(name);
     }
 };

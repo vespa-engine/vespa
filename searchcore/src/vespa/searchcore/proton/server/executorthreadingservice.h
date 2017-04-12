@@ -39,7 +39,7 @@ public:
     /**
      * Implements vespalib::Syncable
      */
-    virtual vespalib::Syncable &sync();
+    virtual vespalib::Syncable &sync() override;
 
     void shutdown();
 
@@ -58,10 +58,10 @@ public:
     /**
      * Implements IThreadingService
      */
-    virtual searchcorespi::index::IThreadService &master() {
+    virtual searchcorespi::index::IThreadService &master() override {
         return _masterService;
     }
-    virtual searchcorespi::index::IThreadService &index() {
+    virtual searchcorespi::index::IThreadService &index() override {
         return _indexService;
     }
 

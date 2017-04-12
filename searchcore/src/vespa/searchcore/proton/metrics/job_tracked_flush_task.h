@@ -20,8 +20,8 @@ public:
                         searchcorespi::FlushTask::UP task);
 
     // Implements searchcorespi::FlushTask
-    virtual void run();
-    virtual search::SerialNum getFlushSerial() const {
+    virtual void run() override;
+    virtual search::SerialNum getFlushSerial() const override {
         return _task->getFlushSerial();
     }
 };

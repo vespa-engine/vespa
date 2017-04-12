@@ -62,7 +62,7 @@ class Test : public vespalib::TestApp {
     bool search(const Node &term, IAttributeManager &attribute_manager);
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int

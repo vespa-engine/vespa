@@ -279,12 +279,12 @@ public:
         _accumRemove(0),
         _accumInsert(0)
     { }
-    virtual void onRemove(size_t index) { _accumRemove += index; }
-    virtual void onInsert(size_t index) { _accumInsert += index; }
+    virtual void onRemove(size_t index) override { _accumRemove += index; }
+    virtual void onInsert(size_t index) override { _accumInsert += index; }
     size_t _accumRemove;
     size_t _accumInsert;
 private:
-    virtual void doSeek(uint32_t docid) { (void) docid; }
+    virtual void doSeek(uint32_t docid) override { (void) docid; }
 };
 
 TEST("testMultiSearch") {
@@ -337,7 +337,7 @@ public:
                            SearchContextParams().useBitVector(true));
     }
     virtual SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const
+    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
         (void) tfmda;
         return _sc->createIterator(&_tfmd, strict);

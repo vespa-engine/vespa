@@ -35,13 +35,13 @@ public:
     ~QueryEnvironment();
 
     // inherit documentation
-    virtual const search::fef::Properties & getProperties() const { return _properties; }
+    virtual const search::fef::Properties & getProperties() const override { return _properties; }
 
     // inherit documentation
-    virtual uint32_t getNumTerms() const { return _queryTerms.size(); }
+    virtual uint32_t getNumTerms() const override { return _queryTerms.size(); }
 
     // inherit documentation
-    virtual const search::fef::ITermData *getTerm(uint32_t idx) const {
+    virtual const search::fef::ITermData *getTerm(uint32_t idx) const override {
         if (idx >= _queryTerms.size()) {
             return NULL;
         }
@@ -49,13 +49,13 @@ public:
     }
 
     // inherit documentation
-    virtual const search::fef::Location & getLocation() const { return _location; }
+    virtual const search::fef::Location & getLocation() const override { return _location; }
 
     // inherit documentation
-    virtual const search::attribute::IAttributeContext & getAttributeContext() const { return *_attrCtx; }
+    virtual const search::attribute::IAttributeContext & getAttributeContext() const override { return *_attrCtx; }
 
     // inherit documentation
-    virtual const search::fef::IIndexEnvironment & getIndexEnvironment() const { return _indexEnv; }
+    virtual const search::fef::IIndexEnvironment & getIndexEnvironment() const override { return _indexEnv; }
 
     void addTerm(const search::fef::ITermData *term) { _queryTerms.push_back(term); }
 };

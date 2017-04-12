@@ -58,7 +58,7 @@ protected:
         this->getEnumStore().freezeTree();
     }
 
-    virtual void fillValues(LoadedVector & loaded);
+    virtual void fillValues(LoadedVector & loaded) override;
     void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded) override;
     void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist) override;
     virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }

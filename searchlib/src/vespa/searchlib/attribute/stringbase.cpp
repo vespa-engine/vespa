@@ -471,7 +471,6 @@ StringAttribute::onAddDoc(DocId doc)
     return false;
 }
 
-
 void StringAttribute::fillPostings(LoadedVector & loaded)
 {
     (void) loaded;

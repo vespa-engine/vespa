@@ -22,7 +22,7 @@ public:
         search::AttributeGuard   _activeLidsGuard;
     public:
         ReadGuard(const search::AttributeVector::SP &metaStoreAttr);
-        virtual const search::IDocumentMetaStore &get() const { return _store; }
+        virtual const search::IDocumentMetaStore &get() const override { return _store; }
     };
 private:
     search::AttributeVector::SP _metaStoreAttr;

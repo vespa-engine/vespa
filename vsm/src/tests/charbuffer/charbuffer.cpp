@@ -10,7 +10,7 @@ class CharBufferTest : public vespalib::TestApp
 private:
     void test();
 public:
-    int Main();
+    int Main() override;
 };
 
 void

@@ -33,17 +33,17 @@ protected:
 public:
     ServiceLayerProcess(const config::ConfigUri & configUri);
 
-    virtual void shutdown();
+    virtual void shutdown() override;
 
     virtual void setupProvider() = 0;
     virtual spi::PersistenceProvider& getProvider() = 0;
 
-    virtual void createNode();
+    virtual void createNode() override;
 
-    virtual StorageNode& getNode() { return *_node; }
-    virtual StorageNodeContext& getContext() { return _context; }
+    virtual StorageNode& getNode() override { return *_node; }
+    virtual StorageNodeContext& getContext() override { return _context; }
 
-    virtual std::string getComponentName() const { return "servicelayer"; }
+    virtual std::string getComponentName() const override { return "servicelayer"; }
 };
 
 } // storage

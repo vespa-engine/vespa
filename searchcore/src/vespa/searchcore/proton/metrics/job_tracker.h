@@ -30,8 +30,8 @@ public:
     double sampleLoad(time_point now, const std::lock_guard<std::mutex> &guard);
 
     // Implements IJobTracker
-    virtual void start();
-    virtual void end();
+    virtual void start() override;
+    virtual void end() override;
 };
 
 } // namespace proton

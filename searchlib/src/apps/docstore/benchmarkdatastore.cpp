@@ -18,7 +18,7 @@ class BenchmarkDataStoreApp : public FastOS_Application
 {
     void usage(void);
     int benchmark(const vespalib::string & directory, size_t numReads, size_t numThreads, size_t perChunk, const vespalib::string & readType);
-    int Main(void);
+    int Main(void) override;
     void read(size_t numReads, size_t perChunk, const IDataStore * dataStore);
 };
 

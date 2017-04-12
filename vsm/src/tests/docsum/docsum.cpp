@@ -29,14 +29,14 @@ private:
 
 public:
     TestDocument(const search::DocumentIdT & docId, size_t numFields) : vsm::Document(docId, numFields), _fields(numFields) {}
-    virtual bool setField(FieldIdT fId, document::FieldValue::UP fv) {
+    virtual bool setField(FieldIdT fId, document::FieldValue::UP fv) override {
         if (fId < _fields.size()) {
             _fields[fId].reset(fv.release());
             return true;
         }
         return false;
     }
-    virtual const document::FieldValue * getField(FieldIdT fId) const {
+    virtual const document::FieldValue * getField(FieldIdT fId) const override {
         if (fId < _fields.size()) {
             return _fields[fId].get();
         }
@@ -68,7 +68,7 @@ private:
     void testDocSumCache();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 ArrayFieldValue

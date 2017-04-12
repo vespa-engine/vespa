@@ -9,7 +9,7 @@
 class Test : public FtTestApp
 {
 public:
-    int Main();
+    int Main() override;
     void testFramework();
     void testFtLib();
     void testAge();

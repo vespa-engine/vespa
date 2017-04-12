@@ -41,7 +41,7 @@ private:
     void testParameters();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 bool

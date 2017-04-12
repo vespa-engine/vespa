@@ -49,7 +49,7 @@ public:
         }
     }
 
-    void doUnpack(uint32_t docid) { (void) docid; }
+    void doUnpack(uint32_t docid) override { (void) docid; }
 
     vespalib::Trinary is_strict() const override {
         return _strict ? vespalib::Trinary::True : vespalib::Trinary::False;

@@ -18,14 +18,14 @@ public:
                             const search::AttributeVector::SP &attribute);
 
     virtual std::unique_ptr<document::select::Value>
-    getValue(const document::select::Context &context) const;
+    getValue(const document::select::Context &context) const override;
 
     virtual std::unique_ptr<document::select::Value>
     traceValue(const document::select::Context &context,
-               std::ostream& out) const;
+               std::ostream& out) const override;
 
     document::select::ValueNode::UP
-    clone(void) const
+    clone(void) const override
     {
         return wrapParens(new AttributeFieldValueNode(getDocType(),
                                                       getFieldName(),

@@ -104,11 +104,11 @@ struct MockSearch : public SearchIterator {
         SearchIterator::initRange(begin, end);
         setDocId(_initial);
     }
-    virtual void doSeek(uint32_t) {
+    virtual void doSeek(uint32_t) override {
         ++seekCnt;
         setAtEnd();
     }
-    virtual void doUnpack(uint32_t) {}
+    virtual void doUnpack(uint32_t) override {}
 };
 
 struct MockFixture {

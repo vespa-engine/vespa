@@ -129,7 +129,7 @@ public:
     ~AndStressWorker(void);
 
     virtual void
-    Run(FastOS_ThreadInterface *thisThread, void *arg);
+    Run(FastOS_ThreadInterface *thisThread, void *arg) override;
 };
 
 

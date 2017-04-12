@@ -22,7 +22,7 @@ private:
         ~Env();
         const vsm::VSMAdapter * getVSMAdapter() const { return _vsmAdapter.get(); }
         const RankManager * getRankManager() const { return _rankManager.get(); }
-        void configure(const config::ConfigSnapshot & snapshot);
+        void configure(const config::ConfigSnapshot & snapshot) override;
 
         static config::ConfigKeySet createKeySet(const vespalib::string & configId);
     private:

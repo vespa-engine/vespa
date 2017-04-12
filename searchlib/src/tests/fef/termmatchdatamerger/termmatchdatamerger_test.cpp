@@ -30,7 +30,7 @@ public:
     void testMergeMultifield();
     void testMergeDuplicates();
     void testMergeFieldLength();
-    int Main();
+    int Main() override;
 };
 
 void

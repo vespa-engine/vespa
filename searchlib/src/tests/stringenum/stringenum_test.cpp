@@ -18,7 +18,7 @@ class MyApp : public vespalib::TestApp
 {
 public:
     void CheckLookup( search::util::StringEnum *strEnum, const char *str, int value);
-    int Main();
+    int Main() override;
 
     MyApp(void) {}
 };

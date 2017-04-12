@@ -63,7 +63,7 @@ public:
     size_t getNumSearchSessions() const;
     std::vector<SearchSessionInfo> getSortedSearchSessionInfo() const;
 
-    void pruneTimedOutSessions(fastos::TimeStamp currentTime);
+    void pruneTimedOutSessions(fastos::TimeStamp currentTime) override;
     void close();
 };
 

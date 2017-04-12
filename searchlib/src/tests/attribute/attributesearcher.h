@@ -72,7 +72,7 @@ public:
     {
         _status._numClients = 1;
     }
-    virtual void doRun() = 0;
+    virtual void doRun() override = 0;
     AttributeSearcherStatus & getStatus() { return _status; }
     void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const char * term, bool prefix = false);
 };
@@ -114,7 +114,7 @@ public:
     {
         _status._numQueries = numQueries;
     }
-    virtual void doRun();
+    virtual void doRun() override;
 };
 
 template <typename T>
@@ -192,7 +192,7 @@ public:
     {
         _status._numQueries = numQueries;
     }
-    virtual void doRun();
+    virtual void doRun() override;
 };
 
 void
@@ -234,7 +234,7 @@ public:
     {
         _status._numQueries = numQueries;
     }
-    virtual void doRun();
+    virtual void doRun() override;
 };
 
 void

@@ -63,7 +63,7 @@ public:
     void TestBasicInplace();
     void TestCompressInplace();
 
-    int Main();
+    int Main() override;
 };
 
 MyApp::MyApp()

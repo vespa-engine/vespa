@@ -31,7 +31,7 @@ vespalib::string myhex(const void * b, size_t sz)
 class Test : public vespalib::TestApp
 {
 public:
-    int Main();
+    int Main() override;
 private:
     bool createDomainTest(TransLogClient & tls, const vespalib::string & name, size_t preExistingDomains=0);
     TransLogClient::Session::UP openDomainTest(TransLogClient & tls, const vespalib::string & name);
@@ -61,9 +61,9 @@ TEST_APPHOOK(Test);
 class CallBackTest : public TransLogClient::Subscriber::Callback
 {
 private:
-    virtual RPC::Result receive(const Packet & packet);
-    virtual void inSync() { _inSync = true; }
-    virtual void eof()    { _eof = true; }
+    virtual RPC::Result receive(const Packet & packet) override;
+    virtual void inSync() override { _inSync = true; }
+    virtual void eof()    override { _eof = true; }
     typedef std::map<SerialNum, ByteBuffer> PacketMap;
     PacketMap _packetMap;
 public:
@@ -93,9 +93,9 @@ RPC::Result CallBackTest::receive(const Packet & p)
 class CallBackManyTest : public TransLogClient::Subscriber::Callback
 {
 private:
-    virtual RPC::Result receive(const Packet & packet);
-    virtual void inSync() { _inSync = true; }
-    virtual void eof()    { _eof = true; }
+    virtual RPC::Result receive(const Packet & packet) override;
+    virtual void inSync() override { _inSync = true; }
+    virtual void eof()    override { _eof = true; }
 public:
     CallBackManyTest(size_t start) : _inSync(false), _eof(false), _count(start), _value(start) { }
     void clear() { _inSync = false; _eof = false; _count = 0; _value = 0; }
@@ -125,9 +125,9 @@ class CallBackUpdate : public TransLogClient::Subscriber::Callback
 public:
     typedef std::map<SerialNum, Identifiable *> PacketMap;
 private:
-    virtual RPC::Result receive(const Packet & packet);
-    virtual void inSync() { _inSync = true; }
-    virtual void eof()    { _eof = true; }
+    virtual RPC::Result receive(const Packet & packet) override;
+    virtual void inSync() override { _inSync = true; }
+    virtual void eof()    override { _eof = true; }
     PacketMap _packetMap;
 public:
     CallBackUpdate() : _inSync(false), _eof(false) { }
@@ -174,9 +174,9 @@ RPC::Result CallBackUpdate::receive(const Packet & packet)
 class CallBackStatsTest : public TransLogClient::Session::Callback
 {
 private:
-    virtual RPC::Result receive(const Packet & packet);
-    virtual void inSync() { _inSync = true; }
-    virtual void eof()    { _eof = true; }
+    virtual RPC::Result receive(const Packet & packet) override;
+    virtual void inSync() override { _inSync = true; }
+    virtual void eof()    override { _eof = true; }
 public:
     CallBackStatsTest() : _inSync(false), _eof(false),
                           _count(0), _inOrder(0),

@@ -86,7 +86,7 @@ public:
     requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap);
 
     Test();
-    int Main();
+    int Main() override;
 };
 
 void

@@ -34,7 +34,7 @@ class Test : public vespalib::TestApp,
     void requireThatSearchablesCanBeReplaced(IndexCollection::UP fsc);
     void requireThatReplaceAndRenumberUpdatesCollectionAfterFusion();
     IndexCollection::UP createWarmup(const IndexCollection::SP & prev, const IndexCollection::SP & next);
-    virtual void warmupDone(ISearchableIndexCollection::SP current) {
+    virtual void warmupDone(ISearchableIndexCollection::SP current) override {
         (void) current;
     }
 
@@ -47,7 +47,7 @@ public:
              _warmup(new FakeIndexSearchable)
     {}
 
-    int Main();
+    int Main() override;
 };
 
 

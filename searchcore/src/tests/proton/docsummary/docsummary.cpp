@@ -381,7 +381,7 @@ private:
 
 public:
     Test();
-    int Main();
+    int Main() override;
 };
 
 

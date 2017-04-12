@@ -17,13 +17,13 @@ protected:
 public:
     virtual ~SpoolerReplayOperation() {}
     SerialNum getSpoolerSerialNum() const { return _spoolerSerialNum; }
-    virtual void serialize(vespalib::nbostream &os) const;
+    virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &) {
+                             const document::DocumentTypeRepo &) override {
         deserialize(is);
     }
     void deserialize(vespalib::nbostream &is);
-    virtual vespalib::string toString() const;
+    virtual vespalib::string toString() const override;
 };
 
 

@@ -76,7 +76,7 @@ public:
     }
 
     virtual bool
-    operator()(const GlobalId &lhs, const GlobalId &rhs) const
+    operator()(const GlobalId &lhs, const GlobalId &rhs) const override
     {
         return _comp(rhs, lhs);
     }

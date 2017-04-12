@@ -26,8 +26,8 @@ private:
     std::vector<uint32_t> _handles;
 
 protected:
-    virtual void doSeek(uint32_t) {}
-    virtual void doUnpack(uint32_t) {}
+    virtual void doSeek(uint32_t) override {}
+    virtual void doUnpack(uint32_t) override {}
 
 public:
     MySearch(const std::string &tag, bool leaf, bool strict)
@@ -92,7 +92,7 @@ public:
         }
     }
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const {
+    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         visit(visitor, "_tag",      _tag);
         visit(visitor, "_isLeaf",   _isLeaf);
         visit(visitor, "_isStrict", _isStrict);
@@ -111,7 +111,7 @@ class MyLeaf : public SimpleLeafBlueprint
 
 public:
     virtual SearchIterator::UP
-    createLeafSearch(const TFMDA &tfmda, bool strict) const
+    createLeafSearch(const TFMDA &tfmda, bool strict) const override
     {
         return SearchIterator::UP(new MySearch("leaf", tfmda, strict));
     }

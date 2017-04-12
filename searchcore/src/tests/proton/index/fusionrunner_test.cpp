@@ -98,7 +98,7 @@ public:
                _threadingService)
     {
     }
-    int Main();
+    int Main() override;
 };
 
 int

@@ -59,7 +59,7 @@ const vespalib::string DOC_TYPE("invalid");
 
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer
 {
-    virtual bool reconfigure(vespalib::Closure0<bool>::UP closure) {
+    virtual bool reconfigure(vespalib::Closure0<bool>::UP closure) override {
         bool ret = true;
         if (closure.get() != NULL)
             ret = closure->call(); // Perform index manager reconfiguration now

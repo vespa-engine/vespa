@@ -195,7 +195,7 @@ public:
     }
 
     virtual uint32_t
-    get(AttributeVector::DocId doc, largeint_t *v, uint32_t sz) const
+    get(AttributeVector::DocId doc, largeint_t *v, uint32_t sz) const override
     {
         ++_gets;
         return SvIntAttr::get(doc, v, sz);

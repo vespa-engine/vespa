@@ -38,7 +38,7 @@ public:
                    const vespalib::string &base, ParamList pl,
                    const vespalib::string &output);
     void testFile(const vespalib::string &name);
-    int Main();
+    int Main() override;
 };
 
 bool

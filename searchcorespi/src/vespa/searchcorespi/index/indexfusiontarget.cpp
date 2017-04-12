@@ -20,14 +20,14 @@ private:
 public:
     Fusioner(IndexMaintainer &indexMaintainer, FlushStats &stats, SerialNum serialNum) :
         _indexMaintainer(indexMaintainer), _stats(stats), _serialNum(serialNum) {}
-    virtual void run() {
+    virtual void run() override {
         vespalib::string outputFusionDir = _indexMaintainer.doFusion(_serialNum);
         // the target must live until this task is done (handled by flush engine).
         _stats.setPath(outputFusionDir);
     }
 
     virtual SerialNum
-    getFlushSerial(void) const
+    getFlushSerial(void) const override
     {
         return 0u; // Zero means that no tls syncing is needed
     }

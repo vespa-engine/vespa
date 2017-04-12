@@ -16,7 +16,7 @@ private:
     void testStorageDocument();
     void testStringFieldIdTMap();
 public:
-    int Main();
+    int Main() override;
 };
 
 void

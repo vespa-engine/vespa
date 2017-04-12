@@ -21,7 +21,7 @@ protected:
     typedef typename B::DocId                             DocId;
     typedef typename B::Change                            Change;
     typedef typename B::ChangeVector                      ChangeVector;
-    typedef typename B::ChangeVector::const_iterator            ChangeVectorIterator;
+    typedef typename B::ChangeVector::const_iterator      ChangeVectorIterator;
 
     using MultiValueType = M;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
@@ -48,7 +48,7 @@ protected:
      * Can be overridden by subclasses that need to resize structures as a result of this.
      * Should return true if underlying structures were resized.
      **/
-    virtual bool onAddDoc(DocId doc) { (void) doc; return false; }
+    virtual bool onAddDoc(DocId doc) override { (void) doc; return false; }
 
     AddressSpace getMultiValueAddressSpaceUsage() const override;
 

@@ -13,7 +13,7 @@ private:
     void testVersionTags();
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("fileheadertk_test");
 
         testVersionTags(); TEST_FLUSH();

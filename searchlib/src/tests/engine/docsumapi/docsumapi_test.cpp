@@ -26,7 +26,7 @@ class Test : public vespalib::TestApp
 public:
     void convertToRequest();
     void convertFromReply();
-    int Main();
+    int Main() override;
 };
 
 document::GlobalId gid0("aaaaaaaaaaaa");

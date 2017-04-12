@@ -219,7 +219,7 @@ public:
     usage(void);
 
     int
-    Main(void);
+    Main(void) override;
 
     void
     testWords(void);

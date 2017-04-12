@@ -168,14 +168,14 @@ private:
     class AttributeIteratorTester : public IteratorTester
     {
     public:
-        virtual bool matches(const SearchIterator & base) const {
+        virtual bool matches(const SearchIterator & base) const override {
             return dynamic_cast<const AttributeIterator *>(&base) != NULL;
         }
     };
     class FlagAttributeIteratorTester : public IteratorTester
     {
     public:
-        virtual bool matches(const SearchIterator & base) const {
+        virtual bool matches(const SearchIterator & base) const override {
             return (dynamic_cast<const FlagAttributeIterator *>(&base) != NULL) ||
                    (dynamic_cast<const BitVectorIterator *>(&base) != NULL) ||
                    (dynamic_cast<const queryeval::EmptySearch *>(&base) != NULL);
@@ -184,7 +184,7 @@ private:
     class AttributePostingListIteratorTester : public IteratorTester
     {
     public:
-        virtual bool matches(const SearchIterator & base) const {
+        virtual bool matches(const SearchIterator & base) const override {
             return dynamic_cast<const AttributePostingListIterator *>(&base) != NULL ||
                 dynamic_cast<const queryeval::EmptySearch *>(&base) != NULL;
                 
@@ -280,7 +280,7 @@ private:
 
 public:
     SearchContextTest();
-    int Main();
+    int Main() override;
 };
 
 

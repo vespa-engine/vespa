@@ -47,7 +47,7 @@ public:
     Test(void);
 
     int
-    Main(void);
+    Main(void) override;
 };
 
 

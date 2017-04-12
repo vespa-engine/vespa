@@ -48,7 +48,7 @@ public:
     AttributeManagerTest()
     {
     }
-    int Main();
+    int Main() override;
 };
 
 

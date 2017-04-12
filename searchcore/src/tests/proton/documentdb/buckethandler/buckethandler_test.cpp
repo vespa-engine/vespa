@@ -65,7 +65,7 @@ struct MyChangedHandler : public IBucketStateChangedHandler
     MyChangedHandler() : _bucket(), _state(BucketInfo::NOT_ACTIVE) {}
 
     virtual void notifyBucketStateChanged(const document::BucketId &bucketId,
-                                          storage::spi::BucketInfo::ActiveState newState) {
+                                          storage::spi::BucketInfo::ActiveState newState) override {
         _bucket = bucketId;
         _state = newState;
     }
@@ -75,7 +75,7 @@ struct MyChangedHandler : public IBucketStateChangedHandler
 struct MyModifiedHandler : public IBucketModifiedHandler
 {
     virtual void
-    notifyBucketModified(const BucketId &bucket)
+    notifyBucketModified(const BucketId &bucket) override
     {
         (void) bucket;
     }

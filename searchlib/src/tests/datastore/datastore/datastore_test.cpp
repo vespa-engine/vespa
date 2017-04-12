@@ -36,7 +36,7 @@ public:
         ParentType::transferHoldLists(generation);
     }
 
-    void trimElemHoldList(generation_t usedGen) {
+    void trimElemHoldList(generation_t usedGen) override {
         ParentType::trimElemHoldList(usedGen);
     }
     void incDead(EntryRef ref, uint64_t dead) {
@@ -143,7 +143,7 @@ private:
     void requireThatWecanDisableElemHoldList(void);
     void requireThatBufferGrowthWorks();
 public:
-    int Main();
+    int Main() override;
 };
 
 bool

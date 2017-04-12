@@ -32,7 +32,7 @@ public:
     }
 
     // Implements IReprocessingRewriter
-    virtual void handleExisting(uint32_t lid, document::Document &doc);
+    virtual void handleExisting(uint32_t lid, document::Document &doc) override;
 };
 
 } // namespace proton

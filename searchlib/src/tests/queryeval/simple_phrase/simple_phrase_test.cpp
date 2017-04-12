@@ -39,7 +39,7 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
         setEstimate(HitEstimate(hits, (hits == 0)));
     }
     virtual SearchIterator::UP createLeafSearch(
-            const search::fef::TermFieldMatchDataArray &, bool) const
+            const search::fef::TermFieldMatchDataArray &, bool) const override
     {
         return SearchIterator::UP();
     }
@@ -58,7 +58,7 @@ class Test : public vespalib::TestApp {
     void requireThatDoomIsPropagated();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int

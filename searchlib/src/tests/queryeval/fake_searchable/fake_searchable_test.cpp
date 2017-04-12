@@ -17,7 +17,7 @@ using namespace search::fef;
 
 class Test : public vespalib::TestApp {
 public:
-    int Main();
+    int Main() override;
     void testTestFakeResult();
     void testTerm();
     void testPhrase();

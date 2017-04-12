@@ -14,10 +14,10 @@ class BaseBlueprint : public Blueprint {
 public:
     BaseBlueprint() : Blueprint("base") { }
     virtual void visitDumpFeatures(const IIndexEnvironment &,
-                                   IDumpFeatureVisitor &) const {}
-    virtual Blueprint::UP createInstance() const { return Blueprint::UP(new BaseBlueprint()); }
+                                   IDumpFeatureVisitor &) const override {}
+    virtual Blueprint::UP createInstance() const override { return Blueprint::UP(new BaseBlueprint()); }
     virtual bool setup(const IIndexEnvironment & indexEnv,
-                       const ParameterList & params) {
+                       const ParameterList & params) override {
         (void) indexEnv; (void) params;
         describeOutput("foo", "foo");
         describeOutput("bar", "bar");
@@ -37,10 +37,10 @@ class CombineBlueprint : public Blueprint {
 public:
     CombineBlueprint() : Blueprint("combine") { }
     virtual void visitDumpFeatures(const IIndexEnvironment &,
-                                   IDumpFeatureVisitor &) const {}
-    virtual Blueprint::UP createInstance() const { return Blueprint::UP(new CombineBlueprint()); }
+                                   IDumpFeatureVisitor &) const override {}
+    virtual Blueprint::UP createInstance() const override { return Blueprint::UP(new CombineBlueprint()); }
     virtual bool setup(const IIndexEnvironment & indexEnv,
-                       const ParameterList & params) {
+                       const ParameterList & params) override {
         (void) indexEnv; (void) params;
         defineInput("base.foo");
         defineInput("base.bar");
@@ -59,7 +59,7 @@ private:
     void requireThatWeGetUniqueBlueprints();
 public:
     Test();
-    int Main();
+    int Main() override;
 };
 
 Test::Test() :

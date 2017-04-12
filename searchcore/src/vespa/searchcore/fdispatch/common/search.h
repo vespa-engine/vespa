@@ -274,30 +274,30 @@ public:
     }
 
 
-    virtual uint32_t GetDataSetID()
+    virtual uint32_t GetDataSetID() override
     {
         return _dataSetID;
     }
 
-    virtual FastS_SearchInfo *GetSearchInfo()
+    virtual FastS_SearchInfo *GetSearchInfo() override
     {
         return &_searchInfo;
     }
 
-    virtual RetCode setSearchRequest(const search::engine::SearchRequest * request)
+    virtual RetCode setSearchRequest(const search::engine::SearchRequest * request) override
     {
         _queryArgs = request;
         return RET_OK;
     }
 
-    virtual RetCode SetGetDocsumArgs(search::docsummary::GetDocsumArgs *docsumArgs)
+    virtual RetCode SetGetDocsumArgs(search::docsummary::GetDocsumArgs *docsumArgs) override
     {
         _docsumArgs = docsumArgs;
         return RET_OK;
     }
 
     virtual RetCode Search(uint32_t searchOffset,
-                           uint32_t maxhits, uint32_t minhits = 0)
+                           uint32_t maxhits, uint32_t minhits = 0) override
     {
         (void) minhits;
         _searchInfo._searchOffset = searchOffset;
@@ -305,50 +305,50 @@ public:
         return RET_OK;
     }
 
-    virtual RetCode ProcessQueryDone()
+    virtual RetCode ProcessQueryDone() override
     {
         return RET_OK;
     }
 
-    virtual FastS_QueryResult *GetQueryResult()
+    virtual FastS_QueryResult *GetQueryResult() override
     {
         return &_queryResult;
     }
 
-    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt)
+    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt) override
     {
         (void) hits;
         (void) hitcnt;
         return RET_OK;
     }
 
-    virtual RetCode ProcessDocsumsDone()
+    virtual RetCode ProcessDocsumsDone() override
     {
         return RET_OK;
     }
 
-    virtual FastS_DocsumsResult *GetDocsumsResult()
+    virtual FastS_DocsumsResult *GetDocsumsResult() override
     {
         return &_docsumsResult;
     }
 
-    virtual search::engine::ErrorCode GetErrorCode()
+    virtual search::engine::ErrorCode GetErrorCode() override
     {
         return _errorCode;
     }
 
-    virtual const char *GetErrorMessage()
+    virtual const char *GetErrorMessage() override
     {
         if (_errorMessage != NULL)
             return _errorMessage;
         return search::engine::getStringFromErrorCode(_errorCode);
     }
 
-    virtual void Interrupt()
+    virtual void Interrupt() override
     {
     }
 
-    virtual void Free()
+    virtual void Free() override
     {
         delete this;
     }
@@ -373,10 +373,10 @@ public:
     }
     virtual ~FastS_FailedSearch() {}
 
-    virtual bool IsAsync() { return _async; }
+    virtual bool IsAsync() override { return _async; }
 
     virtual RetCode SetAsyncArgs(FastS_ISearchOwner *owner,
-                                 FastS_SearchContext context)
+                                 FastS_SearchContext context) override
     {
         (void) owner;
         (void) context;
@@ -392,10 +392,10 @@ public:
     FastS_SyncSearch(uint32_t dataSetID)
         : FastS_SearchBase(dataSetID) {}
 
-    bool IsAsync() { return false; }
+    bool IsAsync() override { return false; }
 
     virtual RetCode SetAsyncArgs(FastS_ISearchOwner *,
-                                 FastS_SearchContext)
+                                 FastS_SearchContext) override
     {
         return RET_ERROR;
     }
@@ -419,10 +419,10 @@ public:
           _searchOwner(NULL),
           _searchContext(FastS_SearchContext()) {}
 
-    bool IsAsync() { return true; }
+    bool IsAsync() override { return true; }
 
     virtual RetCode SetAsyncArgs(FastS_ISearchOwner *owner,
-                                 FastS_SearchContext context)
+                                 FastS_SearchContext context) override
     {
         _searchOwner   = owner;
         _searchContext = context;
@@ -445,24 +445,24 @@ public:
     explicit FastS_SearchAdapter(FastS_ISearch *search);
     virtual ~FastS_SearchAdapter();
 
-    virtual bool IsAsync();
-    virtual uint32_t GetDataSetID();
-    virtual FastS_SearchInfo *GetSearchInfo();
+    virtual bool IsAsync() override;
+    virtual uint32_t GetDataSetID() override;
+    virtual FastS_SearchInfo *GetSearchInfo() override;
     virtual RetCode SetAsyncArgs(FastS_ISearchOwner *owner,
-                                 FastS_SearchContext context);
-    virtual RetCode setSearchRequest(const search::engine::SearchRequest * request);
-    virtual RetCode SetGetDocsumArgs(search::docsummary::GetDocsumArgs *docsumArgs);
+                                 FastS_SearchContext context) override;
+    virtual RetCode setSearchRequest(const search::engine::SearchRequest * request) override;
+    virtual RetCode SetGetDocsumArgs(search::docsummary::GetDocsumArgs *docsumArgs) override;
     virtual RetCode Search(uint32_t searchOffset,
-                           uint32_t maxhits, uint32_t minhits = 0);
-    virtual RetCode ProcessQueryDone();
-    virtual FastS_QueryResult *GetQueryResult();
-    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt);
-    virtual RetCode ProcessDocsumsDone();
-    virtual FastS_DocsumsResult *GetDocsumsResult();
-    virtual search::engine::ErrorCode GetErrorCode();
-    virtual const char *GetErrorMessage();
-    virtual void Interrupt();
-    virtual void Free();
+                           uint32_t maxhits, uint32_t minhits = 0) override;
+    virtual RetCode ProcessQueryDone() override;
+    virtual FastS_QueryResult *GetQueryResult() override;
+    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt) override;
+    virtual RetCode ProcessDocsumsDone() override;
+    virtual FastS_DocsumsResult *GetDocsumsResult() override;
+    virtual search::engine::ErrorCode GetErrorCode() override;
+    virtual const char *GetErrorMessage() override;
+    virtual void Interrupt() override;
+    virtual void Free() override;
 };
 
 //----------------------------------------------------------------
@@ -490,18 +490,18 @@ public:
     void Wait()    { _cond.Wait();   }
     void Signal()  { _cond.Signal(); }
 
-    virtual void DoneQuery(FastS_ISearch *, FastS_SearchContext);
-    virtual void DoneDocsums(FastS_ISearch *, FastS_SearchContext);
+    virtual void DoneQuery(FastS_ISearch *, FastS_SearchContext) override;
+    virtual void DoneDocsums(FastS_ISearch *, FastS_SearchContext) override;
 
     void WaitQueryDone();
     void WaitDocsumsDone();
 
-    virtual bool IsAsync();
+    virtual bool IsAsync() override;
     virtual RetCode SetAsyncArgs(FastS_ISearchOwner *owner,
-                                 FastS_SearchContext context);
+                                 FastS_SearchContext context) override;
     virtual RetCode Search(uint32_t searchOffset,
-                           uint32_t maxhits, uint32_t minhits = 0);
-    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt);
+                           uint32_t maxhits, uint32_t minhits = 0) override;
+    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt) override;
 };
 
 //----------------------------------------------------------------

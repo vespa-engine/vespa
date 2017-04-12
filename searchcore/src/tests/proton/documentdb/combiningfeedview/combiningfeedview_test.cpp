@@ -17,8 +17,8 @@ typedef std::vector<IFeedView::SP> FeedViewVector;
 
 struct MyStreamHandler : public NewConfigOperation::IStreamHandler
 {
-    virtual void serializeConfig(SerialNum, vespalib::nbostream &) {}
-    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) {}
+    virtual void serializeConfig(SerialNum, vespalib::nbostream &) override {}
+    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
 };
 
 
@@ -69,21 +69,21 @@ struct MyFeedView : public test::DummyFeedView
     }
 
     // Implements IFeedView
-    virtual const DocumentMetaStore *getDocumentMetaStorePtr() const { return &_metaStore; }
-    virtual void preparePut(PutOperation &) { ++_preparePut; }
-    virtual void handlePut(FeedToken *, const PutOperation &) { ++_handlePut; }
-    virtual void prepareUpdate(UpdateOperation &) { ++_prepareUpdate; }
-    virtual void handleUpdate(FeedToken *, const UpdateOperation &) { ++_handleUpdate; }
-    virtual void prepareRemove(RemoveOperation &) { ++_prepareRemove; }
-    virtual void handleRemove(FeedToken *, const RemoveOperation &) { ++_handleRemove; }
-    virtual void prepareDeleteBucket(DeleteBucketOperation &) { ++_prepareDeleteBucket; }
-    virtual void handleDeleteBucket(const DeleteBucketOperation &)
+    virtual const DocumentMetaStore *getDocumentMetaStorePtr() const override { return &_metaStore; }
+    virtual void preparePut(PutOperation &) override { ++_preparePut; }
+    virtual void handlePut(FeedToken *, const PutOperation &) override { ++_handlePut; }
+    virtual void prepareUpdate(UpdateOperation &) override { ++_prepareUpdate; }
+    virtual void handleUpdate(FeedToken *, const UpdateOperation &) override { ++_handleUpdate; }
+    virtual void prepareRemove(RemoveOperation &) override { ++_prepareRemove; }
+    virtual void handleRemove(FeedToken *, const RemoveOperation &) override { ++_handleRemove; }
+    virtual void prepareDeleteBucket(DeleteBucketOperation &) override { ++_prepareDeleteBucket; }
+    virtual void handleDeleteBucket(const DeleteBucketOperation &) override
     { ++_handleDeleteBucket; }
-    virtual void prepareMove(MoveOperation &) { ++_prepareMove; }
-    virtual void handleMove(const MoveOperation &) { ++_handleMove; }
-    virtual void heartBeat(SerialNum) { ++_heartBeat; }
-    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) { ++_handlePrune; }
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) {
+    virtual void prepareMove(MoveOperation &) override { ++_prepareMove; }
+    virtual void handleMove(const MoveOperation &) override { ++_handleMove; }
+    virtual void heartBeat(SerialNum) override { ++_heartBeat; }
+    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override { ++_handlePrune; }
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
         _wantedLidLimit = op.getLidLimit();
     }
 };

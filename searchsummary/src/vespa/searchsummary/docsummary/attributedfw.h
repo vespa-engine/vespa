@@ -14,10 +14,10 @@ private:
     vespalib::string _attrName;
 protected:
     const attribute::IAttributeVector & vec(const GetDocsumsState & s) const;
-    virtual const vespalib::string & getAttributeName() const { return _attrName; }
+    virtual const vespalib::string & getAttributeName() const override { return _attrName; }
 public:
     AttrDFW(const vespalib::string & attrName);
-    virtual bool IsGenerated() const { return true; }
+    virtual bool IsGenerated() const override { return true; }
 };
 
 }

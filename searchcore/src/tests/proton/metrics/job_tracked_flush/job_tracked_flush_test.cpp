@@ -28,10 +28,10 @@ struct MyFlushTask : public searchcorespi::FlushTask
     MyFlushTask(Gate &execGate) : _execGate(execGate) {}
 
     // Implements searchcorespi::FlushTask
-    virtual void run() {
+    virtual void run() override {
         _execGate.await(5000);
     }
-    virtual search::SerialNum getFlushSerial() const { return 5; }
+    virtual search::SerialNum getFlushSerial() const override { return 5; }
 };
 
 struct MyFlushTarget : public test::DummyFlushTarget
@@ -48,7 +48,7 @@ struct MyFlushTarget : public test::DummyFlushTarget
     {}
 
     // Implements searchcorespi::IFlushTarget
-    virtual FlushTask::UP initFlush(SerialNum currentSerial) {
+    virtual FlushTask::UP initFlush(SerialNum currentSerial) override {
         if (currentSerial > 0) {
             _initFlushSerial = currentSerial;
             _initGate.await(5000);

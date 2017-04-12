@@ -23,13 +23,13 @@ public:
     virtual ~TextExtractorDFW() {}
     bool init(const vespalib::string & fieldName, const vespalib::string & inputField, const ResultConfig & config);
     // Inherit doc
-    virtual bool IsGenerated() const { return false; }
+    virtual bool IsGenerated() const override { return false; }
     // Inherit doc
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
                              ResType type,
-                             vespalib::slime::Inserter &target);
+                             vespalib::slime::Inserter &target) override;
 };
 
 }

@@ -25,7 +25,7 @@ private:
     MaintenanceJobRunner *_job;
 public:
     JobWrapperTask(MaintenanceJobRunner *job) : _job(job) {}
-    virtual void run() { _job->run(); }
+    virtual void run() override { _job->run(); }
 };
 
 

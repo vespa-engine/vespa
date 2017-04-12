@@ -59,7 +59,7 @@ private:
 public:
     PostingListBM(void);
     ~PostingListBM(void);
-    int Main(void);
+    int Main(void) override;
 };
 
 

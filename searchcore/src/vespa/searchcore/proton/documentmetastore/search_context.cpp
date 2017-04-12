@@ -21,7 +21,7 @@ class GidAllSearchIterator : public AttributeIteratorBase
 {
 private:
     virtual void
-    doSeek(uint32_t docId)
+    doSeek(uint32_t docId) override
     {
         if (_store.validLidFast(docId)) {
             setDocId(docId);
@@ -29,7 +29,7 @@ private:
     }
 
     virtual void
-    doUnpack(uint32_t docId)
+    doUnpack(uint32_t docId) override
     {
         _matchData->reset(docId);
     }
@@ -51,7 +51,7 @@ private:
     uint32_t _numDocs;
 
     virtual void
-    doSeek(uint32_t docId)
+    doSeek(uint32_t docId) override
     {
         if (_store.validLidFast(docId)) {
             setDocId(docId);
@@ -80,7 +80,7 @@ private:
     const GlobalId & _gid;
 
     virtual void
-    doSeek(uint32_t docId)
+    doSeek(uint32_t docId) override
     {
         AttributeVector::DocId lid = 0;
         if (_store.getLid(_gid, lid) && (lid >= docId)) {

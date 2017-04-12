@@ -1228,7 +1228,7 @@ void testAggregationResult(AggregationResult & aggr, const AggrGetter & g,
 
 TEST("testAggregationResults") {
     struct SumGetter : AggrGetter {
-        virtual const ResultNode &operator()(const AggregationResult & r) const
+        virtual const ResultNode &operator()(const AggregationResult & r) const override
         { return static_cast<const SumAggregationResult &>(r).getSum(); }
     };
     SumAggregationResult sum;

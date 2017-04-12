@@ -23,7 +23,7 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &n) { n.allocateTerms(_mdl); }
 
-    virtual void visit(ProtonNodeTypes::Equiv &n) {
+    virtual void visit(ProtonNodeTypes::Equiv &n) override {
         MatchDataReserveVisitor subAllocator(n.children_mdl);
         for (size_t i = 0; i < n.getChildren().size(); ++i) {
             n.getChildren()[i]->accept(subAllocator);

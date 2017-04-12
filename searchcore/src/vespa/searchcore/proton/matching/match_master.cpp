@@ -23,15 +23,15 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     IMatchLoopCommunicator &communicator;
     fastos::StopWatch rerank_time;
     TimedMatchLoopCommunicator(IMatchLoopCommunicator &com) : communicator(com) {}
-    virtual double estimate_match_frequency(const Matches &matches) {
+    virtual double estimate_match_frequency(const Matches &matches) override {
         return communicator.estimate_match_frequency(matches);
     }
-    virtual size_t selectBest(const std::vector<feature_t> &sortedScores) {
+    virtual size_t selectBest(const std::vector<feature_t> &sortedScores) override {
         size_t result = communicator.selectBest(sortedScores);
         rerank_time.start();
         return result;
     }
-    virtual RangePair rangeCover(const RangePair &ranges) {
+    virtual RangePair rangeCover(const RangePair &ranges) override {
         RangePair result = communicator.rangeCover(ranges);
         rerank_time.stop();
         return result;

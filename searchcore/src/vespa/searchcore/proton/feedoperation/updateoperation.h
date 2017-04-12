@@ -22,10 +22,10 @@ public:
                     const document::DocumentUpdate::SP &upd);
     virtual ~UpdateOperation() {}
     const document::DocumentUpdate::SP &getUpdate() const { return _upd; }
-    virtual void serialize(vespalib::nbostream &os) const;
+    virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo);
-    virtual vespalib::string toString() const;
+                             const document::DocumentTypeRepo &repo) override;
+    virtual vespalib::string toString() const override;
     static UpdateOperation makeOldUpdate(const document::BucketId &bucketId,
                                          const storage::spi::Timestamp &timestamp,
                                          const document::DocumentUpdate::SP &upd);

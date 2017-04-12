@@ -29,7 +29,7 @@ private:
     const std::string _tables2Dir;
 public:
     TableTest();
-    int Main();
+    int Main() override;
 };
 
 TableTest::TableTest() :

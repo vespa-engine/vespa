@@ -16,8 +16,8 @@ using std::vector;
 namespace {
 
 struct DummyDocIdLimitProvider : public DocIdLimitProvider {
-    virtual uint32_t getDocIdLimit() const { return 10000; }
-    virtual uint32_t getCommittedDocIdLimit() const { return 10000; }
+    virtual uint32_t getDocIdLimit() const override { return 10000; }
+    virtual uint32_t getCommittedDocIdLimit() const override { return 10000; }
 };
 
 vespalib::GenerationHandler generation_handler;

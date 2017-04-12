@@ -54,22 +54,22 @@ public:
         _map[attr->getName()] = attr;
     }
 
-    virtual AttributeGuard::UP getAttribute(const vespalib::string &name) const {
+    virtual AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
         return AttributeGuard::UP(new AttributeGuard(lookup(name)));
     }
 
-    virtual AttributeGuard::UP getAttributeStableEnum(const vespalib::string &name) const {
+    virtual AttributeGuard::UP getAttributeStableEnum(const vespalib::string &name) const override {
         return AttributeGuard::UP(new AttributeEnumGuard(lookup(name)));
     }
 
-    virtual void getAttributeList(std::vector<AttributeGuard> &list) const {
+    virtual void getAttributeList(std::vector<AttributeGuard> &list) const override {
         Map::const_iterator pos = _map.begin();
         for (; pos != _map.end(); ++pos) {
             list.push_back(pos->second);
         }
     }
 
-    virtual IAttributeContext::UP createContext() const {
+    virtual IAttributeContext::UP createContext() const override {
         return IAttributeContext::UP(new AttributeContext(*this));
     }
 };
@@ -193,7 +193,7 @@ struct WS {
 class Test : public vespalib::TestApp
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

@@ -135,10 +135,10 @@ public:
     FS4PersistentPacketStreamer(FS4PacketFactory::CreatePacket_t cp);
 
     bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen,
-                       uint32_t *pcode, uint32_t *chid, bool *broken);
+                       uint32_t *pcode, uint32_t *chid, bool *broken) override;
     FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen,
-                        uint32_t pcode, FNET_Context context);
-    void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst);
+                        uint32_t pcode, FNET_Context context) override;
+    void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst) override;
 
     void SetConservativeMode(bool cons) { _conservative = cons; }
     void SetCompressionLimit(unsigned int limit) { _compressionLimit = limit; }

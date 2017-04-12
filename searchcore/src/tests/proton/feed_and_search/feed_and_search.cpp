@@ -66,7 +66,7 @@ class Test : public vespalib::TestApp {
                     const string &term, uint32_t doc_id);
 
 public:
-    int Main();
+    int Main() override;
 };
 
 #define TEST_CALL(func) \

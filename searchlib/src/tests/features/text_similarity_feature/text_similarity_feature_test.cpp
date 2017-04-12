@@ -59,7 +59,7 @@ struct IndexFixture {
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
     std::vector<vespalib::string> expect;
     size_t dumped;
-    virtual void visitDumpFeature(const vespalib::string &name) {
+    virtual void visitDumpFeature(const vespalib::string &name) override {
         EXPECT_LESS(dumped, expect.size());
         EXPECT_EQUAL(expect[dumped++], name);
     }

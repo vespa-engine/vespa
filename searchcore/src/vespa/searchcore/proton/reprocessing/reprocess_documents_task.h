@@ -38,13 +38,12 @@ public:
                            uint32_t docIdLimit);
 
     virtual void
-    run();
+    run() override;
 
     virtual void
-    updateProgress(double progress);
+    updateProgress(double progress) override;
 
-    virtual Progress
-    getProgress() const; 
+    virtual Progress getProgress() const override;
 };
 
 } // namespace proton

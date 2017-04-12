@@ -18,7 +18,7 @@ using search::fef::FieldPositionsIterator;
 class Test : public vespalib::TestApp {
 public:
     void testEquiv();
-    int Main();
+    int Main() override;
 };
 
 void

@@ -72,12 +72,12 @@ public:
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
 
     // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const;
-    virtual DiskGain getApproxDiskGain() const;
-    virtual Time getLastFlushTime() const;
-    virtual SerialNum getFlushedSerialNum() const;
-    virtual Task::UP initFlush(SerialNum currentSerial);
-    virtual FlushStats getLastFlushStats() const { return _lastStats; }
+    virtual MemoryGain getApproxMemoryGain() const override;
+    virtual DiskGain getApproxDiskGain() const override;
+    virtual Time getLastFlushTime() const override;
+    virtual SerialNum getFlushedSerialNum() const override;
+    virtual Task::UP initFlush(SerialNum currentSerial) override;
+    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
 
     static void initCleanup(const vespalib::string &baseDir);
     virtual uint64_t getApproxBytesToWriteToDisk() const override;

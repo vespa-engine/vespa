@@ -222,7 +222,7 @@ TEST("testQueryLanguage") {
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
-    virtual bool getRewriteFloatTerms() const { return true; }
+    virtual bool getRewriteFloatTerms() const override { return true; }
 };
 
 const char TERM_UNIQ = ParseItem::ITEM_TERM | ParseItem::IF_UNIQUEID;

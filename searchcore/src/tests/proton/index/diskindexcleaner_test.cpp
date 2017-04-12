@@ -25,7 +25,7 @@ class Test : public vespalib::TestApp {
     void requireThatRemoveDontTouchNewIndexes();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 const string index_dir = "test_data";

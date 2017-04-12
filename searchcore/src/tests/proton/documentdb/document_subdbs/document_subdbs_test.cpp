@@ -85,18 +85,18 @@ struct MySubDBOwner : public IDocumentSubDBOwner
 
 struct MySyncProxy : public SyncProxy
 {
-	virtual void sync(SerialNum) {}
+	virtual void sync(SerialNum) override {}
 };
 
 
 struct MyGetSerialNum : public IGetSerialNum
 {
-    virtual SerialNum getSerialNum() const { return 0u; }
+    virtual SerialNum getSerialNum() const override { return 0u; }
 };
 
 struct MyFileHeaderContext : public FileHeaderContext
 {
-	virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const {}
+	virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
 };
 
 struct MyMetricsWireService : public DummyWireService

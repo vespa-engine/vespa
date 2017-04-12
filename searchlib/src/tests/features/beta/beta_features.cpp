@@ -64,7 +64,7 @@ public:
 //---------------------------------------------------------------------------------------------------------------------
 class Test : public FtTestApp {
 public:
-    int Main();
+    int Main() override;
     void testJaroWinklerDistance();
     void testProximity();
     void testFlowCompleteness();

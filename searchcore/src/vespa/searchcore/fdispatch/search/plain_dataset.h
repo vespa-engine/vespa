@@ -189,7 +189,7 @@ public:
     void LinkInPart_HasLock(FastS_EngineBase *engine);
     void LinkOutPart_HasLock(FastS_EngineBase *engine);
 
-    virtual ChildInfo getChildInfo() const;
+    virtual ChildInfo getChildInfo() const override;
 
     uint32_t getMPP(void) const { return _partMap._mpp; }
     double getMonitorInterval(void) const { return _monitorInterval; }
@@ -204,13 +204,13 @@ public:
 
     // API
     //----
-    virtual uint32_t CalculateQueueLens_HasLock(uint32_t &dispatchnodes);
-    virtual bool AreEnginesReady();
+    virtual uint32_t CalculateQueueLens_HasLock(uint32_t &dispatchnodes) override;
+    virtual bool AreEnginesReady() override;
     virtual void Ping();
 
     // Downcast
     //---------
-    virtual FastS_PlainDataSet * GetPlainDataSet(void) { return this; }
+    virtual FastS_PlainDataSet * GetPlainDataSet(void) override { return this; }
 
     template <class FUN>
     FUN ForEachEngine(FUN fun) {

@@ -19,11 +19,10 @@ struct MyProcessor : public ReprocessingType
     DocumentId _docId;
 
     MyProcessor() : _lid(0), _docId() {}
-    virtual void handleExisting(uint32_t lid, DocumentType doc) {
+    virtual void handleExisting(uint32_t lid, DocumentType doc) override {
         _lid = lid;
         _docId = doc.getId();
     }
-    virtual void done() { }
 };
 
 typedef MyProcessor<IReprocessingReader, const Document &> MyReader;

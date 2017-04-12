@@ -11,8 +11,8 @@ class IntFieldSearcher : public FieldSearcher
 public:
     DUPLICATE(IntFieldSearcher);
     IntFieldSearcher(FieldIdT fId=0);
-    virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf);
-    virtual void onValue(const document::FieldValue & fv);
+    virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
+    virtual void onValue(const document::FieldValue & fv) override;
 protected:
     class IntInfo
     {

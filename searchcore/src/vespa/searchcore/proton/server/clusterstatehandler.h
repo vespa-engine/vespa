@@ -35,7 +35,7 @@ private:
 
     // Implements IBucketModifiedHandler
     virtual void
-    notifyBucketModified(const document::BucketId &bucket);
+    notifyBucketModified(const document::BucketId &bucket) override;
 
 public:
     ClusterStateHandler(vespalib::Executor &executor);
@@ -44,10 +44,10 @@ public:
     ~ClusterStateHandler();
 
     virtual void
-    addClusterStateChangedHandler(IClusterStateChangedHandler *handler);
+    addClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
 
     virtual void
-    removeClusterStateChangedHandler(IClusterStateChangedHandler *handler);
+    removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
 
     /**
      * Implements the cluster state aspect of IPersistenceHandler.

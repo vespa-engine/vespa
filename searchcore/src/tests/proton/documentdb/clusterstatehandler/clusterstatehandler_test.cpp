@@ -18,7 +18,7 @@ struct MyClusterStateChangedHandler : public IClusterStateChangedHandler
 {
     IBucketStateCalculator::SP _calc;
     virtual void
-    notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) {
+    notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override {
         _calc = newCalc;
     }
 };

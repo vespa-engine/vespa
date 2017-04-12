@@ -26,7 +26,7 @@ struct DummyItr : public SearchIterator {
         ++dtorCnt;
     }
 
-    void doSeek(uint32_t docid) {
+    void doSeek(uint32_t docid) override {
         ++seekCnt;
         if (docid <= 10) {
             setDocId(10);
@@ -37,7 +37,7 @@ struct DummyItr : public SearchIterator {
         }
     }
 
-    void doUnpack(uint32_t docid) {
+    void doUnpack(uint32_t docid) override {
         ++unpackCnt;
         if (match != 0) {
             _unpackedDocId = docid;

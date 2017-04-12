@@ -104,7 +104,7 @@ private:
     void reconfigureIndexSearchable();
     void syncViews();
 protected:
-    IFlushTargetList getFlushTargetsInternal();
+    IFlushTargetList getFlushTargetsInternal() override;
 
     using Parent::updateLidReuseDelayer;
 

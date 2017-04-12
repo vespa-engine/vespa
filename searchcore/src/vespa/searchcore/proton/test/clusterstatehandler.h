@@ -26,10 +26,10 @@ public:
     ~ClusterStateHandler();
 
     virtual void
-    addClusterStateChangedHandler(IClusterStateChangedHandler *handler);
+    addClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
 
     virtual void
-    removeClusterStateChangedHandler(IClusterStateChangedHandler *handler);
+    removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
 
     void
     notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc);

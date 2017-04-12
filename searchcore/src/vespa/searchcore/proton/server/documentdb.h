@@ -188,7 +188,7 @@ private:
      * Redo interrupted reprocessing if last entry in transaction log
      * is a config change.
      */
-    virtual void enterRedoReprocessState();
+    virtual void enterRedoReprocessState() override;
     void enterApplyLiveConfigState();
 
     /**
@@ -206,15 +206,15 @@ private:
     /**
      * Implements IFeedHandlerOwner
      */
-    virtual void onTransactionLogReplayDone() __attribute__((noinline));
-    virtual void onPerformPrune(SerialNum flushedSerial);
-    virtual bool isFeedBlockedByRejectedConfig();
+    virtual void onTransactionLogReplayDone() override __attribute__((noinline));
+    virtual void onPerformPrune(SerialNum flushedSerial) override;
+    virtual bool isFeedBlockedByRejectedConfig() override;
 
     /**
      * Implements IFeedHandlerOwner
      **/
-    virtual void performWipeHistory();
-    virtual bool getAllowPrune(void) const;
+    virtual void performWipeHistory() override;
+    virtual bool getAllowPrune(void) const override;
 
     void
     writeWipeHistoryTransactionLogEntry(
@@ -231,13 +231,13 @@ private:
     /**
      * Implements IClusterStateChangedHandler
      */
-    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc);
+    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
     void notifyAllBucketsChanged();
 
     /**
      * Implements IWipeOldRemovedFieldsHandler
      */
-    virtual void wipeOldRemovedFields(TimeStamp wipeTimeLimit);
+    virtual void wipeOldRemovedFields(TimeStamp wipeTimeLimit) override;
     void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
@@ -435,9 +435,9 @@ public:
     /**
      * Implements IReplayConfig API.
      */
-    virtual void replayConfig(SerialNum serialNum);
+    virtual void replayConfig(SerialNum serialNum) override;
 
-    virtual void replayWipeHistory(SerialNum serialNum, TimeStamp wipeTimeLimit);
+    virtual void replayWipeHistory(SerialNum serialNum, TimeStamp wipeTimeLimit) override;
 
     const DocTypeName & getDocTypeName(void) const { return _docTypeName; }
 
@@ -450,7 +450,7 @@ public:
     void newConfigSnapshot(DocumentDBConfig::SP snapshot);
 
     // Implements DocumentDBConfigOwner
-    void reconfigure(const DocumentDBConfig::SP & snapshot);
+    void reconfigure(const DocumentDBConfig::SP & snapshot) override;
 
     int64_t getActiveGeneration() const;
 
@@ -484,7 +484,7 @@ public:
      *
      * Sync transaction log to syncTo.
      */
-    virtual void sync(SerialNum syncTo);
+    virtual void sync(SerialNum syncTo) override;
     void enterReprocessState();
     void enterOnlineState();
     void waitForOnlineState();

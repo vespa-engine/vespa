@@ -78,8 +78,8 @@ public:
     void handleSignals();
 
 private:
-    bool Init();
-    int Main();
+    bool Init() override;
+    int Main() override;
     bool gotSignal() { return _lastSignal != 0; }
 };
 

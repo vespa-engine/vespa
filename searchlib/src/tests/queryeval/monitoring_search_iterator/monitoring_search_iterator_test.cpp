@@ -23,12 +23,12 @@ struct HistorySearchIterator : public SearchIterator
     SearchHistory _history;
     mutable bool  _getPostingInfoCalled;
     HistorySearchIterator() : _history(), _getPostingInfoCalled(false) {}
-    virtual void doSeek(uint32_t docId) {
+    virtual void doSeek(uint32_t docId) override {
         _history.seek("x", docId);
         setDocId(docId);
     }
-    virtual void doUnpack(uint32_t docId) { _history.unpack("x", docId); }
-    virtual const PostingInfo *getPostingInfo() const {
+    virtual void doUnpack(uint32_t docId) override { _history.unpack("x", docId); }
+    virtual const PostingInfo *getPostingInfo() const override {
         _getPostingInfoCalled = true;
         return NULL;
     }

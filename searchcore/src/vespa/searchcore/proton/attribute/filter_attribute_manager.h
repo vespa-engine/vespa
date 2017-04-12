@@ -32,20 +32,20 @@ public:
     ~FilterAttributeManager();
 
     // Implements search::IAttributeManager
-    virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const;
-    virtual void getAttributeList(std::vector<search::AttributeGuard> &list) const;
-    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &name) const;
-    virtual search::AttributeGuard::UP getAttributeStableEnum(const vespalib::string &) const;
-    virtual search::attribute::IAttributeContext::UP createContext() const;
+    virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
+    virtual void getAttributeList(std::vector<search::AttributeGuard> &list) const override;
+    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &name) const override;
+    virtual search::AttributeGuard::UP getAttributeStableEnum(const vespalib::string &) const override;
+    virtual search::attribute::IAttributeContext::UP createContext() const override;
 
     // Implements proton::IAttributeManager
-    virtual IAttributeManager::SP create(const AttributeCollectionSpec &) const;
-    virtual std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const;
-    virtual search::SerialNum getOldestFlushedSerialNumber() const;
-    virtual search::SerialNum getNewestFlushedSerialNumber() const;
-    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const;
+    virtual IAttributeManager::SP create(const AttributeCollectionSpec &) const override;
+    virtual std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override;
+    virtual search::SerialNum getOldestFlushedSerialNumber() const override;
+    virtual search::SerialNum getNewestFlushedSerialNumber() const override;
+    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const override;
     virtual void wipeHistory(search::SerialNum wipeSerial) override;
-    virtual const IAttributeFactory::SP &getFactory() const;
+    virtual const IAttributeFactory::SP &getFactory() const override;
     virtual search::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
 
     virtual search::AttributeVector * getWritableAttribute(const vespalib::string &name) const override;

@@ -239,13 +239,13 @@ public:
     ~ShowPostingListSubApp(void);
 
     virtual void
-    usage(bool showHeader);
+    usage(bool showHeader) override;
 
     virtual bool
-    getOptions(void);
+    getOptions(void) override;
 
     virtual int
-    run(void);
+    run(void) override;
 
     void
     showPostingList(void);
@@ -741,13 +741,13 @@ public:
     ~DumpWordsSubApp(void);
 
     virtual void
-    usage(bool showHeader);
+    usage(bool showHeader) override;
 
     virtual bool
-    getOptions(void);
+    getOptions(void) override;
 
     virtual int
-    run(void);
+    run(void) override;
 
     void
     dumpWords(void);
@@ -923,7 +923,7 @@ public:
     usage(void);
 
     int
-    Main(void);
+    Main(void) override;
 };
 
 

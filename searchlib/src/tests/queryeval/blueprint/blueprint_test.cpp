@@ -21,26 +21,26 @@ class MyOr : public IntermediateBlueprint
 {
 private:
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const {
+    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
     }
 
-    virtual FieldSpecBaseList exposeFields() const {
+    virtual FieldSpecBaseList exposeFields() const override {
         return mixChildrenFields();
     }
 
-    virtual void sort(std::vector<Blueprint*> &children) const {
+    virtual void sort(std::vector<Blueprint*> &children) const override {
         std::sort(children.begin(), children.end(), GreaterEstimate());
     }
 
-    virtual bool inheritStrict(size_t i) const {
+    virtual bool inheritStrict(size_t i) const override {
         (void)i;
         return true;
     }
 
     virtual SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, MatchData &md) const
+                             bool strict, MatchData &md) const override
     {
         return SearchIterator::UP(new MySearch("or", subSearches, &md, strict));
     }
@@ -57,7 +57,7 @@ private:
 public:
     virtual SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, MatchData &md) const
+                             bool strict, MatchData &md) const override
     {
         return SearchIterator::UP(new MySearch("or", subSearches, &md, strict));
     }
@@ -73,21 +73,21 @@ class MyAnd : public AndBlueprint
 {
 private:
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const {
+    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return min(data);
     }
 
-    virtual FieldSpecBaseList exposeFields() const {
+    virtual FieldSpecBaseList exposeFields() const override {
         return FieldSpecBaseList();
     }
 
-    virtual bool inheritStrict(size_t i) const {
+    virtual bool inheritStrict(size_t i) const override {
         return (i == 0);
     }
 
     virtual SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, MatchData &md) const
+                             bool strict, MatchData &md) const override
     {
         return SearchIterator::UP(new MySearch("and", subSearches, &md, strict));
     }
@@ -104,7 +104,7 @@ private:
 public:
     virtual SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, MatchData &md) const
+                             bool strict, MatchData &md) const override
     {
         return SearchIterator::UP(new MySearch("and", subSearches, &md, strict));
     }
@@ -119,7 +119,7 @@ class OtherAndNot : public AndNotBlueprint
 public:
     virtual SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
-                             bool strict, MatchData &md) const
+                             bool strict, MatchData &md) const override
     {
         return SearchIterator::UP(new MySearch("andnot", subSearches, &md, strict));
     }
@@ -136,7 +136,7 @@ struct MyTerm : SimpleLeafBlueprint {
     MyTerm(const FieldSpecBaseList &fields, uint32_t hitEstimate) : SimpleLeafBlueprint(fields) {
         setEstimate(HitEstimate(hitEstimate, false));
     }
-    virtual SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const {
+    virtual SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
         return SearchIterator::UP();
     }
 };
@@ -180,7 +180,7 @@ public:
     void requireThatAsStringWorks();
     void requireThatVisitMembersWorks();
     void requireThatDocIdLimitInjectionWorks();
-    int Main();
+    int Main() override;
 };
 
 SearchIterator::UP

@@ -22,10 +22,10 @@ public:
     NewConfigOperation(SerialNum serialNum,
                        IStreamHandler &streamHandler);
     virtual ~NewConfigOperation() {}
-    virtual void serialize(vespalib::nbostream &os) const;
+    virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo);
-    virtual vespalib::string toString() const;
+                             const document::DocumentTypeRepo &repo) override;
+    virtual vespalib::string toString() const override;
 };
 
 } // namespace proton
