@@ -87,7 +87,7 @@ public:
 
     HitCollector(size_t wantedHits);
 
-    virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const;
+    virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override;
 
     /**
      * Adds a hit to this hit collector.

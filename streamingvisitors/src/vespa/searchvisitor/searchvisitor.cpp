@@ -845,7 +845,7 @@ class SingleDocumentStore : public vsm::IDocSumCache
 {
 public:
     SingleDocumentStore(const StorageDocument & doc) : _doc(doc) { }
-    virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const {
+    virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override {
         (void) docId;
         return _doc;
     }

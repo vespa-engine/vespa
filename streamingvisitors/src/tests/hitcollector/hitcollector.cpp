@@ -33,7 +33,7 @@ private:
 
 public:
     HitCollectorTest();
-    int Main();
+    int Main() override;
 };
 
 HitCollectorTest::HitCollectorTest()
