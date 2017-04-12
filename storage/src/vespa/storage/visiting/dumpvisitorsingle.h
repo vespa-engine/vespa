@@ -20,20 +20,19 @@ public:
 
 private:
     void handleDocuments(const document::BucketId&,
-                         std::vector<spi::DocEntry::UP>&,
-                         HitCounter&);
+                         std::vector<spi::DocEntry::UP>&, HitCounter&) override;
 };
 
 struct DumpVisitorSingleFactory : public VisitorFactory {
 
     VisitorEnvironment::UP
-    makeVisitorEnvironment(StorageComponent&) {
+    makeVisitorEnvironment(StorageComponent&) override {
         return VisitorEnvironment::UP(new VisitorEnvironment);
     };
 
     Visitor*
-    makeVisitor(StorageComponent& c, VisitorEnvironment&,
-                const vdslib::Parameters& params)
+    makeVisitor(StorageComponent& c,
+                VisitorEnvironment&, const vdslib::Parameters& params) override
     {
         return new DumpVisitorSingle(c, params);
     }

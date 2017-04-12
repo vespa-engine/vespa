@@ -23,7 +23,7 @@ private:
 public:
     Server(MessageBus &bus);
     ~Server();
-    void handleMessage(Message::UP msg);
+    void handleMessage(Message::UP msg) override;
 };
 
 Server::Server(MessageBus &bus)
@@ -49,7 +49,7 @@ Server::handleMessage(Message::UP msg) {
 class App : public FastOS_Application
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

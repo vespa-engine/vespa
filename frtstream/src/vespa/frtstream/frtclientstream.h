@@ -21,8 +21,8 @@ class FrtClientStream : public FrtStream {
     bool executed;
     uint32_t _nextOutValue;
 
-    FRT_Values& in();
-    FRT_Value& nextOut();
+    FRT_Values& in() override;
+    FRT_Value& nextOut() override;
 public:
     FrtClientStream(const std::string& connectionSpec);
     ~FrtClientStream();

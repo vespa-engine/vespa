@@ -130,7 +130,7 @@ private:
         StatusBucketVisitor(const IdealStateManager& ism, std::ostream& out)
             : _ism(ism), _out(out) {}
 
-        bool process(const BucketDatabase::Entry& e) {
+        bool process(const BucketDatabase::Entry& e) override {
             _ism.getBucketStatus(e, _statsTracker, _out);
             return true;
         }

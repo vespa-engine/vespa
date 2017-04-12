@@ -37,7 +37,7 @@ public:
     bool contains(uint16_t) const;
     bool empty() const { return _v.empty(); }
     size_t size() const { return _v.size(); }
-    void print(std::ostream&, bool verbose, const std::string& indent) const;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
 };
 
 } // distributor

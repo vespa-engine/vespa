@@ -41,13 +41,13 @@ protected:
     void onlyMarkRedundantRetiredReplicasAsSourceOnly();
 
 public:
-    void setUp() {
+    void setUp() override {
         createLinks();
         _pendingTracker.reset(new PendingMessageTracker(getComponentRegister()));
         _sender.setPendingMessageTracker(*_pendingTracker);
     }
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 };

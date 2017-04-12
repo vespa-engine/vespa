@@ -64,7 +64,7 @@ public:
   }
 
 
-  int Main()
+  int Main() override
   {
     if (_argc < 2) {
       printf("usage : rpc_info <connectspec> [verbose]\n");

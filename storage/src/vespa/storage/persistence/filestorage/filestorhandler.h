@@ -253,9 +253,9 @@ public:
     void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
 
     /** Send the given command back out of the persistence layer. */
-    void sendCommand(const api::StorageCommand::SP&);
+    void sendCommand(const api::StorageCommand::SP&) override;
     /** Send the given reply back out of the persistence layer. */
-    void sendReply(const api::StorageReply::SP&);
+    void sendReply(const api::StorageReply::SP&) override;
 
     /** Writes status page. */
     void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;

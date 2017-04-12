@@ -38,9 +38,9 @@ public:
     ~StateReporter();
 
     vespalib::string getReportContentType(
-            const framework::HttpUrlPath&) const;
+            const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream& out,
-                      const framework::HttpUrlPath& path) const;
+                      const framework::HttpUrlPath& path) const override;
 
 private:
     metrics::MetricManager &_manager;

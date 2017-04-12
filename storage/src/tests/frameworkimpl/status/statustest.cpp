@@ -17,7 +17,7 @@ namespace storage {
 struct StatusTest : public CppUnit::TestFixture {
     std::unique_ptr<TestServiceLayerApp> _node;
 
-    void setUp();
+    void setUp() override;
 
     void testIndexStatusPage();
     void testHtmlStatus();
@@ -51,13 +51,13 @@ namespace {
         }
 
         virtual void reportHtmlHeaderAdditions(
-                std::ostream& out, const framework::HttpUrlPath&) const
+                std::ostream& out, const framework::HttpUrlPath&) const override
         {
             out << _headerAddition;
         }
 
         virtual void reportHtmlStatus(
-                std::ostream& out, const framework::HttpUrlPath&) const
+                std::ostream& out, const framework::HttpUrlPath&) const override
         {
             out << _content;
         }
@@ -68,7 +68,7 @@ namespace {
             : framework::XmlStatusReporter(id, name) {}
         virtual vespalib::string reportXmlStatus(
                 vespalib::xml::XmlOutputStream& xos,
-                const framework::HttpUrlPath&) const
+                const framework::HttpUrlPath&) const override
         {
             xos << vespalib::xml::XmlTag("mytag")
                 << vespalib::xml::XmlAttribute("foo", "bar")

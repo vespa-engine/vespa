@@ -28,11 +28,11 @@ public:
         : api::InternalCommand(ID),
           _config(config) {}
 
-    std::unique_ptr<api::StorageReply> makeReply();
+    std::unique_ptr<api::StorageReply> makeReply() override;
 
     const vespa::config::content::core::StorVisitorConfig& getConfig() const { return _config; }
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override
     {
         out << "PropagateVisitorConfig()";
 
@@ -57,7 +57,7 @@ public:
     }
 
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override
     {
         out << "PropagateVisitorConfigReply()";
 

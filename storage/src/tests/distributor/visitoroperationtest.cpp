@@ -120,13 +120,13 @@ public:
                         100)
     {}
 
-    void setUp() {
+    void setUp() override {
         createLinks();
         nullId = document::BucketId(0, 0);
         doneId = document::BucketId(INT_MAX);
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 

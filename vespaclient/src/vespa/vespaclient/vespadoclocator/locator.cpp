@@ -120,7 +120,7 @@ Locator::configure(const std::string &configId, const std::string &clusterName)
     struct MyCB : public mbus::IConfigHandler {
         mbus::RoutingSpec mySpec;
         MyCB() : mySpec() {}
-        bool setupRouting(const mbus::RoutingSpec &spec) {
+        bool setupRouting(const mbus::RoutingSpec &spec) override {
             mySpec = spec;
             return true;
         }

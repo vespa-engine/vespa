@@ -119,7 +119,7 @@ public:
     void testExternalLoadOpAbortUpdatesMetric();
     void testExternalLoadOpAbortsAreConfigurable();
 
-    void setUp();
+    void setUp() override;
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(ChangedBucketOwnershipHandlerTest);

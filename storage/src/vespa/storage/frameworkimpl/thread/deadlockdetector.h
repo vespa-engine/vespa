@@ -88,11 +88,11 @@ private:
     StorageComponent* _component;
     framework::Thread::UP _thread;
 
-    virtual void run(framework::ThreadHandle&);
+    virtual void run(framework::ThreadHandle&) override;
 
         // Status implementation
     virtual void reportHtmlStatus(std::ostream& out,
-                                  const framework::HttpUrlPath&) const;
+                                  const framework::HttpUrlPath&) const override;
     vespalib::string getBucketLockInfo() const;
 };
 

@@ -43,7 +43,7 @@ protected:
     void testMultiNodeInconsistentTimestamp();
 
 public:
-    void setUp() {
+    void setUp() override {
         _repo.reset(
                 new DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
                                      getConfig("config-doctypes",
@@ -52,7 +52,7 @@ public:
         createLinks();
     }
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 

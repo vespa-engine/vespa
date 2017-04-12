@@ -354,7 +354,7 @@ namespace {
     struct InsertEraseLoadGiver : public LoadGiver {
         InsertEraseLoadGiver(Map& map) : LoadGiver(map) {}
 
-        void run() {
+        void run() override {
                 // Screws up order of buckets by xor'ing with 12345.
                 // Only operate on last 32k super buckets.
             while (running()) {
@@ -375,7 +375,7 @@ namespace {
     struct GetLoadGiver : public LoadGiver {
         GetLoadGiver(Map& map) : LoadGiver(map) {}
 
-        void run() {
+        void run() override {
                 // It's legal to keep entries as long as you only request higher
                 // buckets. So, to test this, keep entries until you request one
                 // that is smaller than those stored.
@@ -395,7 +395,7 @@ namespace {
     struct AllLoadGiver : public LoadGiver {
         AllLoadGiver(Map& map) : LoadGiver(map) {}
 
-        void run() {
+        void run() override {
             while (running()) {
                 _map.all(*this, "foo");
                 ++_counter;
@@ -413,7 +413,7 @@ namespace {
     struct EachLoadGiver : public LoadGiver {
         EachLoadGiver(Map& map) : LoadGiver(map) {}
 
-        void run() {
+        void run() override {
             while (running()) {
                 _map.each(*this, "foo");
                 ++_counter;
@@ -431,7 +431,7 @@ namespace {
     struct RandomRangeLoadGiver : public LoadGiver {
         RandomRangeLoadGiver(Map& map) : LoadGiver(map) {}
 
-        void run() {
+        void run() override {
             while (running()) {
                 uint32_t min = (_counter ^ 23426) % 0x10000;
                 uint32_t max = (_counter ^ 40612) % 0x10000;
@@ -460,7 +460,7 @@ namespace {
     struct GetNextLoadGiver : public LoadGiver {
         GetNextLoadGiver(Map& map) : LoadGiver(map) {}
 
-        void run() {
+        void run() override {
             while (running()) {
                 uint32_t bucket = (_counter ^ 60417) % 0xffff;
                 if (_counter % 7 < 5) {

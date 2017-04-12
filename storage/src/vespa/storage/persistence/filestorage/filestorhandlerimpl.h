@@ -135,7 +135,7 @@ public:
                    const vespalib::stringref & statusString);
         ~BucketLock();
 
-        const document::BucketId& getBucketId() const { return _id; }
+        const document::BucketId& getBucketId() const override { return _id; }
 
     private:
         Disk& _disk;
@@ -171,8 +171,8 @@ public:
     void remapQueue(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2, Operation op);
 
     void failOperations(const document::BucketId&, uint16_t fromDisk, const api::ReturnCode&);
-    void sendCommand(const std::shared_ptr<api::StorageCommand>&);
-    void sendReply(const std::shared_ptr<api::StorageReply>&);
+    void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
+    void sendReply(const std::shared_ptr<api::StorageReply>&) override;
 
     void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
 
@@ -190,7 +190,7 @@ public:
 
     std::string dumpQueue(uint16_t disk) const;
     ResumeGuard pause();
-    void resume();
+    void resume() override;
     void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
 
 private:

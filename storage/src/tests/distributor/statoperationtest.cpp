@@ -14,11 +14,11 @@ namespace distributor {
 struct StatOperationTest : public CppUnit::TestFixture,
                            public DistributorTestUtil
 {
-    void setUp() {
+    void setUp() override {
         createLinks();
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 

@@ -27,16 +27,16 @@ public:
                  const std::shared_ptr<api::PutCommand> & msg,
                  PersistenceOperationMetricSet& metric);
 
-    void onStart(DistributorMessageSender& sender);
+    void onStart(DistributorMessageSender& sender) override;
 
-    const char* getName() const { return "put"; };
+    const char* getName() const override { return "put"; }
 
-    std::string getStatus() const { return ""; };
+    std::string getStatus() const override { return ""; }
 
     void onReceive(DistributorMessageSender& sender,
-                   const std::shared_ptr<api::StorageReply> &);
+                   const std::shared_ptr<api::StorageReply> &) override;
 
-    void onClose(DistributorMessageSender& sender);
+    void onClose(DistributorMessageSender& sender) override;
 
     /**
      * Gets the ideal state of the given bucket, and adds all nodes from the

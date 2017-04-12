@@ -135,8 +135,8 @@ class MergeThrottlerTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testNewClusterStateAbortsAllOutdatedActiveMerges);
     CPPUNIT_TEST_SUITE_END();
 public:
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testMergesConfig();
     void testChain();

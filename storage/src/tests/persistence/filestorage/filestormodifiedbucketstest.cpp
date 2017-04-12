@@ -45,7 +45,7 @@ struct BucketCheckerInjector : FileStorTestFixture::StorageLinkInjector
         : _node(node),
           _fixture(fixture)
     {}
-    void inject(DummyStorageLink& link) const {
+    void inject(DummyStorageLink& link) const override {
        link.push_back(std::unique_ptr<ModifiedBucketChecker>(
             new ModifiedBucketChecker(_node.getComponentRegister(),
                                       _node.getPersistenceProvider(),

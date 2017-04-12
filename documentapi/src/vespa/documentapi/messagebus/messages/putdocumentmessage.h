@@ -75,7 +75,7 @@ public:
 
     uint32_t getType() const override;
 
-    string toString() const { return "putdocumentmessage"; }
+    string toString() const override { return "putdocumentmessage"; }
 };
 
 }

@@ -92,8 +92,7 @@ public:
     RunStatistics& getStatistics() { return _statistics; }
     const RunStatistics& getStatistics() const { return _statistics; }
 
-    virtual void print(std::ostream&, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream&, bool verbose, const std::string& indent) const override;
 private:
     void removePending(Move&);
     void finalize();

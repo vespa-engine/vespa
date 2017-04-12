@@ -34,7 +34,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     {
     }
 
-    void setUp() {
+    void setUp() override {
         _converter.reset(new DocumentApiConverter("raw:"));
     };
 

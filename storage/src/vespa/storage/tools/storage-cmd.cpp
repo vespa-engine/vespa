@@ -43,7 +43,7 @@ private:
     }
 
 public:
-    int Main() {
+    int Main() override {
         if (_argc < 3) {
             fprintf(stderr, "usage: storage-cmd <connectspec> <method> [args]\n");
             fprintf(stderr, "Calls RPC method on a storage/distributor process\n");

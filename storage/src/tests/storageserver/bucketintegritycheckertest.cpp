@@ -25,7 +25,7 @@ struct BucketIntegrityCheckerTest : public CppUnit::TestFixture {
     std::unique_ptr<TestServiceLayerApp> _node;
     int _timeout; // Timeout in seconds before aborting
 
-    void setUp() {
+    void setUp() override {
         _timeout = 60*2;
         _config.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
         _node.reset(new TestServiceLayerApp(DiskCount(256),
@@ -33,7 +33,7 @@ struct BucketIntegrityCheckerTest : public CppUnit::TestFixture {
                                             _config->getConfigId()));
     }
 
-    void tearDown() {
+    void tearDown() override {
         LOG(info, "Finished test");
     }
 

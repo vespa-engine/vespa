@@ -31,8 +31,8 @@ struct StateManagerTest : public CppUnit::TestFixture {
 
     StateManagerTest();
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testSystemState();
     void testReportedNodeState();
@@ -138,7 +138,7 @@ namespace {
         MyStateListener(const NodeStateUpdater& upd)
             : updater(upd), current(*updater.getReportedNodeState()) {}
 
-        void handleNewState()
+        void handleNewState() override
         {
             ost << current << " -> ";
             current = *updater.getReportedNodeState();

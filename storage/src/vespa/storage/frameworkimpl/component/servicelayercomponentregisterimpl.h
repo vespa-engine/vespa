@@ -35,7 +35,7 @@ public:
         return _minUsedBitsTracker;
     }
 
-    virtual void registerServiceLayerComponent(ServiceLayerManagedComponent&);
+    virtual void registerServiceLayerComponent(ServiceLayerManagedComponent&) override;
 
     void setDiskCount(uint16_t count);
 };

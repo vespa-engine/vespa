@@ -44,7 +44,7 @@ struct OperationTargetResolverTest : public CppUnit::TestFixture,
     BucketInstanceList getInstances(const BucketId& bid,
                                     bool stripToRedundancy);
 
-    void setUp() {
+    void setUp() override {
         _repo.reset(new document::DocumentTypeRepo(
                 *config::ConfigGetter<document::DocumenttypesConfig>::getConfig(
                     "config-doctypes",
@@ -53,7 +53,7 @@ struct OperationTargetResolverTest : public CppUnit::TestFixture,
         createLinks();
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 
@@ -84,7 +84,7 @@ namespace {
     { \
         struct MyAsserter : public Asserter { \
             void assertEqualMsg(std::string t1, OperationTargetList t2, \
-                                OperationTargetList t3) { \
+                                OperationTargetList t3) override { \
                 CPPUNIT_ASSERT_EQUAL_MSG(t1, t2, t3); \
             } \
         }; \

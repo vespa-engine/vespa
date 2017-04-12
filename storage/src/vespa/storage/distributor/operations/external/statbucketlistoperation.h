@@ -25,17 +25,15 @@ public:
             const std::shared_ptr<api::GetBucketListCommand>& cmd);
     virtual ~StatBucketListOperation() {}
 
-    virtual const char* getName() const { return "statBucketList"; }
-    virtual std::string getStatus() const { return ""; }
+    virtual const char* getName() const override { return "statBucketList"; }
+    virtual std::string getStatus() const override { return ""; }
 
-    virtual void onStart(DistributorMessageSender& sender);
-    virtual void onReceive(DistributorMessageSender&,
-                           const std::shared_ptr<api::StorageReply>&)
-    {
+    virtual void onStart(DistributorMessageSender& sender) override;
+    virtual void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override {
         // Never called.
         assert(false);
     }
-    void onClose(DistributorMessageSender&) {
+    void onClose(DistributorMessageSender&) override {
     }
 
 private:

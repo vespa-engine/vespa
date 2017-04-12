@@ -29,7 +29,7 @@ public:
     metrics::LongCountMetric notfound;
 
     MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                      metrics::MetricSet* owner, bool includeUnused) const;
+                      metrics::MetricSet* owner, bool includeUnused) const override;
 };
 
 class PersistenceOperationMetricSet : public metrics::MetricSet

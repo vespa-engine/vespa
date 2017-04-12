@@ -40,7 +40,7 @@ public:
     void testOperationNotBlockedWhenNoMessagesPending();
     void testOperationBlockedWhenMessagesPending();
 
-    void setUp();
+    void setUp() override;
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(BlockingOperationStarterTest);

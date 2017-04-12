@@ -48,20 +48,20 @@ public:
     ~FileDistributionModelImpl();
 
     //overrides FileDistributionModel
-    FileDBModel& getFileDBModel() {
+    FileDBModel& getFileDBModel() override {
         return _fileDBModel;
     }
 
-    std::set<std::string> getFilesToDownload();
+    std::set<std::string> getFilesToDownload() override;
 
-    PeerEntries getPeers(const std::string& fileReference, size_t maxPeers);
-    void addPeer(const std::string& fileReference);
-    void removePeer(const std::string& fileReference);
-    void peerFinished(const std::string& fileReference);
+    PeerEntries getPeers(const std::string& fileReference, size_t maxPeers) override;
+    void addPeer(const std::string& fileReference) override;
+    void removePeer(const std::string& fileReference) override;
+    void peerFinished(const std::string& fileReference) override;
     void addConfigServersAsPeers(std::vector<std::string>& peers, char const* envConfigServer, int port);
 
     //Overrides Subscriber
-    void configure(std::unique_ptr<FilereferencesConfig> config);
+    void configure(std::unique_ptr<FilereferencesConfig> config) override;
 };
 
 } //namespace filedistribution

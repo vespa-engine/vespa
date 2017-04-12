@@ -40,13 +40,13 @@ public:
     void dispatchUp(const std::shared_ptr<api::StorageMessage>&);
 
     /** Remember to call this method if you override it. */
-    virtual void onClose() {
+    virtual void onClose() override {
         _commandDispatcher.flush();
         _closeState |= 1;
     }
 
     /** Remember to call this method if you override it. */
-    virtual void onFlush(bool downwards) {
+    virtual void onFlush(bool downwards) override {
         if (downwards) {
             _commandDispatcher.flush();
             _closeState |= 2;
@@ -82,7 +82,7 @@ private:
         virtual ~Dispatcher();
 
         void start();
-        void run(framework::ThreadHandle&);
+        void run(framework::ThreadHandle&) override;
 
         void add(const std::shared_ptr<Message>&);
         void flush();
@@ -103,8 +103,9 @@ private:
                     parent, std::numeric_limits<unsigned int>::max(), true)
         {
         }
-        void send(const std::shared_ptr<api::StorageMessage> & reply)
-            { _parent.sendUp(reply); }
+        void send(const std::shared_ptr<api::StorageMessage> & reply) override {
+            _parent.sendUp(reply);
+        }
         virtual ~ReplyDispatcher() { terminate(); }
     };
 
@@ -117,8 +118,9 @@ private:
         {
         }
         virtual ~CommandDispatcher() { terminate(); }
-        void send(const std::shared_ptr<api::StorageMessage> & command)
-            { _parent.sendDown(command); }
+        void send(const std::shared_ptr<api::StorageMessage> & command) override {
+            _parent.sendDown(command);
+        }
     };
 
     framework::ComponentRegister& _compReg;

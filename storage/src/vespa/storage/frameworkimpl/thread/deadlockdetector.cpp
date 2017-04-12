@@ -149,7 +149,7 @@ namespace {
         virtual void visitThread(const vespalib::string& id,
                                  const framework::ThreadProperties& tp,
                                  const framework::ThreadTickData& tick,
-                                 DeadLockDetector::State& state)
+                                 DeadLockDetector::State& state) override
         {
                 // In case we just got a new tick, ignore the thread
             if (tick._lastTickMs > _currentTime.getTime()) return;
@@ -285,7 +285,7 @@ namespace {
         void visitThread(const vespalib::string& id,
                          const framework::ThreadProperties& tp,
                          const framework::ThreadTickData& tick,
-                         DeadLockDetector::State& /*state*/)
+                         DeadLockDetector::State& /*state*/) override
         {
             _table._table.addRow(id);
             uint32_t i = _table._table.getRowCount() - 1;

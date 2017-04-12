@@ -245,15 +245,15 @@ public:
     ~MergeThrottler();
 
     /** Implements document::Runnable::run */
-    void run(framework::ThreadHandle&);
+    void run(framework::ThreadHandle&) override;
 
-    void onOpen();
-    void onClose();
-    void onFlush(bool downwards);
-    bool onUp(const std::shared_ptr<api::StorageMessage>& msg);
-    bool onDown(const std::shared_ptr<api::StorageMessage>& msg);
+    void onOpen() override;
+    void onClose() override;
+    void onFlush(bool downwards) override;
+    bool onUp(const std::shared_ptr<api::StorageMessage>& msg) override;
+    bool onDown(const std::shared_ptr<api::StorageMessage>& msg) override;
 
-    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& stateCmd);
+    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& stateCmd) override;
 
     // For unit testing only
     const ActiveMergeMap& getActiveMerges() const { return _merges; }
@@ -270,11 +270,10 @@ public:
 
     std::size_t getMaxQueueSize() const { return _maxQueueSize; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     // HtmlStatusReporter implementation
-    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const;
+    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 private:
     friend class ThreadRendezvousGuard; // impl in .cpp file
 
@@ -328,7 +327,7 @@ private:
     /**
      * Callback method for config system (IFetcherCallback)
      */
-    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig);
+    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig) override;
 
     // NOTE: unless explicitly specified, all the below functions require
     // _sync lock to be held upon call (usually implicitly via MessageGuard)

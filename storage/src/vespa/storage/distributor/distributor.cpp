@@ -462,7 +462,7 @@ public:
 
     MaintenanceChecker() : found(false) {};
 
-    bool check(uint32_t msgType, uint16_t node, uint8_t pri) {
+    bool check(uint32_t msgType, uint16_t node, uint8_t pri) override {
         (void) node;
         (void) pri;
         for (uint32_t i = 0;
@@ -486,7 +486,7 @@ public:
 
     SplitChecker(uint8_t maxP) : found(false), maxPri(maxP) {};
 
-    bool check(uint32_t msgType, uint16_t node, uint8_t pri) {
+    bool check(uint32_t msgType, uint16_t node, uint8_t pri) override {
         (void) node;
         (void) pri;
         if (msgType == api::MessageType::SPLITBUCKET_ID && pri <= maxPri) {

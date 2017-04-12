@@ -481,7 +481,7 @@ struct NextEntryFinder : public BucketDatabase::EntryProcessor {
     NextEntryFinder(const document::BucketId& id)
         : _first(true), _last(id), _next() {}
 
-    bool process(const BucketDatabase::Entry& e) {
+    bool process(const BucketDatabase::Entry& e) override {
         document::BucketId bucket(e.getBucketId());
 
         if (_first && bucket == _last) {

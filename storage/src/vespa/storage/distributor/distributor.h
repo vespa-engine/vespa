@@ -56,23 +56,23 @@ public:
 
     ~Distributor();
 
-    void onOpen();
+    void onOpen() override;
 
-    void onClose();
+    void onClose() override;
 
-    bool onDown(const std::shared_ptr<api::StorageMessage>&);
+    bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
 
-    void sendUp(const std::shared_ptr<api::StorageMessage>&);
+    void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
 
-    void sendDown(const std::shared_ptr<api::StorageMessage>&);
+    void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
 
-    virtual ChainedMessageSender& getMessageSender() {
+    virtual ChainedMessageSender& getMessageSender() override {
         return (_messageSender == 0 ? *this : *_messageSender);
     }
 
-    DistributorMetricSet& getMetrics() { return *_metrics; }
+    DistributorMetricSet& getMetrics() override { return *_metrics; }
     
-    PendingMessageTracker& getPendingMessageTracker() {
+    PendingMessageTracker& getPendingMessageTracker() override {
         return _pendingMessageTracker;
     }
 
@@ -82,7 +82,7 @@ public:
      * Enables a new cluster state. Called after the bucket db updater has
      * retrieved all bucket info related to the change.
      */
-    void enableClusterState(const lib::ClusterState& clusterState);
+    void enableClusterState(const lib::ClusterState& clusterState) override;
 
     /**
      * Invoked when a pending cluster state for a distribution (config)
@@ -90,39 +90,39 @@ public:
      * will eventually cause this method to be called, assuming the pending
      * cluster state completed successfully.
      */
-    void notifyDistributionChangeEnabled();
+    void notifyDistributionChangeEnabled() override;
 
-    void storageDistributionChanged();
+    void storageDistributionChanged() override;
 
-    void recheckBucketInfo(uint16_t nodeIdx, const document::BucketId& bid);
+    void recheckBucketInfo(uint16_t nodeIdx, const document::BucketId& bid) override;
 
-    bool handleReply(const std::shared_ptr<api::StorageReply>& reply);
+    bool handleReply(const std::shared_ptr<api::StorageReply>& reply) override;
 
     // StatusReporter implementation
     vespalib::string getReportContentType(
-            const framework::HttpUrlPath&) const;
-    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const;
+            const framework::HttpUrlPath&) const override;
+    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
-    bool handleStatusRequest(const DelegatedStatusRequest& request) const;
+    bool handleStatusRequest(const DelegatedStatusRequest& request) const override;
 
     uint32_t pendingMaintenanceCount() const;
 
     std::string getActiveIdealStateOperations() const;
     std::string getActiveOperations() const;
 
-    virtual framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex);
-    virtual framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex);
+    virtual framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex) override;
+    virtual framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex) override;
 
     /**
      * Checks whether a bucket needs to be split, and sends a split
      * if so.
      */
     void checkBucketForSplit(const BucketDatabase::Entry& e,
-                             uint8_t priority);
+                             uint8_t priority) override;
 
-    const lib::Distribution& getDistribution() const;
+    const lib::Distribution& getDistribution() const override;
 
-    const lib::ClusterState& getClusterState() const {
+    const lib::ClusterState& getClusterState() const override {
         return _clusterState;
     }
 
@@ -130,7 +130,7 @@ public:
      * @return Returns the states in which the distributors consider
      * storage nodes to be up.
      */
-    const char* getStorageNodeUpStates() const
+    const char* getStorageNodeUpStates() const override
     { return _initializingIsUp ? "uri" : "ur"; }
 
     /**
@@ -138,14 +138,14 @@ public:
      * request bucket info operations have been performed as well. Passes the
      * merge back to the operation that created it.
      */
-    void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply);
+    void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply) override;
 
 
-    bool initializing() const {
+    bool initializing() const override {
         return !_doneInitializing;
     }
     
-    const DistributorConfiguration& getConfig() const {
+    const DistributorConfiguration& getConfig() const override {
         return _component.getTotalDistributorConfig();
     }
 
@@ -153,14 +153,14 @@ public:
         return _schedulingMode == MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
     }
 
-    int getDistributorIndex() const;
+    int getDistributorIndex() const override;
 
-    const std::string& getClusterName() const;
+    const std::string& getClusterName() const override;
 
-    const PendingMessageTracker& getPendingMessageTracker() const;
+    const PendingMessageTracker& getPendingMessageTracker() const override;
 
-    virtual void sendCommand(const std::shared_ptr<api::StorageCommand>&);
-    virtual void sendReply(const std::shared_ptr<api::StorageReply>&);
+    virtual void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
+    virtual void sendReply(const std::shared_ptr<api::StorageReply>&) override;
 
     const BucketGcTimeCalculator::BucketIdHasher&
     getBucketIdHasher() const override {

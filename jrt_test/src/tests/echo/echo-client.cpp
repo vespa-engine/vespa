@@ -7,7 +7,7 @@ LOG_SETUP("echo_client");
 class EchoClient : public FastOS_Application
 {
 public:
-  int Main()
+  int Main() override
   {
     if (_argc < 2) {
       printf("usage  : echo_client <connectspec>\n");

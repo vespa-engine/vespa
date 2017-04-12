@@ -43,14 +43,14 @@ public:
 
     void recheckBucketInfo(uint32_t nodeIdx, const document::BucketId& bid);
 
-    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd);
+    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
 
     bool onRequestBucketInfoReply(
-            const std::shared_ptr<api::RequestBucketInfoReply> & repl);
+            const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
 
-    bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply);
+    bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
 
-    bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&);
+    bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
 
     void resendDelayedMessages();
 
@@ -60,8 +60,8 @@ public:
                                         const framework::HttpUrlPath&) const;
 
     vespalib::string getReportContentType(
-            const framework::HttpUrlPath&) const;
-    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const;
+            const framework::HttpUrlPath&) const override;
+    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     virtual void print(std::ostream& out, bool verbose,
                        const std::string& indent) const;
@@ -241,7 +241,7 @@ private:
 
         ~NodeRemover();
 
-        virtual bool process(BucketDatabase::Entry& e);
+        virtual bool process(BucketDatabase::Entry& e) override;
 
         void logRemove(const document::BucketId& bucketId,
                        const char* msg) const;

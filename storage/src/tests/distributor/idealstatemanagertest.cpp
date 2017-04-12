@@ -20,11 +20,11 @@ class IdealStateManagerTest : public CppUnit::TestFixture,
 {
 public:
     IdealStateManagerTest() {}
-    void setUp() {
+    void setUp() override {
         createLinks();
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 

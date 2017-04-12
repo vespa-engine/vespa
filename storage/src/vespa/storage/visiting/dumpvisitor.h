@@ -27,7 +27,7 @@ private:
 
     void handleDocuments(const document::BucketId& bucketId,
                          std::vector<spi::DocEntry::UP>& entries,
-                         HitCounter& hitCounter);
+                         HitCounter& hitCounter) override;
 
     std::unique_ptr<std::set<std::string> > _requestedFields;
     std::unique_ptr<std::set<std::string> > _requestedDocuments;
@@ -40,13 +40,13 @@ public:
     DumpVisitorFactory() {}
 
     VisitorEnvironment::UP
-    makeVisitorEnvironment(StorageComponent&) {
+    makeVisitorEnvironment(StorageComponent&) override {
         return VisitorEnvironment::UP(new VisitorEnvironment);
     };
 
     storage::Visitor*
     makeVisitor(StorageComponent& component, storage::VisitorEnvironment&,
-                const vdslib::Parameters& params)
+                const vdslib::Parameters& params) override
     {
         return new DumpVisitor(component, params);
     }

@@ -28,7 +28,7 @@ struct Watcher : public ZKFacade::NodeChangedWatcher {
     Watcher() :
         _barrier(2) {}
 
-    void operator()() {
+    void operator()() override {
         _barrier.wait();
     }
 };
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(require_that_zkfacade_can_be_deleted_from_callback)
             :_zk(zk)
         {}
 
-        void operator()() {
+        void operator()() override {
             BOOST_CHECK(_zk.use_count() == 2);
             _zk.reset();
             Watcher::operator()();

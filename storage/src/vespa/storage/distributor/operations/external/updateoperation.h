@@ -24,16 +24,16 @@ public:
                     const std::shared_ptr<api::UpdateCommand> & msg,
                     PersistenceOperationMetricSet& metric);
 
-    void onStart(DistributorMessageSender& sender);
+    void onStart(DistributorMessageSender& sender) override;
 
-    const char* getName() const { return "update"; };
+    const char* getName() const override { return "update"; }
 
-    std::string getStatus() const { return ""; };
+    std::string getStatus() const override { return ""; }
 
     void onReceive(DistributorMessageSender& sender,
-                   const std::shared_ptr<api::StorageReply> & msg);
+                   const std::shared_ptr<api::StorageReply> & msg) override;
 
-    void onClose(DistributorMessageSender& sender);
+    void onClose(DistributorMessageSender& sender) override;
 
     std::pair<document::BucketId, uint16_t> getNewestTimestampLocation() const {
         return _newestTimestampLocation;
