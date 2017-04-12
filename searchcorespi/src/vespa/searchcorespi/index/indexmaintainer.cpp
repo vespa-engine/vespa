@@ -59,7 +59,7 @@ public:
           _closure(std::move(closure))
     { }
 
-    virtual void run() {
+    virtual void run() override {
         _result = _reconfigurer.reconfigure(std::move(_closure));
     }
 };
@@ -73,7 +73,7 @@ public:
         _reconfigurer(reconfigurer),
         _closure(std::move(closure))
     { }
-    virtual void run() {
+    virtual void run() override {
         _reconfigurer.reconfigure(std::move(_closure));
     }
 };

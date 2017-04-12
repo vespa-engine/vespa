@@ -15,13 +15,13 @@ struct MyFactory : IIndexManagerFactory {
 
     virtual IIndexManager::UP createIndexManager(const IndexManagerConfig &,
                                                  const index::IndexMaintainerConfig &,
-                                                 const index::IndexMaintainerContext &) {
+                                                 const index::IndexMaintainerContext &) override {
         return IIndexManager::UP();
     }
     virtual config::ConfigKeySet getConfigKeys(
             const string &,
             const search::index::Schema &,
-            const config::ConfigInstance &) {
+            const config::ConfigInstance &) override {
         return config::ConfigKeySet();
     }
 };

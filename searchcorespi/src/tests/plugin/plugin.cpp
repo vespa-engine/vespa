@@ -19,18 +19,18 @@ public:
     virtual void putDocument(uint32_t, const Document &, SerialNum) override { }
     virtual void removeDocument(uint32_t, SerialNum) override { }
     virtual void commit(SerialNum, OnWriteDoneType) override { }
-    virtual void heartBeat(SerialNum ) {}
-    virtual SerialNum getCurrentSerialNum() const { return 0; }
-    virtual SerialNum getFlushedSerialNum() const { return 0; }
-    virtual IndexSearchable::SP getSearchable() const {
+    virtual void heartBeat(SerialNum ) override {}
+    virtual SerialNum getCurrentSerialNum() const override { return 0; }
+    virtual SerialNum getFlushedSerialNum() const override { return 0; }
+    virtual IndexSearchable::SP getSearchable() const override {
         IndexSearchable::SP s;
         return s;
     }
-    virtual SearchableStats getSearchableStats() const {
+    virtual SearchableStats getSearchableStats() const override {
         SearchableStats s;
         return s;
     }
-    virtual searchcorespi::IFlushTarget::List getFlushTargets() {
+    virtual searchcorespi::IFlushTarget::List getFlushTargets() override {
         searchcorespi::IFlushTarget::List l;
         return l;
     }
@@ -43,11 +43,11 @@ class IndexManagerFactory : public searchcorespi::IIndexManagerFactory
 public:
     virtual IIndexManager::UP createIndexManager(const IndexManagerConfig &managerCfg,
                                                  const index::IndexMaintainerConfig &maintainerConfig,
-                                                 const index::IndexMaintainerContext &maintainerContext);
+                                                 const index::IndexMaintainerContext &maintainerContext) override;
 
     virtual ConfigKeySet getConfigKeys(const string &configId,
                                        const Schema &schema,
-                                       const ConfigInstance &rootConfig);
+                                       const ConfigInstance &rootConfig) override;
 };
 
 IIndexManager::UP
