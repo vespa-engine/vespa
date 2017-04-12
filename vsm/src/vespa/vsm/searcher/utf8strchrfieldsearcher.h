@@ -17,8 +17,8 @@ public:
     UTF8StrChrFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) { }
 
 protected:
-    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt);
-    virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm);
+    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt) override;
+    virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
 };
 
 }

@@ -17,13 +17,13 @@ private:
      * Tries to match the given query term against the content of the given field reference.
      * Search strategy is choosen based on the query term type.
      **/
-    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt);
+    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt) override;
 
     /**
      * Tries to match each query term in the underlying query against the content of the given field reference.
      * Search strategy is choosen based on the query term type.
      **/
-    virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm);
+    virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
 
 public:
     DUPLICATE(UTF8FlexibleStringFieldSearcher);

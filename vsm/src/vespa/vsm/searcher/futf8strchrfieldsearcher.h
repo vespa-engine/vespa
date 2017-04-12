@@ -17,8 +17,8 @@ class FUTF8StrChrFieldSearcher : public UTF8StrChrFieldSearcher
   static bool lfoldaa(const char * toFold, size_t sz, char * folded, size_t & unalignedStart);
   static bool lfoldua(const char * toFold, size_t sz, char * folded, size_t & alignedStart);
  private:
-  virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt);
-  virtual size_t matchTerms(const FieldRef&, const size_t shortestTerm);
+  virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt) override;
+  virtual size_t matchTerms(const FieldRef&, const size_t shortestTerm) override;
   virtual size_t match(const char *folded, size_t sz, search::QueryTerm & qt);
   size_t match(const char *folded, size_t sz, size_t mintsz, search::QueryTerm ** qtl, size_t qtlSize);
   std::vector<char> _folded;

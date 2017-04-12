@@ -44,7 +44,7 @@ private:
     void test_sse2_foldua();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 ucs4_t
