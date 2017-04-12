@@ -54,7 +54,7 @@ public:
         _subscriber = NULL;
         _cfgId = "";
     }
-    virtual void configure(std::unique_ptr<CFG> cfg) {
+    virtual void configure(std::unique_ptr<CFG> cfg) override {
         (_target.*_method)(*cfg);
     }
 };
