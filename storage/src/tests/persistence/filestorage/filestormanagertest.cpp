@@ -2432,7 +2432,8 @@ namespace {
             return true;
         }
 
-        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {            // LOG(debug, "onUp Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId()) override;
+        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
+            // LOG(debug, "onUp Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
 
             vespalib::LockGuard lock(_lock);
             std::set<api::StorageMessage::Id>::iterator it
