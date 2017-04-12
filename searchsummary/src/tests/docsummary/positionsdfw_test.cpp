@@ -33,7 +33,7 @@ class Test : public vespalib::TestApp {
     void requireThat2DPositionFieldIsWritten();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int
@@ -51,21 +51,21 @@ struct MyEnvironment : IDocsumEnvironment {
 
     MyEnvironment() : attribute_man(0) {}
 
-    virtual IAttributeManager *getAttributeManager() { return attribute_man; }
-    virtual string lookupIndex(const string &s) const { return s; }
-    virtual juniper::Juniper *getJuniper() { return 0; }
+    virtual IAttributeManager *getAttributeManager() override { return attribute_man; }
+    virtual string lookupIndex(const string &s) const override { return s; }
+    virtual juniper::Juniper *getJuniper() override { return 0; }
 };
 
 class MyAttributeContext : public IAttributeContext {
     const IAttributeVector &_attr;
 public:
     MyAttributeContext(const IAttributeVector &attr) : _attr(attr) {}
-    virtual const IAttributeVector *getAttribute(const string &) const {
+    virtual const IAttributeVector *getAttribute(const string &) const override {
         return &_attr;
     }
-    virtual const IAttributeVector *getAttributeStableEnum(
-            const string &) const { abort(); }
-    virtual void getAttributeList(vector<const IAttributeVector *> &) const
+    virtual const IAttributeVector *
+    getAttributeStableEnum(const string &) const override { abort(); }
+    virtual void getAttributeList(vector<const IAttributeVector *> &) const override
     { abort(); }
 };
 
@@ -74,24 +74,24 @@ class MyAttributeManager : public IAttributeManager {
 public:
 
     MyAttributeManager(const IAttributeVector &attr) : _attr(attr) {}
-    virtual AttributeGuard::UP getAttribute(const string &) const {
+    virtual AttributeGuard::UP getAttribute(const string &) const override {
         abort();
     }
-    virtual AttributeGuard::UP getAttributeStableEnum(const string &) const {
+    virtual AttributeGuard::UP getAttributeStableEnum(const string &) const override {
         abort();
     }
-    virtual void getAttributeList(vector<AttributeGuard> &) const {
+    virtual void getAttributeList(vector<AttributeGuard> &) const override {
         abort();
     }
-    virtual IAttributeContext::UP createContext() const {
+    virtual IAttributeContext::UP createContext() const override {
         return IAttributeContext::UP(new MyAttributeContext(_attr));
     }
 };
 
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
-    virtual void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) {}
-    virtual void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) {}
-    virtual void ParseLocation(GetDocsumsState *) {}
+    virtual void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
+    virtual void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
+    virtual void ParseLocation(GetDocsumsState *) override {}
 };
 
 template <typename AttrType>

@@ -19,7 +19,7 @@ private:
 
     search::docsummary::KeywordExtractor *_extractor;
 
-    int Main();
+    int Main() override;
     void Usage(char *progname);
     bool ShowResult(int testNo, const char *actual, const char *correct);
     bool RunTest(int i, bool verify);
