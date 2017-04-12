@@ -19,7 +19,7 @@ class TransactionLogManager : public TransactionLogManagerBase
     TransLogClient::Visitor::UP _visitor;
 
     virtual void doLogReplayComplete(const vespalib::string &domainName,
-                                     int64_t elapsedTime) const;
+                                     int64_t elapsedTime) const override;
 
 public:
     /**

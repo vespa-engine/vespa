@@ -44,7 +44,7 @@ struct MyTask : public IReprocessingTask
     }
 
     virtual void
-    run()
+    run() override
     {
         ASSERT_EQUAL(_initProgress, _runner.getProgress());
         _myProgress = 0.5;
@@ -54,7 +54,7 @@ struct MyTask : public IReprocessingTask
     }
 
     virtual Progress
-    getProgress(void) const
+    getProgress(void) const override
     {
         return Progress(_myProgress, _weight);
     }

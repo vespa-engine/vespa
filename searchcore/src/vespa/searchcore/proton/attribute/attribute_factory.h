@@ -18,10 +18,10 @@ public:
 
     // Implements IAttributeFactory
     virtual AttributeVectorSP create(const vespalib::string &name,
-                                     const search::attribute::Config &cfg) const;
+                                     const search::attribute::Config &cfg) const override;
 
     virtual void setupEmpty(const AttributeVectorSP &vec,
-                            search::SerialNum serialNum) const;
+                            search::SerialNum serialNum) const override;
 };
 
 } // namespace proton

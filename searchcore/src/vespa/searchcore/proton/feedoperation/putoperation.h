@@ -18,10 +18,10 @@ public:
     virtual ~PutOperation();
     const DocumentSP &getDocument() const { return _doc; }
     void assertValid() const;
-    virtual void serialize(vespalib::nbostream &os) const;
+    virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo);
-    virtual vespalib::string toString() const;
+                             const document::DocumentTypeRepo &repo) override;
+    virtual vespalib::string toString() const override;
 };
 
 } // namespace proton

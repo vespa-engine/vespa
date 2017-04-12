@@ -14,7 +14,7 @@ struct MyStatusProducer : public StatusProducer {
         list.push_back(StatusReport::SP(new StatusReport(StatusReport::Params(comp).
                 state(state).message(msg))));
     }
-    virtual StatusReport::List getStatusReports() const {
+    virtual StatusReport::List getStatusReports() const override {
         return list;
     }
 };

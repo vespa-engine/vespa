@@ -72,11 +72,11 @@ private:
             _tls_mgr(tls_mgr),
             _tlsDirectWriter(tlsDirectWriter)
         { }
-        virtual void storeOperation(const FeedOperation &op);
-        virtual bool erase(SerialNum oldest_to_keep);
+        virtual void storeOperation(const FeedOperation &op) override;
+        virtual bool erase(SerialNum oldest_to_keep) override;
 
         virtual SerialNum
-        sync(SerialNum syncTo);
+        sync(SerialNum syncTo) override;
     };
     typedef searchcorespi::index::IThreadingService IThreadingService;
 
@@ -279,13 +279,13 @@ public:
      * Implements IDocumentMoveHandler
      */
     virtual void
-    handleMove(MoveOperation &op);
+    handleMove(MoveOperation &op) override;
 
     /**
      * Implements IHeartBeatHandler
      */
     virtual void
-    heartBeat(void);
+    heartBeat(void) override;
 
     virtual void
     sync(void);
@@ -294,19 +294,19 @@ public:
      * Implements TransLogClient::Session::Callback.
      */
     virtual RPC::Result
-    receive(const Packet &packet);
+    receive(const Packet &packet) override;
 
     virtual void
-    eof(void);
+    eof(void) override;
 
     virtual void
-    inSync(void);
+    inSync(void) override;
 
     /**
      * Implements IPruneRemovedDocumentsHandler
      */
     void
-    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp);
+    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
 
     void
     syncTls(SerialNum syncTo);
@@ -315,7 +315,7 @@ public:
     storeRemoteOperation(const FeedOperation &op);
 
     // Implements IOperationStorer
-    virtual void storeOperation(FeedOperation &op);
+    virtual void storeOperation(FeedOperation &op) override;
 };
 
 } // namespace proton

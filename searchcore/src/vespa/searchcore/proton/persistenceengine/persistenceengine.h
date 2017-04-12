@@ -112,7 +112,7 @@ public:
     virtual BucketIdListResult listBuckets(PartitionId) const override;
     virtual Result setClusterState(const ClusterState& calc) override;
     virtual Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
-    virtual BucketInfoResult getBucketInfo(const Bucket&) const;
+    virtual BucketInfoResult getBucketInfo(const Bucket&) const override;
     virtual Result put(const Bucket&, Timestamp, const document::Document::SP&, Context&) override;
     virtual RemoveResult remove(const Bucket&, Timestamp, const document::DocumentId&, Context&) override;
     virtual UpdateResult update(const Bucket&, Timestamp, const document::DocumentUpdate::SP&, Context&) override;

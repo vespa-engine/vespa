@@ -21,10 +21,10 @@ public:
     const document::BucketId &getSource1() const { return _source1; }
     const document::BucketId &getSource2() const { return _source2; }
     const document::BucketId &getTarget() const { return _target; }
-    virtual void serialize(vespalib::nbostream &os) const;
+    virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo);
-    virtual vespalib::string toString() const;
+                             const document::DocumentTypeRepo &repo) override;
+    virtual vespalib::string toString() const override;
 };
 
 } // namespace proton

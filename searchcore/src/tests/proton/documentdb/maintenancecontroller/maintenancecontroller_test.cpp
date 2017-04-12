@@ -139,31 +139,31 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     }
 
     virtual const document::DocumentTypeRepo &
-    getDocumentTypeRepo(void) const
+    getDocumentTypeRepo(void) const override
     {
         abort();
     }
 
     virtual void
     getBucketMetaData(const storage::spi::Bucket &,
-                      DocumentMetaData::Vector &) const
+                      DocumentMetaData::Vector &) const override
     {
         abort();
     }
     virtual DocumentMetaData
-    getDocumentMetaData(const DocumentId &) const
+    getDocumentMetaData(const DocumentId &) const override
     {
         return DocumentMetaData();
     }
 
     virtual Document::UP
-    getDocument(DocumentIdT lid) const
+    getDocument(DocumentIdT lid) const override
     {
         return _subDB.getDocument(lid);
     }
 
     virtual CachedSelect::SP
-    parseSelect(const vespalib::string &) const
+    parseSelect(const vespalib::string &) const override
     {
         return CachedSelect::SP();
     }
@@ -173,7 +173,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 struct MyBucketModifiedHandler : public IBucketModifiedHandler
 {
     BucketIdVector _modified;
-    virtual void notifyBucketModified(const BucketId &bucket) {
+    virtual void notifyBucketModified(const BucketId &bucket) override {
         BucketIdVector::const_iterator itr = std::find(_modified.begin(), _modified.end(), bucket);
         _modified.push_back(bucket);
     }
@@ -185,7 +185,7 @@ struct MySessionCachePruner : public ISessionCachePruner
 {
     bool isInvoked;
     MySessionCachePruner() : isInvoked(false) { }
-    void pruneTimedOutSessions(fastos::TimeStamp current) {
+    void pruneTimedOutSessions(fastos::TimeStamp current) override {
         (void) current;
         isInvoked = true;
     }
@@ -213,16 +213,16 @@ public:
     isExecutorThread(void);
 
     virtual void
-    handleMove(MoveOperation &op);
+    handleMove(MoveOperation &op) override;
 
     virtual void
-    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op);
+    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op) override;
 
     virtual void
-    heartBeat(void);
+    heartBeat(void) override;
 
     virtual void
-    wipeOldRemovedFields(TimeStamp wipeTimeLimit);
+    wipeOldRemovedFields(TimeStamp wipeTimeLimit) override;
 
     void
     setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs);
@@ -235,7 +235,7 @@ public:
 
     // Implements IOperationStorer
     virtual void
-    storeOperation(FeedOperation &op);
+    storeOperation(FeedOperation &op) override;
 
     uint32_t
     getHeartBeats(void)
@@ -304,7 +304,7 @@ struct MySimpleJob : public IMaintenanceJob
     {
     }
     void block() { setBlocked(true); }
-    virtual bool run() {
+    virtual bool run() override {
         LOG(info, "MySimpleJob::run()");
         _latch.countDown();
         ++_runCnt;
@@ -320,7 +320,7 @@ struct MySplitJob : public MySimpleJob
         : MySimpleJob(delay, interval, finishCount)
     {
     }
-    virtual bool run() {
+    virtual bool run() override {
         LOG(info, "MySplitJob::run()");
         _latch.countDown();
         ++_runCnt;
@@ -339,7 +339,7 @@ struct MyLongRunningJob : public IMaintenanceJob
     {
     }
     void block() { setBlocked(true); }
-    virtual bool run() {
+    virtual bool run() override {
         _firstRun.countDown();
         usleep(10000);
         return false;

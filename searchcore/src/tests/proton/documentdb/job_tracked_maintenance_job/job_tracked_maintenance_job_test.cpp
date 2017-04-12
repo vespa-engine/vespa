@@ -38,7 +38,7 @@ struct MyMaintenanceJob : public IMaintenanceJob
     void block() {
         setBlocked(true);
     }
-    virtual bool run() {
+    virtual bool run() override {
         _runGates[_runIdx++]->await(5000);
         return _runIdx == _runGates.size();
     }

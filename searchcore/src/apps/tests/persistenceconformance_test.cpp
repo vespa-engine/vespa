@@ -279,7 +279,7 @@ protected:
 class MyPersistenceEngineOwner : public IPersistenceEngineOwner
 {
     virtual void
-    setClusterState(const storage::spi::ClusterState &calc)
+    setClusterState(const storage::spi::ClusterState &calc) override
     {
         (void) calc;
     }
@@ -367,7 +367,7 @@ public:
     {
     }
     virtual PersistenceProvider::UP getPersistenceImplementation(const DocumentTypeRepo::SP &repo,
-                                                                 const DocumenttypesConfig &typesCfg) {
+                                                                 const DocumenttypesConfig &typesCfg) override {
         ConfigFactory cfgFactory(repo, DocumenttypesConfigSP(new DocumenttypesConfig(typesCfg)), _schemaFactory);
         _docDbRepo.reset(new DocumentDBRepo(cfgFactory, _docDbFactory));
         PersistenceEngine::UP engine(new MyPersistenceEngine(_engineOwner,
@@ -378,12 +378,12 @@ public:
         return PersistenceProvider::UP(engine.release());
     }
 
-    virtual void clear() {
+    virtual void clear() override {
         FastOS_FileInterface::EmptyAndRemoveDirectory(_baseDir.c_str());
     }
 
-    virtual bool hasPersistence() const { return true; }
-    virtual bool supportsActiveState() const { return true; }
+    virtual bool hasPersistence() const override { return true; }
+    virtual bool supportsActiveState() const override { return true; }
 };
 
 

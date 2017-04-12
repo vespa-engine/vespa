@@ -14,7 +14,7 @@ namespace proton {
 class DocumentMetaStoreAttribute : public search::NotImplementedAttribute
 {
 protected:
-    virtual void notImplemented() const __attribute__((noinline));
+    virtual void notImplemented() const override __attribute__((noinline));
 
 public:
     DocumentMetaStoreAttribute(const vespalib::string &name=getFixedName());
@@ -29,10 +29,7 @@ public:
         return document::GlobalId::LENGTH;
     }
 
-    virtual void
-    onCommit()
-    {
-    }
+    virtual void onCommit() override {}
 };
 
 }

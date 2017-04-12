@@ -36,12 +36,12 @@ public:
     virtual
     ~FileConfigManager(void);
 
-    virtual SerialNum getBestSerialNum() const;
-    virtual SerialNum getOldestSerialNum() const;
+    virtual SerialNum getBestSerialNum() const override;
+    virtual SerialNum getOldestSerialNum() const override;
 
     virtual void saveConfig(const DocumentDBConfig &snapshot,
                             const search::index::Schema &historySchema,
-                            SerialNum serialNum);
+                            SerialNum serialNum) override;
 
     /**
      * Load a config snapshot from disk corresponding to the given
@@ -59,20 +59,20 @@ public:
     virtual void loadConfig(const DocumentDBConfig &currentSnapshot,
                             SerialNum serialNum,
                             DocumentDBConfig::SP &loadedSnapshot,
-                            search::index::Schema::SP &historySchema);
+                            search::index::Schema::SP &historySchema) override;
 
-    virtual void removeInvalid();
-    virtual void prune(SerialNum serialNum);
-    virtual bool hasValidSerial(SerialNum serialNum) const;
+    virtual void removeInvalid() override;
+    virtual void prune(SerialNum serialNum) override;
+    virtual bool hasValidSerial(SerialNum serialNum) const override;
 
-    virtual SerialNum getPrevValidSerial(SerialNum serialNum) const;
+    virtual SerialNum getPrevValidSerial(SerialNum serialNum) const override;
 
     /**
      * Clone config except for history schema.
      * Used when wiping history.
      */
     virtual void saveWipeHistoryConfig(SerialNum serialNum,
-                                       fastos::TimeStamp wipeTimeLimit);
+                                       fastos::TimeStamp wipeTimeLimit) override;
 
 
     /**
@@ -81,7 +81,7 @@ public:
      * Used for serializing config into transaction log.
      */
     virtual void
-    serializeConfig(SerialNum serialNum, vespalib::nbostream &stream);
+    serializeConfig(SerialNum serialNum, vespalib::nbostream &stream) override;
 
 
     /**
@@ -93,7 +93,7 @@ public:
      * transaction log.
      */
     virtual void
-    deserializeConfig(SerialNum serialNum, vespalib::nbostream &stream);
+    deserializeConfig(SerialNum serialNum, vespalib::nbostream &stream) override;
 
     virtual void setProtonConfig(const ProtonConfigSP &protonConfig) override;
 };

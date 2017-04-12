@@ -28,7 +28,7 @@ public:
 
     virtual void heartBeat(search::SerialNum serialNum) override;
 
-    virtual const search::IDocumentStore &getDocumentStore() const {
+    virtual const search::IDocumentStore &getDocumentStore() const override {
         return _imgr->getBackingStore();
     }
 

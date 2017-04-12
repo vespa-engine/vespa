@@ -38,7 +38,7 @@ protected:
     bool GetOptions(int *exitCode);
 
 public:
-    int Main();
+    int Main() override;
     FastS_FDispatchApp(void);
     ~FastS_FDispatchApp(void);
 };

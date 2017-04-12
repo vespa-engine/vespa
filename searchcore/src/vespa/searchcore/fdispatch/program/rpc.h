@@ -17,11 +17,11 @@ public:
 
     // Register RPC Methods
 
-    virtual void RegisterMethods(FRT_ReflectionBuilder *rb);
+    virtual void RegisterMethods(FRT_ReflectionBuilder *rb) override;
 
     // methods registered by superclass
 
-    virtual void RPC_GetNodeType(FRT_RPCRequest *req);
+    virtual void RPC_GetNodeType(FRT_RPCRequest *req) override;
 
     // methods registered by us
 

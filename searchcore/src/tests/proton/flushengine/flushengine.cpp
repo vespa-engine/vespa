@@ -46,7 +46,7 @@ public:
     }
 
     Task::UP
-    execute(Task::UP task)
+    execute(Task::UP task) override
     {
         task->run();
         _done.countDown();
@@ -222,7 +222,7 @@ public:
         // empty
     }
 
-    void run() {
+    void run() override {
         _start.countDown();
         if (_proceed != NULL) {
             _proceed->await();
@@ -232,7 +232,7 @@ public:
     }
 
     virtual search::SerialNum
-    getFlushSerial(void) const
+    getFlushSerial(void) const override
     {
         return 0u;
     }
@@ -318,7 +318,7 @@ public:
     }
 
     virtual MemoryGain
-    getApproxMemoryGain() const
+    getApproxMemoryGain() const override
     {
         LOG_ASSERT(_mgain == false);
         _mgain = true;
@@ -326,7 +326,7 @@ public:
     }
 
     virtual search::SerialNum
-    getFlushedSerialNum() const
+    getFlushedSerialNum() const override
     {
         LOG_ASSERT(_serial == false);
         _serial = true;
@@ -415,12 +415,12 @@ public:
         _done(done),
         _name(name)
     { }
-    void run() {
+    void run() override {
         _list.push_back(_name);
         _done.countDown();
     }
     virtual search::SerialNum
-    getFlushSerial(void) const
+    getFlushSerial(void) const override
     {
         return 0u;
     }

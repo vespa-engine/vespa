@@ -19,14 +19,14 @@ public:
                     const std::string & name = "my",
                     const std::string & reply = "myreply") :
         _numHits(numHits), _name(name), _reply(reply) {}
-    virtual DocsumReply::UP getDocsums(const DocsumRequest &) {
+    virtual DocsumReply::UP getDocsums(const DocsumRequest &) override {
         return DocsumReply::UP(new DocsumReply);
     }
 
     virtual search::engine::SearchReply::UP match(
             const ISearchHandler::SP &,
             const search::engine::SearchRequest &,
-            vespalib::ThreadBundle &) const {
+            vespalib::ThreadBundle &) const override {
         SearchReply::UP retval(new SearchReply);
         for (size_t i = 0; i < _numHits; ++i) {
             retval->hits.push_back(SearchReply::Hit());
@@ -43,7 +43,7 @@ private:
 public:
     LocalSearchClient();
     ~LocalSearchClient();
-    void searchDone(SearchReply::UP reply) {
+    void searchDone(SearchReply::UP reply) override {
         vespalib::MonitorGuard guard(_monitor);
         _reply = std::move(reply);
         guard.broadcast();
@@ -122,7 +122,7 @@ struct ObserveBundleMatchHandler : MySearchHandler {
     virtual search::engine::SearchReply::UP match(
             const ISearchHandler::SP &,
             const search::engine::SearchRequest &,
-            vespalib::ThreadBundle &threadBundle) const
+            vespalib::ThreadBundle &threadBundle) const override
     {
         bundleSize = threadBundle.size();
         return SearchReply::UP(new SearchReply);

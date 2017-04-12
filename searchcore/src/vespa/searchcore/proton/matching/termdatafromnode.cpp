@@ -19,29 +19,29 @@ struct TermDataFromTermVisitor
         data = &n;
     }
 
-    virtual void visit(ProtonAnd &) {}
-    virtual void visit(ProtonAndNot &) {}
-    virtual void visit(ProtonNear &) {}
-    virtual void visit(ProtonONear &) {}
-    virtual void visit(ProtonOr &) {}
-    virtual void visit(ProtonRank &) {}
-    virtual void visit(ProtonWeakAnd &) {}
+    virtual void visit(ProtonAnd &) override {}
+    virtual void visit(ProtonAndNot &) override {}
+    virtual void visit(ProtonNear &) override {}
+    virtual void visit(ProtonONear &) override {}
+    virtual void visit(ProtonOr &) override {}
+    virtual void visit(ProtonRank &) override {}
+    virtual void visit(ProtonWeakAnd &) override {}
 
-    virtual void visit(ProtonWeightedSetTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonDotProduct &n) { visitTerm(n); }
-    virtual void visit(ProtonWandTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonPhrase &n) { visitTerm(n); }
-    virtual void visit(ProtonEquiv &n) { visitTerm(n); }
+    virtual void visit(ProtonWeightedSetTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonDotProduct &n) override { visitTerm(n); }
+    virtual void visit(ProtonWandTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonPhrase &n) override { visitTerm(n); }
+    virtual void visit(ProtonEquiv &n) override { visitTerm(n); }
 
-    virtual void visit(ProtonNumberTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonLocationTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonPrefixTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonRangeTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonStringTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonSubstringTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonSuffixTerm &n) { visitTerm(n); }
-    virtual void visit(ProtonPredicateQuery &) { }
-    virtual void visit(ProtonRegExpTerm &n) { visitTerm(n); }
+    virtual void visit(ProtonNumberTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonLocationTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonPrefixTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonRangeTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonStringTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonSubstringTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonSuffixTerm &n) override { visitTerm(n); }
+    virtual void visit(ProtonPredicateQuery &) override { }
+    virtual void visit(ProtonRegExpTerm &n) override { visitTerm(n); }
 };
 }  // namespace
 

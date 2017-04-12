@@ -35,7 +35,7 @@ private:
         FastS_FNETAdapter &self;
         MyTask(FNET_Scheduler *scheduler, FastS_FNETAdapter &self_in)
             : FNET_Task(scheduler), self(self_in) {}
-        virtual void PerformTask() {
+        virtual void PerformTask() override {
             self.perform();
             ScheduleNow();
         }
@@ -88,16 +88,16 @@ private:
     unsigned int _checkLimit;
     int          _healthPort;
     std::atomic<bool> _needRestart;
-    void configure(std::unique_ptr<FdispatchrcConfig> cfg);
+    void configure(std::unique_ptr<FdispatchrcConfig> cfg) override;
 public:
     // Implements FastS_AppContext
-    virtual FNET_Transport *GetFNETTransport();
-    virtual FNET_Scheduler *GetFNETScheduler();
-    virtual FastS_NodeManager *GetNodeManager();
-    virtual FastS_DataSetCollection *GetDataSetCollection();
-    virtual FastOS_ThreadPool *GetThreadPool();
-    virtual void logPerformance();
-    virtual uint32_t getDispatchLevel();
+    virtual FNET_Transport *GetFNETTransport() override;
+    virtual FNET_Scheduler *GetFNETScheduler() override;
+    virtual FastS_NodeManager *GetNodeManager() override;
+    virtual FastS_DataSetCollection *GetDataSetCollection() override;
+    virtual FastOS_ThreadPool *GetThreadPool() override;
+    virtual void logPerformance() override;
+    virtual uint32_t getDispatchLevel() override;
     bool CheckTempFail(void);
     bool Failed(void);
     bool Init(void);

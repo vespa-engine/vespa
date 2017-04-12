@@ -14,13 +14,13 @@ private:
     struct EstimateMatchFrequency : vespalib::Rendezvous<Matches, double> {
         EstimateMatchFrequency(size_t n)
             : vespalib::Rendezvous<Matches, double>(n) {}
-        virtual void mingle();
+        virtual void mingle() override;
     };
     struct SelectBest : vespalib::Rendezvous<std::vector<feature_t>, size_t> {
         size_t topN;
         SelectBest(size_t n, size_t topN_in)
             : vespalib::Rendezvous<std::vector<feature_t>, size_t>(n), topN(topN_in) {}
-        virtual void mingle();
+        virtual void mingle() override;
         bool cmp(const uint32_t &a, const uint32_t &b) {
             return (in(a)[out(a)] > in(b)[out(b)]);
         }
@@ -35,7 +35,7 @@ private:
     struct RangeCover : vespalib::Rendezvous<RangePair, RangePair> {
         RangeCover(size_t n)
             : vespalib::Rendezvous<RangePair, RangePair>(n) {}
-        virtual void mingle();
+        virtual void mingle() override;
     };
     EstimateMatchFrequency _estimate_match_frequency;
     SelectBest             _selectBest;
@@ -45,13 +45,13 @@ public:
     MatchLoopCommunicator(size_t threads, size_t topN);
     ~MatchLoopCommunicator();
 
-    virtual double estimate_match_frequency(const Matches &matches) {
+    virtual double estimate_match_frequency(const Matches &matches) override {
         return _estimate_match_frequency.rendezvous(matches);
     }
-    virtual size_t selectBest(const std::vector<feature_t> &sortedScores) {
+    virtual size_t selectBest(const std::vector<feature_t> &sortedScores) override {
         return _selectBest.rendezvous(sortedScores);
     }
-    virtual RangePair rangeCover(const RangePair &ranges) {
+    virtual RangePair rangeCover(const RangePair &ranges) override {
         return _rangeCover.rendezvous(ranges);
     }
 };

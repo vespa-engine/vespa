@@ -47,7 +47,7 @@ class Test : public vespalib::TestApp {
     void requireThatNegativeTermsAreSkipped();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int

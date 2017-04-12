@@ -51,7 +51,7 @@ public:
                                  LegacyAttributeMetrics *totalAttributes,
                                  const std::string &name) override;
     virtual void cleanAttributes(const AttributeMetricsCollection &subAttributes,
-                                 LegacyAttributeMetrics *totalAttributes);
+                                 LegacyAttributeMetrics *totalAttributes) override;
     virtual void addRankProfile(LegacyDocumentDBMetrics &owner,
                                 const std::string &name,
                                 size_t numDocIdPartitions) override;

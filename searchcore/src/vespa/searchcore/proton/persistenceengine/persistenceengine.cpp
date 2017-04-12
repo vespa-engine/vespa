@@ -86,7 +86,7 @@ public:
         : _bucketSet()
     { }
     ~BucketIdListResultHandler();
-    virtual void handle(const BucketIdListResult &result) {
+    virtual void handle(const BucketIdListResult &result) override {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
             _bucketSet.insert(buckets[i]);
@@ -114,7 +114,7 @@ public:
           BucketIdListResultHandler()
     { }
     ~SynchronizedBucketIdListResultHandler();
-    virtual void handle(const BucketIdListResult &result) {
+    virtual void handle(const BucketIdListResult &result) override {
         {
             vespalib::LockGuard guard(_lock);
             BucketIdListResultHandler::handle(result);
@@ -136,7 +136,7 @@ public:
     {
     }
     ~BucketInfoResultHandler();
-    virtual void handle(const BucketInfoResult &result) {
+    virtual void handle(const BucketInfoResult &result) override {
         if (_first) {
             _result = result;
             _first = false;
@@ -182,9 +182,9 @@ class SequenceOfOne : public Sequence<T> {
 public:
     SequenceOfOne(const T &value) : _done(false), _value(value) {}
 
-    virtual bool valid() const { return !_done; }
-    virtual T get() const { return _value; }
-    virtual void next() { _done = true; }
+    virtual bool valid() const override { return !_done; }
+    virtual T get() const override { return _value; }
+    virtual void next() override { _done = true; }
 };
 
 template <typename T>
@@ -728,7 +728,7 @@ private:
 public:
     ActiveBucketIdListResultHandler() : _bucketMap() { }
 
-    virtual void handle(const BucketIdListResult &result) {
+    virtual void handle(const BucketIdListResult &result) override {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
             IR ir(_bucketMap.insert(std::make_pair(buckets[i], 1u)));

@@ -52,16 +52,16 @@ public:
         /**
          * Implements ISummarySetup.
          */
-        search::docsummary::IDocsumWriter & getDocsumWriter() const { return *_docsumWriter; }
-        search::docsummary::ResultConfig & getResultConfig() { return *_docsumWriter->GetResultConfig(); }
+        search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
+        search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
 
         search::docsummary::IDocsumStore::UP createDocsumStore(
-                const vespalib::string &resultClassName);
+                const vespalib::string &resultClassName) override;
 
         // Inherit doc from IDocsumEnvironment
-        virtual search::IAttributeManager * getAttributeManager() { return _attributeMgr.get(); }
-        virtual vespalib::string lookupIndex(const vespalib::string & s) const { (void) s; return ""; }
-        virtual juniper::Juniper * getJuniper() { return _juniperConfig.get(); }
+        virtual search::IAttributeManager * getAttributeManager() override { return _attributeMgr.get(); }
+        virtual vespalib::string lookupIndex(const vespalib::string & s) const override { (void) s; return ""; }
+        virtual juniper::Juniper * getJuniper() override { return _juniperConfig.get(); }
     };
 
 private:
@@ -96,9 +96,9 @@ public:
                        const vespa::config::search::SummarymapConfig &summarymapCfg,
                        const vespa::config::search::summary::JuniperrcConfig &juniperCfg,
                        const document::DocumentTypeRepo::SP &repo,
-                       const search::IAttributeManager::SP &attributeMgr);
+                       const search::IAttributeManager::SP &attributeMgr) override;
 
-    virtual search::IDocumentStore & getBackingStore() { return *_docStore; }
+    virtual search::IDocumentStore & getBackingStore() override { return *_docStore; }
 
 };
 

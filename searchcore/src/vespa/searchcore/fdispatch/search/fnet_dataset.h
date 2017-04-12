@@ -36,7 +36,7 @@ public:
               _dataset(dataset),
               _delay(delay)
         {}
-        void PerformTask();
+        void PerformTask() override;
     };
 
 
@@ -55,16 +55,16 @@ public:
     FNET_Transport *GetTransport() { return _transport; }
 
     // typesafe down-cast
-    virtual FastS_FNET_DataSet *GetFNETDataSet() { return this; }
+    virtual FastS_FNET_DataSet *GetFNETDataSet() override { return this; }
 
     // common dataset API
-    virtual bool AddEngine(FastS_EngineDesc *desc);
-    virtual void ConfigDone(FastS_DataSetCollection *);
-    virtual void ScheduleCheckBad();
+    virtual bool AddEngine(FastS_EngineDesc *desc) override;
+    virtual void ConfigDone(FastS_DataSetCollection *) override;
+    virtual void ScheduleCheckBad() override;
     virtual FastS_ISearch *CreateSearch(FastS_DataSetCollection *dsc,
                                         FastS_TimeKeeper *timeKeeper,
-                                        bool async);
-    virtual void Free();
+                                        bool async) override;
+    virtual void Free() override;
 
     bool isGoodRow(uint32_t rowId);
 };

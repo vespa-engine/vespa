@@ -47,7 +47,7 @@ public:
         _sortData.push_back(sd);
         _sortDataSize += sd.second;
     }
-    virtual void merge(Source &rhs);
+    virtual void merge(Source &rhs) override;
 };
 
 } // namespace proton::matching

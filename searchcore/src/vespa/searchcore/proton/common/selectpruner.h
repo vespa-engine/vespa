@@ -90,29 +90,28 @@ public:
     process(const document::select::Node &node);
 private:
     virtual void
-    visitAndBranch(const document::select::And &expr);
+    visitAndBranch(const document::select::And &expr) override;
 
     virtual void
-    visitComparison(const document::select::Compare &expr);
+    visitComparison(const document::select::Compare &expr) override;
 
     virtual void
-    visitDocumentType(const document::select::DocType &expr);
+    visitDocumentType(const document::select::DocType &expr) override;
 
     virtual void
-    visitNotBranch(const document::select::Not &expr);
+    visitNotBranch(const document::select::Not &expr) override;
 
     virtual void
-    visitOrBranch(const document::select::Or &expr);
+    visitOrBranch(const document::select::Or &expr) override;
 
     virtual void
-    visitArithmeticValueNode(const document::select::ArithmeticValueNode &
-                             expr);
+    visitArithmeticValueNode(const document::select::ArithmeticValueNode &expr) override;
 
     virtual void
-    visitFunctionValueNode(const document::select::FunctionValueNode &expr);
+    visitFunctionValueNode(const document::select::FunctionValueNode &expr) override;
 
     virtual void
-    visitFieldValueNode(const document::select::FieldValueNode &expr);
+    visitFieldValueNode(const document::select::FieldValueNode &expr) override;
 
     void
     invertNode(void);

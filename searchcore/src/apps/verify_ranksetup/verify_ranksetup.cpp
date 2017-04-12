@@ -56,13 +56,13 @@ public:
                       const ImportedFieldsConfig &importedFieldsCfg);
 
     int usage();
-    int Main();
+    int Main() override;
 };
 
 struct DummyConstantValueRepo : IConstantValueRepo {
     const RankingConstantsConfig &cfg;
     DummyConstantValueRepo(const RankingConstantsConfig &cfg_in) : cfg(cfg_in) {}
-    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const {
+    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override {
         for (const auto &entry: cfg.constant) {
             if (entry.name == name) {                
                 const auto &engine = DefaultTensorEngine::ref();

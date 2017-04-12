@@ -64,7 +64,7 @@ namespace {
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer
 {
     virtual bool
-    reconfigure(vespalib::Closure0<bool>::UP closure)
+    reconfigure(vespalib::Closure0<bool>::UP closure) override
     {
         bool ret = true;
         if (closure.get() != NULL)

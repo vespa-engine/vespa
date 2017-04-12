@@ -27,7 +27,7 @@ public:
     {
     }
 
-    void run() {
+    void run() override {
         _client.getDocsumsDone(_engine.getDocsums(_request.release()));
     }
 };

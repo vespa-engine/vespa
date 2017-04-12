@@ -196,7 +196,7 @@ class Test : public vespalib::TestApp {
     void setSpanTree(StringFieldValue & value, SpanTree::UP tree);
 public:
     Test();
-    int Main();
+    int Main() override;
 };
 
 DocumenttypesConfig getDocumenttypesConfig() {

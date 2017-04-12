@@ -20,10 +20,10 @@ public:
     uint32_t getLidLimit() const { return _lidLimit; }
 
     // Implements FeedOperation
-    virtual void serialize(vespalib::nbostream &os) const;
+    virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &);
-    virtual vespalib::string toString() const;
+                             const document::DocumentTypeRepo &) override;
+    virtual vespalib::string toString() const override;
 };
 
 } // namespace proton

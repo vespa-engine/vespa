@@ -107,7 +107,7 @@ class Test : public vespalib::TestApp {
     void requireThatBlackListBlueprintCanBeUsed();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 #define TEST_CALL(func) \
@@ -225,19 +225,19 @@ public:
         EXPECT_EQUAL((double)estimatedHitCount / doc_count, n.field(0).getDocFreq());
     }
 
-    virtual void visit(ProtonNumberTerm &n) { checkNode(n, 1, false); }
-    virtual void visit(ProtonLocationTerm &n) { checkNode(n, 0, true); }
-    virtual void visit(ProtonPrefixTerm &n) { checkNode(n, 1, false); }
-    virtual void visit(ProtonRangeTerm &n) { checkNode(n, 2, false); }
-    virtual void visit(ProtonStringTerm &n) { checkNode(n, 2, false); }
-    virtual void visit(ProtonSubstringTerm &n) { checkNode(n, 0, true); }
-    virtual void visit(ProtonSuffixTerm &n) { checkNode(n, 2, false); }
-    virtual void visit(ProtonPhrase &n) { checkNode(n, 0, true); }
-    virtual void visit(ProtonWeightedSetTerm &) {}
-    virtual void visit(ProtonDotProduct &) {}
-    virtual void visit(ProtonWandTerm &) {}
-    virtual void visit(ProtonPredicateQuery &) {}
-    virtual void visit(ProtonRegExpTerm &) {}
+    virtual void visit(ProtonNumberTerm &n) override { checkNode(n, 1, false); }
+    virtual void visit(ProtonLocationTerm &n) override { checkNode(n, 0, true); }
+    virtual void visit(ProtonPrefixTerm &n) override { checkNode(n, 1, false); }
+    virtual void visit(ProtonRangeTerm &n) override { checkNode(n, 2, false); }
+    virtual void visit(ProtonStringTerm &n) override { checkNode(n, 2, false); }
+    virtual void visit(ProtonSubstringTerm &n) override { checkNode(n, 0, true); }
+    virtual void visit(ProtonSuffixTerm &n) override { checkNode(n, 2, false); }
+    virtual void visit(ProtonPhrase &n) override { checkNode(n, 0, true); }
+    virtual void visit(ProtonWeightedSetTerm &) override {}
+    virtual void visit(ProtonDotProduct &) override {}
+    virtual void visit(ProtonWandTerm &) override {}
+    virtual void visit(ProtonPredicateQuery &) override {}
+    virtual void visit(ProtonRegExpTerm &) override {}
 };
 
 void Test::requireThatTermsAreLookedUp() {
@@ -357,12 +357,12 @@ class SetUpTermDataTestCheckerVisitor
     int Main() { return 0; }
 
 public:
-    virtual void visit(ProtonNumberTerm &) {}
-    virtual void visit(ProtonLocationTerm &) {}
-    virtual void visit(ProtonPrefixTerm &) {}
-    virtual void visit(ProtonRangeTerm &) {}
+    virtual void visit(ProtonNumberTerm &) override {}
+    virtual void visit(ProtonLocationTerm &) override {}
+    virtual void visit(ProtonPrefixTerm &) override {}
+    virtual void visit(ProtonRangeTerm &) override {}
 
-    virtual void visit(ProtonStringTerm &n) {
+    virtual void visit(ProtonStringTerm &n) override {
         const ITermData &term_data = n;
         EXPECT_EQUAL(string_weight.percent(),
                    term_data.getWeight().percent());
@@ -378,17 +378,17 @@ public:
         }
     }
 
-    virtual void visit(ProtonSubstringTerm &) {}
-    virtual void visit(ProtonSuffixTerm &) {}
-    virtual void visit(ProtonPhrase &n) {
+    virtual void visit(ProtonSubstringTerm &) override {}
+    virtual void visit(ProtonSuffixTerm &) override {}
+    virtual void visit(ProtonPhrase &n) override {
         const ITermData &term_data = n;
         EXPECT_EQUAL(2u, term_data.getPhraseLength());
     }
-    virtual void visit(ProtonWeightedSetTerm &) {}
-    virtual void visit(ProtonDotProduct &) {}
-    virtual void visit(ProtonWandTerm &) {}
-    virtual void visit(ProtonPredicateQuery &) {}
-    virtual void visit(ProtonRegExpTerm &) {}
+    virtual void visit(ProtonWeightedSetTerm &) override {}
+    virtual void visit(ProtonDotProduct &) override {}
+    virtual void visit(ProtonWandTerm &) override {}
+    virtual void visit(ProtonPredicateQuery &) override {}
+    virtual void visit(ProtonRegExpTerm &) override {}
 };
 
 void Test::requireThatTermDataIsFilledIn() {

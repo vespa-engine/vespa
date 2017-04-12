@@ -39,7 +39,7 @@ private:
     void writeLog();
     void cleanup();
 
-    virtual void Run(FastOS_ThreadInterface *, void *);
+    virtual void Run(FastOS_ThreadInterface *, void *) override;
 
 public:
     DocsumAdapter(FastS_AppContext *appCtx,

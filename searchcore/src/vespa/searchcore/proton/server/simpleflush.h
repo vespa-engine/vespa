@@ -23,7 +23,7 @@ public:
 
     // Implements IFlushStrategy
     virtual FlushContext::List getFlushTargets(const FlushContext::List &targetList,
-                                               const flushengine::TlsStatsMap &tlsStatsMap) const;
+                                               const flushengine::TlsStatsMap &tlsStatsMap) const override;
 
 };
 

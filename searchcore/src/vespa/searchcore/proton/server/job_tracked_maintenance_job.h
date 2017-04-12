@@ -22,12 +22,12 @@ public:
     ~JobTrackedMaintenanceJob();
 
     // Implements IMaintenanceJob
-    virtual bool isBlocked() const { return _job->isBlocked(); }
-    virtual void unBlock() { _job->unBlock(); }
-    virtual void registerRunner(IMaintenanceJobRunner *runner) {
+    virtual bool isBlocked() const override { return _job->isBlocked(); }
+    virtual void unBlock() override { _job->unBlock(); }
+    virtual void registerRunner(IMaintenanceJobRunner *runner) override {
         _job->registerRunner(runner);
     }
-    virtual bool run();
+    virtual bool run() override;
 };
 
 } // namespace proton

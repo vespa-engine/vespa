@@ -38,7 +38,7 @@ public:
     MySearchHandler(const std::string & name = "my",
                     const stringref & reply = MYREPLY) :
         _name(name), _reply(reply) {}
-    virtual DocsumReply::UP getDocsums(const DocsumRequest & request) {
+    virtual DocsumReply::UP getDocsums(const DocsumRequest & request) override {
         return (request.useRootSlime())
             ? std::make_unique<DocsumReply>(createSlimeReply(request.hits.size()))
             : createOldDocSum(request);
@@ -71,7 +71,7 @@ public:
     virtual search::engine::SearchReply::UP match(
             const ISearchHandler::SP &,
             const search::engine::SearchRequest &,
-            vespalib::ThreadBundle &) const {
+            vespalib::ThreadBundle &) const override {
         return SearchReply::UP(new SearchReply);
     }
 };
@@ -84,7 +84,7 @@ private:
 public:
     MyDocsumClient();
     ~MyDocsumClient();
-    void getDocsumsDone(DocsumReply::UP reply) {
+    void getDocsumsDone(DocsumReply::UP reply) override {
         vespalib::MonitorGuard guard(_monitor);
         _reply = std::move(reply);
         guard.broadcast();
@@ -116,7 +116,7 @@ private:
     void requireThatSlimeInterfaceWorksFine();
     void requireThatRPCInterfaceWorks();
 public:
-    int Main();
+    int Main() override;
 };
 
 DocsumRequest::UP

@@ -50,10 +50,10 @@ public:
     void updateStats();
     bool cleanUp(AttributeDirectory::Writer &writer);
     // Implements vespalib::Executor::Task
-    virtual void run();
+    virtual void run() override;
 
     virtual SerialNum
-    getFlushSerial(void) const
+    getFlushSerial(void) const override
     {
         return _syncToken;
     }

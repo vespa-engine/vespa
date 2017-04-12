@@ -124,29 +124,29 @@ private:
     }
 
 protected:
-    virtual void visit(ProtonAnd &n)     { buildIntermediate(new AndBlueprint(), n); }
-    virtual void visit(ProtonAndNot &n)  { buildIntermediate(new AndNotBlueprint(), n); }
-    virtual void visit(ProtonOr &n)      { buildIntermediate(new OrBlueprint(), n); }
-    virtual void visit(ProtonWeakAnd &n) { buildWeakAnd(n); }
-    virtual void visit(ProtonEquiv &n)   { buildEquiv(n); }
-    virtual void visit(ProtonRank &n)    { buildIntermediate(new RankBlueprint(), n); }
-    virtual void visit(ProtonNear &n)    { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
-    virtual void visit(ProtonONear &n)   { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
+    virtual void visit(ProtonAnd &n)     override { buildIntermediate(new AndBlueprint(), n); }
+    virtual void visit(ProtonAndNot &n)  override { buildIntermediate(new AndNotBlueprint(), n); }
+    virtual void visit(ProtonOr &n)      override { buildIntermediate(new OrBlueprint(), n); }
+    virtual void visit(ProtonWeakAnd &n) override { buildWeakAnd(n); }
+    virtual void visit(ProtonEquiv &n)   override { buildEquiv(n); }
+    virtual void visit(ProtonRank &n)    override { buildIntermediate(new RankBlueprint(), n); }
+    virtual void visit(ProtonNear &n)    override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
+    virtual void visit(ProtonONear &n)   override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
 
-    virtual void visit(ProtonWeightedSetTerm &n) { buildTerm(n); }
-    virtual void visit(ProtonDotProduct &n) { buildTerm(n); }
-    virtual void visit(ProtonWandTerm &n) { buildTerm(n); }
+    virtual void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }
+    virtual void visit(ProtonDotProduct &n) override { buildTerm(n); }
+    virtual void visit(ProtonWandTerm &n) override { buildTerm(n); }
 
-    virtual void visit(ProtonPhrase &n)        { buildTerm(n); }
-    virtual void visit(ProtonNumberTerm &n)    { buildTerm(n); }
-    virtual void visit(ProtonLocationTerm &n)  { buildTerm(n); }
-    virtual void visit(ProtonPrefixTerm &n)    { buildTerm(n); }
-    virtual void visit(ProtonRangeTerm &n)     { buildTerm(n); }
-    virtual void visit(ProtonStringTerm &n)    { buildTerm(n); }
-    virtual void visit(ProtonSubstringTerm &n) { buildTerm(n); }
-    virtual void visit(ProtonSuffixTerm &n)    { buildTerm(n); }
-    virtual void visit(ProtonPredicateQuery &n) { buildTerm(n); }
-    virtual void visit(ProtonRegExpTerm &n)    { buildTerm(n); }
+    virtual void visit(ProtonPhrase &n)        override { buildTerm(n); }
+    virtual void visit(ProtonNumberTerm &n)    override { buildTerm(n); }
+    virtual void visit(ProtonLocationTerm &n)  override { buildTerm(n); }
+    virtual void visit(ProtonPrefixTerm &n)    override { buildTerm(n); }
+    virtual void visit(ProtonRangeTerm &n)     override { buildTerm(n); }
+    virtual void visit(ProtonStringTerm &n)    override { buildTerm(n); }
+    virtual void visit(ProtonSubstringTerm &n) override { buildTerm(n); }
+    virtual void visit(ProtonSuffixTerm &n)    override { buildTerm(n); }
+    virtual void visit(ProtonPredicateQuery &n) override { buildTerm(n); }
+    virtual void visit(ProtonRegExpTerm &n)    override { buildTerm(n); }
 
 public:
     BlueprintBuilderVisitor(const IRequestContext & requestContext, ISearchContext &context) :

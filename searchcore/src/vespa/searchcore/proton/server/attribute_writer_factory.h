@@ -14,7 +14,7 @@ struct AttributeWriterFactory : public IAttributeWriterFactory
 {
     AttributeWriterFactory() {}
     virtual IAttributeWriter::SP create(const IAttributeWriter::SP &old,
-                                        const AttributeCollectionSpec &attrSpec) const
+                                        const AttributeCollectionSpec &attrSpec) const override
     {
         const AttributeWriter &oldAdapter = dynamic_cast<const AttributeWriter &>(*old.get());
         const proton::IAttributeManager::SP &oldMgr = oldAdapter.getAttributeManager();

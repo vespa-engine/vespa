@@ -53,7 +53,7 @@ struct MyMoveHandler : public IDocumentMoveHandler
           _moves(),
           _numCachedBuckets()
     {}
-    virtual void handleMove(MoveOperation &op) {
+    virtual void handleMove(MoveOperation &op) override {
         _moves.push_back(op);
         if (_bucketDb.takeGuard()->isCachedBucket(op.getBucketId())) {
             ++_numCachedBuckets;
@@ -73,16 +73,16 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     MyDocumentRetriever(DocumentTypeRepo::SP repo) : _repo(repo), _docs() {
         _docs.push_back(Document::SP()); // lid 0 invalid
     }
-    virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const { return *_repo; }
+    virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
     virtual void getBucketMetaData(const storage::spi::Bucket &,
-                                   DocumentMetaData::Vector &) const {}
-    virtual DocumentMetaData getDocumentMetaData(const DocumentId &) const { return DocumentMetaData(); }
-    virtual Document::UP getDocument(DocumentIdT lid) const {
+                                   DocumentMetaData::Vector &) const override {}
+    virtual DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return DocumentMetaData(); }
+    virtual Document::UP getDocument(DocumentIdT lid) const override {
         return Document::UP(_docs[lid]->clone());
     }
 
     virtual CachedSelect::SP
-    parseSelect(const vespalib::string &) const
+    parseSelect(const vespalib::string &) const override
     {
         return CachedSelect::SP();
     }
@@ -92,7 +92,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 struct MyBucketModifiedHandler : public IBucketModifiedHandler
 {
     BucketIdVector _modified;
-    virtual void notifyBucketModified(const BucketId &bucket) {
+    virtual void notifyBucketModified(const BucketId &bucket) override {
         BucketIdVector::const_iterator itr = std::find(_modified.begin(), _modified.end(), bucket);
         ASSERT_TRUE(itr == _modified.end());
         _modified.push_back(bucket);

@@ -24,23 +24,23 @@ public:
     const searchcorespi::IFlushTarget &getTarget() const { return *_target; }
 
     // Implements searchcorespi::IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const {
+    virtual MemoryGain getApproxMemoryGain() const override {
         return _target->getApproxMemoryGain();
     }
-    virtual DiskGain getApproxDiskGain() const {
+    virtual DiskGain getApproxDiskGain() const override {
         return _target->getApproxDiskGain();
     }
-    virtual SerialNum getFlushedSerialNum() const {
+    virtual SerialNum getFlushedSerialNum() const override {
         return _target->getFlushedSerialNum();
     }
-    virtual Time getLastFlushTime() const {
+    virtual Time getLastFlushTime() const override {
         return _target->getLastFlushTime();
     }
-    virtual bool needUrgentFlush() const {
+    virtual bool needUrgentFlush() const override {
         return _target->needUrgentFlush();
     }
-    virtual searchcorespi::FlushTask::UP initFlush(SerialNum currentSerial);
-    virtual searchcorespi::FlushStats getLastFlushStats() const {
+    virtual searchcorespi::FlushTask::UP initFlush(SerialNum currentSerial) override;
+    virtual searchcorespi::FlushStats getLastFlushStats() const override {
         return _target->getLastFlushStats();
     }
 

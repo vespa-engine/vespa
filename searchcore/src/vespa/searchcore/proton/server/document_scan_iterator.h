@@ -23,11 +23,11 @@ public:
     DocumentScanIterator(const IDocumentMetaStore &_metaStore);
 
     // Implements IDocumentScanIterator
-    virtual bool valid() const;
+    virtual bool valid() const override;
 
     virtual search::DocumentMetaData next(uint32_t compactLidLimit,
                                           uint32_t maxDocsToScan,
-                                          bool retry);
+                                          bool retry) override;
 };
 
 } // namespace proton

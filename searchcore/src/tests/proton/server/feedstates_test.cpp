@@ -41,9 +41,9 @@ struct MyFeedView : public test::DummyFeedView {
     MyFeedView();
     ~MyFeedView();
 
-    virtual const DocumentTypeRepo::SP &getDocumentTypeRepo() const
+    virtual const DocumentTypeRepo::SP &getDocumentTypeRepo() const override
     { return repo_sp; }
-    virtual void handleRemove(FeedToken *, const RemoveOperation &)
+    virtual void handleRemove(FeedToken *, const RemoveOperation &) override
     { ++remove_handled; }
 };
 
@@ -51,12 +51,12 @@ MyFeedView::MyFeedView() : repo_sp(repo.getTypeRepoSp()), remove_handled(0) {}
 MyFeedView::~MyFeedView() {}
 
 struct MyReplayConfig : IReplayConfig {
-    virtual void replayConfig(SerialNum) {}
-    virtual void replayWipeHistory(SerialNum, fastos::TimeStamp) {}
+    virtual void replayConfig(SerialNum) override {}
+    virtual void replayWipeHistory(SerialNum, fastos::TimeStamp) override {}
 };
 
 struct InstantExecutor : vespalib::Executor {
-    virtual Task::UP execute(Task::UP task) {
+    virtual Task::UP execute(Task::UP task) override {
         task->run();
         return Task::UP();
     }
