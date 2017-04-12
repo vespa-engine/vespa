@@ -42,7 +42,7 @@ public:
     }
 
     virtual FakePosting::SP
-    make(const FakeWord &fw)
+    make(const FakeWord &fw) override
     {
         return FakePosting::SP(new P(fw));
     }

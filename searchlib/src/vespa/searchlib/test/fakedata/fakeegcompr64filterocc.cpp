@@ -792,7 +792,7 @@ public:
     ~FakeEGCompr64SkipFilterOcc(void);
 
     virtual search::queryeval::SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const;
+    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -884,7 +884,7 @@ public:
     void doL2SkipSeek(uint32_t docid); 
     void doL1SkipSeek(uint32_t docId);
 
-    void doUnpack(uint32_t docId);
+    void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;
     void initRange(uint32_t begin, uint32_t end) override;
     Trinary is_strict() const override { return Trinary::True; }

@@ -82,14 +82,14 @@ public:
         vespalib::string toString() const { return _str; }
 
         // Overrides ObjectVisitor
-        virtual void openStruct(const vespalib::string &name, const vespalib::string &type);
-        virtual void closeStruct();
-        virtual void visitBool(const vespalib::string &name, bool value);
-        virtual void visitInt(const vespalib::string &name, int64_t value);
-        virtual void visitFloat(const vespalib::string &name, double value);
-        virtual void visitString(const vespalib::string &name, const vespalib::string &value);
-        virtual void visitNull(const vespalib::string &name);
-        virtual void visitNotImplemented();
+        virtual void openStruct(const vespalib::string &name, const vespalib::string &type) override;
+        virtual void closeStruct() override;
+        virtual void visitBool(const vespalib::string &name, bool value) override;
+        virtual void visitInt(const vespalib::string &name, int64_t value) override;
+        virtual void visitFloat(const vespalib::string &name, double value) override;
+        virtual void visitString(const vespalib::string &name, const vespalib::string &value) override;
+        virtual void visitNull(const vespalib::string &name) override;
+        virtual void visitNotImplemented() override;
     };
 
     typedef std::unique_ptr<MonitoringSearchIterator> UP;
@@ -115,7 +115,7 @@ public:
         SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
     }
     Trinary is_strict() const override { return _search->is_strict(); }
-    virtual const PostingInfo *getPostingInfo() const;
+    virtual const PostingInfo *getPostingInfo() const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
     const SearchIterator &getIterator() const { return *_search; }

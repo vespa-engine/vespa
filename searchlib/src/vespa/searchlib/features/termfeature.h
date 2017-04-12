@@ -23,7 +23,7 @@ public:
      */
     TermExecutor(const search::fef::IQueryEnvironment &env,
                  uint32_t termId);
-    virtual void execute(uint32_t docId);
+    virtual void execute(uint32_t docId) override;
 
 private:
     const search::fef::ITermData *_termData;
@@ -43,19 +43,19 @@ public:
 
     // Inherit doc from Blueprint.
     virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
+                                   search::fef::IDumpFeatureVisitor &visitor) const override;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
+    virtual search::fef::Blueprint::UP createInstance() const override;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc().number();
     }
 
     // Inherit doc from Blueprint.
     virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
+                       const search::fef::ParameterList & params) override;
 
     // Inherit doc from Blueprint.
     virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;

@@ -59,7 +59,7 @@ public:
     using Searchable::createBlueprint;
     virtual Blueprint::UP createBlueprint(const IRequestContext & requestContext,
                                           const FieldSpec &field,
-                                          const search::query::Node &term);
+                                          const search::query::Node &term) override;
     virtual ~FakeSearchable();
 };
 

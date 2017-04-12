@@ -52,16 +52,16 @@ public:
         _unpacker(unpacker)
     { }
 private:
-    virtual void onRemove(size_t index) {
+    virtual void onRemove(size_t index) override {
         _unpacker.onRemove(index);
     }
-    virtual void onInsert(size_t index) {
+    virtual void onInsert(size_t index) override {
         _unpacker.onInsert(index);
     }
-    virtual void doUnpack(uint32_t docid) {
+    virtual void doUnpack(uint32_t docid) override {
         _unpacker.unpack(docid, *this);
     }
-    virtual bool needUnpack(size_t index) const {
+    virtual bool needUnpack(size_t index) const override {
         return _unpacker.needUnpack(index);
     }
     Unpack _unpacker;
