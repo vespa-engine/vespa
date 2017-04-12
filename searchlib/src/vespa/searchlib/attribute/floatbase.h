@@ -65,6 +65,7 @@ public:
     typedef T LoadedValueType;
     typedef SequentialReadModifyWriteInterface<LoadedNumericValueT> LoadedVector;
     virtual uint32_t getRawValues(DocId doc, const multivalue::Value<T> * & values) const;
+    virtual uint32_t getRawValues(DocId doc, const multivalue::WeightedValue<T> * & values) const;
 
 protected:
     FloatingPointAttributeTemplate(const vespalib::string & name);
@@ -72,6 +73,9 @@ protected:
     ~FloatingPointAttributeTemplate();
     static T defaultValue() { return attribute::getUndefined<T>(); }
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
+    virtual void fillEnum(LoadedVector&) {}
+    virtual void fillValues(LoadedVector &) {}
+
     largeint_t getDefaultValue() const override { return static_cast<largeint_t>(-std::numeric_limits<T>::max()); }
     Change _defaultValue;
 private:
