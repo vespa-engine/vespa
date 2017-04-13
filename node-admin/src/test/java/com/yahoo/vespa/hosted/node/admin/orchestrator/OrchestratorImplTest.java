@@ -53,7 +53,7 @@ public class OrchestratorImplTest {
         orchestrator.suspend(hostName);
     }
 
-    @Test(expected=OrchestratorNotFoundException.class)
+    @Test
     public void testSuspendCallWithNotFound() {
         when(requestExecutor.put(
                 any(String.class),
@@ -100,7 +100,7 @@ public class OrchestratorImplTest {
         orchestrator.resume(hostName);
     }
 
-    @Test(expected=OrchestratorNotFoundException.class)
+    @Test
     public void testResumeCallWithNotFound() {
         when(requestExecutor.delete(
                 any(String.class),
