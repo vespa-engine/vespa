@@ -78,11 +78,11 @@ public class DerivedConfiguration {
                 }
             }
         }
-        if (!search.isDocumentsOnly()) {
+        attributeFields = new AttributeFields(search, search.isDocumentsOnly());
+        if ( ! search.isDocumentsOnly()) {
             summaries = new Summaries(search, deployLogger);
             summaryMap = new SummaryMap(search, summaries);
             juniperrc = new Juniperrc(search);
-            attributeFields = new AttributeFields(search);
             rankProfileList = new RankProfileList(search, attributeFields, rankProfileRegistry);
             indexingScript = new IndexingScript(search);
             indexInfo = new IndexInfo(search);

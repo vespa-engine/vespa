@@ -32,8 +32,13 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
      * Flag indicating if a position-attribute has been found
      */
     private boolean hasPosition = false;
+    private final boolean needOnlyFastAccess;
 
     public AttributeFields(Search search) {
+        this(search, false);
+    }
+    public AttributeFields(Search search, boolean onlyFastAccess) {
+        needOnlyFastAccess = onlyFastAccess;
         derive(search);
     }
 
@@ -65,20 +70,25 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return getAttribute(attributeName) != null;
     }
 
+    private void deriveAttribute(ImmutableSDField field, Attribute fieldAttribute) {
+        Attribute attribute = getAttribute(fieldAttribute.getName());
+        if (attribute == null) {
+            attributes.put(fieldAttribute.getName(), fieldAttribute);
+            attribute = getAttribute(fieldAttribute.getName());
+        }
+        Ranking ranking = field.getRanking();
+        if (ranking != null && ranking.isFilter()) {
+            attribute.setEnableBitVectors(true);
+            attribute.setEnableOnlyBitVector(true);
+        }
+    }
     /**
      * Derives one attribute. TODO: Support non-default named attributes
      */
     private void deriveAttributes(ImmutableSDField field) {
         for (Attribute fieldAttribute : field.getAttributes().values()) {
-            Attribute attribute = getAttribute(fieldAttribute.getName());
-            if (attribute == null) {
-                attributes.put(fieldAttribute.getName(), fieldAttribute);
-                attribute = getAttribute(fieldAttribute.getName());
-            }
-            Ranking ranking = field.getRanking();
-            if (ranking != null && ranking.isFilter()) {
-                attribute.setEnableBitVectors(true);
-                attribute.setEnableOnlyBitVector(true);
+            if (fieldAttribute.isFastAccess() || !needOnlyFastAccess) {
+                deriveAttribute(field, fieldAttribute);
             }
         }
 
