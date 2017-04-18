@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -25,31 +26,37 @@ public class NodesSpecification {
 
     private final int groups;
 
+    /** The Vespa version we want the nodes to run */
+    private Version version;
+
     /** 
      * Whether the capacity amount specified is required or can it be relaxed 
      * at the discretion of the component fulfilling it
      */
     private final boolean required;
-
+    
+    /** The flavor the nodes should have, or empty to use the default */        
     private final Optional<String> flavor;
 
     /** The identifier of the custom docker image layer to use (not supported yet) */
     private final Optional<String> dockerImage;
 
-    private NodesSpecification(boolean dedicated, int count, int groups, boolean required, 
+    private NodesSpecification(boolean dedicated, int count, int groups, Version version, boolean required,
                                Optional<String> flavor, Optional<String> dockerImage) {
         this.dedicated = dedicated;
         this.count = count;
         this.groups = groups;
+        this.version = version;
         this.required = required;
         this.flavor = flavor;
         this.dockerImage = dockerImage;
     }
 
-    private NodesSpecification(boolean dedicated, ModelElement nodesElement) {
+    private NodesSpecification(boolean dedicated, Version version, ModelElement nodesElement) {
         this(dedicated,
              nodesElement.requiredIntegerAttribute("count"),
              nodesElement.getIntegerAttribute("groups", 1),
+             version,
              nodesElement.getBooleanAttribute("required", false),
              Optional.ofNullable(nodesElement.getStringAttribute("flavor")),
              Optional.ofNullable(nodesElement.getStringAttribute("docker-image")));
@@ -58,8 +65,8 @@ public class NodesSpecification {
     /**
      * Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element
      */
-    public static NodesSpecification from(ModelElement nodesElement) {
-        return new NodesSpecification(true, nodesElement);
+    public static NodesSpecification from(ModelElement nodesElement, Version version) {
+        return new NodesSpecification(true, version, nodesElement);
     }
 
     /**
@@ -67,11 +74,11 @@ public class NodesSpecification {
      * contained in the given parent element, or empty if the parent element is null, or the nodes elements
      * is not present.
      */
-    public static Optional<NodesSpecification> fromParent(ModelElement parentElement) {
+    public static Optional<NodesSpecification> fromParent(ModelElement parentElement, Version version) {
         if (parentElement == null) return Optional.empty();
         ModelElement nodesElement = parentElement.getChild("nodes");
         if (nodesElement == null) return Optional.empty();
-        return Optional.of(from(nodesElement));
+        return Optional.of(from(nodesElement, version));
     }
 
     /**
@@ -79,16 +86,16 @@ public class NodesSpecification {
      * contained in the given parent element, or empty if the parent element is null, or the nodes elements
      * is not present.
      */
-    public static Optional<NodesSpecification> optionalDedicatedFromParent(ModelElement parentElement) {
+    public static Optional<NodesSpecification> optionalDedicatedFromParent(ModelElement parentElement, Version version) {
         if (parentElement == null) return Optional.empty();
         ModelElement nodesElement = parentElement.getChild("nodes");
         if (nodesElement == null) return Optional.empty();
-        return Optional.of(new NodesSpecification(nodesElement.getBooleanAttribute("dedicated", false), nodesElement));
+        return Optional.of(new NodesSpecification(nodesElement.getBooleanAttribute("dedicated", false), version, nodesElement));
     }
 
     /** Returns a requirement from <code>count</code> nondedicated nodes in one group */
-    public static NodesSpecification nonDedicated(int count) {
-        return new NodesSpecification(false, count, 1, false, Optional.empty(), Optional.empty());
+    public static NodesSpecification nonDedicated(int count, Version version) {
+        return new NodesSpecification(false, count, 1, version, false, Optional.empty(), Optional.empty());
     }
 
     /**
@@ -104,7 +111,7 @@ public class NodesSpecification {
     public int groups() { return groups; }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, DeployLogger logger) {
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, dockerImage);
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, dockerImage);
         return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required), groups, logger);
     }
 

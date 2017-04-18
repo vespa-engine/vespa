@@ -9,7 +9,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Information about provisioned hosts, and (de)serialization (from)to JSON.
@@ -48,8 +47,7 @@ public class ProvisionInfo {
         cursor.setString(hostSpecHostName, host.hostname());
         if (host.membership().isPresent()) {
             cursor.setString(hostSpecMembership, host.membership().get().stringValue());
-            if (host.membership().get().cluster().dockerImage().isPresent())
-                cursor.setString(dockerImage, host.membership().get().cluster().dockerImage().get());
+            cursor.setString(dockerImage, host.membership().get().cluster().dockerImage());
         }
         if (host.flavor().isPresent())
             cursor.setString(hostSpecFlavor, host.flavor().get().name());

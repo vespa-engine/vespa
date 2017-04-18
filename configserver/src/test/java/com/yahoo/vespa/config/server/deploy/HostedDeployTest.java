@@ -97,7 +97,7 @@ public class HostedDeployTest {
     private void assertProvisionInfo(String vespaVersion, DeployTester tester, ApplicationId applicationId) {
         tester.getProvisionInfoFromDeployedApp(applicationId).getHosts().stream()
               .forEach(h -> assertEquals(dockerRegistry + dockerVespaBaseImage + ":" + vespaVersion,
-                                         h.membership().get().cluster().dockerImage().get()));
+                                         h.membership().get().cluster().dockerImage()));
     }
 
     private static ConfigserverConfig createConfigserverConfig() {

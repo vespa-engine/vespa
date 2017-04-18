@@ -125,8 +125,7 @@ public class NodeSerializer {
         object.setLong(restartGenerationKey, allocation.restartGeneration().wanted());
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
-        allocation.membership().cluster().vespaVersion()
-                .ifPresent(version -> object.setString(wantedVespaVersionKey, version.toString()));
+        object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
     }
 
     private void toSlime(History history, Cursor array) {

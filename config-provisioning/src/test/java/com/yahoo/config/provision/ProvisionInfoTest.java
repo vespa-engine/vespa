@@ -57,7 +57,7 @@ public class ProvisionInfoTest {
         assertTrue(serializedInfo.getHosts().contains(h4));
         assertTrue(!getHost(h1.hostname(), serializedInfo.getHosts()).membership().isPresent());
         assertEquals("container/test/0", getHost(h3.hostname(), serializedInfo.getHosts()).membership().get().stringValue());
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", getHost(h4.hostname(), serializedInfo.getHosts()).membership().get().cluster().dockerImage().get());
+        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", getHost(h4.hostname(), serializedInfo.getHosts()).membership().get().cluster().dockerImage());
     }
 
     private HostSpec getHost(String hostname, Set<HostSpec> hosts) {

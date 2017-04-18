@@ -230,7 +230,7 @@ public class SerializationTest {
                                false));
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(nodeWithAllocation));
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0", deserializedNode.allocation().get().membership().cluster().dockerImage().get());
+        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0", deserializedNode.allocation().get().membership().cluster().dockerImage());
     }
 
     @Test
@@ -279,8 +279,8 @@ public class SerializationTest {
                         "   }\n" +
                         "}";
         Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithDockerImage));
-        assertEquals("6.42.1", node.allocation().get().membership().cluster().vespaVersion().get().toString());
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", node.allocation().get().membership().cluster().dockerImage().get());
+        assertEquals("6.42.1", node.allocation().get().membership().cluster().vespaVersion().toString());
+        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", node.allocation().get().membership().cluster().dockerImage());
 
         String nodeWithWantedVespaVersion =
                 "{\n" +
@@ -295,8 +295,8 @@ public class SerializationTest {
                         "   }\n" +
                         "}";
         node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithWantedVespaVersion));
-        assertEquals("6.42.2", node.allocation().get().membership().cluster().vespaVersion().get().toString());
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.2", node.allocation().get().membership().cluster().dockerImage().get());
+        assertEquals("6.42.2", node.allocation().get().membership().cluster().vespaVersion().toString());
+        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.2", node.allocation().get().membership().cluster().dockerImage());
     }
 
     @Test
