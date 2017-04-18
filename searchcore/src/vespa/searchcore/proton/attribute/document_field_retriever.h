@@ -4,7 +4,6 @@
 
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/query/base.h>
 
 namespace proton {
@@ -16,7 +15,7 @@ struct DocumentFieldRetriever
 {
     static void populate(search::DocumentIdT lid,
                          document::Document &doc,
-                         const search::index::Schema::AttributeField &field,
+                         const vespalib::string &fieldName,
                          const search::attribute::IAttributeVector &attr,
                          bool isIndexField);
 };

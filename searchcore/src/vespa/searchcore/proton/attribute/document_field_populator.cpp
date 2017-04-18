@@ -48,7 +48,7 @@ DocumentFieldPopulator::~DocumentFieldPopulator()
 void
 DocumentFieldPopulator::handleExisting(uint32_t lid, Document &doc)
 {
-    DocumentFieldRetriever::populate(lid, doc, _field, *_attr, false);
+    DocumentFieldRetriever::populate(lid, doc, _field.getName(), *_attr, false);
     ++_documentsPopulated;
 }
 
