@@ -93,7 +93,7 @@ setValue(DocumentIdT lid,
         break;
     }
     default:
-        LOG(warning, "Unknown attribute collection type in Schema.");
+        LOG(warning, "Unknown attribute collection type in attribute.");
         break;
     }
 }
@@ -142,7 +142,7 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
         // Reference attribute doesn't store full document id.
         break;
     default:
-        LOG(warning, "Unknown attribute data type in Schema.");
+        LOG(warning, "Unknown attribute data type in attribute.");
     }
 }
 
