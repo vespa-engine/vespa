@@ -106,7 +106,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     AttributeUsageFilter &attributeUsageFilter) {
     typedef IMaintenanceJob::UP MUP;
     controller.registerJobInMasterThread(MUP(new HeartBeatJob(hbHandler, config.getHeartBeatConfig())));
-    controller.registerJobInMasterThread(MUP(new PruneSessionCacheJob(scPruner, config.getSessionCachePruneInterval())));
+    controller.registerJobInDefaultPool(MUP(new PruneSessionCacheJob(scPruner, config.getSessionCachePruneInterval())));
     if (config.getVisibilityDelay() > 0) {
         controller.registerJobInMasterThread(MUP(new DocumentDBCommitJob(commit, config.getVisibilityDelay())));
     }

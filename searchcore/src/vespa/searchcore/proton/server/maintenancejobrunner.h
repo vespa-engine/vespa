@@ -29,8 +29,7 @@ private:
 public:
     typedef std::shared_ptr<MaintenanceJobRunner> SP;
 
-    MaintenanceJobRunner(vespalib::Executor &executor,
-                         IMaintenanceJob::UP job);
+    MaintenanceJobRunner(vespalib::Executor &executor, IMaintenanceJob::UP job);
     virtual void run() override;
     void stop() { _stopped = true; }
     bool isRunning() const;

@@ -59,10 +59,24 @@ void
 MaintenanceController::registerJobInMasterThread(IMaintenanceJob::UP job)
 {
     // Called by master write thread
-    Guard guard(_jobsLock);
-    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(_masterThread,
-                                                           std::move(job)));
+    registerJob(_masterThread, std::move(job));
 }
+
+void
+MaintenanceController::registerJobInDefaultPool(IMaintenanceJob::UP job)
+{
+    // Called by master write thread
+    registerJob(_masterThread, std::move(job));
+}
+
+void
+MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
+{
+    // Called by master write thread
+    Guard guard(_jobsLock);
+    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(executor, std::move(job)));
+}
+
 
 void
 MaintenanceController::killJobs()

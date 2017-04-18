@@ -9,7 +9,10 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <mutex>
 
-namespace vespalib { class Timer; }
+namespace vespalib {
+    class Timer;
+    class Executor;
+}
 namespace searchcorespi { namespace index {class IThreadService; }}
 
 namespace proton {
@@ -34,6 +37,8 @@ public:
 
     virtual ~MaintenanceController();
     void registerJobInMasterThread(IMaintenanceJob::UP job);
+    void registerJobInDefaultPool(IMaintenanceJob::UP job);
+
     void killJobs();
 
     JobList getJobList() const {
@@ -84,6 +89,7 @@ private:
     void notifyThawedBucket(const document::BucketId &bucket) override;
     void performClearJobs();
     void performHoldJobs(JobList jobs);
+    void registerJob(vespalib::Executor & executor, IMaintenanceJob::UP job);
 };
 
 
