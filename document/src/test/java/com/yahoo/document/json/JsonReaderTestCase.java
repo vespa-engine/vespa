@@ -33,6 +33,8 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.json.document.DocumentParser;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate.Operator;
@@ -41,6 +43,7 @@ import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
@@ -269,6 +272,64 @@ public class JsonReaderTestCase {
         assertSame(Struct.class, f.getClass());
         Struct s = (Struct) f;
         assertEquals("person", ((StringFieldValue) s.getFieldValue("sandra")).getString());
+    }
+
+    @Test
+    public final void testStructUpdate() throws IOException {
+        InputStream rawDoc = new ByteArrayInputStream(
+                Utf8.toBytes("{\"update\": \"id:unittest:mirrors:g=test:whee\","
+                        + "\"create\": true,"
+                        + " \"fields\": { "
+                        + "\"skuggsjaa\": {"
+                        + "\"assign\": { \"sandra\": \"person\","
+                        + " \"cloud\": \"another person\"}}}}"));
+        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentUpdate put = new DocumentUpdate(docType, parseInfo.documentId);
+        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, put);
+        assertEquals(1, put.getFieldUpdates().size());
+        FieldUpdate fu = put.getFieldUpdate(0);
+        assertEquals(1, fu.getValueUpdates().size());
+        ValueUpdate vu = fu.getValueUpdate(0);
+        assertTrue(vu instanceof AssignValueUpdate);
+        AssignValueUpdate avu = (AssignValueUpdate) vu;
+        assertTrue(avu.getValue() instanceof Struct);
+        Struct s = (Struct) avu.getValue();
+        assertEquals(2, s.getFieldCount());
+        assertEquals(new StringFieldValue("person"), s.getFieldValue(s.getField("sandra")));
+        GrowableByteBuffer buf = new GrowableByteBuffer();
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(buf);
+        put.serialize(serializer);
+        assertEquals(107, buf.position());
+    }
+
+    @Test
+    public final void testEmptyStructUpdate() throws IOException {
+        InputStream rawDoc = new ByteArrayInputStream(
+                Utf8.toBytes("{\"update\": \"id:unittest:mirrors:g=test:whee\","
+                        + "\"create\": true,"
+                        + " \"fields\": { "
+                        + "\"skuggsjaa\": {"
+                        + "\"assign\": { }}}}"));
+        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentUpdate put = new DocumentUpdate(docType, parseInfo.documentId);
+        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, put);
+        assertEquals(1, put.getFieldUpdates().size());
+        FieldUpdate fu = put.getFieldUpdate(0);
+        assertEquals(1, fu.getValueUpdates().size());
+        ValueUpdate vu = fu.getValueUpdate(0);
+        assertTrue(vu instanceof AssignValueUpdate);
+        AssignValueUpdate avu = (AssignValueUpdate) vu;
+        assertTrue(avu.getValue() instanceof Struct);
+        Struct s = (Struct) avu.getValue();
+        assertEquals(0, s.getFieldCount());
+        GrowableByteBuffer buf = new GrowableByteBuffer();
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(buf);
+        put.serialize(serializer);
+        assertEquals(69, buf.position());
     }
 
     @Test
