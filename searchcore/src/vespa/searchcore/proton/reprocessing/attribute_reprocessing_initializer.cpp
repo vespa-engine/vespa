@@ -119,7 +119,7 @@ getFieldsToPopulate(const ARIConfig &newCfg,
             toStr(populateField));
         if (populateField) {
             fieldsToPopulate.push_back(IReprocessingRewriter::SP
-                    (new DocumentFieldPopulator(attrField,
+                    (new DocumentFieldPopulator(name,
                             guard.getSP(), subDbName)));
         }
     }

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_rewriter.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 
@@ -15,13 +14,13 @@ class DocumentFieldPopulator : public IReprocessingRewriter
 {
 private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
-    search::index::Schema::AttributeField _field;
+    vespalib::string _fieldName;
     AttributeVectorSP _attr;
     vespalib::string _subDbName;
     int64_t _documentsPopulated;
 
 public:
-    DocumentFieldPopulator(const search::index::Schema::AttributeField &field,
+    DocumentFieldPopulator(const vespalib::string &fieldName,
                            AttributeVectorSP attr,
                            const vespalib::string &subDbName);
 

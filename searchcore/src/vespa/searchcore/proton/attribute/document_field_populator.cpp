@@ -8,7 +8,6 @@
 LOG_SETUP(".proton.attribute.document_field_populator");
 
 using document::Document;
-using search::index::Schema;
 using search::AttributeGuard;
 
 namespace proton {
@@ -24,23 +23,23 @@ getFieldName(const vespalib::string &subDbName,
 
 }
 
-DocumentFieldPopulator::DocumentFieldPopulator(const Schema::AttributeField &field,
+DocumentFieldPopulator::DocumentFieldPopulator(const vespalib::string &fieldName,
                                                AttributeVectorSP attr,
                                                const vespalib::string &subDbName)
-    : _field(field),
+    : _fieldName(fieldName),
       _attr(attr),
       _subDbName(subDbName),
       _documentsPopulated(0)
 {
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::populateDocumentFieldStart(getFieldName(subDbName, field.getName()));
+        EventLogger::populateDocumentFieldStart(getFieldName(subDbName, fieldName));
     }
 }
 
 DocumentFieldPopulator::~DocumentFieldPopulator()
 {
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::populateDocumentFieldComplete(getFieldName(_subDbName, _field.getName()),
+        EventLogger::populateDocumentFieldComplete(getFieldName(_subDbName, _fieldName),
                 _documentsPopulated);
     }
 }
@@ -48,7 +47,7 @@ DocumentFieldPopulator::~DocumentFieldPopulator()
 void
 DocumentFieldPopulator::handleExisting(uint32_t lid, Document &doc)
 {
-    DocumentFieldRetriever::populate(lid, doc, _field.getName(), *_attr, false);
+    DocumentFieldRetriever::populate(lid, doc, _fieldName, *_attr, false);
     ++_documentsPopulated;
 }
 
