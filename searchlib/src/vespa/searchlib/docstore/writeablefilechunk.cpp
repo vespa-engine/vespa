@@ -111,8 +111,8 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
 {
     if (tune._write.getWantDirectIO()) {
         _dataFile.EnableDirectIO();
-        _idxFile.EnableSyncWrites();
-    } else if (tune._write.getWantSyncWrites()) {
+    }
+    if (tune._write.getWantSyncWrites()) {
         _dataFile.EnableSyncWrites();
         _idxFile.EnableSyncWrites();
     }
