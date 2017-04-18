@@ -164,7 +164,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         assertThat(connector.tcpNoDelay(), equalTo(false));
         assertThat(connector.acceptQueueSize(), equalTo(2));
         assertThat(connector.idleTimeout(), equalTo(34.1));
-        assertThat(connector.soLingerTime(), equalTo(42));
+        assertThat(connector.soLingerTime(), equalTo(42.2));
         assertThat(connector.outputBufferSize(), equalTo(1234));
         assertThat(connector.headerCacheSize(), equalTo(4321));
         assertThat(connector.ssl().enabled(), equalTo(true));
