@@ -12,7 +12,7 @@ using namespace vespalib;
 class Test : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
     void testCorrectNess();
     void testBenchmark(bool our, size_t bufSz, size_t numRep);
 };

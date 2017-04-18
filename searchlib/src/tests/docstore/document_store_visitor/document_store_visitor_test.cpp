@@ -85,7 +85,7 @@ public:
     }
 
     void
-    sync(SerialNum syncTo)
+    sync(SerialNum syncTo) override
     {
         _syncedTo = syncTo;
     }
@@ -125,10 +125,10 @@ public:
     using MyVisitorBase::MyVisitorBase;
 
     virtual void
-    visit(uint32_t lid, const Document &doc);
+    visit(uint32_t lid, const Document &doc) override;
 
     virtual void
-    visit(uint32_t lid);
+    visit(uint32_t lid) override;
 };
 
 
@@ -159,7 +159,7 @@ public:
     using MyVisitorBase::MyVisitorBase;
 
     virtual void
-    visit(uint32_t lid, Document &doc);
+    visit(uint32_t lid, Document &doc) override;
 };
 
 
@@ -184,7 +184,7 @@ public:
     MyVisitorProgress();
 
     virtual void
-    updateProgress(double progress);
+    updateProgress(double progress) override;
 
     virtual double
     getProgress() const;

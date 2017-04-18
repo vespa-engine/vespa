@@ -21,7 +21,7 @@ class Test : public vespalib::TestApp
 {
 public:
     void benchmark();
-    int Main();
+    int Main() override;
     template <typename T>
     void testSearch(bool strict);
 private:

@@ -31,7 +31,7 @@ public:
 
     MaintenanceJobRunner(vespalib::Executor &executor,
                          IMaintenanceJob::UP job);
-    virtual void run();
+    virtual void run() override;
     void stop() { _stopped = true; }
     bool isRunning() const;
     const IMaintenanceJob &getJob() const { return *_job; }

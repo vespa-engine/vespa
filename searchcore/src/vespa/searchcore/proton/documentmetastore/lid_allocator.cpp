@@ -2,6 +2,8 @@
 
 #include "lid_allocator.h"
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore.lid_allocator");
 
@@ -227,7 +229,7 @@ private:
 
     virtual SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda,
-                     bool strict) const
+                     bool strict) const override
     {
         assert(tfmda.size() == 0);
         (void) tfmda;
@@ -241,7 +243,7 @@ private:
     }
 
     virtual void
-    fetchPostings(bool strict)
+    fetchPostings(bool strict) override
     {
         _searchCtx->fetchPostings(strict);
     }

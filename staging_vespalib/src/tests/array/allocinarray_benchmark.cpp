@@ -16,7 +16,7 @@ public:
 private:
     void benchmarkTree(size_t count);
     void benchmarkTreeInArray(size_t count);
-    int Main();
+    int Main() override;
 };
 
 template <typename T>

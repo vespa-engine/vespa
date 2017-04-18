@@ -27,7 +27,7 @@ public:
      * @param name The name of the field.
      */
     IndexEnvironmentBuilder &addField(const FieldType &type,
-                                      const CollectionType &coll,
+                                      const FieldInfo::CollectionType &coll,
                                       const vespalib::string &name);
 
     /** Returns a reference to the index environment of this. */

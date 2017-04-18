@@ -7,8 +7,8 @@
 namespace storage {
 
 struct PaletteTest : public CppUnit::TestFixture {
-    void setUp() {}
-    void tearDown() {}
+    void setUp() override {}
+    void tearDown() override {}
 
     void testNormalUsage();
 

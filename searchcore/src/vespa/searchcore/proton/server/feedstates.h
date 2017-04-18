@@ -28,12 +28,12 @@ public:
     {
     }
 
-    virtual void handleOperation(FeedToken, FeedOperation::UP op) {
+    virtual void handleOperation(FeedToken, FeedOperation::UP op) override {
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
     virtual void
-    receive(const PacketWrapper::SP &wrap, vespalib::Executor &) {
+    receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override {
         throwExceptionInReceive(_doc_type_name.c_str(),
                                 wrap->packet.range().from(),
                                 wrap->packet.range().to(),
@@ -57,12 +57,12 @@ public:
             IReplayConfig &replay_config,
             FeedConfigStore &config_store);
 
-    virtual void handleOperation(FeedToken, FeedOperation::UP op) {
+    virtual void handleOperation(FeedToken, FeedOperation::UP op) override {
         throwExceptionInHandleOperation(_doc_type_name, *op);
     }
 
     virtual void receive(const PacketWrapper::SP &wrap,
-                         vespalib::Executor &executor);
+                         vespalib::Executor &executor) override;
 };
 
 
@@ -79,12 +79,12 @@ public:
           _handler(handler) {
     }
 
-    virtual void handleOperation(FeedToken token, FeedOperation::UP op) {
+    virtual void handleOperation(FeedToken token, FeedOperation::UP op) override {
         _handler.performOperation(FeedToken::UP(new FeedToken(token)), std::move(op));
     }
 
     virtual void
-    receive(const PacketWrapper::SP &wrap, vespalib::Executor &)
+    receive(const PacketWrapper::SP &wrap, vespalib::Executor &) override
     {
         throwExceptionInReceive(_handler.getDocTypeName().c_str(),
                                 wrap->packet.range().from(),

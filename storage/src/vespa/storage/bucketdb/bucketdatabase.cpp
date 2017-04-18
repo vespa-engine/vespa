@@ -8,7 +8,7 @@ namespace {
     struct GetNextEntryProcessor : public BucketDatabase::EntryProcessor {
         BucketDatabase::Entry _entry;
 
-        bool process(const BucketDatabase::Entry& e) {
+        bool process(const BucketDatabase::Entry& e) override {
             _entry = e;
             return false;
         }

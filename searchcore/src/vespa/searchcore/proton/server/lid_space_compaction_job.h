@@ -56,7 +56,7 @@ public:
     virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
 
     // Implements IMaintenanceJob
-    virtual bool run();
+    virtual bool run() override;
     virtual void registerRunner(IMaintenanceJobRunner *runner) override;
 };
 

@@ -21,7 +21,7 @@ using vespalib::ConstBufferRef;
 class Test : public vespalib::TestApp
 {
 public:
-    int Main();
+    int Main() override;
     void testUnsignedIntegerSort();
     template <typename T>
     void testSignedIntegerSort();

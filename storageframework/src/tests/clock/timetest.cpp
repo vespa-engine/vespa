@@ -10,8 +10,8 @@ namespace defaultimplementation {
 
 struct TimeTest : public CppUnit::TestFixture
 {
-    void setUp() {}
-    void tearDown() {}
+    void setUp() override {}
+    void tearDown() override {}
 
     void testBasics();
     void testCreatedFromClock();

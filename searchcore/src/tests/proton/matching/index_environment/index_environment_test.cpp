@@ -49,7 +49,7 @@ struct Fixture {
     const FieldInfo *assertField(size_t idx,
                                  const vespalib::string &name,
                                  DataType dataType,
-                                 search::fef::CollectionType collectionType) {
+                                 CollectionType collectionType) {
         const FieldInfo *field = env.getField(idx);
         ASSERT_TRUE(field != nullptr);
         EXPECT_EQUAL(field, env.getFieldByName(name));
@@ -62,7 +62,7 @@ struct Fixture {
     void assertHiddenAttributeField(size_t idx,
                                     const vespalib::string &name,
                                     DataType dataType,
-                                    search::fef::CollectionType collectionType) {
+                                    CollectionType collectionType) {
         const FieldInfo *field = assertField(idx, name, dataType, collectionType);
         EXPECT_FALSE(field->hasAttribute());
         EXPECT_TRUE(field->type() == FieldType::HIDDEN_ATTRIBUTE);
@@ -71,7 +71,7 @@ struct Fixture {
     void assertAttributeField(size_t idx,
                               const vespalib::string &name,
                               DataType dataType,
-                              search::fef::CollectionType collectionType) {
+                              CollectionType collectionType) {
         const FieldInfo *field = assertField(idx, name, dataType, collectionType);
         EXPECT_TRUE(field->hasAttribute());
         EXPECT_TRUE(field->type() == FieldType::ATTRIBUTE);
@@ -82,14 +82,14 @@ struct Fixture {
 TEST_F("require that document meta store is always extracted in index environment", Fixture(buildEmptySchema()))
 {
     ASSERT_EQUAL(1u, f.env.getNumFields());
-    TEST_DO(f.assertHiddenAttributeField(0, "[documentmetastore]", DataType::RAW, search::fef::CollectionType::SINGLE));
+    TEST_DO(f.assertHiddenAttributeField(0, "[documentmetastore]", DataType::RAW, CollectionType::SINGLE));
 }
 
 TEST_F("require that imported attribute fields are extracted in index environment", Fixture(buildSchema()))
 {
     ASSERT_EQUAL(3u, f.env.getNumFields());
-    TEST_DO(f.assertAttributeField(0, "imported_a", DataType::INT32, search::fef::CollectionType::SINGLE));
-    TEST_DO(f.assertAttributeField(1, "imported_b", DataType::STRING, search::fef::CollectionType::ARRAY));
+    TEST_DO(f.assertAttributeField(0, "imported_a", DataType::INT32, CollectionType::SINGLE));
+    TEST_DO(f.assertAttributeField(1, "imported_b", DataType::STRING, CollectionType::ARRAY));
     EXPECT_EQUAL("[documentmetastore]", f.env.getField(2)->name());
 }
 

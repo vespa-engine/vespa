@@ -54,7 +54,8 @@ struct DummyHandler : JsonGetHandler {
     DummyHandler(const vespalib::string &result_in) : result(result_in) {}
     virtual vespalib::string get(const vespalib::string &,
                                  const vespalib::string &,
-                                 const std::map<vespalib::string,vespalib::string> &) const
+                                 const std::map<vespalib::string,vespalib::string> &)
+        const override
     {
         return result;
     }
@@ -114,7 +115,8 @@ TEST_FFFF("require that handler is selected based on longest matching url prefix
 struct EchoHost : JsonGetHandler {
     virtual vespalib::string get(const vespalib::string &host,
                                  const vespalib::string &,
-                                 const std::map<vespalib::string,vespalib::string> &) const
+                                 const std::map<vespalib::string,vespalib::string> &)
+        const override
     {
         return "[\"" + host + "\"]";
     }
@@ -314,10 +316,10 @@ TEST_FFFFF("require that custom handlers can be added to the state server",
 }
 
 struct EchoConsumer : MetricsProducer {
-    virtual vespalib::string getMetrics(const vespalib::string &consumer) {
+    virtual vespalib::string getMetrics(const vespalib::string &consumer) override {
         return "[\"" + consumer + "\"]";
     }
-    virtual vespalib::string getTotalMetrics(const vespalib::string &consumer) {
+    virtual vespalib::string getTotalMetrics(const vespalib::string &consumer) override {
         return "[\"" + consumer + "\"]";        
     }
 };

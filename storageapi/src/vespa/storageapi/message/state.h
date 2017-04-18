@@ -28,8 +28,7 @@ public:
     const lib::NodeState* getExpectedState() const
         { return _expectedState.get(); }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(GetNodeStateCommand, onGetNodeState)
 };
@@ -51,8 +50,7 @@ public:
     bool hasNodeState() const { return (_state.get() != 0); }
     const lib::NodeState& getNodeState() const { return *_state; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void setNodeInfo(const std::string& info) { _nodeInfo = info; }
     const std::string& getNodeInfo() const { return _nodeInfo; }
@@ -76,8 +74,7 @@ public:
 
     const lib::ClusterState& getSystemState() const { return _state; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(SetSystemStateCommand, onSetSystemState)
 };
@@ -97,8 +94,7 @@ public:
     // Not serialized. Available locally
     const lib::ClusterState& getSystemState() const { return _state; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(SetSystemStateReply, onSetSystemStateReply)
 };

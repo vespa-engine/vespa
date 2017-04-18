@@ -25,7 +25,7 @@ private:
     public:
         RewriteVisitor(DocumentReprocessingHandler &handler) : _handler(handler) {}
         // Implements search::IDocumentStoreRewriteVisitor
-        virtual void visit(uint32_t lid, document::Document &doc) {
+        virtual void visit(uint32_t lid, document::Document &doc) override {
             _handler.rewriteVisit(lid, doc);
         }
     };
@@ -57,18 +57,18 @@ public:
     }
 
     // Implements IReprocessingHandler
-    virtual void addReader(const IReprocessingReader::SP &reader) {
+    virtual void addReader(const IReprocessingReader::SP &reader) override {
         _readers.push_back(reader);
     }
 
-    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) {
+    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) override {
         _rewriters.push_back(rewriter);
     }
 
     // Implements search::IDocumentStoreReadVisitor
-    virtual void visit(uint32_t lid, const document::Document &doc);
+    virtual void visit(uint32_t lid, const document::Document &doc) override;
 
-    virtual void visit(uint32_t lid);
+    virtual void visit(uint32_t lid) override;
 
     void done();
 };

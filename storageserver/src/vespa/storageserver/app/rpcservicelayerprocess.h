@@ -18,10 +18,10 @@ public:
     RpcServiceLayerProcess(const config::ConfigUri & configUri);
     ~RpcServiceLayerProcess() { shutdown(); }
 
-    virtual void shutdown();
-    virtual void setupProvider();
-    virtual void updateConfig();
-    virtual spi::PersistenceProvider& getProvider() { return *_provider; }
+    virtual void shutdown() override;
+    virtual void setupProvider() override;
+    virtual void updateConfig() override;
+    virtual spi::PersistenceProvider& getProvider() override { return *_provider; }
 };
 
 } // storage

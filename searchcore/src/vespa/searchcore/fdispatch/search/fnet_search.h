@@ -154,7 +154,7 @@ public:
         return (_channel == NULL) ?  packet->Free(), false : _channel->Send(packet);
     }
 
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context);
+    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 };
 
 
@@ -206,7 +206,7 @@ public:
         Timeout(FNET_Scheduler *scheduler, FastS_FNET_Search *search)
             : FNET_Task(scheduler),
               _search(search) {}
-        void PerformTask();
+        void PerformTask() override;
     };
 
     enum FNETMode {
@@ -311,12 +311,12 @@ public:
 
     // *** API methods -- BEGIN ***
 
-    virtual FastS_SearchInfo *GetSearchInfo() { return _util.GetSearchInfo(); }
+    virtual FastS_SearchInfo *GetSearchInfo() override { return _util.GetSearchInfo(); }
 
-    virtual RetCode Search(uint32_t searchOffset, uint32_t maxhits, uint32_t minhits = 0);
-    virtual RetCode ProcessQueryDone();
-    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt);
-    virtual RetCode ProcessDocsumsDone();
+    virtual RetCode Search(uint32_t searchOffset, uint32_t maxhits, uint32_t minhits = 0) override;
+    virtual RetCode ProcessQueryDone() override;
+    virtual RetCode GetDocsums(const FastS_hitresult *hits, uint32_t hitcnt) override;
+    virtual RetCode ProcessDocsumsDone() override;
 
     // *** API methods -- END ***
 
@@ -387,7 +387,7 @@ public:
         _search.SetAsyncArgs(this, FastS_SearchContext());
     }
     virtual ~FastS_Sync_FNET_Search();
-    virtual void Free() { delete this; }
+    virtual void Free() override { delete this; }
 };
 
 //-----------------------------------------------------------------

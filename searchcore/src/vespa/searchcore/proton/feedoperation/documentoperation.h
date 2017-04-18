@@ -184,11 +184,11 @@ public:
     }
 
     virtual void
-    serialize(vespalib::nbostream &os) const;
+    serialize(vespalib::nbostream &os) const override;
 
     virtual void
     deserialize(vespalib::nbostream &is,
-                const document::DocumentTypeRepo &repo);
+                const document::DocumentTypeRepo &repo) override;
 
     uint32_t getSerializedDocSize() const { return _serializedDocSize; }
 };

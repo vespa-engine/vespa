@@ -33,8 +33,7 @@ public:
     void setBucketInfo(const BucketInfo& info) { _result = info; }
 
     /** Overload this to get more descriptive message output. */
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api

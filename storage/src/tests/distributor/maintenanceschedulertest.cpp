@@ -39,7 +39,7 @@ public:
     void testSuppressLowPrioritiesInEmergencyMode();
     void testPriorityNotClearedIfOperationNotStarted();
 
-    void setUp();
+    void setUp() override;
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(MaintenanceSchedulerTest);

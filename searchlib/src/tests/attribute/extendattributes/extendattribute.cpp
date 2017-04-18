@@ -18,7 +18,7 @@ private:
     void testExtendString(Attribute & attr);
 
 public:
-    int Main();
+    int Main() override;
 };
 
 template <typename Attribute>

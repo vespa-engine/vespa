@@ -25,14 +25,14 @@ class MyFlushHandler : public IFlushHandler {
 public:
     MyFlushHandler(const vespalib::string &name) : IFlushHandler(name) {}
     // Implements IFlushHandler
-    virtual std::vector<IFlushTarget::SP> getFlushTargets() {
+    virtual std::vector<IFlushTarget::SP> getFlushTargets() override {
         return std::vector<IFlushTarget::SP>();
     }
-    virtual SerialNum getCurrentSerialNumber() const { return 0; }
-    virtual void flushDone(SerialNum oldestSerial) { (void) oldestSerial; }
+    virtual SerialNum getCurrentSerialNumber() const override { return 0; }
+    virtual void flushDone(SerialNum oldestSerial) override { (void) oldestSerial; }
 
     virtual void
-    syncTls(search::SerialNum syncTo)
+    syncTls(search::SerialNum syncTo) override
     {
         (void) syncTo;
     }

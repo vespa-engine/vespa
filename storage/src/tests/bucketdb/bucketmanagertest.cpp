@@ -153,11 +153,11 @@ public:
     static constexpr uint32_t MESSAGE_WAIT_TIME = 60*2;
 
 
-    void setUp() {
+    void setUp() override {
         _emptyBuckets = 0;
     }
 
-    void tearDown() {
+    void tearDown() override {
     }
 
     friend class ConcurrentOperationFixture;

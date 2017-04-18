@@ -71,7 +71,7 @@ struct Fixture
           _pop(_mgr, 1, "test", CREATE_SERIAL_NUM),
           _ctx()
     {
-        _mgr->addAttribute("a1", AVConfig(AVBasicType::INT32),
+        _mgr->addAttribute({ "a1", AVConfig(AVBasicType::INT32)},
                 CREATE_SERIAL_NUM);
     }
     AttributeGuard::UP getAttr() {

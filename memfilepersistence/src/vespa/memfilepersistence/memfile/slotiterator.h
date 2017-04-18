@@ -65,8 +65,8 @@ public:
                           Timestamp fromTimestamp,
                           Timestamp toTimestamp);
 
-    virtual void iterate() const;
-    virtual SlotIterator* clone() const;
+    virtual void iterate() const override;
+    virtual SlotIterator* clone() const override;
 };
 
 class AllSlotsIterator : public SlotIterator {
@@ -82,8 +82,8 @@ public:
                      Timestamp fromTimestamp,
                      Timestamp toTimestamp);
 
-    virtual void iterate() const;
-    virtual SlotIterator* clone() const;
+    virtual void iterate() const override;
+    virtual SlotIterator* clone() const override;
 };
 
 /**

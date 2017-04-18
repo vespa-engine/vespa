@@ -67,9 +67,9 @@ public:
         Subscriber(const vespalib::string & domain, TransLogClient & tlc, Callback & callBack);
         bool subscribe(const SerialNum & from);
         virtual ~Subscriber();
-        virtual RPC::Result visit(const Packet & packet) { return _callback.receive(packet); }
-        virtual void inSync() { _callback.inSync(); }
-        virtual void eof()    { _callback.eof(); }
+        virtual RPC::Result visit(const Packet & packet) override { return _callback.receive(packet); }
+        virtual void inSync() override { _callback.inSync(); }
+        virtual void eof()    override { _callback.eof(); }
     private:
         Callback & _callback;
     };

@@ -9,25 +9,19 @@
 #include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
 #include "feedhandler.h"
+#include "i_feed_handler_owner.h"
 #include "i_lid_space_compaction_handler.h"
 #include "ifeedview.h"
 #include "ireplayconfig.h"
 #include "iwipeoldremovedfieldshandler.h"
 #include "maintenancecontroller.h"
 #include "i_document_db_config_owner.h"
-#include "searchable_doc_subdb_configurer.h"
-#include "searchabledocsubdb.h"
-#include "summaryadapter.h"
+#include "executorthreadingservice.h"
 #include "visibilityhandler.h"
+#include "i_document_subdb_owner.h"
 
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
-#include <vespa/searchcore/proton/docsummary/summarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
-#include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
@@ -41,8 +35,6 @@
 #include <vespa/metrics/updatehook.h>
 #include <mutex>
 #include <condition_variable>
-
-using vespa::config::search::core::ProtonConfig;
 
 namespace search
 {
@@ -58,8 +50,9 @@ namespace transactionlog { class TransLogClient; }
 }  // namespace search
 
 namespace proton {
-class MetricsWireService;
 class IDocumentDBOwner;
+class MetricsWireService;
+class StatusReport;
 
 namespace configvalidator { class Result; }
 
@@ -71,8 +64,8 @@ namespace configvalidator { class Result; }
  */
 class DocumentDB : public IDocumentDBConfigOwner,
                    public IReplayConfig,
-                   public FeedHandler::IOwner,
-                   public IDocumentSubDB::IOwner,
+                   public IFeedHandlerOwner,
+                   public IDocumentSubDBOwner,
                    public IClusterStateChangedHandler,
                    public IWipeOldRemovedFieldsHandler,
                    public search::transactionlog::SyncProxy
@@ -92,6 +85,9 @@ private:
 
 
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
+    using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
+    using StatusReportUP = std::unique_ptr<StatusReport>;
+    using ProtonConfig = vespa::config::search::core::ProtonConfig;
 
     DocTypeName                   _docTypeName;
     vespalib::string              _baseDir;
@@ -192,7 +188,7 @@ private:
      * Redo interrupted reprocessing if last entry in transaction log
      * is a config change.
      */
-    virtual void enterRedoReprocessState();
+    virtual void enterRedoReprocessState() override;
     void enterApplyLiveConfigState();
 
     /**
@@ -208,17 +204,17 @@ private:
     void performDropFeedView2(IFeedView::SP feedView);
 
     /**
-     * Implements FeedHandler::IOwner
+     * Implements IFeedHandlerOwner
      */
-    virtual void onTransactionLogReplayDone() __attribute__((noinline));
-    virtual void onPerformPrune(SerialNum flushedSerial);
-    virtual bool isFeedBlockedByRejectedConfig();
+    virtual void onTransactionLogReplayDone() override __attribute__((noinline));
+    virtual void onPerformPrune(SerialNum flushedSerial) override;
+    virtual bool isFeedBlockedByRejectedConfig() override;
 
     /**
-     * Implements FeedHandler::IOwner
+     * Implements IFeedHandlerOwner
      **/
-    virtual void performWipeHistory();
-    virtual bool getAllowPrune(void) const;
+    virtual void performWipeHistory() override;
+    virtual bool getAllowPrune(void) const override;
 
     void
     writeWipeHistoryTransactionLogEntry(
@@ -235,13 +231,13 @@ private:
     /**
      * Implements IClusterStateChangedHandler
      */
-    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc);
+    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
     void notifyAllBucketsChanged();
 
     /**
      * Implements IWipeOldRemovedFieldsHandler
      */
-    virtual void wipeOldRemovedFields(TimeStamp wipeTimeLimit);
+    virtual void wipeOldRemovedFields(TimeStamp wipeTimeLimit) override;
     void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
@@ -413,7 +409,7 @@ public:
     std::unique_ptr<search::engine::DocsumReply>
     getDocsums(const search::engine::DocsumRequest & request);
 
-    IFlushTarget::List getFlushTargets();
+    IFlushTargetList getFlushTargets();
     void flushDone(SerialNum flushedSerial);
 
     virtual SerialNum
@@ -425,7 +421,7 @@ public:
         return _feedHandler.getSerialNum();
     }
 
-    StatusReport::UP reportStatus() const;
+    StatusReportUP reportStatus() const;
 
     /**
      * Reference counting
@@ -439,9 +435,9 @@ public:
     /**
      * Implements IReplayConfig API.
      */
-    virtual void replayConfig(SerialNum serialNum);
+    virtual void replayConfig(SerialNum serialNum) override;
 
-    virtual void replayWipeHistory(SerialNum serialNum, TimeStamp wipeTimeLimit);
+    virtual void replayWipeHistory(SerialNum serialNum, TimeStamp wipeTimeLimit) override;
 
     const DocTypeName & getDocTypeName(void) const { return _docTypeName; }
 
@@ -454,11 +450,11 @@ public:
     void newConfigSnapshot(DocumentDBConfig::SP snapshot);
 
     // Implements DocumentDBConfigOwner
-    void reconfigure(const DocumentDBConfig::SP & snapshot);
+    void reconfigure(const DocumentDBConfig::SP & snapshot) override;
 
     int64_t getActiveGeneration() const;
 
-    // Implements IDocSubDB::IOwner
+    // Implements IDocumentSubDBOwner
     void syncFeedView() override;
 
     std::shared_ptr<searchcorespi::IIndexManagerFactory>
@@ -468,7 +464,7 @@ public:
     uint32_t getDistributionKey() const override;
 
     /**
-     * Implements FeedHandler::IOwner
+     * Implements IFeedHandlerOwner
      **/
     void injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config);
     void performStartMaintenance(void);
@@ -488,7 +484,7 @@ public:
      *
      * Sync transaction log to syncTo.
      */
-    virtual void sync(SerialNum syncTo);
+    virtual void sync(SerialNum syncTo) override;
     void enterReprocessState();
     void enterOnlineState();
     void waitForOnlineState();

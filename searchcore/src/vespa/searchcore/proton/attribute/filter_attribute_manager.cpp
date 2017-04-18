@@ -4,6 +4,7 @@
 #include "i_attribute_functor.h"
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 
 using search::AttributeGuard;
 using searchcorespi::IFlushTarget;

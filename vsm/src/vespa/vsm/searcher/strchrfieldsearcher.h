@@ -11,8 +11,8 @@ class StrChrFieldSearcher : public FieldSearcher
  public:
   StrChrFieldSearcher() : FieldSearcher(0) { }
   StrChrFieldSearcher(FieldIdT fId) : FieldSearcher(fId) { }
-  virtual void onValue(const document::FieldValue & fv);
-  virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf);
+  virtual void onValue(const document::FieldValue & fv) override;
+  virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
  private:
   size_t shortestTerm() const;
   bool matchDoc(const FieldRef & field);

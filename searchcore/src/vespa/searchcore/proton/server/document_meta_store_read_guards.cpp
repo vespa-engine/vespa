@@ -2,6 +2,7 @@
 
 #include "document_meta_store_read_guards.h"
 #include "documentsubdbcollection.h"
+#include "idocumentsubdb.h"
 
 namespace proton {
 

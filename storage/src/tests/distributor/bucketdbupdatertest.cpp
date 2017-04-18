@@ -141,11 +141,11 @@ protected:
     }
 
 public:
-    void setUp() {
+    void setUp() override {
         createLinks();
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 
@@ -1746,7 +1746,7 @@ struct BucketDumper : public BucketDatabase::EntryProcessor
     {
     }
 
-    bool process(const BucketDatabase::Entry& e) {
+    bool process(const BucketDatabase::Entry& e) override {
         document::BucketId bucketId(e.getBucketId());
 
         ost << (uint32_t)bucketId.getRawId() << ":";

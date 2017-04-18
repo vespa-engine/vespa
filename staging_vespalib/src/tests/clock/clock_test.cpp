@@ -11,7 +11,7 @@ using fastos::TimeStamp;
 class Test : public vespalib::TestApp
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 

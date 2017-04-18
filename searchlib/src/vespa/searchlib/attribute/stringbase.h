@@ -67,7 +67,7 @@ protected:
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
-    virtual bool onAddDoc(DocId doc);
+    virtual bool onAddDoc(DocId doc) override;
 
     virtual MemoryUsage getChangeVectorMemoryUsage() const override;
 private:

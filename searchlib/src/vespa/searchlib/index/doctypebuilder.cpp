@@ -13,28 +13,28 @@ namespace {
 
 const DataType *convert(Schema::DataType type) {
     switch (type) {
-    case schema::UINT1:
-    case schema::UINT2:
-    case schema::UINT4:
-    case schema::INT8:
+    case schema::DataType::UINT1:
+    case schema::DataType::UINT2:
+    case schema::DataType::UINT4:
+    case schema::DataType::INT8:
         return DataType::BYTE;
-    case schema::INT16:
+    case schema::DataType::INT16:
         return DataType::SHORT;
-    case schema::INT32:
+    case schema::DataType::INT32:
         return DataType::INT;
-    case schema::INT64:
+    case schema::DataType::INT64:
         return DataType::LONG;
-    case schema::FLOAT:
+    case schema::DataType::FLOAT:
         return DataType::FLOAT;
-    case schema::DOUBLE:
+    case schema::DataType::DOUBLE:
         return DataType::DOUBLE;
-    case schema::STRING:
+    case schema::DataType::STRING:
         return DataType::STRING;
-    case schema::RAW:
+    case schema::DataType::RAW:
         return DataType::RAW;
-    case schema::BOOLEANTREE:
+    case schema::DataType::BOOLEANTREE:
         return DataType::PREDICATE;
-    case schema::TENSOR:
+    case schema::DataType::TENSOR:
         return DataType::TENSOR;
     default:
         break;
@@ -88,7 +88,7 @@ DocTypeBuilder::UriField::valid(const Schema &schema,
     if (fieldId == Schema::UNKNOWN_FIELD_ID)
         return false;
     const Schema::IndexField &field = schema.getIndexField(fieldId);
-    if (field.getDataType() != schema::STRING)
+    if (field.getDataType() != schema::DataType::STRING)
         return false;
     if (field.getCollectionType() != collectionType)
         return false;
@@ -209,7 +209,7 @@ DocTypeBuilder::SchemaIndexFields::setup(const Schema &schema)
             continue;
         const Schema::IndexField &field = schema.getIndexField(fieldId);
         switch (field.getDataType()) {
-        case schema::STRING:
+        case schema::DataType::STRING:
             _textFields.push_back(fieldId);
             break;
         default:
@@ -230,9 +230,9 @@ using namespace document::config_builder;
 TypeOrId makeCollection(TypeOrId datatype,
                         Schema::CollectionType collection_type) {
     switch (collection_type) {
-    case schema::ARRAY:
+    case schema::CollectionType::ARRAY:
         return Array(datatype);
-    case schema::WEIGHTEDSET:
+    case schema::CollectionType::WEIGHTEDSET:
         // TODO: consider using array of struct<primitive,int32> to keep order
         return Wset(datatype);
     default:
@@ -241,11 +241,11 @@ TypeOrId makeCollection(TypeOrId datatype,
 }
 
 struct TypeCache {
-    std::map<std::pair<int, int>, TypeOrId> types;
+    std::map<std::pair<int, Schema::CollectionType>, TypeOrId> types;
 
     TypeOrId getType(TypeOrId datatype, Schema::CollectionType c_type) {
         TypeOrId type = makeCollection(datatype, c_type);
-        std::pair<int, int> key = std::make_pair(datatype.id, c_type);
+        std::pair<int, Schema::CollectionType> key = std::make_pair(datatype.id, c_type);
         if (types.find(key) == types.end()) {
             types.insert(std::make_pair(key, type));
         }
@@ -270,7 +270,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
             _schema.getIndexField(_iFields._textFields[i]);
 
         // only handles string fields for now
-        assert(field.getDataType() == schema::STRING);
+        assert(field.getDataType() == schema::DataType::STRING);
         header_struct.addField(field.getName(), type_cache.getType(
                         DataType::T_STRING, field.getCollectionType()));
         header_struct.sstruct.field.back().id = field_id++;
@@ -283,7 +283,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
             _schema.getIndexField(_iFields._uriFields[i]._all);
 
         // only handles string fields for now
-        assert(field.getDataType() == schema::STRING);
+        assert(field.getDataType() == schema::DataType::STRING);
         header_struct.addField(field.getName(), type_cache.getType(
                         uri_type, field.getCollectionType()));
         header_struct.sstruct.field.back().id = field_id++;

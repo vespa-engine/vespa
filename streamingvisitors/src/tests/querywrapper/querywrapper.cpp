@@ -18,7 +18,7 @@ private:
     void testQueryWrapper();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 void

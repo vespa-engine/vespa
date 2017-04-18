@@ -27,39 +27,40 @@
 #include <vespa/log/log.h>
 LOG_SETUP("cachedselect_test");
 
-using search::index::Schema;
-using document::DocumentTypeRepo;
-using document::DocumentType;
-using document::select::Node;
-using document::select::Result;
-using document::select::ResultSet;
-using document::select::CloningVisitor;
-using document::select::Context;
-using vespalib::string;
-
-using document::config_builder::DocumenttypesConfigBuilderHelper;
-using document::config_builder::Struct;
-using document::config_builder::Array;
-using document::config_builder::Wset;
-using document::config_builder::Map;
 using document::DataType;
 using document::Document;
 using document::DocumentId;
-using document::StringFieldValue;
+using document::DocumentType;
+using document::DocumentTypeRepo;
 using document::IntFieldValue;
+using document::StringFieldValue;
+using document::config_builder::Array;
+using document::config_builder::DocumenttypesConfigBuilderHelper;
+using document::config_builder::Map;
+using document::config_builder::Struct;
+using document::config_builder::Wset;
+using document::select::CloningVisitor;
+using document::select::Context;
+using document::select::Node;
+using document::select::Result;
+using document::select::ResultSet;
 using proton::CachedSelect;
 using proton::SelectContext;
-using search::AttributeVector;
-using search::AttributeGuard;
-using search::AttributeEnumGuard;
 using search::AttributeContext;
-using search::EnumAttribute;
+using search::AttributeEnumGuard;
+using search::AttributeGuard;
 using search::AttributePosting;
-using search::SingleValueNumericPostingAttribute;
+using search::AttributeVector;
+using search::EnumAttribute;
 using search::IntegerAttribute;
 using search::IntegerAttributeTemplate;
+using search::SingleValueNumericPostingAttribute;
 using search::attribute::IAttributeContext;
 using search::attribute::test::MockAttributeManager;
+using search::index::Schema;
+using search::index::schema::CollectionType;
+using vespalib::string;
+
 using namespace search::index;
 
 typedef Node::UP NodeUP;
@@ -77,10 +78,10 @@ namespace {
 void
 makeSchema(Schema &s)
 {
-    s.addIndexField(Schema::IndexField("ia", schema::STRING));
-    s.addAttributeField(Schema::AttributeField("aa", schema::INT32));
-    s.addAttributeField(Schema::AttributeField("aaa", schema::INT32, schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("aaw", schema::INT32, schema::WEIGHTEDSET));
+    s.addIndexField(Schema::IndexField("ia", schema::DataType::STRING));
+    s.addAttributeField(Schema::AttributeField("aa", schema::DataType::INT32));
+    s.addAttributeField(Schema::AttributeField("aaa", schema::DataType::INT32, CollectionType::ARRAY));
+    s.addAttributeField(Schema::AttributeField("aaw", schema::DataType::INT32, CollectionType::WEIGHTEDSET));
 }
 
 const int32_t doc_type_id = 787121340;
@@ -194,7 +195,7 @@ public:
     }
 
     virtual uint32_t
-    get(AttributeVector::DocId doc, largeint_t *v, uint32_t sz) const
+    get(AttributeVector::DocId doc, largeint_t *v, uint32_t sz) const override
     {
         ++_gets;
         return SvIntAttr::get(doc, v, sz);

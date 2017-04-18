@@ -14,7 +14,7 @@ import static org.junit.Assert.assertThat;
  */
 public class DelayedResponseHandlerTest {
 
-    private final MapBackedConfigSource source = new MapBackedConfigSource(new MockClientUpdater(new MemoryCache()));
+    private final MockConfigSource source = new MockConfigSource(new MockClientUpdater(new MemoryCache()));
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();

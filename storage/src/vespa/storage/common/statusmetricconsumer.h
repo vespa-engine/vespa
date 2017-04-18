@@ -33,9 +33,8 @@ public:
             const std::string& name = "status");
     ~StatusMetricConsumer();
 
-    vespalib::string getReportContentType(
-                            const framework::HttpUrlPath&) const;
-    bool reportStatus(std::ostream& out, const framework::HttpUrlPath&) const;
+    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    bool reportStatus(std::ostream& out, const framework::HttpUrlPath&) const override;
 
     void waitUntilTimeProcessed(framework::SecondTime t) const;
 

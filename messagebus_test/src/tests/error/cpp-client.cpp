@@ -20,7 +20,7 @@ using namespace mbus;
 class App : public FastOS_Application
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

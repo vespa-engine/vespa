@@ -36,7 +36,7 @@ public:
     void testOptimizeAndOr();
     template <typename T>
     void testSearch(bool strict);
-    int Main();
+    int Main() override;
 private:
     void verifySelectiveUnpack(SearchIterator & s, const TermFieldMatchData * tfmd);
     void searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit);

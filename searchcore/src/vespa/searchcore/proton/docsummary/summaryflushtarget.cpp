@@ -8,6 +8,8 @@ LOG_SETUP(".proton.docsummary.summaryflushtarget");
 
 using search::IDocumentStore;
 using search::SerialNum;
+using searchcorespi::FlushStats;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 
@@ -28,7 +30,7 @@ public:
     {
         _currSerial = _docStore.initFlush(currSerial);
     }
-    virtual void run() {
+    virtual void run() override {
         _docStore.flush(_currSerial);
         updateStats();
     }
@@ -38,7 +40,7 @@ public:
     }
 
     virtual SerialNum
-    getFlushSerial(void) const
+    getFlushSerial(void) const override
     {
         return _currSerial;
     }

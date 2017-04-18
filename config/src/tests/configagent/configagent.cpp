@@ -19,22 +19,22 @@ public:
         : _key(key)
     { }
 
-    const ConfigKey & getKey() const
+    const ConfigKey & getKey() const override
     {
         return _key;
     }
 
-    bool abort()
+    bool abort() override
     {
         return false;
     }
 
-    bool isAborted() const
+    bool isAborted() const override
     {
         return false;
     }
 
-    void setError(int errorCode)
+    void setError(int errorCode) override
     {
         (void) errorCode;
     }
@@ -57,52 +57,52 @@ public:
           _isError(iserror)
     { }
 
-    const ConfigKey& getKey() const
+    const ConfigKey& getKey() const override
     {
         return _key;
     }
 
-    const ConfigValue & getValue() const
+    const ConfigValue & getValue() const override
     {
         return _value;
     }
 
-    const ConfigState & getConfigState() const
+    const ConfigState & getConfigState() const override
     {
         return _state;
     }
 
-    bool hasValidResponse() const
+    bool hasValidResponse() const override
     {
         return _valid;
     }
 
-    bool validateResponse()
+    bool validateResponse() override
     {
         return _valid;
     }
 
-    void fill()
+    void fill() override
     {
         _fillCalled = true;
     }
 
-    vespalib::string errorMessage() const
+    vespalib::string errorMessage() const override
     {
         return _errorMessage;
     }
 
-    int errorCode() const
+    int errorCode() const override
     {
         return _errorCode;
     }
 
-    bool isError() const
+    bool isError() const override
     {
         return  _isError;
     }
 
-    const Trace & getTrace() const { return _trace; }
+    const Trace & getTrace() const override { return _trace; }
 
     const ConfigKey _key;
     const ConfigValue _value;
@@ -145,24 +145,24 @@ public:
     {
     }
 
-    std::unique_ptr<ConfigUpdate> provide()
+    std::unique_ptr<ConfigUpdate> provide() override
     {
         return std::move(_update);
     }
 
-    bool wait(uint64_t timeout)
+    bool wait(uint64_t timeout) override
     {
         (void) timeout;
         return true;
     }
 
-    void handle(std::unique_ptr<ConfigUpdate> update)
+    void handle(std::unique_ptr<ConfigUpdate> update) override
     {
         _update = std::move(update);
     }
 
-    bool poll() { return true; }
-    void interrupt() { }
+    bool poll() override { return true; }
+    void interrupt() override { }
 private:
     std::unique_ptr<ConfigUpdate> _update;
 };

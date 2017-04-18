@@ -19,6 +19,7 @@ LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
+#include "documentmetastore.h"
 
 using namespace search;
 using namespace vespalib;
@@ -26,6 +27,8 @@ using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using vespalib::makeTask;
 using vespalib::makeClosure;
+using searchcorespi::IFlushTarget;
+using searchcorespi::FlushStats;
 
 namespace proton {
 
@@ -49,10 +52,10 @@ public:
     void updateStats();
     bool cleanUp(AttributeDirectory::Writer &writer);
     // Implements vespalib::Executor::Task
-    virtual void run();
+    virtual void run() override;
 
     virtual SerialNum
-    getFlushSerial(void) const
+    getFlushSerial(void) const override
     {
         return _syncToken;
     }

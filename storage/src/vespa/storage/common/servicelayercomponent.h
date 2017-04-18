@@ -55,10 +55,11 @@ class ServiceLayerComponent : public StorageComponent,
     MinimumUsedBitsTracker* _minUsedBitsTracker;
 
         // ServiceLayerManagedComponent implementation
-    virtual void setDiskCount(uint16_t count) { _diskCount = count; }
-    virtual void setBucketDatabase(StorBucketDatabase& db)
-        { _bucketDatabase = &db; }
-    virtual void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) {
+    virtual void setDiskCount(uint16_t count) override { _diskCount = count; }
+    virtual void setBucketDatabase(StorBucketDatabase& db) override {
+        _bucketDatabase = &db;
+    }
+    virtual void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) override {
         _minUsedBitsTracker = &tracker;
     }
 public:

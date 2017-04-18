@@ -78,29 +78,29 @@ struct TermAsStringVisitor : public QueryVisitor {
         isSet = false;
     }
 
-    virtual void visit(And &) { illegalVisit(); }
-    virtual void visit(AndNot &) { illegalVisit(); }
-    virtual void visit(Equiv &) { illegalVisit(); }
-    virtual void visit(Near &) { illegalVisit(); }
-    virtual void visit(ONear &) { illegalVisit(); }
-    virtual void visit(Or &) { illegalVisit(); }
-    virtual void visit(Phrase &) { illegalVisit(); }
-    virtual void visit(Rank &) { illegalVisit(); }
-    virtual void visit(WeakAnd &) { illegalVisit(); }
-    virtual void visit(WeightedSetTerm &) { illegalVisit(); }
-    virtual void visit(DotProduct &) { illegalVisit(); }
-    virtual void visit(WandTerm &) { illegalVisit(); }
+    virtual void visit(And &) override { illegalVisit(); }
+    virtual void visit(AndNot &) override { illegalVisit(); }
+    virtual void visit(Equiv &) override { illegalVisit(); }
+    virtual void visit(Near &) override { illegalVisit(); }
+    virtual void visit(ONear &) override { illegalVisit(); }
+    virtual void visit(Or &) override { illegalVisit(); }
+    virtual void visit(Phrase &) override { illegalVisit(); }
+    virtual void visit(Rank &) override { illegalVisit(); }
+    virtual void visit(WeakAnd &) override { illegalVisit(); }
+    virtual void visit(WeightedSetTerm &) override { illegalVisit(); }
+    virtual void visit(DotProduct &) override { illegalVisit(); }
+    virtual void visit(WandTerm &) override { illegalVisit(); }
 
-    virtual void visit(NumberTerm &n) { visitTerm(n); }
-    virtual void visit(LocationTerm &n) { visitTerm(n); }
-    virtual void visit(PrefixTerm &n) { visitTerm(n); }
-    virtual void visit(RangeTerm &n) { visitTerm(n); }
-    virtual void visit(StringTerm &n) { visitTerm(n); }
-    virtual void visit(SubstringTerm &n) { visitTerm(n); }
-    virtual void visit(SuffixTerm &n) { visitTerm(n); }
-    virtual void visit(RegExpTerm &n) { visitTerm(n); }
+    virtual void visit(NumberTerm &n) override { visitTerm(n); }
+    virtual void visit(LocationTerm &n) override { visitTerm(n); }
+    virtual void visit(PrefixTerm &n) override { visitTerm(n); }
+    virtual void visit(RangeTerm &n) override { visitTerm(n); }
+    virtual void visit(StringTerm &n) override { visitTerm(n); }
+    virtual void visit(SubstringTerm &n) override { visitTerm(n); }
+    virtual void visit(SuffixTerm &n) override { visitTerm(n); }
+    virtual void visit(RegExpTerm &n) override { visitTerm(n); }
 
-    virtual void visit(PredicateQuery &) { illegalVisit(); }
+    virtual void visit(PredicateQuery &) override { illegalVisit(); }
 };
 }  // namespace
 

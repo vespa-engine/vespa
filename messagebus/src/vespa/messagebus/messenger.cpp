@@ -37,11 +37,11 @@ public:
         }
     }
 
-    void run() {
+    void run() override {
         _handler.handleMessage(std::move(_msg));
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         if (_msg.get() != NULL) {
             return _msg->priority();
         }
@@ -69,11 +69,11 @@ public:
         }
     }
 
-    void run() {
+    void run() override {
         _handler.handleReply(std::move(_reply));
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         if (_reply.get() != NULL) {
             return _reply->priority();
         }
@@ -97,11 +97,11 @@ public:
         _gate.countDown();
     }
 
-    void run() {
+    void run() override {
         // empty
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         return 255;
     }
 };
@@ -119,11 +119,11 @@ public:
         // empty
     }
 
-    void run() {
+    void run() override {
         _tasks.push_back(_task.release());
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         return 255;
     }
 };
@@ -140,13 +140,13 @@ public:
         // empty
     }
 
-    void run() {
+    void run() override {
         std::for_each(_tasks.begin(), _tasks.end(), DeleteFunctor<ITask>());
         _tasks.clear();
         SyncTask::run();
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         return 255;
     }
 };

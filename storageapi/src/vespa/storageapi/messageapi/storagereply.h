@@ -36,9 +36,7 @@ public:
     const ReturnCode& getResult() const { return _result; }
 
     /** Overload this to get more descriptive output. */
-    virtual void print(std::ostream& out,
-                       bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api

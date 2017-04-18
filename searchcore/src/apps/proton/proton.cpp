@@ -14,6 +14,7 @@
 LOG_SETUP("proton");
 
 typedef vespalib::SignalHandler SIG;
+using vespa::config::search::core::ProtonConfig;
 
 struct Params
 {
@@ -31,7 +32,7 @@ private:
     void setupSignals();
     Params parseParams();
 public:
-    int Main();
+    int Main() override;
 };
 
 void
@@ -101,9 +102,9 @@ public:
                               PersistenceProvider *downPersistence);
     ~ProtonServiceLayerProcess() { shutdown(); }
 
-    virtual void shutdown();
-    virtual void setupProvider();
-    virtual storage::spi::PersistenceProvider& getProvider();
+    virtual void shutdown() override;
+    virtual void setupProvider() override;
+    virtual storage::spi::PersistenceProvider& getProvider() override;
 
     void setMetricManager(metrics::MetricManager& mm) {
         // The service layer will call init(...) and stop() on the metric

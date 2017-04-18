@@ -66,7 +66,7 @@ private:
     void replyFromDestination(TestData &data, Message::UP msg, uint32_t errorCode, double retryDelay);
 
 public:
-    int Main();
+    int Main() override;
     void testRetryTag(TestData &data);
     void testRetryEnabledTag(TestData &data);
     void testTransientError(TestData &data);

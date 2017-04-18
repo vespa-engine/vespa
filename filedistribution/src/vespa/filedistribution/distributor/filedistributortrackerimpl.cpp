@@ -68,7 +68,7 @@ struct TrackingTask : public Scheduler::Task {
     ~TrackingTask();
 
     //TODO: refactor
-    void doHandle();
+    void doHandle() override;
     PeerEntries getPeers(const std::shared_ptr<FileDownloader>& downloader);
     void reschedule();
 };

@@ -9,18 +9,18 @@ using namespace vbench;
 class App : public FastOS_Application
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 struct MyHttpHandler : public HttpResultHandler {
-    virtual void handleHeader(const string &name, const string &value) {
+    virtual void handleHeader(const string &name, const string &value) override {
         fprintf(stderr, "got header: '%s': '%s'\n", name.c_str(), value.c_str());
     }
-    virtual void handleContent(const Memory &data) {
+    virtual void handleContent(const Memory &data) override {
         fprintf(stderr, "got data: %zu bytes\n", data.size);
         fwrite(data.data, 1, data.size, stdout);
     }
-    virtual void handleFailure(const string &reason) {
+    virtual void handleFailure(const string &reason) override {
         fprintf(stderr, "got FAILURE: '%s'\n", reason.c_str());
     }
 };

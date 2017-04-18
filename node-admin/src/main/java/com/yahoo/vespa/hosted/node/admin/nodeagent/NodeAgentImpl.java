@@ -46,7 +46,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.Containe
  */
 public class NodeAgentImpl implements NodeAgent {
     private final AtomicBoolean terminated = new AtomicBoolean(false);
-    private boolean isFrozen = false;
+    private boolean isFrozen = true;
     private boolean wantFrozen = false;
     private boolean workToDoNow = true;
 
@@ -333,13 +333,20 @@ public class NodeAgentImpl implements NodeAgent {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
             if (existingContainer.get().state.isRunning()) {
-                orchestratorSuspendNode();
-                stopServices();
+                if (nodeSpec.nodeState == Node.State.active) {
+                    orchestratorSuspendNode();
+                }
+
+                try {
+                    stopServices();
+                } catch (Exception e) {
+                    logger.info("Failed stopping services, ignoring", e);
+                }
             }
-            containerState = ABSENT;
             vespaVersion = Optional.empty();
             dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
+            containerState = ABSENT;
             return Optional.empty();
         }
         return existingContainer;
@@ -667,10 +674,6 @@ public class NodeAgentImpl implements NodeAgent {
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode() {
         logger.info("Ask Orchestrator for permission to suspend node " + hostname);
-        if ( ! orchestrator.suspend(hostname)) {
-            logger.info("Orchestrator rejected suspend of node " + hostname);
-            // TODO: change suspend() to throw an exception if suspend is denied
-            throw new OrchestratorException("Failed to get permission to suspend " + hostname);
-        }
+        orchestrator.suspend(hostname);
     }
 }

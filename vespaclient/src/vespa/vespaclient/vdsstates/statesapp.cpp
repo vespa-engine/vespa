@@ -221,7 +221,7 @@ struct StateApp : public FastOS_Application {
 
     StateApp(std::string calledAs) : _options(getMode(calledAs)) {}
 
-    int Main() {
+    int Main() override {
         _options.setCommandLineArguments(_argc, _argv);
         try{
             _options.parse();

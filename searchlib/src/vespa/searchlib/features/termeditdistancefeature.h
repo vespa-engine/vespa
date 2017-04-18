@@ -80,7 +80,7 @@ public:
      *
      * @param docid local document id to be evaluated
      */
-    virtual void execute(uint32_t docId);
+    virtual void execute(uint32_t docId) override;
 
 private:
     /**
@@ -114,16 +114,16 @@ public:
 
     // Inherit doc from Blueprint.
     virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
+                                   search::fef::IDumpFeatureVisitor &visitor) const override;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
+    virtual search::fef::Blueprint::UP createInstance() const override;
 
     // Inherit doc from Blueprint.
     virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::SINGLE);
     }
 
@@ -144,7 +144,7 @@ public:
      * @return Whether or not setup was possible.
      */
     virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
+                       const search::fef::ParameterList & params) override;
 
 private:
     TermEditDistanceConfig _config; // The config for this blueprint.

@@ -14,7 +14,7 @@ class VerifyLogDataStoreApp : public FastOS_Application
 {
     void usage(void);
     int verify(const vespalib::string & directory);
-    int Main(void);
+    int Main(void) override;
 };
 
 

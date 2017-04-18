@@ -208,7 +208,7 @@ public:
     FeederThread(const std::string & tlsSpec, const std::string & domain,
                  const EntryGenerator & generator, uint32_t feedRate, size_t packetSize);
     ~FeederThread();
-    virtual void doRun();
+    virtual void doRun() override;
     SerialNumRange getRange() const { return SerialNumRange(1, _lastCommited); }
 };
 
@@ -306,9 +306,9 @@ public:
         _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec),
         _generator(generator), _name(name), _id(id), _validate(validate) {}
     virtual ~Agent() {}
-    virtual RPC::Result receive(const Packet & packet) = 0;
-    virtual void inSync() {}
-    virtual void eof() {}
+    virtual RPC::Result receive(const Packet & packet) override = 0;
+    virtual void inSync() override {}
+    virtual void eof() override {}
     virtual void failed() {}
 };
 
@@ -342,7 +342,7 @@ public:
         return _next;
     }
     SerialNumRange getRange() const { return SerialNumRange(_from, _next - 1); }
-    virtual RPC::Result receive(const Packet & packet);
+    virtual RPC::Result receive(const Packet & packet) override;
 };
 
 void
@@ -445,8 +445,8 @@ public:
         }
     }
     SerialNum getFrom() { return _from; }
-    virtual RPC::Result receive(const Packet & packet);
-    virtual void eof() {
+    virtual RPC::Result receive(const Packet & packet) override;
+    virtual void eof() override {
         LOG(info, "VisitorAgent[%u]: eof", _id);
         setState(FINISHED);
     }
@@ -555,7 +555,7 @@ public:
     uint32_t runningVisitors();
     std::vector<std::shared_ptr<SubscriberAgent> > & getSubscribers() { return _subscribers; }
     std::vector<std::shared_ptr<VisitorAgent> > & getVisitors() { return _visitors; }
-    virtual void doRun();
+    virtual void doRun() override;
 
 };
 
@@ -692,7 +692,7 @@ private:
     void usage();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 void

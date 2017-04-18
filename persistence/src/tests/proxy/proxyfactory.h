@@ -26,12 +26,12 @@ struct ProxyFactory : ConformanceTest::PersistenceFactory
     ProxyFactory() {}
 
     Provider::UP
-    getPersistenceImplementation(const Repo::SP &repo, const Repo::DocumenttypesConfig &) {
+    getPersistenceImplementation(const Repo::SP &repo, const Repo::DocumenttypesConfig &) override {
         return Provider::UP(new Client("tcp/localhost:3456", *repo));
     }
 
     virtual bool
-    supportsActiveState() const
+    supportsActiveState() const override
     {
         return false;
     }

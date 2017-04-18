@@ -9,6 +9,7 @@ LOG_SETUP("bitvector_test");
 #include <vespa/vespalib/io/fileutil.h>
 
 using namespace search::index;
+using search::index::schema::DataType;
 
 namespace search {
 namespace diskindex {
@@ -85,7 +86,7 @@ public:
     requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap);
 
     Test();
-    int Main();
+    int Main() override;
 };
 
 void
@@ -191,7 +192,7 @@ Test::Test()
     : _schema(),
       _indexId(0)
 {
-    _schema.addIndexField(Schema::IndexField("f1", schema::STRING));
+    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
 }
 
 int

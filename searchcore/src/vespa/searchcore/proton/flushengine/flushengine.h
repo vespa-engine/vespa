@@ -31,6 +31,7 @@ public:
     };
     typedef std::set<FlushMeta> FlushMetaSet;
 private:
+    using IFlushTarget = searchcorespi::IFlushTarget;
     struct FlushInfo : public FlushMeta
     {
         FlushInfo();
@@ -165,7 +166,7 @@ public:
     removeFlushHandler(const DocTypeName &docTypeName);
 
     // Implements FastOS_Runnable.
-    void Run(FastOS_ThreadInterface *thread, void *arg);
+    void Run(FastOS_ThreadInterface *thread, void *arg) override;
 
     FlushMetaSet getCurrentlyFlushingSet() const;
 

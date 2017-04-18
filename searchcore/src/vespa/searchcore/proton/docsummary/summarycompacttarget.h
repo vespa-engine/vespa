@@ -6,14 +6,13 @@
 
 namespace proton {
 
-using searchcorespi::FlushStats;
-using searchcorespi::IFlushTarget;
 
 /**
  * This class implements the IFlushTarget interface to proxy a summary manager.
  */
-class SummaryCompactTarget : public IFlushTarget {
+class SummaryCompactTarget : public searchcorespi::IFlushTarget {
 private:
+    using FlushStats = searchcorespi::FlushStats;
     search::IDocumentStore & _docStore;
     FlushStats _lastStats;
 
@@ -21,14 +20,14 @@ public:
     SummaryCompactTarget(search::IDocumentStore & docStore);
 
     // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const;
-    virtual   DiskGain getApproxDiskGain() const;
-    virtual  SerialNum getFlushedSerialNum() const;
-    virtual       Time getLastFlushTime() const;
+    virtual MemoryGain getApproxMemoryGain() const override;
+    virtual   DiskGain getApproxDiskGain() const override;
+    virtual  SerialNum getFlushedSerialNum() const override;
+    virtual       Time getLastFlushTime() const override;
 
-    virtual Task::UP initFlush(SerialNum currentSerial);
+    virtual Task::UP initFlush(SerialNum currentSerial) override;
 
-    virtual FlushStats getLastFlushStats() const { return _lastStats; }
+    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
     virtual uint64_t getApproxBytesToWriteToDisk() const override;
 };
 

@@ -13,11 +13,11 @@ TEST_SETUP(Test);
 
 class ThrowException : public Messenger::ITask {
 public:
-    void run() {
+    void run() override {
         throw std::exception();
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         return 0;
     }
 };
@@ -33,11 +33,11 @@ public:
         // empty
     }
 
-    void run() {
+    void run() override {
         _barrier.await();
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         return 0;
     }
 };

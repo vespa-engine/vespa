@@ -18,7 +18,7 @@ private:
     void sortDirect(size_t count);
     template<typename T>
     void sortInDirect(size_t count);
-    int Main();
+    int Main() override;
 };
 
 template<size_t N>

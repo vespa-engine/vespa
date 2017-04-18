@@ -161,7 +161,7 @@ public:
                            uint32_t minValueCount, uint32_t maxValueCount);
     ~AttributeUpdaterThread();
 
-    virtual void doRun();
+    virtual void doRun() override;
 };
 
 template <typename Vector, typename T, typename BT>

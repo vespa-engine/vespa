@@ -77,8 +77,8 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
 
     FileStorManagerTest() : _node(), _waitTime(LONG_WAITTIME) {}
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testPut();
     void testHeaderOnlyPut();
@@ -686,7 +686,7 @@ public:
     MessagePusherThread(FileStorHandler& handler, Document::SP doc);
     ~MessagePusherThread();
 
-    void run() {
+    void run() override {
         while (!_done) {
             document::BucketIdFactory factory;
             document::BucketId bucket(16, factory.getBucketId(
@@ -720,7 +720,7 @@ public:
         : _handler(handler), _config(0), _fetchedCount(0), _done(false),
           _failed(false), _threadDone(false) {}
 
-    void run() {
+    void run() override {
         while (!_done) {
             FileStorHandler::LockedMessage msg = _handler.getNextMessage(0, 255);
             if (msg.second.get()) {
@@ -1160,7 +1160,7 @@ public:
     PausedThread(FileStorHandler& handler)
         : _handler(handler), pause(false), done(false), gotoperation(false) {}
 
-    void run() {
+    void run() override {
         FileStorHandler::LockedMessage msg = _handler.getNextMessage(0, 255);
         gotoperation = true;
 
@@ -2364,10 +2364,10 @@ namespace {
             closeNextLink();
         }
 
-        virtual void print(std::ostream& out, bool, const std::string&) const
+        virtual void print(std::ostream& out, bool, const std::string&) const override
             { out << "MidLink"; }
 
-        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) {
+        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
             if (!StorageLinkTest::callOnUp(_up, msg)) _up.sendUp(msg);
             return true;
         }
@@ -2395,10 +2395,10 @@ namespace {
               _leftAddr(leftAddr),
               _rightAddr(rightAddr) {}
 
-        virtual void print(std::ostream& out, bool, const std::string&) const
+        virtual void print(std::ostream& out, bool, const std::string&) const override
             { out << "BinaryStorageLink"; }
 
-        virtual bool onDown(const std::shared_ptr<api::StorageMessage> & msg) {
+        virtual bool onDown(const std::shared_ptr<api::StorageMessage> & msg) override {
 //            LOG(debug, "onDown Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
 
             vespalib::LockGuard lock(_lock);
@@ -2432,7 +2432,8 @@ namespace {
             return true;
         }
 
-        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) {            // LOG(debug, "onUp Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
+        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
+            // LOG(debug, "onUp Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
 
             vespalib::LockGuard lock(_lock);
             std::set<api::StorageMessage::Id>::iterator it
@@ -2455,17 +2456,17 @@ namespace {
             }
         }
 
-        void onFlush(bool downwards) {
+        void onFlush(bool downwards) override {
             if (downwards) {
                 _left.flush();
                 _right.flush();
             }
         }
-        void onOpen() {
+        void onOpen() override {
             _left.open();
             _right.open();
         }
-        void onClose() {
+        void onClose() override {
             _left.close();
             _right.close();
         }

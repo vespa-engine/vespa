@@ -13,7 +13,7 @@ namespace distributor {
 struct MapBucketDatabaseTest : public BucketDatabaseTest {
     MapBucketDatabase _db;
 
-    virtual BucketDatabase& db() { return _db; };
+    virtual BucketDatabase& db() override { return _db; }
 
     CPPUNIT_TEST_SUITE(MapBucketDatabaseTest);
     SETUP_DATABASE_TESTS();

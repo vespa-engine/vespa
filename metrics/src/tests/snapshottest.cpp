@@ -41,7 +41,7 @@ struct SubSubMetricSet : public MetricSet {
     SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner = 0);
     ~SubSubMetricSet();
     virtual MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
-                             metrics::MetricSet* owner, bool includeUnused) const;
+                             metrics::MetricSet* owner, bool includeUnused) const override;
     void incValues();
 };
 
@@ -194,7 +194,7 @@ struct FakeTimer : public MetricManager::Timer {
 
     FakeTimer() : _timeInSecs(1) {}
 
-    virtual time_t getTime() const { return _timeInSecs; }
+    virtual time_t getTime() const override { return _timeInSecs; }
 };
 
 } // End of anonymous namespace

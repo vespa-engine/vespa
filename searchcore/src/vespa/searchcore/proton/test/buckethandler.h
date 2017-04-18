@@ -26,10 +26,10 @@ public:
     ~BucketHandler();
 
     virtual void
-    addBucketStateChangedHandler(IBucketStateChangedHandler *handler);
+    addBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
 
     virtual void
-    removeBucketStateChangedHandler(IBucketStateChangedHandler *handler);
+    removeBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
 
     void
     notifyBucketStateChanged(const document::BucketId &bucketId,

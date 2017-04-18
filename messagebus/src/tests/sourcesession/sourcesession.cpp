@@ -34,7 +34,7 @@ struct DelayedHandler : public IMessageHandler
     ~DelayedHandler() {
         session.reset();
     }
-    virtual void handleMessage(Message::UP msg) {
+    virtual void handleMessage(Message::UP msg) override {
         // this will block the transport thread in the server messagebus,
         // but that should be ok, as we only want to test the timing in the
         // client messagebus...
@@ -77,7 +77,7 @@ public:
     void testNoServices();
     void testBlockingClose();
     void testNonBlockingClose();
-    int Main();
+    int Main() override;
 };
 
 void

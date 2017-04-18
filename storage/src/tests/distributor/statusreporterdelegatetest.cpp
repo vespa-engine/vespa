@@ -26,7 +26,7 @@ namespace {
 class MockDelegator : public StatusDelegator
 {
     mutable std::ostringstream _calls;
-    bool handleStatusRequest(const DelegatedStatusRequest& request) const {
+    bool handleStatusRequest(const DelegatedStatusRequest& request) const override {
         _calls << "Request(" << request.path << ")";
         return request.reporter.reportStatus(request.outputStream, request.path);
     }
@@ -43,13 +43,13 @@ public:
         : framework::StatusReporter("foo", "Bar")
     {}
     vespalib::string getReportContentType(
-            const framework::HttpUrlPath&) const
+            const framework::HttpUrlPath&) const override
     {
         return "foo/bar";
     }
 
     bool reportStatus(std::ostream& os,
-                      const framework::HttpUrlPath& path) const
+                      const framework::HttpUrlPath& path) const override
     {
         os << "reportStatus with " << path;
         return true;

@@ -30,42 +30,40 @@ public:
     /*
      * Size of posting list, in bits.
      */
-    size_t
-    bitSize(void) const;
+    size_t bitSize(void) const override;
 
-    virtual bool
-    hasWordPositions(void) const;
+    virtual bool hasWordPositions(void) const override;
 
     /*
      * Single posting list performance, without feature unpack.
      */
     virtual int
-    lowLevelSinglePostingScan(void) const;
+    lowLevelSinglePostingScan(void) const override;
 
     /*
      * Single posting list performance, with feature unpack.
      */
     virtual int
-    lowLevelSinglePostingScanUnpack(void) const;
+    lowLevelSinglePostingScanUnpack(void) const override;
 
     /*
      * Two posting lists performance (same format) without feature unpack.
      */
     virtual int
-    lowLevelAndPairPostingScan(const FakePosting &rhs) const;
+    lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
 
     /*
      * Two posting lists performance (same format) with feature unpack.
      */
     virtual int
-    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const;
+    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
 
 
     /*
      * Iterator factory, for current query evaluation framework.
      */
     virtual search::queryeval::SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const;
+    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 } // namespace fakedata

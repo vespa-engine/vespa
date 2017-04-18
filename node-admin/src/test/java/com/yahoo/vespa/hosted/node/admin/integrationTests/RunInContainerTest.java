@@ -6,6 +6,8 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -26,20 +28,20 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Optional;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 /**
  * @author dybis
  */
 public class RunInContainerTest {
+    private final Orchestrator orchestrator = ComponentsProviderWithMocks.orchestratorMock;
+    private final String parentHostname = "localhost.test.yahoo.com";
     private JDisc container;
     private int port;
 
@@ -51,6 +53,10 @@ public class RunInContainerTest {
 
     @Before
     public void startContainer() throws Exception {
+        // To test the initial NodeAdminStateUpdater convergence towards RESUME, orchestrator should
+        // deny permission to resume for parent host, otherwise it'll converge to RESUME before REST
+        // handler comes up
+        doThrow(new RuntimeException()).when(orchestrator).resume(parentHostname);
         port = findRandomOpenPort();
         System.out.println("PORT IS " + port);
         container = JDisc.fromServicesXml(createServiceXml(port), Networking.enable);
@@ -110,19 +116,20 @@ public class RunInContainerTest {
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
-        final String parentHostname = "localhost.test.yahoo.com";
 
-        assertThat(doPutCall("resume"), is(true));
+        assertFalse(doPutCall("resume")); // Initial is false to force convergence
+        doNothing().when(orchestrator).resume(parentHostname);
+        Thread.sleep(50);
+        assertTrue(doPutCall("resume"));
 
         // No nodes are allocated to this host yet, so freezing should be fine, but orchestrator doesnt allow node-admin suspend
-        when(ComponentsProviderWithMocks.orchestratorMock.suspend(parentHostname, Collections.singletonList(parentHostname)))
-                .thenReturn(Optional.of("Cannot suspend because..."));
+        doThrow(new OrchestratorException("Cannot suspend because..."))
+                .when(orchestrator).suspend(parentHostname, Collections.singletonList(parentHostname));
         assertFalse(doPutCall("suspend/node-admin"));
 
         // Orchestrator changes its mind, allows node-admin to suspend
         when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
-        when(ComponentsProviderWithMocks.orchestratorMock.suspend(parentHostname, Collections.singletonList(parentHostname)))
-                .thenReturn(Optional.empty());
+        doNothing().when(orchestrator).suspend(parentHostname, Collections.singletonList(parentHostname));
         Thread.sleep(50);
         assertTrue(doPutCall("suspend/node-admin")); // Tick loop should've run several times by now, expect to be suspended
 
@@ -145,18 +152,17 @@ public class RunInContainerTest {
                         .nodeType("tenant")
                         .nodeFlavor("docker")
                         .build()));
-        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com",
-                Arrays.asList("host1.test.yahoo.com", parentHostname)))
-                .thenReturn(Optional.of("Cant suspend because..."));
+        doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator)
+                .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));
 
         // Orchestrator doesn't allow to suspend either the container or the node-admin
         assertFalse(doPutCall("suspend/node-admin"));
         Thread.sleep(50);
         assertFalse(doPutCall("suspend/node-admin"));
 
-        when(ComponentsProviderWithMocks.orchestratorMock.suspend("localhost.test.yahoo.com",
-                Arrays.asList("host1.test.yahoo.com", parentHostname)))
-                .thenReturn(Optional.empty());
+        doNothing().when(orchestrator)
+                .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));
+
         // Orchestrator successfully suspended everything
         Thread.sleep(50);
         assertTrue(doPutCall("suspend/node-admin"));

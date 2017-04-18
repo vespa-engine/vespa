@@ -47,6 +47,8 @@ using namespace search::index;
 using namespace search::query;
 using namespace search::queryeval;
 using namespace search;
+
+using search::index::schema::DataType;
 using storage::spi::Timestamp;
 
 void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
@@ -78,15 +80,15 @@ public:
         return _vectors.find(name)->second;
     }
     virtual const IAttributeVector *
-    getAttribute(const string &name) const {
+    getAttribute(const string &name) const override {
         return get(name);
     }
     virtual const IAttributeVector *
-    getAttributeStableEnum(const string &name) const {
+    getAttributeStableEnum(const string &name) const override {
         return get(name);
     }
     virtual void
-    getAttributeList(std::vector<const IAttributeVector *> & list) const {
+    getAttributeList(std::vector<const IAttributeVector *> & list) const override {
         Map::const_iterator pos = _vectors.begin();
         Map::const_iterator end = _vectors.end();
         for (; pos != end; ++pos) {
@@ -133,12 +135,12 @@ struct MyWorld {
 
     void basicSetup(size_t heapSize=10, size_t arraySize=100) {
         // schema
-        schema.addIndexField(Schema::IndexField("f1", schema::STRING));
-        schema.addIndexField(Schema::IndexField("f2", schema::STRING));
-        schema.addIndexField(Schema::IndexField("tensor_field", schema::TENSOR));
-        schema.addAttributeField(Schema::AttributeField("a1", schema::INT32));
-        schema.addAttributeField(Schema::AttributeField("a2", schema::INT32));
-        schema.addAttributeField(Schema::AttributeField("predicate_field", schema::BOOLEANTREE));
+        schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
+        schema.addIndexField(Schema::IndexField("f2", DataType::STRING));
+        schema.addIndexField(Schema::IndexField("tensor_field", DataType::TENSOR));
+        schema.addAttributeField(Schema::AttributeField("a1", DataType::INT32));
+        schema.addAttributeField(Schema::AttributeField("a2", DataType::INT32));
+        schema.addAttributeField(Schema::AttributeField("predicate_field", DataType::BOOLEANTREE));
 
         // config
         config.add(indexproperties::rank::FirstPhase::NAME, "attribute(a1)");
@@ -275,11 +277,11 @@ struct MyWorld {
 
         MySearchHandler(Matcher::SP matcher) : _matcher(matcher) {}
 
-        virtual DocsumReply::UP getDocsums(const DocsumRequest &)
+        virtual DocsumReply::UP getDocsums(const DocsumRequest &) override
         { return DocsumReply::UP(); }
         virtual SearchReply::UP match(const ISearchHandler::SP &,
                                       const SearchRequest &,
-                                      vespalib::ThreadBundle &) const
+                                      vespalib::ThreadBundle &) const override
         { return SearchReply::UP(); }
     };
 

@@ -100,7 +100,7 @@ private:
 
 public:
     EnumStoreTest() {}
-    int Main();
+    int Main() override;
 };
 
 EnumStoreTest::Reader::Reader(uint32_t generation, const IndexVector & indices, const ExpectedVector & expected)

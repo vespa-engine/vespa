@@ -5,6 +5,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -13,11 +14,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -62,14 +63,21 @@ public class NodeAdminStateUpdaterTest {
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
 
-        // Initially we start with everything running and we want to continue running, therefore we are converged
-        // and ticks should complete without ever calling NodeAdmin
-        tickAfter(0);
+        // Initially everything is frozen to force convergence
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
+        doNothing().when(orchestrator).resume(parentHostname);
+        tickAfter(0); // The first tick should unfreeze
+        verify(orchestrator, times(1)).resume(parentHostname); // Resume host
+        verify(orchestrator, times(1)).resume(parentHostname);
+
+        // Everything is running and we want to continue running, therefore we have converged
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         verify(refresher, never()).signalWorkToBeDone(); // No attempt in changing state
+        verify(orchestrator, times(1)).resume(parentHostname); // Already resumed
 
         // Lets try to suspend node admin only, immediately we get false back, and need to wait until next
         // tick before any change can happen
@@ -84,13 +92,12 @@ public class NodeAdminStateUpdaterTest {
         verify(refresher, times(1)).signalWorkToBeDone(); // No change in desired state
 
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
-        when(orchestrator.suspend(eq(parentHostname), eq(suspendHostnames)))
-                .thenReturn(Optional.of("Cannot allow to suspend because some reason"))
-                .thenReturn(Optional.empty());
+        doThrow(new RuntimeException("Cannot allow to suspend because some reason")).doNothing()
+                .when(orchestrator).suspend(eq(parentHostname), eq(suspendHostnames));
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(refresher, times(1)).signalWorkToBeDone();
-        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // Roll back
+        verify(nodeAdmin, times(1)).setFrozen(eq(false));
 
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
@@ -117,13 +124,15 @@ public class NodeAdminStateUpdaterTest {
 
 
         // Lets try going back to resumed
-        when(nodeAdmin.setFrozen(eq(false))).thenReturn(false); // NodeAgents not converged to yet
+        when(nodeAdmin.setFrozen(eq(false))).thenReturn(false).thenReturn(true); // NodeAgents not converged to yet
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
 
-        when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
-        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED)); // Still false before tick
+        doThrow(new OrchestratorException("Cannot allow to suspend " + parentHostname)).doNothing()
+                .when(orchestrator).resume(parentHostname);
+        tickAfter(35);
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
     }

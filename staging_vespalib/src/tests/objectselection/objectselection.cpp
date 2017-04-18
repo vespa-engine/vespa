@@ -17,7 +17,7 @@ struct Foo : public Identifiable
 
     DECLARE_IDENTIFIABLE(Foo);
     virtual Foo *clone() const { return new Foo(*this); }
-    virtual void selectMembers(const ObjectPredicate &p, ObjectOperation &o) {
+    virtual void selectMembers(const ObjectPredicate &p, ObjectOperation &o) override {
         for (uint32_t i = 0; i < nodes.size(); ++i) {
             nodes[i]->select(p, o);
         }
@@ -32,7 +32,7 @@ struct Bar : public Foo
     DECLARE_IDENTIFIABLE(Bar);
     Bar() : value(0) {}
     Bar(int v) { value = v; }
-    virtual Bar *clone() const { return new Bar(*this); }
+    virtual Bar *clone() const override { return new Bar(*this); }
 };
 IMPLEMENT_IDENTIFIABLE(Bar, Identifiable);
 
@@ -40,7 +40,7 @@ struct ObjectType : public ObjectPredicate
 {
     uint32_t cid;
     ObjectType(uint32_t id) : cid(id) {}
-    virtual bool check(const Identifiable &obj) const {
+    virtual bool check(const Identifiable &obj) const override {
         return (obj.getClass().id() == cid);
     }
 };
@@ -48,7 +48,7 @@ struct ObjectType : public ObjectPredicate
 struct ObjectCollect : public ObjectOperation
 {
     std::vector<Identifiable*> nodes;
-    virtual void execute(Identifiable &obj) {
+    virtual void execute(Identifiable &obj) override {
         nodes.push_back(&obj);
     }
 };

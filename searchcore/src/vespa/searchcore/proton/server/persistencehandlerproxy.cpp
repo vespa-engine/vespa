@@ -5,6 +5,13 @@
 #include "documentretriever.h"
 #include <vespa/persistence/spi/result.h>
 #include "documentdb.h"
+#include <vespa/searchcore/proton/feedoperation/createbucketoperation.h>
+#include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
+#include <vespa/searchcore/proton/feedoperation/joinbucketsoperation.h>
+#include <vespa/searchcore/proton/feedoperation/putoperation.h>
+#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
+#include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
+#include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.persistencehandlerproxy");
 

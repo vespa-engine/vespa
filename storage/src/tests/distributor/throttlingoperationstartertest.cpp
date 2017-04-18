@@ -38,8 +38,8 @@ public:
     void testStartingOperationsFillsUpPendingWindow();
     void testFinishingOperationsAllowsMoreToStart();
 
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(ThrottlingOperationStarterTest);

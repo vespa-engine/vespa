@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -42,7 +41,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final Optional<StorageMaintainer> storageMaintainer;
-    private boolean isFrozen = false;
+    private boolean isFrozen = true;
 
     private final Map<String, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 
@@ -81,10 +80,15 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
-        final List<Container> existingContainers = dockerOperations.getAllManagedContainers();
+        final List<String> existingContainerHostnames = dockerOperations.getAllManagedContainers().stream()
+                .map(container -> container.hostname)
+                .collect(Collectors.toList());
+        final List<String> containersToRunHostnames = containersToRun.stream()
+                .map(container -> container.hostname)
+                .collect(Collectors.toList());
 
         storageMaintainer.ifPresent(StorageMaintainer::cleanNodeAdmin);
-        synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
+        synchronizeNodeSpecsToNodeAgents(containersToRunHostnames, existingContainerHostnames);
         dockerOperations.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
@@ -153,7 +157,7 @@ public class NodeAdminImpl implements NodeAdmin {
             boolean metricsSchedulerShutdown = metricsScheduler.awaitTermination(30, TimeUnit.SECONDS);
             boolean aclSchedulerShutdown = aclScheduler.awaitTermination(30, TimeUnit.SECONDS);
             if (! (metricsSchedulerShutdown && aclSchedulerShutdown)) {
-                throw new RuntimeException("Failed shuttingdown all scheduler(s), shutdown status:\n" +
+                throw new RuntimeException("Failed shutting down all scheduler(s), shutdown status:\n" +
                         "\tMetrics Scheduler: " + metricsSchedulerShutdown + "\n" +
                         "\tACL Scheduler: " + aclSchedulerShutdown);
             }
@@ -187,25 +191,20 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(key -> new Pair<>(Optional.ofNullable(tMap.get(key)), Optional.ofNullable(uMap.get(key))));
     }
 
-    // TODO This method should rather take a list of Hostname instead of Container. However, it triggers
-    // a refactoring of the logic. Which is hard due to the style of programming.
     // The method streams the list of containers twice.
     void synchronizeNodeSpecsToNodeAgents(
-            final List<ContainerNodeSpec> containersToRun,
-            final List<Container> existingContainers) {
-        final Stream<Pair<Optional<ContainerNodeSpec>, Optional<Container>>> nodeSpecContainerPairs = fullOuterJoin(
-                containersToRun.stream(), nodeSpec -> nodeSpec.hostname,
-                existingContainers.stream(), container -> container.hostname);
+            final List<String> containersToRun,
+            final List<String> existingContainers) {
+        final Stream<Pair<Optional<String>, Optional<String>>> nodeSpecContainerPairs = fullOuterJoin(
+                containersToRun.stream(), hostname -> hostname,
+                existingContainers.stream(), hostname -> hostname);
 
-        final Set<String> nodeHostNames = containersToRun.stream()
-                .map(spec -> spec.hostname)
-                .collect(Collectors.toSet());
-        final Set<String> obsoleteAgentHostNames = diff(nodeAgents.keySet(), nodeHostNames);
+        final Set<String> obsoleteAgentHostNames = diff(nodeAgents.keySet(), new HashSet<>(containersToRun));
         obsoleteAgentHostNames.forEach(hostName -> nodeAgents.remove(hostName).stop());
 
         nodeSpecContainerPairs.forEach(nodeSpecContainerPair -> {
-            final Optional<ContainerNodeSpec> nodeSpec = nodeSpecContainerPair.getFirst();
-            final Optional<Container> existingContainer = nodeSpecContainerPair.getSecond();
+            final Optional<String> nodeSpec = nodeSpecContainerPair.getFirst();
+            final Optional<String> existingContainer = nodeSpecContainerPair.getSecond();
 
             if (!nodeSpec.isPresent()) {
                 assert existingContainer.isPresent();
@@ -217,14 +216,14 @@ public class NodeAdminImpl implements NodeAdmin {
         });
     }
 
-    private void ensureNodeAgentForNodeIsStarted(final ContainerNodeSpec nodeSpec) {
-        if (nodeAgents.containsKey(nodeSpec.hostname)) {
+    private void ensureNodeAgentForNodeIsStarted(final String hostname) {
+        if (nodeAgents.containsKey(hostname)) {
             return;
         }
 
-        final NodeAgent agent = nodeAgentFactory.apply(nodeSpec.hostname);
+        final NodeAgent agent = nodeAgentFactory.apply(hostname);
         agent.start(nodeAgentScanIntervalMillis);
-        nodeAgents.put(nodeSpec.hostname, agent);
+        nodeAgents.put(hostname, agent);
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {

@@ -28,7 +28,7 @@ struct MergeHandlerTest : public SingleDiskPersistenceTestUtils
     template <typename T>
     std::shared_ptr<T> fetchSingleMessage();
 
-    void setUp();
+    void setUp() override;
 
     enum ChainPos { FRONT, MIDDLE, BACK };
     void setUpChain(ChainPos);
@@ -129,7 +129,7 @@ private:
         : public HandlerInvoker
     {
     public:
-        std::string afterInvoke(MergeHandlerTest&, MergeHandler&);
+        std::string afterInvoke(MergeHandlerTest&, MergeHandler&) override;
     };
 
     template <typename ExpectedMessage>
@@ -139,21 +139,21 @@ private:
         : public NoReplyHandlerInvoker
     {
     public:
-        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
+        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
     };
 
     class HandleMergeBucketReplyInvoker
         : public NoReplyHandlerInvoker
     {
     public:
-        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
+        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
     };
 
     class HandleGetBucketDiffInvoker
         : public NoReplyHandlerInvoker
     {
     public:
-        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
+        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
     };
 
     class MultiPositionHandlerInvoker
@@ -176,9 +176,9 @@ private:
     public:
         HandleGetBucketDiffReplyInvoker();
         ~HandleGetBucketDiffReplyInvoker();
-        void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
-        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
-        std::string afterInvoke(MergeHandlerTest&, MergeHandler&);
+        void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
+        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
+        std::string afterInvoke(MergeHandlerTest&, MergeHandler&) override;
     private:
         MessageSenderStub _stub;
         std::shared_ptr<api::GetBucketDiffCommand> _diffCmd;
@@ -189,7 +189,7 @@ private:
     {
     public:
         HandleApplyBucketDiffInvoker() : _counter(0) {}
-        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
+        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
     private:
         int _counter;
     };
@@ -200,9 +200,9 @@ private:
     public:
         HandleApplyBucketDiffReplyInvoker();
         ~HandleApplyBucketDiffReplyInvoker();
-        void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
-        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&);
-        std::string afterInvoke(MergeHandlerTest&, MergeHandler&);
+        void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
+        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
+        std::string afterInvoke(MergeHandlerTest&, MergeHandler&) override;
     private:
         int _counter;
         MessageSenderStub _stub;

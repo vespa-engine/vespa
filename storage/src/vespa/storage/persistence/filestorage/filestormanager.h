@@ -104,8 +104,7 @@ public:
                              ServiceLayerComponentRegister&);
     ~FileStorManager();
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     // Return true if we are currently merging the given bucket.
     bool isMerging(const document::BucketId& bucket) const;
@@ -118,10 +117,10 @@ public:
         return *_provider;
     }
 
-    void handleNewState();
+    void handleNewState() override;
 
 private:
-    void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config);
+    void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
 
     void replyWithBucketNotFound(api::StorageMessage&,
                                  const document::BucketId&);
@@ -149,53 +148,47 @@ private:
                                   uint16_t disk);
 
     // Document operations
-    bool onPut(const std::shared_ptr<api::PutCommand>&);
-    bool onUpdate(const std::shared_ptr<api::UpdateCommand>&);
-    bool onGet(const std::shared_ptr<api::GetCommand>&);
-    bool onRemove(const std::shared_ptr<api::RemoveCommand>&);
-    bool onRevert(const std::shared_ptr<api::RevertCommand>&);
-    bool onMultiOperation(const std::shared_ptr<api::MultiOperationCommand>&);
-    bool onBatchPutRemove(const std::shared_ptr<api::BatchPutRemoveCommand>&);
-    bool onStatBucket(const std::shared_ptr<api::StatBucketCommand>&);
+    bool onPut(const std::shared_ptr<api::PutCommand>&) override;
+    bool onUpdate(const std::shared_ptr<api::UpdateCommand>&) override;
+    bool onGet(const std::shared_ptr<api::GetCommand>&) override;
+    bool onRemove(const std::shared_ptr<api::RemoveCommand>&) override;
+    bool onRevert(const std::shared_ptr<api::RevertCommand>&) override;
+    bool onMultiOperation(const std::shared_ptr<api::MultiOperationCommand>&) override;
+    bool onBatchPutRemove(const std::shared_ptr<api::BatchPutRemoveCommand>&) override;
+    bool onStatBucket(const std::shared_ptr<api::StatBucketCommand>&) override;
 
     // Bucket operations
-    bool onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>&);
-    bool onCreateBucket(const std::shared_ptr<api::CreateBucketCommand>&);
-    bool onDeleteBucket(const std::shared_ptr<api::DeleteBucketCommand>&);
-    bool onMergeBucket(const std::shared_ptr<api::MergeBucketCommand>&);
-    bool onGetBucketDiff(const std::shared_ptr<api::GetBucketDiffCommand>&);
-    bool onGetBucketDiffReply(
-            const std::shared_ptr<api::GetBucketDiffReply>&);
-    bool onApplyBucketDiff(
-            const std::shared_ptr<api::ApplyBucketDiffCommand>&);
-    bool onApplyBucketDiffReply(
-            const std::shared_ptr<api::ApplyBucketDiffReply>&);
-    bool onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>&);
-    bool onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>&);
-    bool onSetBucketState(const std::shared_ptr<api::SetBucketStateCommand>&);
-    bool onNotifyBucketChangeReply(
-            const std::shared_ptr<api::NotifyBucketChangeReply>&)
-        { return true; }
+    bool onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>&) override;
+    bool onCreateBucket(const std::shared_ptr<api::CreateBucketCommand>&) override;
+    bool onDeleteBucket(const std::shared_ptr<api::DeleteBucketCommand>&) override;
+    bool onMergeBucket(const std::shared_ptr<api::MergeBucketCommand>&) override;
+    bool onGetBucketDiff(const std::shared_ptr<api::GetBucketDiffCommand>&) override;
+    bool onGetBucketDiffReply(const std::shared_ptr<api::GetBucketDiffReply>&) override;
+    bool onApplyBucketDiff(const std::shared_ptr<api::ApplyBucketDiffCommand>&) override;
+    bool onApplyBucketDiffReply(const std::shared_ptr<api::ApplyBucketDiffReply>&) override;
+    bool onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>&) override;
+    bool onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>&) override;
+    bool onSetBucketState(const std::shared_ptr<api::SetBucketStateCommand>&) override;
+    bool onNotifyBucketChangeReply(const std::shared_ptr<api::NotifyBucketChangeReply>&) override { return true; }
 
     // Other
-    bool onInternal(const std::shared_ptr<api::InternalCommand>&);
-    bool onInternalReply(const std::shared_ptr<api::InternalReply>&);
+    bool onInternal(const std::shared_ptr<api::InternalCommand>&) override;
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
 
     void handleAbortBucketOperations(
             const std::shared_ptr<AbortBucketOperationsCommand>&);
 
-    void sendCommand(const std::shared_ptr<api::StorageCommand>&);
-    void sendReply(const std::shared_ptr<api::StorageReply>&);
+    void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
+    void sendReply(const std::shared_ptr<api::StorageReply>&) override;
 
-    void sendUp(const std::shared_ptr<api::StorageMessage>&);
+    void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
 
-    void onClose();
-    void onFlush(bool downwards);
+    void onClose() override;
+    void onFlush(bool downwards) override;
 
-    virtual void reportHtmlStatus(std::ostream&,
-                                  const framework::HttpUrlPath&) const;
+    virtual void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
-    virtual void storageDistributionChanged();
+    virtual void storageDistributionChanged() override;
 
     void updateState();
 };

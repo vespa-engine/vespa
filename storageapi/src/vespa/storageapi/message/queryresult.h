@@ -18,10 +18,9 @@ class QueryResultCommand : public StorageCommand {
 public:
     QueryResultCommand();
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    uint32_t getMemoryFootprint() const {
+    uint32_t getMemoryFootprint() const override {
         return getSearchResult().getSerializedSize() + getDocumentSummary().getSerializedSize();
     }
     const vdslib::SearchResult & getSearchResult() const { return _searchResult; }
@@ -45,8 +44,7 @@ class QueryResultReply : public StorageReply {
 public:
     explicit QueryResultReply(const QueryResultCommand& command);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(QueryResultReply, onQueryResultReply)
 };

@@ -9,7 +9,7 @@ namespace {
 
 struct Untaintable : Taintable {
     Taint taint;
-    virtual const Taint &tainted() const { return taint; }
+    virtual const Taint &tainted() const override { return taint; }
     virtual ~Untaintable() {}
 };
 

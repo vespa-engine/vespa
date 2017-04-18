@@ -9,7 +9,7 @@ using namespace search;
 
 class Test : public vespalib::TestApp {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

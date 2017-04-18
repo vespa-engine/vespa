@@ -36,6 +36,8 @@ typedef search::attribute::CollectionType AVCT;
 
 typedef AttributeVector::SP             AttributePtr;
 
+using CollectionType = FieldInfo::CollectionType;
+
 class Benchmark : public FtTestApp {
 public:
     typedef std::vector<std::pair<vespalib::string, vespalib::string> > KeyValueVector;
@@ -130,7 +132,7 @@ private:
 
 public:
     Benchmark() : _factory(), _timer(), _sample() {}
-    int Main();
+    int Main() override;
 
 };
 

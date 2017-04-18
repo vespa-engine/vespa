@@ -14,6 +14,7 @@ using search::feature_t;
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
+using CollectionType = FieldInfo::CollectionType;
 
 const vespalib::string featureName("itemRawScore(label)");
 
@@ -36,7 +37,7 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) {
+    virtual void visitDumpFeature(const vespalib::string &) override {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
@@ -47,13 +48,13 @@ struct Labels {
     virtual ~Labels() {}
 };
 struct NoLabel : public Labels {
-    virtual void inject(Properties &) const {}    
+    virtual void inject(Properties &) const override {}    
 };
 struct SingleLabel : public Labels {
     vespalib::string label;
     uint32_t uid;
     SingleLabel(const vespalib::string &l, uint32_t x) : label(l), uid(x) {}
-    virtual void inject(Properties &p) const {
+    virtual void inject(Properties &p) const override {
         vespalib::asciistream key;
         key << "vespa.label." << label << ".id";
         vespalib::asciistream value;

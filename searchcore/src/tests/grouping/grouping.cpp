@@ -41,15 +41,15 @@ public:
         return _vectors.find(name)->second;
     }
     virtual const IAttributeVector *
-    getAttribute(const string &name) const {
+    getAttribute(const string &name) const override {
         return get(name);
     }
     virtual const IAttributeVector *
-    getAttributeStableEnum(const string &name) const {
+    getAttributeStableEnum(const string &name) const override {
         return get(name);
     }
     virtual void
-    getAttributeList(std::vector<const IAttributeVector *> & list) const {
+    getAttributeList(std::vector<const IAttributeVector *> & list) const override {
         Map::const_iterator pos = _vectors.begin();
         Map::const_iterator end = _vectors.end();
         for (; pos != end; ++pos) {

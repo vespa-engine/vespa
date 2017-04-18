@@ -25,7 +25,7 @@ class Test : public vespalib::TestApp {
     void requireThatStructFieldsCanContainAnnotations();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int Test::Main() {

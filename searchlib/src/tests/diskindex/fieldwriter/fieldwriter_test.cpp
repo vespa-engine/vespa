@@ -24,30 +24,32 @@
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
 
-
 using search::ResultSet;
-using search::fef::TermFieldMatchData;
-using search::fef::TermFieldMatchDataArray;
-using search::queryeval::SearchIterator;
-using search::fakedata::FakeWord;
-using search::fakedata::FakeWordSet;
-using search::index::PostingListParams;
-using search::index::PostingListCounts;
-using search::index::PostingListOffsetAndCounts;
-using search::index::Schema;
-using search::index::SchemaUtil;
-using search::common::FileHeaderContext;
-using search::index::DummyFileHeaderContext;
-using search::diskindex::CheckPointFile;
+using search::TuneFileRandRead;
 using search::TuneFileSeqRead;
 using search::TuneFileSeqWrite;
-using search::TuneFileRandRead;
-using vespalib::nbostream;
-using search::diskindex::FieldWriter;
-using search::diskindex::FieldReader;
+using search::common::FileHeaderContext;
+using search::diskindex::CheckPointFile;
 using search::diskindex::DocIdMapping;
-using search::diskindex::WordNumMapping;
+using search::diskindex::FieldReader;
+using search::diskindex::FieldWriter;
 using search::diskindex::PageDict4RandRead;
+using search::diskindex::WordNumMapping;
+using search::fakedata::FakeWord;
+using search::fakedata::FakeWordSet;
+using search::fef::TermFieldMatchData;
+using search::fef::TermFieldMatchDataArray;
+using search::index::DummyFileHeaderContext;
+using search::index::PostingListCounts;
+using search::index::PostingListOffsetAndCounts;
+using search::index::PostingListParams;
+using search::index::Schema;
+using search::index::SchemaUtil;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
+using search::queryeval::SearchIterator;
+using vespalib::nbostream;
+
 using namespace search::index;
 
 // needed to resolve external symbol from httpd.h on AIX
@@ -113,7 +115,7 @@ private:
 public:
     FieldWriterTest(void);
     ~FieldWriterTest(void);
-    int Main(void);
+    int Main(void) override;
 };
 
 
@@ -188,8 +190,8 @@ WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
       _schema(),
       _indexId()
 {
-    schema::CollectionType ct(schema::SINGLE);
-    _schema.addIndexField(Schema::IndexField("field1", schema::STRING, ct));
+    schema::CollectionType ct(CollectionType::SINGLE);
+    _schema.addIndexField(Schema::IndexField("field1", DataType::STRING, ct));
     _indexId = _schema.getIndexFieldId("field1");
 }
 
@@ -324,12 +326,12 @@ WrappedFieldReader::WrappedFieldReader(const vespalib::string &namepref,
       _oldSchema(),
       _schema()
 {
-    Schema::CollectionType ct(schema::SINGLE);
+    Schema::CollectionType ct(CollectionType::SINGLE);
     _oldSchema.addIndexField(Schema::IndexField("field1",
-                                                schema::STRING,
+                                                DataType::STRING,
                                                 ct));
     _schema.addIndexField(Schema::IndexField("field1",
-                                             schema::STRING,
+                                             DataType::STRING,
                                              ct));
 }
 

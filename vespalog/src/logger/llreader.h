@@ -15,7 +15,7 @@ public:
     MsgException(const MsgException &x) : std::exception(), _string(x._string) {}
     MsgException(const char *s) : _string(s) {}
     ~MsgException() throw() {} // nothing to do
-    const char *what() const throw() { return _string; }
+    const char *what() const throw() override { return _string; }
 };
 
 

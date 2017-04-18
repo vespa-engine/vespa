@@ -25,7 +25,7 @@ struct BucketMatcher : public SlotMatcher {
           _factory(factory),
           _bid(bid) {}
 
-    virtual bool match(const Slot& slot) {
+    virtual bool match(const Slot& slot) override {
         document::DocumentId id(slot.getDocumentId());
         document::BucketId bucket = _factory.getBucketId(id);
         bucket.setUsedBits(_bid.getUsedBits());

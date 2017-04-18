@@ -14,6 +14,8 @@ LOG_SETUP(".proton.flushengine.flushengine");
 
 using vespalib::MonitorGuard;
 typedef vespalib::Executor::Task Task;
+using searchcorespi::IFlushTarget;
+using searchcorespi::FlushStats;
 
 namespace proton {
 

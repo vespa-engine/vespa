@@ -81,10 +81,10 @@ public:
 
     bool attemptedStopped() const;
 
-    virtual void notifyDoneInitializing();
+    virtual void notifyDoneInitializing() override;
     void waitUntilInitialized(uint32_t timeoutSeconds = 15);
 
-    void updateMetrics(const MetricLockGuard & guard);
+    void updateMetrics(const MetricLockGuard & guard) override;
 
     /** Updates the document type repo. */
     void setNewDocumentRepo(const document::DocumentTypeRepo::SP& repo);
@@ -95,7 +95,7 @@ public:
      */
     virtual ResumeGuard pause() = 0;
 
-    void requestShutdown(vespalib::stringref reason);
+    void requestShutdown(vespalib::stringref reason) override;
 
     void
     notifyPartitionDown(int partId, vespalib::stringref reason);
@@ -140,10 +140,10 @@ private:
     std::unique_ptr<StorageLink>               _chain;
 
     /** Implementation of config callbacks. */
-    virtual void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> config);
-    virtual void configure(std::unique_ptr<vespa::config::content::UpgradingConfig> config);
-    virtual void configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config);
-    virtual void configure(std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig>);
+    virtual void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> config) override;
+    virtual void configure(std::unique_ptr<vespa::config::content::UpgradingConfig> config) override;
+    virtual void configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config) override;
+    virtual void configure(std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig>) override;
     virtual void configure(std::unique_ptr<document::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
     void updateUpgradeFlag(const vespa::config::content::UpgradingConfig&);

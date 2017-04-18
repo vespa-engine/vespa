@@ -237,9 +237,9 @@ struct ProgramOptions::OptionParser {
 
 struct ProgramOptions::OptionHeader : public OptionParser {
     OptionHeader(const std::string& desc) : OptionParser("", 0, desc) {}
-    virtual void set(const std::vector<std::string>&) {}
-    virtual void setDefault() {}
-    virtual bool isHeader() const { return true; }
+    virtual void set(const std::vector<std::string>&) override {}
+    virtual void setDefault() override {}
+    virtual bool isHeader() const override { return true; }
 };
 
 template<typename Number>
@@ -265,11 +265,11 @@ struct ProgramOptions::NumberOptionParser : public OptionParser {
     {
     }
 
-    virtual void set(const std::vector<std::string>& arguments);
+    virtual void set(const std::vector<std::string>& arguments) override;
 
-    virtual void setDefault() { _number = _defaultValue; }
+    virtual void setDefault() override { _number = _defaultValue; }
 
-    virtual std::string getArgType(uint32_t /* index */) const
+    virtual std::string getArgType(uint32_t /* index */) const override
         { return getTypeName<Number>(); }
 
 };
@@ -281,9 +281,9 @@ struct ProgramOptions::BoolOptionParser : public OptionParser {
     BoolOptionParser(const std::string& nameList, bool& value,
                      const std::string& description);
 
-    virtual void set(const std::vector<std::string>&) { _value = true; }
+    virtual void set(const std::vector<std::string>&) override { _value = true; }
 
-    virtual void setDefault() { _value = false; }
+    virtual void setDefault() override { _value = false; }
 };
 
 struct ProgramOptions::FlagOptionParser : public OptionParser {
@@ -295,9 +295,9 @@ struct ProgramOptions::FlagOptionParser : public OptionParser {
     FlagOptionParser(const std::string& nameList, bool& value,
                      const bool& unsetValue, const std::string& description);
 
-    virtual void set(const std::vector<std::string>&) { _value = !_unsetValue; }
+    virtual void set(const std::vector<std::string>&) override { _value = !_unsetValue; }
 
-    virtual void setDefault() { _value = _unsetValue; }
+    virtual void setDefault() override { _value = _unsetValue; }
 };
 
 struct ProgramOptions::StringOptionParser : public OptionParser {
@@ -310,12 +310,12 @@ struct ProgramOptions::StringOptionParser : public OptionParser {
     StringOptionParser(const std::string& nameList, std::string& value,
                        const std::string& defVal, const std::string& desc);
 
-    virtual void set(const std::vector<std::string>& arguments)
+    virtual void set(const std::vector<std::string>& arguments) override
         { _value = arguments[0]; }
 
-    virtual void setDefault() { _value = _defaultValue; }
+    virtual void setDefault() override { _value = _defaultValue; }
 
-    virtual std::string getArgType(uint32_t /* index */) const
+    virtual std::string getArgType(uint32_t /* index */) const override
         { return "string"; }
 };
 
@@ -327,14 +327,14 @@ struct ProgramOptions::MapOptionParser : public OptionParser {
                     std::map<std::string, std::string>& value,
                     const std::string& description);
 
-    virtual void set(const std::vector<std::string>& arguments)
+    virtual void set(const std::vector<std::string>& arguments) override
         { _value[arguments[0]] = arguments[1]; }
 
-    virtual std::string getArgType(uint32_t /* index */) const
+    virtual std::string getArgType(uint32_t /* index */) const override
         { return "string"; }
 
         // Default of map is just an empty map.
-    virtual void setDefault() { _value.clear(); }
+    virtual void setDefault() override { _value.clear(); }
 };
 
 template<typename T>
@@ -357,8 +357,8 @@ struct ProgramOptions::ListOptionParser : public OptionParser {
         _entryParser = std::move(entryParser);
     }
 
-    virtual bool isRequired() const { return false; }
-    virtual void set(const std::vector<std::string>& arguments) {
+    virtual bool isRequired() const override { return false; }
+    virtual void set(const std::vector<std::string>& arguments) override {
         for (uint32_t i=0; i<arguments.size(); ++i) {
             std::vector<std::string> v;
             v.push_back(arguments[i]);
@@ -366,10 +366,10 @@ struct ProgramOptions::ListOptionParser : public OptionParser {
             _value.push_back(_singleValue);
         }
     }
-    virtual void setDefault() {
+    virtual void setDefault() override {
         _value.clear();
     }
-    virtual std::string getArgType(uint32_t index) const {
+    virtual std::string getArgType(uint32_t index) const override {
         return _entryParser->getArgType(index) + "[]";
     }
 };

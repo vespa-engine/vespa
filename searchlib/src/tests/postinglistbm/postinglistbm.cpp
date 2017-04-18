@@ -16,7 +16,10 @@
 using search::ResultSet;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
 using search::queryeval::SearchIterator;
+
 using namespace search::index;
 using namespace search::fakedata;
 
@@ -56,7 +59,7 @@ private:
 public:
     PostingListBM(void);
     ~PostingListBM(void);
-    int Main(void);
+    int Main(void) override;
 };
 
 
@@ -372,8 +375,8 @@ PostingListBM::Main(void)
             do {
                 Schema schema;
                 Schema::IndexField indexField("field0",
-                        schema::STRING,
-                        schema::SINGLE);
+                        DataType::STRING,
+                        CollectionType::SINGLE);
                 schema.addIndexField(indexField);
                 std::unique_ptr<FPFactory> ff(getFPFactory(optArg, schema));
                 if (ff.get() == NULL) {

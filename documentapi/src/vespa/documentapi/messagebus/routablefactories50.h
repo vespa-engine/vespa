@@ -101,10 +101,10 @@ public:
         typedef std::shared_ptr<IRoutableFactory> SP;
 
         // Implements IRoutableFactory.
-        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const;
+        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
 
         // Implements IRoutableFactory.
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const;
+        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
     };
 
     /**
@@ -144,10 +144,10 @@ public:
         typedef std::shared_ptr<IRoutableFactory> SP;
 
         // Implements IRoutableFactory.
-        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const;
+        bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
 
         // Implements IRoutableFactory.
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const;
+        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
     };
 
     /**
@@ -164,8 +164,8 @@ public:
      */
     class FeedReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
         virtual uint32_t getType() const = 0;
     };
 
@@ -177,113 +177,113 @@ public:
 
     class BatchDocumentUpdateMessageFactory : public DocumentMessageFactory {
         const document::DocumentTypeRepo &_repo;
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         BatchDocumentUpdateMessageFactory(const document::DocumentTypeRepo &r)
             : _repo(r) {}
     };
     class BatchDocumentUpdateReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class CreateVisitorMessageFactory : public DocumentMessageFactory {
         const document::DocumentTypeRepo &_repo;
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         CreateVisitorMessageFactory(const document::DocumentTypeRepo &r)
             : _repo(r) {}
     };
     class CreateVisitorReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class DestroyVisitorMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class DestroyVisitorReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class DocBlockMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class DocBlockReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class DocumentListMessageFactory : public DocumentMessageFactory {
         const document::DocumentTypeRepo &_repo;
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         DocumentListMessageFactory(const document::DocumentTypeRepo &r)
             : _repo(r) {}
     };
     class DocumentListReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class DocumentSummaryMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class DocumentSummaryReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class EmptyBucketsMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class EmptyBucketsReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class GetBucketListMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class GetBucketListReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class GetBucketStateMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class GetBucketStateReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class GetDocumentMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class GetDocumentReplyFactory : public DocumentReplyFactory {
         const document::DocumentTypeRepo &_repo;
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         GetDocumentReplyFactory(const document::DocumentTypeRepo &r)
             : _repo(r) {}
@@ -291,39 +291,39 @@ public:
     class MapVisitorMessageFactory : public DocumentMessageFactory {
         const document::DocumentTypeRepo &_repo;
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         MapVisitorMessageFactory(const document::DocumentTypeRepo &r)
             : _repo(r) {}
     };
     class MapVisitorReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class MultiOperationMessageFactory : public DocumentMessageFactory {
         document::DocumentTypeRepo::SP _repo;
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         MultiOperationMessageFactory(const document::DocumentTypeRepo::SP &r)
             : _repo(r) {}
     };
     class MultiOperationReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class PutDocumentMessageFactory : public DocumentMessageFactory {
     protected:
         const document::DocumentTypeRepo &_repo;
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const {
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override {
             return decodeMessage<PutDocumentMessage>(this, buf);
         }
 
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         void decodeInto(PutDocumentMessage & msg, document::ByteBuffer & buf) const;
         PutDocumentMessageFactory(const document::DocumentTypeRepo &r)
@@ -331,75 +331,75 @@ public:
     };
     class PutDocumentReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class RemoveDocumentMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const {
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override {
             return decodeMessage<RemoveDocumentMessage>(this, buf);
         }
 
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         void decodeInto(RemoveDocumentMessage & msg, document::ByteBuffer & buf) const;
     };
     class RemoveDocumentReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class RemoveLocationMessageFactory : public DocumentMessageFactory {
         const document::DocumentTypeRepo &_repo;
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         RemoveLocationMessageFactory(const document::DocumentTypeRepo &r)
             : _repo(r) {}
     };
     class RemoveLocationReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class SearchResultMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class SearchResultReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class StatBucketMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class StatBucketReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class StatDocumentMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class StatDocumentReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class UpdateDocumentMessageFactory : public DocumentMessageFactory {
     protected:
         const document::DocumentTypeRepo &_repo;
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const {
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override {
             return decodeMessage<UpdateDocumentMessage>(this, buf);
         }
 
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         void decodeInto(UpdateDocumentMessage & msg, document::ByteBuffer & buf) const;
         UpdateDocumentMessageFactory(const document::DocumentTypeRepo &r)
@@ -407,33 +407,33 @@ public:
     };
     class UpdateDocumentReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class VisitorInfoMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class VisitorInfoReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class WrongDistributionReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
     class QueryResultMessageFactory : public DocumentMessageFactory {
     protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const;
+        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     };
     class QueryResultReplyFactory : public DocumentReplyFactory {
     protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const;
+        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
+        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
 
     ///////////////////////////////////////////////////////////////////////////

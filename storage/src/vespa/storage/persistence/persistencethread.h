@@ -31,11 +31,11 @@ public:
     ~PersistenceThread();
 
     /** Waits for current operation to be finished. */
-    void flush();
+    void flush() override;
 
     bool isMerging(const BucketId& bucket) const;
 
-    virtual framework::Thread& getThread() { return *_thread; }
+    virtual framework::Thread& getThread() override { return *_thread; }
 
     MessageTracker::UP handlePut(api::PutCommand& cmd);
     MessageTracker::UP handleRemove(api::RemoveCommand& cmd);
@@ -99,7 +99,7 @@ private:
     void processMessages(FileStorHandler::LockedMessage & lock);
 
     // Thread main loop
-    virtual void run(framework::ThreadHandle&);
+    virtual void run(framework::ThreadHandle&) override;
 
     bool checkForError(const spi::Result& response, MessageTracker& tracker);
 

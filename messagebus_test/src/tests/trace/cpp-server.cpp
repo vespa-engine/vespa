@@ -23,8 +23,8 @@ private:
 public:
     Server(MessageBus &bus, const std::string &name);
     ~Server();
-    void handleMessage(Message::UP msg);
-    void handleReply(Reply::UP reply);
+    void handleMessage(Message::UP msg) override;
+    void handleReply(Reply::UP reply) override;
 };
 
 Server::Server(MessageBus &bus, const std::string &name)
@@ -62,7 +62,7 @@ Server::handleReply(Reply::UP reply) {
 class App : public FastOS_Application
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

@@ -23,7 +23,7 @@ public:
     virtual void send(mbus::Reply::UP reply,
                       ResultUP result,
                       bool documentWasFound,
-                      double latency_ms);
+                      double latency_ms) override;
     void await() {
         _latch.await();
     }

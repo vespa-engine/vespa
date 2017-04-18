@@ -37,9 +37,9 @@ public:
         virtual search::docsummary::IDocsumStore::UP createDocsumStore(const vespalib::string &resultClassName) = 0;
 
         // Inherit doc from IDocsumEnvironment
-        virtual search::IAttributeManager *getAttributeManager() = 0;
-        virtual vespalib::string lookupIndex(const vespalib::string & s) const = 0;
-        virtual juniper::Juniper *getJuniper() = 0;
+        virtual search::IAttributeManager *getAttributeManager() override = 0;
+        virtual vespalib::string lookupIndex(const vespalib::string & s) const override = 0;
+        virtual juniper::Juniper *getJuniper() override = 0;
     };
 
     typedef std::unique_ptr<ISummaryManager> UP;

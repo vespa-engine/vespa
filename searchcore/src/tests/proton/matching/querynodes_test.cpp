@@ -39,7 +39,6 @@ LOG_SETUP("querynodes_test");
 #include <vector>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 
-using search::fef::CollectionType;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::MatchData;
@@ -70,6 +69,7 @@ using std::string;
 using std::vector;
 using namespace proton::matching;
 namespace fef_test = search::fef::test;
+using CollectionType = FieldInfo::CollectionType;
 
 namespace {
 

@@ -18,7 +18,7 @@ class Application : public FastOS_Application {
     HostFilter parse_host_set(vespalib::stringref raw_arg) const;
 public:
     void usage(void);
-    int Main(void);
+    int Main(void) override;
 
     Application();
     ~Application();

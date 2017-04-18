@@ -17,12 +17,12 @@ namespace {
 
 struct DummyFactory : Factory {
     PersistenceProvider::UP getPersistenceImplementation(const Repo::SP& repo,
-                                                         const Repo::DocumenttypesConfig &) {
+                                                         const Repo::DocumenttypesConfig &) override {
         return PersistenceProvider::UP(new dummy::DummyPersistence(repo, 4));
     }
 
     virtual bool
-    supportsActiveState() const
+    supportsActiveState() const override
     {
         return true;
     }

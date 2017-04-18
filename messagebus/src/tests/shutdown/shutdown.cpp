@@ -26,7 +26,7 @@ private:
     void requireThatShutdownOnIntermediateWithPendingIsSafe();
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("shutdown_test");
 
         requireThatListenFailedIsExceptionSafe();             TEST_FLUSH();

@@ -28,6 +28,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
@@ -166,7 +167,7 @@ struct AttributeManagerFixture
     AttributeManagerFixture(BaseFixture &bf);
     ~AttributeManagerFixture();
     AttributeVector::SP addAttribute(const vespalib::string &name) {
-        return _m.addAttribute(name, INT32_SINGLE, createSerialNum);
+        return _m.addAttribute({name, INT32_SINGLE}, createSerialNum);
     }
     void addImportedAttribute(const vespalib::string &name) {
         _builder.add(name);
@@ -262,7 +263,7 @@ TEST_F("require that attributes are added", Fixture)
 
 TEST_F("require that predicate attributes are added", Fixture)
 {
-    EXPECT_TRUE(f._m.addAttribute("p1", AttributeUtils::getPredicateConfig(),
+    EXPECT_TRUE(f._m.addAttribute({"p1", AttributeUtils::getPredicateConfig()},
                                   createSerialNum).get() != NULL);
     EXPECT_EQUAL("p1", (*f._m.getAttribute("p1"))->getName());
     EXPECT_EQUAL("p1", (*f._m.getAttributeStableEnum("p1"))->getName());
@@ -352,10 +353,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
     {
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
-        AttributeVector::SP a1 =
-            am.addAttribute("a1",
-                            AttributeUtils::getPredicateConfig(),
-                            createSerialNum);
+        AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum);
         EXPECT_EQUAL(1u, a1->getNumDocs());
 
         PredicateAttribute &pa = static_cast<PredicateAttribute &>(*a1);
@@ -375,9 +373,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
     {
         AttributeManagerFixture amf(f);
         proton::AttributeManager &am = amf._m;
-        AttributeVector::SP a1 =
-            am.addAttribute("a1", AttributeUtils::getPredicateConfig(),
-                            createSerialNum); // loaded
+        AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum); // loaded
         EXPECT_EQUAL(2u, a1->getNumDocs());
 
         PredicateAttribute &pa = static_cast<PredicateAttribute &>(*a1);
@@ -488,9 +484,7 @@ TEST_F("require that removed attributes cannot resurrect", BaseFixture)
                                          f._fileHeaderContext,
                                          f._attributeFieldWriter, f._hwInfo));
     {
-        AttributeVector::SP a1 =
-            am1->addAttribute("a1", INT32_SINGLE,
-                              0);
+        AttributeVector::SP a1 = am1->addAttribute({"a1", INT32_SINGLE}, 0);
         fillAttribute(a1, 2, 10, 15);
         EXPECT_EQUAL(3u, a1->getNumDocs());
     }
@@ -762,12 +756,12 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     auto am1(std::make_shared<proton::AttributeManager>
              (test_dir, "test.subdb", TuneFileAttributes(),
               f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
-    am1->addAttribute("a1", INT32_SINGLE, 1);
-    am1->addAttribute("a2", INT32_SINGLE, 2);
-    am1->addAttribute("a3", generic_tensor, 3);
-    am1->addAttribute("a4", generic_tensor, 4);
-    am1->addAttribute("a5", predicate, 5);
-    am1->addAttribute("a6", predicate, 6);
+    am1->addAttribute({"a1", INT32_SINGLE}, 1);
+    am1->addAttribute({"a2", INT32_SINGLE}, 2);
+    am1->addAttribute({"a3", generic_tensor}, 3);
+    am1->addAttribute({"a4", generic_tensor}, 4);
+    am1->addAttribute({"a5", predicate}, 5);
+    am1->addAttribute({"a6", predicate}, 6);
     AttrSpecList newSpec;
     newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
     newSpec.push_back(AttributeSpec("a2", INT32_ARRAY));

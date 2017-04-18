@@ -5,6 +5,7 @@
 LOG_SETUP(".proton.exclusive_attribute_read_accessor");
 
 #include "exclusive_attribute_read_accessor.h"
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>

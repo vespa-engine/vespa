@@ -41,19 +41,19 @@ public:
                     StorageLink::UP communicationManager = StorageLink::UP());
     ~DistributorNode();
 
-    virtual const lib::NodeType& getNodeType() const
+    virtual const lib::NodeType& getNodeType() const override
         { return lib::NodeType::DISTRIBUTOR; }
 
-    virtual ResumeGuard pause();
+    virtual ResumeGuard pause() override;
 
     void handleConfigChange(vespa::config::content::core::StorDistributormanagerConfig&);
     void handleConfigChange(vespa::config::content::core::StorVisitordispatcherConfig&);
 
 private:
-    virtual void initializeNodeSpecific();
-    virtual StorageLink::UP createChain();
+    virtual void initializeNodeSpecific() override;
+    virtual StorageLink::UP createChain() override;
 
-    virtual api::Timestamp getUniqueTimestamp();
+    virtual api::Timestamp getUniqueTimestamp() override;
 
     /**
      * Shut down necessary distributor-specific components before shutting

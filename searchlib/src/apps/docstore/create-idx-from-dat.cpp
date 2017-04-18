@@ -13,7 +13,7 @@ class CreateIdxFileFromDatApp : public FastOS_Application
 {
     void usage(void);
     int createIdxFile(const vespalib::string & datFileName, const vespalib::string & idxFileName);
-    int Main(void);
+    int Main(void) override;
 };
 
 void

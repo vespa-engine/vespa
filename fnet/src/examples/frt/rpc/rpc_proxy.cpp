@@ -68,7 +68,7 @@ private:
 
 public:
     ReqDone(RPCProxy &proxy) : _proxy(proxy) {}
-    virtual void RequestDone(FRT_RPCRequest *req);
+    virtual void RequestDone(FRT_RPCRequest *req) override;
 };
 
 void
@@ -209,7 +209,7 @@ RPCProxy::HOOK_Fini(FRT_RPCRequest *req)
 class App : public FastOS_Application
 {
 public:
-    virtual int Main();
+    virtual int Main() override;
 };
 
 int

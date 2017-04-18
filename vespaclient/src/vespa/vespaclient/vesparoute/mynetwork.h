@@ -20,13 +20,13 @@ public:
     MyNetwork(const mbus::RPCNetworkParams &params);
 
     // Overrides RPCNetwork.
-    bool allocServiceAddress(mbus::RoutingNode &recipient);
+    bool allocServiceAddress(mbus::RoutingNode &recipient) override;
 
     // Overrides RPCNetwork.
-    void freeServiceAddress(mbus::RoutingNode &recipient);
+    void freeServiceAddress(mbus::RoutingNode &recipient) override;
 
     // Overrides RPCNetwork.
-    void send(const mbus::Message &msg, const std::vector<mbus::RoutingNode*> &recipients);
+    void send(const mbus::Message &msg, const std::vector<mbus::RoutingNode*> &recipients) override;
 
     /**
      * Returns whether or not the given address is actually out of service.

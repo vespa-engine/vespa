@@ -17,7 +17,7 @@ struct MemoryStatusViewerTest : public CppUnit::TestFixture
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<framework::defaultimplementation::MemoryManager> _memMan;
 
-    void setUp();
+    void setUp() override;
 
     void testEmptyState();
     void testSnapshots();

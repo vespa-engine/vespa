@@ -30,15 +30,14 @@ public:
         _bucket = bucket;
     }
 
-    document::BucketId getBucketId() const { return _bucket; }
+    document::BucketId getBucketId() const override { return _bucket; }
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
     const document::BucketId& getOriginalBucketId() const
         { return _originalBucket; }
 
-    virtual void print(std::ostream& out,
-                       bool verbose, const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual bool hasSingleBucketId() const { return true; }
+    virtual bool hasSingleBucketId() const override { return true; }
 
 };
 

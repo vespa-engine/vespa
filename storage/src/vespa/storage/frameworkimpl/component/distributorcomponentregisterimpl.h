@@ -36,16 +36,16 @@ public:
     DistributorComponentRegisterImpl();
     ~DistributorComponentRegisterImpl();
 
-    virtual void registerDistributorComponent(DistributorManagedComponent&);
+    virtual void registerDistributorComponent(DistributorManagedComponent&) override;
 
     void setTimeCalculator(UniqueTimeCalculator& calc);
     void setDistributorConfig(const DistributorConfig&);
     void setVisitorConfig(const VisitorConfig&);
 
 private:
-    virtual void handleNewState();
+    virtual void handleNewState() override;
 
-    virtual void setNodeStateUpdater(NodeStateUpdater& updater);
+    virtual void setNodeStateUpdater(NodeStateUpdater& updater) override;
 };
 
 } // storage

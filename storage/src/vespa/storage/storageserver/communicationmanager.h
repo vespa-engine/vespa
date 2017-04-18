@@ -141,8 +141,8 @@ private:
     typedef std::vector< std::pair<framework::SecondTime, mbus::IProtocol::SP> > Protocols;
     Protocols _earlierGenerations;
 
-    void onOpen();
-    void onClose();
+    void onOpen() override;
+    void onClose() override;
 
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
@@ -151,7 +151,7 @@ private:
 
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
 
-    void configure(std::unique_ptr<CommunicationManagerConfig> config);
+    void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
 
     void receiveStorageReply(const std::shared_ptr<api::StorageReply>&);
 
@@ -201,7 +201,7 @@ public:
      * From StorageLink. Called when messages arrive from storage
      * modules. Will convert and dispatch messages to MessageServer
      */
-    virtual bool onUp(const std::shared_ptr<api::StorageMessage>&);
+    virtual bool onUp(const std::shared_ptr<api::StorageMessage>&) override;
 
     bool sendCommand(const std::shared_ptr<api::StorageCommand>& command);
 
@@ -210,19 +210,18 @@ public:
     void sendMessageBusReply(StorageTransportContext& context, const std::shared_ptr<api::StorageReply>& reply);
 
     // Pump thread
-    void run(framework::ThreadHandle&);
+    void run(framework::ThreadHandle&) override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /** Get messages from messagebus. */
-    void handleMessage(std::unique_ptr<mbus::Message> msg);
+    void handleMessage(std::unique_ptr<mbus::Message> msg) override;
 
     void sendMessageBusMessage(const std::shared_ptr<api::StorageCommand>& msg,
                                             std::unique_ptr<mbus::Message> mbusMsg, const mbus::Route& route);
 
     /** Get replies from messagebus. */
-    void handleReply(std::unique_ptr<mbus::Reply> msg);
+    void handleReply(std::unique_ptr<mbus::Reply> msg) override;
 
     void updateMessagebusProtocol(const document::DocumentTypeRepo::SP &repo);
 

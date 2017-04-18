@@ -44,7 +44,7 @@ public:
     {
     }
 
-    virtual void run() { _log.append(_name); }
+    virtual void run() override { _log.append(_name); }
 };
 
 

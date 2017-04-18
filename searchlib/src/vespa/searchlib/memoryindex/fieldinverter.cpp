@@ -22,29 +22,30 @@ namespace search {
 
 namespace memoryindex {
 
-using document::Field;
-using document::FieldValue;
-using document::Document;
-using document::ArrayFieldValue;
-using document::WeightedSetFieldValue;
-using document::StringFieldValue;
-using document::IntFieldValue;
-using document::StructFieldValue;
-using document::DataType;
-using document::DocumentType;
+using document::AlternateSpanList;
 using document::Annotation;
 using document::AnnotationType;
-using document::AlternateSpanList;
+using document::ArrayFieldValue;
+using document::DataType;
+using document::Document;
+using document::DocumentType;
+using document::Field;
+using document::FieldValue;
+using document::IntFieldValue;
+using document::SimpleSpanList;
 using document::Span;
 using document::SpanList;
-using document::SimpleSpanList;
 using document::SpanNode;
 using document::SpanTree;
 using document::SpanTreeVisitor;
+using document::StringFieldValue;
+using document::StructFieldValue;
+using document::WeightedSetFieldValue;
 using index::DocIdAndPosOccFeatures;
 using index::Schema;
-using vespalib::make_string;
+using search::index::schema::CollectionType;
 using search::util::URL;
+using vespalib::make_string;
 
 namespace documentinverterkludge {
 
@@ -427,14 +428,14 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
     const vespalib::Identifiable::RuntimeClass & cInfo(val.getClass());
     const Schema::IndexField &field = _schema.getIndexField(_fieldId);
     switch (field.getCollectionType()) {
-    case index::schema::SINGLE:
+    case CollectionType::SINGLE:
         if (cInfo.id() == StringFieldValue::classId) {
             processNormalDocTextField(static_cast<const StringFieldValue &>(val));
         } else {
             throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
-    case index::schema::WEIGHTEDSET:
+    case CollectionType::WEIGHTEDSET:
         if (cInfo.id() == WeightedSetFieldValue::classId) {
             const WeightedSetFieldValue &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (wset.getNestedType() == *DataType::STRING) {
@@ -446,7 +447,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
             throw std::runtime_error(make_string("Expected weighted set, got '%s'", cInfo.name()));
         }
         break;
-    case index::schema::ARRAY:
+    case CollectionType::ARRAY:
         if (cInfo.id() == ArrayFieldValue::classId) {
             const ArrayFieldValue &arr = static_cast<const ArrayFieldValue&>(val);
             if (arr.getNestedType() == *DataType::STRING) {

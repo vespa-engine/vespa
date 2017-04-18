@@ -26,9 +26,9 @@ public:
 private:
     void handleDocuments(const document::BucketId& bucketId,
                          std::vector<spi::DocEntry::UP>& entries,
-                         HitCounter& hitCounter);
+                         HitCounter& hitCounter) override;
 
-    void completedBucket(const document::BucketId&, HitCounter&);
+    void completedBucket(const document::BucketId&, HitCounter&) override;
 
     std::set<std::string> _requestedFields;
 
@@ -42,13 +42,13 @@ private:
 struct RecoveryVisitorFactory : public VisitorFactory {
 
     VisitorEnvironment::UP
-    makeVisitorEnvironment(StorageComponent&) {
+    makeVisitorEnvironment(StorageComponent&) override {
         return VisitorEnvironment::UP(new VisitorEnvironment);
     };
 
     Visitor*
     makeVisitor(StorageComponent& c, VisitorEnvironment&,
-                const vdslib::Parameters& params)
+                const vdslib::Parameters& params) override
     {
         return new RecoveryVisitor(c, params);
     }

@@ -57,8 +57,7 @@ public:
     void setMinByteSize(uint32_t v) { _minByteSize = v; }
     void setMinDocCount(uint32_t v) { _minDocCount = v; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(SplitBucketCommand, onSplitBucket)
 };
@@ -82,8 +81,7 @@ public:
     std::vector<Entry>& getSplitInfo() { return _result; }
     const std::vector<Entry>& getSplitInfo() const { return _result; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(SplitBucketReply, onSplitBucketReply)
 };
@@ -110,8 +108,7 @@ public:
     void setMinJoinBits(uint8_t minJoinBits) { _minJoinBits = minJoinBits; }
     uint8_t getMinJoinBits() const { return _minJoinBits; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(JoinBucketsCommand, onJoinBuckets)
 };
@@ -133,8 +130,7 @@ public:
     const std::vector<document::BucketId>& getSourceBuckets() const
         { return _sources; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(JoinBucketsReply, onJoinBucketsReply)
 };

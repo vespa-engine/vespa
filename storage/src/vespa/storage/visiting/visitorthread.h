@@ -117,7 +117,7 @@ public:
     }
 
 private:
-    virtual void run(framework::ThreadHandle&);
+    virtual void run(framework::ThreadHandle&) override;
     /**
      * Attempt to fetch an event from the visitor thread's queue. If an event
      * was available, pop it from the queue and return it. If not, return
@@ -134,11 +134,11 @@ private:
                                              const vdslib::Parameters& params,
                                              vespalib::asciistream & error);
 
-    bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&);
+    bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
 
     bool onVisitorReply(const std::shared_ptr<api::StorageReply>& reply);
-    bool onInternal(const std::shared_ptr<api::InternalCommand>&);
-    bool onInternalReply(const std::shared_ptr<api::InternalReply>&);
+    bool onInternal(const std::shared_ptr<api::InternalCommand>&) override;
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
 
     /** Deletes a visitor instance. */
     void close();

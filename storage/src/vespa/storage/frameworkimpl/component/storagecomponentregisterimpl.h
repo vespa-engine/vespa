@@ -53,7 +53,7 @@ public:
     NodeStateUpdater& getNodeStateUpdater()
         { assert(_nodeStateUpdater != 0); return *_nodeStateUpdater; }
 
-    virtual void registerStorageComponent(StorageComponent&);
+    virtual void registerStorageComponent(StorageComponent&) override;
 
     void setNodeInfo(vespalib::stringref clusterName,
                      const lib::NodeType& nodeType,

@@ -63,7 +63,7 @@ public class StatisticsSearcher extends Searcher {
     private Value maxQueryLatency; // separate to avoid name mangling
     @SuppressWarnings("unused") // all the work is done by the callback
     private Value activeQueries; // raw measure every 5 minutes
-    private Value peakQPS; // peak 10s QPS
+    private Value peakQPS; // peak 1s QPS
     private Counter emptyResults; // number of results containing no concrete hits
     private Value hitsPerQuery; // mean number of hits per query
     private long prevMaxQPSTime; // previous measurement time of QPS
@@ -128,7 +128,7 @@ public class StatisticsSearcher extends Searcher {
         // but two memory barriers in the common case. Don't change till we know
         // that is actually better.
         synchronized (peakQpsLock) {
-            if ((now - prevMaxQPSTime) >= (10 * 1000)) {
+            if ((now - prevMaxQPSTime) >= (1000)) {
                 double ms = (double) (now - prevMaxQPSTime);
                 final double peakQPS = queriesForQPS / (ms / 1000);
                 this.peakQPS.put(peakQPS);

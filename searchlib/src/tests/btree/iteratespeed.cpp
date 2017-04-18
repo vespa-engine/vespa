@@ -39,7 +39,7 @@ class IterateSpeed : public FastOS_Application
     void usage();
 
     int
-    Main(void);
+    Main(void) override;
 };
 
 

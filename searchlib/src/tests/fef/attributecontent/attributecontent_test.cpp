@@ -20,7 +20,7 @@ private:
     void testFill();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 void

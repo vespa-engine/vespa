@@ -22,11 +22,12 @@ LOG_SETUP("memoryindex_test");
 
 using document::Document;
 using document::FieldValue;
+using search::ScheduleTaskCallback;
+using search::index::schema::DataType;
+using search::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
-using search::makeLambdaTask;
-using search::ScheduleTaskCallback;
 using namespace search::fef;
 using namespace search::index;
 using namespace search::memoryindex;
@@ -37,7 +38,7 @@ using namespace search::queryeval;
 struct Setup {
     Schema schema;
     Setup &field(const std::string &name) {
-        schema.addIndexField(Schema::IndexField(name, schema::STRING));
+        schema.addIndexField(Schema::IndexField(name, DataType::STRING));
         return *this;
     }
 };

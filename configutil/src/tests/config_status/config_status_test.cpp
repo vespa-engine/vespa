@@ -18,7 +18,7 @@ private:
     bool _fail;
 
     virtual void onGetRequest(const string &, const string &,
-                      Fast_HTTPConnection &conn) {
+                              Fast_HTTPConnection &conn) override {
         if (_fail) {
             conn.Output(conn.GetHTTPVersion().c_str());
             conn.Output(" 500 Error\r\n");

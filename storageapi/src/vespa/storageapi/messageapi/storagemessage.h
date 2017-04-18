@@ -44,7 +44,7 @@ public: \
 private: \
     virtual bool callHandler( \
             MessageHandler& h, \
-            const std::shared_ptr<StorageMessage>& m) const \
+            const std::shared_ptr<StorageMessage>& m) const override \
     { \
         return h.callback(std::static_pointer_cast<reply>(m)); \
     }
@@ -52,7 +52,7 @@ private: \
 /** Commands also has a command to implement to create the reply. */
 #define DECLARE_STORAGECOMMAND(command, callback) \
 public: \
-    std::unique_ptr<StorageReply> makeReply(); \
+    std::unique_ptr<StorageReply> makeReply() override; \
     DECLARE_STORAGEREPLY(command, callback)
 
 /** This macro implements common stuff for all storage messages. */

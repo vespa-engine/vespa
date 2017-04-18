@@ -42,11 +42,11 @@ namespace {
             : update(),
               notified(false)
         { }
-        ConfigUpdate::UP provide() { return ConfigUpdate::UP(); }
-        void handle(ConfigUpdate::UP u) { update = std::move(u); }
+        ConfigUpdate::UP provide() override { return ConfigUpdate::UP(); }
+        void handle(ConfigUpdate::UP u) override { update = std::move(u); }
         bool wait(int timeoutInMillis) { (void) timeoutInMillis; return notified; }
-        bool poll() { return notified; }
-        void interrupt() { }
+        bool poll() override { return notified; }
+        void interrupt() override { }
 
         bool waitUntilResponse(int timeoutInMillis)
         {
@@ -118,7 +118,7 @@ namespace {
     {
         bool aborted;
         MyAbortHandler() : aborted(false) { }
-        bool HandleAbort() { aborted = true; return true; }
+        bool HandleAbort() override { aborted = true; return true; }
     };
 
     struct ConnectionMock : public Connection {
@@ -130,9 +130,9 @@ namespace {
         vespalib::string address;
         ConnectionMock(FRT_RPCRequest * answer = NULL);
         ~ConnectionMock();
-        FRT_RPCRequest * allocRPCRequest() { return supervisor.AllocRPCRequest(); }
-        void setError(int ec) { errorCode = ec; }
-        void invoke(FRT_RPCRequest * req, double t, FRT_IRequestWait * waiter)
+        FRT_RPCRequest * allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
+        void setError(int ec) override { errorCode = ec; }
+        void invoke(FRT_RPCRequest * req, double t, FRT_IRequestWait * waiter) override
         {
             timeout = static_cast<int>(t);
             if (ans != NULL)
@@ -140,8 +140,8 @@ namespace {
             else
                 waiter->RequestDone(req);
         }
-        const vespalib::string & getAddress() const { return address; }
-        void setTransientDelay(int64_t delay) { (void) delay; }
+        const vespalib::string & getAddress() const override { return address; }
+        void setTransientDelay(int64_t delay) override { (void) delay; }
     };
 
     ConnectionMock::ConnectionMock(FRT_RPCRequest * answer)
@@ -156,11 +156,11 @@ namespace {
     struct FactoryMock : public ConnectionFactory {
         ConnectionMock * current;
         FactoryMock(ConnectionMock * c) : current(c) { }
-        Connection * getCurrent() {
+        Connection * getCurrent() override {
             return current;
         }
-        FNET_Scheduler * getScheduler() { return &current->scheduler; }
-        void syncTransport() { }
+        FNET_Scheduler * getScheduler() override { return &current->scheduler; }
+        void syncTransport() override { }
     };
 
 
@@ -187,10 +187,10 @@ namespace {
         {
         }
 
-        const ConfigState & getConfigState() const { return result->state; }
-        uint64_t getWaitTime () const { return result->waitTime; }
-        uint64_t getTimeout() const { return result->timeout; }
-        void handleResponse(const ConfigRequest & request, ConfigResponse::UP response)
+        const ConfigState & getConfigState() const override { return result->state; }
+        uint64_t getWaitTime () const override { return result->waitTime; }
+        uint64_t getTimeout() const override { return result->timeout; }
+        void handleResponse(const ConfigRequest & request, ConfigResponse::UP response) override
         {
             (void) request;
             (void) response;

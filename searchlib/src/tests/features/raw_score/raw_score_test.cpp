@@ -13,6 +13,7 @@ using search::feature_t;
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
+using CollectionType = FieldInfo::CollectionType;
 
 const std::string featureName("rawScore(foo)");
 
@@ -35,7 +36,7 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) {
+    virtual void visitDumpFeature(const vespalib::string &) override {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}

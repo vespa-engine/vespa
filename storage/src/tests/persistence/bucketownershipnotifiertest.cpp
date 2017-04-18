@@ -19,7 +19,7 @@ public:
           _clusterState("distributor:2 storage:1")
     {}
 
-    void setUp();
+    void setUp() override;
 
     CPPUNIT_TEST_SUITE(BucketOwnershipNotifierTest);
     CPPUNIT_TEST(testSendNotifyBucketChangeIfOwningDistributorChanged);

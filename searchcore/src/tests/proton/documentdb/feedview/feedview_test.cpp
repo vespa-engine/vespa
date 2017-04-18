@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
@@ -35,20 +36,20 @@
 LOG_SETUP("feedview_test");
 
 using document::BucketId;
-using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
 using documentapi::DocumentProtocol;
 using documentapi::RemoveDocumentReply;
 using fastos::TimeStamp;
-using namespace proton;
 using proton::matching::SessionManager;
+using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
 using search::SearchableStats;
-using namespace search::index;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
 using searchcorespi::IndexSearchable;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
@@ -56,7 +57,9 @@ using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using vespalib::eval::ValueType;
-using proton::test::MockGidToLidChangeHandler;
+
+using namespace proton;
+using namespace search::index;
 
 typedef SearchableFeedView::SerialNum SerialNum;
 typedef search::DocumentIdT DocumentIdT;
@@ -225,7 +228,7 @@ struct MyDocumentStore : public test::DummyDocumentStore
           _lastSyncToken(0),
           _compactLidSpaceLidLimit(0)
     {}
-    virtual Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const {
+    virtual Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const override {
         DocMap::const_iterator itr = _docs.find(lid);
         if (itr != _docs.end()) {
             Document::UP retval(itr->second->clone());
@@ -233,18 +236,18 @@ struct MyDocumentStore : public test::DummyDocumentStore
         }
         return Document::UP();
     }
-    virtual void write(uint64_t syncToken, const document::Document& doc, DocumentIdT lid) {
+    virtual void write(uint64_t syncToken, const document::Document& doc, DocumentIdT lid) override {
         _lastSyncToken = syncToken;
         _docs[lid] = Document::SP(doc.clone());
     }
-    virtual void remove(uint64_t syncToken, DocumentIdT lid) {
+    virtual void remove(uint64_t syncToken, DocumentIdT lid) override {
         _lastSyncToken = syncToken;
         _docs.erase(lid);
     }
-    virtual uint64_t initFlush(uint64_t syncToken) {
+    virtual uint64_t initFlush(uint64_t syncToken) override {
         return syncToken;
     }
-    virtual uint64_t lastSyncToken() const { return _lastSyncToken; }
+    virtual uint64_t lastSyncToken() const override { return _lastSyncToken; }
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) override {
         _compactLidSpaceLidLimit = wantedDocLidLimit;
     }
@@ -254,7 +257,7 @@ struct MySummaryManager : public test::DummySummaryManager
 {
     MyDocumentStore _store;
     MySummaryManager() : _store() {}
-    virtual search::IDocumentStore &getBackingStore() { return _store; }
+    virtual search::IDocumentStore &getBackingStore() override { return _store; }
 };
 
 struct MySummaryAdapter : public test::MockSummaryAdapter
@@ -402,7 +405,7 @@ struct MyTransport : public FeedToken::ITransport
     virtual void send(mbus::Reply::UP reply,
                       ResultUP result,
                       bool documentWasFound,
-                      double latency_ms) {
+                      double latency_ms) override {
         (void) reply; (void) documentWasFound, (void) latency_ms;
         lastResult = std::move(result);
         _tracer.traceAck(lastResult);
@@ -418,7 +421,7 @@ struct MyResultHandler : public IGenericResultHandler
 {
     vespalib::Gate _gate;
     MyResultHandler() : _gate() {}
-    virtual void handle(const storage::spi::Result &) {
+    virtual void handle(const storage::spi::Result &) override {
         _gate.countDown();
     }
     void await() { _gate.await(); }
@@ -437,11 +440,11 @@ SchemaContext::SchemaContext() :
     _schema(new Schema()),
     _builder()
 {
-    _schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a1", schema::STRING, schema::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a2", schema::BOOLEANTREE, schema::SINGLE));
-    _schema->addAttributeField(Schema::AttributeField("a3", schema::TENSOR, schema::SINGLE));
-    _schema->addSummaryField(Schema::SummaryField("s1", schema::STRING, schema::SINGLE));
+    _schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a1", DataType::STRING, CollectionType::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a2", DataType::BOOLEANTREE, CollectionType::SINGLE));
+    _schema->addAttributeField(Schema::AttributeField("a3", DataType::TENSOR, CollectionType::SINGLE));
+    _schema->addSummaryField(Schema::SummaryField("s1", DataType::STRING, CollectionType::SINGLE));
     _builder.reset(new DocBuilder(*_schema));
 }
 SchemaContext::~SchemaContext() {}
@@ -735,7 +738,7 @@ struct SearchableFeedViewFixture : public FixtureBase
     {
         runInMaster([&]() { _lidReuseDelayer.setHasIndexedOrAttributeFields(true); });
     }
-    virtual IFeedView &getFeedView() { return fv; }
+    virtual IFeedView &getFeedView() override { return fv; }
 };
 
 struct FastAccessFeedViewFixture : public FixtureBase
@@ -754,7 +757,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
     }
-    virtual IFeedView &getFeedView() { return fv; }
+    virtual IFeedView &getFeedView() override { return fv; }
 };
 
 void

@@ -21,7 +21,7 @@ private:
     void testSplitterUpdate();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 void

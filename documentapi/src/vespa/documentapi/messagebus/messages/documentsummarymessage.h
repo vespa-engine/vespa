@@ -10,7 +10,7 @@ class DocumentSummaryMessage : public VisitorMessage,
                                public vdslib::DocumentSummary {
 protected:
     // Implements VisitorMessage.
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     /**
@@ -32,12 +32,12 @@ public:
     DocumentSummaryMessage(const vdslib::DocumentSummary &summary);
 
     // Overrides VisitorMessage.
-    uint32_t getApproxSize() const;
+    uint32_t getApproxSize() const override;
 
     // Implements VisitorMessage.
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
-    string toString() const { return "documentsummarymessage"; }
+    string toString() const override { return "documentsummarymessage"; }
 };
 
 }

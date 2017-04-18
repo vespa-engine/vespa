@@ -21,7 +21,7 @@ public:
                             const DocumentDBWipeOldRemovedFieldsConfig &config);
 
     // Implements IMaintenanceJob
-    virtual bool run();
+    virtual bool run() override;
 };
 
 } // namespace proton

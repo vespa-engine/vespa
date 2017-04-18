@@ -80,7 +80,7 @@ public:
      *
      * @param message the Message
      */
-    void handleMessage(Message::UP message);
+    void handleMessage(Message::UP message) override;
 
     /**
      * Returns the message handler of this session.

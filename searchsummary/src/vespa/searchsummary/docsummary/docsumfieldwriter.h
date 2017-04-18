@@ -55,12 +55,12 @@ public:
     EmptyDFW();
     virtual ~EmptyDFW();
 
-    virtual bool IsGenerated() const { return true; }
+    virtual bool IsGenerated() const override { return true; }
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
                              ResType type,
-                             vespalib::slime::Inserter &target);
+                             vespalib::slime::Inserter &target) override;
 };
 
 //--------------------------------------------------------------------------
@@ -76,12 +76,12 @@ public:
 
     bool Init(const ResultConfig & config, const char *inputField);
 
-    virtual bool IsGenerated() const { return false; }
+    virtual bool IsGenerated() const override { return false; }
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
                              ResType type,
-                             vespalib::slime::Inserter &target);
+                             vespalib::slime::Inserter &target) override;
 };
 
 //--------------------------------------------------------------------------

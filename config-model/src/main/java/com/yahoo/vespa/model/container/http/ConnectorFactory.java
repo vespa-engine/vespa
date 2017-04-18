@@ -67,7 +67,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
                 Element soLinger = XML.getChild(legacyConfig, "soLinger");
                 if (soLinger != null) {
 
-                    connectorBuilder.soLingerTime((int) Double.parseDouble(XML.getValue(soLinger).trim()));
+                    connectorBuilder.soLingerTime(Double.parseDouble(XML.getValue(soLinger).trim()));
                 }
             }
             {

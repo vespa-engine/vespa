@@ -31,7 +31,7 @@ public:
 class Test : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
 private:
     typedef LruParam<uint32_t, string> P;
     typedef Map<uint32_t, string> B;

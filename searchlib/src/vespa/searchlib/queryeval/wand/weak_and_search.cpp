@@ -59,8 +59,8 @@ public:
     virtual size_t get_num_terms() const override { return _terms.size(); }
     virtual int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
     virtual score_t get_max_score(size_t idx) const override { return _terms.maxScore(idx); }
-    const Terms &getTerms() const { return _terms.input_terms(); }
-    uint32_t getN() const { return _n; }
+    const Terms &getTerms() const override { return _terms.input_terms(); }
+    uint32_t getN() const override { return _n; }
     void doSeek(uint32_t docid) override {
         if (IS_STRICT) {
             seek_strict(docid);

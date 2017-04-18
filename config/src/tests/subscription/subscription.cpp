@@ -28,9 +28,9 @@ namespace {
             : source(src)
         {}
 
-        void getConfig() { source->numGetConfig++; }
-        void close() { source->numClose++; }
-        void reload(int64_t gen) { (void) gen; source->numReload++; }
+        void getConfig() override { source->numGetConfig++; }
+        void close() override { source->numClose++; }
+        void reload(int64_t gen) override { (void) gen; source->numReload++; }
 
         SourceFixture * source;
     };

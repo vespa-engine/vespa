@@ -141,7 +141,7 @@ public:
             delete _threadPool;
         }
     }
-    int Main();
+    int Main() override;
 };
 
 

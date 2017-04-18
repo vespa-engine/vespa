@@ -10,6 +10,7 @@ LOG_SETUP(".proton.flushengine.prepare_restart_flush_strategy");
 namespace proton {
 
 using search::SerialNum;
+using searchcorespi::IFlushTarget;
 
 using Config = PrepareRestartFlushStrategy::Config;
 using FlushContextsMap = std::map<vespalib::string, FlushContext::List>;

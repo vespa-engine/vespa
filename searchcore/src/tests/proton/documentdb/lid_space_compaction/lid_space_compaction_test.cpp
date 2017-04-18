@@ -42,12 +42,12 @@ struct MyScanIterator : public IDocumentScanIterator
     LidVector::const_iterator _itr;
     bool _validItr;
     MyScanIterator(const LidVector &lids) : _lids(lids), _itr(_lids.begin()), _validItr(true) {}
-    virtual bool valid() const {
+    virtual bool valid() const override {
         return _validItr;
     }
     virtual search::DocumentMetaData next(uint32_t compactLidLimit,
                                           uint32_t maxDocsToScan,
-                                          bool retry) {
+                                          bool retry) override {
         if (!retry && _itr != _lids.begin()) {
             ++_itr;
         }
@@ -78,29 +78,29 @@ struct MyHandler : public ILidSpaceCompactionHandler
 
     MyHandler();
     ~MyHandler();
-    virtual vespalib::string getName() const {
+    virtual vespalib::string getName() const override {
         return "myhandler";
     }
-    virtual uint32_t getSubDbId() const { return 2; }
-    virtual LidUsageStats getLidStatus() const {
+    virtual uint32_t getSubDbId() const override { return 2; }
+    virtual LidUsageStats getLidStatus() const override {
         ASSERT_TRUE(_handleMoveCnt < _stats.size());
         return _stats[_handleMoveCnt];
     }
-    virtual IDocumentScanIterator::UP getIterator() const {
+    virtual IDocumentScanIterator::UP getIterator() const override {
         ASSERT_TRUE(_iteratorCnt < _lids.size());
         return IDocumentScanIterator::UP(new MyScanIterator(_lids[_iteratorCnt++]));
     }
     virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document,
-                                                  uint32_t moveToLid) const {
+                                                  uint32_t moveToLid) const override {
         ASSERT_TRUE(document.lid > moveToLid);
         _moveFromLid = document.lid;
         _moveToLid = moveToLid;
         return MoveOperation::UP(new MoveOperation());
     }
-    virtual void handleMove(const MoveOperation &) {
+    virtual void handleMove(const MoveOperation &) override {
         ++_handleMoveCnt;
     }
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) {
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
         _wantedSubDbId = op.getSubDbId();
         _wantedLidLimit = op.getLidLimit();
     }
@@ -125,7 +125,7 @@ struct MyStorer : public IOperationStorer
         : _moveCnt(0),
           _compactCnt(0)
     {}
-    virtual void storeOperation(FeedOperation &op) {
+    virtual void storeOperation(FeedOperation &op) override {
         if (op.getType() == FeedOperation::MOVE) {
             ++ _moveCnt;
         } else if (op.getType() == FeedOperation::COMPACT_LID_SPACE) {
@@ -191,7 +191,7 @@ struct MyDocumentStore : public test::DummyDocumentStore
     mutable uint32_t _readLid;
     MyDocumentStore() : _readDoc(), _readLid(0) {}
     virtual document::Document::UP
-    read(search::DocumentIdT lid, const document::DocumentTypeRepo &) const {
+    read(search::DocumentIdT lid, const document::DocumentTypeRepo &) const override {
         _readLid = lid;
         return Document::UP(_readDoc->clone());
     }
@@ -201,7 +201,7 @@ struct MySummaryManager : public test::DummySummaryManager
 {
     MyDocumentStore _store;
     MySummaryManager() : _store() {}
-    virtual search::IDocumentStore &getBackingStore() { return _store; }
+    virtual search::IDocumentStore &getBackingStore() override { return _store; }
 };
 
 struct MySubDb : public test::DummyDocumentSubDb
@@ -209,7 +209,7 @@ struct MySubDb : public test::DummyDocumentSubDb
     DocumentTypeRepo::SP _repo;
     MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB);
     ~MySubDb();
-    virtual IFeedView::SP getFeedView() const {
+    virtual IFeedView::SP getFeedView() const override {
         return IFeedView::SP(new MyFeedView(_repo));
     }
 };

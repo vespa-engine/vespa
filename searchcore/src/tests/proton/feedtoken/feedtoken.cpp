@@ -21,7 +21,7 @@ public:
         // empty
     }
 
-    void send(mbus::Reply::UP reply, ResultUP, bool, double latency_ms) {
+    void send(mbus::Reply::UP reply, ResultUP, bool, double latency_ms) override {
         _receptor.handleReply(std::move(reply));
         _latency_ms = latency_ms;
     }
@@ -45,7 +45,7 @@ private:
     void testTrace();
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("feedtoken_test");
 
         testAck();       TEST_FLUSH();

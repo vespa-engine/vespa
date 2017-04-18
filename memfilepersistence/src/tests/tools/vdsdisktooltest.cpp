@@ -15,7 +15,7 @@ struct VdsDiskToolTest : public SingleDiskMemFileTestUtils
 {
     framework::defaultimplementation::FakeClock _clock;
 
-    void setUp();
+    void setUp() override;
     void setupRoot();
 
     void testSimple();

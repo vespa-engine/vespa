@@ -9,6 +9,9 @@ using namespace search::btree;
 using namespace search::datastore;
 using namespace search::index;
 
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
+
 namespace search
 {
 
@@ -44,7 +47,7 @@ public:
     Test(void);
 
     int
-    Main(void);
+    Main(void) override;
 };
 
 
@@ -217,8 +220,8 @@ Test::requireThatAddFeaturesTriggersChangeOfBuffer(void)
 Test::Test()
     : _schema()
 {
-    _schema.addIndexField(Schema::IndexField("f0", schema::STRING));
-    _schema.addIndexField(Schema::IndexField("f1", schema::STRING, schema::WEIGHTEDSET));
+    _schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
+    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING, CollectionType::WEIGHTEDSET));
 }
 
 

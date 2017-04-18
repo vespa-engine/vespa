@@ -114,7 +114,7 @@ private:
     bool testNearSearch(MyQuery &query, uint32_t matchId);
 
 public:
-    int Main();
+    int Main() override;
     void testBasicNear();
     void testRepeatedTerms();
 };

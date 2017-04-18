@@ -34,7 +34,7 @@ public:
      **/
     bool readLine(string &dst);
 
-    virtual const Taint &tainted() const { return _taint; }
+    virtual const Taint &tainted() const override { return _taint; }
 };
 
 } // namespace vbench

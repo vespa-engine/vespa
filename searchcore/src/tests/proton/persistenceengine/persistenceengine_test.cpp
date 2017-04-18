@@ -17,11 +17,24 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using search::DocumentMetaData;
+using storage::spi::Bucket;
 using storage::spi::BucketChecksum;
+using storage::spi::BucketIdListResult;
 using storage::spi::BucketInfo;
+using storage::spi::BucketInfoResult;
+using storage::spi::Context;
 using storage::spi::ClusterState;
+using storage::spi::CreateIteratorResult;
 using storage::spi::DocumentSelection;
 using storage::spi::GetResult;
+using storage::spi::IteratorId;
+using storage::spi::IterateResult;
+using storage::spi::PartitionId;
+using storage::spi::RemoveResult;
+using storage::spi::Result;
+using storage::spi::Selection;
+using storage::spi::Timestamp;
+using storage::spi::UpdateResult;
 using namespace proton;
 using namespace vespalib;
 
@@ -106,16 +119,16 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
 
     MyDocumentRetriever(const Document *d, Timestamp ts, DocumentId &last_id)
         : repo(), document(d), timestamp(ts), last_doc_id(last_id) {}
-    virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const {
+    virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
     virtual void getBucketMetaData(const storage::spi::Bucket &,
-                                   search::DocumentMetaData::Vector &v) const {
+                                   search::DocumentMetaData::Vector &v) const override {
         if (document != 0) {
             v.push_back(getDocumentMetaData(document->getId()));
         }
     }
-    virtual DocumentMetaData getDocumentMetaData(const DocumentId &id) const {
+    virtual DocumentMetaData getDocumentMetaData(const DocumentId &id) const override {
         last_doc_id = id;
         if (document != 0) {
             return DocumentMetaData(1, timestamp, document::BucketId(1),
@@ -123,7 +136,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
         }
         return DocumentMetaData();
     }
-    virtual document::Document::UP getDocument(search::DocumentIdT) const {
+    virtual document::Document::UP getDocument(search::DocumentIdT) const override {
         if (document != 0) {
             return Document::UP(document->clone());
         }
@@ -131,7 +144,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
     }
 
     virtual CachedSelect::SP
-    parseSelect(const vespalib::string &) const
+    parseSelect(const vespalib::string &) const override
     {
         return CachedSelect::SP();
     }
@@ -193,66 +206,66 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         token.ack();
     }
 
-    virtual void initialize() { initialized = true; }
+    virtual void initialize() override { initialized = true; }
 
     virtual void handlePut(FeedToken token, const Bucket& bucket,
-                           Timestamp timestamp, const document::Document::SP& doc) {
+                           Timestamp timestamp, const document::Document::SP& doc) override {
         token.setResult(ResultUP(new storage::spi::Result()), false);
         handle(token, bucket, timestamp, doc->getId());
     }
 
     virtual void handleUpdate(FeedToken token, const Bucket& bucket,
-                              Timestamp timestamp, const document::DocumentUpdate::SP& upd) {
+                              Timestamp timestamp, const document::DocumentUpdate::SP& upd) override {
         token.setResult(ResultUP(new storage::spi::UpdateResult(existingTimestamp)),
                         existingTimestamp > 0);
         handle(token, bucket, timestamp, upd->getId());
     }
 
     virtual void handleRemove(FeedToken token, const Bucket& bucket,
-                              Timestamp timestamp, const DocumentId& id) {
+                              Timestamp timestamp, const DocumentId& id) override {
         bool wasFound = existingTimestamp > 0;
         token.setResult(ResultUP(new storage::spi::RemoveResult(wasFound)), wasFound);
         handle(token, bucket, timestamp, id);
     }
 
-    virtual void handleListBuckets(IBucketIdListResultHandler &resultHandler) {
+    virtual void handleListBuckets(IBucketIdListResultHandler &resultHandler) override {
         resultHandler.handle(BucketIdListResult(bucketList));
     }
 
     virtual void handleSetClusterState(const ClusterState &calc,
-                                       IGenericResultHandler &resultHandler) {
+                                       IGenericResultHandler &resultHandler) override {
         lastCalc = &calc;
         resultHandler.handle(Result());
     }
 
     virtual void handleSetActiveState(const Bucket &bucket,
                                        storage::spi::BucketInfo::ActiveState newState,
-                                       IGenericResultHandler &resultHandler) {
+                                       IGenericResultHandler &resultHandler) override {
         lastBucket = bucket;
         lastBucketState = newState;
         resultHandler.handle(bucketStateResult);
     }
 
     virtual void handleGetBucketInfo(const Bucket &,
-                                     IBucketInfoResultHandler &resultHandler) {
+                                     IBucketInfoResultHandler &resultHandler) override {
         resultHandler.handle(BucketInfoResult(bucketInfo));
     }
 
     virtual void
     handleCreateBucket(FeedToken token,
-                       const storage::spi::Bucket &)
+                       const storage::spi::Bucket &) override
     {
         token.setResult(ResultUP(new Result(_createBucketResult)), true);
         token.ack();
     }
 
     virtual void handleDeleteBucket(FeedToken token,
-                                    const storage::spi::Bucket &) {
+                                    const storage::spi::Bucket &) override {
         token.setResult(ResultUP(new Result(deleteBucketResult)), true);
         token.ack();
     }
 
-    virtual void handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler) {
+    virtual void handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler) override {
         resultHandler.handle(BucketIdListResult(modBucketList));
     }
 
@@ -260,7 +273,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     handleSplit(FeedToken token,
                 const storage::spi::Bucket &source,
                 const storage::spi::Bucket &target1,
-                const storage::spi::Bucket &target2)
+                const storage::spi::Bucket &target2) override
     {
         (void) source;
         (void) target1;
@@ -384,7 +397,7 @@ Selection selection(doc_sel);
 class SimplePersistenceEngineOwner : public IPersistenceEngineOwner
 {
     virtual void
-    setClusterState(const storage::spi::ClusterState &calc)
+    setClusterState(const storage::spi::ClusterState &calc) override
     {
         (void) calc;
     }

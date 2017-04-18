@@ -2,17 +2,20 @@
 
 #pragma once
 
-#include "i_attribute_factory.h"
-#include <vespa/searchlib/attribute/attributevector.h>
+#include "attribute_spec.h"
+#include "attribute_initializer_result.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 
-namespace search { namespace attribute { class AttributeHeader; } }
+namespace search {
+namespace attribute { class AttributeHeader; }
+}
 
 namespace proton {
 
 class AttributeDirectory;
+class IAttributeFactory;
 
 /**
  * Class used by an attribute manager to initialize and load attribute vectors from disk.
@@ -23,32 +26,33 @@ public:
     typedef std::unique_ptr<AttributeInitializer> UP;
 
 private:
+    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     std::shared_ptr<AttributeDirectory> _attrDir;
     const vespalib::string          _documentSubDbName;
-    const search::attribute::Config _cfg;
+    const AttributeSpec             _spec;
     const uint64_t                  _currentSerialNum;
     const IAttributeFactory        &_factory;
 
-    search::AttributeVector::SP tryLoadAttribute() const;
+    AttributeVectorSP tryLoadAttribute() const;
 
-    bool loadAttribute(const search::AttributeVector::SP &attr,
+    bool loadAttribute(const AttributeVectorSP &attr,
                        search::SerialNum serialNum) const;
 
-    void setupEmptyAttribute(search::AttributeVector::SP &attr,
+    void setupEmptyAttribute(AttributeVectorSP &attr,
                              search::SerialNum serialNum,
                              const search::attribute::AttributeHeader &header) const;
 
-    search::AttributeVector::SP createAndSetupEmptyAttribute() const;
+    AttributeVectorSP createAndSetupEmptyAttribute() const;
 
 public:
     AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                          const vespalib::string &documentSubDbName,
-                         const search::attribute::Config &cfg,
+                         const AttributeSpec &spec,
                          uint64_t currentSerialNum,
                          const IAttributeFactory &factory);
     ~AttributeInitializer();
 
-    search::AttributeVector::SP init() const;
+    AttributeInitializerResult init() const;
     uint64_t getCurrentSerialNum() const { return _currentSerialNum; }
 };
 

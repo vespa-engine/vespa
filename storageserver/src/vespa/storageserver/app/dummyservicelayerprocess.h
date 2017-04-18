@@ -18,9 +18,9 @@ public:
     DummyServiceLayerProcess(const config::ConfigUri & configUri);
     ~DummyServiceLayerProcess() { shutdown(); }
 
-    virtual void shutdown();
-    virtual void setupProvider();
-    virtual spi::PersistenceProvider& getProvider() { return *_provider; }
+    virtual void shutdown() override;
+    virtual void setupProvider() override;
+    virtual spi::PersistenceProvider& getProvider() override { return *_provider; }
 };
 
 } // storage

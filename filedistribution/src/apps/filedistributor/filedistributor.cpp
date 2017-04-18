@@ -140,20 +140,20 @@ public:
     FileDistributor();
     ~FileDistributor();
 
-    void notifyGenerationChange(int64_t generation) {
+    void notifyGenerationChange(int64_t generation) override {
         if (_components && ! completeReconfigurationNeeded()) {
             _components->updatedConfig(generation);
         }
     }
 
     //configure overrides
-    void configure(std::unique_ptr<ZookeepersConfig> config) {
+    void configure(std::unique_ptr<ZookeepersConfig> config) override {
         LockGuard guard(_configMutex);
         _zooKeepersConfig = std::move(config);
         _completeReconfigurationNeeded = true;
     }
 
-    void configure(std::unique_ptr<FiledistributorConfig> config) {
+    void configure(std::unique_ptr<FiledistributorConfig> config) override {
         LockGuard guard(_configMutex);
         if (_fileDistributorConfig.get() != NULL &&
             (config->torrentport != _fileDistributorConfig->torrentport ||
@@ -169,7 +169,7 @@ public:
 
     }
 
-    void configure(std::unique_ptr<FiledistributorrpcConfig> config) {
+    void configure(std::unique_ptr<FiledistributorrpcConfig> config) override {
         LockGuard guard(_configMutex);
         _rpcConfig = std::move(config);
         _completeReconfigurationNeeded = true;
@@ -241,8 +241,7 @@ class FileDistributorApplication : public FastOS_Application {
 public:
     FileDistributorApplication(const config::ConfigUri & configUri);
 
-    //overrides
-    int Main();
+    int Main() override;
 };
 
 namespace {

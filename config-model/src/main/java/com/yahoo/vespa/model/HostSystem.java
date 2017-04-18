@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ProvisionLogger;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -187,13 +188,11 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     Set<HostSpec> getSingleTenantHosts() {
-        LinkedHashSet<HostSpec> hostSpecs = new LinkedHashSet<>();
-        for (HostResource host: hostname2host.values()) {
-            if (! host.getHost().isMultitenant()) {
-                hostSpecs.add(new HostSpec(host.getHostName(), host.primaryClusterMembership()));
-            }
-        }
-        return hostSpecs;
+        return hostname2host.values().stream()
+                .filter(host -> ! host.getHost().isMultitenant())
+                .map(host -> new HostSpec(host.getHostName(), Collections.emptyList(),
+                                          host.getFlavor(), host.primaryClusterMembership()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** A provision logger which forwards to a deploy logger */

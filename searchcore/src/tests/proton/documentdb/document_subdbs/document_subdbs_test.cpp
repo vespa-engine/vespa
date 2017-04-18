@@ -18,6 +18,7 @@
 #include <vespa/searchcore/proton/server/fast_access_document_retriever.h>
 #include <vespa/searchcore/proton/server/minimal_document_retriever.h>
 #include <vespa/searchcore/proton/server/searchabledocsubdb.h>
+#include <vespa/searchcore/proton/server/i_document_subdb_owner.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
@@ -68,7 +69,7 @@ struct ConfigDir3 { static vespalib::string dir() { return TEST_PATH("cfg3"); } 
 struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4")
                 ; } };
 
-struct MySubDBOwner : public IDocumentSubDB::IOwner
+struct MySubDBOwner : public IDocumentSubDBOwner
 {
     uint32_t _syncCnt;
     MySubDBOwner() : _syncCnt(0) {}
@@ -84,18 +85,18 @@ struct MySubDBOwner : public IDocumentSubDB::IOwner
 
 struct MySyncProxy : public SyncProxy
 {
-	virtual void sync(SerialNum) {}
+	virtual void sync(SerialNum) override {}
 };
 
 
 struct MyGetSerialNum : public IGetSerialNum
 {
-    virtual SerialNum getSerialNum() const { return 0u; }
+    virtual SerialNum getSerialNum() const override { return 0u; }
 };
 
 struct MyFileHeaderContext : public FileHeaderContext
 {
-	virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const {}
+	virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
 };
 
 struct MyMetricsWireService : public DummyWireService

@@ -53,7 +53,7 @@ public:
     void configure(const vespa::config::search::summary::JuniperrcConfig &cfg);
 
     // Inherit doc from IJuniperProperties.
-    const char *GetProperty(const char *name, const char *def = NULL);
+    const char *GetProperty(const char *name, const char *def = NULL) override;
 
     /**
      * Sets the value of a given named property. If the property already exists, it is overwritten. If it does not

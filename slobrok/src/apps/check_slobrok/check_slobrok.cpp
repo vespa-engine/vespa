@@ -25,7 +25,7 @@ public:
     int usage();
     void initRPC(const char *spec);
     void finiRPC();
-    virtual int Main();
+    virtual int Main() override;
 };
 
 

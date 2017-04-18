@@ -204,7 +204,7 @@ struct RangeChecker : vespalib::Rendezvous<WorkTracker,bool> {
     size_t docid_limit;
     RangeChecker(size_t num_threads, size_t docid_limit_in)
         : vespalib::Rendezvous<WorkTracker,bool>(num_threads), docid_limit(docid_limit_in) {}
-    virtual void mingle() {
+    virtual void mingle() override {
         std::vector<DocidRange> ranges;
         for (size_t i = 0; i < size(); ++i) {
             ranges.insert(ranges.end(), in(i).ranges.begin(), in(i).ranges.end());

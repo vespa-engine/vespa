@@ -20,9 +20,9 @@ class SyncServer : public search::engine::SearchServer,
                    public search::engine::MonitorServer
 {
 private:
-    virtual SearchReply::UP search(SearchRequest::Source request, SearchClient &client);
-    virtual DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient &client);
-    virtual MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client);
+    virtual SearchReply::UP search(SearchRequest::Source request, SearchClient &client) override;
+    virtual DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient &client) override;
+    virtual MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client) override;
 
     SyncServer(const SyncServer &);
     SyncServer &operator=(const SyncServer &);

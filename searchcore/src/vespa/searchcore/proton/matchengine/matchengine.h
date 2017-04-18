@@ -147,7 +147,7 @@ public:
     // Implements SearchServer.
     search::engine::SearchReply::UP search(
             search::engine::SearchRequest::Source request,
-            search::engine::SearchClient &client);
+            search::engine::SearchClient &client) override;
 
     // Implements vespalib::StateExplorer
     virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;

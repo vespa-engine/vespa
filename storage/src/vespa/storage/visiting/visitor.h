@@ -174,8 +174,7 @@ private:
 
         bool hasPendingIterators() const { return _pendingIterators > 0; }
 
-        void print(std::ostream& out, bool /*verbose*/,
-                   const std::string& /*indent*/) const
+        void print(std::ostream& out, bool, const std::string& /*indent*/) const override
         {
             out << "BucketIterationState("
                 << _bucketId

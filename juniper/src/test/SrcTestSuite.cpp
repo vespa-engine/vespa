@@ -53,7 +53,7 @@ SrcTestSuite::SrcTestSuite() :
  */
 class SrcTestSuiteApp : public vespalib::TestApp {
 public:
-    virtual int Main();
+    virtual int Main() override;
 };
 
 int SrcTestSuiteApp::Main() {

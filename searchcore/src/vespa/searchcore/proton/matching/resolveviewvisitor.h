@@ -25,7 +25,7 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &n) { n.resolve(_resolver, _indexEnv); }
 
-    virtual void visit(ProtonNodeTypes::Equiv &n) {
+    virtual void visit(ProtonNodeTypes::Equiv &n) override {
         visitChildren(n);
         n.resolveFromChildren(n.getChildren());
     }

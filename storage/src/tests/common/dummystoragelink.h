@@ -33,14 +33,14 @@ public:
     DummyStorageLink();
     ~DummyStorageLink();
 
-    bool onDown(const api::StorageMessage::SP&);
-    bool onUp(const api::StorageMessage::SP&);
+    bool onDown(const api::StorageMessage::SP&) override;
+    bool onUp(const api::StorageMessage::SP&) override;
 
     void addOnTopOfChain(StorageLink& link) {
         link.addTestLinkOnTop(this);
     }
 
-    void print(std::ostream& ost, bool verbose, const std::string& indent) const
+    void print(std::ostream& ost, bool verbose, const std::string& indent) const override
     {
         (void) verbose;
         ost << indent << "DummyStorageLink("

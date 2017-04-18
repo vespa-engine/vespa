@@ -23,7 +23,7 @@ struct BucketInstance : public vespalib::AsciiPrintable {
                    lib::Node node, uint16_t idealLocationPriority, bool trusted,
                    bool exist = true);
 
-    void print(vespalib::asciistream& out, const PrintProperties&) const;
+    void print(vespalib::asciistream& out, const PrintProperties&) const override;
 };
 
 class BucketInstanceList : public vespalib::AsciiPrintable {
@@ -104,7 +104,7 @@ public:
     }
 
     virtual OperationTargetList getTargets(OperationType type,
-                                           const document::BucketId& id)
+                                           const document::BucketId& id) override
         { return getInstances(type, id).createTargets(); }
 };
 

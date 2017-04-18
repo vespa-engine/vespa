@@ -113,30 +113,30 @@ public:
 
     void illegalVisit() {}
 
-    virtual void visit(search::query::And &) { illegalVisit(); }
-    virtual void visit(search::query::AndNot &) { illegalVisit(); }
-    virtual void visit(search::query::Equiv &) { illegalVisit(); }
-    virtual void visit(search::query::Near &) { illegalVisit(); }
-    virtual void visit(search::query::ONear &) { illegalVisit(); }
-    virtual void visit(search::query::Or &) { illegalVisit(); }
-    virtual void visit(search::query::Rank &) { illegalVisit(); }
-    virtual void visit(search::query::WeakAnd &) { illegalVisit(); }
+    virtual void visit(search::query::And &) override { illegalVisit(); }
+    virtual void visit(search::query::AndNot &) override { illegalVisit(); }
+    virtual void visit(search::query::Equiv &) override { illegalVisit(); }
+    virtual void visit(search::query::Near &) override { illegalVisit(); }
+    virtual void visit(search::query::ONear &) override { illegalVisit(); }
+    virtual void visit(search::query::Or &) override { illegalVisit(); }
+    virtual void visit(search::query::Rank &) override { illegalVisit(); }
+    virtual void visit(search::query::WeakAnd &) override { illegalVisit(); }
 
-    virtual void visit(search::query::Phrase &n) {
+    virtual void visit(search::query::Phrase &n) override {
         visitPhrase(n);
     }
-    virtual void visit(search::query::WeightedSetTerm &n) { visitWeightedSetTerm(n); }
-    virtual void visit(search::query::DotProduct &n) { visitDotProduct(n); }
-    virtual void visit(search::query::WandTerm &n) { visitWandTerm(n); }
+    virtual void visit(search::query::WeightedSetTerm &n) override { visitWeightedSetTerm(n); }
+    virtual void visit(search::query::DotProduct &n) override { visitDotProduct(n); }
+    virtual void visit(search::query::WandTerm &n) override { visitWandTerm(n); }
 
-    virtual void visit(search::query::NumberTerm &n) = 0;
-    virtual void visit(search::query::LocationTerm &n) = 0;
-    virtual void visit(search::query::PrefixTerm &n) = 0;
-    virtual void visit(search::query::RangeTerm &n) = 0;
-    virtual void visit(search::query::StringTerm &n) = 0;
-    virtual void visit(search::query::SubstringTerm &n) = 0;
-    virtual void visit(search::query::SuffixTerm &n) = 0;
-    virtual void visit(search::query::RegExpTerm &n) = 0;
+    virtual void visit(search::query::NumberTerm &n) override = 0;
+    virtual void visit(search::query::LocationTerm &n) override = 0;
+    virtual void visit(search::query::PrefixTerm &n) override = 0;
+    virtual void visit(search::query::RangeTerm &n) override = 0;
+    virtual void visit(search::query::StringTerm &n) override = 0;
+    virtual void visit(search::query::SubstringTerm &n) override = 0;
+    virtual void visit(search::query::SuffixTerm &n) override = 0;
+    virtual void visit(search::query::RegExpTerm &n) override = 0;
 };
 
 } // namespace search::queryeval

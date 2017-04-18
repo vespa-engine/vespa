@@ -19,20 +19,6 @@ namespace index {
  **/
 class SchemaBuilder
 {
-    static Schema::DataType
-    convert(const vespa::config::search::IndexschemaConfig::Indexfield::Datatype &type);
-
-    static Schema::CollectionType
-    convert(const vespa::config::search::IndexschemaConfig::Indexfield::Collectiontype &type);
-
-    static Schema::DataType
-    convert(const vespa::config::search::AttributesConfig::Attribute::Datatype &type);
-
-    static Schema::CollectionType
-    convert(const vespa::config::search::AttributesConfig::Attribute::Collectiontype &type);
-
-    static Schema::DataType
-    convertSummaryType(const vespalib::string &type);
 public:
     /**
      * Build from indexschema config.

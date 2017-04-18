@@ -835,10 +835,9 @@ namespace {
     struct MyCommand : public api::InternalCommand {
         MyCommand() : InternalCommand(101) {}
 
-        api::StorageReply::UP makeReply();
+        api::StorageReply::UP makeReply() override;
 
-        virtual void print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
+        virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override
         {
             out << "MyCommand()";
             if (verbose) {
@@ -851,8 +850,7 @@ namespace {
     struct MyReply : public api::InternalReply {
         MyReply(const MyCommand& cmd) : InternalReply(102, cmd) {}
 
-        virtual void print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
+        virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override
         {
             out << "MyReply()";
             if (verbose) {

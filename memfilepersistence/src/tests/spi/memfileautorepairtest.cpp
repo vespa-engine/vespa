@@ -15,8 +15,8 @@ namespace memfile {
 class MemFileAutoRepairTest : public SingleDiskMemFileTestUtils
 {
 public:
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testFileMetadataCorruptionIsAutoRepaired();
     void testDocumentContentCorruptionIsAutoRepaired();

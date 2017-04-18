@@ -3,11 +3,14 @@
 #include "attribute_initializer.h"
 #include "attributedisklayout.h"
 #include "attribute_directory.h"
+#include "i_attribute_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -165,7 +168,7 @@ AttributeInitializer::tryLoadAttribute() const
 {
     search::SerialNum serialNum = _attrDir->getFlushedSerialNum();
     vespalib::string attrFileName = _attrDir->getAttributeFileName(serialNum);
-    AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
+    AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
     if (serialNum != 0) {
         AttributeHeader header = extractHeader(attrFileName);
         if (header.getCreateSerialNum() > _currentSerialNum || !headerTypeOK(header, attr->getConfig()) || (serialNum < _currentSerialNum)) {
@@ -182,7 +185,7 @@ AttributeInitializer::tryLoadAttribute() const
 }
 
 bool
-AttributeInitializer::loadAttribute(const AttributeVector::SP &attr,
+AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
                                     search::SerialNum serialNum) const
 {
     assert(attr->hasLoadData());
@@ -203,7 +206,7 @@ AttributeInitializer::loadAttribute(const AttributeVector::SP &attr,
 }
 
 void
-AttributeInitializer::setupEmptyAttribute(AttributeVector::SP &attr,
+AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr,
                                           search::SerialNum serialNum,
                                           const AttributeHeader &header) const
 {
@@ -226,19 +229,19 @@ AttributeVector::SP
 AttributeInitializer::createAndSetupEmptyAttribute() const
 {
     vespalib::string attrFileName = _attrDir->getAttributeFileName(0);
-    AttributeVector::SP attr = _factory.create(attrFileName, _cfg);
+    AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
     _factory.setupEmpty(attr, _currentSerialNum);
     return attr;
 }
 
 AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                                            const vespalib::string &documentSubDbName,
-                                           const search::attribute::Config &cfg,
+                                           const AttributeSpec &spec,
                                            uint64_t currentSerialNum,
                                            const IAttributeFactory &factory)
     : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
-      _cfg(cfg),
+      _spec(spec),
       _currentSerialNum(currentSerialNum),
       _factory(factory)
 {
@@ -246,13 +249,13 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
 
 AttributeInitializer::~AttributeInitializer() {}
 
-search::AttributeVector::SP
+AttributeInitializerResult
 AttributeInitializer::init() const
 {
     if (!_attrDir->empty()) {
-        return tryLoadAttribute();
+        return AttributeInitializerResult(tryLoadAttribute(), _spec.getHideFromReading(), _spec.getHideFromWriting());
     } else {
-        return createAndSetupEmptyAttribute();
+        return AttributeInitializerResult(createAndSetupEmptyAttribute(), _spec.getHideFromReading(), _spec.getHideFromWriting());
     }
 }
 

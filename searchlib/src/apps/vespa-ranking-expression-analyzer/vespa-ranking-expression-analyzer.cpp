@@ -330,9 +330,9 @@ State::~State() {}
 //-----------------------------------------------------------------------------
 
 struct MyApp : public FastOS_Application {
-    int Main();
+    int Main() override;
     int usage();
-    virtual bool useProcessStarter() const { return false; }
+    virtual bool useProcessStarter() const override { return false; }
 };
 
 int

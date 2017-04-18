@@ -34,7 +34,7 @@ RPC::Init(FRT_Supervisor *s)
 class MyApp : public FastOS_Application
 {
 public:
-    virtual int Main();
+    virtual int Main() override;
 };
 
 int

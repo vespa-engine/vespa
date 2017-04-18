@@ -35,7 +35,7 @@ class Test : public vespalib::TestApp {
     void requireThatUnknownAnnotationIsSkipped();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int

@@ -22,8 +22,8 @@ private:
 
 public:
     IgnoreBefore(double time, Handler<Request> &next);
-    virtual void handle(Request::UP request);
-    virtual void report();
+    virtual void handle(Request::UP request) override;
+    virtual void report() override;
 };
 
 } // namespace vbench

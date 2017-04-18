@@ -30,12 +30,12 @@ public:
     SummaryFeaturesDFW();
     virtual ~SummaryFeaturesDFW();
     void init(IDocsumEnvironment * env);
-    virtual bool IsGenerated() const { return true; }
+    virtual bool IsGenerated() const override { return true; }
     virtual void insertField(uint32_t docid,
                              GeneralResult *gres,
                              GetDocsumsState *state,
                              ResType type,
-                             vespalib::slime::Inserter &target);
+                             vespalib::slime::Inserter &target) override;
 
     static uint32_t writeString(const vespalib::stringref & str, ResType type, search::RawBuf * target);
 };

@@ -56,7 +56,7 @@ private:
     size_t                       _numDocs;
 
     void handleDocumentPut(document::Document::SP doc);
-    virtual void handleMessage(mbus::Message::UP message);
+    virtual void handleMessage(mbus::Message::UP message) override;
 
 public:
     FeedHandler(document::DocumentTypeRepo::SP repo, OutputFile &idx, OutputFile &dat);
@@ -121,8 +121,8 @@ FeedHandler::~FeedHandler()
 class App : public FastOS_Application
 {
 public:
-    virtual bool useProcessStarter() const { return true; }
-    virtual int Main();
+    virtual bool useProcessStarter() const override { return true; }
+    virtual int Main() override;
 };
 
 template <typename CFG>

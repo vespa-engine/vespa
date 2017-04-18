@@ -34,7 +34,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
     private final AtomicBoolean terminated = new AtomicBoolean(false);
-    private State currentState = RESUMED;
+    private State currentState = SUSPENDED_NODE_ADMIN;
     private State wantedState = RESUMED;
     private boolean workToDoNow = true;
 
@@ -131,23 +131,16 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     }
 
     /**
-     * This method attempts to converge NodeAgent's and NodeAdmin's frozen state with their orchestrator
-     * state. When trying to suspend node-admin, this method will first attempt to freeze all NodeAgents and
-     * NodeAdmin, then asking orchestrator for permission to suspend all active nodes on this host, including
-     * node-admin itself, if the request is denied, this method will unfreeze NodeAgents and NodeAdmin.
+     * This method attempts to converge node-admin towards one of the {@link State}
      */
     private void convergeState(State wantedState) {
-        boolean wantFrozen = wantedState != RESUMED;
-        if (!nodeAdmin.setFrozen(wantFrozen)) {
-            throw new RuntimeException("NodeAdmin has not yet converged to " + (wantFrozen ? "frozen" : "unfrozen"));
-        }
-
-        // To get to resumed state, we only need to converge NodeAdmins frozen state
         if (wantedState == RESUMED) {
-            synchronized (monitor) {
-                currentState = RESUMED;
+            if (!nodeAdmin.setFrozen(false)) {
+                throw new RuntimeException("NodeAdmin has not yet converged to unfrozen");
             }
-            return;
+
+            orchestrator.resume(dockerHostHostName);
+            if (wantedState == updateAndGetCurrentState(RESUMED)) return;
         }
 
         // Fetch active nodes from node repo before suspending nodes.
@@ -160,26 +153,29 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         try {
             nodesInActiveState = getNodesInActiveState();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to get nodes from node repo:" + e.getMessage());
+            throw new RuntimeException("Failed to get nodes from node repo: " + e.getMessage());
         }
 
         if (currentState == RESUMED) {
             List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
             nodesToSuspend.add(dockerHostHostName);
-            orchestrator.suspend(dockerHostHostName, nodesToSuspend).ifPresent(orchestratorResponse -> {
-                nodeAdmin.setFrozen(false);
-                throw new RuntimeException("Failed to get permission to suspend, resuming. Reason: " + orchestratorResponse);
-            });
+            orchestrator.suspend(dockerHostHostName, nodesToSuspend);
 
-            synchronized (monitor) {
-                currentState = SUSPENDED_NODE_ADMIN;
+            if (!nodeAdmin.setFrozen(true)) {
+                throw new RuntimeException("NodeAdmin has not yet converged to frozen");
             }
-            if (wantedState == currentState) return;
+
+            if (wantedState == updateAndGetCurrentState(SUSPENDED_NODE_ADMIN)) return;
         }
 
         nodeAdmin.stopNodeAgentServices(nodesInActiveState);
+        updateAndGetCurrentState(SUSPENDED);
+    }
+
+    private State updateAndGetCurrentState(State currentState) {
         synchronized (monitor) {
-            currentState = SUSPENDED;
+            this.currentState = currentState;
+            return currentState;
         }
     }
 

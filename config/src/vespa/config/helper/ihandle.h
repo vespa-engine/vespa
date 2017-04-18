@@ -23,10 +23,10 @@ public:
     {
     }
 
-    std::unique_ptr<const ConfigInstance> getConfig() {
+    std::unique_ptr<const ConfigInstance> getConfig() override {
         return std::unique_ptr<const ConfigInstance>(_handle->getConfig().release());
     }
-    bool isChanged() { return _handle->isChanged(); }
+    bool isChanged() override { return _handle->isChanged(); }
 private:
     std::unique_ptr<ConfigHandle <ConfigType> > _handle;
 };

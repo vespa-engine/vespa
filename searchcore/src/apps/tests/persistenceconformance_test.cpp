@@ -5,14 +5,19 @@ LOG_SETUP("persistenceconformance_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/config-imported-fields.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
+#include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -274,7 +279,7 @@ protected:
 class MyPersistenceEngineOwner : public IPersistenceEngineOwner
 {
     virtual void
-    setClusterState(const storage::spi::ClusterState &calc)
+    setClusterState(const storage::spi::ClusterState &calc) override
     {
         (void) calc;
     }
@@ -362,7 +367,7 @@ public:
     {
     }
     virtual PersistenceProvider::UP getPersistenceImplementation(const DocumentTypeRepo::SP &repo,
-                                                                 const DocumenttypesConfig &typesCfg) {
+                                                                 const DocumenttypesConfig &typesCfg) override {
         ConfigFactory cfgFactory(repo, DocumenttypesConfigSP(new DocumenttypesConfig(typesCfg)), _schemaFactory);
         _docDbRepo.reset(new DocumentDBRepo(cfgFactory, _docDbFactory));
         PersistenceEngine::UP engine(new MyPersistenceEngine(_engineOwner,
@@ -373,12 +378,12 @@ public:
         return PersistenceProvider::UP(engine.release());
     }
 
-    virtual void clear() {
+    virtual void clear() override {
         FastOS_FileInterface::EmptyAndRemoveDirectory(_baseDir.c_str());
     }
 
-    virtual bool hasPersistence() const { return true; }
-    virtual bool supportsActiveState() const { return true; }
+    virtual bool hasPersistence() const override { return true; }
+    virtual bool supportsActiveState() const override { return true; }
 };
 
 

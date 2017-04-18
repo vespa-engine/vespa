@@ -6,12 +6,20 @@
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
+#include <vespa/searchcore/proton/feedoperation/putoperation.h>
+#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
+#include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
+#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/server/configstore.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/feedhandler.h>
+#include <vespa/searchcore/proton/server/i_feed_handler_owner.h>
+#include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -36,8 +44,10 @@ using documentapi::DocumentReply;
 using documentapi::RemoveDocumentReply;
 using documentapi::UpdateDocumentReply;
 using mbus::Reply;
-using namespace search::index;
 using search::SerialNum;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
+using search::makeLambdaTask;
 using search::transactionlog::TransLogServer;
 using storage::spi::PartitionId;
 using storage::spi::RemoveResult;
@@ -49,8 +59,9 @@ using vespalib::ThreadStackExecutor;
 using vespalib::ThreadStackExecutorBase;
 using vespalib::makeClosure;
 using vespalib::makeTask;
-using search::makeLambdaTask;
+
 using namespace proton;
+using namespace search::index;
 
 typedef std::unique_ptr<vespalib::CountDownLatch> CountDownLatchUP;
 
@@ -84,7 +95,7 @@ struct Rendezvous {
 };
 
 
-struct MyOwner : public FeedHandler::IOwner
+struct MyOwner : public IFeedHandlerOwner
 {
     bool rejected_config;
     bool _allowPrune;
@@ -97,16 +108,16 @@ struct MyOwner : public FeedHandler::IOwner
         wipe_history_count(0)
     {
     }
-    virtual void performWipeHistory() { ++wipe_history_count; }
-    virtual void onTransactionLogReplayDone() {
+    virtual void performWipeHistory() override { ++wipe_history_count; }
+    virtual void onTransactionLogReplayDone() override {
         LOG(info, "MyOwner::onTransactionLogReplayDone()");
     }
-    virtual void enterRedoReprocessState() {}
-    virtual void onPerformPrune(SerialNum) {}
-    virtual bool isFeedBlockedByRejectedConfig() { return rejected_config; }
+    virtual void enterRedoReprocessState() override {}
+    virtual void onPerformPrune(SerialNum) override {}
+    virtual bool isFeedBlockedByRejectedConfig() override { return rejected_config; }
 
     virtual bool
-    getAllowPrune(void) const
+    getAllowPrune(void) const override
     {
         return _allowPrune;
     }
@@ -130,8 +141,8 @@ struct MyResourceWriteFilter : public IResourceWriteFilter
 
 
 struct MyReplayConfig : public IReplayConfig {
-    virtual void replayConfig(SerialNum) {}
-    virtual void replayWipeHistory(SerialNum, fastos::TimeStamp) {}
+    virtual void replayConfig(SerialNum) override {}
+    virtual void replayWipeHistory(SerialNum, fastos::TimeStamp) override {}
 };
 
 void ackToken(FeedToken *token) {
@@ -191,7 +202,7 @@ struct MyFeedView : public test::DummyFeedView {
     MyFeedView(const DocumentTypeRepo::SP &dtr);
     ~MyFeedView();
     void resetPutLatch(uint32_t count) { putLatch.reset(new vespalib::CountDownLatch(count)); }
-    virtual void preparePut(PutOperation &op) {
+    virtual void preparePut(PutOperation &op) override {
         prepareDocumentOperation(op, op.getDocument()->getId().getGlobalId());
     }
     void prepareDocumentOperation(DocumentOperation &op, const GlobalId &gid) {
@@ -202,7 +213,7 @@ struct MyFeedView : public test::DummyFeedView {
             op.setPrevTimestamp(entry->_prevTimestamp);
         }
     }
-    virtual void handlePut(FeedToken *token, const PutOperation &putOp) {
+    virtual void handlePut(FeedToken *token, const PutOperation &putOp) override {
         LOG(info, "MyFeedView::handlePut(): docId(%s), putCount(%u), putLatchCount(%u)",
             putOp.getDocument()->getId().toString().c_str(), put_count,
             (putLatch.get() != NULL ? putLatch->getCount() : 0u));
@@ -217,21 +228,21 @@ struct MyFeedView : public test::DummyFeedView {
         }
         ackToken(token);
     }
-    virtual void prepareUpdate(UpdateOperation &op) {
+    virtual void prepareUpdate(UpdateOperation &op) override {
         prepareDocumentOperation(op, op.getUpdate()->getId().getGlobalId());
     }
-    virtual void handleUpdate(FeedToken *token, const UpdateOperation &op) {
+    virtual void handleUpdate(FeedToken *token, const UpdateOperation &op) override {
         ++update_count;
         update_serial = op.getSerialNum();
         ackToken(token);
     }
-    virtual void handleRemove(FeedToken *token, const RemoveOperation &)
+    virtual void handleRemove(FeedToken *token, const RemoveOperation &) override
     { ++remove_count; ackToken(token); }
-    virtual void handleMove(const MoveOperation &) { ++move_count; }
-    virtual void heartBeat(SerialNum) { ++heartbeat_count; }
+    virtual void handleMove(const MoveOperation &) override { ++move_count; }
+    virtual void heartBeat(SerialNum) override { ++heartbeat_count; }
     virtual void handlePruneRemovedDocuments(
-            const PruneRemovedDocumentsOperation &) { ++prune_removed_count; }
-    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const {
+            const PruneRemovedDocumentsOperation &) override { ++prune_removed_count; }
+    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return NULL;
     }
 };
@@ -261,7 +272,7 @@ struct SchemaContext {
         schema(new Schema()),
         builder()
     {
-        schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
+        schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
         builder.reset(new DocBuilder(*schema));
     }
     DocTypeName getDocType() const {
@@ -299,7 +310,7 @@ struct MyTransport : public FeedToken::ITransport {
     bool documentWasFound;
     MyTransport();
     ~MyTransport();
-    virtual void send(Reply::UP, ResultUP res, bool documentWasFound_, double) {
+    virtual void send(Reply::UP, ResultUP res, bool documentWasFound_, double) override {
         result = std::move(res);
         documentWasFound = documentWasFound_;
         gate.countDown();
@@ -404,11 +415,11 @@ struct MyTlsWriter : TlsWriter {
     bool erase_return;
 
     MyTlsWriter() : store_count(0), erase_count(0), erase_return(true) {}
-    virtual void storeOperation(const FeedOperation &) { ++store_count; }
-    virtual bool erase(SerialNum) { ++erase_count; return erase_return; }
+    virtual void storeOperation(const FeedOperation &) override { ++store_count; }
+    virtual bool erase(SerialNum) override { ++erase_count; return erase_return; }
 
     virtual SerialNum
-    sync(SerialNum syncTo)
+    sync(SerialNum syncTo) override
     {
         return syncTo;
     } 
@@ -470,21 +481,21 @@ struct FeedHandlerFixture
 
 
 struct MyConfigStore : ConfigStore {
-    virtual SerialNum getBestSerialNum() const { return 1; }
-    virtual SerialNum getOldestSerialNum() const { return 1; }
+    virtual SerialNum getBestSerialNum() const override { return 1; }
+    virtual SerialNum getOldestSerialNum() const override { return 1; }
     virtual void saveConfig(const DocumentDBConfig &,
-                            const search::index::Schema &, SerialNum) {}
+                            const search::index::Schema &, SerialNum) override {}
     virtual void loadConfig(const DocumentDBConfig &, SerialNum,
                             DocumentDBConfig::SP &,
-                            search::index::Schema::SP &) {}
-    virtual void removeInvalid() {}
-    void prune(SerialNum) {}
-    virtual bool hasValidSerial(SerialNum) const { return true; }
-    virtual SerialNum getPrevValidSerial(SerialNum) const { return 1; }
+                            search::index::Schema::SP &) override {}
+    virtual void removeInvalid() override {}
+    void prune(SerialNum) override {}
+    virtual bool hasValidSerial(SerialNum) const override { return true; }
+    virtual SerialNum getPrevValidSerial(SerialNum) const override { return 1; }
     virtual void saveWipeHistoryConfig(SerialNum,
-                                       fastos::TimeStamp) {}
-    virtual void serializeConfig(SerialNum, vespalib::nbostream &) {}
-    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) {}
+                                       fastos::TimeStamp) override {}
+    virtual void serializeConfig(SerialNum, vespalib::nbostream &) override {}
+    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
     virtual void setProtonConfig(const ProtonConfigSP &) override { }
 };
 

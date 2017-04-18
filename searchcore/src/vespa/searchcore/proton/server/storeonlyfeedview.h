@@ -64,6 +64,7 @@ public:
     using OnOperationDoneType = const std::shared_ptr<OperationDoneContext> &;
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
+    using FeedTokenUP = std::unique_ptr<FeedToken>;
 
     struct Context
     {
@@ -162,11 +163,11 @@ private:
                     const document::DocumentId &docId);
 
     void
-    internalPut(FeedToken::UP token,
+    internalPut(FeedTokenUP token,
                 const PutOperation &putOp);
 
     void
-    internalUpdate(FeedToken::UP token,
+    internalUpdate(FeedTokenUP token,
                    const UpdateOperation &updOp);
 
     void
@@ -182,7 +183,7 @@ private:
                 search::DocumentIdT & lid) const;
 
     void
-    internalRemove(FeedToken::UP token,
+    internalRemove(FeedTokenUP token,
                    const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
@@ -191,13 +192,13 @@ private:
                            bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedToken::UP token,
+    void internalRemove(FeedTokenUP token,
                         SerialNum serialNum,
                         search::DocumentIdT lid,
                         FeedOperation::Type opType);
 
     // Ack token early if visibility delay is nonzero
-    void considerEarlyAck(FeedToken::UP &token, FeedOperation::Type opType);
+    void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
@@ -305,13 +306,13 @@ public:
      * Implements IFeedView.
      */
     virtual const document::DocumentTypeRepo::SP &
-    getDocumentTypeRepo() const { return _repo; }
+    getDocumentTypeRepo() const override { return _repo; }
 
     /**
      * Implements IFeedView.
      */
     virtual const ISimpleDocumentMetaStore *
-    getDocumentMetaStorePtr() const;
+    getDocumentMetaStorePtr() const override;
 
     /**
      * Similar to IPersistenceHandler functions.
@@ -320,43 +321,40 @@ public:
      */
 
     virtual void
-    preparePut(PutOperation &putOp);
+    preparePut(PutOperation &putOp) override;
 
     virtual void
-    handlePut(FeedToken *token,
-              const PutOperation &putOp);
+    handlePut(FeedToken *token, const PutOperation &putOp) override;
 
     virtual void
-    prepareUpdate(UpdateOperation &updOp);
+    prepareUpdate(UpdateOperation &updOp) override;
 
     virtual void
-    handleUpdate(FeedToken *token,
-                 const UpdateOperation &updOp);
+    handleUpdate(FeedToken *token, const UpdateOperation &updOp) override;
 
     virtual void
-    prepareRemove(RemoveOperation &rmOp);
+    prepareRemove(RemoveOperation &rmOp) override;
 
     virtual void
-    handleRemove(FeedToken *token,
-                 const RemoveOperation &rmOp);
+    handleRemove(FeedToken *token, const RemoveOperation &rmOp) override;
 
     virtual void
-    prepareDeleteBucket(DeleteBucketOperation &delOp);
+    prepareDeleteBucket(DeleteBucketOperation &delOp) override;
 
     virtual void
-    handleDeleteBucket(const DeleteBucketOperation &delOp);
+    handleDeleteBucket(const DeleteBucketOperation &delOp) override;
 
     virtual void
-    prepareMove(MoveOperation &putOp);
+    prepareMove(MoveOperation &putOp) override;
 
     virtual void
-    handleMove(const MoveOperation &putOp);
+    handleMove(const MoveOperation &putOp) override;
 
     virtual void
-    heartBeat(search::SerialNum serialNum);
+    heartBeat(search::SerialNum serialNum) override;
 
     virtual void
-    sync();
+    sync() override;
 
     virtual void forceCommit(SerialNum serialNum) override;
 
@@ -370,10 +368,10 @@ public:
      * Called by writer thread.
      */
     virtual void
-    handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp);
+    handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
 
     virtual void
-    handleCompactLidSpace(const CompactLidSpaceOperation &op);
+    handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
 
 };
 

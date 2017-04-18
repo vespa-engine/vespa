@@ -106,8 +106,8 @@ public:
     ~MemAttr();
 
     // Implements IAttributeSaveTarget
-    virtual bool setup() { return true; }
-    virtual void close() {}
+    virtual bool setup() override { return true; }
+    virtual void close() override {}
     virtual IAttributeFileWriter &datWriter() override { return _datWriter; }
     virtual IAttributeFileWriter &idxWriter() override { return _idxWriter; }
     virtual IAttributeFileWriter &weightWriter() override {

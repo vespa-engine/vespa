@@ -199,7 +199,7 @@ public:
     documentapi::SystemStateHandle getSystemState();
 
     // Implements IReplyHandler.
-    void handleReply(mbus::Reply::UP reply);
+    void handleReply(mbus::Reply::UP reply) override;
 };
 
 class UIntList : public std::vector<uint32_t> {

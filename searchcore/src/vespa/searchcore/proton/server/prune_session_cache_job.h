@@ -19,7 +19,7 @@ public:
                          double jobInterval);
 
     // Implements IMaintenanceJob
-    virtual bool run();
+    virtual bool run() override;
 };
 
 } // namespace proton

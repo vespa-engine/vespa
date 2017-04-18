@@ -69,7 +69,7 @@ public:
     ~Application();
 
     // Inherit doc from FastOS_Application.
-    int Main();
+    int Main() override;
 };
 
 }

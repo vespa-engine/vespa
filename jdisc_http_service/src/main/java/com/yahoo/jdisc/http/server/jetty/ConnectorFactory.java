@@ -104,7 +104,12 @@ public class ConnectorFactory {
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
         connector.setReuseAddress(connectorConfig.reuseAddress());
-        connector.setSoLingerTime(connectorConfig.soLingerTime());
+        double soLingerTimeSeconds = connectorConfig.soLingerTime();
+        if (soLingerTimeSeconds == -1) {
+            connector.setSoLingerTime(-1);
+        } else {
+            connector.setSoLingerTime((int)(soLingerTimeSeconds * 1000.0));
+        }
         connector.setIdleTimeout((long)(connectorConfig.idleTimeout() * 1000.0));
         connector.setStopTimeout((long)(connectorConfig.stopTimeout() * 1000.0));
         return connector;

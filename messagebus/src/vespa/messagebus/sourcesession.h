@@ -91,7 +91,7 @@ public:
      *
      * @param reply the Reply
      **/
-    void handleReply(Reply::UP reply);
+    void handleReply(Reply::UP reply) override;
 
     /**
      * Close this session. This method will block until Reply objects have been obtained for all pending

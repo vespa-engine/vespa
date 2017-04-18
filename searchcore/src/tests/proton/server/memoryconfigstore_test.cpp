@@ -11,8 +11,10 @@ LOG_SETUP("memoryconfigstore_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
 
-using search::index::Schema;
 using search::SerialNum;
+using search::index::Schema;
+using search::index::schema::DataType;
+
 using namespace proton;
 
 namespace {
@@ -35,12 +37,12 @@ Schema::SP
 getSchema(int step)
 {
     Schema::SP schema(new Schema);
-    schema->addIndexField(Schema::IndexField("foo1", search::index::schema::STRING));
+    schema->addIndexField(Schema::IndexField("foo1", DataType::STRING));
     if (step < 2) {
-        schema->addIndexField(Schema::IndexField("foo2", search::index::schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo2", DataType::STRING));
     }
     if (step < 1) {
-        schema->addIndexField(Schema::IndexField("foo3", search::index::schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo3", DataType::STRING));
     }
     return schema;
 }
@@ -113,7 +115,7 @@ TEST("require that wipe history clears previous history schema "
      "and adds new, identical entry for current serial num") {
     MemoryConfigStore config_store;
     Schema::SP history(new Schema);
-    history->addIndexField(Schema::IndexField("foo", search::index::schema::STRING));
+    history->addIndexField(Schema::IndexField("foo", DataType::STRING));
     config_store.saveConfig(*getConfig(10), *history, 5);
     DocumentDBConfig::SP config;
     config_store.loadConfig(*getConfig(14), 5, config, history);
@@ -171,7 +173,7 @@ TEST("require that wipe history clears only portions of history")
 TEST("require that wipe history does nothing if serial num exists") {
     MemoryConfigStore config_store;
     Schema::SP history(new Schema);
-    history->addIndexField(Schema::IndexField("foo", search::index::schema::STRING));
+    history->addIndexField(Schema::IndexField("foo", DataType::STRING));
     config_store.saveConfig(*getConfig(10), *history, 5);
     DocumentDBConfig::SP config;
     config_store.saveWipeHistoryConfig(5, 0);

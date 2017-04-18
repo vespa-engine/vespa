@@ -126,7 +126,7 @@ struct DefaultLazyFileFactory
 
     DefaultLazyFileFactory(int flags) : _flags(flags) {}
 
-    vespalib::LazyFile::UP createFile(const std::string& fileName) const;
+    vespalib::LazyFile::UP createFile(const std::string& fileName) const override;
 };
 
 } // storage

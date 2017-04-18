@@ -38,7 +38,7 @@ public:
     }
 
     virtual bool operator()(const document::GlobalId &lhs,
-                            const document::GlobalId &rhs) const {
+                            const document::GlobalId &rhs) const override {
         return _comp(lhs, rhs);
     }
 };

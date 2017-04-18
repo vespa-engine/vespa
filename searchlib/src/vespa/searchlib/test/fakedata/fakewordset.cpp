@@ -13,6 +13,8 @@ namespace fakedata {
 
 using index::PostingListParams;
 using index::SchemaUtil;
+using index::schema::CollectionType;
+using index::schema::DataType;
 
 static void
 clearFakeWordVector(std::vector<FakeWord *> &v)
@@ -63,14 +65,15 @@ FakeWordSet::setupParams(bool hasElements,
     _schema.clear();
 
     assert(hasElements || !hasElementWeights);
-    Schema::CollectionType collectionType(index::schema::SINGLE);
+    Schema::CollectionType collectionType(CollectionType::SINGLE);
     if (hasElements) {
-        if (hasElementWeights)
-            collectionType = index::schema::WEIGHTEDSET;
-        else
-            collectionType = index::schema::ARRAY;
+        if (hasElementWeights) {
+            collectionType = CollectionType::WEIGHTEDSET;
+        } else {
+            collectionType = CollectionType::ARRAY;
+        }
     }
-    Schema::IndexField indexField("field0", index::schema::STRING, collectionType);
+    Schema::IndexField indexField("field0", DataType::STRING, collectionType);
     indexField.setAvgElemLen(512u);
     _schema.addIndexField(indexField);
     _fieldsParams.resize(_schema.getNumIndexFields());

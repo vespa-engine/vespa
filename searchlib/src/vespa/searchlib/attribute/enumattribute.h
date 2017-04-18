@@ -61,18 +61,18 @@ protected:
     virtual EnumType getFromEnum(EnumHandle e)        const { return _enumStore.getValue(e); }
 
     virtual void fillPostings(LoadedVector & loaded) { (void) loaded; }
-    virtual void fillEnum(LoadedVector & loaded);
+    virtual void fillEnum(LoadedVector & loaded) override;
 
     virtual void
     fillEnum0(const void *src,
               size_t srcLen,
-              EnumIndexVector &eidxs);
+              EnumIndexVector &eidxs) override;
 
     virtual void
-    fixupEnumRefCounts(const EnumVector &enumHist);
+    fixupEnumRefCounts(const EnumVector &enumHist) override;
 
     virtual uint64_t
-    getUniqueValueCount(void) const;
+    getUniqueValueCount(void) const override;
 
     static EnumType getDefaultEnumTypeValue() { return B::defaultValue(); }
 

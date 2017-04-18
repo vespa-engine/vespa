@@ -31,11 +31,11 @@ struct StateCheckersTest : public CppUnit::TestFixture,
 {
     StateCheckersTest() {}
 
-    void setUp() {
+    void setUp() override {
         createLinks();
     }
 
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 

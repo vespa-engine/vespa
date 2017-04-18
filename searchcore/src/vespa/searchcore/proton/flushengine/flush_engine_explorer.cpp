@@ -11,6 +11,7 @@ LOG_SETUP(".proton.flushengine.flush_engine_explorer");
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
 using vespalib::StateExplorer;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

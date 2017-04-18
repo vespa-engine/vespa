@@ -5,15 +5,17 @@
 
 using namespace proton;
 using namespace search::index;
+
+using proton::configvalidator::Result;
+using proton::configvalidator::ResultType;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 
 typedef Schema::AttributeField AField;
 typedef Schema::IndexField     IField;
 typedef Schema::SummaryField   SField;
-
-using proton::configvalidator::ResultType;
-using proton::configvalidator::Result;
 
 const ResultType OK  = ResultType::OK;
 const ResultType DTC = ResultType::DATA_TYPE_CHANGED;
@@ -47,7 +49,7 @@ struct SchemaBuilder
     Schema _schema;
     SchemaBuilder() : _schema() {}
     SchemaBuilder &add(const vespalib::string &name, FType ftype,
-                       schema::DataType dtype, schema::CollectionType ctype = schema::SINGLE) {
+                       schema::DataType dtype, schema::CollectionType ctype = schema::CollectionType::SINGLE) {
         switch (ftype) {
         case INDEX:
             _schema.addIndexField(IField(name, dtype, ctype));
@@ -74,13 +76,13 @@ create(FType ftype, Schema::DataType dtype, Schema::CollectionType ctype)
 Schema
 created(FType ftype, schema::DataType dtype)
 {
-    return create(ftype, dtype, schema::SINGLE);
+    return create(ftype, dtype, CollectionType::SINGLE);
 }
 
 Schema
 createc(FType ftype, schema::CollectionType ctype)
 {
-    return create(ftype, schema::STRING, ctype);
+    return create(ftype, DataType::STRING, ctype);
 }
 
 ResultType
@@ -104,13 +106,13 @@ void
 requireThatChangedDataTypeIsDiscovered(FType ftype)
 {
     EXPECT_EQUAL(DTC,
-                 checkSchema(created(ftype, schema::INT32),
-                         created(ftype, schema::STRING),
+                 checkSchema(created(ftype, DataType::INT32),
+                         created(ftype, DataType::STRING),
                          Schema()));
     EXPECT_EQUAL(DTC,
-                 checkSchema(created(ftype, schema::INT32),
+                 checkSchema(created(ftype, DataType::INT32),
                          Schema(),
-                         created(ftype, schema::STRING)));
+                         created(ftype, DataType::STRING)));
 }
 
 TEST("require that changed data type is discovered")
@@ -124,13 +126,13 @@ void
 requireThatChangedCollectionTypeIsDiscovered(FType ftype)
 {
     EXPECT_EQUAL(CTC,
-                 checkSchema(createc(ftype, schema::ARRAY),
-                         createc(ftype, schema::SINGLE),
+                 checkSchema(createc(ftype, CollectionType::ARRAY),
+                         createc(ftype, CollectionType::SINGLE),
                          Schema()));
     EXPECT_EQUAL(CTC,
-                 checkSchema(createc(ftype, schema::ARRAY),
+                 checkSchema(createc(ftype, CollectionType::ARRAY),
                          Schema(),
-                         createc(ftype, schema::SINGLE)));
+                         createc(ftype, CollectionType::SINGLE)));
 }
 
 TEST("require that changed collection type is discovered")
@@ -142,15 +144,15 @@ TEST("require that changed collection type is discovered")
 
 TEST("require that changed index aspect is discovered")
 {
-    Schema s1 = created(SUMMARY, schema::STRING);
-    s1.addIndexField(IField("f1", schema::STRING));
-    Schema s2 = created(SUMMARY, schema::STRING);
-    Schema s2h = created(INDEX, schema::STRING);
+    Schema s1 = created(SUMMARY, DataType::STRING);
+    s1.addIndexField(IField("f1", DataType::STRING));
+    Schema s2 = created(SUMMARY, DataType::STRING);
+    Schema s2h = created(INDEX, DataType::STRING);
 
-    Schema s3 = created(ATTRIBUTE, schema::STRING);
-    s3.addIndexField(IField("f1", schema::STRING));
-    Schema s4 = created(ATTRIBUTE, schema::STRING);
-    Schema s4h = created(INDEX, schema::STRING);
+    Schema s3 = created(ATTRIBUTE, DataType::STRING);
+    s3.addIndexField(IField("f1", DataType::STRING));
+    Schema s4 = created(ATTRIBUTE, DataType::STRING);
+    Schema s4h = created(INDEX, DataType::STRING);
     { // remove as index field
         EXPECT_EQUAL(IAR, checkSchema(s2, s1, Schema()));
         EXPECT_EQUAL(IAR, checkSchema(s2, Schema(), s1));
@@ -174,21 +176,21 @@ TEST("require that changed index aspect is discovered")
 
 TEST("require that changed attribute aspect is discovered")
 {
-    Schema s1 = created(SUMMARY, schema::STRING);
-    s1.addAttributeField(AField("f1", schema::STRING));
-    Schema s2 = created(SUMMARY, schema::STRING);
-    Schema s2h = created(ATTRIBUTE, schema::STRING);
+    Schema s1 = created(SUMMARY, DataType::STRING);
+    s1.addAttributeField(AField("f1", DataType::STRING));
+    Schema s2 = created(SUMMARY, DataType::STRING);
+    Schema s2h = created(ATTRIBUTE, DataType::STRING);
 
-    Schema s3 = created(INDEX, schema::STRING);
-    s3.addAttributeField(AField("f1", schema::STRING));
-    Schema s4 = created(INDEX, schema::STRING);
-    Schema s4h = created(ATTRIBUTE, schema::STRING);
+    Schema s3 = created(INDEX, DataType::STRING);
+    s3.addAttributeField(AField("f1", DataType::STRING));
+    Schema s4 = created(INDEX, DataType::STRING);
+    Schema s4h = created(ATTRIBUTE, DataType::STRING);
 
-    Schema s5 = created(INDEX, schema::STRING);
-    s5.addSummaryField(SField("f1", schema::STRING));
-    s5.addAttributeField(AField("f1", schema::STRING));
-    Schema s6 = created(INDEX, schema::STRING);
-    s6.addSummaryField(SField("f1", schema::STRING));
+    Schema s5 = created(INDEX, DataType::STRING);
+    s5.addSummaryField(SField("f1", DataType::STRING));
+    s5.addAttributeField(AField("f1", DataType::STRING));
+    Schema s6 = created(INDEX, DataType::STRING);
+    s6.addSummaryField(SField("f1", DataType::STRING));
     { // remove as attribute field
         EXPECT_EQUAL(AAR, checkSchema(s2, s1, Schema()));
         EXPECT_EQUAL(AAR, checkSchema(s2, Schema(), s1));
@@ -214,15 +216,15 @@ TEST("require that changed attribute aspect is discovered")
 
 TEST("require that changed summary aspect is allowed")
 {
-    Schema s1 = created(INDEX, schema::STRING);
-    s1.addSummaryField(SField("f1", schema::STRING));
-    Schema s2 = created(INDEX, schema::STRING);
-    Schema s2h = created(SUMMARY, schema::STRING);
+    Schema s1 = created(INDEX, DataType::STRING);
+    s1.addSummaryField(SField("f1", DataType::STRING));
+    Schema s2 = created(INDEX, DataType::STRING);
+    Schema s2h = created(SUMMARY, DataType::STRING);
 
-    Schema s3 = created(ATTRIBUTE, schema::STRING);
-    s3.addSummaryField(SField("f1", schema::STRING));
-    Schema s4 = created(ATTRIBUTE, schema::STRING);
-    Schema s4h = created(SUMMARY, schema::STRING);
+    Schema s3 = created(ATTRIBUTE, DataType::STRING);
+    s3.addSummaryField(SField("f1", DataType::STRING));
+    Schema s4 = created(ATTRIBUTE, DataType::STRING);
+    Schema s4h = created(SUMMARY, DataType::STRING);
     { // remove as summary field
         EXPECT_EQUAL(OK, checkSchema(s2, s1, Schema()));
         EXPECT_EQUAL(IAA, checkSchema(s2, Schema(), s1));
@@ -242,16 +244,16 @@ TEST("require that changed summary aspect is allowed")
 TEST("require that fields can be added and removed")
 {
     Schema e;
-    Schema s1 = created(INDEX, schema::STRING);
-    Schema s2 = created(ATTRIBUTE, schema::STRING);
-    Schema s3 = created(SUMMARY, schema::STRING);
-    Schema s4 = created(SUMMARY, schema::STRING);
-    s4.addIndexField(IField("f1", schema::STRING));
-    Schema s5 = created(SUMMARY, schema::STRING);
-    s5.addAttributeField(AField("f1", schema::STRING));
-    Schema s6 = created(SUMMARY, schema::STRING);
-    s6.addIndexField(IField("f1", schema::STRING));
-    s6.addAttributeField(AField("f1", schema::STRING));
+    Schema s1 = created(INDEX, DataType::STRING);
+    Schema s2 = created(ATTRIBUTE, DataType::STRING);
+    Schema s3 = created(SUMMARY, DataType::STRING);
+    Schema s4 = created(SUMMARY, DataType::STRING);
+    s4.addIndexField(IField("f1", DataType::STRING));
+    Schema s5 = created(SUMMARY, DataType::STRING);
+    s5.addAttributeField(AField("f1", DataType::STRING));
+    Schema s6 = created(SUMMARY, DataType::STRING);
+    s6.addIndexField(IField("f1", DataType::STRING));
+    s6.addAttributeField(AField("f1", DataType::STRING));
     { // addition of field
         EXPECT_EQUAL(OK, checkSchema(s1, e, e));
         EXPECT_EQUAL(OK, checkSchema(s2, e, e));
@@ -278,53 +280,53 @@ TEST("require that fields can be added and removed")
 
 TEST("require that data type changed precedes collection type changed")
 {
-    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f2", FType::INDEX, schema::STRING).schema();
-    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, schema::INT32).
-            add("f2", FType::INDEX, schema::STRING, schema::ARRAY).schema();
+    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::INDEX, DataType::STRING).schema();
+    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, DataType::INT32).
+            add("f2", FType::INDEX, DataType::STRING, CollectionType::ARRAY).schema();
     EXPECT_EQUAL(DTC, checkSchema(news, olds, Schema()));
 }
 
 TEST("require that collection type change precedes index aspect added")
 {
-    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f2", FType::SUMMARY, schema::STRING).schema();
-    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING, schema::ARRAY).
-            add("f2", FType::SUMMARY, schema::STRING).
-            add("f2", FType::INDEX, schema::STRING).schema();
+    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::SUMMARY, DataType::STRING).schema();
+    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING, CollectionType::ARRAY).
+            add("f2", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::INDEX, DataType::STRING).schema();
     EXPECT_EQUAL(CTC, checkSchema(news, olds, Schema()));
 }
 
 TEST("require that index aspect added precedes index aspect removed")
 {
-    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f2", FType::SUMMARY, schema::STRING).
-            add("f2", FType::INDEX, schema::STRING).schema();
-    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f1", FType::INDEX, schema::STRING).
-            add("f2", FType::SUMMARY, schema::STRING).schema();
+    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::INDEX, DataType::STRING).schema();
+    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f1", FType::INDEX, DataType::STRING).
+            add("f2", FType::SUMMARY, DataType::STRING).schema();
     EXPECT_EQUAL(IAA, checkSchema(news, olds, Schema()));
 }
 
 TEST("require that index aspect removed precedes attribute aspect removed")
 {
-    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f1", FType::INDEX, schema::STRING).
-            add("f2", FType::SUMMARY, schema::STRING).
-            add("f2", FType::ATTRIBUTE, schema::STRING).schema();
-    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f2", FType::SUMMARY, schema::STRING).schema();
+    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f1", FType::INDEX, DataType::STRING).
+            add("f2", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::ATTRIBUTE, DataType::STRING).schema();
+    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::SUMMARY, DataType::STRING).schema();
     EXPECT_EQUAL(IAR, checkSchema(news, olds, Schema()));
 }
 
 TEST("require that attribute aspect removed precedes attribute aspect added")
 {
-    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f1", FType::ATTRIBUTE, schema::STRING).
-            add("f2", FType::SUMMARY, schema::STRING).schema();
-    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, schema::STRING).
-            add("f2", FType::SUMMARY, schema::STRING).
-            add("f2", FType::ATTRIBUTE, schema::STRING).schema();
+    Schema olds = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f1", FType::ATTRIBUTE, DataType::STRING).
+            add("f2", FType::SUMMARY, DataType::STRING).schema();
+    Schema news = SchemaBuilder().add("f1", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::SUMMARY, DataType::STRING).
+            add("f2", FType::ATTRIBUTE, DataType::STRING).schema();
     EXPECT_EQUAL(AAR, checkSchema(news, olds, Schema()));
 }
 

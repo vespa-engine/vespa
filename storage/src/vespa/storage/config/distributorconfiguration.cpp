@@ -45,7 +45,7 @@ public:
 
     TimeVisitor() : hasCurrentTime(false) {}
 
-    void visitCurrentTimeValueNode(const document::select::CurrentTimeValueNode&) {
+    void visitCurrentTimeValueNode(const document::select::CurrentTimeValueNode&) override {
         hasCurrentTime = true;
     }
 };

@@ -41,6 +41,7 @@ LOG_SETUP("beta_features_test");
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
+using CollectionType = FieldInfo::CollectionType;
 
 //---------------------------------------------------------------------------------------------------------------------
 // TermPositionList
@@ -63,7 +64,7 @@ public:
 //---------------------------------------------------------------------------------------------------------------------
 class Test : public FtTestApp {
 public:
-    int Main();
+    int Main() override;
     void testJaroWinklerDistance();
     void testProximity();
     void testFlowCompleteness();

@@ -16,8 +16,8 @@ namespace bucketmover {
 
 struct BucketMoverTest : public CppUnit::TestFixture {
 public:
-    void setUp();
-    void tearDown();
+    void setUp() override;
+    void tearDown() override;
 
     void testNormalUsage();
     void testMaxPending();

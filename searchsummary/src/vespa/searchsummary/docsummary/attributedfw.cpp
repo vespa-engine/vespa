@@ -82,8 +82,8 @@ public:
                              GeneralResult *gres,
                              GetDocsumsState *state,
                              ResType type,
-                             vespalib::slime::Inserter &target);
-   virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const;
+                             vespalib::slime::Inserter &target) override;
+   virtual bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override;
 };
 
 bool SingleAttrDFW::isDefaultValue(uint32_t docid, const GetDocsumsState * state) const
@@ -181,7 +181,7 @@ public:
                              GeneralResult *gres,
                              GetDocsumsState *state,
                              ResType type,
-                             vespalib::slime::Inserter &target);
+                             vespalib::slime::Inserter &target) override;
 
 };
 

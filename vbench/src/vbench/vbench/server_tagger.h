@@ -23,7 +23,7 @@ private:
 public:
     ServerTagger(const ServerSpec &server,
                  Handler<Request> &next);
-    virtual void handle(Request::UP request);
+    virtual void handle(Request::UP request) override;
 };
 
 } // namespace vbench

@@ -36,7 +36,7 @@ public:
     badurlresult(uint32_t partition, uint32_t docid, HitRank metric);
     virtual ~badurlresult();
 
-    virtual int unpack(const char *buf, const size_t buflen);
+    virtual int unpack(const char *buf, const size_t buflen) override;
 };
 
 
@@ -72,8 +72,8 @@ public:
     ResEntry *GetEntry(uint32_t idx);
     ResEntry *GetEntry(const char *name);
     ResEntry *GetEntryFromEnumValue(uint32_t val);
-    virtual bool IsGeneral() const { return true; }
-    virtual int unpack(const char *buf, const size_t buflen);
+    virtual bool IsGeneral() const override { return true; }
+    virtual int unpack(const char *buf, const size_t buflen) override;
 
     bool inplaceUnpack(const DocsumStoreValue &value) {
         if (value.valid()) {

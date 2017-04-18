@@ -73,7 +73,7 @@ namespace {
 
 struct ModifyProcessor : public BucketDatabase::MutableEntryProcessor
 {
-    bool process(BucketDatabase::Entry& e) {
+    bool process(BucketDatabase::Entry& e) override {
         if (e.getBucketId() == document::BucketId(16, 0x0b)) {
             e.getBucketInfo() = BI(7);
         } else if (e.getBucketId() == document::BucketId(16, 0x2a)) {
@@ -90,7 +90,7 @@ struct ListAllProcessor : public BucketDatabase::EntryProcessor
 {
     std::ostringstream ost;
 
-    bool process(const BucketDatabase::Entry& e) {
+    bool process(const BucketDatabase::Entry& e) override {
         ost << e << "\n";
         return true;
     }
@@ -100,7 +100,7 @@ struct DummyProcessor : public BucketDatabase::EntryProcessor
 {
     std::ostringstream ost;
 
-    bool process(const BucketDatabase::Entry&) {
+    bool process(const BucketDatabase::Entry&) override {
         return true;
     }
 };
@@ -110,7 +110,7 @@ struct StoppingProcessor : public BucketDatabase::EntryProcessor
 {
     std::ostringstream ost;
 
-    bool process(const BucketDatabase::Entry& e) {
+    bool process(const BucketDatabase::Entry& e) override {
         ost << e << "\n";
 
         if (e.getBucketId() == document::BucketId(16, 0x2a)) {

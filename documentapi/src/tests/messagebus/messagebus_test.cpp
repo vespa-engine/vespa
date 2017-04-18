@@ -17,7 +17,7 @@ class Test : public vespalib::TestApp {
     DocumentTypeRepo::SP _repo;
 
 public:
-    int Main();
+    int Main() override;
 
 private:
     void testMessage();

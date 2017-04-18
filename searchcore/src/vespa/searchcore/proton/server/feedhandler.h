@@ -2,29 +2,38 @@
 
 #pragma once
 
-#include "feedstate.h"
 #include "i_operation_storer.h"
 #include "idocumentmovehandler.h"
-#include "ifeedview.h"
 #include "igetserialnum.h"
 #include "iheartbeathandler.h"
 #include "ipruneremoveddocumentshandler.h"
-#include "ireplayconfig.h"
 #include "tlswriter.h"
 #include "transactionlogmanager.h"
+#include <persistence/spi/types.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
-#include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
-#include <vespa/vespalib/util/executor.h>
+
+namespace searchcorespi { namespace index { class IThreadingService; } }
 
 namespace proton {
 class ConfigStore;
-class FeedConfigStore;
-class IDocumentDBOwner;
 class CreateBucketOperation;
 class DDBState;
+class DeleteBucketOperation;
+class FeedConfigStore;
+class FeedState;
+class FeedToken;
+class IDocumentDBOwner;
+class IFeedHandlerOwner;
+class IFeedView;
+class IResourceWriteFilter;
+class IReplayConfig;
+class JoinBucketsOperation;
+class PerDocTypeFeedMetrics;
+class PutOperation;
+class RemoveOperation;
+class SplitBucketOperation;
+class UpdateOperation;
 
 namespace bucketdb
 {
@@ -50,22 +59,10 @@ private:
     typedef search::SerialNum               SerialNum;
     typedef storage::spi::Timestamp         Timestamp;
     typedef document::BucketId              BucketId;
+    using FeedStateSP = std::shared_ptr<FeedState>;
+    using FeedTokenUP = std::unique_ptr<FeedToken>;
+    using FeedOperationUP = std::unique_ptr<FeedOperation>;
 
-public:
-    /**
-     * Interface defining the communication needed with the owner of the feed handler.
-     */
-    struct IOwner {
-        virtual ~IOwner() {}
-        virtual void performWipeHistory() = 0;
-        virtual void onTransactionLogReplayDone() = 0;
-        virtual void enterRedoReprocessState() = 0;
-        virtual void onPerformPrune(SerialNum flushedSerial) = 0;
-        virtual bool isFeedBlockedByRejectedConfig() = 0;
-        virtual bool getAllowPrune() const = 0;
-    };
-
-private:
     class TlsMgrWriter : public TlsWriter {
         TransactionLogManager &_tls_mgr;
         search::transactionlog::Writer *_tlsDirectWriter;
@@ -75,18 +72,18 @@ private:
             _tls_mgr(tls_mgr),
             _tlsDirectWriter(tlsDirectWriter)
         { }
-        virtual void storeOperation(const FeedOperation &op);
-        virtual bool erase(SerialNum oldest_to_keep);
+        virtual void storeOperation(const FeedOperation &op) override;
+        virtual bool erase(SerialNum oldest_to_keep) override;
 
         virtual SerialNum
-        sync(SerialNum syncTo);
+        sync(SerialNum syncTo) override;
     };
     typedef searchcorespi::index::IThreadingService IThreadingService;
 
     IThreadingService                     &_writeService;
     DocTypeName                            _docTypeName;
     DDBState                              &_state;
-    IOwner                                &_owner;
+    IFeedHandlerOwner                     &_owner;
     const IResourceWriteFilter            &_writeFilter;
     IReplayConfig                         &_replayConfig;
     TransactionLogManager                  _tlsMgr;
@@ -98,7 +95,7 @@ private:
     SerialNum                              _prunedSerialNum;
     bool                                   _delayedPrune;
     vespalib::Lock                         _feedLock;
-    FeedState::SP                          _feedState;
+    FeedStateSP                            _feedState;
     // used by master write thread tasks
     IFeedView                             *_activeFeedView;
     bucketdb::IBucketDBHandler            *_bucketDBHandler;
@@ -112,7 +109,7 @@ private:
      * Delayed handling of feed operations, in master write thread.
      * The current feed state is sampled here.
      */
-    void doHandleOperation(FeedToken token, FeedOperation::UP op);
+    void doHandleOperation(FeedToken token, FeedOperationUP op);
 
     bool considerWriteOperationForRejection(FeedToken *token, const FeedOperation &op);
 
@@ -120,22 +117,22 @@ private:
      * Delayed execution of feed operations against feed view, in
      * master write thread.
      */
-    void performPut(FeedToken::UP token, PutOperation &op);
+    void performPut(FeedTokenUP token, PutOperation &op);
 
-    void performUpdate(FeedToken::UP token, UpdateOperation &op);
-    void performInternalUpdate(FeedToken::UP token, UpdateOperation &op);
-    void createNonExistingDocument(FeedToken::UP, const UpdateOperation &op);
+    void performUpdate(FeedTokenUP token, UpdateOperation &op);
+    void performInternalUpdate(FeedTokenUP token, UpdateOperation &op);
+    void createNonExistingDocument(FeedTokenUP, const UpdateOperation &op);
 
-    void performRemove(FeedToken::UP token, RemoveOperation &op);
+    void performRemove(FeedTokenUP token, RemoveOperation &op);
 private:
-    void performGarbageCollect(FeedToken::UP token);
+    void performGarbageCollect(FeedTokenUP token);
 
     void
-    performCreateBucket(FeedToken::UP token, CreateBucketOperation &op);
+    performCreateBucket(FeedTokenUP token, CreateBucketOperation &op);
 
-    void performDeleteBucket(FeedToken::UP token, DeleteBucketOperation &op);
-    void performSplit(FeedToken::UP token, SplitBucketOperation &op);
-    void performJoin(FeedToken::UP token, JoinBucketsOperation &op);
+    void performDeleteBucket(FeedTokenUP token, DeleteBucketOperation &op);
+    void performSplit(FeedTokenUP token, SplitBucketOperation &op);
+    void performJoin(FeedTokenUP token, JoinBucketsOperation &op);
     void performSync();
 
     /**
@@ -157,14 +154,14 @@ private:
     /**
      * Returns the current feed state of this feed handler.
      */
-    FeedState::SP getFeedState() const;
+    FeedStateSP getFeedState() const;
 
     /**
      * Used to handle feed state transitions.
      */
-    void changeFeedState(FeedState::SP newState);
+    void changeFeedState(FeedStateSP newState);
 
-    void changeFeedState(FeedState::SP newState, const vespalib::LockGuard &feedGuard);
+    void changeFeedState(FeedStateSP newState, const vespalib::LockGuard &feedGuard);
 
 public:
     FeedHandler(const FeedHandler &) = delete;
@@ -186,7 +183,7 @@ public:
                 const DocTypeName &docTypeName,
                 PerDocTypeFeedMetrics &metrics,
                 DDBState &state,
-                IOwner &owner,
+                IFeedHandlerOwner &owner,
                 const IResourceWriteFilter &writerFilter,
                 IReplayConfig &replayConfig,
                 search::transactionlog::Writer *writer,
@@ -275,20 +272,20 @@ public:
     vespalib::string getDocTypeName() const { return _docTypeName.getName(); }
     void tlsPrune(SerialNum oldest_to_keep);
 
-    void performOperation(FeedToken::UP token, FeedOperation::UP op);
-    void handleOperation(FeedToken token, FeedOperation::UP op);
+    void performOperation(FeedTokenUP token, FeedOperationUP op);
+    void handleOperation(FeedToken token, FeedOperationUP op);
 
     /**
      * Implements IDocumentMoveHandler
      */
     virtual void
-    handleMove(MoveOperation &op);
+    handleMove(MoveOperation &op) override;
 
     /**
      * Implements IHeartBeatHandler
      */
     virtual void
-    heartBeat(void);
+    heartBeat(void) override;
 
     virtual void
     sync(void);
@@ -297,19 +294,19 @@ public:
      * Implements TransLogClient::Session::Callback.
      */
     virtual RPC::Result
-    receive(const Packet &packet);
+    receive(const Packet &packet) override;
 
     virtual void
-    eof(void);
+    eof(void) override;
 
     virtual void
-    inSync(void);
+    inSync(void) override;
 
     /**
      * Implements IPruneRemovedDocumentsHandler
      */
     void
-    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp);
+    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
 
     void
     syncTls(SerialNum syncTo);
@@ -318,7 +315,7 @@ public:
     storeRemoteOperation(const FeedOperation &op);
 
     // Implements IOperationStorer
-    virtual void storeOperation(FeedOperation &op);
+    virtual void storeOperation(FeedOperation &op) override;
 };
 
 } // namespace proton

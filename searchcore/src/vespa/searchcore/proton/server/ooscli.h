@@ -39,7 +39,7 @@ private:
 public:
     OosCli(const OosParams &params, FRT_Supervisor &orb);
     virtual ~OosCli();
-    virtual void PerformTask();
+    virtual void PerformTask() override;
 };
 
 } // namespace proton

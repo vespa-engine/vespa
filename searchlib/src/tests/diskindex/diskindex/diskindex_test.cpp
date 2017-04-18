@@ -63,7 +63,7 @@ private:
     void requireThatSearchIteratorsConforms();
 public:
     Test();
-    int Main();
+    int Main() override;
 };
 
 class Verifier : public SearchIteratorVerifier {

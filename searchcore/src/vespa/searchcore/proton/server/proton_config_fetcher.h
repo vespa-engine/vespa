@@ -43,7 +43,7 @@ public:
 
     DocumentDBConfig::SP getDocumentDBConfig(const DocTypeName & docTypeName) const;
 
-    void Run(FastOS_ThreadInterface * thread, void *arg);
+    void Run(FastOS_ThreadInterface * thread, void *arg) override;
 
 private:
     typedef std::map<DocTypeName, DocumentDBConfigManager::SP> DBManagerMap;

@@ -28,6 +28,7 @@ using search::WriteableFileChunk;
 
 using search::TuneFileSummary;
 using search::common::FileHeaderContext;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

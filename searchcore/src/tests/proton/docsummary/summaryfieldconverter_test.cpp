@@ -50,8 +50,6 @@
 #include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
-using vespa::config::search::SummarymapConfig;
-using vespa::config::search::SummarymapConfigBuilder;
 using document::Annotation;
 using document::AnnotationType;
 using document::ArrayDataType;
@@ -59,11 +57,11 @@ using document::ArrayFieldValue;
 using document::ByteFieldValue;
 using document::DataType;
 using document::Document;
-using document::DocumenttypesConfig;
-using document::DocumenttypesConfigBuilder;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
+using document::DocumenttypesConfig;
+using document::DocumenttypesConfigBuilder;
 using document::DoubleFieldValue;
 using document::FeatureSet;
 using document::Field;
@@ -75,6 +73,8 @@ using document::LongFieldValue;
 using document::Predicate;
 using document::PredicateFieldValue;
 using document::RawFieldValue;
+using document::ReferenceDataType;
+using document::ReferenceFieldValue;
 using document::ShortFieldValue;
 using document::Span;
 using document::SpanList;
@@ -82,23 +82,24 @@ using document::SpanTree;
 using document::StringFieldValue;
 using document::StructDataType;
 using document::StructFieldValue;
+using document::TensorFieldValue;
 using document::UrlDataType;
 using document::WeightedSetDataType;
 using document::WeightedSetFieldValue;
-using document::TensorFieldValue;
-using document::ReferenceDataType;
-using document::ReferenceFieldValue;
 using search::index::Schema;
-using vespalib::Slime;
-using vespalib::slime::Cursor;
-using vespalib::string;
 using search::linguistics::SPANTREE_NAME;
 using search::linguistics::TERM;
-using namespace search::docsummary;
+using vespa::config::search::SummarymapConfig;
+using vespa::config::search::SummarymapConfigBuilder;
+using vespalib::Slime;
 using vespalib::geo::ZCurve;
+using vespalib::slime::Cursor;
+using vespalib::string;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
+
+using namespace search::docsummary;
 
 typedef SummaryFieldConverter SFC;
 
@@ -195,7 +196,7 @@ class Test : public vespalib::TestApp {
     void setSpanTree(StringFieldValue & value, SpanTree::UP tree);
 public:
     Test();
-    int Main();
+    int Main() override;
 };
 
 DocumenttypesConfig getDocumenttypesConfig() {
@@ -481,11 +482,11 @@ void Test::checkArray(const char *(&str)[N], const FieldValue *value) {
 }
 
 void Test::setSummaryField(const string &field) {
-    _schema->addSummaryField(Schema::Field(field, search::index::schema::STRING));
+    _schema->addSummaryField(Schema::Field(field, search::index::schema::DataType::STRING));
 }
 
 void Test::setAttributeField(const string &field) {
-    _schema->addAttributeField(Schema::Field(field, search::index::schema::STRING));
+    _schema->addAttributeField(Schema::Field(field, search::index::schema::DataType::STRING));
 }
 
 void Test::requireThatSummaryIsAnUnmodifiedString() {

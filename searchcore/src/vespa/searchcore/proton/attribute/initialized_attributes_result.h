@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/attributevector.h>
+#include "attribute_initializer_result.h"
 #include <mutex>
+#include <vector>
 
 namespace proton {
 
@@ -13,13 +14,13 @@ namespace proton {
 class InitializedAttributesResult
 {
 private:
-    std::vector<search::AttributeVector::SP> _attributes;
+    std::vector<AttributeInitializerResult> _attributes;
     std::mutex _lock;
 
 public:
     InitializedAttributesResult();
-    void add(search::AttributeVector::SP attribute);
-    const std::vector<search::AttributeVector::SP> &get() const { return _attributes; }
+    void add(AttributeInitializerResult attribute);
+    const std::vector<AttributeInitializerResult> &get() const { return _attributes; }
 };
 
 } // namespace proton

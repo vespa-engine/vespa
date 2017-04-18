@@ -283,7 +283,7 @@ class IndexMaintainer : public IIndexManager,
      * result.
      */
     bool reconfigure(vespalib::Closure0<bool>::UP closure);
-    virtual void warmupDone(ISearchableIndexCollection::SP current);
+    virtual void warmupDone(ISearchableIndexCollection::SP current) override;
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
     void scheduleCommit();
     void commit();

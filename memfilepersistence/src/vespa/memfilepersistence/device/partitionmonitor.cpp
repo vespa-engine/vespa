@@ -26,8 +26,7 @@ namespace {
     }
 
     struct RealStatter : public PartitionMonitor::Statter {
-        virtual void statFileSystem(const std::string& file,
-                                    struct statvfs& info)
+        virtual void statFileSystem(const std::string& file, struct statvfs& info) override
         {
             if (statvfs(file.c_str(), &info) != 0) {
                 vespalib::asciistream ost;

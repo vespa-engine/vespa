@@ -4,6 +4,7 @@
 #include "forcecommitcontext.h"
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
+#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>

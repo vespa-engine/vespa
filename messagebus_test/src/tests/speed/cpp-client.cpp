@@ -28,7 +28,7 @@ public:
     void send();
     void send(uint64_t seq);
     void sample(uint32_t &okCnt, uint32_t &failCnt);
-    void handleReply(Reply::UP reply);
+    void handleReply(Reply::UP reply) override;
 };
 uint64_t Client::_seq = 100000;
 
@@ -87,7 +87,7 @@ Client::handleReply(Reply::UP reply) {
 class App : public FastOS_Application
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 int

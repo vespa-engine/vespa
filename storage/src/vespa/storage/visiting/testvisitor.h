@@ -17,21 +17,21 @@ public:
     TestVisitor(StorageComponent&, const vdslib::Parameters&);
 
 private:
-    void startingVisitor(const std::vector<document::BucketId>& buckets);
+    void startingVisitor(const std::vector<document::BucketId>& buckets) override;
 
     void handleDocuments(const document::BucketId& bucketId,
                          std::vector<spi::DocEntry::UP>& entries,
-                         HitCounter& hitCounter);
+                         HitCounter& hitCounter) override;
 
-    void completedBucket(const document::BucketId& bucket, HitCounter& hitCounter);
+    void completedBucket(const document::BucketId& bucket, HitCounter& hitCounter) override;
 
     spi::ReadConsistency getRequiredReadConsistency() const override {
         return spi::ReadConsistency::WEAK;
     }
 
-    void completedVisiting(HitCounter& hitCounter);
+    void completedVisiting(HitCounter& hitCounter) override;
 
-    void abortedVisiting();
+    void abortedVisiting() override;
 
         // Send datagram with message back to client
     void report(const std::string& message);
@@ -42,13 +42,13 @@ private:
 struct TestVisitorFactory : public VisitorFactory {
 
     VisitorEnvironment::UP
-    makeVisitorEnvironment(StorageComponent&) {
+    makeVisitorEnvironment(StorageComponent&) override {
         return VisitorEnvironment::UP(new VisitorEnvironment);
     };
 
     Visitor*
     makeVisitor(StorageComponent& c, VisitorEnvironment&,
-                const vdslib::Parameters& params) {
+                const vdslib::Parameters& params) override {
         return new TestVisitor(c, params);
     }
 

@@ -102,7 +102,7 @@ public:
 
     virtual void
     visitProperty(const search::fef::Property::Value &key,
-                  const search::fef::Property &values)
+                  const search::fef::Property &values) override
     {
         // Account for std::map element size
         _size += _mapFuzz;

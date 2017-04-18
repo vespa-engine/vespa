@@ -15,7 +15,7 @@ private:
     void requireThatWordsCanBeAddedAndRetrieved();
     void requireThatAddWordTriggersChangeOfBuffer();
 public:
-    int Main();
+    int Main() override;
 };
 
 void

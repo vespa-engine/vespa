@@ -405,13 +405,13 @@ struct MyTokenProcessor : public ITokenProcessor
     Matcher &_m;
     std::vector<size_t> _cands;
     MyTokenProcessor(Matcher &m) : _m(m), _cands() {}
-    virtual void handle_token(Token &token) {
+    virtual void handle_token(Token &token) override {
         _m.handle_token(token);
         const match_sequence *ms = _m.GetWorkSet();
         _cands.push_back(ms[0].size());
         LOG(info, "match_sequence[0].size(%zu)", _cands.back());
     }
-    virtual void handle_end(Token &token) {
+    virtual void handle_end(Token &token) override {
         _m.handle_end(token);
     }
 };

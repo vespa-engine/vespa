@@ -11,6 +11,8 @@
 #include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/searchlib/attribute/attributememorysavetarget.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <future>
 #include "attribute_directory.h"
 #include <vespa/vespalib/util/stringfmt.h>
@@ -24,6 +26,7 @@ using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using vespalib::makeTask;
 using vespalib::makeClosure;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 
@@ -47,10 +50,10 @@ public:
     void updateStats();
     bool cleanUp(AttributeDirectory::Writer &writer);
     // Implements vespalib::Executor::Task
-    virtual void run();
+    virtual void run() override;
 
     virtual SerialNum
-    getFlushSerial(void) const
+    getFlushSerial(void) const override
     {
         return _syncToken;
     }
@@ -158,7 +161,7 @@ FlushableAttribute::Flusher::run()
     }
 }
 
-FlushableAttribute::FlushableAttribute(const AttributeVector::SP attr,
+FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        const std::shared_ptr<AttributeDirectory> &attrDir,
                                        const TuneFileAttributes &
                                        tuneFileAttributes,

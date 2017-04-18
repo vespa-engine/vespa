@@ -37,7 +37,12 @@ public class RemoteSessionFactory {
 
     public RemoteSession createSession(long sessionId) {
         Path sessionPath = sessionDirPath.append(String.valueOf(sessionId));
-        SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator, configCurator, sessionPath, defRepo, configserverConfig.serverId());
+        SessionZooKeeperClient sessionZKClient = new SessionZooKeeperClient(curator,
+                                                                            configCurator,
+                                                                            sessionPath,
+                                                                            defRepo,
+                                                                            configserverConfig.serverId(),
+                                                                            componentRegistry.getZone().nodeFlavors());
         return new RemoteSession(tenant, sessionId, componentRegistry, sessionZKClient);
     }
 

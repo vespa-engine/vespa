@@ -51,7 +51,7 @@ private:
 protected:
     void SetFailed() { _failed = true; }
 
-    void configure(std::unique_ptr<PartitionsConfig> cfg);
+    void configure(std::unique_ptr<PartitionsConfig> cfg) override;
 
 public:
     FastS_NodeManager(vespalib::SimpleComponentConfigProducer &componentConfig,

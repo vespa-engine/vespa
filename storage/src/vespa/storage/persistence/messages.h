@@ -31,9 +31,9 @@ public:
                    uint32_t maxByteSize);
     ~GetIterCommand();
 
-    std::unique_ptr<api::StorageReply> makeReply();
+    std::unique_ptr<api::StorageReply> makeReply() override;
 
-    document::BucketId getBucketId() const { return _bucketId; }
+    document::BucketId getBucketId() const override { return _bucketId; }
     bool hasSingleBucketId() const override { return true; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
@@ -65,7 +65,7 @@ public:
     ~GetIterReply();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const {
+    document::BucketId getBucketId() const override {
         return _bucketId;
     }
 
@@ -102,7 +102,7 @@ public:
                           spi::IncludedVersions includedVersions);
     ~CreateIteratorCommand();
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const { return _bucketId; }
+    document::BucketId getBucketId() const override { return _bucketId; }
     const spi::Selection& getSelection() const { return _selection; }
     spi::IncludedVersions getIncludedVersions() const { return _includedVersions; }
     const std::string& getFields() const { return _fieldSet; }
@@ -114,7 +114,7 @@ public:
         return _readConsistency;
     }
 
-    std::unique_ptr<api::StorageReply> makeReply();
+    std::unique_ptr<api::StorageReply> makeReply() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
@@ -132,7 +132,7 @@ public:
     ~CreateIteratorReply();
 
     bool hasSingleBucketId() const override { return true; }
-    document::BucketId getBucketId() const { return _bucketId; }
+    document::BucketId getBucketId() const override { return _bucketId; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
 
@@ -152,7 +152,7 @@ public:
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
 
-    std::unique_ptr<api::StorageReply> makeReply();
+    std::unique_ptr<api::StorageReply> makeReply() override;
 
     void print(std::ostream& out, bool, const std::string &) const override;
 };
@@ -182,11 +182,11 @@ public:
     RecheckBucketInfoCommand(const document::BucketId& bucketId);
     ~RecheckBucketInfoCommand();
 
-    document::BucketId getBucketId() const {
+    document::BucketId getBucketId() const override {
         return _bucketId;
     }
 
-    std::unique_ptr<api::StorageReply> makeReply();
+    std::unique_ptr<api::StorageReply> makeReply() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
@@ -202,7 +202,7 @@ public:
     RecheckBucketInfoReply(const RecheckBucketInfoCommand& cmd);
     ~RecheckBucketInfoReply();
 
-    document::BucketId getBucketId() const {
+    document::BucketId getBucketId() const override {
         return _bucketId;
     }
 
@@ -256,7 +256,7 @@ public:
         return _predicate->shouldAbort(bid);
     }
 
-    std::unique_ptr<api::StorageReply> makeReply();
+    std::unique_ptr<api::StorageReply> makeReply() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };

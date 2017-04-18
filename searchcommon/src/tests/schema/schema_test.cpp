@@ -13,6 +13,8 @@ using vespalib::string;
 namespace search {
 namespace index {
 
+using schema::DataType;
+using schema::CollectionType;
 using SIAF = Schema::ImportedAttributeField;
 
 void assertField(const Schema::Field & exp, const Schema::Field & act) {
@@ -72,34 +74,34 @@ TEST("testBasic") {
     EXPECT_EQUAL(0u, s.getNumSummaryFields());
     EXPECT_EQUAL(0u, s.getNumImportedAttributeFields());
 
-    s.addIndexField(Schema::IndexField("foo", schema::STRING));
-    s.addIndexField(Schema::IndexField("bar", schema::INT32));
+    s.addIndexField(Schema::IndexField("foo", DataType::STRING));
+    s.addIndexField(Schema::IndexField("bar", DataType::INT32));
 
-    s.addAttributeField(Schema::AttributeField("foo", schema::STRING, schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("bar", schema::INT32,  schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("cox", schema::STRING));
+    s.addAttributeField(Schema::AttributeField("foo", DataType::STRING, CollectionType::ARRAY));
+    s.addAttributeField(Schema::AttributeField("bar", DataType::INT32,  CollectionType::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("cox", DataType::STRING));
 
-    s.addSummaryField(Schema::SummaryField("foo", schema::STRING, schema::ARRAY));
-    s.addSummaryField(Schema::SummaryField("bar", schema::INT32,  schema::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("cox", schema::STRING));
-    s.addSummaryField(Schema::SummaryField("fox", schema::RAW));
+    s.addSummaryField(Schema::SummaryField("foo", DataType::STRING, CollectionType::ARRAY));
+    s.addSummaryField(Schema::SummaryField("bar", DataType::INT32,  CollectionType::WEIGHTEDSET));
+    s.addSummaryField(Schema::SummaryField("cox", DataType::STRING));
+    s.addSummaryField(Schema::SummaryField("fox", DataType::RAW));
 
     s.addFieldSet(Schema::FieldSet("default").addField("foo").addField("bar"));
 
-    s.addImportedAttributeField(SIAF("imported", schema::INT32));
+    s.addImportedAttributeField(SIAF("imported", DataType::INT32));
 
     EXPECT_EQUAL(2u, s.getNumIndexFields());
     {
         EXPECT_EQUAL("foo", s.getIndexField(0).getName());
-        EXPECT_EQUAL(schema::STRING, s.getIndexField(0).getDataType());
-        EXPECT_EQUAL(schema::SINGLE, s.getIndexField(0).getCollectionType());
+        EXPECT_EQUAL(DataType::STRING, s.getIndexField(0).getDataType());
+        EXPECT_EQUAL(CollectionType::SINGLE, s.getIndexField(0).getCollectionType());
         EXPECT_TRUE(!s.getIndexField(0).hasPrefix());
         EXPECT_TRUE(!s.getIndexField(0).hasPhrases());
         EXPECT_TRUE(s.getIndexField(0).hasPositions());
 
         EXPECT_EQUAL("bar", s.getIndexField(1).getName());
-        EXPECT_EQUAL(schema::INT32, s.getIndexField(1).getDataType());
-        EXPECT_EQUAL(schema::SINGLE, s.getIndexField(1).getCollectionType());
+        EXPECT_EQUAL(DataType::INT32, s.getIndexField(1).getDataType());
+        EXPECT_EQUAL(CollectionType::SINGLE, s.getIndexField(1).getCollectionType());
 
         EXPECT_EQUAL(0u, s.getIndexFieldId("foo"));
         EXPECT_EQUAL(1u, s.getIndexFieldId("bar"));
@@ -108,16 +110,16 @@ TEST("testBasic") {
     EXPECT_EQUAL(3u, s.getNumAttributeFields());
     {
         EXPECT_EQUAL("foo", s.getAttributeField(0).getName());
-        EXPECT_EQUAL(schema::STRING, s.getAttributeField(0).getDataType());
-        EXPECT_EQUAL(schema::ARRAY, s.getAttributeField(0).getCollectionType());
+        EXPECT_EQUAL(DataType::STRING, s.getAttributeField(0).getDataType());
+        EXPECT_EQUAL(CollectionType::ARRAY, s.getAttributeField(0).getCollectionType());
 
         EXPECT_EQUAL("bar", s.getAttributeField(1).getName());
-        EXPECT_EQUAL(schema::INT32, s.getAttributeField(1).getDataType());
-        EXPECT_EQUAL(schema::WEIGHTEDSET, s.getAttributeField(1).getCollectionType());
+        EXPECT_EQUAL(DataType::INT32, s.getAttributeField(1).getDataType());
+        EXPECT_EQUAL(CollectionType::WEIGHTEDSET, s.getAttributeField(1).getCollectionType());
 
         EXPECT_EQUAL("cox", s.getAttributeField(2).getName());
-        EXPECT_EQUAL(schema::STRING, s.getAttributeField(2).getDataType());
-        EXPECT_EQUAL(schema::SINGLE, s.getAttributeField(2).getCollectionType());
+        EXPECT_EQUAL(DataType::STRING, s.getAttributeField(2).getDataType());
+        EXPECT_EQUAL(CollectionType::SINGLE, s.getAttributeField(2).getCollectionType());
 
         EXPECT_EQUAL(0u, s.getAttributeFieldId("foo"));
         EXPECT_EQUAL(1u, s.getAttributeFieldId("bar"));
@@ -127,20 +129,20 @@ TEST("testBasic") {
     EXPECT_EQUAL(4u, s.getNumSummaryFields());
     {
         EXPECT_EQUAL("foo", s.getSummaryField(0).getName());
-        EXPECT_EQUAL(schema::STRING, s.getSummaryField(0).getDataType());
-        EXPECT_EQUAL(schema::ARRAY, s.getSummaryField(0).getCollectionType());
+        EXPECT_EQUAL(DataType::STRING, s.getSummaryField(0).getDataType());
+        EXPECT_EQUAL(CollectionType::ARRAY, s.getSummaryField(0).getCollectionType());
 
         EXPECT_EQUAL("bar", s.getSummaryField(1).getName());
-        EXPECT_EQUAL(schema::INT32, s.getSummaryField(1).getDataType());
-        EXPECT_EQUAL(schema::WEIGHTEDSET, s.getSummaryField(1).getCollectionType());
+        EXPECT_EQUAL(DataType::INT32, s.getSummaryField(1).getDataType());
+        EXPECT_EQUAL(CollectionType::WEIGHTEDSET, s.getSummaryField(1).getCollectionType());
 
         EXPECT_EQUAL("cox", s.getSummaryField(2).getName());
-        EXPECT_EQUAL(schema::STRING, s.getSummaryField(2).getDataType());
-        EXPECT_EQUAL(schema::SINGLE, s.getSummaryField(2).getCollectionType());
+        EXPECT_EQUAL(DataType::STRING, s.getSummaryField(2).getDataType());
+        EXPECT_EQUAL(CollectionType::SINGLE, s.getSummaryField(2).getCollectionType());
 
         EXPECT_EQUAL("fox", s.getSummaryField(3).getName());
-        EXPECT_EQUAL(schema::RAW, s.getSummaryField(3).getDataType());
-        EXPECT_EQUAL(schema::SINGLE, s.getSummaryField(3).getCollectionType());
+        EXPECT_EQUAL(DataType::RAW, s.getSummaryField(3).getDataType());
+        EXPECT_EQUAL(CollectionType::SINGLE, s.getSummaryField(3).getCollectionType());
 
         EXPECT_EQUAL(0u, s.getSummaryFieldId("foo"));
         EXPECT_EQUAL(1u, s.getSummaryFieldId("bar"));
@@ -159,7 +161,7 @@ TEST("testBasic") {
     {
         const auto &imported = s.getImportedAttributeFields();
         EXPECT_EQUAL(1u, imported.size());
-        TEST_DO(assertField(SIAF("imported", schema::INT32, schema::SINGLE), imported[0]));
+        TEST_DO(assertField(SIAF("imported", DataType::INT32, CollectionType::SINGLE), imported[0]));
     }
 }
 
@@ -219,7 +221,7 @@ TEST("testLoadAndSave") {
         EXPECT_TRUE(s3.loadFromFile("schema.txt"));
         assertSchema(s, s3); // test that saved file is loaded correctly
         s3.addIndexField(SIF("foo", SDT::STRING));
-        s3.addImportedAttributeField(SIAF("imported", schema::INT32));
+        s3.addImportedAttributeField(SIAF("imported", DataType::INT32));
         EXPECT_TRUE(s3.loadFromFile("schema.txt")); // load should clear the current content
         assertSchema(s, s3);
     }
@@ -228,7 +230,7 @@ TEST("testLoadAndSave") {
         EXPECT_TRUE(s.saveToFile("schema2.txt"));
         Schema s2;
         s2.addIndexField(SIF("foo", SDT::STRING));
-        s2.addImportedAttributeField(SIAF("imported", schema::INT32));
+        s2.addImportedAttributeField(SIAF("imported", DataType::INT32));
         EXPECT_TRUE(s2.loadFromFile("schema2.txt"));
         assertSchema(s, s2);
     }
@@ -243,7 +245,7 @@ TEST("require that schema can save and load timestamps for fields") {
     const fastos::TimeStamp timestamp(42);
     const std::string file_name = "schema-with-timestamps.txt";
     Schema s;
-    Schema::IndexField f("foo", schema::STRING);
+    Schema::IndexField f("foo", DataType::STRING);
     f.setTimestamp(timestamp);
     s.addIndexField(f);
     ASSERT_TRUE(s.saveToFile(file_name));
@@ -256,7 +258,7 @@ TEST("require that schema can save and load timestamps for fields") {
 TEST("require that timestamps are omitted when 0.") {
     const std::string file_name = "schema-without-timestamps.txt";
     Schema s;
-    s.addIndexField(Schema::IndexField("foo", schema::STRING));
+    s.addIndexField(Schema::IndexField("foo", DataType::STRING));
     ASSERT_TRUE(s.saveToFile(file_name));
 
     std::ifstream file(file_name.c_str());
@@ -274,15 +276,15 @@ TEST("require that timestamps are omitted when 0.") {
 
 void addAllFieldTypes(const string &name, Schema &schema,
                       fastos::TimeStamp timestamp) {
-    Schema::IndexField index_field(name, schema::STRING);
+    Schema::IndexField index_field(name, DataType::STRING);
     index_field.setTimestamp(timestamp);
     schema.addIndexField(index_field);
 
-    Schema::AttributeField attribute_field(name, schema::STRING);
+    Schema::AttributeField attribute_field(name, DataType::STRING);
     attribute_field.setTimestamp(timestamp);
     schema.addAttributeField(attribute_field);
 
-    Schema::SummaryField summary_field(name, schema::STRING);
+    Schema::SummaryField summary_field(name, DataType::STRING);
     summary_field.setTimestamp(timestamp);
     schema.addSummaryField(summary_field);
 
@@ -387,9 +389,9 @@ TEST("require that schema can calculate intersection") {
 TEST("require that incompatible fields are removed from intersection") {
     const string name = "foo";
     Schema s1;
-    s1.addIndexField(Schema::IndexField(name, schema::STRING));
+    s1.addIndexField(Schema::IndexField(name, DataType::STRING));
     Schema s2;
-    s2.addIndexField(Schema::IndexField(name, schema::INT32));
+    s2.addIndexField(Schema::IndexField(name, DataType::INT32));
     Schema::UP schema = Schema::intersect(s1, s2);
     EXPECT_EQUAL(0u, schema->getNumIndexFields());
     EXPECT_FALSE(schema->isIndexField(name));
@@ -400,7 +402,7 @@ TEST("require that imported attribute fields are not saved to disk")
     const vespalib::string fileName = "schema-no-imported-fields.txt";
     {
         Schema s;
-        s.addImportedAttributeField(Schema::ImportedAttributeField("imported", schema::INT32));
+        s.addImportedAttributeField(Schema::ImportedAttributeField("imported", DataType::INT32));
         s.saveToFile(fileName);
     }
     {
@@ -416,8 +418,8 @@ TEST("require that schema can be built from imported-fields config")
     SchemaConfigurer configurer(s, "dir:" + TEST_PATH("imported-fields-cfg"));
     const auto &imported = s.getImportedAttributeFields();
     EXPECT_EQUAL(2u, imported.size());
-    TEST_DO(assertField(SIAF("imported_a", schema::STRING, schema::SINGLE), imported[0]));
-    TEST_DO(assertField(SIAF("imported_b", schema::STRING, schema::SINGLE), imported[1]));
+    TEST_DO(assertField(SIAF("imported_a", DataType::INT32, CollectionType::SINGLE), imported[0]));
+    TEST_DO(assertField(SIAF("imported_b", DataType::STRING, CollectionType::ARRAY), imported[1]));
 }
 
 }  // namespace index

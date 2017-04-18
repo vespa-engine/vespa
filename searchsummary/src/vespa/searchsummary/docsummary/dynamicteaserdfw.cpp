@@ -71,7 +71,7 @@ public:
     TermVisitor(juniper::IQueryVisitor *visitor) :
         _visitor(visitor), _item() {}
 
-    virtual void visitProperty(const Property::Value &key, const Property &values);
+    virtual void visitProperty(const Property::Value &key, const Property &values) override;
 
 };
 
@@ -142,9 +142,9 @@ public:
         return true;
     }
 
-    virtual bool Traverse(juniper::IQueryVisitor *v) const;
+    virtual bool Traverse(juniper::IQueryVisitor *v) const override;
 
-    virtual int Weight(const juniper::QueryItem* item) const
+    virtual int Weight(const juniper::QueryItem* item) const override
     {
         if (item->_si != NULL) {
             return item->_si->GetWeight().percent();
@@ -152,7 +152,7 @@ public:
             return item->_data->_weight;
         }
     }
-    virtual juniper::ItemCreator Creator(const juniper::QueryItem* item) const
+    virtual juniper::ItemCreator Creator(const juniper::QueryItem* item) const override
     {
         // cast master: Knut Omang
         if (item->_si != NULL) {
@@ -161,7 +161,7 @@ public:
             return juniper::CREA_ORIG;
         }
     }
-    virtual const char *Index(const juniper::QueryItem* item, size_t *len) const
+    virtual const char *Index(const juniper::QueryItem* item, size_t *len) const override
     {
         if (item->_si != NULL) {
             *len = item->_si->getIndexName().size();
@@ -172,7 +172,7 @@ public:
         }
 
     }
-    virtual bool UsefulIndex(const juniper::QueryItem* item) const
+    virtual bool UsefulIndex(const juniper::QueryItem* item) const override
     {
         vespalib::stringref index;
 

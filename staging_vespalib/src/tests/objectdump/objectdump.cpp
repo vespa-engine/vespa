@@ -22,7 +22,7 @@ IMPLEMENT_IDENTIFIABLE(Base, vespalib::Identifiable);
 struct Baz : public Base
 {
     DECLARE_IDENTIFIABLE(Baz);
-    virtual Baz *clone() const { return new Baz(*this); }
+    virtual Baz *clone() const override { return new Baz(*this); }
 };
 IMPLEMENT_IDENTIFIABLE(Baz, Base);
 
@@ -45,9 +45,9 @@ struct Bar : public Base
             _int32(-4), _uint32(4), _int64(-8), _uint64(8),
             _float(2.5), _double(2.75), _string("bla bla") {}
 
-    virtual Bar *clone() const { return new Bar(*this); }
+    virtual Bar *clone() const override { return new Bar(*this); }
 
-    virtual void visitMembers(ObjectVisitor &v) const {
+    virtual void visitMembers(ObjectVisitor &v) const override {
         visit(v, "_bool", _bool);
         visit(v, "_int8", _int8);
         visit(v, "_uint8", _uint8);

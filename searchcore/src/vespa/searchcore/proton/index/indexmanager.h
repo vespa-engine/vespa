@@ -8,16 +8,13 @@
 
 namespace proton {
 
-using searchcorespi::IFlushTarget;
-using searchcorespi::IIndexManager;
-
 /**
  * The IndexManager provides a holistic view of a set of disk and
  * memory indexes. It allows updating the active index, enables search
  * across all indexes, and manages the set of indexes through flushing
  * of memory indexes and fusion of disk indexes.
  */
-class IndexManager : public IIndexManager
+class IndexManager : public searchcorespi::IIndexManager
 {
 public:
     class MaintainerOperations : public searchcorespi::index::IIndexMaintainerOperations {
@@ -39,14 +36,14 @@ public:
         createMemoryIndex(const search::index::Schema &schema,
                           SerialNum serialNum) override;
         virtual searchcorespi::index::IDiskIndex::SP
-            loadDiskIndex(const vespalib::string &indexDir);
+            loadDiskIndex(const vespalib::string &indexDir) override;
         virtual searchcorespi::index::IDiskIndex::SP
-            reloadDiskIndex(const searchcorespi::index::IDiskIndex &oldIndex);
+            reloadDiskIndex(const searchcorespi::index::IDiskIndex &oldIndex) override;
         virtual bool runFusion(const search::index::Schema &schema,
                                const vespalib::string &outputDir,
                                const std::vector<vespalib::string> &sources,
                                const search::diskindex::SelectorArray &docIdSelector,
-                               search::SerialNum lastSerialNum);
+                               search::SerialNum lastSerialNum) override;
     };
 
 private:
@@ -90,35 +87,35 @@ public:
         _maintainer.commit(serialNum, onWriteDone);
     }
 
-    virtual void heartBeat(SerialNum serialNum) {
+    virtual void heartBeat(SerialNum serialNum) override {
         _maintainer.heartBeat(serialNum);
     }
 
-    virtual SerialNum getCurrentSerialNum() const {
+    virtual SerialNum getCurrentSerialNum() const override {
         return _maintainer.getCurrentSerialNum();
     }
 
-    virtual SerialNum getFlushedSerialNum() const {
+    virtual SerialNum getFlushedSerialNum() const override {
         return _maintainer.getFlushedSerialNum();
     }
 
-    virtual searchcorespi::IndexSearchable::SP getSearchable() const {
+    virtual searchcorespi::IndexSearchable::SP getSearchable() const override {
         return _maintainer.getSearchable();
     }
 
-    virtual search::SearchableStats getSearchableStats() const {
+    virtual search::SearchableStats getSearchableStats() const override {
         return _maintainer.getSearchableStats();
     }
 
-    virtual IFlushTarget::List getFlushTargets() {
+    virtual searchcorespi::IFlushTarget::List getFlushTargets() override {
         return _maintainer.getFlushTargets();
     }
 
-    virtual void setSchema(const Schema &schema, SerialNum serialNum) {
+    virtual void setSchema(const Schema &schema, SerialNum serialNum) override {
         _maintainer.setSchema(schema, serialNum);
     }
 
-    virtual void wipeHistory(SerialNum wipeSerial) {
+    virtual void wipeHistory(SerialNum wipeSerial) override {
         _maintainer.wipeHistory(wipeSerial);
     }
 };

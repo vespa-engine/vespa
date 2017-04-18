@@ -2,6 +2,8 @@
 #include "feedstates.h"
 #include "feedconfigstore.h"
 #include "replaypacketdispatcher.h"
+#include "ifeedview.h"
+#include "ireplayconfig.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
@@ -76,61 +78,61 @@ public:
           _config_store(config_store) {
     }
 
-    virtual void replay(const PutOperation &op) {
+    virtual void replay(const PutOperation &op) override {
         _feed_view_ptr->handlePut(NULL, op);
     }
-    virtual void replay(const RemoveOperation &op) {
+    virtual void replay(const RemoveOperation &op) override {
         _feed_view_ptr->handleRemove(NULL, op);
     }
-    virtual void replay(const UpdateOperation &op) {
+    virtual void replay(const UpdateOperation &op) override {
         _feed_view_ptr->handleUpdate(NULL, op);
     }
-    virtual void replay(const NoopOperation &) {} // ignored
-    virtual void replay(const NewConfigOperation &op) {
+    virtual void replay(const NoopOperation &) override {} // ignored
+    virtual void replay(const NewConfigOperation &op) override {
         _replay_config.replayConfig(op.getSerialNum());
     }
-    virtual void replay(const WipeHistoryOperation &op) {
+    virtual void replay(const WipeHistoryOperation &op) override {
         _config_store.saveWipeHistoryConfig(op.getSerialNum(),
                                             op.getWipeTimeLimit());
         _replay_config.replayWipeHistory(op.getSerialNum(),
                                          op.getWipeTimeLimit());
     }
-    virtual void replay(const DeleteBucketOperation &op) {
+    virtual void replay(const DeleteBucketOperation &op) override {
         _feed_view_ptr->handleDeleteBucket(op);
     }
-    virtual void replay(const SplitBucketOperation &op) {
+    virtual void replay(const SplitBucketOperation &op) override {
         _bucketDBHandler.handleSplit(op.getSerialNum(),
                                      op.getSource(),
                                      op.getTarget1(),
                                      op.getTarget2());
     }
-    virtual void replay(const JoinBucketsOperation &op) {
+    virtual void replay(const JoinBucketsOperation &op) override {
         _bucketDBHandler.handleJoin(op.getSerialNum(),
                                     op.getSource1(),
                                     op.getSource2(),
                                     op.getTarget());
     }
-    virtual void replay(const PruneRemovedDocumentsOperation &op) {
+    virtual void replay(const PruneRemovedDocumentsOperation &op) override {
         _feed_view_ptr->handlePruneRemovedDocuments(op);
     }
-    virtual void replay(const SpoolerReplayStartOperation &op) {
+    virtual void replay(const SpoolerReplayStartOperation &op) override {
         (void) op;
     }
-    virtual void replay(const SpoolerReplayCompleteOperation &op) {
+    virtual void replay(const SpoolerReplayCompleteOperation &op) override {
         (void) op;
     }
-    virtual void replay(const MoveOperation &op) {
+    virtual void replay(const MoveOperation &op) override {
         _feed_view_ptr->handleMove(op);
     }
-    virtual void replay(const CreateBucketOperation &) {
+    virtual void replay(const CreateBucketOperation &) override {
     }
-    virtual void replay(const CompactLidSpaceOperation &op) {
+    virtual void replay(const CompactLidSpaceOperation &op) override {
         _feed_view_ptr->handleCompactLidSpace(op);
     }
-    virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() {
+    virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _config_store;
     }
-    virtual document::DocumentTypeRepo &getDeserializeRepo() {
+    virtual document::DocumentTypeRepo &getDeserializeRepo() override {
         return *_feed_view_ptr->getDocumentTypeRepo();
     }
 };

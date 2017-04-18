@@ -22,7 +22,7 @@ class Test : public vespalib::TestApp {
     template <class T> void checkVisit(T *node);
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int
@@ -44,29 +44,29 @@ public:
         return b;
     }
 
-    virtual void visit(And &) { isVisited<And>() = true; }
-    virtual void visit(AndNot &) { isVisited<AndNot>() = true; }
-    virtual void visit(Equiv &) { isVisited<Equiv>() = true; }
-    virtual void visit(NumberTerm &) { isVisited<NumberTerm>() = true; }
-    virtual void visit(LocationTerm &) { isVisited<LocationTerm>() = true; }
-    virtual void visit(Near &) { isVisited<Near>() = true; }
-    virtual void visit(ONear &) { isVisited<ONear>() = true; }
-    virtual void visit(Or &) { isVisited<Or>() = true; }
-    virtual void visit(Phrase &) { isVisited<Phrase>() = true; }
-    virtual void visit(PrefixTerm &) { isVisited<PrefixTerm>() = true; }
-    virtual void visit(RangeTerm &) { isVisited<RangeTerm>() = true; }
-    virtual void visit(Rank &) { isVisited<Rank>() = true; }
-    virtual void visit(StringTerm &) { isVisited<StringTerm>() = true; }
-    virtual void visit(SubstringTerm &) { isVisited<SubstringTerm>() = true; }
-    virtual void visit(SuffixTerm &) { isVisited<SuffixTerm>() = true; }
-    virtual void visit(WeakAnd &) { isVisited<WeakAnd>() = true; }
-    virtual void visit(WeightedSetTerm &)
+    virtual void visit(And &) override { isVisited<And>() = true; }
+    virtual void visit(AndNot &) override { isVisited<AndNot>() = true; }
+    virtual void visit(Equiv &) override { isVisited<Equiv>() = true; }
+    virtual void visit(NumberTerm &) override { isVisited<NumberTerm>() = true; }
+    virtual void visit(LocationTerm &) override { isVisited<LocationTerm>() = true; }
+    virtual void visit(Near &) override { isVisited<Near>() = true; }
+    virtual void visit(ONear &) override { isVisited<ONear>() = true; }
+    virtual void visit(Or &) override { isVisited<Or>() = true; }
+    virtual void visit(Phrase &) override { isVisited<Phrase>() = true; }
+    virtual void visit(PrefixTerm &) override { isVisited<PrefixTerm>() = true; }
+    virtual void visit(RangeTerm &) override { isVisited<RangeTerm>() = true; }
+    virtual void visit(Rank &) override { isVisited<Rank>() = true; }
+    virtual void visit(StringTerm &) override { isVisited<StringTerm>() = true; }
+    virtual void visit(SubstringTerm &) override { isVisited<SubstringTerm>() = true; }
+    virtual void visit(SuffixTerm &) override { isVisited<SuffixTerm>() = true; }
+    virtual void visit(WeakAnd &) override { isVisited<WeakAnd>() = true; }
+    virtual void visit(WeightedSetTerm &) override
     { isVisited<WeightedSetTerm>() = true; }
-    virtual void visit(DotProduct &) { isVisited<DotProduct>() = true; }
-    virtual void visit(WandTerm &) { isVisited<WandTerm>() = true; }
-    virtual void visit(PredicateQuery &)
+    virtual void visit(DotProduct &) override { isVisited<DotProduct>() = true; }
+    virtual void visit(WandTerm &) override { isVisited<WandTerm>() = true; }
+    virtual void visit(PredicateQuery &) override
     { isVisited<PredicateQuery>() = true; }
-    virtual void visit(RegExpTerm &) { isVisited<RegExpTerm>() = true; }
+    virtual void visit(RegExpTerm &) override { isVisited<RegExpTerm>() = true; }
 };
 
 template <class T>

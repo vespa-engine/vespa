@@ -412,7 +412,7 @@ public:
 
     TestChecker() : pri(UINT8_MAX) {}
 
-    bool check(uint32_t msgType, uint16_t node, uint8_t p) {
+    bool check(uint32_t msgType, uint16_t node, uint8_t p) override {
         (void) node;
         if (msgType == api::MessageType::REMOVE_ID) {
             pri = p;

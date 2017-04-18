@@ -40,15 +40,15 @@ private:
     HttpConnectionPool      _connectionPool;
     std::vector<Worker::UP> _workers;
 
-    virtual void run();
+    virtual void run() override;
 public:
     typedef std::unique_ptr<RequestScheduler> UP;
     RequestScheduler(Handler<Request> &next, size_t numWorkers);
     void abort();
-    virtual void handle(Request::UP request);
-    virtual void start();
-    virtual RequestScheduler &stop();
-    virtual void join();
+    virtual void handle(Request::UP request) override;
+    virtual void start() override;
+    virtual RequestScheduler &stop() override;
+    virtual void join() override;
 };
 
 } // namespace vbench

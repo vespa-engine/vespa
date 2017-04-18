@@ -36,7 +36,7 @@ private:
 public:
     TermDistanceExecutor(const search::fef::IQueryEnvironment & env,
                          const TermDistanceParams & params);
-    virtual void execute(uint32_t docId);
+    virtual void execute(uint32_t docId) override;
     bool valid() const;
 };
 
@@ -53,19 +53,19 @@ public:
 
     // Inherit doc from Blueprint.
     virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
+                                   search::fef::IDumpFeatureVisitor & visitor) const override;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
+    virtual search::fef::Blueprint::UP createInstance() const override;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::ANY).number().number();
     }
 
     // Inherit doc from Blueprint.
     virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
+                       const search::fef::ParameterList & params) override;
 
     // Inherit doc from Blueprint.
     virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;

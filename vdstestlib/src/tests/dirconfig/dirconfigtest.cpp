@@ -19,7 +19,7 @@ class Test : public vespalib::TestApp
 {
 public:
     void testNormalUsage();
-    int Main();
+    int Main() override;
 };
 
 int

@@ -26,7 +26,7 @@ using namespace mbus;
 
 class Test : public vespalib::TestApp {
 public:
-    int Main();
+    int Main() override;
     void testAddrServiceAddress();
     void testNameServiceAddress();
 

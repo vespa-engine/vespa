@@ -168,8 +168,7 @@ public:
                     const char* clientId,
                     uint32_t chunkSize = DEFAULT_CHUNK_SIZE);
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
      * Returns all buckets in the bucket database that can contain the given

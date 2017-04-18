@@ -5,16 +5,15 @@
 
 namespace proton {
 
-using searchcorespi::FlushStats;
-using searchcorespi::IFlushTarget;
-
 /**
  * Implements a flush target that caches the flushable memory and flush cost of
  * a decorated target. This is used by the flush engine to avoid recalculating
  * these during selection of flush target.
  */
-class CachedFlushTarget : public IFlushTarget {
+class CachedFlushTarget : public searchcorespi::IFlushTarget {
 private:
+    using FlushStats = searchcorespi::FlushStats;
+    using IFlushTarget = searchcorespi::IFlushTarget;
     IFlushTarget::SP  _target;
     SerialNum         _flushedSerialNum;
     Time              _lastFlushTime;
@@ -43,14 +42,14 @@ public:
     const IFlushTarget::SP & getFlushTarget() { return _target; }
 
     // Implements IFlushTarget.
-    virtual MemoryGain getApproxMemoryGain() const { return _memoryGain; }
-    virtual   DiskGain   getApproxDiskGain() const { return _diskGain; }
-    virtual  SerialNum getFlushedSerialNum() const { return _flushedSerialNum; }
-    virtual       Time    getLastFlushTime() const { return _lastFlushTime; }
-    virtual       bool     needUrgentFlush() const { return _needUrgentFlush; }
+    virtual MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
+    virtual   DiskGain   getApproxDiskGain() const override { return _diskGain; }
+    virtual  SerialNum getFlushedSerialNum() const override { return _flushedSerialNum; }
+    virtual       Time    getLastFlushTime() const override { return _lastFlushTime; }
+    virtual       bool     needUrgentFlush() const override { return _needUrgentFlush; }
 
-    virtual Task::UP initFlush(SerialNum currentSerial) { return _target->initFlush(currentSerial); }
-    virtual FlushStats getLastFlushStats() const { return _target->getLastFlushStats(); }
+    virtual Task::UP initFlush(SerialNum currentSerial) override { return _target->initFlush(currentSerial); }
+    virtual FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
     virtual uint64_t getApproxBytesToWriteToDisk() const override;
 };

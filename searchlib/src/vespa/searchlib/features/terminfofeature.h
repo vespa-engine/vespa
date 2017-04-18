@@ -18,13 +18,13 @@ private:
 public:
     TermInfoBlueprint();
     virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &indexEnv,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
-    virtual search::fef::Blueprint::UP createInstance() const { return search::fef::Blueprint::UP(new TermInfoBlueprint()); }
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+                                   search::fef::IDumpFeatureVisitor &visitor) const override;
+    virtual search::fef::Blueprint::UP createInstance() const override { return search::fef::Blueprint::UP(new TermInfoBlueprint()); }
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc().number();
     }
     virtual bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params);
+                       const search::fef::ParameterList & params) override;
     virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 

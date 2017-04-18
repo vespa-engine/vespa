@@ -87,7 +87,7 @@ private:
     void testSyncId();
 
 public:
-    int Main() {
+    int Main() override {
         TEST_INIT("sequencer_test");
 
         testSyncNone(); TEST_FLUSH();

@@ -27,11 +27,9 @@ public:
 
     const vespalib::string& getDocumentSelection() const { return _docSelection; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual StorageCommand::UP createCopyToForward(
-            const document::BucketId&, uint64_t timestamp) const;
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(StatBucketCommand, onStatBucket);
 };
@@ -44,8 +42,7 @@ public:
 
     const vespalib::string& getResults() { return _results; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(StatBucketReply, onStatBucketReply)
 };
@@ -64,8 +61,7 @@ class GetBucketListCommand : public BucketCommand {
 public:
     GetBucketListCommand(const document::BucketId& bucket);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(GetBucketListCommand, onGetBucketList);
 };
@@ -98,8 +94,7 @@ public:
     std::vector<BucketInfo>& getBuckets() { return _buckets; }
     const std::vector<BucketInfo>& getBuckets() const { return _buckets; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(GetBucketListReply, onGetBucketListReply)
 

@@ -8,9 +8,13 @@ namespace search {
 
 template<typename T>
 uint32_t
-FloatingPointAttributeTemplate<T>::getRawValues(DocId doc, const multivalue::Value<T> * & values) const {
-    (void) doc;
-    (void) values;
+FloatingPointAttributeTemplate<T>::getRawValues(DocId, const multivalue::Value<T> * &) const {
+    throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
+}
+
+template<typename T>
+uint32_t
+FloatingPointAttributeTemplate<T>::getRawValues(DocId, const multivalue::WeightedValue<T> * &) const {
     throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
 }
 

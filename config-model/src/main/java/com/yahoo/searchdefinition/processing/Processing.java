@@ -73,6 +73,7 @@ public class Processing {
                 TensorFieldProcessor::new,
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
+                FastAccessValidator::new,
 
                 // These two should be last.
                 IndexingValidation::new,

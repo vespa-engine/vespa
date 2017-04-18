@@ -83,7 +83,7 @@ protected:
     }
 
     virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
-    virtual void fillValues(LoadedVector & loaded);
+    virtual void fillValues(LoadedVector & loaded) override;
 
     void fillEnumIdx(ReaderBase &attrReader,
                      const EnumStoreBase::IndexVector &eidxs,
@@ -101,7 +101,7 @@ protected:
      *
      * Should return true if underlying structures were resized.
      **/
-    virtual bool onAddDoc(DocId doc);
+    virtual bool onAddDoc(DocId doc) override;
 
 public:
     SingleValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);

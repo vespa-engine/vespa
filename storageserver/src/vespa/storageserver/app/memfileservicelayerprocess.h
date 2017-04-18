@@ -40,19 +40,19 @@ public:
     MemFileServiceLayerProcess(const config::ConfigUri & configUri);
     ~MemFileServiceLayerProcess() { shutdown(); }
 
-    virtual void shutdown();
+    virtual void shutdown() override;
 
-    void setupConfig(uint64_t subscribeTimeout);
-    virtual void removeConfigSubscriptions();
-    virtual void setupProvider();
-    virtual bool configUpdated();
-    virtual void updateConfig();
+    void setupConfig(uint64_t subscribeTimeout) override;
+    virtual void removeConfigSubscriptions() override;
+    virtual void setupProvider() override;
+    virtual bool configUpdated() override;
+    virtual void updateConfig() override;
 
-    virtual spi::PersistenceProvider& getProvider() { return *_provider; }
+    virtual spi::PersistenceProvider& getProvider() override { return *_provider; }
 
-    void configure(std::unique_ptr<vespa::config::storage::StorMemfilepersistenceConfig> config);
-    void configure(std::unique_ptr<vespa::config::storage::StorDevicesConfig> config);
-    void configure(std::unique_ptr<vespa::config::content::PersistenceConfig> config);
+    void configure(std::unique_ptr<vespa::config::storage::StorMemfilepersistenceConfig> config) override;
+    void configure(std::unique_ptr<vespa::config::storage::StorDevicesConfig> config) override;
+    void configure(std::unique_ptr<vespa::config::content::PersistenceConfig> config) override;
 };
 
 } // storage

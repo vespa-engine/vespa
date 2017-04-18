@@ -29,7 +29,7 @@ public:
     { }
 
     virtual void
-    addTags(GenericHeader &header, const vespalib::string &name) const
+    addTags(GenericHeader &header, const vespalib::string &name) const override
     {
         typedef GenericHeader::Tag Tag;
         _parent.addTags(header, name);

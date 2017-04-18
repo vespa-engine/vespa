@@ -164,7 +164,7 @@ public:
     void testThatNanIsConverted();
     void testNanSorting();
     void testGroupingEngineFromRequest();
-    int Main();
+    int Main() override;
 private:
     bool verifyEqual(const Group & a, const Group & b);
     void testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr);
@@ -174,12 +174,12 @@ private:
         CheckAttributeReferences() : _numrefs(0) { }
         int _numrefs;
     private:
-        virtual void execute(vespalib::Identifiable &obj) {
+        virtual void execute(vespalib::Identifiable &obj) override {
             if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
                 _numrefs++;
             }
         }
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(AttributeNode::classId); }
+        virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
     };
 };
 

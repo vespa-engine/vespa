@@ -8,7 +8,7 @@
 namespace {
 
 struct DumpSlotFileApp : public FastOS_Application {
-    int Main() {
+    int Main() override {
         try{
             config::ConfigUri config("");
             return storage::memfile::SlotFileDumper::dump(

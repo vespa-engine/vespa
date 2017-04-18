@@ -27,10 +27,13 @@ using namespace btree;
 using namespace datastore;
 using namespace fef;
 using namespace index;
-using queryeval::SearchIterator;
+
 using document::Document;
-using vespalib::GenerationHandler;
+using queryeval::SearchIterator;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
 using test::SearchIteratorVerifier;
+using vespalib::GenerationHandler;
 
 namespace memoryindex {
 
@@ -66,7 +69,7 @@ public:
     {}
 
     virtual void
-    startWord(const vespalib::stringref &word)
+    startWord(const vespalib::stringref &word) override
     {
         assert(_insideField);
         assert(!_insideWord);
@@ -78,7 +81,7 @@ public:
     }
 
     virtual void
-    endWord(void)
+    endWord(void) override
     {
         assert(_insideWord);
         assert(!_insideDoc);
@@ -88,7 +91,7 @@ public:
     }
 
     virtual void
-    startField(uint32_t fieldId)
+    startField(uint32_t fieldId) override
     {
         assert(!_insideField);
         if (!_firstField) _ss << ",";
@@ -98,7 +101,7 @@ public:
     }
 
     virtual void
-    endField()
+    endField() override
     {
         assert(_insideField);
         assert(!_insideWord);
@@ -108,7 +111,7 @@ public:
     }
 
     virtual void
-    startDocument(uint32_t docId)
+    startDocument(uint32_t docId) override
     {
         assert(_insideWord);
         assert(!_insideDoc);
@@ -119,7 +122,7 @@ public:
     }
 
     virtual void
-    endDocument(void)
+    endDocument(void) override
     {
         assert(_insideDoc);
         assert(!_insideElem);
@@ -131,7 +134,7 @@ public:
     virtual void
     startElement(uint32_t elementId,
                  int32_t weight,
-                 uint32_t elementLen)
+                 uint32_t elementLen) override
     {
         assert(_insideDoc);
         assert(!_insideElem);
@@ -144,7 +147,7 @@ public:
     }
 
     virtual void
-    endElement(void)
+    endElement(void) override
     {
         assert(_insideElem);
         _ss << "]";
@@ -153,7 +156,7 @@ public:
     }
 
     virtual void
-    addOcc(const WordDocElementWordPosFeatures &features)
+    addOcc(const WordDocElementWordPosFeatures &features) override
     {
         assert(_insideElem);
         if (!_firstPos) _ss << ",";
@@ -577,10 +580,10 @@ struct Fixture
 {
     Schema _schema;
     Fixture() : _schema() {
-        _schema.addIndexField(Schema::IndexField("f0", schema::STRING));
-        _schema.addIndexField(Schema::IndexField("f1", schema::STRING));
-        _schema.addIndexField(Schema::IndexField("f2", schema::STRING, schema::ARRAY));
-        _schema.addIndexField(Schema::IndexField("f3", schema::STRING, schema::WEIGHTEDSET));
+        _schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
+        _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
+        _schema.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
+        _schema.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
     }
     const Schema & getSchema() const { return _schema; }
 };
@@ -1160,9 +1163,9 @@ public:
     UriFixture()
         : _schema()
     {
-        _schema.addUriIndexFields(Schema::IndexField("iu", schema::STRING));
-        _schema.addUriIndexFields(Schema::IndexField("iau", schema::STRING, schema::ARRAY));
-        _schema.addUriIndexFields(Schema::IndexField("iwu", schema::STRING, schema::WEIGHTEDSET));
+        _schema.addUriIndexFields(Schema::IndexField("iu", DataType::STRING));
+        _schema.addUriIndexFields(Schema::IndexField("iau", DataType::STRING, CollectionType::ARRAY));
+        _schema.addUriIndexFields(Schema::IndexField("iwu", DataType::STRING, CollectionType::WEIGHTEDSET));
     }
     const Schema & getSchema() const { return _schema; }
 };
@@ -1368,7 +1371,7 @@ public:
     SingleFieldFixture()
         : _schema()
     {
-        _schema.addIndexField(Schema::IndexField("i", schema::STRING));
+        _schema.addIndexField(Schema::IndexField("i", DataType::STRING));
     }
     const Schema & getSchema() const { return _schema; }
 };

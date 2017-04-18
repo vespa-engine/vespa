@@ -54,15 +54,15 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &n);
 
-    virtual void visit(NumberTerm &n) { visitTerm(n); }
-    virtual void visit(LocationTerm &n) { visitTerm(n); }
-    virtual void visit(PrefixTerm &n) { visitTerm(n); }
-    virtual void visit(RangeTerm &n) { visitTerm(n); }
-    virtual void visit(StringTerm &n) { visitTerm(n); }
-    virtual void visit(SubstringTerm &n) { visitTerm(n); }
-    virtual void visit(SuffixTerm &n) { visitTerm(n); }
-    virtual void visit(PredicateQuery &n) { visitTerm(n); }
-    virtual void visit(RegExpTerm &n) { visitTerm(n); }
+    virtual void visit(NumberTerm &n) override { visitTerm(n); }
+    virtual void visit(LocationTerm &n) override { visitTerm(n); }
+    virtual void visit(PrefixTerm &n) override { visitTerm(n); }
+    virtual void visit(RangeTerm &n) override { visitTerm(n); }
+    virtual void visit(StringTerm &n) override { visitTerm(n); }
+    virtual void visit(SubstringTerm &n) override { visitTerm(n); }
+    virtual void visit(SuffixTerm &n) override { visitTerm(n); }
+    virtual void visit(PredicateQuery &n) override { visitTerm(n); }
+    virtual void visit(RegExpTerm &n) override { visitTerm(n); }
 };
 
 template <class Map>

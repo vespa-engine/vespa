@@ -5,7 +5,7 @@
 
 struct DoIt : public FNET_IExecutable {
     vespalib::Gate gate;
-    virtual void execute() {
+    virtual void execute() override {
         gate.countDown();
     }
 };

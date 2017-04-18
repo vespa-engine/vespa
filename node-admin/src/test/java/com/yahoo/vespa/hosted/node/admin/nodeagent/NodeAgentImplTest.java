@@ -323,7 +323,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(orchestrator.suspend(eq(hostName))).thenReturn(true);
 
         nodeAgent.converge();
 
@@ -335,6 +334,7 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, never()).startContainer(eq(containerName), any());
         verify(orchestrator, never()).resume(any(String.class));
+        verify(orchestrator, never()).suspend(any(String.class));
         // current Docker image and vespa version should be cleared
         verify(nodeRepository, times(1)).updateNodeAttributes(
                 any(String.class), eq(new NodeAttributes()

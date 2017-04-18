@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.transaction.Transaction;
@@ -23,6 +24,7 @@ import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,17 +46,24 @@ public class SessionZooKeeperClient {
     private final Path sessionStatusPath;
     private final String serverId;
     private final ServerCacheLoader cacheLoader;
+    private final Optional<NodeFlavors> nodeFlavors;
 
     // Only for testing when cache loader does not need cache entries.
     public SessionZooKeeperClient(Curator curator, Path rootPath) {
-        this(curator, ConfigCurator.create(curator), rootPath, new StaticConfigDefinitionRepo(), "");
+        this(curator, ConfigCurator.create(curator), rootPath, new StaticConfigDefinitionRepo(), "", Optional.empty());
     }
 
-    public SessionZooKeeperClient(Curator curator, ConfigCurator configCurator, Path rootPath, ConfigDefinitionRepo definitionRepo, String serverId) {
+    public SessionZooKeeperClient(Curator curator,
+                                  ConfigCurator configCurator,
+                                  Path rootPath,
+                                  ConfigDefinitionRepo definitionRepo,
+                                  String serverId,
+                                  Optional<NodeFlavors> nodeFlavors) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.rootPath = rootPath;
         this.serverId = serverId;
+        this.nodeFlavors = nodeFlavors;
         this.sessionStatusPath = rootPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
         this.cacheLoader = new ServerCacheLoader(configCurator, rootPath, definitionRepo);
     }
@@ -133,7 +142,7 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(configCurator, rootPath);
+        return new ZKApplicationPackage(configCurator, rootPath, nodeFlavors);
     }
 
     public ServerCache loadServerCache() {

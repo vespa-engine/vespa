@@ -15,7 +15,7 @@ private:
     static ServerSpec::HostSpecList _sources;
     void verifyAllSourcesInRotation(FRTConnectionPool& sourcePool);
 public:
-    int Main();
+    int Main() override;
     void testBasicRoundRobin();
     void testBasicHashBasedSelection();
     void testSetErrorRoundRobin();

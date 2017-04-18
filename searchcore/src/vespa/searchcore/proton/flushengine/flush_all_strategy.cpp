@@ -3,6 +3,7 @@
 #include "flush_all_strategy.h"
 
 using search::SerialNum;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 

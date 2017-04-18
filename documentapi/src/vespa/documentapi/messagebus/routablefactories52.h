@@ -44,7 +44,7 @@ public:
             return decodeMessage<RemoveDocumentMessage>(this, buf);
         }
 
-        bool doEncode(const DocumentMessage & msg, vespalib::GrowableByteBuffer & buf) const;
+        bool doEncode(const DocumentMessage & msg, vespalib::GrowableByteBuffer & buf) const override;
     public:
         void decodeInto(RemoveDocumentMessage & msg, document::ByteBuffer & buf) const;
     };
@@ -56,7 +56,7 @@ public:
             return decodeMessage<UpdateDocumentMessage>(this, buf);
         }
 
-        bool doEncode(const DocumentMessage & msg, vespalib::GrowableByteBuffer & buf) const;
+        bool doEncode(const DocumentMessage & msg, vespalib::GrowableByteBuffer & buf) const override;
     public:
         void decodeInto(UpdateDocumentMessage & msg, document::ByteBuffer & buf) const;
         UpdateDocumentMessageFactory(const document::DocumentTypeRepo & r) : super::UpdateDocumentMessageFactory(r) {}

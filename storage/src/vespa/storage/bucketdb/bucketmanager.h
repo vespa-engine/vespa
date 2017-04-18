@@ -103,8 +103,7 @@ public:
 
     void startWorkerThread();
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /** Dump the whole database to the given output. Use for debugging. */
     void dump(std::ostream& out) const;
@@ -115,25 +114,23 @@ public:
 private:
     friend class BucketManagerTest;
 
-    void run(framework::ThreadHandle&);
+    void run(framework::ThreadHandle&) override;
 
         // Status::Reporter implementation
-    vespalib::string getReportContentType(
-                            const framework::HttpUrlPath&) const;
-    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const;
+    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
         /** Event saying node is up and running. We can start to build cache. */
-    virtual void onOpen();
-    virtual void onDoneInit() { _doneInitialized = true; }
-    virtual void onClose();
-    virtual void onFlush(bool downwards);
+    virtual void onOpen() override;
+    virtual void onDoneInit() override { _doneInitialized = true; }
+    virtual void onClose() override;
+    virtual void onFlush(bool downwards) override;
 
     void updateMetrics(bool updateDocCount);
     void updateMetrics(const MetricLockGuard &) override { updateMetrics(true); }
     void updateMinUsedBits();
 
-    bool onRequestBucketInfo(
-            const std::shared_ptr<api::RequestBucketInfoCommand>&);
+    bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;
     bool processRequestBucketInfoCommands(BIList&);
 
     /**

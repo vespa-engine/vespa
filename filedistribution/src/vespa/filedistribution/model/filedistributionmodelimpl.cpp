@@ -86,7 +86,7 @@ struct FileDistributionModelImpl::DeployedFilesChangedCallback :
     {}
 
     //override
-    void operator()() {
+    void operator()() override {
         if (std::shared_ptr<FileDistributionModelImpl> model = _parent.lock()) {
             model->_filesToDownloadChanged();
         }

@@ -13,8 +13,10 @@
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
 #include <vespa/persistence/proxy/providerstub.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
@@ -58,7 +60,6 @@ private:
     typedef search::engine::MonitorRequest                MonitorRequest;
     typedef search::engine::MonitorReply                  MonitorReply;
     typedef search::engine::MonitorClient                 MonitorClient;
-    typedef search::docsummary::JuniperProperties         JuniperProperties;
     typedef storage::spi::ProviderStub                    ProviderStub;
     typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
     typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;
@@ -92,7 +93,7 @@ private:
 
         virtual void
         addTags(vespalib::GenericHeader &header,
-                const vespalib::string &name) const;
+                const vespalib::string &name) const override;
 
         void
         setClusterName(const vespalib::string &clusterName,
@@ -158,7 +159,7 @@ private:
     virtual void removeDocumentDB(const DocTypeName &docTypeName) override;
 
     virtual void applyConfig(const BootstrapConfig::SP & configSnapshot) override;
-    virtual MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client);
+    virtual MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client) override;
 
     /**
      * Called by the metrics update hook (typically in the context of
@@ -232,7 +233,7 @@ public:
     virtual void getComponentConfig(Consumer &consumer) override;
 
     // implements IPersistenceEngineOwner interface
-    virtual void setClusterState(const storage::spi::ClusterState &calc);
+    virtual void setClusterState(const storage::spi::ClusterState &calc) override;
 
     /**
      * Return the oldest active config generation used by proton.
@@ -245,7 +246,7 @@ public:
 
     vespalib::string getBadConfigs(void) const;
 
-    virtual StatusReport::List getStatusReports() const;
+    virtual StatusReport::List getStatusReports() const override;
 
     MatchEngine & getMatchEngine() { return *_matchEngine; }
     FlushEngine & getFlushEngine() { return *_flushEngine; }
@@ -253,7 +254,7 @@ public:
 
     bool isReplayDone() const { return _isReplayDone; }
 
-    virtual bool isInitializing() const {
+    virtual bool isInitializing() const override {
         return _isInitializing;
     }
 

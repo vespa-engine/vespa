@@ -13,7 +13,7 @@ using namespace search::queryeval;
 class Test : public vespalib::TestApp {
 public:
     int32_t getWeight(const Node &node);
-    int Main();
+    int Main() override;
 };
 
 int32_t

@@ -112,8 +112,8 @@ class MediumHandler1 : public FRT_Invokable,
                        public MediumB
 {
 public:
-  virtual void foo() {}
-  virtual void bar() {}
+  virtual void foo() override {}
+  virtual void bar() override {}
   void RPC_Method(FRT_RPCRequest *req);
 };
 
@@ -123,8 +123,8 @@ class MediumHandler2 : public MediumA,
                        public MediumB
 {
 public:
-  virtual void foo() {}
-  virtual void bar() {}
+  virtual void foo() override {}
+  virtual void bar() override {}
   void RPC_Method(FRT_RPCRequest *req);
 };
 
@@ -134,8 +134,8 @@ class MediumHandler3 : public MediumA,
                        public FRT_Invokable
 {
 public:
-  virtual void foo() {}
-  virtual void bar() {}
+  virtual void foo() override {}
+  virtual void bar() override {}
   void RPC_Method(FRT_RPCRequest *req);
 };
 
@@ -146,8 +146,8 @@ class ComplexHandler1 : public FRT_Invokable,
                         public ComplexB
 {
 public:
-  virtual void foo() {}
-  virtual void bar() {}
+  virtual void foo() override {}
+  virtual void bar() override {}
   void RPC_Method(FRT_RPCRequest *req);
 };
 
@@ -157,8 +157,8 @@ class ComplexHandler2 : public ComplexA,
                         public ComplexB
 {
 public:
-  virtual void foo() {}
-  virtual void bar() {}
+  virtual void foo() override {}
+  virtual void bar() override {}
   void RPC_Method(FRT_RPCRequest *req);
 };
 
@@ -168,8 +168,8 @@ class ComplexHandler3 : public ComplexA,
                         public FRT_Invokable
 {
 public:
-  virtual void foo() {}
-  virtual void bar() {}
+  virtual void foo() override {}
+  virtual void bar() override {}
   void RPC_Method(FRT_RPCRequest *req);
 };
 

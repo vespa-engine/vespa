@@ -49,7 +49,7 @@ public:
     virtual StorageNode& getNode() = 0;
     virtual StorageNodeContext& getContext() = 0;
 
-    virtual int64_t getGeneration() const;
+    virtual int64_t getGeneration() const override;
 };
 
 } // storage

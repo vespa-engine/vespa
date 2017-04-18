@@ -9,19 +9,22 @@ using namespace document;
 namespace search {
 namespace index {
 
+using schema::CollectionType;
+using schema::DataType;
+
 TEST("testSearchDocType") {
     Schema s;
-    s.addIndexField(Schema::IndexField("ia", schema::STRING));
-    s.addIndexField(Schema::IndexField("ib", schema::STRING, schema::ARRAY));
-    s.addIndexField(Schema::IndexField("ic", schema::STRING, schema::WEIGHTEDSET));
-    s.addUriIndexFields(Schema::IndexField("iu", schema::STRING));
-    s.addUriIndexFields(Schema::IndexField("iau", schema::STRING, schema::ARRAY));
-    s.addUriIndexFields(Schema::IndexField("iwu", schema::STRING, schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("aa", schema::INT32));
-    s.addAttributeField(Schema::AttributeField("spos", schema::INT64));
-    s.addAttributeField(Schema::AttributeField("apos", schema::INT64, schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("wpos", schema::INT64, schema::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("sa", schema::STRING));
+    s.addIndexField(Schema::IndexField("ia", DataType::STRING));
+    s.addIndexField(Schema::IndexField("ib", DataType::STRING, CollectionType::ARRAY));
+    s.addIndexField(Schema::IndexField("ic", DataType::STRING, CollectionType::WEIGHTEDSET));
+    s.addUriIndexFields(Schema::IndexField("iu", DataType::STRING));
+    s.addUriIndexFields(Schema::IndexField("iau", DataType::STRING, CollectionType::ARRAY));
+    s.addUriIndexFields(Schema::IndexField("iwu", DataType::STRING, CollectionType::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("aa", DataType::INT32));
+    s.addAttributeField(Schema::AttributeField("spos", DataType::INT64));
+    s.addAttributeField(Schema::AttributeField("apos", DataType::INT64, CollectionType::ARRAY));
+    s.addAttributeField(Schema::AttributeField("wpos", DataType::INT64, CollectionType::WEIGHTEDSET));
+    s.addSummaryField(Schema::SummaryField("sa", DataType::STRING));
 
     DocTypeBuilder docTypeBuilder(s);
     document::DocumenttypesConfig config = docTypeBuilder.makeConfig();
@@ -52,8 +55,8 @@ TEST("testSearchDocType") {
 
 TEST("require that multiple fields can have the same type") {
     Schema s;
-    s.addIndexField(Schema::IndexField("array1", schema::STRING, schema::ARRAY));
-    s.addIndexField(Schema::IndexField("array2", schema::STRING, schema::ARRAY));
+    s.addIndexField(Schema::IndexField("array1", DataType::STRING, CollectionType::ARRAY));
+    s.addIndexField(Schema::IndexField("array2", DataType::STRING, CollectionType::ARRAY));
     DocTypeBuilder docTypeBuilder(s);
     document::DocumenttypesConfig config = docTypeBuilder.makeConfig();
     DocumentTypeRepo repo(config);

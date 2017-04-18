@@ -54,7 +54,7 @@ public:
      * attribute field valulue nodes.
      */
     virtual void
-    visitFieldValueNode(const FieldValueNode &expr);
+    visitFieldValueNode(const FieldValueNode &expr) override;
 };
 
 

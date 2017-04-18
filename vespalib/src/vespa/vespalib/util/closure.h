@@ -69,7 +69,7 @@ class Closure0_0 : public Closure0<R> {
 
     Func _func;
 
-    virtual R call()
+    virtual R call() override
     { return _func(); }
 
 public:
@@ -85,7 +85,7 @@ class Closure0_1 : public Closure0<R> {
     Func _func;
     T1 _arg1;
 
-    virtual R call()
+    virtual R call() override
     { return _func(std::move(_arg1)); }
 
 public:
@@ -102,7 +102,7 @@ class Closure0_2 : public Closure0<R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call()
+    virtual R call() override
     { return _func(std::move(_arg1), std::move(_arg2)); }
 
 public:
@@ -120,7 +120,7 @@ class Closure0_3 : public Closure0<R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call()
+    virtual R call() override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3)); }
 
 public:
@@ -139,7 +139,7 @@ class Closure0_4 : public Closure0<R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call()
+    virtual R call() override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4)); }
 
 public:
@@ -157,7 +157,7 @@ class MemberClosure0_0 : public Closure0<R> {
     Ptr _ptr;
     MemFun _mem_fun;
 
-    virtual R call()
+    virtual R call() override
     { return ((*_ptr).*_mem_fun)(); }
 
 public:
@@ -209,7 +209,7 @@ class MemberClosure0_3 : public Closure0<R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call()
+    virtual R call() override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3)); }
 
 public:
@@ -229,7 +229,7 @@ class MemberClosure0_4 : public Closure0<R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call()
+    virtual R call() override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4)); }
 
 public:
@@ -246,7 +246,7 @@ class Closure1_0 : public Closure1<P1, R> {
 
     Func _func;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return _func(std::move(param1)); }
 
 public:
@@ -262,7 +262,7 @@ class Closure1_1 : public Closure1<P1, R> {
     Func _func;
     T1 _arg1;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return _func(std::move(_arg1), std::move(param1)); }
 
 public:
@@ -279,7 +279,7 @@ class Closure1_2 : public Closure1<P1, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(param1)); }
 
 public:
@@ -297,7 +297,7 @@ class Closure1_3 : public Closure1<P1, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1)); }
 
 public:
@@ -316,7 +316,7 @@ class Closure1_4 : public Closure1<P1, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1)); }
 
 public:
@@ -334,7 +334,7 @@ class MemberClosure1_0 : public Closure1<P1, R> {
     Ptr _ptr;
     MemFun _mem_fun;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return ((*_ptr).*_mem_fun)(std::move(param1)); }
 
 public:
@@ -351,7 +351,7 @@ class MemberClosure1_1 : public Closure1<P1, R> {
     MemFun _mem_fun;
     T1 _arg1;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(param1)); }
 
 public:
@@ -369,7 +369,7 @@ class MemberClosure1_2 : public Closure1<P1, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(param1)); }
 
 public:
@@ -388,7 +388,7 @@ class MemberClosure1_3 : public Closure1<P1, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1)); }
 
 public:
@@ -408,7 +408,7 @@ class MemberClosure1_4 : public Closure1<P1, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1)
+    virtual R call(P1 param1) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1)); }
 
 public:
@@ -425,7 +425,7 @@ class Closure2_0 : public Closure2<P1, P2, R> {
 
     Func _func;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return _func(std::move(param1), std::move(param2)); }
 
 public:
@@ -441,7 +441,7 @@ class Closure2_1 : public Closure2<P1, P2, R> {
     Func _func;
     T1 _arg1;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return _func(std::move(_arg1), std::move(param1), std::move(param2)); }
 
 public:
@@ -458,7 +458,7 @@ class Closure2_2 : public Closure2<P1, P2, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(param1), std::move(param2)); }
 
 public:
@@ -476,7 +476,7 @@ class Closure2_3 : public Closure2<P1, P2, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1), std::move(param2)); }
 
 public:
@@ -495,7 +495,7 @@ class Closure2_4 : public Closure2<P1, P2, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1), std::move(param2)); }
 
 public:
@@ -513,7 +513,7 @@ class MemberClosure2_0 : public Closure2<P1, P2, R> {
     Ptr _ptr;
     MemFun _mem_fun;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return ((*_ptr).*_mem_fun)(std::move(param1), std::move(param2)); }
 
 public:
@@ -530,7 +530,7 @@ class MemberClosure2_1 : public Closure2<P1, P2, R> {
     MemFun _mem_fun;
     T1 _arg1;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(param1), std::move(param2)); }
 
 public:
@@ -548,7 +548,7 @@ class MemberClosure2_2 : public Closure2<P1, P2, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(param1), std::move(param2)); }
 
 public:
@@ -567,7 +567,7 @@ class MemberClosure2_3 : public Closure2<P1, P2, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1), std::move(param2)); }
 
 public:
@@ -587,7 +587,7 @@ class MemberClosure2_4 : public Closure2<P1, P2, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1, P2 param2)
+    virtual R call(P1 param1, P2 param2) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1), std::move(param2)); }
 
 public:
@@ -604,7 +604,7 @@ class Closure3_0 : public Closure3<P1, P2, P3, R> {
 
     Func _func;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return _func(std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -620,7 +620,7 @@ class Closure3_1 : public Closure3<P1, P2, P3, R> {
     Func _func;
     T1 _arg1;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return _func(std::move(_arg1), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -637,7 +637,7 @@ class Closure3_2 : public Closure3<P1, P2, P3, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -655,7 +655,7 @@ class Closure3_3 : public Closure3<P1, P2, P3, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -674,7 +674,7 @@ class Closure3_4 : public Closure3<P1, P2, P3, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -692,7 +692,7 @@ class MemberClosure3_0 : public Closure3<P1, P2, P3, R> {
     Ptr _ptr;
     MemFun _mem_fun;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return ((*_ptr).*_mem_fun)(std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -709,7 +709,7 @@ class MemberClosure3_1 : public Closure3<P1, P2, P3, R> {
     MemFun _mem_fun;
     T1 _arg1;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -727,7 +727,7 @@ class MemberClosure3_2 : public Closure3<P1, P2, P3, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -746,7 +746,7 @@ class MemberClosure3_3 : public Closure3<P1, P2, P3, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -766,7 +766,7 @@ class MemberClosure3_4 : public Closure3<P1, P2, P3, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1, P2 param2, P3 param3)
+    virtual R call(P1 param1, P2 param2, P3 param3) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1), std::move(param2), std::move(param3)); }
 
 public:
@@ -783,7 +783,7 @@ class Closure4_0 : public Closure4<P1, P2, P3, P4, R> {
 
     Func _func;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return _func(std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -799,7 +799,7 @@ class Closure4_1 : public Closure4<P1, P2, P3, P4, R> {
     Func _func;
     T1 _arg1;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return _func(std::move(_arg1), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -816,7 +816,7 @@ class Closure4_2 : public Closure4<P1, P2, P3, P4, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -834,7 +834,7 @@ class Closure4_3 : public Closure4<P1, P2, P3, P4, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -853,7 +853,7 @@ class Closure4_4 : public Closure4<P1, P2, P3, P4, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -871,7 +871,7 @@ class MemberClosure4_0 : public Closure4<P1, P2, P3, P4, R> {
     Ptr _ptr;
     MemFun _mem_fun;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return ((*_ptr).*_mem_fun)(std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -888,7 +888,7 @@ class MemberClosure4_1 : public Closure4<P1, P2, P3, P4, R> {
     MemFun _mem_fun;
     T1 _arg1;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -906,7 +906,7 @@ class MemberClosure4_2 : public Closure4<P1, P2, P3, P4, R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -925,7 +925,7 @@ class MemberClosure4_3 : public Closure4<P1, P2, P3, P4, R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:
@@ -945,7 +945,7 @@ class MemberClosure4_4 : public Closure4<P1, P2, P3, P4, R> {
     T3 _arg3;
     T4 _arg4;
 
-    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4)
+    virtual R call(P1 param1, P2 param2, P3 param3, P4 param4) override
     { return ((*_ptr).*_mem_fun)(std::move(_arg1), std::move(_arg2), std::move(_arg3), std::move(_arg4), std::move(param1), std::move(param2), std::move(param3), std::move(param4)); }
 
 public:

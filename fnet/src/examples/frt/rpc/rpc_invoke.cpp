@@ -43,7 +43,7 @@ private:
     int run();
 
 public:
-    virtual int Main();
+    virtual int Main() override;
 };
 
 int

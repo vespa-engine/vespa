@@ -45,13 +45,13 @@ public:
     MessageTypePolicy(const config::ConfigUri & configUri);
 
     // Implements Subscriber.
-    void configure(std::unique_ptr<vespa::config::content::MessagetyperouteselectorpolicyConfig> cfg);
+    void configure(std::unique_ptr<vespa::config::content::MessagetyperouteselectorpolicyConfig> cfg) override;
 
     // Implements IRoutingPolicy.
-    void select(mbus::RoutingContext &context);
+    void select(mbus::RoutingContext &context) override;
 
     // Implements IRoutingPolicy.
-    void merge(mbus::RoutingContext &context);
+    void merge(mbus::RoutingContext &context) override;
 };
 
 }

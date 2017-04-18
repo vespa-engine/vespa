@@ -54,7 +54,7 @@ class DumpFeatureVisitor : public IDumpFeatureVisitor
 {
 public:
     DumpFeatureVisitor() {}
-    virtual void visitDumpFeature(const vespalib::string & name) {
+    virtual void visitDumpFeature(const vespalib::string & name) override {
         std::cout << "dump feature: " << name << std::endl;
     }
 };
@@ -247,7 +247,7 @@ private:
 
 public:
     RankSetupTest();
-    int Main();
+    int Main() override;
 };
 
 

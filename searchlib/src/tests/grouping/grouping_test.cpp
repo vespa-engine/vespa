@@ -161,7 +161,7 @@ public:
     void testFixedWidthBuckets();
     void testThatNanIsConverted();
     void testNanSorting();
-    int Main();
+    int Main() override;
 private:
     void testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr);
     class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
@@ -170,12 +170,12 @@ private:
         CheckAttributeReferences() : _numrefs(0) { }
         int _numrefs;
     private:
-        virtual void execute(vespalib::Identifiable &obj) {
+        virtual void execute(vespalib::Identifiable &obj) override {
             if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
                 _numrefs++;
             }
         }
-        virtual bool check(const vespalib::Identifiable &obj) const { return obj.inherits(AttributeNode::classId); }
+        virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
     };
 };
 

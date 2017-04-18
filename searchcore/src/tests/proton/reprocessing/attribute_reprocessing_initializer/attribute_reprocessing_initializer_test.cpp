@@ -24,6 +24,7 @@ using namespace search;
 using namespace search::index;
 using search::attribute::Config;
 using search::attribute::BasicType;
+using search::index::schema::DataType;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
@@ -36,10 +37,10 @@ struct MyReprocessingHandler : public IReprocessingHandler
     IReprocessingReader::SP _reader;
     std::vector<IReprocessingRewriter::SP> _rewriters;
     MyReprocessingHandler() : _reader(), _rewriters() {}
-    virtual void addReader(const IReprocessingReader::SP &reader) {
+    virtual void addReader(const IReprocessingReader::SP &reader) override {
         _reader = reader;
     }
-    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) {
+    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) override {
         _rewriters.push_back(rewriter);
     }
 };
@@ -62,19 +63,19 @@ struct MyConfig
     void addAttrs(const StringVector &attrs) {
         for (auto attr : attrs) {
             if (attr == "tensor") {
-                _mgr->addAttribute(attr, test::AttributeUtils::getTensorConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, schema::TENSOR));
+                _mgr->addAttribute({attr, test::AttributeUtils::getTensorConfig()}, 1);
+                _schema.addAttributeField(Schema::AttributeField(attr, DataType::TENSOR));
             } else if (attr == "predicate") {
-                _mgr->addAttribute(attr, test::AttributeUtils::getPredicateConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, schema::BOOLEANTREE));
+                _mgr->addAttribute({attr, test::AttributeUtils::getPredicateConfig()}, 1);
+                _schema.addAttributeField(Schema::AttributeField(attr, DataType::BOOLEANTREE));
             } else {
-                _mgr->addAttribute(attr, test::AttributeUtils::getStringConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, schema::STRING));
+                _mgr->addAttribute({attr, test::AttributeUtils::getStringConfig()}, 1);
+                _schema.addAttributeField(Schema::AttributeField(attr, DataType::STRING));
             }
         }
     }
     void addIndexField(const vespalib::string &name) {
-        _schema.addIndexField(Schema::IndexField(name, schema::STRING));
+        _schema.addIndexField(Schema::IndexField(name, DataType::STRING));
     }
 };
 
@@ -98,7 +99,7 @@ struct MyDocTypeInspector : public IDocumentTypeInspector
           _newCfg(newCfg)
     {
     }
-    virtual bool hasUnchangedField(const vespalib::string &name) const {
+    virtual bool hasUnchangedField(const vespalib::string &name) const override {
         return _oldCfg._fields.count(name) > 0 &&
             _newCfg._fields.count(name) > 0;
     }

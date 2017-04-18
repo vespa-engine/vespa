@@ -423,7 +423,7 @@ struct FakePersistenceLayer : public StorageLink {
         }
         return 0;
     }
-    virtual bool onDown(const api::StorageMessage::SP& msg) {
+    virtual bool onDown(const api::StorageMessage::SP& msg) override {
         fatalError = "";
         if (messageCallback) {
             messageCallback->onMessage(*msg);
@@ -795,7 +795,7 @@ struct DatabaseInsertCallback : MessageCallback
           _expectedReadBucketPriority(255)
     {}
 
-    void onMessage(const api::StorageMessage& msg)
+    void onMessage(const api::StorageMessage& msg) override
     {
         // Always make sure we're not set as initialized while we're still
         // processing messages! Also ensure progress never goes down.

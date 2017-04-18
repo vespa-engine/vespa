@@ -27,7 +27,7 @@ public:
 protected:
     OrSearch(const  Children & children) : MultiSearch(children) { }
 private:
-    virtual bool isOr() const { return true; }
+    virtual bool isOr() const override { return true; }
 };
 
 } // namespace queryeval

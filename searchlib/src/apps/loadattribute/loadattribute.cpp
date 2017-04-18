@@ -24,7 +24,7 @@ private:
     void usage();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 void

@@ -84,18 +84,18 @@ public:
             _getIndexOf = false;
     };
 
-    void yamlDump() { _yamlDump = true; };
-    void listHosts() { _listHosts = true; };
-    void listServices() { _listServices = true; };
-    void listClusters() { _listClusters = true; };
-    void listConfigIds() { _listConfigIds = true; };
-    int listHost(const vespalib::string)  { _listHost = true; return 0; };
-    int listAllPorts() { _listAllPorts = true; return 0; };
-    int listCluster(const vespalib::string)  { _listCluster = true; return 0; };
-    int listService(const vespalib::string)  { _listService = true; return 0; };
-    int listService(const vespalib::string, const vespalib::string)  { _listService2 = true; return 0; };
-    int listConfigId(const vespalib::string) { _listConfigId = true; return 0; };
-    int getIndexOf(const vespalib::string, const vespalib::string) { _getIndexOf = true; return 0; };
+    void yamlDump() override { _yamlDump = true; };
+    void listHosts() override { _listHosts = true; };
+    void listServices() override { _listServices = true; };
+    void listClusters() override { _listClusters = true; };
+    void listConfigIds() override { _listConfigIds = true; };
+    int listHost(const vespalib::string)  override { _listHost = true; return 0; };
+    int listAllPorts() override { _listAllPorts = true; return 0; };
+    int listCluster(const vespalib::string)  override { _listCluster = true; return 0; };
+    int listService(const vespalib::string)  override { _listService = true; return 0; };
+    int listService(const vespalib::string, const vespalib::string)  override { _listService2 = true; return 0; };
+    int listConfigId(const vespalib::string) override { _listConfigId = true; return 0; };
+    int getIndexOf(const vespalib::string, const vespalib::string) override { _getIndexOf = true; return 0; };
 
     ~ModelDummy() {};
 };

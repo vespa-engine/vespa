@@ -12,6 +12,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -238,7 +239,8 @@ public class ProvisioningTest {
         config.defaultFlavor("not-used");
         config.defaultContainerFlavor("small");
         config.defaultContentFlavor("large");
-        ProvisioningTester tester = new ProvisioningTester(new Zone(new ConfigserverConfig(config)));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(new ConfigserverConfig(config),
+                                                                    new NodeFlavors(new FlavorsConfig(new FlavorsConfig.Builder()))));
 
         ApplicationId application1 = tester.makeApplicationId();
 

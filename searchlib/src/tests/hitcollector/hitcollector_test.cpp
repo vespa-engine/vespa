@@ -21,7 +21,7 @@ struct BasicScorer : public HitCollector::DocumentScorer
 {
     feature_t _scoreDelta;
     BasicScorer(feature_t scoreDelta) : _scoreDelta(scoreDelta) {}
-    virtual feature_t score(uint32_t docId) {
+    virtual feature_t score(uint32_t docId) override {
         return docId + _scoreDelta;
     }
 };
@@ -30,7 +30,7 @@ struct PredefinedScorer : public HitCollector::DocumentScorer
 {
     ScoreMap _scores;
     PredefinedScorer(const ScoreMap &scores) : _scores(scores) {}
-    virtual feature_t score(uint32_t docId) {
+    virtual feature_t score(uint32_t docId) override {
         feature_t retval = 0.0;
         auto itr = _scores.find(docId);
         if (itr != _scores.end()) {
@@ -167,14 +167,14 @@ struct Fixture {
 
 struct AscendingScoreFixture : Fixture {
     AscendingScoreFixture() : Fixture() {}
-    virtual HitRank calculateScore(uint32_t i) {
+    virtual HitRank calculateScore(uint32_t i) override {
         return i + 100;
     }
 };
 
 struct DescendingScoreFixture : Fixture {
     DescendingScoreFixture() : Fixture() {}
-    virtual HitRank calculateScore(uint32_t i) {
+    virtual HitRank calculateScore(uint32_t i) override {
         return 100 - i;
     }
 };

@@ -15,7 +15,7 @@ struct WeakAndSearch : SearchIterator {
     virtual wand::score_t get_max_score(size_t idx) const = 0;
     virtual const Terms &getTerms() const = 0;
     virtual uint32_t getN() const = 0;
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     static SearchIterator *createArrayWand(const Terms &terms, uint32_t n, bool strict);
     static SearchIterator *createHeapWand(const Terms &terms, uint32_t n, bool strict);
     static SearchIterator *create(const Terms &terms, uint32_t n, bool strict);

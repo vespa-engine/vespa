@@ -232,21 +232,19 @@ public:
     ~RandTextFieldGenerator(void);
 
     virtual void
-    setup(void);
+    setup(void) override;
 
     virtual void
-    clear(void);
+    clear(void) override;
 
     virtual void
-    deleteHistogram(const string &baseDir,
-                    const string &name);
+    deleteHistogram(const string &baseDir, const string &name) override;
 
     virtual void
-    writeHistogram(const string &baseDir,
-                   const string &name);
+    writeHistogram(const string &baseDir, const string &name) override;
 
     virtual void
-    generate(vespalib::asciistream &doc, uint32_t id);
+    generate(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 
@@ -368,13 +366,13 @@ public:
     ~ModTextFieldGenerator(void);
 
     virtual void
-    clear(void);
+    clear(void) override;
 
     virtual void
     writeHistogram(const string &name);
 
     virtual void
-    generate(vespalib::asciistream &doc, uint32_t id);
+    generate(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 
@@ -432,13 +430,13 @@ public:
     ~IdTextFieldGenerator(void);
 
     virtual void
-    clear(void);
+    clear(void) override;
 
     virtual void
     writeHistogram(const string &name);
 
     virtual void
-    generate(vespalib::asciistream &doc, uint32_t id);
+    generate(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 
@@ -491,13 +489,13 @@ public:
     ~RandIntFieldGenerator(void);
 
     virtual void
-    clear(void);
+    clear(void) override;
 
     virtual void
     writeHistogram(const string &name);
 
     virtual void
-    generate(vespalib::asciistream &doc, uint32_t id);
+    generate(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 
@@ -755,13 +753,13 @@ public:
     }
 
     virtual void
-    usage(bool showHeader);
+    usage(bool showHeader) override;
 
     virtual bool
-    getOptions(void);
+    getOptions(void) override;
 
     virtual int
-    run(void);
+    run(void) override;
 };
 
 
@@ -923,7 +921,7 @@ public:
     usage(void);
 
     int
-    Main(void);
+    Main(void) override;
 };
 
 

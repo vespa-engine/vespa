@@ -284,25 +284,25 @@ public:
     Messenger & getMessenger() { return *_msn; }
 
     // Implements IReplyHandler.
-    void handleReply(Reply::UP reply);
+    void handleReply(Reply::UP reply) override;
 
     // Implements IDiscardHandler.
-    void handleDiscard(Context ctx);
+    void handleDiscard(Context ctx) override;
 
     // Implements IMessageHandler.
-    void handleMessage(Message::UP msg);
+    void handleMessage(Message::UP msg) override;
 
     // Implements IConfigHandler.
-    bool setupRouting(const RoutingSpec &spec);
+    bool setupRouting(const RoutingSpec &spec) override;
 
     // Implements INetworkOwner.
-    IProtocol::SP getProtocol(const string &name);
+    IProtocol::SP getProtocol(const string &name) override;
 
     // Implements INetworkOwner.
-    void deliverMessage(Message::UP msg, const string &session);
+    void deliverMessage(Message::UP msg, const string &session) override;
 
     // Implements INetworkOwner.
-    void deliverReply(Reply::UP reply, IReplyHandler &handler);
+    void deliverReply(Reply::UP reply, IReplyHandler &handler) override;
 };
 
 } // namespace mbus

@@ -15,7 +15,7 @@ namespace slobrok {
 class App : public FastOS_Application
 {
 public:
-    int Main();
+    int Main() override;
 };
 
 static std::unique_ptr<SBEnv> mainobj;

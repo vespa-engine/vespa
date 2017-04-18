@@ -13,6 +13,7 @@
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
+using CollectionType = FieldInfo::CollectionType;
 
 const vespalib::string DEFAULT   = "elementSimilarity(foo)";
 const vespalib::string PROXIMITY = "elementSimilarity(foo).proximity";
@@ -64,7 +65,7 @@ struct IndexFixture {
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
     std::vector<vespalib::string> actual;
     FeatureDumpFixture() : IDumpFeatureVisitor(), actual() {}
-    virtual void visitDumpFeature(const vespalib::string &name) {
+    virtual void visitDumpFeature(const vespalib::string &name) override {
         actual.push_back(name);
     }
 };

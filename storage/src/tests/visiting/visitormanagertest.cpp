@@ -70,7 +70,7 @@ public:
         // Not using setUp since can't throw exception out of it.
     void initializeTest();
     void addSomeRemoves(bool removeAll = false);
-    void tearDown();
+    void tearDown() override;
     TestVisitorMessageSession& getSession(uint32_t n);
     uint64_t verifyCreateVisitorReply(
             api::ReturnCode::Result expectedResult,

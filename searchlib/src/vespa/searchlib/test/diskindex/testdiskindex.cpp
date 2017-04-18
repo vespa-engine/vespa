@@ -7,9 +7,10 @@
 
 namespace search {
 
-using index::Schema;
 using index::DummyFileHeaderContext;
+using index::Schema;
 using index::WordDocElementWordPosFeatures;
+using index::schema::DataType;
 
 namespace diskindex {
 
@@ -56,8 +57,8 @@ struct Builder
 void
 TestDiskIndex::buildSchema(void)
 {
-    _schema.addIndexField(Schema::IndexField("f1", index::schema::STRING));
-    _schema.addIndexField(Schema::IndexField("f2", index::schema::STRING));
+    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
+    _schema.addIndexField(Schema::IndexField("f2", DataType::STRING));
     _schema.addFieldSet(Schema::FieldSet("c2").
                         addField("f1").
                         addField("f2"));

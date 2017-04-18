@@ -21,7 +21,7 @@ class Test : public vespalib::TestApp {
     void requireThatAllTermsCanBeVisited();
 
 public:
-    int Main();
+    int Main() override;
 };
 
 int

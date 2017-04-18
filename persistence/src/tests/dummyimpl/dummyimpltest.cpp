@@ -14,19 +14,13 @@ namespace spi {
 struct DummyImplTest : public ConformanceTest {
     struct Factory : public PersistenceFactory {
         using Repo = document::DocumentTypeRepo;
+
         PersistenceProvider::UP
-        getPersistenceImplementation(const Repo::SP& repo, const Repo::DocumenttypesConfig&) {
+        getPersistenceImplementation(const Repo::SP& repo, const Repo::DocumenttypesConfig&) override {
             return PersistenceProvider::UP(new dummy::DummyPersistence(repo, 4));
         }
 
-        bool
-        supportsActiveState() const
-        {
-            return true;
-        }
-        bool
-        supportsRevert() const
-        {
+        bool supportsActiveState() const override {
             return true;
         }
     };

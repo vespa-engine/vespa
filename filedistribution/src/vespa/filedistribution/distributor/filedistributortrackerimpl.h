@@ -30,7 +30,7 @@ public:
     virtual ~FileDistributorTrackerImpl();
 
     //overrides
-    void trackingRequest(libtorrent::tracker_request& request, const TorrentSP & torrent);
+    void trackingRequest(libtorrent::tracker_request& request, const TorrentSP & torrent) override;
 
     void setDownloader(const std::shared_ptr<FileDownloader>& downloader);
 };

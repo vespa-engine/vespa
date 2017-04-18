@@ -302,6 +302,14 @@ public:
 
 protected:
     /**
+     * Called when a new document has been added, but only for
+     * multivalue, enumerated, and string attributes.
+     * Can be overridden by subclasses that need to resize structures as a result of this.
+     * Should return true if underlying structures were resized.
+     **/
+    virtual bool onAddDoc(DocId) { return false; }
+
+    /**
      * Returns the number of readers holding a generation guard.
      * Should be called by the writer thread.
      */

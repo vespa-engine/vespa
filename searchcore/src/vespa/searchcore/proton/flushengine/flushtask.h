@@ -36,7 +36,7 @@ public:
     ~FlushTask();
 
     // Implements Executor::Task.
-    void run();
+    void run() override;
 };
 
 } // namespace proton

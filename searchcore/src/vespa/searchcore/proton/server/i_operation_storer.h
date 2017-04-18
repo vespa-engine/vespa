@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/feedoperation/feedoperation.h>
-
 namespace proton {
+
+class FeedOperation;
 
 /**
  * Interface for a component assigning serial numbers and storing feed operations.

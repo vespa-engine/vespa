@@ -89,7 +89,7 @@ protected:
 
     AttributeCollectionSpec::UP createAttributeSpec(const AttributeSpecs &attrCfg, SerialNum serialNum) const;
     AttributeManager::SP getAndResetInitAttributeManager();
-    virtual IFlushTarget::List getFlushTargetsInternal();
+    virtual IFlushTargetList getFlushTargetsInternal() override;
     void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
 
     IReprocessingTask::UP

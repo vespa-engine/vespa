@@ -11,26 +11,26 @@ enum {
 class PingRequest : public FNET_Packet
 {
 public:
-    virtual uint32_t GetPCODE();
-    virtual uint32_t GetLength();
-    virtual void Encode(FNET_DataBuffer *);
-    virtual bool Decode(FNET_DataBuffer *src, uint32_t len);
+    virtual uint32_t GetPCODE() override;
+    virtual uint32_t GetLength() override;
+    virtual void Encode(FNET_DataBuffer *) override;
+    virtual bool Decode(FNET_DataBuffer *src, uint32_t len) override;
 };
 
 
 class PingReply : public FNET_Packet
 {
 public:
-    virtual uint32_t GetPCODE();
-    virtual uint32_t GetLength();
-    virtual void Encode(FNET_DataBuffer *);
-    virtual bool Decode(FNET_DataBuffer *src, uint32_t len);
+    virtual uint32_t GetPCODE() override;
+    virtual uint32_t GetLength() override;
+    virtual void Encode(FNET_DataBuffer *) override;
+    virtual bool Decode(FNET_DataBuffer *src, uint32_t len) override;
 };
 
 
 class PingPacketFactory : public FNET_IPacketFactory
 {
 public:
-    virtual FNET_Packet *CreatePacket(uint32_t pcode, FNET_Context);
+    virtual FNET_Packet *CreatePacket(uint32_t pcode, FNET_Context) override;
 };
 

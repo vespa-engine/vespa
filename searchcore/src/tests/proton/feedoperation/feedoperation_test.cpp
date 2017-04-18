@@ -55,8 +55,8 @@ namespace {
 
 struct MyStreamHandler : NewConfigOperation::IStreamHandler {
     typedef NewConfigOperation::SerialNum SerialNum;
-    virtual void serializeConfig(SerialNum, vespalib::nbostream &) {}
-    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) {}
+    virtual void serializeConfig(SerialNum, vespalib::nbostream &) override {}
+    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
 };
 
 

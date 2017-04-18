@@ -15,7 +15,7 @@ private:
     void testMemoryDataStore();
     void testVariableSizeVector();
 public:
-    int Main();
+    int Main() override;
 };
 
 void

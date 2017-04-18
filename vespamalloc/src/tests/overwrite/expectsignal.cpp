@@ -7,9 +7,9 @@ using namespace vespalib;
 class Test : public TestApp
 {
 public:
-    int Main();
+    int Main() override;
 private:
-    virtual bool useProcessStarter() const { return true; }
+    virtual bool useProcessStarter() const override { return true; }
 };
 
 int Test::Main()

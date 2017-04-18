@@ -73,7 +73,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     const ISummaryAdapter::SP &getSummaryAdapter() const override { return _summaryAdapter; }
     const IIndexWriter::SP &getIndexWriter() const override { return _indexWriter; }
     IDocumentMetaStoreContext &getDocumentMetaStoreContext() override { return _metaStoreCtx; }
-    IFlushTarget::List getFlushTargets() override { return IFlushTarget::List(); }
+    IFlushTargetList getFlushTargets() override { return IFlushTargetList(); }
     size_t getNumDocs() const override { return 0; }
     size_t getNumActiveDocs() const override { return 0; }
     bool hasDocument(const document::DocumentId &) override { return false; }

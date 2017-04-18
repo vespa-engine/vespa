@@ -9,7 +9,7 @@ class MatchTester : public slobrok::api::IMirrorAPI
     }
     virtual uint32_t updates() const override { return 0; }
 
-    virtual bool ready() const { return true; }
+    virtual bool ready() const override { return true; }
 
     const std::string name;
 

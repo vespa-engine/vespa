@@ -47,25 +47,25 @@ public:
     }
     // Implements IFlushTarget.
     virtual MemoryGain
-    getApproxMemoryGain() const;
+    getApproxMemoryGain() const override;
 
     virtual DiskGain
-    getApproxDiskGain() const;
+    getApproxDiskGain() const override;
 
     virtual SerialNum
-    getFlushedSerialNum() const;
+    getFlushedSerialNum() const override;
 
     virtual Time
-    getLastFlushTime() const;
+    getLastFlushTime() const override;
 
     virtual bool
-    needUrgentFlush() const;
+    needUrgentFlush() const override;
 
     virtual Task::UP
-    initFlush(SerialNum currentSerial);;
+    initFlush(SerialNum currentSerial) override;
 
     virtual searchcorespi::FlushStats
-    getLastFlushStats() const;
+    getLastFlushStats() const override;
 
     virtual uint64_t getApproxBytesToWriteToDisk() const override;
 };

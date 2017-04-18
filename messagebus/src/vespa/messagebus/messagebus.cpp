@@ -32,11 +32,11 @@ public:
         // empty
     }
 
-    void run() {
+    void run() override {
         _resender->resendScheduled();
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         return 255;
     }
 };
@@ -66,12 +66,12 @@ public:
         _gate.countDown();
     }
 
-    void run() {
+    void run() override {
         _net.postShutdownHook();
         _done = _msn.isEmpty();
     }
 
-    uint8_t priority() const {
+    uint8_t priority() const override {
         return 255;
     }
 };

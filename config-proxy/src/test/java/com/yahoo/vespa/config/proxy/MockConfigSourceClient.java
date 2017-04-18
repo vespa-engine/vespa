@@ -1,34 +1,24 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
- * A simple class to be able to test config proxy without having an RPC config
- * source.
+ * Mock client that always returns with config immediately
  *
  * @author hmusum
- * @since 5.1.10
  */
-public class MapBackedConfigSource implements ConfigSource, ConfigSourceClient {
-    private final HashMap<ConfigKey<?>, RawConfig> backing = new HashMap<>();
+public class MockConfigSourceClient implements ConfigSourceClient{
     private final ClientUpdater clientUpdater;
+    private final MockConfigSource configSource;
 
-    MapBackedConfigSource(ClientUpdater clientUpdater) {
+    MockConfigSourceClient(ClientUpdater clientUpdater, MockConfigSource configSource) {
         this.clientUpdater = clientUpdater;
-    }
-
-    MapBackedConfigSource put(ConfigKey<?> key, RawConfig config) {
-        backing.put(key, config);
-        clientUpdater.updateSubscribers(config);
-        return this;
+        this.configSource = configSource;
     }
 
     @Override
@@ -38,21 +28,17 @@ public class MapBackedConfigSource implements ConfigSource, ConfigSourceClient {
         return config;
     }
 
-    RawConfig getConfig(ConfigKey<?> configKey) {
-        return backing.get(configKey);
+    private RawConfig getConfig(ConfigKey<?> configKey) {
+        return configSource.getConfig(configKey);
     }
 
     @Override
     public void cancel() {
-        clear();
+        configSource.clear();
     }
 
     @Override
     public void shutdownSourceConnections() {
-    }
-
-    void clear() {
-        backing.clear();
     }
 
     @Override

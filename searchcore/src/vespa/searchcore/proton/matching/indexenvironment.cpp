@@ -11,37 +11,23 @@ using namespace search::fef;
 namespace proton {
 namespace matching {
 
-namespace {
-
-search::fef::CollectionType convertCollectionType(search::index::Schema::CollectionType type) {
-    switch (type) {
-    case search::index::schema::SINGLE:      return search::fef::CollectionType::SINGLE;
-    case search::index::schema::ARRAY:       return search::fef::CollectionType::ARRAY;
-    case search::index::schema::WEIGHTEDSET: return search::fef::CollectionType::WEIGHTEDSET;
-    default:
-        abort();
-    }
-}
-
-}
-
 void
 IndexEnvironment::extractFields(const search::index::Schema &schema)
 {
     typedef search::index::Schema::Field SchemaField;
     for (uint32_t i = 0; i < schema.getNumAttributeFields(); ++i) {
         const SchemaField &field = schema.getAttributeField(i);
-        search::fef::FieldInfo fieldInfo(search::fef::FieldType::ATTRIBUTE,
-                                         convertCollectionType(field.getCollectionType()),
-                                         field.getName(), _fields.size());
+        FieldInfo fieldInfo(FieldType::ATTRIBUTE,
+                            field.getCollectionType(),
+                            field.getName(), _fields.size());
         fieldInfo.set_data_type(field.getDataType());
         insertField(fieldInfo);
     }
     for (uint32_t i = 0; i < schema.getNumIndexFields(); ++i) {
         const SchemaField &field = schema.getIndexField(i);
-        search::fef::FieldInfo fieldInfo(search::fef::FieldType::INDEX,
-                                         convertCollectionType(field.getCollectionType()),
-                                         field.getName(), _fields.size());
+        FieldInfo fieldInfo(FieldType::INDEX,
+                            field.getCollectionType(),
+                            field.getName(), _fields.size());
         fieldInfo.set_data_type(field.getDataType());
         if (indexproperties::IsFilterField::check(
                     _properties, field.getName()))
@@ -62,19 +48,19 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
         }
     }
     for (const auto &attr : schema.getImportedAttributeFields()) {
-        search::fef::FieldInfo field(search::fef::FieldType::ATTRIBUTE,
-                                     convertCollectionType(attr.getCollectionType()),
-                                     attr.getName(), _fields.size());
+        FieldInfo field(FieldType::ATTRIBUTE,
+                        attr.getCollectionType(),
+                        attr.getName(), _fields.size());
         field.set_data_type(attr.getDataType());
         insertField(field);
     }
 
     //TODO: This is a kludge to get [documentmetastore] searchable
     {
-        search::fef::FieldInfo fieldInfo(search::fef::FieldType::HIDDEN_ATTRIBUTE,
-                                         search::fef::CollectionType::SINGLE,
-                                         DocumentMetaStore::getFixedName(),
-                                         _fields.size());
+        FieldInfo fieldInfo(FieldType::HIDDEN_ATTRIBUTE,
+                            FieldInfo::CollectionType::SINGLE,
+                            DocumentMetaStore::getFixedName(),
+                            _fields.size());
         fieldInfo.set_data_type(FieldInfo::DataType::RAW);
         fieldInfo.setFilter(true);
         insertField(fieldInfo);

@@ -19,7 +19,7 @@ class Application : public FastOS_Application
     vespalib::string getSources();
 public:
     void usage();
-    int Main();
+    int Main() override;
 
     Application();
     ~Application();

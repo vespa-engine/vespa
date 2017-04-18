@@ -19,18 +19,18 @@ public:
     /**
      * Implements IIndexWriter.
      */
-    virtual const IIndexManager::SP & getIndexManager() const { return _mgr; }
+    virtual const IIndexManager::SP & getIndexManager() const override { return _mgr; }
 
     virtual void put(search::SerialNum serialNum,
                      const document::Document &doc,
-                     const search::DocumentIdT lid);
+                     const search::DocumentIdT lid) override;
     virtual void remove(search::SerialNum serialNum,
-                        const search::DocumentIdT lid);
+                        const search::DocumentIdT lid) override;
     virtual void commit(search::SerialNum serialNum,
                         OnWriteDoneType onWriteDone) override;
 
     virtual void
-    heartBeat(search::SerialNum serialNum);
+    heartBeat(search::SerialNum serialNum) override;
 };
 
 } // namespace proton

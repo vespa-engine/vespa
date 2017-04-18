@@ -36,19 +36,19 @@ namespace {
     {
     public:
         MySource(TestContext * data, const IConfigHolder::SP & holder) : _holder(holder), _data(data) { }
-        void getConfig()
+        void getConfig() override
         {
             _data->numGetConfig++;
             if (_data->respond) {
                 _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), true, _data->generation)));
             }
         }
-        void reload(int64_t generation)
+        void reload(int64_t generation) override
         {
             _data->numUpdate++;
             _data->generation = generation;
         }
-        void close()
+        void close() override
         {
             _data->numClose++;
         }
@@ -60,7 +60,7 @@ namespace {
     {
     public:
         MySourceFactory(TestContext * d) : data(d) { }
-        Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const
+        Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override
         {
             (void) key;
             return Source::UP(new MySource(data, holder));
@@ -77,7 +77,7 @@ namespace {
         {
         }
         SourceSpecKey createKey() const { return SourceSpecKey(_key); }
-        SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const {
+        SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const override {
             (void) timingValues;
             return SourceFactory::UP(new MySourceFactory(_data));
         }

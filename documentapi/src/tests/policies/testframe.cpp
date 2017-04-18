@@ -40,17 +40,17 @@ public:
         // empty
     }
 
-    bool allocServiceAddress(mbus::RoutingNode &recipient) {
+    bool allocServiceAddress(mbus::RoutingNode &recipient) override {
         string hop = recipient.getRoute().getHop(0).toString();
         recipient.setServiceAddress(mbus::IServiceAddress::UP(new MyServiceAddress(hop)));
         return true;
     }
 
-    void freeServiceAddress(mbus::RoutingNode &recipient) {
+    void freeServiceAddress(mbus::RoutingNode &recipient) override {
         recipient.setServiceAddress(mbus::IServiceAddress::UP());
     }
 
-    void send(const mbus::Message &, const std::vector<mbus::RoutingNode*> &nodes) {
+    void send(const mbus::Message &, const std::vector<mbus::RoutingNode*> &nodes) override {
         _nodes.insert(_nodes.begin(), nodes.begin(), nodes.end());
     }
 

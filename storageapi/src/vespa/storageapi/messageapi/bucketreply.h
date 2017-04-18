@@ -27,8 +27,8 @@ protected:
 public:
     DECLARE_POINTER_TYPEDEFS(BucketReply);
 
-    document::BucketId getBucketId() const { return _bucket; }
-    virtual bool hasSingleBucketId() const { return true; }
+    document::BucketId getBucketId() const override { return _bucket; }
+    virtual bool hasSingleBucketId() const override { return true; }
 
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
     const document::BucketId& getOriginalBucketId() const
@@ -40,8 +40,7 @@ public:
         _bucket = bucket;
     }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api

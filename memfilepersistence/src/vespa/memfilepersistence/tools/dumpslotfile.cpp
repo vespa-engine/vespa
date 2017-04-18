@@ -162,7 +162,7 @@ namespace {
                         const char* documentConfigId);
         ~EnvironmentImpl();
 
-        MemFilePersistenceThreadMetrics& getMetrics() const {
+        MemFilePersistenceThreadMetrics& getMetrics() const override {
             return *_threadMetrics;
         }
 

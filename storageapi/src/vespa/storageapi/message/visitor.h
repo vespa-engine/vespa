@@ -115,8 +115,7 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual StorageCommand::UP createCopyToForward(
-            const document::BucketId&, uint64_t timestamp) const;
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(CreateVisitorCommand, onCreateVisitor)
 };

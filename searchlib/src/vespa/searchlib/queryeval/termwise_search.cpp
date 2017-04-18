@@ -38,7 +38,7 @@ struct TermwiseSearch : public SearchIterator {
         }
     }
     void doUnpack(uint32_t) override {}
-    void visitMembers(vespalib::ObjectVisitor &visitor) const {
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         visit(visitor, "search", *search);
         visit(visitor, "strict", IS_STRICT);
     }

@@ -27,7 +27,7 @@ public:
         // empty
     }
 
-    void run() {
+    void run() override {
         _engine.performSearch(std::move(_request), _client);
     }
 };

@@ -6,6 +6,9 @@ LOG_SETUP(".features.textsimilarity");
 #include "text_similarity_feature.h"
 
 namespace search {
+
+using CollectionType = fef::FieldInfo::CollectionType;
+
 namespace features {
 
 namespace {
@@ -181,7 +184,7 @@ TextSimilarityBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment 
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const search::fef::FieldInfo &field = *env.getField(i);
         if (field.type() == search::fef::FieldType::INDEX) {
-            if (!field.isFilter() && field.collection() == fef::CollectionType::SINGLE) {
+            if (!field.isFilter() && field.collection() == CollectionType::SINGLE) {
                 search::fef::FeatureNameBuilder fnb;
                 fnb.baseName(getBaseName()).parameter(field.name());
                 visitor.visitDumpFeature(fnb.output(score_output).buildName());

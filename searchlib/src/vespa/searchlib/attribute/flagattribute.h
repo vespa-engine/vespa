@@ -40,13 +40,14 @@ public:
     void setNewBVValue(DocId doc, typename B::WType::ValueType value);
 
 private:
-    virtual bool onAddDoc(DocId doc);
+    virtual bool onAddDoc(DocId doc) override;
+
     void onAddDocs(DocId docIdLimit) override;
     void ensureGuardBit(BitVector & bv);
     void ensureGuardBit();
     void clearGuardBit(DocId doc);
     void resizeBitVectors(uint32_t neededSize);
-    void removeOldGenerations(vespalib::GenerationHandler::generation_t firstUsed);
+    void removeOldGenerations(vespalib::GenerationHandler::generation_t firstUsed) override;
     uint32_t getOffset(int8_t value) const { return value + 128; }
     BitVector * getBitVector(typename B::BaseType value) const {
         return _bitVectors[value + 128];

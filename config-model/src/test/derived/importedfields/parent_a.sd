@@ -1,0 +1,13 @@
+search parent_a {
+  document parent_a {
+    field int_field type int {
+      indexing: attribute
+    }
+    field int_array_field type array<int> {
+      indexing: attribute
+    }
+    field int_wset_field type weightedset<int> {
+      indexing: attribute
+    }
+  }
+}

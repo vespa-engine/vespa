@@ -67,27 +67,25 @@ public:
                           std::unique_ptr<HostInfo>, bool testMode = false);
     ~StateManager();
 
-    void onOpen();
-    void onClose();
+    void onOpen() override;
+    void onClose() override;
 
     void tick();
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /** Implementation of HtmlStatusReporter */
-    virtual void reportHtmlStatus(std::ostream&,
-                                  const framework::HttpUrlPath&) const;
+    virtual void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
-    virtual lib::NodeState::CSP getReportedNodeState() const;
-    virtual lib::NodeState::CSP getCurrentNodeState() const;
-    virtual lib::ClusterState::CSP getSystemState() const;
+    virtual lib::NodeState::CSP getReportedNodeState() const override;
+    virtual lib::NodeState::CSP getCurrentNodeState() const override;
+    virtual lib::ClusterState::CSP getSystemState() const override;
 
-    virtual void addStateListener(StateListener&);
-    virtual void removeStateListener(StateListener&);
+    virtual void addStateListener(StateListener&) override;
+    virtual void removeStateListener(StateListener&) override;
 
-    virtual Lock::SP grabStateChangeLock();
-    virtual void setReportedNodeState(const lib::NodeState& state);
+    virtual Lock::SP grabStateChangeLock() override;
+    virtual void setReportedNodeState(const lib::NodeState& state) override;
 
     void setClusterState(const lib::ClusterState& c);
 
@@ -130,15 +128,15 @@ private:
             const lib::ClusterState& currentState,
             const lib::ClusterState& newState) const;
 
-    bool onGetNodeState(const std::shared_ptr<api::GetNodeStateCommand>&);
-    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&);
+    bool onGetNodeState(const std::shared_ptr<api::GetNodeStateCommand>&) override;
+    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
 
     /**
      * _stateLock MUST NOT be held while calling.
      */
     std::string getNodeInfo() const;
 
-    virtual void run(framework::ThreadHandle&);
+    virtual void run(framework::ThreadHandle&) override;
 
 };
 

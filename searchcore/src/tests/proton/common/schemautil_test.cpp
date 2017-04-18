@@ -6,25 +6,27 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
+using namespace proton;
 using namespace search::index;
+using search::index::schema::CollectionType;
+using search::index::schema::DataType;
 using vespalib::string;
 
-using namespace proton;
 
 namespace {
 
 void addAllFieldTypes(const string &name, Schema &schema,
                       fastos::TimeStamp timestamp)
 {
-    Schema::IndexField index_field(name, schema::STRING);
+    Schema::IndexField index_field(name, DataType::STRING);
     index_field.setTimestamp(timestamp);
     schema.addIndexField(index_field);
 
-    Schema::AttributeField attribute_field(name, schema::STRING);
+    Schema::AttributeField attribute_field(name, DataType::STRING);
     attribute_field.setTimestamp(timestamp);
     schema.addAttributeField(attribute_field);
 
-    Schema::SummaryField summary_field(name, schema::STRING);
+    Schema::SummaryField summary_field(name, DataType::STRING);
     summary_field.setTimestamp(timestamp);
     schema.addSummaryField(summary_field);
 }
@@ -109,9 +111,9 @@ assertSchemaResult(const vespalib::string &name,
 TEST("require that listSchema can list all fields")
 {
     Schema schema;
-    schema.addIndexField(Schema::IndexField("if", schema::STRING));
-    schema.addAttributeField(Schema::AttributeField("af", schema::INT32));
-    schema.addSummaryField(Schema::SummaryField("sf", schema::FLOAT, schema::ARRAY));
+    schema.addIndexField(Schema::IndexField("if", DataType::STRING));
+    schema.addAttributeField(Schema::AttributeField("af", DataType::INT32));
+    schema.addSummaryField(Schema::SummaryField("sf", DataType::FLOAT, CollectionType::ARRAY));
 
     ListSchemaResult r;
     SchemaUtil::listSchema(schema, r.fieldNames, r.fieldDataTypes, r.fieldCollectionTypes, r.fieldLocations);

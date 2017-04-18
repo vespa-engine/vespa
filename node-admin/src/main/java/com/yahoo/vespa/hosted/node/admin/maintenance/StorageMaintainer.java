@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
 /**
  * @author freva
  */
@@ -267,10 +269,12 @@ public class StorageMaintainer {
             try {
                 args = objectMapper.writeValueAsString(jobs);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed trasform list of maintenance jobs to JSON");
+                throw new RuntimeException("Failed transform list of maintenance jobs to JSON");
             }
 
-            String[] command = {"java", "-cp", classPath, "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
+            String[] command = {"java", "-cp", classPath,
+                    "-Dvespa.log.target=file:" + getDefaults().underVespaHome("logs/vespa/vespa.log"),
+                    "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
             ProcessResult result = docker.executeInContainerAsRoot(executeIn, command);
 
             if (! result.isSuccess()) {

@@ -52,7 +52,7 @@ public:
     document::BucketId bucketId;
     std::unique_ptr<Operation> op;
 
-    void setUp() {
+    void setUp() override {
         _repo.reset(
                 new document::DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
                         getConfig("config-doctypes",
@@ -63,7 +63,7 @@ public:
         bucketId = getExternalOperationHandler().getBucketId(docId);
     };
 
-    void tearDown() {
+    void tearDown() override {
         close();
         op.reset();
     }
