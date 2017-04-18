@@ -333,8 +333,15 @@ public class NodeAgentImpl implements NodeAgent {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
             if (existingContainer.get().state.isRunning()) {
-                orchestratorSuspendNode();
-                stopServices();
+                if (nodeSpec.nodeState == Node.State.active) {
+                    orchestratorSuspendNode();
+                }
+
+                try {
+                    stopServices();
+                } catch (Exception e) {
+                    logger.info("Failed stopping services, ignoring", e);
+                }
             }
             vespaVersion = Optional.empty();
             dockerOperations.removeContainer(existingContainer.get());
