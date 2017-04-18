@@ -46,8 +46,8 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                                            *lidHandler, opStorer, fbHandler,
                                            diskMemUsageNotifier,
                                            config.getResourceLimitFactor()));
-        controller.registerJob(std::move(trackJob(tracker,
-                std::move(job))));
+        controller.registerJobInMasterThread(std::move(trackJob(tracker,
+                                                                std::move(job))));
     }
 }
 
@@ -76,8 +76,8 @@ injectBucketMoveJob(MaintenanceController &controller,
                                 diskMemUsageNotifier,
                                 resourceLimitFactor,
                                 docTypeName));
-    controller.registerJob(std::move(trackJob(jobTrackers.getBucketMove(),
-                                              std::move(bmj))));
+    controller.registerJobInMasterThread(std::move(trackJob(jobTrackers.getBucketMove(),
+                                                            std::move(bmj))));
 }
 
 }
@@ -105,16 +105,18 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IAttributeManagerSP notReadyAttributeManager,
                                     AttributeUsageFilter &attributeUsageFilter) {
     typedef IMaintenanceJob::UP MUP;
-    controller.registerJob(MUP(new HeartBeatJob(hbHandler, config.getHeartBeatConfig())));
-    controller.registerJob(MUP(new PruneSessionCacheJob(scPruner, config.getSessionCachePruneInterval())));
+    controller.registerJobInMasterThread(MUP(new HeartBeatJob(hbHandler, config.getHeartBeatConfig())));
+    controller.registerJobInMasterThread(MUP(new PruneSessionCacheJob(scPruner, config.getSessionCachePruneInterval())));
     if (config.getVisibilityDelay() > 0) {
-        controller.registerJob(MUP(new DocumentDBCommitJob(commit, config.getVisibilityDelay())));
+        controller.registerJobInMasterThread(MUP(new DocumentDBCommitJob(commit, config.getVisibilityDelay())));
     }
-    controller.registerJob(MUP(new WipeOldRemovedFieldsJob(worfHandler, config.getWipeOldRemovedFieldsConfig())));
+    controller.registerJobInMasterThread(
+            MUP(new WipeOldRemovedFieldsJob(worfHandler, config.getWipeOldRemovedFieldsConfig())));
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
     MUP pruneRDjob(new PruneRemovedDocumentsJob(config.getPruneRemovedDocumentsConfig(), *mRemSubDB._metaStore,
                                                 mRemSubDB._subDbId, docTypeName, prdHandler, fbHandler));
-    controller.registerJob(std::move(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob))));
+    controller.registerJobInMasterThread(
+            std::move(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob))));
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer,
                                      fbHandler, jobTrackers.getLidSpaceCompact(),
@@ -122,12 +124,12 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     }
     injectBucketMoveJob(controller, fbHandler, docTypeName, moveHandler, bucketModifiedHandler,
                         clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers, diskMemUsageNotifier, config.getResourceLimitFactor());
-    controller.registerJob(std::make_unique<SampleAttributeUsageJob>
-                           (readyAttributeManager,
-                            notReadyAttributeManager,
-                            attributeUsageFilter,
-                            docTypeName,
-                            config.getAttributeUsageSampleInterval()));
+    controller.registerJobInMasterThread(std::make_unique<SampleAttributeUsageJob>
+                                                 (readyAttributeManager,
+                                                  notReadyAttributeManager,
+                                                  attributeUsageFilter,
+                                                  docTypeName,
+                                                  config.getAttributeUsageSampleInterval()));
 }
 
 } // namespace proton

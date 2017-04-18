@@ -43,12 +43,6 @@ public:
     virtual void unBlock() { setBlocked(false); }
 
     /**
-     * Indicates if it can be run in any thread, or if the master thread is required.
-     * @return true if master thread is required.
-     */
-    virtual bool requireMasterThread() const { return true; }
-
-    /**
      * Register maintenance job runner, in case event passed to the
      * job causes it to want to be run again.
      */

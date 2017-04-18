@@ -49,14 +49,14 @@ MaintenanceController::MaintenanceController(IThreadService &masterThread,
     _frozenBuckets.addListener(this); // forward freeze/thaw to bmc
 }
 
-MaintenanceController::~MaintenanceController(void)
+MaintenanceController::~MaintenanceController()
 {
     kill();
     _frozenBuckets.removeListener(this);
 }
 
 void
-MaintenanceController::registerJob(IMaintenanceJob::UP job)
+MaintenanceController::registerJobInMasterThread(IMaintenanceJob::UP job)
 {
     // Called by master write thread
     Guard guard(_jobsLock);

@@ -1330,7 +1330,7 @@ TEST_F("require that a simple maintenance job is executed", MaintenanceControlle
 {
     IMaintenanceJob::UP job(new MySimpleJob(0.2, 0.2, 3));
     MySimpleJob &myJob = static_cast<MySimpleJob &>(*job);
-    f._mc.registerJob(std::move(job));
+    f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
     bool done = myJob._latch.await(TIMEOUT_MS);
@@ -1342,7 +1342,7 @@ TEST_F("require that a split maintenance job is executed", MaintenanceController
 {
     IMaintenanceJob::UP job(new MySplitJob(0.2, TIMEOUT_SEC * 2, 3));
     MySplitJob &myJob = static_cast<MySplitJob &>(*job);
-    f._mc.registerJob(std::move(job));
+    f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
     bool done = myJob._latch.await(TIMEOUT_MS);
@@ -1357,8 +1357,8 @@ TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
     MySimpleJob &myJob1 = static_cast<MySimpleJob &>(*job1);
     IMaintenanceJob::UP job2(new MySimpleJob(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0));
     MySimpleJob &myJob2 = static_cast<MySimpleJob &>(*job2);
-    f._mc.registerJob(std::move(job1));
-    f._mc.registerJob(std::move(job2));
+    f._mc.registerJobInMasterThread(std::move(job1));
+    f._mc.registerJobInMasterThread(std::move(job2));
     f._injectDefaultJobs = false;
     f.startMaintenance();
 
@@ -1388,7 +1388,7 @@ TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixtur
     IMaintenanceJob::UP job(new MySimpleJob(0.2, 0.2, 0));
     MySimpleJob &myJob = static_cast<MySimpleJob &>(*job);
     myJob.block();
-    f._mc.registerJob(std::move(job));
+    f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
     FastOS_Thread::Sleep(2000);
@@ -1401,8 +1401,8 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
         IMaintenanceJob::UP job1(new MySimpleJob(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0));
         IMaintenanceJob::UP job2(new MyLongRunningJob(0.2, 0.2));
         MyLongRunningJob &longRunningJob = static_cast<MyLongRunningJob &>(*job2);
-        f._mc.registerJob(std::move(job1));
-        f._mc.registerJob(std::move(job2));
+        f._mc.registerJobInMasterThread(std::move(job1));
+        f._mc.registerJobInMasterThread(std::move(job2));
         f._injectDefaultJobs = false;
         f.startMaintenance();
         longRunningJob._firstRun.await(TIMEOUT_MS);
