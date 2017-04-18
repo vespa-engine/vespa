@@ -47,7 +47,7 @@ public class PrepareParamsTest {
             PrepareParams.IGNORE_VALIDATION_PARAM_NAME + "=false&" +
             PrepareParams.APPLICATION_NAME_PARAM_NAME + "=baz&" +
             PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion;
-
+   
     @Test
     public void testCorrectParsingWithRotation() {
         PrepareParams prepareParams = createParams(request + "&" +
