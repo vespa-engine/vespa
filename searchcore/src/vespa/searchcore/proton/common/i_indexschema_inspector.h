@@ -6,6 +6,9 @@
 
 namespace proton {
 
+/**
+ * Interface for inspector for an indexschema config.
+ */
 class IIndexschemaInspector {
 public:
     virtual ~IIndexschemaInspector() { }

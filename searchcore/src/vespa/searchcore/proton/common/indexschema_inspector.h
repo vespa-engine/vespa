@@ -8,6 +8,9 @@
 
 namespace proton {
 
+/**
+ * Inspector for an indexschema config.
+ */
 class IndexschemaInspector : public IIndexschemaInspector {
     using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
     ConfigHash<IndexschemaConfig::Indexfield> _hash;
