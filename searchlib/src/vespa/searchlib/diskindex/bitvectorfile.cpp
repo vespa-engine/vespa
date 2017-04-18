@@ -85,10 +85,12 @@ BitVectorFileWrite::open(const vespalib::string &name,
 
     FastOS_FileInterface *datfile = new FastOS_File;
     _datFile = new Fast_BufferedFile(datfile);
-    if (tuneFileWrite.getWantSyncWrites())
+    if (tuneFileWrite.getWantSyncWrites()) {
         _datFile->EnableSyncWrites();
-    if (tuneFileWrite.getWantDirectIO())
+    }
+    if (tuneFileWrite.getWantDirectIO()) {
         _datFile->EnableDirectIO();
+    }
     // XXX no checking for success:
     _datFile->OpenWriteOnly(datname.c_str());
 
