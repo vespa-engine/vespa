@@ -6,7 +6,8 @@
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/select/operator.h>
 #include <vespa/document/select/resultset.h>
-#include <vespa/searchcommon/common/schema.h>
+
+namespace search { class IAttributeManager; }
 
 namespace proton
 {
@@ -15,14 +16,14 @@ class SelectPrunerBase
 {
 protected:
     const vespalib::string &_docType;
-    const search::index::Schema &_schema;
+    const search::IAttributeManager *_amgr;
     const document::Document &_emptyDoc;
     const document::DocumentTypeRepo &_repo;
     bool _hasFields;
 
 public:
     SelectPrunerBase(const vespalib::string &docType,
-                     const search::index::Schema &schema,
+                     const search::IAttributeManager *amgr,
                      const document::Document &emptyDoc,
                      const document::DocumentTypeRepo &repo,
                      bool hasFields);
@@ -43,7 +44,7 @@ private:
     uint32_t _attrFieldNodes;
 public:
     SelectPruner(const vespalib::string &docType,
-                 const search::index::Schema &schema,
+                 const search::IAttributeManager *amgr,
                  const document::Document &emptyDoc,
                  const document::DocumentTypeRepo &repo,
                  bool hasFields);

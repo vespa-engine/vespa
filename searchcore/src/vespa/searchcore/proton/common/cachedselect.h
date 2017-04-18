@@ -13,7 +13,6 @@ namespace document {
 namespace search {
     class AttributeVector;
     class IAttributeManager;
-    namespace index { class Schema; }
 }
 
 namespace proton {
@@ -59,7 +58,6 @@ public:
         const vespalib::string &docTypeName,
         const document::Document &emptyDoc,
         const document::DocumentTypeRepo &repo,
-        const search::index::Schema &schema,
         const search::IAttributeManager *amgr,
         bool hasFields);
 };

@@ -7,11 +7,12 @@
 #include <vespa/searchcore/proton/common/selectpruner.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("selectpruner_test");
 
-using namespace search::index;
 using document::DataType;
 using document::Document;
 using document::DocumentType;
@@ -26,24 +27,16 @@ using document::select::Node;
 using document::select::Result;
 using document::select::ResultSet;
 using proton::SelectPruner;
-using search::index::schema::CollectionType;
 using vespalib::string;
+using search::attribute::BasicType;
+using search::attribute::CollectionType;
+using search::attribute::test::MockAttributeManager;
+using search::AttributeFactory;
 
 typedef Node::UP NodeUP;
 
 namespace
 {
-
-void
-makeSchema(Schema &s)
-{
-    s.addIndexField(Schema::IndexField("ia", schema::DataType::STRING));
-    s.addAttributeField(Schema::AttributeField("aa", schema::DataType::INT32));
-    s.addAttributeField(Schema::AttributeField("aaa", schema::DataType::INT32,
-                                               CollectionType::ARRAY));
-    s.addAttributeField(Schema::AttributeField("aaw", schema::DataType::INT32,
-                                               CollectionType::WEIGHTEDSET));
-}
 
 const int32_t doc_type_id = 787121340;
 const string type_name = "test";
@@ -134,7 +127,7 @@ csString(const SelectPruner &pruner)
 class TestFixture
 {
 public:
-    Schema _s;
+    MockAttributeManager _amgr;
     DocumentTypeRepo::UP _repoUP;
     bool _hasFields;
 
@@ -160,11 +153,13 @@ public:
 
 
 TestFixture::TestFixture(void)
-    : _s(),
+    : _amgr(),
       _repoUP(),
       _hasFields(true)
 {
-    makeSchema(_s);
+    _amgr.addAttribute("aa", AttributeFactory::createAttribute("aa", { BasicType::INT32 }));
+    _amgr.addAttribute("aaa", AttributeFactory::createAttribute("aaa", { BasicType::INT32 , CollectionType::ARRAY}));
+    _amgr.addAttribute("aaw", AttributeFactory::createAttribute("aaw", { BasicType::INT32 , CollectionType::WSET}));
     _repoUP = makeDocTypeRepo();
 }
 
@@ -227,7 +222,6 @@ TestFixture::testPrune(const string &selection,
                        const string &docTypeName)
 {
     const DocumentTypeRepo &repo(*_repoUP);
-    const Schema &schema(_s);
     document::select::Parser parser(repo,
                                     document::BucketIdFactory());
 
@@ -252,7 +246,7 @@ TestFixture::testPrune(const string &selection,
     ASSERT_TRUE(docType != NULL);
     Document::UP emptyDoc(new Document(*docType, docId));
     emptyDoc->setRepo(repo);
-    SelectPruner pruner(docTypeName, schema, *emptyDoc, repo, _hasFields);
+    SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields);
     pruner.process(*select);
     std::ostringstream pos;
     pruner.getNode()->print(pos, true, "");
