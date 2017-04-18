@@ -50,31 +50,6 @@ public class SearchClusterTest {
 
     @Test
     public void testSdConfigLogical() throws IOException, SAXException {
-        String services = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-        "<services  version=\"1.0\">" +
-        "  <admin version='2.0'>" +
-        "    <adminserver hostalias='node0' />" +
-        "  </admin>" +
-        "  <search version=\"2.0\">" +
-        "    <qrservers>" +
-        "      <qrserver hostalias=\"node0\" />" +
-        "   </qrservers>" +
-        "   <cluster name=\"s1\" indexingmode=\"realtime\">" +
-        "     <searchdefinitions>" +
-        "       <searchdefinition name=\"s1\" />" +
-        "       <searchdefinition name=\"s2\" />" +
-        "     </searchdefinitions>" +
-        "     <documents selection=\"music\" feedname=\"a\" />" +
-        "       <row index=\"0\">" +
-        "         <searchnodes>" +
-        "            <searchnode hostalias=\"node2\" index=\"0\" />" +
-        "         </searchnodes>" +
-        "       </row>" +
-        "   </cluster>" +
-        "  </search>" +
-        "</services>";
-        ApplicationPackage app = new VespaModelCreatorWithMockPkg(vespaHosts, services).appPkg;
-
         // sd1
         SDDocumentType sdt1=new SDDocumentType("s1");
         Search search1 = new Search("s1", null);
