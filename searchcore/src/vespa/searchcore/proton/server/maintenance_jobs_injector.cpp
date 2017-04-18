@@ -1,11 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.maintenance_jobs_injector");
-
 #include "bucketmovejob.h"
-#include "documentbucketmover.h"
 #include "documentdb_commit_job.h"
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
@@ -15,7 +10,6 @@ LOG_SETUP(".proton.server.maintenance_jobs_injector");
 #include "pruneremoveddocumentsjob.h"
 #include "sample_attribute_usage_job.h"
 #include "wipe_old_removed_fields_job.h"
-#include <vespa/fastos/timestamp.h>
 
 using fastos::ClockSystem;
 using fastos::TimeStamp;

@@ -7,8 +7,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <mutex>
 
-namespace proton
-{
+namespace proton {
 
 class MaintenanceJobRunner : public IMaintenanceJobRunner
 {
@@ -30,12 +29,12 @@ public:
     typedef std::shared_ptr<MaintenanceJobRunner> SP;
 
     MaintenanceJobRunner(vespalib::Executor &executor, IMaintenanceJob::UP job);
-    virtual void run() override;
+    void run() override;
     void stop() { _stopped = true; }
     bool isRunning() const;
+    const vespalib::Executor & getExecutor() const { return _executor; }
     const IMaintenanceJob &getJob() const { return *_job; }
     IMaintenanceJob &getJob() { return *_job; }
 };
 
 } // namespace proton
-

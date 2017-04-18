@@ -31,9 +31,11 @@ public:
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
+                                             vespalib::Executor & defaultExecutor,
                                              const DocTypeName &docTypeName)
     : IBucketFreezeListener(),
       _masterThread(masterThread),
+      _defaultExecutor(defaultExecutor),
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
@@ -66,7 +68,7 @@ void
 MaintenanceController::registerJobInDefaultPool(IMaintenanceJob::UP job)
 {
     // Called by master write thread
-    registerJob(_masterThread, std::move(job));
+    registerJob(_defaultExecutor, std::move(job));
 }
 
 void

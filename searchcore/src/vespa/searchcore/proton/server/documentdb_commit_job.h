@@ -2,9 +2,11 @@
 #pragma once
 
 #include "i_maintenance_job.h"
-#include "icommitable.h"
+#include <vespa/fastos/timestamp.h>
 
 namespace proton {
+
+class ICommitable;
 
 /**
  * Job that regularly commits the documentdb.

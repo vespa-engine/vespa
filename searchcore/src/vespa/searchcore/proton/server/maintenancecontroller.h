@@ -33,7 +33,7 @@ public:
     using JobList = std::vector<std::shared_ptr<MaintenanceJobRunner>>;
     using UP = std::unique_ptr<MaintenanceController>;
 
-    MaintenanceController(IThreadService &masterThread, const DocTypeName &docTypeName);
+    MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, const DocTypeName &docTypeName);
 
     virtual ~MaintenanceController();
     void registerJobInMasterThread(IMaintenanceJob::UP job);
@@ -72,6 +72,7 @@ private:
     using Guard = std::lock_guard<Mutex>;
 
     IThreadService                   &_masterThread;
+    vespalib::Executor               &_defaultExecutor;
     MaintenanceDocumentSubDB          _readySubDB;
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;
