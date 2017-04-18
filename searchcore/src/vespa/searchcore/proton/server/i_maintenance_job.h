@@ -32,28 +32,27 @@ public:
           _delay(delay),
           _interval(interval),
           _blocked(false)
-    {
-    }
+    {}
 
     virtual ~IMaintenanceJob() {}
 
     virtual const vespalib::string &getName() const { return _name; }
-
     virtual double getDelay() const { return _delay; }
-
     virtual double getInterval() const { return _interval; }
-
     virtual bool isBlocked() const { return _blocked; }
-
     virtual void unBlock() { setBlocked(false); }
+
+    /**
+     * Indicates if it can be run in any thread, or if the master thread is required.
+     * @return true if master thread is required.
+     */
+    virtual bool requireMasterThread() const { return true; }
 
     /**
      * Register maintenance job runner, in case event passed to the
      * job causes it to want to be run again.
      */
-    virtual void
-    registerRunner(IMaintenanceJobRunner *runner)
-    {
+    virtual void registerRunner(IMaintenanceJobRunner *runner) {
         (void) runner;
     }
 

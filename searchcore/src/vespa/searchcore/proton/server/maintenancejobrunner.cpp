@@ -1,18 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.maintenancejobrunner");
 #include "maintenancejobrunner.h"
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/fastos/thread.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.maintenancejobrunner");
 
 using vespalib::Executor;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 
-namespace proton
-{
+namespace proton {
 
 
 void
@@ -29,9 +28,7 @@ MaintenanceJobRunner::addExecutorTask()
         Guard guard(_lock);
         if (!_queued) {
             _queued = true;
-            _executor.execute(makeTask(makeClosure(this,
-                                                   &MaintenanceJobRunner::
-                                                   runJobInExecutor)));
+            _executor.execute(makeTask(makeClosure(this, &MaintenanceJobRunner::runJobInExecutor)));
         }
     }
 }

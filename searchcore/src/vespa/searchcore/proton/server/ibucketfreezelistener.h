@@ -2,16 +2,9 @@
 
 #pragma once
 
-namespace document
-{
+namespace document { class BucketId; }
 
-class BucketId;
-
-}
-
-namespace proton
-{
-
+namespace proton {
 
 /**
  * Interface class used by a registered listener to get notifications about
@@ -23,7 +16,6 @@ public:
     virtual ~IBucketFreezeListener() {}
     virtual void notifyThawedBucket(const document::BucketId &bucket) = 0;
 };
-
 
 } // namespace proton
 

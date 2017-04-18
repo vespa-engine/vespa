@@ -4,8 +4,7 @@
 
 #include <vespa/document/bucket/bucketid.h>
 
-namespace proton
-{
+namespace proton {
 
 class IBucketFreezer
 {

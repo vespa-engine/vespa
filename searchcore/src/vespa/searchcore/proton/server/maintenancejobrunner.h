@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include "i_maintenance_job.h"
 #include "imaintenancejobrunner.h"
+#include <vespa/vespalib/util/executor.h>
 #include <mutex>
 
 namespace proton

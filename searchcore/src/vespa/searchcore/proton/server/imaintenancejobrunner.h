@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Interface for running maintenance jobs (cf. IMaintenanceJob).
