@@ -12,14 +12,12 @@ public interface Orchestrator {
     /**
      * Invokes orchestrator suspend of a host.
      * @throws OrchestratorException if suspend was denied.
-     * @throws OrchestratorNotFoundException if host is unknown to the orchestrator
      */
     void suspend(String hostName);
 
     /**
      * Invokes orchestrator resume of a host.
      * @throws OrchestratorException if resume was denied
-     * @throws OrchestratorNotFoundException if host is unknown to the orchestrator
      */
     void resume(String hostName);
 

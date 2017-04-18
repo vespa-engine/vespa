@@ -3,8 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.yahoo.vespa.defaults.Defaults;
 
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
@@ -42,7 +44,9 @@ public class OrchestratorImpl implements Orchestrator {
                     Optional.empty(), /* body */
                     UpdateHostResponse.class);
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
-            throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            getLogger(hostName).info("Got not found on suspending, allowed to suspend");
+            return;
         } catch (Exception e) {
             throw new RuntimeException("Got error on suspend", e);
         }
@@ -77,7 +81,9 @@ public class OrchestratorImpl implements Orchestrator {
             String path = getSuspendPath(hostName);
             response = requestExecutor.delete(path, WEB_SERVICE_PORT, UpdateHostResponse.class);
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
-            throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            getLogger(hostName).info("Got not found on resuming, allowed to resume");
+            return;
         } catch (Exception e) {
             throw new RuntimeException("Got error on resume", e);
         }
@@ -85,6 +91,10 @@ public class OrchestratorImpl implements Orchestrator {
         Optional.ofNullable(response.reason()).ifPresent(reason -> {
             throw new OrchestratorException(reason.message());
         });
+    }
+
+    private PrefixLogger getLogger(String hostName) {
+        return PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class, ContainerName.fromHostname(hostName));
     }
 
     private String getSuspendPath(String hostName) {
