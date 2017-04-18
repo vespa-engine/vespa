@@ -64,13 +64,9 @@ private:
                    std::vector<std::string> &oos, std::set<std::string> &errors) const;
 
 public:
-    /** Null member variables. */
     Application();
     ~Application();
-
-    // Inherit doc from FastOS_Application.
     int Main() override;
 };
 
 }
-

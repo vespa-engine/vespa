@@ -1,11 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/base/testdocman.h>
-#include <vespa/document/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/update/fieldpathupdates.h>
-#include <iomanip>
-#include <sstream>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
@@ -16,10 +10,16 @@
 #include <vespa/storageapi/mbusprot/storageprotocol.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
+#include <vespa/storageapi/message/visitor.h>
+#include <vespa/document/base/testdocman.h>
+#include <vespa/document/document.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
-#include <vespa/storageapi/message/visitor.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <iomanip>
+#include <sstream>
 
 using std::shared_ptr;
 using document::ByteBuffer;
@@ -837,8 +837,7 @@ namespace {
 
         api::StorageReply::UP makeReply() override;
 
-        virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override
-        {
+        void print(std::ostream& out, bool verbose, const std::string& indent) const override {
             out << "MyCommand()";
             if (verbose) {
                 out << " : ";
@@ -850,8 +849,7 @@ namespace {
     struct MyReply : public api::InternalReply {
         MyReply(const MyCommand& cmd) : InternalReply(102, cmd) {}
 
-        virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override
-        {
+        void print(std::ostream& out, bool verbose, const std::string& indent) const override {
             out << "MyReply()";
             if (verbose) {
                 out << " : ";

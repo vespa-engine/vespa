@@ -2,14 +2,10 @@
 
 #include "attributefactory.h"
 #include "defines.h"
-
 #include "attributevector.hpp"
 #include "multivalueattribute.hpp"
 #include "multinumericattribute.hpp"
 #include "multistringattribute.h"
-
-#include <vespa/log/log.h>
-LOG_SETUP(".createarraystd");
 
 namespace search {
 

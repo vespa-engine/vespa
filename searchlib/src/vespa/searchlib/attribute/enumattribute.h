@@ -61,7 +61,7 @@ protected:
     virtual EnumType getFromEnum(EnumHandle e)        const { return _enumStore.getValue(e); }
 
     virtual void fillPostings(LoadedVector & loaded) { (void) loaded; }
-    void fillEnum(LoadedVector & loaded);
+    void fillEnum(LoadedVector & loaded) override;
     void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs) override;
     void fixupEnumRefCounts(const EnumVector &enumHist) override;
     uint64_t getUniqueValueCount(void) const override;

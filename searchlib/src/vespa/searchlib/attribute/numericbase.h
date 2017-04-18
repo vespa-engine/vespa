@@ -4,7 +4,7 @@
 
 #include "attributevector.h"
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/searchlib/attribute/enumstorebase.h>
+#include "enumstorebase.h"
 #include "loadedenumvalue.h"
 
 namespace search {
@@ -28,6 +28,7 @@ protected:
     virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
     virtual void fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
     virtual void fixupEnumRefCounts(const EnumVector &enumHist);
+    virtual bool onAddDoc(DocId) { return true; }
 
     template<typename T>
     class Equal

@@ -2,9 +2,7 @@
 
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/mapper/memfile_v1_serializer.h>
-#include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
 #include <tests/spi/memfiletestutils.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/memfilepersistence/mapper/locationreadplanner.h>
 #include <tests/spi/simulatedfailurefile.h>
 #include <tests/spi/options_builder.h>
