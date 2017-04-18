@@ -8,7 +8,7 @@
 #include "i_attribute_initializer_registry.h"
 #include <set>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 
 namespace search

@@ -27,7 +27,6 @@ using search::TuneFileAttributes;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
-using search::index::Schema;
 using search::attribute::BasicType;
 using searchcorespi::IFlushTarget;
 
