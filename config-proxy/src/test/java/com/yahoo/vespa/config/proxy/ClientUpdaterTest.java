@@ -11,8 +11,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static junit.framework.TestCase.assertNull;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -48,21 +49,21 @@ public class ClientUpdaterTest {
         clientUpdater.updateSubscribers(fooConfig);
 
         // No delayed response, so not returned
-        assertResponseAndCache(rpcServer, memoryCache, fooConfig, 0, 1);
+        assertEquals(0, rpcServer.responses);
 
         delayedResponses.add(new DelayedResponse(JRTServerConfigRequestV3.createFromRequest(JRTConfigRequestFactory.createFromRaw(fooConfig, -10L).getRequest())));
         clientUpdater.updateSubscribers(fooConfig);
-        assertResponseAndCache(rpcServer, memoryCache, fooConfig, 1, 1);
+        assertEquals(1, rpcServer.responses);
 
         // Will not find bar config in delayed responses
         RawConfig barConfig = new RawConfig(new ConfigKey<>("bar", "id", "namespace"), fooConfig.getDefMd5());
         clientUpdater.updateSubscribers(barConfig);
-        assertResponseAndCache(rpcServer, memoryCache, barConfig, 1, 2);
+        assertEquals(1, rpcServer.responses);
 
 
         mode = new Mode(Mode.ModeName.MEMORYCACHE);
         // Nothing should be returned, so still 1 response
-        assertResponseAndCache(rpcServer, memoryCache, fooConfig, 1, 2);
+        assertEquals(1, rpcServer.responses);
         assertThat(statistics.errors(), is(0L));
     }
 
@@ -93,13 +94,5 @@ public class ClientUpdaterTest {
         assertThat(statistics.errors(), is(1L));
     }
 
-    private static void assertResponseAndCache(MockRpcServer rpcServer,
-                                               MemoryCache memoryCache,
-                                               RawConfig expectedConfig,
-                                               long expectedResponses,
-                                               int cacheSize) {
-        assertThat(rpcServer.responses, is(expectedResponses));
-        assertThat(memoryCache.size(), is(cacheSize));
-        assertThat(memoryCache.get(new ConfigCacheKey(expectedConfig.getKey(), expectedConfig.getDefMd5())), is(expectedConfig));
-    }
+
 }

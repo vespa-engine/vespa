@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.proxy;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
+import com.yahoo.vespa.config.protocol.Payload;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,8 +23,11 @@ import static org.junit.Assert.*;
 public class ProxyServerTest {
 
     private final MemoryCache memoryCache = new MemoryCache();
-    private final MapBackedConfigSource source = new MapBackedConfigSource(new MockClientUpdater(memoryCache));
-    private ProxyServer proxy = ProxyServer.createTestServer(source, source, memoryCache);
+    private MockClientUpdater clientUpdater = new MockClientUpdater(memoryCache);
+    private final MockConfigSource source = new MockConfigSource(clientUpdater);
+    private MockConfigSourceClient client = new MockConfigSourceClient(clientUpdater, source);
+    private final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
+    private ProxyServer proxy;
 
     static final RawConfig fooConfig = Helper.fooConfig;
 
@@ -41,7 +45,7 @@ public class ProxyServerTest {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
         source.put(errorConfigKey, createConfigWithNextConfigGeneration(fooConfig, ErrorCode.UNKNOWN_DEFINITION));
-        proxy = ProxyServer.createTestServer(source, source, memoryCache);
+        proxy = ProxyServer.createTestServer(source, client, memoryCache, statistics);
     }
 
     @After
@@ -54,6 +58,36 @@ public class ProxyServerTest {
         assertTrue(proxy.getMode().isDefault());
         assertThat(proxy.getMemoryCache().size(), is(0));
         assertThat(proxy.getTimingValues(), is(ProxyServer.defaultTimingValues()));
+
+        ConfigTester tester = new ConfigTester();
+        final MemoryCache memoryCache = proxy.getMemoryCache();
+        assertEquals(0, memoryCache.size());
+        RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
+        assertNotNull(res);
+        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
+        assertEquals(1, memoryCache.size());
+        assertThat(memoryCache.get(new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5())), is(res));
+
+
+        assertEquals(1, statistics.processedRequests());
+        assertEquals(0, statistics.rpcRequests());
+        assertEquals(0, statistics.errors());
+        assertEquals(0, statistics.delayedResponses());
+
+        statistics.incProcessedRequests();
+        statistics.incRpcRequests();
+        statistics.incErrorCount();
+        statistics.delayedResponses(1);
+
+        assertEquals(2, statistics.processedRequests());
+        assertEquals(1, statistics.rpcRequests());
+        assertEquals(1, statistics.errors());
+        assertEquals(1, statistics.delayedResponses());
+
+        statistics.decDelayedResponses();
+        assertEquals(0, statistics.delayedResponses());
+
+        assertEquals(ConfigProxyStatistics.defaultEventInterval, statistics.getEventInterval().longValue());
     }
 
     /**
@@ -157,6 +191,25 @@ public class ProxyServerTest {
     }
 
     @Test
+    public void testReconfigurationAsClient() {
+        long generation = 1;
+        RawConfig fooConfig = Helper.fooConfig;
+        source.put(fooConfig.getKey(), fooConfig);
+
+        clientUpdater.waitForConfigGeneration(fooConfig.getKey(), generation);
+        assertThat(clientUpdater.getLastConfig(), is(fooConfig));
+
+        // Update payload in config
+        generation++;
+        final ConfigPayload payload = Helper.createConfigPayload("bar", "value2");
+        RawConfig fooConfig2 = createConfigWithNextConfigGeneration(fooConfig, 0, Payload.from(payload));
+        source.put(fooConfig2.getKey(), fooConfig2);
+
+        clientUpdater.waitForConfigGeneration(fooConfig2.getKey(), generation);
+        assertFalse(clientUpdater.getLastConfig().equals(fooConfig));
+    }
+
+    @Test
     public void testReadingSystemProperties() {
         ProxyServer.Properties properties = ProxyServer.getSystemProperties();
         assertThat(properties.eventInterval, is(ConfigProxyStatistics.defaultEventInterval));
@@ -165,9 +218,13 @@ public class ProxyServerTest {
     }
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode) {
+        return createConfigWithNextConfigGeneration(config, errorCode, config.getPayload());
+    }
+
+    static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload) {
         return new RawConfig(config.getKey(), config.getDefMd5(),
-            config.getPayload(), config.getConfigMd5(),
-            config.getGeneration() + 1, errorCode, config.getDefContent(), Optional.empty());
+                             payload, config.getConfigMd5(),
+                             config.getGeneration() + 1, errorCode, config.getDefContent(), Optional.empty());
     }
 
 }

@@ -22,7 +22,7 @@ public class ConfigProxyRpcServerTest {
     private static final String hostname = "localhost";
     private static final int port = 12345;
     private static final String address = "tcp/" + hostname + ":" + port;
-    ProxyServer proxyServer;
+    private ProxyServer proxyServer;
     private ConfigProxyRpcServer rpcServer;
 
     @Before
