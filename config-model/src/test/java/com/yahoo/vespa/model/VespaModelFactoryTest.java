@@ -1,13 +1,29 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.*;
+import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.ModelCreateResult;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.Rotation;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -100,7 +116,7 @@ public class VespaModelFactoryTest {
                                     ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.admin,
                                                                             new ClusterSpec.Id(routingClusterName),
                                                                             ClusterSpec.Group.from(0),
-                                                                            Optional.empty()),
+                                                                            Version.fromString("6.42")),
                                                            0));
             }
 
@@ -111,7 +127,7 @@ public class VespaModelFactoryTest {
                                                               ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.container,
                                                                                                       new ClusterSpec.Id(routingClusterName),
                                                                                                       ClusterSpec.Group.from(0),
-                                                                                                      Optional.empty()),
+                                                                                                      Version.fromString("6.42")),
                                                                                      0)));
             }
         };

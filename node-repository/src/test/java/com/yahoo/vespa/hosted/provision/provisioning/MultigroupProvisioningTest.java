@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -196,7 +197,7 @@ public class MultigroupProvisioningTest {
         assertEquals("No additional groups are retained containing retired nodes", wantedGroups, allGroups.size());
     }
 
-    private ClusterSpec cluster() { return ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty()); }
+    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42")); }
 
     private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, int groupCount, ProvisioningTester tester) {
         return new HashSet<>(tester.prepare(application, cluster(), capacity, groupCount));

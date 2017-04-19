@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.content.utils;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
@@ -23,6 +24,7 @@ import java.util.Optional;
 
 /**
  * For testing purposes only.
+ * 
  * @author geirst
  */
 public class ContentClusterUtils {
@@ -51,8 +53,9 @@ public class ContentClusterUtils {
     public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
         Document doc = XML.getDocument(clusterXml);
         Admin admin = new Admin(root, new Yamas("vespa", 60), new Metrics(), Collections.emptyMap(), false);
-        DeployLogger deployLogger = new BaseDeployLogger();
-        return new ContentCluster.Builder(admin, deployLogger).build(Collections.emptyList(), root, doc.getDocumentElement());
+        ConfigModelContext context = ConfigModelContext.create(null, DeployState.createTestState(), null, root, null);
+        
+        return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());
     }
 
     public static ContentCluster createCluster(String clusterXml, List<String> searchDefinitions) throws Exception {

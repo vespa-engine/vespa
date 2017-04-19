@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
@@ -189,12 +190,12 @@ public class StorageGroup {
 
         private final ModelElement clusterElement;
         private final ContentCluster owner;
-        private final DeployLogger deployLogger;
+        private final ConfigModelContext context;
 
-        public Builder(ModelElement clusterElement, ContentCluster owner, DeployLogger deployLogger) {
+        public Builder(ModelElement clusterElement, ContentCluster owner, ConfigModelContext context) {
             this.clusterElement = clusterElement;
             this.owner = owner;
-            this.deployLogger = deployLogger;
+            this.context = context;
         }
 
         public StorageGroup buildRootGroup() {
@@ -404,13 +405,13 @@ public class StorageGroup {
 
             Optional<NodesSpecification> nodeRequirement;
             if (nodesElement.isPresent() && nodesElement.get().getStringAttribute("count") != null ) // request these nodes
-                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get()));
+                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context.getDeployState().getWantedNodeVespaVersion()));
             else if (! nodesElement.isPresent() && subGroups.isEmpty() && owner.getRoot().getDeployState().isHosted()) // request one node
-                nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1));
+                nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context.getDeployState().getWantedNodeVespaVersion()));
             else // Nodes or groups explicitly listed, and/opr not hosted - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
 
-            return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement, deployLogger);
+            return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement, context.getDeployLogger());
         }
 
         private Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {

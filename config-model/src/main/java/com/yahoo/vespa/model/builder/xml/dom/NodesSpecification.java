@@ -111,7 +111,7 @@ public class NodesSpecification {
     public int groups() { return groups; }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, DeployLogger logger) {
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, dockerImage);
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version);
         return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required), groups, logger);
     }
 

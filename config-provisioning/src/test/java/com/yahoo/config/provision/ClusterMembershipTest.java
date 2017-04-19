@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.*;
+import com.yahoo.component.Version;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -16,59 +18,59 @@ public class ClusterMembershipTest {
 
     @Test
     public void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));
         assertContainerService(ClusterMembership.from(cluster, 3));
     }
 
     @Test
     public void testContainerServiceInstanceFromString() {
-        assertContainerService(ClusterMembership.fromVersion("container/id1/3", Optional.empty()));
+        assertContainerService(ClusterMembership.from("container/id1/3", Vtag.currentVersion));
     }
 
     @Test
     public void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));
         assertContentService(ClusterMembership.from(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceFromString() {
-        assertContentService(ClusterMembership.fromVersion("content/id1/37", Optional.empty()));
+        assertContentService(ClusterMembership.from("content/id1/37", Vtag.currentVersion));
     }
 
     @Test
     public void testServiceInstanceWithGroup() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Optional.empty());
+                                               ClusterSpec.Group.from(4), Version.fromString("6.42"));
         assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroupFromString() {
-        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Optional.empty()));
+        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Vtag.currentVersion));
     }
 
     @Test
     public void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithRetireFromString() {
-        assertContentServiceWithRetire(ClusterMembership.from("content/id1/37/retired", Optional.empty()));
+        assertContentServiceWithRetire(ClusterMembership.from("content/id1/37/retired", Vtag.currentVersion));
     }
 
     @Test
     public void testServiceInstanceWithGroupAndRetire() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Optional.empty());
+                                               ClusterSpec.Group.from(4), Version.fromString("6.42"));
         assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroupAndRetireFromString() {
-        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Optional.empty()));
+        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Vtag.currentVersion));
     }
 
     private void assertContainerService(ClusterMembership instance) {

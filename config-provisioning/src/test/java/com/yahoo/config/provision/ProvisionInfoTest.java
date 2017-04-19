@@ -20,7 +20,7 @@ public class ProvisionInfoTest {
 
     private final HostSpec h1 = new HostSpec("host1", Optional.empty());
     private final HostSpec h2 = new HostSpec("host2", Optional.empty());
-    private final HostSpec h3 = new HostSpec("host3", Optional.of(ClusterMembership.from("container/test/0", Optional.empty())));
+    private final HostSpec h3 = new HostSpec("host3", Optional.of(ClusterMembership.from("container/test/0", com.yahoo.component.Version.fromString("6.73.1"))));
     private final HostSpec h4 = new HostSpec("host4", Optional.of(ClusterMembership.from("container/test/1", Optional.of("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1"))));
 
     @Test
@@ -57,6 +57,7 @@ public class ProvisionInfoTest {
         assertTrue(serializedInfo.getHosts().contains(h4));
         assertTrue(!getHost(h1.hostname(), serializedInfo.getHosts()).membership().isPresent());
         assertEquals("container/test/0", getHost(h3.hostname(), serializedInfo.getHosts()).membership().get().stringValue());
+        assertEquals(h3.membership().get().cluster().vespaVersion(), getHost(h3.hostname(), serializedInfo.getHosts()).membership().get().cluster().vespaVersion());
         assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", getHost(h4.hostname(), serializedInfo.getHosts()).membership().get().cluster().dockerImage());
     }
 

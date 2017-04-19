@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
@@ -65,7 +66,7 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
-                             ClusterMembership.fromVersion("content/myId/0/0", Optional.empty()),
+                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
                              clock.instant());
         assertEquals(1, node.history().events().size());
         node = node.withRestart(new Generation(1, 2));
@@ -101,7 +102,7 @@ public class SerializationTest {
         Node node = createNode().allocate(ApplicationId.from(TenantName.from("myTenant"),
                 ApplicationName.from("myApplication"),
                 InstanceName.from("myInstance")),
-                ClusterMembership.fromVersion("content/myId/0/0", Optional.empty()),
+                ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
                 clock.instant());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(NodeType.host, copy.type());
@@ -155,7 +156,7 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
-                             ClusterMembership.fromVersion("content/myId/0", Optional.empty()),
+                             ClusterMembership.from("content/myId/0", Vtag.currentVersion),
                              clock.instant());
         assertEquals(1, node.history().events().size());
         clock.advance(Duration.ofMinutes(2));
@@ -203,7 +204,7 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                              ApplicationName.from("myApplication"),
                              InstanceName.from("myInstance")),
-                             ClusterMembership.fromVersion("content/myId/0/0", Optional.empty()),
+                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
                              clock.instant());
 
         node = node.with(node.status().setFailCount(0));
@@ -216,10 +217,8 @@ public class SerializationTest {
     public void serialize_docker_image() {
         Node node = createNode();
 
-        Optional<Version> version = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0")
-                .map(DockerImage::new)
-                .map(DockerImage::tagAsVersion);
-        ClusterMembership clusterMembership = ClusterMembership.fromVersion("content/myId/0", version);
+        Version version = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0").tagAsVersion();
+        ClusterMembership clusterMembership = ClusterMembership.from("content/myId/0", version);
 
         Node nodeWithAllocation = node.with(
                 new Allocation(ApplicationId.from(TenantName.from("myTenant"),

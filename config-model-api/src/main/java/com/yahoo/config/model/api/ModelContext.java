@@ -36,7 +36,10 @@ public interface ModelContext {
     @Deprecated
     default Optional<com.yahoo.config.provision.Version> vespaVersion() { return Optional.empty(); }
     
+    /** The Vespa version this model is built for */
     Version modelVespaVersion();
+    
+    /** The Vespa version we want nodes to become */
     Version wantedNodeVespaVersion();
 
     interface Properties {

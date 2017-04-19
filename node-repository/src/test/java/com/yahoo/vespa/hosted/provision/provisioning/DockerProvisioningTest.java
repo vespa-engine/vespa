@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
  * @author bratseth
  */
 public class DockerProvisioningTest {
+
     private static final String dockerFlavor = "docker1";
 
     @Test
@@ -35,21 +36,21 @@ public class DockerProvisioningTest {
             tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost" + i);
         }
 
-        Optional<Version> wantedVespaVersion = Optional.of(Version.fromString("6.39"));
-        final int nodeCount = 7;
+        Version wantedVespaVersion = Version.fromString("6.39");
+        int nodeCount = 7;
         List<HostSpec> hosts = tester.prepare(application1,
-                                              ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion),
+                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedVespaVersion),
                                               nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
-        final NodeList nodes = tester.getNodes(application1, Node.State.active);
+        NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, nodes.size());
         assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
 
         // Upgrade Vespa version on nodes
-        Optional<Version> upgradedWantedVespaVersion = Optional.of(Version.fromString("6.40"));
+        Version upgradedWantedVespaVersion = Version.fromString("6.40");
         List<HostSpec> upgradedHosts = tester.prepare(application1,
-                                                      ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), upgradedWantedVespaVersion),
+                                                      ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), upgradedWantedVespaVersion),
                                                       nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(upgradedHosts));
         final NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
@@ -65,10 +66,10 @@ public class DockerProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost");
 
-        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty()), 1, 1, dockerFlavor);
+        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42")), 1, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
-        final NodeList nodes = tester.getNodes(application1, Node.State.active);
+        NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
         assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
     }

@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -47,7 +48,7 @@ public class MapConfigModelRegistryTest {
         }
 
         @Override
-        public List<ConfigModelId> handlesElements() { return Arrays.asList(ConfigModelId.fromName("modelB")); }
+        public List<ConfigModelId> handlesElements() { return Collections.singletonList(ConfigModelId.fromName("modelB")); }
         @Override
         public void doBuild(ModelB model, Element spec, ConfigModelContext modelContext) { }
     }
@@ -57,7 +58,7 @@ public class MapConfigModelRegistryTest {
             super(ModelB.class);
         }
         @Override
-        public List<ConfigModelId> handlesElements() { return Arrays.asList(ConfigModelId.fromName("modelB")); }
+        public List<ConfigModelId> handlesElements() { return Collections.singletonList(ConfigModelId.fromName("modelB")); }
         @Override
         public void doBuild(ModelB model, Element spec, ConfigModelContext modelContext) { }
     }
@@ -73,7 +74,7 @@ public class MapConfigModelRegistryTest {
             super(ModelA.class);
         }
         @Override
-        public List<ConfigModelId> handlesElements() { return Arrays.asList(ConfigModelId.fromName("modelA")); }
+        public List<ConfigModelId> handlesElements() { return Collections.singletonList(ConfigModelId.fromName("modelA")); }
 
         @Override
         public void doBuild(ModelA model, Element spec, ConfigModelContext modelContext) { }

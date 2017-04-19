@@ -21,13 +21,14 @@ import static org.junit.Assert.assertNull;
  * @author  bratseth
  */
 public class SummaryTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testDeriving() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
         SummaryClass summary=new SummaryClass(search,search.getSummary("default"), new BaseDeployLogger());
         assertEquals("default",summary.getName());
 
-        Iterator fields=summary.fieldIterator();
+        Iterator<SummaryClassField> fields=summary.fieldIterator();
 
         SummaryClassField field;
 

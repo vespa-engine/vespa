@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
@@ -28,25 +29,29 @@ import java.util.Optional;
 public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     private final Collection<ContainerModel> containerModels;
-    private final DeployLogger deployLogger;
+    private final ConfigModelContext context;
 
-    public DomAdminV4Builder(ConfigModelContext modelContext, boolean multitenant, List<ConfigServerSpec> configServerSpecs, Collection<ContainerModel> containerModels) {
-        super(modelContext.getApplicationType(), modelContext.getDeployState().getFileRegistry(), multitenant, configServerSpecs);
+    public DomAdminV4Builder(ConfigModelContext context, boolean multitenant, List<ConfigServerSpec> configServerSpecs, Collection<ContainerModel> containerModels) {
+        super(context.getApplicationType(), context.getDeployState().getFileRegistry(), multitenant, configServerSpecs);
         this.containerModels = containerModels;
-        this.deployLogger = modelContext.getDeployLogger();
+        this.context = context;
     }
 
     @Override
     protected void doBuildAdmin(Admin admin, Element w3cAdminElement) {
         ModelElement adminElement = new ModelElement(w3cAdminElement);
         admin.addConfigservers(getConfigServersFromSpec(admin));
-
+        Version version = context.getDeployState().getWantedNodeVespaVersion();
+        
         // Note: These two elements only exists in admin version 4.0
         // This build handles admin version 3.0 by ignoring its content (as the content is not useful)
-        Optional<NodesSpecification> requestedSlobroks   = NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("slobroks"));
-        Optional<NodesSpecification> requestedLogservers = NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"));
-        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3)), admin);
-        assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1)), admin);
+        Optional<NodesSpecification> requestedSlobroks = 
+                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("slobroks"), version);
+        Optional<NodesSpecification> requestedLogservers = 
+                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), version);
+
+        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin);
+        assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, version)), admin);
     }
 
     private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin) {
@@ -71,7 +76,10 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private Collection<HostResource> allocateHosts(HostSystem hostSystem, String clusterId, NodesSpecification nodesSpecification) {
-        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterId), deployLogger).keySet();
+        return nodesSpecification.provision(hostSystem, 
+                                            ClusterSpec.Type.admin, 
+                                            ClusterSpec.Id.from(clusterId), 
+                                            context.getDeployLogger()).keySet();
     }
 
     /**

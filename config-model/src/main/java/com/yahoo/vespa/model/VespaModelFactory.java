@@ -70,6 +70,7 @@ public class VespaModelFactory implements ModelFactory {
         this.clock = clock;
     }
 
+    /** Returns the version this model is build for */
     @Override
     public Version getVersion() {
         return Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
@@ -129,7 +130,8 @@ public class VespaModelFactory implements ModelFactory {
             .modelHostProvisioner(createHostProvisioner(modelContext))
             .rotations(modelContext.properties().rotations())
             .zone(zone)
-            .now(clock.instant());
+            .now(clock.instant())
+            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build();
     }

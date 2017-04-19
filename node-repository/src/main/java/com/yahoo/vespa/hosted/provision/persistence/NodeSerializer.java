@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
@@ -223,7 +224,7 @@ public class NodeSerializer {
         } else {
             vespaVersion = softwareVersionFromSlime(object.field(wantedVespaVersionKey));
         }
-        return ClusterMembership.fromVersion(object.field(serviceIdKey).asString(), vespaVersion);
+        return ClusterMembership.from(object.field(serviceIdKey).asString(), vespaVersion.orElse(Vtag.currentVersion));
     }
 
     private Optional<Version> softwareVersionFromSlime(Inspector object) {
