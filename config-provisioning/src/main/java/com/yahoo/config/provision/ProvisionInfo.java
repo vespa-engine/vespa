@@ -28,6 +28,7 @@ public class ProvisionInfo {
     private static final String hostSpecMembership = "membership";
     private static final String hostSpecFlavor = "flavor";
     private static final String hostSpecVespaVersion = "vespaVersion";
+    private static final String dockerImage = "dockerImage";
 
     private final Set<HostSpec> hosts = new LinkedHashSet<>();
 
@@ -83,11 +84,11 @@ public class ProvisionInfo {
     }
 
     private static ClusterMembership readMembership(Inspector object) {
-        // TODO: When no version older than 6.97 is present anywhere, remove the possibility of the version field missing
+        // TODO: When no version older than 6.97 is present anywhere, remove the possibility of the version field missing (and hence also remove reading of dockerImage)
         return ClusterMembership.from(object.field(hostSpecMembership).asString(),
                                       object.field(hostSpecVespaVersion).valid() ? 
                                       com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersion).asString()) :
-                                      Vtag.currentVersion);
+                                      ( object.field(dockerImage).valid() ? com.yahoo.component.Version.fromString(object.field(dockerImage).asString()) : Vtag.currentVersion));
     }
 
     private static Optional<Flavor> readFlavor(Inspector object, Optional<NodeFlavors> nodeFlavors) {
