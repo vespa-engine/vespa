@@ -3,42 +3,21 @@
 #include "attribute_specs_builder.h"
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/config-indexschema.h>
+#include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
+#include <vespa/searchcore/proton/common/config_hash.hpp>
 #include <vespa/config-attributes.h>
 #include "attribute_specs.h"
 
 using search::attribute::ConfigConverter;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
-using vespa::config::search::IndexschemaConfig;
 using search::attribute::BasicType;
 
 namespace proton {
 
 namespace {
 
-template <class Elem>
-class ConfigHash {
-    vespalib::hash_map<vespalib::string, const Elem *> _hash;
-public:
-    ConfigHash(const std::vector<Elem> &config)
-        : _hash()
-    {
-        for (const auto &elem : config) {
-            auto insres = _hash.insert(std::make_pair(elem.name, &elem));
-            assert(insres.second);
-        }
-    }
-    ~ConfigHash() { }
-    const Elem *lookup(const vespalib::string &name) const {
-        auto itr = _hash.find(name);
-        return ((itr == _hash.end()) ? nullptr : itr->second);
-    }
-};
-
 using AttributesConfigHash = ConfigHash<AttributesConfig::Attribute>;
-using IndexConfigHash = ConfigHash<IndexschemaConfig::Indexfield>;
 
 bool fastPartialUpdateAttribute(const search::attribute::Config &cfg) {
     auto basicType = cfg.basicType().type();
@@ -47,22 +26,11 @@ bool fastPartialUpdateAttribute(const search::attribute::Config &cfg) {
             (basicType != BasicType::Type::REFERENCE));
 }
 
-bool isStringIndex(const IndexConfigHash &indexConfig, const vespalib::string &name)
-{
-    auto index = indexConfig.lookup(name);
-    if (index != nullptr) {
-        if (index->datatype == IndexschemaConfig::Indexfield::Datatype::STRING) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Config &cfg,
-                                                  const IndexConfigHash &indexConfig,
+                                                  const IIndexschemaInspector &indexschemaInspector,
                                                   const vespalib::string &name)
 {
-    return fastPartialUpdateAttribute(cfg) && !isStringIndex(indexConfig, name);
+    return fastPartialUpdateAttribute(cfg) && !indexschemaInspector.isStringIndex(name);
 }
 
 
@@ -105,7 +73,7 @@ namespace {
 void
 handleNewAttributes(const AttributesConfig &oldAttributesConfig,
                     const AttributesConfig &newAttributesConfig,
-                    IndexConfigHash &oldIndexes,
+                    const IIndexschemaInspector &oldIndexschemaInspector,
                     const IDocumentTypeInspector &inspector,
                     AttributeSpecs &specs,
                     AttributesConfigBuilder &config)
@@ -121,7 +89,7 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
             auto oldAttr = oldAttrs.lookup(newAttr.name);
             if (oldAttr != nullptr) {
                 search::attribute::Config oldCfg = ConfigConverter::convert(*oldAttr);
-                if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexes, newAttr.name) || !oldAttr->fastaccess) {
+                if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexschemaInspector, newAttr.name) || !oldAttr->fastaccess) {
                     // Delay change of fast access flag
                     newCfg.setFastAccess(oldAttr->fastaccess);
                     specs.emplace_back(newAttr.name, newCfg);
@@ -150,7 +118,7 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
 void
 handleOldAttributes(const AttributesConfig &oldAttributesConfig,
                     const AttributesConfig &newAttributesConfig,
-                    IndexConfigHash &oldIndexes,
+                    const IIndexschemaInspector &oldIndexschemaInspector,
                     const IDocumentTypeInspector &inspector,
                     AttributeSpecs &specs,
                     AttributesConfigBuilder &config)
@@ -163,7 +131,7 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
             if (newAttr == nullptr) {
                 // Delay removal of attribute aspect if it would trigger
                 // reprocessing.
-                if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexes, oldAttr.name)) {
+                if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexschemaInspector, oldAttr.name)) {
                     specs.emplace_back(oldAttr.name, oldCfg, true, false);
                     config.attribute.emplace_back(oldAttr);
                 }
@@ -177,14 +145,13 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
 void
 AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
                              const AttributesConfig &newAttributesConfig,
-                             const IndexschemaConfig &oldIndexschemaConfig,
+                             const IIndexschemaInspector &oldIndexschemaInspector,
                              const IDocumentTypeInspector &inspector)
 {
-    IndexConfigHash oldIndexes(oldIndexschemaConfig.indexfield);
     handleNewAttributes(oldAttributesConfig, newAttributesConfig,
-                        oldIndexes, inspector, *_specs, *_config);
+                        oldIndexschemaInspector, inspector, *_specs, *_config);
     handleOldAttributes(oldAttributesConfig, newAttributesConfig,
-                        oldIndexes, inspector, *_specs, *_config);
+                        oldIndexschemaInspector, inspector, *_specs, *_config);
 }
 
 } // namespace proton

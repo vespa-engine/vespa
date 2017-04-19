@@ -15,6 +15,7 @@
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
@@ -22,7 +23,6 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchcommon/common/schema.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("cachedselect_test");
@@ -48,6 +48,7 @@ using proton::CachedSelect;
 using proton::SelectContext;
 using search::AttributeContext;
 using search::AttributeEnumGuard;
+using search::AttributeFactory;
 using search::AttributeGuard;
 using search::AttributePosting;
 using search::AttributeVector;
@@ -55,10 +56,10 @@ using search::EnumAttribute;
 using search::IntegerAttribute;
 using search::IntegerAttributeTemplate;
 using search::SingleValueNumericPostingAttribute;
+using search::attribute::BasicType;
+using search::attribute::CollectionType;
 using search::attribute::IAttributeContext;
 using search::attribute::test::MockAttributeManager;
-using search::index::Schema;
-using search::index::schema::CollectionType;
 using vespalib::string;
 
 using namespace search::index;
@@ -74,15 +75,6 @@ extern template class SingleValueNumericPostingAttribute<IntPostingAttribute>;
 typedef SingleValueNumericPostingAttribute<IntEnumAttribute> SvIntAttr;
 
 namespace {
-
-void
-makeSchema(Schema &s)
-{
-    s.addIndexField(Schema::IndexField("ia", schema::DataType::STRING));
-    s.addAttributeField(Schema::AttributeField("aa", schema::DataType::INT32));
-    s.addAttributeField(Schema::AttributeField("aaa", schema::DataType::INT32, CollectionType::ARRAY));
-    s.addAttributeField(Schema::AttributeField("aaw", schema::DataType::INT32, CollectionType::WEIGHTEDSET));
-}
 
 const int32_t doc_type_id = 787121340;
 const string type_name = "test";
@@ -212,6 +204,7 @@ public:
 class MyAttributeManager : public MockAttributeManager
 {
 public:
+    using MockAttributeManager::addAttribute;
     void addAttribute(const vespalib::string &name) {
         if (findAttribute(name).get() != NULL) {
             return;
@@ -230,7 +223,6 @@ class MyDB
 public:
     typedef std::unique_ptr<MyDB> UP;
 
-    const Schema &_schema;
     const DocumentTypeRepo &_repo;
     MyAttributeManager &_amgr;
     typedef std::map<string, uint32_t> DocIdToLid;
@@ -238,11 +230,9 @@ public:
     DocIdToLid _docIdToLid;
     LidToDocSP _lidToDocSP;
 
-    MyDB(const Schema &schema,
-         const DocumentTypeRepo &repo,
+    MyDB(const DocumentTypeRepo &repo,
          MyAttributeManager &amgr)
-        : _schema(schema),
-          _repo(repo),
+        : _repo(repo),
           _amgr(amgr)
     {
     }
@@ -298,7 +288,6 @@ MyDB::getDoc(uint32_t lid) const
 class TestFixture
 {
 public:
-    Schema _s;
     DocumentTypeRepo::UP _repoUP;
     bool _hasFields;
     MyAttributeManager _amgr;
@@ -316,18 +305,18 @@ public:
 
 
 TestFixture::TestFixture(void)
-    : _s(),
-      _repoUP(),
+    : _repoUP(),
       _hasFields(true),
       _amgr(),
       _db()
 {
-    makeSchema(_s);
     _repoUP = makeDocTypeRepo();
 
     _amgr.addAttribute("aa");
+    _amgr.addAttribute("aaa", AttributeFactory::createAttribute("aaa", {BasicType::INT32, CollectionType::ARRAY}));
+    _amgr.addAttribute("aaw", AttributeFactory::createAttribute("aaw", {BasicType::INT32, CollectionType::WSET}));
 
-    _db.reset(new MyDB(_s, *_repoUP, _amgr));
+    _db.reset(new MyDB(*_repoUP, _amgr));
 }
 
 
@@ -341,7 +330,6 @@ TestFixture::testParse(const string &selection,
                        const string &docTypeName)
 {
     const DocumentTypeRepo &repo(*_repoUP);
-    const Schema &schema(_s);
 
     CachedSelect::SP res(new CachedSelect);
 
@@ -353,7 +341,6 @@ TestFixture::testParse(const string &selection,
              docTypeName,
              *emptyDoc,
              repo,
-             schema,
              &_amgr,
              _hasFields);
     

@@ -14,7 +14,6 @@ LOG_SETUP(".proton.common.cachedselect");
 namespace proton
 {
 
-using search::index::Schema;
 using search::AttributeVector;
 using search::AttributeGuard;
 using document::select::FieldValueNode;
@@ -28,7 +27,6 @@ public:
     AttrMap _amap;
     const search::IAttributeManager &_amgr;
     CachedSelect &_cached;
-    const Schema &_schema;
     uint32_t _svAttrs;
     uint32_t _mvAttrs;
     uint32_t _complexAttrs;
@@ -45,8 +43,7 @@ public:
         return std::numeric_limits<uint32_t>::max();
     }
     
-    AttrVisitor(const Schema &schema,
-                const search::IAttributeManager &amgr,
+    AttrVisitor(const search::IAttributeManager &amgr,
                 CachedSelect &cachedSelect);
 
     /*
@@ -58,14 +55,12 @@ public:
 };
 
 
-AttrVisitor::AttrVisitor(const Schema &schema,
-                         const search::IAttributeManager &amgr,
+AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr,
                          CachedSelect &cachedSelect)
     : CloningVisitor(),
       _amap(),
       _amgr(amgr),
       _cached(cachedSelect),
-      _schema(schema),
       _svAttrs(0u),
       _mvAttrs(0u),
       _complexAttrs(0u)
@@ -89,19 +84,11 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
             break;
         }
     }
-    if (_schema.isAttributeField(name)) {
+    AttributeGuard::UP ag(_amgr.getAttribute(name));
+    if (ag->valid()) {
         if (complex) {
             ++_complexAttrs;
             // Don't try to optimize complex attribute references yet.
-            _valueNode = expr.clone();
-            return;
-        }
-        AttributeGuard::UP ag(_amgr.getAttribute(name));
-        assert(ag.get() != NULL);
-        if (!ag->valid()) {
-            // Fast access document sub where attribute is not marked as
-            // fast-access.  Disable optimization.
-            ++_complexAttrs;
             _valueNode = expr.clone();
             return;
         }
@@ -171,7 +158,6 @@ CachedSelect::set(const vespalib::string &selection,
                   const vespalib::string &docTypeName,
                   const document::Document &emptyDoc,
                   const document::DocumentTypeRepo &repo,
-                  const search::index::Schema &schema,
                   const search::IAttributeManager *amgr,
                   bool hasFields)
 {                  
@@ -182,7 +168,7 @@ CachedSelect::set(const vespalib::string &selection,
     if (parsed.get() == NULL)
         return;
     SelectPruner pruner(docTypeName,
-                        schema,
+                        amgr,
                         emptyDoc,
                         repo,
                         hasFields);
@@ -196,7 +182,7 @@ CachedSelect::set(const vespalib::string &selection,
     _attrFieldNodes = pruner.getAttrFieldNodes();
     if (amgr == NULL || _attrFieldNodes == 0u)
         return;
-    AttrVisitor av(schema, *amgr, *this);
+    AttrVisitor av(*amgr, *this);
     _select->visit(av);
     assert(_fieldNodes == av.getFieldNodes());
     assert(_attrFieldNodes == av._mvAttrs + av._svAttrs + av._complexAttrs);

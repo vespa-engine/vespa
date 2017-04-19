@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
+#include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 #include <vespa/log/log.h>
@@ -15,6 +16,7 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerialNum;
 using search::index::schema::DataType;
+using search::attribute::BasicType;
 
 namespace proton {
 
@@ -30,9 +32,11 @@ toStr(bool value)
     return (value ? "true" : "false");
 }
 
-bool fastPartialUpdateAttribute(const schema::DataType &attrType) {
+bool fastPartialUpdateAttribute(BasicType::Type attrType) {
     // Partial update to tensor or predicate attribute must update document
-    return ((attrType != DataType::BOOLEANTREE) && (attrType != DataType::TENSOR) && (attrType != DataType::REFERENCE));
+    return ((attrType != BasicType::Type::PREDICATE) &&
+            (attrType != BasicType::Type::TENSOR) &&
+            (attrType != BasicType::Type::REFERENCE));
 }
 
 
@@ -90,6 +94,7 @@ std::vector<IReprocessingRewriter::SP>
 getFieldsToPopulate(const ARIConfig &newCfg,
                     const ARIConfig &oldCfg,
                     const IDocumentTypeInspector &inspector,
+                    const IIndexschemaInspector &oldIndexschemaInspector,
                     const vespalib::string &subDbName)
 {
     std::vector<IReprocessingRewriter::SP> fieldsToPopulate;
@@ -98,24 +103,23 @@ getFieldsToPopulate(const ARIConfig &newCfg,
     for (const auto &guard : attrList) {
         const vespalib::string &name = guard->getName();
         Schema::AttributeField attrField = getAttributeField(oldCfg.getSchema(), name);
-        Schema::DataType attrType(attrField.getDataType());
+        BasicType attrType(guard->getConfig().basicType());
         bool inNewAttrMgr = newCfg.getAttrMgr()->getAttribute(name)->valid();
         bool unchangedField = inspector.hasUnchangedField(name);
         // NOTE: If it is a string and index field we shall
         // keep the original in order to preserve annotations.
-        bool isStringIndexField = attrField.getDataType() == DataType::STRING &&
-                newCfg.getSchema().isIndexField(name);
-        bool populateField = !inNewAttrMgr && unchangedField && !isStringIndexField &&
-                             fastPartialUpdateAttribute(attrType);
+        bool wasStringIndexField = oldIndexschemaInspector.isStringIndex(name);
+        bool populateField = !inNewAttrMgr && unchangedField && !wasStringIndexField &&
+                             fastPartialUpdateAttribute(attrType.type());
         LOG(debug, "getFieldsToPopulate(): name='%s', inNewAttrMgr=%s, unchangedField=%s, "
-                "isStringIndexField=%s, dataType=%s, populate=%s",
+                "wasStringIndexField=%s, dataType=%s, populate=%s",
                 name.c_str(), toStr(inNewAttrMgr), toStr(unchangedField),
-            toStr(isStringIndexField),
-            schema::getTypeName(attrType).c_str(),
+            toStr(wasStringIndexField),
+            attrType.asString(),
             toStr(populateField));
         if (populateField) {
             fieldsToPopulate.push_back(IReprocessingRewriter::SP
-                    (new DocumentFieldPopulator(attrField,
+                    (new DocumentFieldPopulator(name,
                             guard.getSP(), subDbName)));
         }
     }
@@ -128,10 +132,11 @@ AttributeReprocessingInitializer::
 AttributeReprocessingInitializer(const Config &newCfg,
                                  const Config &oldCfg,
                                  const IDocumentTypeInspector &inspector,
+                                 const IIndexschemaInspector &oldIndexschemaInspector,
                                  const vespalib::string &subDbName,
                                  search::SerialNum serialNum)
     : _attrsToPopulate(getAttributesToPopulate(newCfg, oldCfg, inspector, subDbName, serialNum)),
-      _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, inspector, subDbName))
+      _fieldsToPopulate(getFieldsToPopulate(newCfg, oldCfg, inspector, oldIndexschemaInspector, subDbName))
 {
 }
 

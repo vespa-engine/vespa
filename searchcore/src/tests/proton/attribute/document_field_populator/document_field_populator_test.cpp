@@ -58,7 +58,7 @@ struct Fixture
     Fixture()
         : _attr(search::AttributeFactory::createAttribute("a1", AVConfig(AVBasicType::INT32))),
           _intAttr(dynamic_cast<IntegerAttribute &>(*_attr)),
-          _pop(createAttributeField(), _attr, "test"),
+          _pop("a1", _attr, "test"),
           _ctx()
     {
         _intAttr.addDocs(2);

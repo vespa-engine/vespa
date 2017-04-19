@@ -13,6 +13,7 @@ class InternalIndexschemaType;
 namespace proton {
 
 class IDocumentTypeInspector;
+class IIndexschemaInspector;
 class AttributeSpecs;
 
 /*
@@ -44,7 +45,7 @@ public:
      */
     void setup(const AttributesConfig &oldAttributesConfig,
                const AttributesConfig &newAttributesConfig,
-               const IndexschemaConfig &oldIndexschemaConfig,
+               const IIndexschemaInspector &oldIndexschemaInspector,
                const IDocumentTypeInspector &inspector);
 
     std::shared_ptr<const AttributeSpecs> getAttributeSpecs() const;
