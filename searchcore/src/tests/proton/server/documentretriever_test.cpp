@@ -19,6 +19,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/result.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/server/documentretriever.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
@@ -225,7 +226,7 @@ struct Fixture {
     search::AttributeManager attr_manager;
     Schema schema;
     DocTypeName _dtName;
-    DocumentRetriever retriever;
+    std::unique_ptr<DocumentRetriever> _retriever;
 
     template <typename T>
     T *addAttribute(const char *name,
@@ -267,8 +268,7 @@ struct Fixture {
           attr_manager(),
           schema(),
           _dtName(doc_type_name),
-          retriever(_dtName,
-                    repo, schema, meta_store, attr_manager, doc_store)
+          _retriever()
     {
         typedef DocumentMetaStore::Result Result;
         meta_store.constructFreeList();
@@ -314,12 +314,13 @@ struct Fixture {
                 dyn_wset_field_s, dyn_value_s, DataType::STRING, ct);
         addAttribute<FloatingPointAttribute>(
                 dyn_wset_field_n, DataType::FLOAT, ct);
+        _retriever = std::make_unique<DocumentRetriever>(_dtName, repo, schema, meta_store, attr_manager, doc_store);
     }
 };
 
 TEST_F("require that document retriever can retrieve document meta data",
        Fixture) {
-    DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
     EXPECT_EQUAL(f.lid, meta_data.lid);
     EXPECT_EQUAL(f.timestamp, meta_data.timestamp);
 }
@@ -327,19 +328,19 @@ TEST_F("require that document retriever can retrieve document meta data",
 TEST_F("require that document retriever can retrieve bucket meta data",
        Fixture) {
     DocumentMetaData::Vector result;
-    f.retriever.getBucketMetaData(Bucket(f.bucket_id, PartitionId(0)), result);
+    f._retriever->getBucketMetaData(Bucket(f.bucket_id, PartitionId(0)), result);
     ASSERT_EQUAL(1u, result.size());
     EXPECT_EQUAL(f.lid, result[0].lid);
     EXPECT_EQUAL(f.timestamp, result[0].timestamp);
     result.clear();
-    f.retriever.getBucketMetaData(Bucket(BucketId(f.bucket_id.getId() + 1),
+    f._retriever->getBucketMetaData(Bucket(BucketId(f.bucket_id.getId() + 1),
                                          PartitionId(0)), result);
     EXPECT_EQUAL(0u, result.size());
 }
 
 TEST_F("require that document retriever can retrieve document", Fixture) {
-    DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
-    Document::UP doc = f.retriever.getDocument(meta_data.lid);
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());
     EXPECT_EQUAL(doc_id, doc->getId());
 }
@@ -377,8 +378,8 @@ void checkWset(FieldValue::UP wset, T v) {
 }
 
 TEST_F("require that attributes are patched into stored document", Fixture) {
-    DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
-    Document::UP doc = f.retriever.getDocument(meta_data.lid);
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(static_field);
@@ -408,15 +409,15 @@ TEST_F("require that attributes are patched into stored document", Fixture) {
 
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
     f.schema.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING));
-    DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
-    Document::UP doc = f.retriever.getDocument(meta_data.lid);
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());
     checkFieldValue<StringFieldValue>(doc->getValue(dyn_field_s), static_value_s);
 }
 
 TEST_F("require that position fields are regenerated from zcurves", Fixture) {
-    DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
-    Document::UP doc = f.retriever.getDocument(meta_data.lid);
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(position_field);
@@ -433,13 +434,13 @@ TEST_F("require that position fields are regenerated from zcurves", Fixture) {
 }
 
 TEST_F("require that non-existing lid returns null pointer", Fixture) {
-    Document::UP doc = f.retriever.getDocument(0);
+    Document::UP doc = f._retriever->getDocument(0);
     ASSERT_FALSE(doc.get());
 }
 
 TEST_F("require that predicate attributes can be retrieved", Fixture) {
-    DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
-    Document::UP doc = f.retriever.getDocument(meta_data.lid);
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());
 
     FieldValue::UP value = doc->getValue(dyn_field_p);

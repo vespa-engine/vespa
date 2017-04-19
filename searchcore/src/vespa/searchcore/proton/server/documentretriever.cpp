@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/attribute/document_field_retriever.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchcommon/common/schema.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentretriever");
@@ -37,7 +38,8 @@ DocumentRetriever
       _schema(schema),
       _attr_manager(attr_manager),
       _doc_store(doc_store),
-      _possiblePositionFields()
+      _possiblePositionFields(),
+      _attributeFields()
 {
     const DocumentType * documentType = repo.getDocumentType(docTypeName.getName());
     document::Field::Set fields = documentType->getFieldSet();
@@ -48,9 +50,15 @@ DocumentRetriever
             LOG(debug, "Field '%s' is a position field", field->getName().c_str());
             const vespalib::string & zcurve_name = PositionDataType::getZCurveFieldName(field->getName());
             AttributeGuard::UP attr = attr_manager.getAttribute(zcurve_name);
-            if (attr) {
+            if (attr && attr->valid()) {
                 LOG(debug, "Field '%s' is a registered attribute field", zcurve_name.c_str());
                 _possiblePositionFields.emplace_back(field, zcurve_name);
+            }
+        } else {
+            const vespalib::string &name = field->getName();
+            AttributeGuard::UP attr = attr_manager.getAttribute(name);
+            if (attr && attr->valid()) {
+                _attributeFields.emplace_back(name);
             }
         }
     }
@@ -74,10 +82,8 @@ void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetrieve
     for (const auto & it : possiblePositionFields) {
         if (doc.hasValue(*it.first)) {
             AttributeGuard::UP attr = attr_manager.getAttribute(it.second);
-            if (attr.get() && attr->valid()) {
-                int64_t zcurve = (*attr)->getInt(lid);
-                doc.setValue(*it.first, *positionFromZcurve(zcurve));
-            }
+            int64_t zcurve = (*attr)->getInt(lid);
+            doc.setValue(*it.first, *positionFromZcurve(zcurve));
         }
     }
 }
@@ -124,22 +130,12 @@ void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocument
 
 void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
 {
-    for (uint32_t i = 0; i < _schema.getNumAttributeFields(); ++i) {
-        const Schema::AttributeField &field = _schema.getAttributeField(i);
-        AttributeGuard::UP attr = _attr_manager.getAttribute(field.getName());
-        if (attr.get() && attr->valid()) {
-            DocumentFieldRetriever::populate(lid, doc, field.getName(), **attr, _schema.isIndexField(field.getName()));
-        }
+    for (const auto &field : _attributeFields) {
+        AttributeGuard::UP attr = _attr_manager.getAttribute(field);
+        DocumentFieldRetriever::populate(lid, doc, field, **attr, _schema.isIndexField(field));
     }
     fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager);
 }
-
-const Schema &
-DocumentRetriever::getSchema(void) const
-{
-    return _schema;
-}
-
 
 const IAttributeManager *
 DocumentRetriever::getAttrMgr(void) const
