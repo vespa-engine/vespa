@@ -6,12 +6,10 @@
 
 using document::DocumentId;
 using document::GlobalId;
-using search::index::Schema;
 
 namespace {
 
 const DocumentId docId("doc:test:1");
-const Schema emptySchema;
 
 }
 
@@ -59,13 +57,6 @@ DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
     IDocumentMetaStoreContext::IReadGuard::UP readGuard = _meta_store.getReadGuard();
     const search::IDocumentMetaStore &meta_store = readGuard->get();
     return meta_store.getMetaData(gid);
-}
-
-
-const search::index::Schema &
-DocumentRetrieverBase::getSchema(void) const
-{
-    return emptySchema;
 }
 
 

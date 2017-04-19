@@ -6,8 +6,8 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/lrucache_map.h>
-#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/vespalib/util/sync.h>
 
 namespace proton {
 
@@ -25,7 +25,6 @@ class DocumentRetrieverBase : public IDocumentRetriever
     const bool             _hasFields;
 
 protected:
-    virtual const search::index::Schema & getSchema(void) const;
     virtual const search::IAttributeManager * getAttrMgr(void) const;
 public:
     DocumentRetrieverBase(const DocTypeName &docTypeName,
