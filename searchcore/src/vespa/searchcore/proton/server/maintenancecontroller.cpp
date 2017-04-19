@@ -1,17 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "maintenancecontroller.h"
+#include "maintenancejobrunner.h"
+#include "document_db_maintenance_config.h"
+#include <vespa/searchcorespi/index/i_thread_service.h>
+#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/timer.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancecontroller");
 
-#include "maintenancecontroller.h"
-#include <vespa/vespalib/util/closuretask.h>
-#include "maintenancejobrunner.h"
-
 using document::BucketId;
-using searchcorespi::index::IThreadService;
 using vespalib::Executor;
-using vespalib::ThreadExecutor;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 
@@ -28,13 +28,14 @@ public:
     virtual void run() override { _job->run(); }
 };
 
-
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
+                                             vespalib::Executor & defaultExecutor,
                                              const DocTypeName &docTypeName)
     : IBucketFreezeListener(),
       _masterThread(masterThread),
+      _defaultExecutor(defaultExecutor),
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
@@ -50,20 +51,34 @@ MaintenanceController::MaintenanceController(IThreadService &masterThread,
     _frozenBuckets.addListener(this); // forward freeze/thaw to bmc
 }
 
-MaintenanceController::~MaintenanceController(void)
+MaintenanceController::~MaintenanceController()
 {
     kill();
     _frozenBuckets.removeListener(this);
 }
 
 void
-MaintenanceController::registerJob(IMaintenanceJob::UP job)
+MaintenanceController::registerJobInMasterThread(IMaintenanceJob::UP job)
+{
+    // Called by master write thread
+    registerJob(_masterThread, std::move(job));
+}
+
+void
+MaintenanceController::registerJobInDefaultPool(IMaintenanceJob::UP job)
+{
+    // Called by master write thread
+    registerJob(_defaultExecutor, std::move(job));
+}
+
+void
+MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
 {
     // Called by master write thread
     Guard guard(_jobsLock);
-    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(_masterThread,
-                                                           std::move(job)));
+    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(executor, std::move(job)));
 }
+
 
 void
 MaintenanceController::killJobs()

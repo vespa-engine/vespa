@@ -3,22 +3,22 @@
 #pragma once
 
 #include "maintenancedocumentsubdb.h"
-#include "documentdbconfig.h"
 #include "i_maintenance_job.h"
-#include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/vespalib/util/random.h>
-#include <vespa/vespalib/util/timer.h>
-#include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include "frozenbuckets.h"
 #include "ibucketfreezelistener.h"
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <mutex>
 
-namespace proton
-{
+namespace vespalib {
+    class Timer;
+    class Executor;
+}
+namespace searchcorespi { namespace index {class IThreadService; }}
+
+namespace proton {
 
 class MaintenanceJobRunner;
-
+class DocumentDBMaintenanceConfig;
 
 /**
  * Class that controls the bucket moving between ready and notready sub databases
@@ -28,40 +28,17 @@ class MaintenanceJobRunner;
 class MaintenanceController : public IBucketFreezeListener
 {
 public:
+    using IThreadService = searchcorespi::index::IThreadService;
+    using DocumentDBMaintenanceConfigSP = std::shared_ptr<DocumentDBMaintenanceConfig>;
+    using JobList = std::vector<std::shared_ptr<MaintenanceJobRunner>>;
+    using UP = std::unique_ptr<MaintenanceController>;
 
-    typedef std::vector<std::shared_ptr<MaintenanceJobRunner>> JobList;
+    MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, const DocTypeName &docTypeName);
 
-private:
-    using Mutex = std::mutex;
-    using Guard = std::lock_guard<Mutex>;
+    virtual ~MaintenanceController();
+    void registerJobInMasterThread(IMaintenanceJob::UP job);
+    void registerJobInDefaultPool(IMaintenanceJob::UP job);
 
-    searchcorespi::index::IThreadService &_masterThread;
-    MaintenanceDocumentSubDB            _readySubDB;
-    MaintenanceDocumentSubDB            _remSubDB;
-    MaintenanceDocumentSubDB            _notReadySubDB;
-    std::unique_ptr<vespalib::Timer>    _periodicTimer;
-    DocumentDBMaintenanceConfig::SP     _config;
-    FrozenBuckets                       _frozenBuckets;
-    bool                                _started;
-    bool                                _stopping;
-    const DocTypeName                  &_docTypeName;
-    JobList                             _jobs;
-    mutable Mutex                       _jobsLock;
-
-    void addJobsToPeriodicTimer();
-    void restart(void);
-    virtual void notifyThawedBucket(const document::BucketId &bucket) override;
-    void performClearJobs();
-    void performHoldJobs(JobList jobs);
-
-public:
-    typedef std::unique_ptr<MaintenanceController> UP;
-
-    MaintenanceController(searchcorespi::index::IThreadService &masterThread,
-                          const DocTypeName &docTypeName);
-
-    virtual ~MaintenanceController(void);
-    void registerJob(IMaintenanceJob::UP job);
     void killJobs();
 
     JobList getJobList() const {
@@ -69,9 +46,9 @@ public:
         return _jobs;
     }
 
-    void stop(void);
-    void start(const DocumentDBMaintenanceConfig::SP &config);
-    void newConfig(const DocumentDBMaintenanceConfig::SP &config);
+    void stop();
+    void start(const DocumentDBMaintenanceConfigSP &config);
+    void newConfig(const DocumentDBMaintenanceConfigSP &config);
 
     void
     syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,
@@ -90,6 +67,30 @@ public:
     const MaintenanceDocumentSubDB &    getReadySubDB() const { return _readySubDB; }
     const MaintenanceDocumentSubDB &      getRemSubDB() const { return _remSubDB; }
     const MaintenanceDocumentSubDB & getNotReadySubDB() const { return _notReadySubDB; }
+private:
+    using Mutex = std::mutex;
+    using Guard = std::lock_guard<Mutex>;
+
+    IThreadService                   &_masterThread;
+    vespalib::Executor               &_defaultExecutor;
+    MaintenanceDocumentSubDB          _readySubDB;
+    MaintenanceDocumentSubDB          _remSubDB;
+    MaintenanceDocumentSubDB          _notReadySubDB;
+    std::unique_ptr<vespalib::Timer>  _periodicTimer;
+    DocumentDBMaintenanceConfigSP     _config;
+    FrozenBuckets                     _frozenBuckets;
+    bool                              _started;
+    bool                              _stopping;
+    const DocTypeName                &_docTypeName;
+    JobList                           _jobs;
+    mutable Mutex                     _jobsLock;
+
+    void addJobsToPeriodicTimer();
+    void restart();
+    void notifyThawedBucket(const document::BucketId &bucket) override;
+    void performClearJobs();
+    void performHoldJobs(JobList jobs);
+    void registerJob(vespalib::Executor & executor, IMaintenanceJob::UP job);
 };
 
 

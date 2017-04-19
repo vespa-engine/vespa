@@ -2,15 +2,16 @@
 
 #pragma once
 
-#include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/document/bucket/bucketid.h>
 #include "ifrozenbuckethandler.h"
 #include "ibucketfreezer.h"
-#include <map>
 #include <vespa/vespalib/util/sync.h>
+#include <map>
+#include <vector>
 
-namespace proton
-{
+
+namespace searchcorespi { namespace index {class IThreadService; }}
+
+namespace proton {
 
 class IBucketFreezeListener;
 
@@ -76,13 +77,14 @@ private:
 class FrozenBuckets : public IFrozenBucketHandler,
                       public IBucketFreezer
 {
-    FrozenBucketsMap                       _frozen;
-    searchcorespi::index::IThreadService  &_masterThread;
-    std::vector<IBucketFreezeListener *>   _listeners;
+    using IThreadService = searchcorespi::index::IThreadService;
+    FrozenBucketsMap                     _frozen;
+    IThreadService                      &_masterThread;
+    std::vector<IBucketFreezeListener *> _listeners;
 
     void notifyThawed(document::BucketId bucket);
 public:
-    FrozenBuckets(searchcorespi::index::IThreadService &masterThread);
+    FrozenBuckets(IThreadService &masterThread);
     virtual ~FrozenBuckets();
 
     virtual ExclusiveBucketGuard::UP acquireExclusiveBucket(document::BucketId bucket) override;

@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include "i_maintenance_job.h"
 #include "imaintenancejobrunner.h"
+#include <vespa/vespalib/util/executor.h>
 #include <mutex>
 
-namespace proton
-{
+namespace proton {
 
 class MaintenanceJobRunner : public IMaintenanceJobRunner
 {
@@ -29,14 +28,13 @@ private:
 public:
     typedef std::shared_ptr<MaintenanceJobRunner> SP;
 
-    MaintenanceJobRunner(vespalib::Executor &executor,
-                         IMaintenanceJob::UP job);
-    virtual void run() override;
+    MaintenanceJobRunner(vespalib::Executor &executor, IMaintenanceJob::UP job);
+    void run() override;
     void stop() { _stopped = true; }
     bool isRunning() const;
+    const vespalib::Executor & getExecutor() const { return _executor; }
     const IMaintenanceJob &getJob() const { return *_job; }
     IMaintenanceJob &getJob() { return *_job; }
 };
 
 } // namespace proton
-
