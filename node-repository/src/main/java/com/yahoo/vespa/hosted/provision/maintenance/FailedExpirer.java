@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -49,16 +50,15 @@ public class FailedExpirer extends Expirer {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node recycleCandidate : expired) {
             if (recycleCandidate.status().hardwareFailure().isPresent()) continue;
-            if (failCountIndicatesHwFail(zone) && recycleCandidate.status().failCount() >= 5) continue;
+            if (failCountIndicatesHwFail(zone, recycleCandidate) && recycleCandidate.status().failCount() >= 5) continue;
             nodesToRecycle.add(recycleCandidate);
         }
         nodeRepository.setDirty(nodesToRecycle);
     }
 
-    private boolean failCountIndicatesHwFail(Zone zone) {
-        if (zone.system() == SystemName.cd) {
-            return false;
-        }
+    private boolean failCountIndicatesHwFail(Zone zone, Node node) {
+        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) return false;
+        if (zone.system() == SystemName.cd) return false;
         return zone.environment() == Environment.prod || zone.environment() == Environment.staging;
     }
 
