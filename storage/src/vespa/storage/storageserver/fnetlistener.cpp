@@ -4,6 +4,7 @@
 #include "rpcrequestwrapper.h"
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/host_name.h>
 
 #include <vespa/log/log.h>
 
@@ -114,7 +115,7 @@ FNetListener::RPC_getCurrentTime(FRT_RPCRequest *req)
     clock_gettime(CLOCK_REALTIME, &t);
     req->GetReturn()->AddInt64(t.tv_sec);
     req->GetReturn()->AddInt32(t.tv_nsec);
-    vespalib::string hostname = FastOS_Socket::getHostName();
+    vespalib::string hostname = vespalib::HostName::get();
     req->GetReturn()->AddString(hostname.c_str());
     // all handled, will return immediately
     return;

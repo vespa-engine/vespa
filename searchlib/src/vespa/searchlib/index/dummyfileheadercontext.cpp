@@ -6,6 +6,7 @@ LOG_SETUP(".index.dummyfileheadercontext");
 #include "dummyfileheadercontext.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/vespalib/util/host_name.h>
 
 namespace search
 {
@@ -21,7 +22,7 @@ DummyFileHeaderContext::DummyFileHeaderContext(void)
       _hostName(),
       _pid(getpid())
 {
-    _hostName = FastOS_Socket::getHostName();
+    _hostName = vespalib::HostName::get();
     assert(!_hostName.empty());
 }
 

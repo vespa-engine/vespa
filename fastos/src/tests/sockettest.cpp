@@ -654,9 +654,6 @@ public:
 
       // Fallback to localhost if we can't get the hostname
       std::string strictBindHost("localhost");
-      std::string hostName = FastOS_Socket::getHostName();
-      if(!hostName.empty())
-         strictBindHost = hostName;
 
       FastOS_ServerSocket *serverSocket =
          new FastOS_ServerSocket(18333, 5, NULL, strictBindHost.c_str());
@@ -812,68 +809,6 @@ public:
       PrintSeparator();
    }
 
-   void HostNameTest ()
-   {
-      std::string errorMessage;
-      std::string hostName;
-
-      TestHeader("Hostname Test");
-
-      hostName = FastOS_Socket::getHostName(&errorMessage);
-
-      if(!hostName.empty())
-      {
-         Progress(true, "Got hostname: [%s]", hostName.c_str());
-
-
-      }
-      else
-      {
-         Progress(false, "Error getting hostname:\n%s", errorMessage.c_str());
-      }
-
-      PrintSeparator();
-   }
-
-   void HostAddressTest (bool testWithFailure)
-   {
-      std::string errorMessage;
-
-      if (!testWithFailure)
-      {
-         TestHeader("Hostaddress Test");
-      }
-      else
-      {
-         TestHeader("Provoked Hostaddress Failure Test");
-      }
-
-      std::string hostName;
-
-      hostName = FastOS_Socket::getHostName(&errorMessage);
-
-      if (!hostName.empty())
-      {
-            if (testWithFailure)
-            {
-               Progress(true, "Got FQ Hostname: [%s], but will use ZZZZ instead",
-                  hostName.c_str());
-               hostName = "ZZZZ";
-            }
-            else
-            {
-               Progress(true, "Got FQ Hostname: [%s]",
-                        hostName.c_str());
-            }
-      }
-      else
-      {
-         Progress(false, "Error getting hostname:\n%s", errorMessage.c_str());
-      }
-
-      PrintSeparator();
-   }
-
    int Main () override
    {
       printf("This test should be run in the 'test/workarea' directory.\n\n");
@@ -892,9 +827,6 @@ public:
          }
       }
 
-      HostNameTest();
-      HostAddressTest(false);
-      HostAddressTest(true);
       HttpClientTest();
       ClientServerTest();
       StrictBindTest();

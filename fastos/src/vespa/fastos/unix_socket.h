@@ -15,8 +15,6 @@ public:
     ssize_t Read (void *readBuffer, size_t bufferSize) override;
     ssize_t Write (const void *writeBuffer, size_t bufferSize) override;
 
-    static std::string getHostName(std::string *errorMsg);
-    static std::string getHostName() { return getHostName(nullptr); }
     static int GetLastError () { return errno; }
     static std::string getErrorString(int error);
 

@@ -30,6 +30,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
@@ -100,7 +101,7 @@ Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const Proton &proton_,
       _cluster(),
       _pid(getpid())
 {
-    _hostName = FastOS_Socket::getHostName();
+    _hostName = vespalib::HostName::get();
     assert(!_hostName.empty());
 }
 
