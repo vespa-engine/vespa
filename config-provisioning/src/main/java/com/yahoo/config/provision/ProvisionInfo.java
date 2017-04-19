@@ -88,7 +88,7 @@ public class ProvisionInfo {
         return ClusterMembership.from(object.field(hostSpecMembership).asString(),
                                       object.field(hostSpecVespaVersion).valid() ? 
                                       com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersion).asString()) :
-                                      ( object.field(dockerImage).valid() ? com.yahoo.component.Version.fromString(object.field(dockerImage).asString()) : Vtag.currentVersion));
+                                      ( object.field(dockerImage).valid() ? new DockerImage(object.field(dockerImage).asString()).tagAsVersion() : Vtag.currentVersion));
     }
 
     private static Optional<Flavor> readFlavor(Inspector object, Optional<NodeFlavors> nodeFlavors) {
