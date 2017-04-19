@@ -128,7 +128,7 @@ void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
         const Schema::AttributeField &field = _schema.getAttributeField(i);
         AttributeGuard::UP attr = _attr_manager.getAttribute(field.getName());
         if (attr.get() && attr->valid()) {
-            DocumentFieldRetriever::populate(lid, doc, field, **attr, _schema.isIndexField(field.getName()));
+            DocumentFieldRetriever::populate(lid, doc, field.getName(), **attr, _schema.isIndexField(field.getName()));
         }
     }
     fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager);

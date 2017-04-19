@@ -11,6 +11,8 @@
 
 namespace proton {
 
+class IIndexschemaInspector;
+
 /**
  * Class responsible for initialize reprocessing of attribute vectors if needed.
  */
@@ -43,6 +45,7 @@ public:
     AttributeReprocessingInitializer(const Config &newCfg,
                                      const Config &oldCfg,
                                      const IDocumentTypeInspector &inspector,
+                                     const IIndexschemaInspector &oldIndexschemaInspector,
                                      const vespalib::string &subDbName,
                                      search::SerialNum serialNum);
 

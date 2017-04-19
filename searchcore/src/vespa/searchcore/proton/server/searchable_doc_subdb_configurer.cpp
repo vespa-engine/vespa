@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
+#include <vespa/searchcore/proton/common/indexschema_inspector.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 
@@ -172,10 +173,11 @@ createAttributeReprocessingInitializer(const DocumentDBConfig &newConfig,
     assert(newDocType != nullptr);
     assert(oldDocType != nullptr);
     DocumentTypeInspector inspector(*oldDocType, *newDocType);
+    IndexschemaInspector oldIndexschemaInspector(oldConfig.getIndexschemaConfig());
     return std::make_unique<AttributeReprocessingInitializer>
         (ARIConfig(newAttrMgr, *newConfig.getSchemaSP()),
          ARIConfig(oldAttrMgr, *oldConfig.getSchemaSP()),
-         inspector, subDbName, serialNum);
+         inspector, oldIndexschemaInspector, subDbName, serialNum);
 }
 
 }

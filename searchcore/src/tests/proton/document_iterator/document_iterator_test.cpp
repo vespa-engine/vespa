@@ -5,7 +5,6 @@
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/result.h>
-#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
 #include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
@@ -185,41 +184,39 @@ struct VisitRecordingUnitDR : UnitDR {
 struct AttrUnitDR : public UnitDR
 {
     MockAttributeManager _amgr;
-    Schema _schema;
     AttributeVector::SP _aa;
     AttributeVector::SP _dd;
     AttributeVector::SP _ss;
 
     AttrUnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r)
         : UnitDR(d->getType(), document::Document::UP(d->clone()), t, b, r),
-          _amgr(), _schema(), _aa(), _dd(), _ss()
+          _amgr(), _aa(), _dd(), _ss()
     {
-        createAttribute(_aa, BasicType::INT32, schema::DataType::INT32, "aa");
-        createAttribute(_dd, BasicType::DOUBLE, schema::DataType::DOUBLE, "dd");
-        createAttribute(_ss, BasicType::STRING, schema::DataType::STRING, "ss");
+        createAttribute(_aa, BasicType::INT32, "aa");
+        createAttribute(_dd, BasicType::DOUBLE, "dd");
+        createAttribute(_ss, BasicType::STRING, "ss");
     }
 
     AttrUnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r,
                int32_t aa, double dd, const vespalib::string &ss)
         : UnitDR(d->getType(), document::Document::UP(d->clone()), t, b, r),
-          _amgr(), _schema(), _aa(), _dd(), _ss()
+          _amgr(), _aa(), _dd(), _ss()
     {
-        createAttribute(_aa, BasicType::INT32, schema::DataType::INT32, "aa");
+        createAttribute(_aa, BasicType::INT32, "aa");
         addAttribute<IntFieldValue, int32_t>(*_aa, aa);
-        createAttribute(_dd, BasicType::DOUBLE, schema::DataType::DOUBLE, "dd");
+        createAttribute(_dd, BasicType::DOUBLE, "dd");
         addAttribute<DoubleFieldValue, double>(*_dd, dd);
-        createAttribute(_ss, BasicType::STRING, schema::DataType::STRING, "ss");
+        createAttribute(_ss, BasicType::STRING, "ss");
         addAttribute<StringFieldValue, vespalib::string>(*_ss, ss);
     }
 
     void createAttribute(AttributeVector::SP &av, BasicType basicType,
-                         Schema::DataType dataType, const vespalib::string &fieldName)
+                         const vespalib::string &fieldName)
     {
         Config cfg(basicType, CollectionType::SINGLE);
         cfg.setFastSearch(true);
         av = search::AttributeFactory::createAttribute(fieldName, cfg);
         _amgr.addAttribute(fieldName, av);
-        _schema.addAttributeField(Schema::AttributeField(fieldName, dataType));
         while (docid >= av->getNumDocs()) {
             AttributeVector::DocId checkDocId(0u);
             ASSERT_TRUE(av->addDoc(checkDocId));
@@ -236,7 +233,7 @@ struct AttrUnitDR : public UnitDR
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
         CachedSelect::SP res(new CachedSelect);
-        res->set(selection, "foo", Document(document->getType(), DocumentId()), repo, _schema, &_amgr, true);
+        res->set(selection, "foo", Document(document->getType(), DocumentId()), repo, &_amgr, true);
         return res;
     }
 };

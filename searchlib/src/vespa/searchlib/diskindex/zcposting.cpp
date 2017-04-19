@@ -926,10 +926,12 @@ Zc4PostingSeqWrite::open(const vespalib::string &name,
                          const TuneFileSeqWrite &tuneFileWrite,
                          const FileHeaderContext &fileHeaderContext)
 {
-    if (tuneFileWrite.getWantSyncWrites())
+    if (tuneFileWrite.getWantSyncWrites()) {
         _file.EnableSyncWrites();
-    if (tuneFileWrite.getWantDirectIO())
+    }
+    if (tuneFileWrite.getWantDirectIO()) {
         _file.EnableDirectIO();
+    }
     bool ok = _file.OpenWriteOnly(name.c_str());
     if (!ok) {
         LOG(error, "could not open '%s' for writing: %s",

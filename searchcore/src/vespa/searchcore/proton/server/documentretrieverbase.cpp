@@ -91,7 +91,6 @@ DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
                  _docTypeName.getName(),
                  *_emptyDoc,
                  getDocumentTypeRepo(),
-                 getSchema(),
                  getAttrMgr(),
                  _hasFields);
 

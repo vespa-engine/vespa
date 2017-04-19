@@ -14,6 +14,7 @@ LOG_SETUP(".proton.common.selectpruner");
 #include <vespa/document/select/doctype.h>
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/constant.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
 
 
 using document::select::And;
@@ -46,17 +47,18 @@ using document::select::ValueNode;
 using document::FieldPath;
 using document::Field;
 using document::FieldNotFoundException;
+using search::AttributeGuard;
 
 namespace proton
 {
 
 SelectPrunerBase::SelectPrunerBase(const vespalib::string &docType,
-                                   const search::index::Schema &schema,
+                                   const search::IAttributeManager *amgr,
                                    const document::Document &emptyDoc,
                                    const document::DocumentTypeRepo &repo,
                                    bool hasFields)
     : _docType(docType),
-      _schema(schema),
+      _amgr(amgr),
       _emptyDoc(emptyDoc),
       _repo(repo),
       _hasFields(hasFields)
@@ -65,7 +67,7 @@ SelectPrunerBase::SelectPrunerBase(const vespalib::string &docType,
 
 SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase &rhs)
     : _docType(rhs._docType),
-      _schema(rhs._schema),
+      _amgr(rhs._amgr),
       _emptyDoc(rhs._emptyDoc),
       _repo(rhs._repo),
       _hasFields(rhs._hasFields)
@@ -73,12 +75,12 @@ SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase &rhs)
 }
 
 SelectPruner::SelectPruner(const vespalib::string &docType,
-                           const search::index::Schema &schema,
+                           const search::IAttributeManager *amgr,
                            const document::Document &emptyDoc,
                            const document::DocumentTypeRepo &repo,
                            bool hasFields)
     : CloningVisitor(),
-      SelectPrunerBase(docType, schema, emptyDoc, repo, hasFields),
+      SelectPrunerBase(docType, amgr, emptyDoc, repo, hasFields),
       _inverted(false),
       _wantInverted(false),
       _attrFieldNodes(0u)
@@ -426,8 +428,11 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     _valueNode = expr.clone(); // Replace with different node type for attrs ?
     _valueNode->clearParentheses();
     ++_fieldNodes;
-    if (_schema.isAttributeField(name)) {
-        ++_attrFieldNodes;
+    if (_amgr != nullptr) {
+        AttributeGuard::UP ag(_amgr->getAttribute(name));
+        if (ag->valid()) {
+            ++_attrFieldNodes;
+        }
     }
     _priority = FieldValuePriority;
 }
