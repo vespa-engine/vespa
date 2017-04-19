@@ -400,9 +400,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     
     private List<Container> createNodes(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("count")) // regular, hosted node spec
-            return createNodesFromNodeCount(cluster, nodesElement);
+            return createNodesFromNodeCount(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
-            return createNodesFromNodeType(cluster, nodesElement);
+            return createNodesFromNodeType(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
             return createNodesFromContentServiceReference(cluster, nodesElement, context);
         else // the non-hosted option
@@ -448,7 +448,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 return singleContentHost.get();
             }
             else { // request 1 node
-                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), Optional.empty());
+                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), context.getDeployState().getWantedNodeVespaVersion());
                 return cluster.getHostSystem().allocateHosts(clusterSpec, Capacity.fromNodeCount(1), 1, logger).keySet().iterator().next();
             }
         } else {
@@ -456,8 +456,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement) {
-        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement));
+    private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), 
+                                                                        context.getDeployState().getWantedNodeVespaVersion());
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
@@ -465,11 +466,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return createNodesFromHosts(hosts, cluster);
     }
 
-    private List<Container> createNodesFromNodeType(ContainerCluster cluster, Element nodesElement) {
+    private List<Container> createNodesFromNodeType(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
                                                       ClusterSpec.Id.from(cluster.getName()), 
-                                                      Optional.empty());
+                                                      context.getDeployState().getWantedNodeVespaVersion());
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
                                                                 Capacity.fromRequiredNodeType(type), 1, log);
@@ -492,7 +493,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setHostClusterId(referenceId);
 
         Map<HostResource, ClusterMembership> hosts = 
-                StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement)), 
+                StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement), 
+                                                                    context.getDeployState().getWantedNodeVespaVersion()), 
                                             referenceId, 
                                             cluster.getRoot().getHostSystem(),
                                             context.getDeployLogger());
@@ -514,9 +516,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         
         NodesSpecification nodesSpec;
         if (contentNodesElementOrNull == null)
-            nodesSpec = NodesSpecification.nonDedicated(1);
+            nodesSpec = NodesSpecification.nonDedicated(1, context.getDeployState().getWantedNodeVespaVersion());
         else
-            nodesSpec = NodesSpecification.from(new ModelElement(contentNodesElementOrNull));
+            nodesSpec = NodesSpecification.from(new ModelElement(contentNodesElementOrNull), context.getDeployState().getWantedNodeVespaVersion());
 
         Map<HostResource, ClusterMembership> hosts =
                 StorageGroup.provisionHosts(nodesSpec,

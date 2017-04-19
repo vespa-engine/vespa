@@ -23,6 +23,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class LastErrorsHolderTestCase {
+
     private static final int serverPort = 18324;
     private static final int lastErrorsHolderPort = 18326;
     Server server;

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -120,7 +121,7 @@ public class FailedExpirerTest {
         List<Node> provisioned = nodeRepository.getNodes(NodeType.tenant, Node.State.provisioned);
         nodeRepository.setReady(nodeRepository.setDirty(provisioned));
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(3, flavorName), 1, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, ProvisioningTester.toHostSpecs(nodes));

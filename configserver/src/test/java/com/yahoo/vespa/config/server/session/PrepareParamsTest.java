@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 
 import org.junit.Test;
@@ -28,15 +28,14 @@ public class PrepareParamsTest {
 
     @Test
     public void testCorrectParsing() {
-        PrepareParams prepareParams = createParams("http://foo:19071/application/v2/",
-                TenantName.defaultName());
+        PrepareParams prepareParams = createParams("http://foo:19071/application/v2/", TenantName.defaultName());
 
         assertThat(prepareParams.getApplicationId(), is(ApplicationId.defaultId()));
         assertFalse(prepareParams.isDryRun());
         assertFalse(prepareParams.ignoreValidationErrors());
-        assertThat(prepareParams.getVespaVersion(), is(Optional.<String>empty()));
+        assertThat(prepareParams.vespaVersion(), is(Optional.<String>empty()));
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
-        assertThat(prepareParams.getRotations().size(), is(0));
+        assertThat(prepareParams.rotations().size(), is(0));
     }
 
 
@@ -46,35 +45,33 @@ public class PrepareParamsTest {
             PrepareParams.DRY_RUN_PARAM_NAME + "=true&" +
             PrepareParams.IGNORE_VALIDATION_PARAM_NAME + "=false&" +
             PrepareParams.APPLICATION_NAME_PARAM_NAME + "=baz&" +
-            PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion + "&" +
-            PrepareParams.DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME+ "=" + vespaVersion;
-
+            PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion;
+   
     @Test
     public void testCorrectParsingWithRotation() {
         PrepareParams prepareParams = createParams(request + "&" +
-                        PrepareParams.ROTATIONS_PARAM_NAME + "=" + rotation,
-                TenantName.from("foo"));
+                                                   PrepareParams.ROTATIONS_PARAM_NAME + "=" + rotation,
+                                                   TenantName.from("foo"));
 
         assertThat(prepareParams.getApplicationId().serializedForm(), is("foo:baz:default"));
         assertTrue(prepareParams.isDryRun());
         assertFalse(prepareParams.ignoreValidationErrors());
-        final Version expectedVersion = Version.fromString(vespaVersion);
-        assertThat(prepareParams.getVespaVersion().get(), is(expectedVersion));
+        Version expectedVersion = Version.fromString(vespaVersion);
+        assertThat(prepareParams.vespaVersion().get(), is(expectedVersion));
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
-        final Set<Rotation> rotations = prepareParams.getRotations();
+        Set<Rotation> rotations = prepareParams.rotations();
         assertThat(rotations.size(), is(1));
         assertThat(rotations, contains(equalTo(new Rotation(rotation))));
-        assertThat(prepareParams.getDockerVespaImageVersion().get(), is(expectedVersion));
     }
 
     @Test
     public void testCorrectParsingWithSeveralRotations() {
-        final String rotationTwo = "rotation-043.vespa.a02.yahoodns.net";
-        final String twoRotations = rotation + "," + rotationTwo;
+        String rotationTwo = "rotation-043.vespa.a02.yahoodns.net";
+        String twoRotations = rotation + "," + rotationTwo;
         PrepareParams prepareParams = createParams(request + "&" +
-                        PrepareParams.ROTATIONS_PARAM_NAME + "=" + twoRotations,
-                TenantName.from("foo"));
-        final Set<Rotation> rotations = prepareParams.getRotations();
+                                      PrepareParams.ROTATIONS_PARAM_NAME + "=" + twoRotations,
+                                      TenantName.from("foo"));
+        Set<Rotation> rotations = prepareParams.rotations();
         assertThat(rotations, containsInAnyOrder(new Rotation(rotation), new Rotation(rotationTwo)));
     }
 

@@ -20,9 +20,9 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class AttributeListTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testDeriving() throws IOException, ParseException {
-
         // Test attribute importing
         Search search = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
 
@@ -66,6 +66,6 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         assertEquals(Attribute.CollectionType.SINGLE, attribute.getCollectionType());
 
         assertTrue(!attributes.hasNext());
-
     }
+
 }

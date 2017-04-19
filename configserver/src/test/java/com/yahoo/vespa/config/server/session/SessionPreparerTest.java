@@ -186,7 +186,7 @@ public class SessionPreparerTest extends TestWithCurator {
         preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), params, Optional.empty(), tenantPath);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, appPath);
         assertTrue(configCurator.exists(appPath.append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute()));
-        assertThat(zkc.readApplicationId(tenant), is(origId));
+        assertThat(zkc.readApplicationId(), is(origId));
     }
 
     @Test

@@ -70,6 +70,7 @@ public class VespaModelFactory implements ModelFactory {
         this.clock = clock;
     }
 
+    /** Returns the version this model is build for */
     @Override
     public Version getVersion() {
         return Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
@@ -81,14 +82,24 @@ public class VespaModelFactory implements ModelFactory {
     }
 
     @Override
-    public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
+    public ModelCreateResult createAndValidateModel(ModelContext modelContext, 
+                                                    boolean ignoreValidationErrors) {
+        validateXml(modelContext, ignoreValidationErrors);
+        DeployState deployState = createDeployState(modelContext);
+        VespaModel model = buildModel(deployState);
+        List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
+        return new ModelCreateResult(model, changeActions);
+    }
+    
+    private void validateXml(ModelContext modelContext, boolean ignoreValidationErrors) {
         if (modelContext.appDir().isPresent()) {
             ApplicationPackageXmlFilesValidator validator =
                     ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(modelContext.appDir().get(),
-                                                                                  modelContext.vespaVersion());
+                                                                                  modelContext.modelVespaVersion());
             try {
                 validator.checkApplication();
-                ApplicationPackageXmlFilesValidator.checkIncludedDirs(modelContext.applicationPackage());
+                ApplicationPackageXmlFilesValidator.checkIncludedDirs(modelContext.applicationPackage(), 
+                                                                      modelContext.modelVespaVersion());
             } catch (IllegalArgumentException e) {
                 rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
             } catch (Exception e) {
@@ -98,10 +109,6 @@ public class VespaModelFactory implements ModelFactory {
         } else {
             validateXML(modelContext.applicationPackage(), ignoreValidationErrors);
         }
-        DeployState deployState = createDeployState(modelContext);
-        VespaModel model = buildModel(deployState);
-        List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
-        return new ModelCreateResult(model, changeActions);
     }
 
     private VespaModel buildModel(DeployState deployState) {
@@ -123,7 +130,8 @@ public class VespaModelFactory implements ModelFactory {
             .modelHostProvisioner(createHostProvisioner(modelContext))
             .rotations(modelContext.properties().rotations())
             .zone(zone)
-            .now(clock.instant());
+            .now(clock.instant())
+            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build();
     }

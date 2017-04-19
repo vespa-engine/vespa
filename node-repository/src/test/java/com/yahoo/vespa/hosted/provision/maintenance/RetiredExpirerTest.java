@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -57,7 +58,7 @@ public class RetiredExpirerTest {
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
         // Should end up with 3 nodes in the cluster (one previously retired), and 3 retired
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
         int wantedNodes;
         activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
         activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
@@ -94,7 +95,7 @@ public class RetiredExpirerTest {
 
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
         activate(applicationId, cluster, 8, 8, provisioner);
         activate(applicationId, cluster, 1, 1, provisioner);
         assertEquals(8, nodeRepository.getNodes(applicationId, Node.State.active).size());

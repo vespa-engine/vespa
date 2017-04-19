@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -29,7 +29,6 @@ public final class PrepareParams {
     static final String DRY_RUN_PARAM_NAME = "dryRun";
     static final String VESPA_VERSION_PARAM_NAME = "vespaVersion";
     static final String ROTATIONS_PARAM_NAME = "rotations";
-    static final String DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME = "dockerVespaImageVersion";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -37,18 +36,15 @@ public final class PrepareParams {
     private final boolean dryRun;
     private final Optional<Version> vespaVersion;
     private final Set<Rotation> rotations;
-    private final Optional<Version> dockerVespaImageVersion;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
-                         boolean dryRun, Optional<Version> vespaVersion, Set<Rotation> rotations,
-                         Optional<Version> dockerVespaImageVersion) {
+                         boolean dryRun, Optional<Version> vespaVersion, Set<Rotation> rotations) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
         this.dryRun = dryRun;
         this.vespaVersion = vespaVersion;
         this.rotations = rotations;
-        this.dockerVespaImageVersion = dockerVespaImageVersion;
     }
 
     public static class Builder {
@@ -58,7 +54,6 @@ public final class PrepareParams {
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(30));
         private Optional<Version> vespaVersion = Optional.empty();
         private Set<Rotation> rotations;
-        private Optional<Version> dockerVespaImageVersion = Optional.empty();
 
         public Builder() { }
 
@@ -102,18 +97,9 @@ public final class PrepareParams {
             return this;
         }
 
-        public Builder dockerVespaImageVersion(String dockerVespaImageVersion) {
-            Optional<Version> version = Optional.empty();
-            if (dockerVespaImageVersion != null && !dockerVespaImageVersion.isEmpty()) {
-                version = Optional.of(Version.fromString(dockerVespaImageVersion));
-            }
-            this.dockerVespaImageVersion = version;
-            return this;
-        }
-
         public PrepareParams build() {
-            return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
-                                     vespaVersion, rotations, dockerVespaImageVersion);
+            return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
+                                     vespaVersion, rotations);
         }
 
     }
@@ -125,7 +111,6 @@ public final class PrepareParams {
                                           .applicationId(createApplicationId(request, tenant))
                                           .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
                                           .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
-                                          .dockerVespaImageVersion(request.getProperty(DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME))
                                           .build();
     }
 
@@ -153,6 +138,7 @@ public final class PrepareParams {
         return applicationId;
     }
 
+    /** Returns the Vespa version the nodes running the prepared system should have, or empty to use the system version */
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
     public Set<Rotation> rotations() { return rotations; }
@@ -169,15 +155,4 @@ public final class PrepareParams {
         return timeoutBudget;
     }
 
-    public Optional<Version> getVespaVersion() {
-        return vespaVersion;
-    }
-
-    public Set<Rotation> getRotations() {
-        return rotations;
-    }
-
-    public Optional<Version> getDockerVespaImageVersion() {
-        return dockerVespaImageVersion;
-    }
 }

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -41,7 +42,7 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate then deallocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
         tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
@@ -78,7 +79,9 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(1, "default");
 
         // Allocate and deallocate a single node
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, 
+                                                  ClusterSpec.Id.from("test"), 
+                                                  Version.fromString("6.42"));
         tester.prepare(applicationId, cluster, Capacity.fromNodeCount(1), 1);
         tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
         assertEquals(1, tester.getNodes(applicationId, Node.State.active).size());
@@ -104,8 +107,8 @@ public class InactiveAndFailedExpirerTest {
     @Test
     public void node_that_wants_to_retire_is_moved_to_parked() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                                                         Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
+                                                  Version.fromString("6.42"));
         tester.makeReadyNodes(5, "default");
 
         // Allocate two nodes

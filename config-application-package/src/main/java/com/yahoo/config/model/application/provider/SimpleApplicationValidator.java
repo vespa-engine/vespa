@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
+import com.yahoo.component.Version;
+
 import java.io.IOException;
 import java.io.Reader;
 
@@ -11,7 +13,7 @@ import java.io.Reader;
  */
 public class SimpleApplicationValidator {
 
-    public static void checkServices(Reader reader) throws IOException {
-        SchemaValidator.createTestValidatorServices().validate(reader);
+    public static void checkServices(Reader reader, Version version) throws IOException {
+        SchemaValidator.createTestValidatorServices(version).validate(reader);
     }
 }

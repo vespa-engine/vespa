@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -31,8 +32,8 @@ import static org.junit.Assert.assertNotNull;
 public class VirtualNodeProvisioningTest {
 
     private static final String flavor = "v-4-8-100";
-    private static final ClusterSpec contentClusterSpec = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
-    private static final ClusterSpec containerClusterSpec = ClusterSpec.requestVersion(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
+    private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"));
+    private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"));
 
     private ProvisioningTester tester;
     private ApplicationId applicationId;
@@ -110,9 +111,9 @@ public class VirtualNodeProvisioningTest {
         tester.makeReadyVirtualNodes(1, flavor, "parentHost5");
         tester.makeReadyVirtualNodes(1, flavor, "parentHost6");
 
-        final int containerNodeCount = 2;
-        final int contentNodeCount = 2;
-        final int groups = 1;
+        int containerNodeCount = 2;
+        int contentNodeCount = 2;
+        int groups = 1;
         List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
         List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
         activate(containerHosts, contentHosts);
@@ -141,9 +142,9 @@ public class VirtualNodeProvisioningTest {
         tester.makeReadyVirtualNodes(1, flavor, "parentHost3");
         tester.makeReadyVirtualNodes(1, flavor, "parentHost4");
 
-        final int containerNodeCount = 2;
-        final int contentNodeCount = 2;
-        final int groups = 1;
+        int containerNodeCount = 2;
+        int contentNodeCount = 2;
+        int groups = 1;
         List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
         List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
         activate(containerHosts, contentHosts);
@@ -170,11 +171,11 @@ public class VirtualNodeProvisioningTest {
         tester.makeReadyVirtualNodes(2, flavor, "parentHost1");
         tester.makeReadyVirtualNodes(1, flavor, "parentHost2");
 
-        final int contentNodeCount = 3;
+        int contentNodeCount = 3;
         List<HostSpec> hosts = prepare(contentClusterSpec, contentNodeCount, 1);
         activate(hosts);
 
-        final List<Node> nodes = getNodes(applicationId);
+        List<Node> nodes = getNodes(applicationId);
         assertDistinctParentHosts(nodes, ClusterSpec.Type.content, contentNodeCount);
     }
 

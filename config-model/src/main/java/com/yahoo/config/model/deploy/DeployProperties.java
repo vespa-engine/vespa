@@ -51,6 +51,7 @@ public class DeployProperties {
         return hostedVespa;
     }
 
+    /** Returns the config model version this is building */
     public Version vespaVersion() {
         return vespaVersion;
     }

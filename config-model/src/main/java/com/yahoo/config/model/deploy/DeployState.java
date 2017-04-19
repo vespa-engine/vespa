@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
+import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
@@ -47,7 +49,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Contains various state during deploy that should be reachable to all builders of a {@link com.yahoo.config.model.ConfigModel}
+ * Contains various state during deploy that should be available in all builders of a {@link com.yahoo.config.model.ConfigModel}
  *
  * @author lulf
  * @since 5.8
@@ -68,6 +70,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final QueryProfiles queryProfiles;
     private final SemanticRules semanticRules;
     private final ValidationOverrides validationOverrides;
+    private final Version wantedNodeVespaVersion;
 
     private final HostProvisioner provisioner;
 
@@ -83,18 +86,14 @@ public class DeployState implements ConfigDefinitionStore {
                         FileRegistry fileRegistry, DeployLogger deployLogger, Optional<HostProvisioner> hostProvisioner, DeployProperties properties,
                         Optional<ApplicationPackage> permanentApplicationPackage, Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         java.util.Optional<Model> previousModel, Set<Rotation> rotations, Zone zone, QueryProfiles queryProfiles, 
-                        SemanticRules semanticRules, Instant now) {
+                        SemanticRules semanticRules, Instant now, Version wantedNodeVespaVersion) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
         this.applicationPackage = applicationPackage;
         this.properties = properties;
         this.previousModel = previousModel;
-        if (hostProvisioner.isPresent()) {
-            this.provisioner = hostProvisioner.get();
-        } else {
-            this.provisioner = getDefaultModelHostProvisioner(applicationPackage);
-        }
+        this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
         this.searchDefinitions = searchDocumentModel.getSearchDefinitions();
         this.documentModel = searchDocumentModel.getDocumentModel();
         this.permanentApplicationPackage = permanentApplicationPackage;
@@ -104,7 +103,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.validationOverrides = new ValidationOverridesXMLReader().read(applicationPackage.getValidationOverrides(), now);
-
+        this.wantedNodeVespaVersion = wantedNodeVespaVersion;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -212,6 +211,8 @@ public class DeployState implements ConfigDefinitionStore {
     public QueryProfiles getQueryProfiles() { return queryProfiles; }
 
     public SemanticRules getSemanticRules() { return semanticRules; }
+    
+    public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
     public static class Builder {
 
@@ -226,6 +227,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Set<Rotation> rotations = new HashSet<>();
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
+        private Version wantedNodeVespaVersion = Vtag.currentVersion;
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -281,6 +283,11 @@ public class DeployState implements ConfigDefinitionStore {
             this.now = now;
             return this;
         }
+        
+        public Builder wantedNodeVespaVersion(Version version) {
+            this.wantedNodeVespaVersion = version;
+            return this;
+        }
 
         public DeployState build() {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
@@ -288,7 +295,7 @@ public class DeployState implements ConfigDefinitionStore {
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
             SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles);
             return new DeployState(applicationPackage, searchDocumentModel, rankProfileRegistry, fileRegistry, logger, hostProvisioner,
-                                   properties, permanentApplicationPackage, configDefinitionRepo, previousModel, rotations, zone, queryProfiles, semanticRules, now);
+                                   properties, permanentApplicationPackage, configDefinitionRepo, previousModel, rotations, zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry, DeployLogger logger, QueryProfiles queryProfiles) {

@@ -3,6 +3,8 @@ package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
@@ -88,35 +90,32 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
         /** The admin model of this system or null if none (which only happens in tests) */
         private final Admin admin;
-        private final DeployLogger deployLogger;
 
-        public Builder(Admin admin, DeployLogger deployLogger) {
+        public Builder(Admin admin) {
             this.admin = admin;
-            this.deployLogger = deployLogger;
         }
         
-        public ContentCluster build(Collection<ContainerModel> containers, 
-                                    AbstractConfigProducer ancestor, Element w3cContentElement) {
+        public ContentCluster build(Collection<ContainerModel> containers, ConfigModelContext context, Element w3cContentElement) {
 
             ModelElement contentElement = new ModelElement(w3cContentElement);
 
             ModelElement documentsElement = contentElement.getChild("documents");
             Map<String, NewDocumentType> documentDefinitions =
-                    new SearchDefinitionBuilder().build(ancestor.getRoot().getDeployState().getDocumentModel().getDocumentManager(), documentsElement);
+                    new SearchDefinitionBuilder().build(context.getParentProducer().getRoot().getDeployState().getDocumentModel().getDocumentManager(), documentsElement);
 
             String routingSelection = new DocumentSelectionBuilder().build(documentsElement);
             Redundancy redundancy = new RedundancyBuilder().build(contentElement);
             Set<NewDocumentType> globallyDistributedDocuments = new GlobalDistributionBuilder(documentDefinitions).build(documentsElement);
 
-            ContentCluster c = new ContentCluster(ancestor, getClusterName(contentElement), documentDefinitions, 
+            ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterName(contentElement), documentDefinitions, 
                                                   globallyDistributedDocuments, routingSelection, redundancy,
-                                                  ancestor.getRoot().getDeployState().getProperties().zone());
+                                                  context.getParentProducer().getRoot().getDeployState().getProperties().zone());
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(c, w3cContentElement);
-            c.rootGroup = new StorageGroup.Builder(contentElement, c, deployLogger).buildRootGroup();
+            c.rootGroup = new StorageGroup.Builder(contentElement, c, context).buildRootGroup();
             validateThatGroupSiblingsAreUnique(c.clusterName, c.rootGroup);
             redundancy.setExplicitGroups(c.getRootGroup().getNumberOfLeafGroups());
             c.search.handleRedundancy(redundancy);
@@ -144,10 +143,9 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                 setupTuning(c, tuning);
             }
 
-            AbstractConfigProducerRoot root = ancestor.getRoot();
-            if (root == null) return c;
+            if (context.getParentProducer().getRoot() == null) return c;
 
-            addClusterControllers(containers, root, c.rootGroup, contentElement, c.clusterName, c);
+            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterName, c);
             return c;
         }
 
@@ -263,7 +261,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             }
         }
 
-        private void addClusterControllers(Collection<ContainerModel> containers, AbstractConfigProducerRoot root, 
+        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context, 
                                            StorageGroup rootGroup, ModelElement contentElement, 
                                            String contentClusterName, ContentCluster contentCluster) {
             if (admin == null) return; // only in tests
@@ -271,7 +269,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
             ContainerCluster clusterControllers;
 
-            ContentCluster overlappingCluster = findOverlappingCluster(root, contentCluster);
+            ContentCluster overlappingCluster = findOverlappingCluster(context.getParentProducer().getRoot(), contentCluster);
             if (overlappingCluster != null && overlappingCluster.getClusterControllers() != null) {
                 // Borrow the cluster controllers of the other cluster in this case.
                 // This condition only obtains on non-hosted systems with a shared config server,
@@ -281,9 +279,10 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             else if (admin.multitenant()) {
                 String clusterName = contentClusterName + "-controllers";
                 NodesSpecification nodesSpecification =
-                    NodesSpecification.optionalDedicatedFromParent(contentElement.getChild("controllers")).orElse(NodesSpecification.nonDedicated(3));
+                    NodesSpecification.optionalDedicatedFromParent(contentElement.getChild("controllers"), context.getDeployState().getWantedNodeVespaVersion())
+                                      .orElse(NodesSpecification.nonDedicated(3, context.getDeployState().getWantedNodeVespaVersion()));
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
-                                                 getControllerHosts(nodesSpecification, admin, clusterName) :
+                                                 getControllerHosts(nodesSpecification, admin, clusterName, context) :
                                                  drawControllerHosts(nodesSpecification.count(), rootGroup, containers);
 
                 clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"), hosts, clusterName, true);
@@ -319,8 +318,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             return ! Sets.intersection(c1Hosts, c2Hosts).isEmpty();
         }
 
-        private Collection<HostResource> getControllerHosts(NodesSpecification nodesSpecification, Admin admin, String clusterName) {
-            return nodesSpecification.provision(admin.getHostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), deployLogger).keySet();
+        private Collection<HostResource> getControllerHosts(NodesSpecification nodesSpecification, Admin admin, String clusterName, ConfigModelContext context) {
+            return nodesSpecification.provision(admin.getHostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), context.getDeployLogger()).keySet();
         }
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {

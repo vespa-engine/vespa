@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.XmlPreProcessor;
@@ -630,9 +631,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public void validateXML(Optional<Version> vespaVersion) throws IOException {
-        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, vespaVersion);
+        com.yahoo.component.Version modelVersion = vespaVersion.map(v -> new com.yahoo.component.Version(vespaVersion.toString())).orElse(Vtag.currentVersion);
+        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, modelVersion);
         xmlFilesValidator.checkApplication();
-        ApplicationPackageXmlFilesValidator.checkIncludedDirs(this);
+        ApplicationPackageXmlFilesValidator.checkIncludedDirs(this, modelVersion);
     }
 
     @Override

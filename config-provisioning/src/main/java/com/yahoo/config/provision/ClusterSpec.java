@@ -2,6 +2,8 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -19,9 +21,9 @@ public final class ClusterSpec {
     /** The group id of these hosts, or empty if this is represents a request for hosts */
     private final Optional<Group> groupId;
 
-    private final Optional<Version> vespaVersion;
+    private final Version vespaVersion;
 
-    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Optional<Version> vespaVersion) {
+    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -34,10 +36,10 @@ public final class ClusterSpec {
     /** Returns the cluster id */
     public Id id() { return id; }
 
-    public Optional<Version> vespaVersion() { return vespaVersion; }
+    public Version vespaVersion() { return vespaVersion; }
 
-    public Optional<String> dockerImage() {
-        return vespaVersion.map(DockerImage.defaultImage::withTag).map(DockerImage::toString);
+    public String dockerImage() {
+        return DockerImage.defaultImage.withTag(vespaVersion).toString();
     }
 
     /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */
@@ -47,18 +49,28 @@ public final class ClusterSpec {
 
     /** Create a specification <b>requesting</b> a cluster with these attributes */
     @Deprecated
-    // TODO: April 2017 - Remove this we no longer have old config-models using it
+    // TODO: April 2017 - Remove this when no version older than 6.94 is used anywhere
     public static ClusterSpec request(Type type, Id id, Optional<String> dockerImage) {
         return requestVersion(type, id, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion));
     }
 
     /** Create a specification <b>requesting</b> a cluster with these attributes */
+    // TODO: April 2017 - Remove this when no version older than 6.97 is used anywhere
     public static ClusterSpec requestVersion(Type type, Id id, Optional<Version> vespaVersion) {
+        return new ClusterSpec(type, id, Optional.empty(), vespaVersion.orElse(Vtag.currentVersion));
+    }
+
+    public static ClusterSpec request(Type type, Id id, Version vespaVersion) {
         return new ClusterSpec(type, id, Optional.empty(), vespaVersion);
     }
 
     /** Create a specification <b>specifying</b> an existing cluster group having these attributes */
+    // TODO: April 2017 - Remove this when no version older than 6.97 is used anywhere
     public static ClusterSpec from(Type type, Id id, Group groupId, Optional<Version> vespaVersion) {
+        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion.orElse(Vtag.currentVersion));
+    }
+
+    public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion) {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion);
     }
 
@@ -66,7 +78,7 @@ public final class ClusterSpec {
     public String toString() {
         return String.join(" ", type.toString(), id.toString(),
                            groupId.map(Group::toString).orElse(""),
-                           vespaVersion.orElse(Version.emptyVersion).toString());
+                           vespaVersion.toString());
     }
 
     @Override

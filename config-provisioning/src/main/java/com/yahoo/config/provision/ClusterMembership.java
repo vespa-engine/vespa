@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 
 import java.util.Optional;
 
@@ -20,7 +21,7 @@ public class ClusterMembership {
 
     protected ClusterMembership() {}
 
-    private ClusterMembership(String stringValue, Optional<Version> vespaVersion) {
+    private ClusterMembership(String stringValue, Version vespaVersion) {
         String restValue;
         if (stringValue.endsWith("/retired")) {
             retired = true;
@@ -51,14 +52,14 @@ public class ClusterMembership {
         this.stringValue = toStringValue();
     }
 
-    private void initWithoutGroup(String[] components, Optional<Version> vespaVersion) {
-        this.cluster = ClusterSpec.requestVersion(ClusterSpec.Type.valueOf(components[0]),
-                                                  ClusterSpec.Id.from(components[1]),
-                                                  vespaVersion);
+    private void initWithoutGroup(String[] components, Version vespaVersion) {
+        this.cluster = ClusterSpec.request(ClusterSpec.Type.valueOf(components[0]),
+                                           ClusterSpec.Id.from(components[1]),
+                                           vespaVersion);
         this.index = Integer.parseInt(components[2]);
     }
 
-    private void initWithGroup(String[] components, Optional<Version> vespaVersion) {
+    private void initWithGroup(String[] components, Version vespaVersion) {
         this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
                                         ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion);
         this.index = Integer.parseInt(components[3]);
@@ -115,10 +116,16 @@ public class ClusterMembership {
     @Deprecated
     // TODO: April 2017 - Remove this when no version older than 6.92 is in production
     public static ClusterMembership from(String stringValue, Optional<String> dockerImage) {
-        return fromVersion(stringValue, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion));
+        return from(stringValue, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion).orElse(Vtag.currentVersion));
     }
 
+    @Deprecated
+    // TODO: April 2017 - Remove this when no version older than 6.97 is in production
     public static ClusterMembership fromVersion(String stringValue, Optional<Version> vespaVersion) {
+        return new ClusterMembership(stringValue, vespaVersion.orElse(Vtag.currentVersion));
+    }
+
+    public static ClusterMembership from(String stringValue, Version vespaVersion) {
         return new ClusterMembership(stringValue, vespaVersion);
     }
 

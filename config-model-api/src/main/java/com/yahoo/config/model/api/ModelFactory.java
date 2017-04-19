@@ -9,10 +9,9 @@ import com.yahoo.config.provision.Version;
 public interface ModelFactory {
 
     /**
-     * Gets version of this {@link ModelFactory}. The version will be used to dispatch deployments to the correct
-     * {@link ModelFactory}.
+     * Returns the Vespa version of the models this builds.
      *
-     * @return The version of a {@link Model} instance that this factory can create.
+     * @return the version of a {@link Model} instance that this factory can create.
      */
     Version getVersion();
 
@@ -21,7 +20,7 @@ public interface ModelFactory {
      * validation will be done, calling this method assumes that {@link #createAndValidateModel} has already
      * been called at some point for this model.
      *
-     * @param modelContext An instance of {@link ModelContext}, containing dependencies for creating a {@link Model}.
+     * @param modelContext an instance of {@link ModelContext}, containing dependencies for creating a {@link Model}.
      * @return a {@link Model} instance.
      */
     Model createModel(ModelContext modelContext);
@@ -30,8 +29,8 @@ public interface ModelFactory {
      * Creates an instance of a {@link Model}. The resulting instance will be used to serve config. Any validation
      * of a {@link Model} and the {@link ModelContext} can be done in this method.
      *
-     * @param modelContext An instance of {@link ModelContext}, containing dependencies for creating a {@link Model}.
-     * @param ignoreValidationErrors true if validation errors should not trigger exceptions.
+     * @param modelContext an instance of {@link ModelContext}, containing dependencies for creating a {@link Model}
+     * @param ignoreValidationErrors true if validation errors should not trigger exceptions
      * @return a {@link ModelCreateResult} instance.
      */
     ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors);

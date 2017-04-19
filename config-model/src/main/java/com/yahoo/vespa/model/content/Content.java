@@ -215,7 +215,7 @@ public class Content extends ConfigModel {
         @Override
         public void doBuild(Content content, Element xml, ConfigModelContext modelContext) {
             Admin admin = content.adminModel != null ? content.adminModel.getAdmin() : null; // This is null in tests only
-            content.cluster = new ContentCluster.Builder(admin, modelContext.getDeployLogger()).build(content.containers, modelContext.getParentProducer(), xml);
+            content.cluster = new ContentCluster.Builder(admin).build(content.containers, modelContext, xml);
             buildIndexingClusters(content, modelContext,
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
         }

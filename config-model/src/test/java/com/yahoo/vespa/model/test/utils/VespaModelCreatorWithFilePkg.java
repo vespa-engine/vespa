@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test.utils;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.*;
@@ -44,8 +45,8 @@ public class VespaModelCreatorWithFilePkg {
     }
 
     public void validate() throws IOException {
-        ApplicationPackageXmlFilesValidator.createTestXmlValidator(applicationPkg.getAppDir()).checkApplication();
-        ApplicationPackageXmlFilesValidator.checkIncludedDirs(applicationPkg);
+        ApplicationPackageXmlFilesValidator.createTestXmlValidator(applicationPkg.getAppDir(), new Version(6)).checkApplication();
+        ApplicationPackageXmlFilesValidator.checkIncludedDirs(applicationPkg, new Version(6));
     }
 
     public VespaModel create(boolean validateApplicationWithSchema) {

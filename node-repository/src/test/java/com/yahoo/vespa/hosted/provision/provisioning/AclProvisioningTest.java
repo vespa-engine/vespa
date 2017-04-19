@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -223,8 +224,8 @@ public class AclProvisioningTest {
     }
 
     private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
-        ClusterSpec cluster = ClusterSpec.requestVersion(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                                                         Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
+                                                  Version.fromString("6.42"));
         List<HostSpec> prepared = tester.prepare(applicationId, cluster, capacity, 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         return tester.getNodes(applicationId, Node.State.active).asList();

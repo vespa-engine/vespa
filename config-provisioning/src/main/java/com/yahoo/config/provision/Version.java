@@ -15,6 +15,7 @@ package com.yahoo.config.provision;
  * Loosely based on component/Version.java
  * {@link Version} objects are immutable.
  */
+// TODO: Replace usage of this by com.yahoo.component.Version
 public final class Version implements Comparable<Version> {
 
     private final int major;

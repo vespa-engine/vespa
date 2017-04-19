@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -83,9 +84,9 @@ public class NodeTypeProvisioningTest {
 
     private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {
         return tester.prepare(application, 
-                              ClusterSpec.requestVersion(ClusterSpec.Type.container,
-                                                         ClusterSpec.Id.from("test"),
-                                                         Optional.empty()),
+                              ClusterSpec.request(ClusterSpec.Type.container,
+                                                  ClusterSpec.Id.from("test"),
+                                                   Version.fromString("6.42")),
                               Capacity.fromRequiredNodeType(NodeType.proxy),
                               1);
         

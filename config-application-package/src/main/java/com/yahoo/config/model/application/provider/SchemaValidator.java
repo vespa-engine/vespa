@@ -6,8 +6,8 @@ import com.thaiopensource.util.PropertyMapBuilder;
 import com.thaiopensource.validate.ValidateProperty;
 import com.thaiopensource.validate.ValidationDriver;
 import com.thaiopensource.validate.rng.CompactSchemaReader;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
@@ -27,7 +27,6 @@ import java.io.Reader;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -53,8 +52,9 @@ public class SchemaValidator {
      * Initializes the validator by using the given file as schema file
      * @param schema a schema file in RNC format
      * @param logger a logger
+     * @param vespaVersion the version of Vespa we should validate against
      */
-    public SchemaValidator(String schema, DeployLogger logger, Optional<Version> vespaVersion) {
+    public SchemaValidator(String schema, DeployLogger logger, Version vespaVersion) {
         this.deployLogger = logger;
         driver = new ValidationDriver(PropertyMap.EMPTY, instanceProperties(), CompactSchemaReader.getInstance());
         File schemaDir = new File(schemaDirBase);
@@ -70,26 +70,27 @@ public class SchemaValidator {
     /**
      * Initializes the validator by using the given file as schema file
      * @param schema a schema file in RNC format
+     * @param vespaVersion the version we should validate against
      * @throws IOException if it is not possible to read schema files
      */
-    public SchemaValidator(String schema) throws IOException {
-        this(schema, new BaseDeployLogger(), Optional.empty());
+    public SchemaValidator(String schema, Version vespaVersion) throws IOException {
+        this(schema, new BaseDeployLogger(), vespaVersion);
     }
 
     /**
      * Create a validator for services.xml for tests
      * @throws IOException if it is not possible to read schema files
      */
-    public static SchemaValidator createTestValidatorServices() throws IOException {
-        return new SchemaValidator(servicesXmlSchemaName);
+    public static SchemaValidator createTestValidatorServices(Version vespaVersion) throws IOException {
+        return new SchemaValidator(servicesXmlSchemaName, vespaVersion);
     }
 
     /**
      * Create a validator for hosts.xml for tests
      * @throws IOException if it is not possible to read schema files
     */
-    public static SchemaValidator createTestValidatorHosts() throws IOException {
-        return new SchemaValidator(hostsXmlSchemaName);
+    public static SchemaValidator createTestValidatorHosts(Version vespaVersion) throws IOException {
+        return new SchemaValidator(hostsXmlSchemaName, vespaVersion);
     }
 
     /**
@@ -97,8 +98,8 @@ public class SchemaValidator {
      *
      * @throws IOException if it is not possible to read schema files
      */
-    public static SchemaValidator createTestValidatorDeployment() throws IOException {
-        return new SchemaValidator(deploymentXmlSchemaName);
+    public static SchemaValidator createTestValidatorDeployment(Version vespaVersion) throws IOException {
+        return new SchemaValidator(deploymentXmlSchemaName, vespaVersion);
     }
 
     private class CustomErrorHandler implements ErrorHandler {
@@ -129,7 +130,7 @@ public class SchemaValidator {
      * @return the directory the schema files are stored in
      * @throws IOException if it is not possible to read schema files
      */
-    public File saveSchemasFromJar(File tmpBase, Optional<Version> vespaVersion) throws IOException {
+    private File saveSchemasFromJar(File tmpBase, Version vespaVersion) throws IOException {
         final Class<? extends SchemaValidator> schemaValidatorClass = this.getClass();
         final ClassLoader classLoader = schemaValidatorClass.getClassLoader();
         Enumeration<URL> uris = classLoader.getResources("schema");
@@ -158,7 +159,7 @@ public class SchemaValidator {
                 // TODO: Hack to handle cases where bundle=null
                 if (bundle == null) {
                     File schemaPath;
-                    if (vespaVersion.isPresent() && vespaVersion.get().getMajor() == 5) {
+                    if (vespaVersion.getMajor() == 5) {
                         schemaPath = new File(Defaults.getDefaults().vespaHome() + "share/vespa/schema/version/5.x/schema/");
                     } else {
                         schemaPath = new File(Defaults.getDefaults().vespaHome() + "share/vespa/schema/");
@@ -234,12 +235,12 @@ public class SchemaValidator {
         errorHandler.fileName = (fileName == null ? " input" : fileName);
         try {
             if ( ! driver.validate(inputSource)) {
-                //Shouldn't happen, error handler should have thrown
+                // Shouldn't happen, error handler should have thrown
                 throw new RuntimeException("Aborting due to earlier XML errors.");
             }
         } catch (SAXException e) {
-            //This should never happen, as it is handled by the ErrorHandler
-            //installed for the driver.
+            // This should never happen, as it is handled by the ErrorHandler
+            // installed for the driver.
             throw new IllegalArgumentException(
                     "XML error in " + (fileName == null ? " input" : fileName) + ": " + Exceptions.toMessageString(e));
         }

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -75,17 +76,19 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     @Override
-    protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                                    ApplicationId applicationId) {
-        Version version = modelFactory.getVersion();
-        log.log(LogLevel.DEBUG, "Start building model for Vespa version " + version);
+    protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, 
+                                                    ApplicationPackage applicationPackage,
+                                                    ApplicationId applicationId, 
+                                                    com.yahoo.component.Version wantedNodeVespaVersion) {
+        Version modelVersion = modelFactory.getVersion();
+        log.log(LogLevel.DEBUG, "Start building model for Vespa version " + modelVersion);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(
                 context.getServerDBSessionDir(),
                 applicationId);
 
         Optional<HostProvisioner> hostProvisioner = createHostProvisionerAdapter(properties);
         Optional<Model> previousModel = currentActiveApplicationSet
-                .map(set -> set.getForVersionOrLatest(Optional.of(version)).getModel());
+                .map(set -> set.getForVersionOrLatest(Optional.of(modelVersion)).getModel());
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 previousModel,
@@ -96,13 +99,14 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 hostProvisioner,
                 properties,
                 getAppDir(applicationPackage),
-                Optional.of(version));
+                new com.yahoo.component.Version(modelVersion.toString()),
+                wantedNodeVespaVersion);
 
-        log.log(LogLevel.DEBUG, "Running createAndValidateModel for Vespa version " + version);
+        log.log(LogLevel.DEBUG, "Running createAndValidateModel for Vespa version " + modelVersion);
         ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, params.ignoreValidationErrors());
         validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
-        log.log(LogLevel.DEBUG, "Done building model for Vespa version " + version);
-        return new PreparedModelsBuilder.PreparedModelResult(version, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
+        log.log(LogLevel.DEBUG, "Done building model for Vespa version " + modelVersion);
+        return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }
 
     private Optional<File> getAppDir(ApplicationPackage applicationPackage) {

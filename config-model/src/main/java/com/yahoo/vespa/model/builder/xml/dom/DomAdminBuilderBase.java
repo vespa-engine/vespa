@@ -63,21 +63,21 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected Admin doBuild(AbstractConfigProducer parent, Element adminE) {
-        Yamas yamas = getYamas(XML.getChild(adminE, "yamas"));
+    protected Admin doBuild(AbstractConfigProducer parent, Element adminElement) {
+        Yamas yamas = getYamas(XML.getChild(adminElement, "yamas"));
 
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
-                .buildMetrics(XML.getChild(adminE, "metrics"));
+                .buildMetrics(XML.getChild(adminElement, "metrics"));
         Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
-                .buildMetricsConsumers(XML.getChild(adminE, "metric-consumers"));
+                .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
 
         Admin admin = new Admin(parent, yamas, metrics, legacyMetricsConsumers, multitenant);
 
-        doBuildAdmin(admin, adminE);
+        doBuildAdmin(admin, adminElement);
 
         new ModelConfigProvider(admin);
 
-        FileDistributionOptions fileDistributionOptions = new DomFileDistributionOptionsBuilder().build(XML.getChild(adminE, "filedistribution"));
+        FileDistributionOptions fileDistributionOptions = new DomFileDistributionOptionsBuilder().build(XML.getChild(adminElement, "filedistribution"));
         admin.setFileDistribution(new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry));
         return admin;
     }

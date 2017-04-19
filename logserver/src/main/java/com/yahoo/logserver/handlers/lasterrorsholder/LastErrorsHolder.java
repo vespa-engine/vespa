@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 public class LastErrorsHolder extends AbstractLogHandler implements ConnectionFactory {
+
     private static final Logger log = Logger.getLogger(LastErrorsHolder.class.getName());
     private static final int maxNumErrors = 100;
     private final Object lock = new Object();

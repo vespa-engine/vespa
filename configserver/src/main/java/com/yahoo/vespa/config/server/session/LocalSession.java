@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -83,7 +84,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private Transaction setActive() {
         Transaction transaction = createSetStatusTransaction(Status.ACTIVATE);
-        transaction.add(applicationRepo.createPutApplicationTransaction(zooKeeperClient.readApplicationId(getTenant()), getSessionId()).operations());
+        transaction.add(applicationRepo.createPutApplicationTransaction(zooKeeperClient.readApplicationId(), getSessionId()).operations());
         return transaction;
     }
 
@@ -153,6 +154,10 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         zooKeeperClient.writeApplicationId(applicationId);
     }
 
+    public void setVespaVersion(Version version) {
+        zooKeeperClient.writeVespaVersion(version);
+    }
+
     public enum Mode {
         READ, WRITE
     }
@@ -161,9 +166,9 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         return applicationPackage.getMetaData();
     }
 
-    public ApplicationId getApplicationId() {
-        return zooKeeperClient.readApplicationId(getTenant());
-    }
+    public ApplicationId getApplicationId() { return zooKeeperClient.readApplicationId(); }
+
+    public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
 
     public ProvisionInfo getProvisionInfo() {
         return zooKeeperClient.getProvisionInfo();
