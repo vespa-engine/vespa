@@ -9,9 +9,11 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.FutureResult;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
+import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +30,7 @@ public class FederationResultTest {
     private static final FederationSearcher.Target dsp1 = new MockTarget("dsp1", 240);
     private static final FederationSearcher.Target dsp2 = new MockTarget("dsp2", 200);
 
-    private final Clock clock = Clock.systemUTC();
+    private final ManualClock clock = new ManualClock();
 
     @Test
     public void testFederationResult() {
@@ -41,7 +43,7 @@ public class FederationResultTest {
         assertTimeout(ImmutableSet.of("dsp1", "dsp2"), 200, 260, 260);
         assertTimeout(ImmutableSet.of("organic"),      520, 260, 260);
     }
-    
+
     private void assertTimeout(Set<String> expectedTimeoutNames, int ... responseTimes) {
         FederationResult.Builder builder = new FederationResult.Builder();
         builder.add(organic, resultAfter(responseTimes[0]));
@@ -92,24 +94,16 @@ public class FederationResultTest {
             long elapsedTime = clock.millis() - startTime;
             long leftUntilResponse = responseTime - elapsedTime;
             if (leftUntilResponse > timeout) {
-                sleepUntil(timeout);
+                clock.advance(Duration.ofMillis(timeout));
                 return Optional.empty();
             }
             else {
-                sleepUntil(leftUntilResponse);
+                if (leftUntilResponse > 0) // otherwise we already spent more time than this sources timeout
+                    clock.advance(Duration.ofMillis(leftUntilResponse));
                 return Optional.of(new Result(query));
             }
         }
         
-        private void sleepUntil(long time) {
-            if (time <= 0) return;
-            try {
-                Thread.sleep(time);
-            }
-            catch (InterruptedException e) {
-            }
-        }
-
         @Override
         public Query getQuery() {
             return query;
