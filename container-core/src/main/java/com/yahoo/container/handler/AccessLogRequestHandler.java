@@ -35,7 +35,7 @@ public class AccessLogRequestHandler extends ThreadedHttpRequestHandler {
             @Override
             public void render(OutputStream outputStream) throws IOException {
 
-                JsonGenerator generator = jsonFactory.createJsonGenerator(outputStream);
+                JsonGenerator generator = jsonFactory.createGenerator(outputStream);
                 generator.writeStartObject();
                 generator.writeArrayFieldStart("entries");
                 for (String uri : uris) {
