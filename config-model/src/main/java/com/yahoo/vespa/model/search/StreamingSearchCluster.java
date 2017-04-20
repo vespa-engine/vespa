@@ -49,7 +49,7 @@ public class StreamingSearchCluster extends SearchCluster implements
 
     public StreamingSearchCluster(AbstractConfigProducer parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
         super(parent, clusterName, index);
-        attributesConfig = new AttributesProducer(this, docTypeName);
+        attributesConfig = new AttributesProducer(parent, docTypeName);
         this.storageRouteSpec = storageRouteSpec;
     }
 
