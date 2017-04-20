@@ -165,7 +165,8 @@ BucketInfo::updateNode(const BucketCopy& newCopy)
 
 void
 BucketInfo::addNodes(const std::vector<BucketCopy>& newCopies,
-                     const std::vector<uint16_t>& recommendedOrder)
+                     const std::vector<uint16_t>& recommendedOrder,
+                     TrustedUpdate update)
 {
     for (uint32_t i = 0; i < newCopies.size(); ++i) {
         BucketCopy* found = getNodeInternal(newCopies[i].getNode());
@@ -182,7 +183,9 @@ BucketInfo::addNodes(const std::vector<BucketCopy>& newCopies,
 
     std::sort(_nodes.begin(), _nodes.end(), Sorter(recommendedOrder));
 
-    updateTrusted();
+    if (update == TrustedUpdate::UPDATE) {
+        updateTrusted();
+    }
 }
 
 void
@@ -194,14 +197,16 @@ BucketInfo::addNode(const BucketCopy& newCopy,
 }
 
 bool
-BucketInfo::removeNode(unsigned short node)
+BucketInfo::removeNode(unsigned short node, TrustedUpdate update)
 {
     for (std::vector<BucketCopy>::iterator iter = _nodes.begin();
          iter != _nodes.end();
          iter++) {
         if (iter->getNode() == node) {
             _nodes.erase(iter);
-            updateTrusted();
+            if (update == TrustedUpdate::UPDATE) {
+                updateTrusted();
+            }
             return true;
         }
     }

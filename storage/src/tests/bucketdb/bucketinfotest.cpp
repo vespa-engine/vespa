@@ -22,6 +22,10 @@ struct BucketInfoTest : public CppUnit::TestFixture {
     void testTrustedResetWhenCopiesBecomeInconsistent();
     void testTrustedResetWhenTrustedCopiesGoOutOfSync();
     void testTrustedNotResetWhenNonTrustedCopiesStillOutOfSync();
+    void add_nodes_can_immediately_update_trusted_flag();
+    void add_nodes_can_defer_update_of_trusted_flag();
+    void remove_node_can_immediately_update_trusted_flag();
+    void remove_node_can_defer_update_of_trusted_flag();
 
     CPPUNIT_TEST_SUITE(BucketInfoTest);
     CPPUNIT_TEST(testBucketInfoEntriesWithNewestTimestampsAreKept);
@@ -31,6 +35,10 @@ struct BucketInfoTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_IGNORED(testTrustedResetWhenCopiesBecomeInconsistent);
     CPPUNIT_TEST(testTrustedResetWhenTrustedCopiesGoOutOfSync);
     CPPUNIT_TEST(testTrustedNotResetWhenNonTrustedCopiesStillOutOfSync);
+    CPPUNIT_TEST(add_nodes_can_immediately_update_trusted_flag);
+    CPPUNIT_TEST(add_nodes_can_defer_update_of_trusted_flag);
+    CPPUNIT_TEST(remove_node_can_immediately_update_trusted_flag);
+    CPPUNIT_TEST(remove_node_can_defer_update_of_trusted_flag);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -193,6 +201,43 @@ BucketInfoTest::testTrustedNotResetWhenNonTrustedCopiesStillOutOfSync()
     CPPUNIT_ASSERT(info.getNode(0)->trusted());
     CPPUNIT_ASSERT(!info.getNode(1)->trusted());
     CPPUNIT_ASSERT(!info.getNode(2)->trusted());
+}
+
+void BucketInfoTest::add_nodes_can_immediately_update_trusted_flag() {
+    BucketInfo info;
+    std::vector<uint16_t> order;
+    info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000))}, order, TrustedUpdate::UPDATE);
+    // Only one replica, so implicitly trusted iff trusted flag update is invoked.
+    CPPUNIT_ASSERT(info.getNode(0)->trusted());
+}
+
+void BucketInfoTest::add_nodes_can_defer_update_of_trusted_flag() {
+    BucketInfo info;
+    std::vector<uint16_t> order;
+    info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000))}, order, TrustedUpdate::DEFER);
+    CPPUNIT_ASSERT(!info.getNode(0)->trusted());
+}
+
+void BucketInfoTest::remove_node_can_immediately_update_trusted_flag() {
+    BucketInfo info;
+    std::vector<uint16_t> order;
+    info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000)),
+                   BucketCopy(0, 1, api::BucketInfo(20, 200, 2000))},
+                  order, TrustedUpdate::UPDATE);
+    CPPUNIT_ASSERT(!info.getNode(0)->trusted());
+    info.removeNode(1, TrustedUpdate::UPDATE);
+    // Only one replica remaining after remove, so implicitly trusted iff trusted flag update is invoked.
+    CPPUNIT_ASSERT(info.getNode(0)->trusted());
+}
+
+void BucketInfoTest::remove_node_can_defer_update_of_trusted_flag() {
+    BucketInfo info;
+    std::vector<uint16_t> order;
+    info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000)),
+                   BucketCopy(0, 1, api::BucketInfo(20, 200, 2000))},
+                  order, TrustedUpdate::UPDATE);
+    info.removeNode(1, TrustedUpdate::DEFER);
+    CPPUNIT_ASSERT(!info.getNode(0)->trusted());
 }
 
 }

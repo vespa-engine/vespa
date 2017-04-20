@@ -238,6 +238,9 @@ private:
 
     std::string requestNodesToString();
 
+    // Returns whether at least one replica was removed from the entry.
+    // Does NOT implicitly update trusted status on remaining replicas; caller must do
+    // this explicitly.
     bool removeCopiesFromNodesThatWereRequested(
             BucketDatabase::Entry& e,
             const document::BucketId& bucketId);

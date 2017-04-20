@@ -73,6 +73,13 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(transition_time_reset_across_non_preempting_state_changes);
     CPPUNIT_TEST(transition_time_tracked_for_distribution_config_change);
     CPPUNIT_TEST(transition_time_tracked_across_preempted_transitions);
+    CPPUNIT_TEST(batch_update_of_existing_diverging_replicas_does_not_mark_any_as_trusted);
+    CPPUNIT_TEST(batch_add_of_new_diverging_replicas_does_not_mark_any_as_trusted);
+    CPPUNIT_TEST(batch_add_with_single_resulting_replica_implicitly_marks_as_trusted);
+    CPPUNIT_TEST(identity_update_of_single_replica_does_not_clear_trusted);
+    CPPUNIT_TEST(identity_update_of_diverging_untrusted_replicas_does_not_mark_any_as_trusted);
+    CPPUNIT_TEST(adding_diverging_replica_to_existing_trusted_does_not_remove_trusted);
+    CPPUNIT_TEST(batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -127,6 +134,13 @@ protected:
     void transition_time_reset_across_non_preempting_state_changes();
     void transition_time_tracked_for_distribution_config_change();
     void transition_time_tracked_across_preempted_transitions();
+    void batch_update_of_existing_diverging_replicas_does_not_mark_any_as_trusted();
+    void batch_add_of_new_diverging_replicas_does_not_mark_any_as_trusted();
+    void batch_add_with_single_resulting_replica_implicitly_marks_as_trusted();
+    void identity_update_of_single_replica_does_not_clear_trusted();
+    void identity_update_of_diverging_untrusted_replicas_does_not_mark_any_as_trusted();
+    void adding_diverging_replica_to_existing_trusted_does_not_remove_trusted();
+    void batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted();
 
     bool bucketExistsThatHasNode(int bucketCount, uint16_t node) const;
 
@@ -2412,6 +2426,74 @@ BucketDBUpdaterTest::transition_time_tracked_across_preempted_transitions()
     completeStateTransitionInSeconds("distributor:2 storage:3", 3, 3);
 
     CPPUNIT_ASSERT_EQUAL(uint64_t(8000), lastTransitionTimeInMillis());
+}
+
+/*
+ * Brief reminder on test DSL for checking bucket merge operations:
+ *
+ *   mergeBucketLists() takes as input strings of the format
+ *     <node>:<raw bucket id>/<checksum>/<num docs>/<doc size>|<node>:
+ *   and returns a string describing the bucket DB post-merge with the format
+ *     <raw bucket id>:<node>/<checksum>/<num docs>/<doc size>,<node>:....|<raw bucket id>:....
+ *
+ * Yes, the order of node<->bucket id is reversed between the two, perhaps to make sure you're awake.
+ */
+
+void BucketDBUpdaterTest::batch_update_of_existing_diverging_replicas_does_not_mark_any_as_trusted() {
+    // Replacing bucket information for content node 0 should not mark existing
+    // untrusted replica as trusted as a side effect.
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("5:1/7/8/9/u,0/1/2/3/u|"),
+            mergeBucketLists(
+                    lib::ClusterState("distributor:1 storage:3 .0.s:i"),
+                    "0:5/0/0/0|1:5/7/8/9",
+                    lib::ClusterState("distributor:1 storage:3 .0.s:u"),
+                    "0:5/1/2/3|1:5/7/8/9", true));
+}
+
+void BucketDBUpdaterTest::batch_add_of_new_diverging_replicas_does_not_mark_any_as_trusted() {
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("5:1/7/8/9/u,0/1/2/3/u|"),
+            mergeBucketLists("", "0:5/1/2/3|1:5/7/8/9", true));
+}
+
+void BucketDBUpdaterTest::batch_add_with_single_resulting_replica_implicitly_marks_as_trusted() {
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("5:0/1/2/3/t|"),
+            mergeBucketLists("", "0:5/1/2/3", true));
+}
+
+void BucketDBUpdaterTest::identity_update_of_single_replica_does_not_clear_trusted() {
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("5:0/1/2/3/t|"),
+            mergeBucketLists("0:5/1/2/3", "0:5/1/2/3", true));
+}
+
+void BucketDBUpdaterTest::identity_update_of_diverging_untrusted_replicas_does_not_mark_any_as_trusted() {
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("5:1/7/8/9/u,0/1/2/3/u|"),
+            mergeBucketLists("0:5/1/2/3|1:5/7/8/9", "0:5/1/2/3|1:5/7/8/9", true));
+}
+
+void BucketDBUpdaterTest::adding_diverging_replica_to_existing_trusted_does_not_remove_trusted() {
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("5:1/2/3/4/u,0/1/2/3/t|"),
+            mergeBucketLists("0:5/1/2/3", "0:5/1/2/3|1:5/2/3/4", true));
+}
+
+void BucketDBUpdaterTest::batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted() {
+    // This differs from batch_update_of_existing_diverging_replicas_does_not_mark_any_as_trusted
+    // in that _all_ content nodes are considered outdated when distributor changes take place,
+    // and therefore a slightly different code path is taken. In particular, bucket info for
+    // outdated nodes gets removed before possibly being re-added (if present in the bucket info
+    // response).
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("5:1/7/8/9/u,0/1/2/3/u|"),
+            mergeBucketLists(
+                    lib::ClusterState("distributor:2 storage:3"),
+                    "0:5/1/2/3|1:5/7/8/9",
+                    lib::ClusterState("distributor:1 storage:3"),
+                    "0:5/1/2/3|1:5/7/8/9", true));
 }
 
 } // distributor
