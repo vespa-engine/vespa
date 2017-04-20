@@ -377,9 +377,6 @@ public class FSA {
         catch (FileNotFoundException e) {
             throw new IllegalArgumentException("Could not find FSA file '" + filename + "'",e);
         }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not read FSA file '" + filename + "'",e);
-        }
     }
 
     private void init(FileInputStream file, String charsetname) {
