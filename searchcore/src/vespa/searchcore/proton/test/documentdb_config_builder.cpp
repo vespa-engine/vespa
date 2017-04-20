@@ -75,7 +75,7 @@ DocumentDBConfig::SP
 DocumentDBConfigBuilder::build()
 {
     AttributeSpecsBuilder attributeSpecsBuilder;
-    attributeSpecsBuilder.setup(*_attributes);
+    attributeSpecsBuilder.setup(*_attributes, *_summarymap);
     return std::make_shared<DocumentDBConfig>(
             _generation,
             _rankProfiles,
@@ -84,7 +84,7 @@ DocumentDBConfigBuilder::build()
             attributeSpecsBuilder.getAttributesConfig(),
             attributeSpecsBuilder.getAttributeSpecs(),
             _summary,
-            _summarymap,
+            attributeSpecsBuilder.getSummarymapConfig(),
             _juniperrc,
             _documenttypes,
             _repo,

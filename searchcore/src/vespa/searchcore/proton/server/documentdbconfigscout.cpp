@@ -21,7 +21,7 @@ DocumentDBConfigScout::scout(const DocumentDBConfig::SP &config,
     if (*ac == config->getAttributesConfig())
         return config; // no change
     AttributeSpecsBuilder attributeSpecsBuilder;
-    attributeSpecsBuilder.setup(*ac);
+    attributeSpecsBuilder.setup(*ac, config->getSummarymapConfig());
     return config->newFromAttributesConfig(attributeSpecsBuilder.getAttributesConfig(),
                                            attributeSpecsBuilder.getAttributeSpecs());
 }

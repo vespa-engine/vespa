@@ -270,7 +270,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     }
     ConfigSnapshot extraConfigs(snapshot.subset(_extraConfigKeys));
     AttributeSpecsBuilder attributeSpecsBuilder;
-    attributeSpecsBuilder.setup(*newAttributesConfig);
+    attributeSpecsBuilder.setup(*newAttributesConfig, *newSummarymapConfig);
     DocumentDBConfig::SP newSnapshot(
             new DocumentDBConfig(generation,
                                  newRankProfilesConfig,
@@ -279,7 +279,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  attributeSpecsBuilder.getAttributesConfig(),
                                  attributeSpecsBuilder.getAttributeSpecs(),
                                  newSummaryConfig,
-                                 newSummarymapConfig,
+                                 attributeSpecsBuilder.getSummarymapConfig(),
                                  newJuniperrcConfig,
                                  _bootstrapConfig->getDocumenttypesConfigSP(),
                                  _bootstrapConfig->getDocumentTypeRepoSP(),

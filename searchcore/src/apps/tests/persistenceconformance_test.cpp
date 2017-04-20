@@ -114,7 +114,7 @@ public:
         SchemaBuilder::build(*attributes, *schema);
         SchemaBuilder::build(*summary, *schema);
         AttributeSpecsBuilder attributeSpecsBuilder;
-        attributeSpecsBuilder.setup(*attributes);
+        attributeSpecsBuilder.setup(*attributes, SummarymapConfig());
         return DocumentDBConfig::SP(new DocumentDBConfig(
                         1,
                         std::make_shared<RankProfilesConfig>(),
@@ -123,7 +123,7 @@ public:
                         attributeSpecsBuilder.getAttributesConfig(),
                         attributeSpecsBuilder.getAttributeSpecs(),
                         summary,
-                        std::make_shared<SummarymapConfig>(),
+                        attributeSpecsBuilder.getSummarymapConfig(),
                         std::make_shared<JuniperrcConfig>(),
                         _typeCfg,
                         _repo,

@@ -73,7 +73,7 @@ struct DBConfigFixture {
                                    const vespalib::string &docTypeName)
     {
         AttributeSpecsBuilder attributeSpecsBuilder;
-        attributeSpecsBuilder.setup(_attributesBuilder);
+        attributeSpecsBuilder.setup(_attributesBuilder, _summarymapBuilder);
         return std::make_shared<DocumentDBConfig>
             (generation,
              std::make_shared<RankProfilesConfig>(_rankProfilesBuilder),
@@ -82,7 +82,7 @@ struct DBConfigFixture {
              attributeSpecsBuilder.getAttributesConfig(),
              attributeSpecsBuilder.getAttributeSpecs(),
              std::make_shared<SummaryConfig>(_summaryBuilder),
-             std::make_shared<SummarymapConfig>(_summarymapBuilder),
+             attributeSpecsBuilder.getSummarymapConfig(),
              std::make_shared<JuniperrcConfig>(_juniperrcBuilder),
              documentTypes,
              repo,
