@@ -63,10 +63,10 @@ public class MockFileAcquirerTest {
     }
 
     private FileReference createFileReference(String value) {
-        Constructor constructors = FileReference.class.getDeclaredConstructors()[0];
-        constructors.setAccessible(true);
         try {
-            return (FileReference)constructors.newInstance(value);
+            Constructor<FileReference> constructors = FileReference.class.getDeclaredConstructor(String.class);
+            constructors.setAccessible(true);
+            return constructors.newInstance(value);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
